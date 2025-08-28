@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortune Cookie</title>
+    <style>
+        /* Windows 95 style theme */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Tahoma', 'MS Sans Serif', sans-serif;
+            background: white;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            background: #c0c0c0;
+            border-bottom: 2px solid #808080;
+            padding: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .button {
+            background: #c0c0c0;
+            border: 2px outset #c0c0c0;
+            padding: 4px 12px;
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            color: black;
+        }
+
+        .button:hover {
+            background: #d0d0d0;
+        }
+
+        .button:active {
+            border: 2px inset #c0c0c0;
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .fortune-display {
+            text-align: center;
+            max-width: 400px;
+            margin-bottom: 30px;
+        }
+
+        .cookie-container {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        .cookie {
+            font-size: 80px;
+            cursor: pointer;
+            transition: transform 0.1s;
+            user-select: none;
+        }
+
+        .cookie:hover {
+            transform: scale(1.1);
+        }
+
+        .cookie:active {
+            transform: scale(0.9);
+        }
+
+        .fortune-text {
+            font-size: 16px;
+            line-height: 1.5;
+            padding: 15px;
+            background: #fffacd;
+            border: 2px inset #c0c0c0;
+            margin: 10px 0;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-style: italic;
+        }
+
+        .fortune-number {
+            font-size: 12px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .favorites-section {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        .favorites-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .favorites-list {
+            max-height: 150px;
+            overflow-y: auto;
+            background: white;
+            border: 2px inset #c0c0c0;
+            padding: 10px;
+        }
+
+        .favorite-item {
+            font-size: 12px;
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+        }
+
+        .favorite-item:hover {
+            background: #e0e0e0;
+        }
+
+        .favorite-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-bar {
+            background: #c0c0c0;
+            border-top: 2px solid #808080;
+            padding: 4px 8px;
+            font-size: 11px;
+            color: #333;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .crack-animation {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 60px;
+            color: #8B4513;
+            animation: crack 0.5s ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes crack {
+            0% { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
+            50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="button" onclick="crackNewCookie()">New Cookie</button>
+        <button class="button" onclick="addToFavorites()" id="favoriteBtn">♥ Favorite</button>
+        <button class="button" onclick="showStats()">Stats</button>
+        <span style="margin-left: auto; font-size: 11px;" id="userDisplay">Guest User</span>
+    </div>
+
+    <div class="main-content">
+        <div class="fortune-display">
+            <div class="cookie-container">
+                <div class="cookie" onclick="crackCookie()" id="cookieEmoji">🥠</div>
+                <div id="crackEffect" class="crack-animation hidden">💥</div>
+            </div>
+            <div class="fortune-text" id="fortuneText">
+                Click the fortune cookie to reveal your fortune!
+            </div>
+            <div class="fortune-number" id="fortuneNumber"></div>
+        </div>
+
+        <div class="favorites-section">
+            <div class="favorites-title">Your Favorite Fortunes</div>
+            <div class="favorites-list" id="favoritesList">
+                <div style="text-align: center; color: #666; padding: 20px;">
+                    No favorites yet. Click ♥ to save fortunes!
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">
+        Ready - Click a cookie to get your fortune
+    </div>
+
+    <script>
+        // ZAD Configuration
+        window.APP_ID = 'fortune-cookie-app';
+        
+        // Current user from ToyBox authentication
+        let currentUser = null;
+
+        // Fortune cookie database
+        const fortunes = [
+            "Your future is as bright as your faith allows it to be.",
+            "A journey of a thousand miles begins with a single step.",
+            "Success comes to those who dare to begin.",
+            "The best time to plant a tree was 20 years ago. The second best time is now.",
+            "You will find luck is just a matter of preparation meeting opportunity.",
+            "Your greatest glory is not in never falling, but in rising every time you fall.",
+            "The only impossible journey is the one you never begin.",
+            "Be yourself; everyone else is already taken.",
+            "In the middle of difficulty lies opportunity.",
+            "Believe you can and you're halfway there.",
+            "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+            "The way to get started is to quit talking and begin doing.",
+            "Life is what happens to you while you're busy making other plans.",
+            "The future belongs to those who believe in the beauty of their dreams.",
+            "It is during our darkest moments that we must focus to see the light.",
+            "Happiness is not something ready made. It comes from your own actions.",
+            "Change your thoughts and you change your world.",
+            "The only way to do great work is to love what you do.",
+            "Innovation distinguishes between a leader and a follower.",
+            "Your limitation—it's only your imagination.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Sometimes later becomes never. Do it now.",
+            "Great things never come from comfort zones.",
+            "Dream it. Wish it. Do it.",
+            "Success doesn't just find you. You have to go out and get it.",
+            "The harder you work for something, the greater you'll feel when you achieve it.",
+            "Dream bigger. Do bigger.",
+            "Don't stop when you're tired. Stop when you're done.",
+            "Wake up with determination. Go to bed with satisfaction.",
+            "Do something today that your future self will thank you for.",
+            "Little things make big days.",
+            "It's going to be hard, but hard does not mean impossible.",
+            "Don't wait for opportunity. Create it.",
+            "Sometimes we're tested not to show our weaknesses, but to discover our strengths.",
+            "The key to success is to focus on goals, not obstacles.",
+            "Today's accomplishments were yesterday's impossibilities.",
+            "You are never too old to set another goal or to dream a new dream.",
+            "A smooth sea never made a skilled sailor.",
+            "Your potential is endless.",
+            "The expert in anything was once a beginner.",
+            "Every master was once a disaster.",
+            "Good things happen to those who hustle.",
+            "Don't be afraid to give yourself everything you've ever wanted in life.",
+            "You are capable of more than you know.",
+            "If you want to lift yourself up, lift up someone else.",
+            "The best revenge is massive success.",
+            "A goal is a dream with a deadline.",
+            "You don't have to be great to get started, but you have to get started to be great.",
+            "A year from now you may wish you had started today.",
+            "Opportunities don't happen. You create them."
+        ];
+
+        let currentFortune = null;
+        let totalCookiesCracked = 0;
+        let favoriteCount = 0;
+
+        // Listen for auth updates from ToyBox OS
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUserDisplay();
+                loadUserData();
+            }
+        });
+
+        // Load auth from localStorage (backup method)
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserDisplay();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+
+        function updateUserDisplay() {
+            const userDisplay = document.getElementById('userDisplay');
+            if (currentUser) {
+                userDisplay.textContent = `User: ${currentUser.handle}`;
+            } else {
+                userDisplay.textContent = 'Guest User';
+            }
+        }
+
+        // ZAD Helper Functions (REQUIRED)
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        action_type: dataType,
+                        participant_id: currentUser ? currentUser.handle : 'guest',
+                        content_data: data
+                    })
+                });
+                const result = await response.json();
+                updateStatus('Data saved successfully');
+                return result;
+            } catch (error) {
+                updateStatus('Failed to save data');
+                console.error('Save error:', error);
+                return null;
+            }
+        }
+        
+        async function load(dataType, participantId = null) {
+            try {
+                const pid = participantId || (currentUser ? currentUser.handle : 'guest');
+                const response = await fetch('/api/zad/load', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        action_type: dataType,
+                        participant_id: pid
+                    })
+                });
+                const result = await response.json();
+                return result.data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('statusBar').textContent = message;
+            setTimeout(() => {
+                document.getElementById('statusBar').textContent = 'Ready - Click a cookie to get your fortune';
+            }, 3000);
+        }
+
+        function crackCookie() {
+            // Show crack animation
+            const crackEffect = document.getElementById('crackEffect');
+            crackEffect.classList.remove('hidden');
+            setTimeout(() => {
+                crackEffect.classList.add('hidden');
+            }, 500);
+
+            // Get random fortune
+            const randomIndex = Math.floor(Math.random() * fortunes.length);
+            currentFortune = {
+                text: fortunes[randomIndex],
+                number: Math.floor(Math.random() * 999) + 1,
+                timestamp: new Date().toISOString(),
+                id: Date.now()
+            };
+
+            // Display fortune
+            document.getElementById('fortuneText').textContent = currentFortune.text;
+            document.getElementById('fortuneNumber').textContent = `Lucky Numbers: ${currentFortune.number}`;
+
+            // Update cookie to broken state
+            document.getElementById('cookieEmoji').textContent = '🍪';
+
+            totalCookiesCracked++;
+            saveStats();
+            updateStatus(`Fortune revealed! Total cookies cracked: ${totalCookiesCracked}`);
+        }
+
+        function crackNewCookie() {
+            // Reset cookie to uncracked state
+            document.getElementById('cookieEmoji').textContent = '🥠';
+            document.getElementById('fortuneText').textContent = 'Click the fortune cookie to reveal your fortune!';
+            document.getElementById('fortuneNumber').textContent = '';
+            currentFortune = null;
+            updateStatus('New fortune cookie ready');
+        }
+
+        async function addToFavorites() {
+            if (!currentFortune) {
+                updateStatus('Please crack a cookie first!');
+                return;
+            }
+
+            // Save to favorites
+            await save('favorite_fortune', currentFortune);
+            favoriteCount++;
+            
+            updateStatus('Fortune added to favorites!');
+            loadFavorites();
+        }
+
+        async function loadFavorites() {
+            const favorites = await load('favorite_fortune');
+            const favoritesList = document.getElementById('favoritesList');
+            
+            if (favorites.length === 0) {
+                favoritesList.innerHTML = '<div style="text-align: center; color: #666; padding: 20px;">No favorites yet. Click ♥ to save fortunes!</div>';
+                return;
+            }
+
+            // Sort by timestamp, newest first
+            favorites.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+            favoritesList.innerHTML = favorites.map(item => {
+                const fortune = item.content_data;
+                return `<div class="favorite-item" onclick="showFavorite('${fortune.text}', ${fortune.number})">
+                    "${fortune.text}" - Lucky #${fortune.number}
+                </div>`;
+            }).join('');
+        }
+
+        function showFavorite(text, number) {
+            document.getElementById('fortuneText').textContent = text;
+            document.getElementById('fortuneNumber').textContent = `Lucky Numbers: ${number}`;
+            document.getElementById('cookieEmoji').textContent = '🍪';
+            updateStatus('Showing favorite fortune');
+        }
+
+        async function loadUserData() {
+            // Load favorites
+            await loadFavorites();
+            
+            // Load stats
+            const stats = await load('user_stats');
+            if (stats.length > 0) {
+                const userStats = stats[stats.length - 1].content_data;
+                totalCookiesCracked = userStats.totalCookiesCracked || 0;
+                favoriteCount = userStats.favoriteCount || 0;
+            }
+        }
+
+        async function saveStats() {
+            await save('user_stats', {
+                totalCookiesCracked,
+                favoriteCount,
+                lastVisit: new Date().toISOString()
+            });
+        }
+
+        async function showStats() {
+            const stats = await load('user_stats');
+            let message = `Your Fortune Cookie Stats:\n\n`;
+            message += `Total Cookies Cracked: ${totalCookiesCracked}\n`;
+            message += `Favorite Fortunes: ${favoriteCount}\n`;
+            
+            if (stats.length > 0) {
+                const userStats = stats[stats.length - 1].content_data;
+                const lastVisit = new Date(userStats.lastVisit).toLocaleDateString();
+                message += `Last Visit: ${lastVisit}`;
+            }
+            
+            alert(message);
+        }
+
+        // Initialize app
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            loadUserData();
+            updateStatus('Fortune Cookie app loaded - Click the cookie!');
+        });
+    </script>
+</body>
+</html>

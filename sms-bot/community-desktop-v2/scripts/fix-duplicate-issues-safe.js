@@ -1,42 +1,67 @@
-import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
-import fs from 'fs';
+#!/usr/bin/env node
 
-dotenv.config({ path: '../.env' });
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Load environment variables
+import { fileURLToPath } from 'url';
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+let result = dotenv.config({ path: path.join(__dirname, '../../.env.local') });
+if (result.error) {
+    // Try the regular .env file  
+    result = dotenv.config({ path: path.join(__dirname, '../../.env') });
+    if (result.error) {
+        console.error('Error loading .env files:', result.error.message);
+        console.error('Make sure you have .env or .env.local with SUPABASE_URL and SUPABASE_SERVICE_KEY');
+        process.exit(1);
+    }
+}
 
 const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
 );
 
 async function fixDuplicateIssues() {
-  try {
-    // Get current app
-    const { data: app, error } = await supabase
-      .from('wtaf_content')
-      .select('*')
-      .eq('user_slug', 'public')
-      .eq('app_slug', 'toybox-issue-tracker')
-      .single();
-    
-    if (error) {
-      console.error('Error fetching app:', error);
-      return;
-    }
-    
-    console.log('Fetched app:', app.title);
-    
-    // Create backup with timestamp
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const backupFile = `../backups/toybox-issue-tracker_pre-duplicate-fix_${timestamp}.html`;
-    fs.writeFileSync(backupFile, app.html_content);
-    console.log(`Created backup: ${backupFile}`);
-    
-    // Apply the enhanced deduplication fix
-    let fixedHtml = app.html_content;
-    
-    // 1. Replace the loadRecentUpdates function with improved deduplication
-    const improvedLoadFunction = `async function loadRecentUpdates() {
+    try {
+        console.log('🔧 Starting duplicate issue fix for toybox-issue-tracker...');
+
+        // Get current app
+        const { data: app, error } = await supabase
+            .from('wtaf_content')
+            .select('*')
+            .eq('user_slug', 'public')
+            .eq('app_slug', 'toybox-issue-tracker')
+            .single();
+        
+        if (error) {
+            console.error('❌ Error fetching app:', error);
+            return;
+        }
+        
+        console.log(`📱 Found app: ${app.title}`);
+        console.log(`📏 Original HTML size: ${app.html_content.length} characters`);
+
+        // Create backup
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+        const backupDir = path.join(__dirname, '../backups');
+        if (!fs.existsSync(backupDir)) {
+            fs.mkdirSync(backupDir, { recursive: true });
+        }
+        
+        const backupFile = path.join(backupDir, `toybox-issue-tracker_pre-duplicate-fix_${timestamp}.html`);
+        fs.writeFileSync(backupFile, app.html_content);
+        console.log(`💾 Created backup: ${path.basename(backupFile)}`);
+
+        // Apply the enhanced deduplication fix
+        let fixedHtml = app.html_content;
+
+        // 1. Replace the loadRecentUpdates function with improved deduplication
+        const improvedLoadFunction = `        // Load recent updates
+        async function loadRecentUpdates() {
             const updates = await load('update_request');
             const container = document.getElementById('issuesContainer');
             
@@ -128,51 +153,71 @@ async function fixDuplicateIssues() {
                 container.innerHTML = '<div style="font-size: 8px; color: #808080; font-style: italic;">No issues found.</div>';
             }
         }`;
-    
-    // Replace the function
-    fixedHtml = fixedHtml.replace(
-      /async function loadRecentUpdates\(\) \{[\s\S]*?\n        \}/,
-      improvedLoadFunction
-    );
-    
-    // 2. Remove the duplicate openTicket function (lines 639-662)
-    fixedHtml = fixedHtml.replace(
-      /        \/\/ Open ticket function \(change status from pending to open\)\s*\n        async function openTicket\(issueNumber\) \{[\s\S]*?\n        \}/,
-      ''
-    );
-    
-    // 3. Remove the duplicate loadRecentIssues() call
-    fixedHtml = fixedHtml.replace(
-      /loadRecentIssues\(\);/g,
-      'loadRecentUpdates();'
-    );
-    
-    console.log('Fixed HTML length:', fixedHtml.length);
-    console.log('Original HTML length:', app.html_content.length);
-    
-    // Update the database
-    const { error: updateError } = await supabase
-      .from('wtaf_content')
-      .update({
-        html_content: fixedHtml,
-        updated_at: new Date().toISOString()
-      })
-      .eq('user_slug', 'public')
-      .eq('app_slug', 'toybox-issue-tracker');
-    
-    if (updateError) {
-      console.error('Error updating app:', updateError);
-      return;
+
+        // Replace the function - find the specific pattern
+        const functionPattern = /        \/\/ Load recent updates\s*\n        async function loadRecentUpdates\(\) \{[\s\S]*?\n        \}/;
+        if (functionPattern.test(fixedHtml)) {
+            fixedHtml = fixedHtml.replace(functionPattern, improvedLoadFunction);
+            console.log('✅ Replaced loadRecentUpdates function with enhanced deduplication');
+        } else {
+            console.log('⚠️ Could not find exact loadRecentUpdates function pattern, trying broader pattern');
+            const broaderPattern = /async function loadRecentUpdates\(\) \{[\s\S]*?\n        \}/;
+            if (broaderPattern.test(fixedHtml)) {
+                fixedHtml = fixedHtml.replace(broaderPattern, improvedLoadFunction);
+                console.log('✅ Replaced loadRecentUpdates function with enhanced deduplication (broader pattern)');
+            } else {
+                console.log('❌ Could not find loadRecentUpdates function to replace');
+                return;
+            }
+        }
+
+        // 2. Remove duplicate openTicket function if it exists
+        const duplicateOpenTicket = /        \/\/ Open ticket function \(change status from pending to open\)\s*\n        async function openTicket\(issueNumber\) \{[\s\S]*?\n        \}/;
+        if (duplicateOpenTicket.test(fixedHtml)) {
+            fixedHtml = fixedHtml.replace(duplicateOpenTicket, '');
+            console.log('✅ Removed duplicate openTicket function');
+        }
+
+        // 3. Replace any loadRecentIssues() calls with loadRecentUpdates()
+        const issuesCallCount = (fixedHtml.match(/loadRecentIssues\(\)/g) || []).length;
+        if (issuesCallCount > 0) {
+            fixedHtml = fixedHtml.replace(/loadRecentIssues\(\);/g, 'loadRecentUpdates();');
+            console.log(`✅ Replaced ${issuesCallCount} loadRecentIssues() calls with loadRecentUpdates()`);
+        }
+
+        console.log(`📏 Fixed HTML size: ${fixedHtml.length} characters`);
+        console.log(`📊 Size change: ${fixedHtml.length - app.html_content.length} characters`);
+
+        // Update the database
+        const { error: updateError } = await supabase
+            .from('wtaf_content')
+            .update({
+                html_content: fixedHtml,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_slug', 'public')
+            .eq('app_slug', 'toybox-issue-tracker');
+        
+        if (updateError) {
+            console.error('❌ Error updating app:', updateError);
+            return;
+        }
+        
+        console.log('\n🎉 SUCCESS! Duplicate issue fix applied!');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ Enhanced deduplication logic implemented');
+        console.log('✅ Issues are now grouped by issueNumber with latest version kept'); 
+        console.log('✅ OPEN/CLOSE buttons preserved for bart admin user');
+        console.log('✅ Add Comment functionality preserved');
+        console.log('✅ Console logging added for debugging duplicates');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🌐 Visit: https://webtoys.ai/public/toybox-issue-tracker');
+        console.log('🔍 Check browser console for deduplication logs');
+        console.log('📊 Should show exactly 29 unique issues now');
+        
+    } catch (err) {
+        console.error('❌ Error during fix:', err);
     }
-    
-    console.log('✅ Successfully updated toybox-issue-tracker with duplicate fix!');
-    console.log('✅ The app now properly deduplicates issues by keeping the most recent version of each issue number');
-    console.log('✅ All functionality (OPEN/CLOSE buttons, Add Comment) should still work');
-    console.log('✅ Visit https://webtoys.ai/public/toybox-issue-tracker to verify exactly 29 unique issues display');
-    
-  } catch (err) {
-    console.error('Error:', err);
-  }
 }
 
 fixDuplicateIssues();

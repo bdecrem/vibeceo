@@ -241,6 +241,23 @@
 </head>
 <body class="theme-system7">
     <div id="desktop">
+    
+    <!-- Detective's Case Files -->
+    <div class="desktop-icon" 
+         style="left: 620px; top: 240px;"
+         onclick="openWindowedApp('detective-mystery')"
+         title="Detective's Case Files">
+        <div class="icon">🔍</div>
+        <div class="label">Detective's Case Files</div>
+    </div>
+<!-- Paint 98 -->
+    <div class="desktop-icon" 
+         style="left: 620px; top: 180px;"
+         onclick="openWindowedApp('paint-98')"
+         title="Paint 98">
+        <div class="icon">🎨</div>
+        <div class="label">Paint 98</div>
+    </div>
         <!-- Windowed Apps -->
         <div class="desktop-icon" onclick="openWindowedApp('toybox-chat')">
                 <div class="icon">💬</div>
@@ -260,6 +277,11 @@
                 <div class="label">Sudoku</div>
             </div>
         
+        
+        <div class="desktop-icon" style="left: 610px; top: 80px" onclick="openWindowedApp('texty')">
+            <div class="icon">📄</div>
+            <div class="label">TEXTY</div>
+        </div>
         <!-- Simple Apps -->
         <div class="desktop-icon" style="left: 20px; top: 120px" 
              onclick="alert('You rolled: ' + Math.ceil(Math.random() * 6))">
@@ -268,7 +290,7 @@
         </div>
         
         <div class="desktop-icon" style="left: 120px; top: 120px" 
-             onclick="localStorage.rockName=prompt('Name your pet rock:')||localStorage.rockName||'Rocky';alert('Your pet rock '+localStorage.rockName+' loves you!')">
+             onclick="enhancedPetRock()">
             <div class="icon">🪨</div>
             <div class="label">Pet Rock</div>
         </div>
@@ -407,7 +429,12 @@
                 <div class="icon">📝</div>
                 <div class="label">MacWord</div>
             </div>
-    </div>
+    
+            <div class="desktop-icon" onclick="openWindowedApp('painty')">
+                <div class="icon">🎨</div>
+                <div class="label">PAINTY</div>
+            </div>
+</div>
     
     <script>
     let currentToyBoxUser = null;
@@ -830,6 +857,43 @@ window.windowManager = new WindowManager();
         
         
         window.windowedApps = {
+            
+            'detective-mystery': {
+                name: 'Detective Mystery',
+                url: '/public/detective-mystery',
+                icon: '🔍',
+                width: 800,
+                height: 600
+            },
+            'no404': {
+                name: 'No404 Text Editor',
+                url: '/public/no404',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+
+        'TEST-555611': {
+            name: 'test',
+            url: '/community/TEST-555611',
+            icon: '📝',
+            width: 800,
+            height: 600
+            'painty': {
+        name: 'PAINTY',
+        url: '/public/painty',
+        icon: '🎨',
+        width: 700,
+        height: 500
+    },
+},
+            'texty': {
+                name: 'TEXTY',
+                url: '/public/texty',
+                icon: '📄',
+                width: 700,
+                height: 500
+            },
 
         'TESTY-246380': {
             name: 'testy',
@@ -1056,6 +1120,13 @@ window.windowManager = new WindowManager();
                 width: 800,
                 height: 600
             }
+            'paint-98': {
+                name: 'Paint 98',
+                url: '/public/paint-98',
+                icon: '🎨',
+                width: 800,
+                height: 600
+            },
         };
         
         
@@ -1958,7 +2029,47 @@ async function deleteIconFromDesktop(iconElement) {
             }
         }
     });
-</script>
+
+function enhancedPetRock() {
+    // If no name yet, ask for name
+    if (!localStorage.rockName) {
+        localStorage.rockName = prompt('Name your pet rock:') || 'Rocky';
+        alert('Hello ' + localStorage.rockName + '! Click me again anytime for some encouragement! 🪨💕');
+        return;
+    }
+    
+    // Array of affirming messages
+    const messages = [
+        "loves spending time with you! 💕",
+        "thinks you're amazing! ✨", 
+        "is grateful to have you as a friend! 🤗",
+        "believes in you completely! 💪",
+        "is proud of everything you've accomplished! 🌟",
+        "thinks you have a wonderful heart! ❤️",
+        "knows you can handle anything! 🦸",
+        "appreciates your kindness! 🌸",
+        "thinks you make the world brighter! ☀️",
+        "is lucky to know you! 🍀",
+        "admires your creativity! 🎨",
+        "thinks you're doing great! 👏",
+        "sends you positive vibes! ✌️",
+        "believes you're capable of wonderful things! 🌈",
+        "thinks you have an amazing spirit! 🕊️",
+        "is cheering you on always! 📣",
+        "knows you're special! 💎",
+        "thinks you're a ray of sunshine! 🌅",
+        "appreciates your unique perspective! 👁️",
+        "believes in your dreams! 💫"
+    ];
+    
+    // Pick a random message
+    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+    
+    // Show the affirming message
+    alert(localStorage.rockName + ' ' + randomMessage);
+}
+
+        </script>
 
     <!-- Auth Modal -->
     <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;">
@@ -2106,6 +2217,15 @@ async function deleteIconFromDesktop(iconElement) {
          title="testy">
         <div class="icon">📝</div>
         <div class="label">testy</div>
+    </div>
+
+    <!-- test by bd -->
+    <div class="desktop-icon" 
+         style="left: 620px; top: 220px;"
+         onclick="openWindowedApp('TEST-555611')"
+         title="test">
+        <div class="icon">📝</div>
+        <div class="label">test</div>
     </div>
     </div>
 </body>
