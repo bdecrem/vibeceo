@@ -1,0 +1,1011 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>WebtoysOS v3 - Modern Desktop</title>
+    
+    <style>
+        /* CSS Reset and Base Styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', Arial, sans-serif;
+            font-size: 14px;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            position: relative;
+        }
+        
+        /* Menu Bar - Mobile Responsive */
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 32px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            z-index: 10000;
+            user-select: none;
+        }
+        
+        .menu-left {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .menu-logo {
+            font-weight: 600;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .menu-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .menu-time {
+            font-size: 13px;
+            color: #666;
+        }
+        
+        #profile-icon {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        #profile-icon:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        #profile-icon:active {
+            background: rgba(0, 0, 0, 0.15);
+        }
+        
+        /* Desktop - Mobile First Grid */
+        #desktop {
+            position: absolute;
+            top: 32px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .desktop-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        /* Desktop Icons - Touch Friendly */
+        .desktop-icon {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 8px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            position: relative;
+        }
+        
+        .desktop-icon:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: scale(1.05);
+        }
+        
+        .desktop-icon:active {
+            transform: scale(0.95);
+        }
+        
+        .desktop-icon.selected {
+            background: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+        }
+        
+        .desktop-icon .icon {
+            font-size: 40px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+        }
+        
+        .desktop-icon .label {
+            font-size: 12px;
+            color: white;
+            text-align: center;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Window Container */
+        #window-container {
+            position: fixed;
+            top: 32px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        /* Window Styles */
+        .desktop-window {
+            position: absolute;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            min-width: 300px;
+            min-height: 200px;
+            overflow: hidden;
+        }
+        
+        .window-titlebar {
+            height: 36px;
+            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
+            border-bottom: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            cursor: move;
+            user-select: none;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .window-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .window-control:hover {
+            opacity: 0.8;
+        }
+        
+        .window-control.close {
+            background: #ff5f57;
+        }
+        
+        .window-control.minimize {
+            background: #ffbd2e;
+        }
+        
+        .window-control.maximize {
+            background: #28c940;
+        }
+        
+        .window-content {
+            flex: 1;
+            overflow: auto;
+            background: white;
+        }
+        
+        .window-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Authentication Modal */
+        #auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 20000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #auth-modal.show {
+            display: flex;
+        }
+        
+        .auth-container {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .auth-header h2 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+        
+        .auth-tab.active {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        
+        .auth-input {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 16px;
+            transition: border-color 0.2s;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .auth-button {
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .auth-button:hover {
+            background: #5a67d8;
+        }
+        
+        .auth-button:active {
+            background: #4c51bf;
+        }
+        
+        .auth-close {
+            margin-top: 12px;
+            padding: 8px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .auth-close:hover {
+            background: #e0e0e0;
+        }
+        
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .desktop-grid {
+                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                gap: 15px;
+                padding: 0;
+            }
+            
+            .desktop-icon .icon {
+                font-size: 32px;
+            }
+            
+            .desktop-icon .label {
+                font-size: 11px;
+            }
+            
+            #desktop {
+                padding: 15px;
+            }
+            
+            /* Windows go fullscreen on mobile */
+            .desktop-window {
+                position: fixed !important;
+                top: 32px !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: calc(100% - 32px) !important;
+                border-radius: 0 !important;
+            }
+            
+            .window-titlebar {
+                border-radius: 0 !important;
+            }
+        }
+        
+        /* Drag and Drop Visual Feedback */
+        .dragging {
+            opacity: 0.5;
+            transform: scale(1.1);
+        }
+        
+        .drag-over {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Loading State */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-left">
+            <span class="menu-logo">🌟 WebtoysOS</span>
+        </div>
+        <div class="menu-right">
+            <span class="menu-time" id="menu-time">--:--</span>
+            <div id="profile-icon" onclick="toggleAuth(event)">
+                <span id="profile-emoji">👤</span>
+                <span id="username-display">Login</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Desktop -->
+    <div id="desktop">
+        <div class="desktop-grid" id="desktop-grid">
+            <!-- Icons will be dynamically loaded here -->
+        </div>
+    </div>
+    
+    <!-- Window Container -->
+    <div id="window-container"></div>
+    
+    <!-- Authentication Modal -->
+    <div id="auth-modal">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h2>Welcome to WebtoysOS</h2>
+                <p>Sign in or create an account</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <div class="auth-form" id="auth-form">
+                <input type="text" id="auth-handle" class="auth-input" placeholder="Username (3-15 characters)" maxlength="15">
+                <input type="password" id="auth-pin" class="auth-input" placeholder="PIN (4 digits)" maxlength="4" pattern="[0-9]{4}">
+                <button class="auth-button" onclick="handleAuth()">Login</button>
+                <button class="auth-close" onclick="closeAuth()">Cancel</button>
+            </div>
+            
+            <div id="auth-message" style="color: red; text-align: center; margin-top: 12px; display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Global state
+        let currentUser = null;
+        let authMode = 'login';
+        let windows = [];
+        let nextWindowZ = 1000;
+        let selectedIcons = new Set();
+        let draggedIcon = null;
+        let desktopConfig = null;
+        
+        // App registry - will be loaded from config
+        const windowedApps = {};
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 WebtoysOS v3 initializing...');
+            initClock();
+            await loadAuth();
+            await loadDesktopConfig();
+            renderDesktop();
+            initDragAndDrop();
+            initMultiSelect();
+            initTouchHandlers();
+            console.log('✅ WebtoysOS v3 ready!');
+        });
+        
+        // Clock
+        function initClock() {
+            const updateTime = () => {
+                const now = new Date();
+                const time = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit',
+                    hour12: false 
+                });
+                document.getElementById('menu-time').textContent = time;
+            };
+            updateTime();
+            setInterval(updateTime, 1000);
+        }
+        
+        // Authentication System
+        async function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateAuthDisplay();
+                    broadcastAuth();
+                } catch (e) {
+                    console.error('Failed to load saved auth:', e);
+                    localStorage.removeItem('toybox_user');
+                }
+            }
+        }
+        
+        function toggleAuth(event) {
+            event.stopPropagation();
+            if (currentUser) {
+                // Show logout option
+                if (confirm('Do you want to logout?')) {
+                    logout();
+                }
+            } else {
+                document.getElementById('auth-modal').classList.add('show');
+            }
+        }
+        
+        function closeAuth() {
+            document.getElementById('auth-modal').classList.remove('show');
+            document.getElementById('auth-message').style.display = 'none';
+        }
+        
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(tab => {
+                tab.classList.toggle('active', tab.textContent.toLowerCase() === mode);
+            });
+            const button = document.querySelector('.auth-button');
+            button.textContent = mode === 'login' ? 'Login' : 'Create Account';
+        }
+        
+        async function handleAuth() {
+            const handle = document.getElementById('auth-handle').value.trim();
+            const pin = document.getElementById('auth-pin').value;
+            
+            // Validation
+            if (!handle || handle.length < 3) {
+                showAuthError('Username must be at least 3 characters');
+                return;
+            }
+            
+            if (!/^\d{4}$/.test(pin)) {
+                showAuthError('PIN must be exactly 4 digits');
+                return;
+            }
+            
+            if (authMode === 'login') {
+                await login(handle, pin);
+            } else {
+                await register(handle, pin);
+            }
+        }
+        
+        async function login(handle, pin) {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+                const users = await response.json();
+                
+                const user = users.find(u => 
+                    u.content_data && 
+                    u.content_data.handle === handle && 
+                    u.content_data.pin === pin
+                );
+                
+                if (user) {
+                    currentUser = user.content_data;
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthDisplay();
+                    broadcastAuth();
+                    closeAuth();
+                    console.log('✅ Logged in as:', handle);
+                } else {
+                    showAuthError('Invalid username or PIN');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAuthError('Login failed. Please try again.');
+            }
+        }
+        
+        async function register(handle, pin) {
+            try {
+                // Check if user exists
+                const checkResponse = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+                const users = await checkResponse.json();
+                
+                if (users.some(u => u.content_data && u.content_data.handle === handle)) {
+                    showAuthError('Username already taken');
+                    return;
+                }
+                
+                // Create new user
+                const userData = {
+                    handle: handle,
+                    pin: pin,
+                    id: handle,
+                    created: new Date().toISOString()
+                };
+                
+                const saveResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-os-users',
+                        participant_id: handle,
+                        action_type: 'user_registry',
+                        content_data: userData
+                    })
+                });
+                
+                if (saveResponse.ok) {
+                    currentUser = userData;
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthDisplay();
+                    broadcastAuth();
+                    closeAuth();
+                    console.log('✅ Registered as:', handle);
+                } else {
+                    showAuthError('Registration failed. Please try again.');
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAuthError('Registration failed. Please try again.');
+            }
+        }
+        
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('toybox_user');
+            updateAuthDisplay();
+            broadcastAuth();
+            console.log('👋 Logged out');
+        }
+        
+        function showAuthError(message) {
+            const errorDiv = document.getElementById('auth-message');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function updateAuthDisplay() {
+            const display = document.getElementById('username-display');
+            if (currentUser) {
+                display.textContent = currentUser.handle;
+            } else {
+                display.textContent = 'Login';
+            }
+        }
+        
+        function broadcastAuth() {
+            // Send auth update to all open windows
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                } catch (e) {
+                    // Silent fail if iframe not ready
+                }
+            });
+        }
+        
+        // Desktop Configuration
+        async function loadDesktopConfig() {
+            // For now, use default config
+            // Later this will load from wtaf_desktop_config table
+            desktopConfig = {
+                apps: [
+                    { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad' },
+                    { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker' },
+                    { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat' },
+                    { id: 'about', name: 'About', icon: 'ℹ️', action: () => alert('WebtoysOS v3.0\\nModern Desktop Environment') }
+                ],
+                iconPositions: {},
+                settings: {
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                }
+            };
+            
+            // Apply settings
+            if (desktopConfig.settings.background) {
+                document.body.style.background = desktopConfig.settings.background;
+            }
+        }
+        
+        // Desktop Rendering
+        function renderDesktop() {
+            const grid = document.getElementById('desktop-grid');
+            grid.innerHTML = '';
+            
+            desktopConfig.apps.forEach((app, index) => {
+                const icon = document.createElement('div');
+                icon.className = 'desktop-icon';
+                icon.dataset.appId = app.id;
+                icon.draggable = true;
+                
+                // Position from saved config or default grid
+                const savedPos = desktopConfig.iconPositions[app.id];
+                if (savedPos) {
+                    icon.style.gridColumn = savedPos.col;
+                    icon.style.gridRow = savedPos.row;
+                }
+                
+                icon.innerHTML = `
+                    <div class="icon">${app.icon}</div>
+                    <div class="label">${app.name}</div>
+                `;
+                
+                // Click/touch handler
+                icon.addEventListener('click', (e) => {
+                    if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                        handleIconClick(app);
+                    }
+                });
+                
+                grid.appendChild(icon);
+            });
+        }
+        
+        function handleIconClick(app) {
+            if (app.action) {
+                app.action();
+            } else if (app.url) {
+                openWindow(app);
+            }
+        }
+        
+        // Window Management
+        function openWindow(app) {
+            const windowId = 'window-' + Date.now();
+            const isMobile = window.innerWidth <= 768;
+            
+            const windowDiv = document.createElement('div');
+            windowDiv.className = 'desktop-window';
+            windowDiv.id = windowId;
+            windowDiv.style.zIndex = nextWindowZ++;
+            
+            // Position and size
+            if (isMobile) {
+                // Fullscreen on mobile
+                windowDiv.style.top = '0';
+                windowDiv.style.left = '0';
+                windowDiv.style.width = '100%';
+                windowDiv.style.height = 'calc(100% - 32px)';
+            } else {
+                // Centered on desktop
+                windowDiv.style.width = '800px';
+                windowDiv.style.height = '600px';
+                windowDiv.style.top = '50%';
+                windowDiv.style.left = '50%';
+                windowDiv.style.transform = 'translate(-50%, -50%)';
+            }
+            
+            windowDiv.innerHTML = `
+                <div class="window-titlebar" onmousedown="startDragWindow(event, '${windowId}')">
+                    <div class="window-title">${app.name}</div>
+                    <div class="window-controls">
+                        <div class="window-control minimize" onclick="minimizeWindow('${windowId}')"></div>
+                        <div class="window-control maximize" onclick="maximizeWindow('${windowId}')"></div>
+                        <div class="window-control close" onclick="closeWindow('${windowId}')"></div>
+                    </div>
+                </div>
+                <div class="window-content">
+                    <iframe src="${app.url}" onload="setupIframeAuth(this)"></iframe>
+                </div>
+            `;
+            
+            document.getElementById('window-container').appendChild(windowDiv);
+            windows.push({ id: windowId, app: app });
+            
+            // Focus window on click
+            windowDiv.addEventListener('mousedown', () => {
+                windowDiv.style.zIndex = nextWindowZ++;
+            });
+        }
+        
+        function closeWindow(windowId) {
+            const windowDiv = document.getElementById(windowId);
+            if (windowDiv) {
+                windowDiv.remove();
+                windows = windows.filter(w => w.id !== windowId);
+            }
+        }
+        
+        function minimizeWindow(windowId) {
+            // TODO: Implement minimize to taskbar
+            const windowDiv = document.getElementById(windowId);
+            if (windowDiv) {
+                windowDiv.style.display = 'none';
+            }
+        }
+        
+        function maximizeWindow(windowId) {
+            const windowDiv = document.getElementById(windowId);
+            if (windowDiv) {
+                if (windowDiv.dataset.maximized === 'true') {
+                    // Restore
+                    windowDiv.style.width = windowDiv.dataset.originalWidth;
+                    windowDiv.style.height = windowDiv.dataset.originalHeight;
+                    windowDiv.style.top = windowDiv.dataset.originalTop;
+                    windowDiv.style.left = windowDiv.dataset.originalLeft;
+                    windowDiv.style.transform = windowDiv.dataset.originalTransform;
+                    windowDiv.dataset.maximized = 'false';
+                } else {
+                    // Maximize
+                    windowDiv.dataset.originalWidth = windowDiv.style.width;
+                    windowDiv.dataset.originalHeight = windowDiv.style.height;
+                    windowDiv.dataset.originalTop = windowDiv.style.top;
+                    windowDiv.dataset.originalLeft = windowDiv.style.left;
+                    windowDiv.dataset.originalTransform = windowDiv.style.transform;
+                    
+                    windowDiv.style.width = '100%';
+                    windowDiv.style.height = 'calc(100% - 32px)';
+                    windowDiv.style.top = '0';
+                    windowDiv.style.left = '0';
+                    windowDiv.style.transform = 'none';
+                    windowDiv.dataset.maximized = 'true';
+                }
+            }
+        }
+        
+        function setupIframeAuth(iframe) {
+            // Send auth state to newly loaded iframe
+            try {
+                iframe.contentWindow.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            } catch (e) {
+                console.error('Failed to send auth to iframe:', e);
+            }
+        }
+        
+        // Window Dragging
+        let draggedWindow = null;
+        let dragOffset = { x: 0, y: 0 };
+        
+        function startDragWindow(event, windowId) {
+            if (event.target.closest('.window-controls')) return;
+            
+            draggedWindow = document.getElementById(windowId);
+            const rect = draggedWindow.getBoundingClientRect();
+            dragOffset.x = event.clientX - rect.left;
+            dragOffset.y = event.clientY - rect.top;
+            
+            document.addEventListener('mousemove', dragWindow);
+            document.addEventListener('mouseup', stopDragWindow);
+            event.preventDefault();
+        }
+        
+        function dragWindow(event) {
+            if (!draggedWindow) return;
+            
+            draggedWindow.style.left = (event.clientX - dragOffset.x) + 'px';
+            draggedWindow.style.top = (event.clientY - dragOffset.y) + 'px';
+            draggedWindow.style.transform = 'none';
+        }
+        
+        function stopDragWindow() {
+            draggedWindow = null;
+            document.removeEventListener('mousemove', dragWindow);
+            document.removeEventListener('mouseup', stopDragWindow);
+        }
+        
+        // Icon Drag and Drop
+        function initDragAndDrop() {
+            const icons = document.querySelectorAll('.desktop-icon');
+            
+            icons.forEach(icon => {
+                icon.addEventListener('dragstart', handleDragStart);
+                icon.addEventListener('dragend', handleDragEnd);
+            });
+            
+            const grid = document.getElementById('desktop-grid');
+            grid.addEventListener('dragover', handleDragOver);
+            grid.addEventListener('drop', handleDrop);
+        }
+        
+        function handleDragStart(e) {
+            draggedIcon = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/html', this.innerHTML);
+        }
+        
+        function handleDragEnd(e) {
+            this.classList.remove('dragging');
+            draggedIcon = null;
+        }
+        
+        function handleDragOver(e) {
+            if (e.preventDefault) {
+                e.preventDefault();
+            }
+            e.dataTransfer.dropEffect = 'move';
+            return false;
+        }
+        
+        function handleDrop(e) {
+            if (e.stopPropagation) {
+                e.stopPropagation();
+            }
+            
+            if (draggedIcon && draggedIcon !== this) {
+                // TODO: Update position in config
+                console.log('Icon dropped at new position');
+            }
+            
+            return false;
+        }
+        
+        // Multi-select
+        function initMultiSelect() {
+            const icons = document.querySelectorAll('.desktop-icon');
+            
+            icons.forEach(icon => {
+                icon.addEventListener('click', (e) => {
+                    if (e.shiftKey || e.ctrlKey || e.metaKey) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        toggleIconSelection(icon);
+                    }
+                });
+            });
+            
+            // Clear selection when clicking desktop
+            document.getElementById('desktop').addEventListener('click', (e) => {
+                if (e.target.id === 'desktop' || e.target.classList.contains('desktop-grid')) {
+                    clearIconSelection();
+                }
+            });
+        }
+        
+        function toggleIconSelection(icon) {
+            if (selectedIcons.has(icon)) {
+                selectedIcons.delete(icon);
+                icon.classList.remove('selected');
+            } else {
+                selectedIcons.add(icon);
+                icon.classList.add('selected');
+            }
+        }
+        
+        function clearIconSelection() {
+            selectedIcons.forEach(icon => {
+                icon.classList.remove('selected');
+            });
+            selectedIcons.clear();
+        }
+        
+        // Touch Handlers for Mobile
+        function initTouchHandlers() {
+            const icons = document.querySelectorAll('.desktop-icon');
+            
+            icons.forEach(icon => {
+                let touchTimer;
+                
+                icon.addEventListener('touchstart', (e) => {
+                    touchTimer = setTimeout(() => {
+                        // Long press for multi-select
+                        toggleIconSelection(icon);
+                        e.preventDefault();
+                    }, 500);
+                });
+                
+                icon.addEventListener('touchend', () => {
+                    clearTimeout(touchTimer);
+                });
+                
+                icon.addEventListener('touchmove', () => {
+                    clearTimeout(touchTimer);
+                });
+            });
+        }
+        
+        // Listen for auth requests from iframes
+        window.addEventListener('message', (event) => {
+            if (event.data && event.data.type === 'REQUEST_AUTH') {
+                // Send current auth state
+                event.source.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
