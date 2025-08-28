@@ -47,28 +47,63 @@ Our ZAD system demonstrates secure multi-user data access:
 - Helper functions injected into pages handle the API communication
 
 #### 3. Row Level Security (RLS) Strategy
-While not yet fully implemented, our target security model includes:
+Our security model uses different RLS policies based on table sensitivity and access patterns:
 
-**Current State:**
-- Most tables lack RLS policies
-- Security enforced at application layer
-- Service keys used for backend operations
+**Current RLS Implementation:**
 
-**Target State:**
-- All tables will have appropriate RLS policies
-- Service keys only for administrative operations
-- User operations use RLS for fine-grained access control
-- Defense in depth with both RLS and application validation
+**🔒 Service-Only Access Tables (High Security):**
+These tables use `service_only_access` policy - ONLY accessible with service key:
 
-**Planned RLS Implementation:**
+- **`wtaf_content`** - All apps and pages
+  - Policy: Service role only
+  - Access: Through Next.js routes that serve HTML
+  - Why: Contains all user-created content
+  
+- **`wtaf_submissions`** - Form submissions  
+  - Policy: Service role only
+  - Access: Through backend API endpoints
+  - Why: Contains user-submitted data
+  
+- **`wtaf_users`** - User accounts
+  - Policy: Service role only
+  - Access: SMS bot manages accounts
+  - Why: Contains authentication data
+  
+- **`wtaf_zero_admin_collaborative`** - ZAD app data
+  - Policy: Service role only
+  - Access: Through `/api/zad/save` and `/api/zad/load` endpoints
+  - Why: Multi-user collaborative data
+  
+- **`sms_subscribers`** - SMS users
+  - Policy: Service role only
+  - Access: Backend only
+  - Why: Contains phone numbers
+
+**🔓 Public Access Tables (Functionality over Security):**
+These tables allow anon role access for browser functionality:
+
+- **`wtaf_desktop_config`** - Desktop settings (Added 2025-08-28)
+  - Policy: `allow_all_desktop_config_access`
+  - Access: Direct from browser with anon key
+  - Permissions: Full READ/WRITE for anon role
+  - Why: Desktop needs to save icon positions, widget locations
+  - Risk: Low - only UI preferences, no sensitive data
+  - Trade-off: Simpler than API approach, acceptable risk
+
+**RLS Policy Examples:**
 ```sql
--- Example: Users can only read their own content
-CREATE POLICY "Users read own content" ON wtaf_content
-  FOR SELECT USING (auth.uid() = user_id);
+-- Service-only access (most tables)
+CREATE POLICY "service_only_access" ON wtaf_content
+  FOR ALL 
+  USING (auth.jwt() ->> 'role' = 'service_role');
 
--- Example: Apps can only access their own ZAD data
-CREATE POLICY "Apps access own data" ON wtaf_zero_admin_collaborative
-  FOR ALL USING (app_id = current_setting('app.current_app_id'));
+-- Public access (desktop config only)  
+CREATE POLICY "allow_all_desktop_config_access" ON wtaf_desktop_config
+  FOR ALL 
+  USING (true)
+  WITH CHECK (true);
+
+GRANT ALL ON wtaf_desktop_config TO anon;
 ```
 
 #### 4. Principle of Least Privilege
@@ -192,14 +227,16 @@ The web console API violates our standard "no direct database access" rule for s
 - **Mitigation**: Token validation before any service key usage
 
 ### Row Level Security (RLS)
-Current state and recommendations:
+Current implementation by table:
 
-- `wtaf_content`: No RLS (relies on application logic)
-- `wtaf_submissions`: No RLS (relies on application logic)
-- `sms_subscribers`: No RLS (protected by service key requirement)
-- `wtaf_zero_admin_collaborative`: No RLS (uses app_id validation)
+- `wtaf_content`: **Service-only access** (service_role policy)
+- `wtaf_submissions`: **Service-only access** (service_role policy)  
+- `sms_subscribers`: **Service-only access** (service_role policy)
+- `wtaf_zero_admin_collaborative`: **Service-only access** (service_role policy)
+- `wtaf_users`: **Service-only access** (service_role policy)
+- `wtaf_desktop_config`: **Public access** (allow_all policy for anon role)
 
-**Recommendation**: Implement RLS policies to add defense in depth
+**Security Model**: Most tables restricted to service key access, with desktop config as the only public exception for UI functionality
 
 ## API Security
 
