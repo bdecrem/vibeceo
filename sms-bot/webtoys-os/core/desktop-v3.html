@@ -713,15 +713,30 @@
     </div>
     
     <script>
-        // Initialize Supabase
+        // Initialize Supabase - using the global 'supabase' object from the CDN
         const SUPABASE_URL = 'https://uqjmhpbwhomemkvlerjh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxam1ocGJ3aG9tZW1rdmxlcmpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4ODA3MzYsImV4cCI6MjA0NzQ1NjczNn0.YF6w7xSAxCUyUC7eoQKizpu6OwP1tNL38q3lEqfinE0';
-        const supabase = supabaseClient.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // The CDN version exports to window.supabase
+        let supabaseInstance;
+        if (typeof supabase !== 'undefined') {
+            supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error('Supabase library not loaded!');
+            // Create a mock client so the page doesn't break
+            supabaseInstance = {
+                from: () => ({
+                    select: () => Promise.resolve({ data: null, error: 'Supabase not loaded' }),
+                    update: () => Promise.resolve({ error: 'Supabase not loaded' }),
+                    insert: () => Promise.resolve({ error: 'Supabase not loaded' })
+                })
+            };
+        }
         
         // Desktop Config Client
         class DesktopConfigClient {
             constructor() {
-                this.supabase = supabase;
+                this.supabase = supabaseInstance;
                 this.config = null;
                 this.userId = null;
                 this.saveTimeout = null;
