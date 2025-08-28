@@ -8,7 +8,7 @@
     <title>WebtoysOS v3 - Modern Desktop</title>
     
     <!-- Supabase Client -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
     
     <style>
         /* CSS Reset and Base Styles */
@@ -713,12 +713,12 @@
     </div>
     
     <script>
-        // Initialize Supabase - using the global 'supabase' object from the CDN
+        // Initialize Supabase - using the WORKING keys from web/.env.local
         const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjM0ODA3MTcsImV4cCI6MjAzOTA1NjcxN30.XvI08vG37MNaFPMV2CUBKfscFh7VlJw4oC0FKQT6vXg';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
         
         // The CDN version exports to window.supabase
-        let supabaseInstance;
+        let supabaseInstance = null;
         if (typeof supabase !== 'undefined') {
             supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } else {
