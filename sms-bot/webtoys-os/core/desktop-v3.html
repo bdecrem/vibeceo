@@ -744,42 +744,62 @@
             
             async loadConfig(userId = null) {
                 this.userId = userId;
+                console.log('🔄 Loading desktop config for user:', userId || 'anonymous');
                 
                 try {
                     // Try user config first
                     if (userId) {
-                        const { data: userConfig, error } = await this.supabase
+                        console.log('🔍 Attempting to load user config...');
+                        const { data: userConfig, error: userError } = await this.supabase
                             .from('wtaf_desktop_config')
                             .select('*')
                             .eq('user_id', userId)
                             .eq('desktop_version', 'webtoys-os-v3')
                             .single();
                         
-                        if (userConfig && !error) {
+                        if (userError) {
+                            console.warn('❌ User config error:', userError.message, userError.code);
+                        }
+                        
+                        if (userConfig && !userError) {
                             this.config = userConfig;
-                            console.log('Loaded user config for:', userId);
+                            console.log('✅ Loaded user config for:', userId);
                             return userConfig;
                         }
                     }
                     
                     // Fall back to default config
-                    const { data: defaultConfig, error } = await this.supabase
+                    console.log('🔍 Attempting to load default config...');
+                    const { data: defaultConfig, error: defaultError } = await this.supabase
                         .from('wtaf_desktop_config')
                         .select('*')
                         .is('user_id', null)
                         .eq('desktop_version', 'webtoys-os-v3')
                         .single();
                     
-                    if (defaultConfig && !error) {
+                    if (defaultError) {
+                        console.warn('❌ Default config error:', defaultError.message, defaultError.code);
+                        
+                        // If it's a 401 error, show more helpful info
+                        if (defaultError.code === '42501' || defaultError.message?.includes('401')) {
+                            console.error('🚨 RLS Policy Issue: The anon key cannot access wtaf_desktop_config table.');
+                            console.error('🔧 Fix: Run the RLS policy fix script in Supabase.');
+                            console.error('📁 Script location: /scripts/fix-desktop-config-rls-policies.sql');
+                        }
+                    }
+                    
+                    if (defaultConfig && !defaultError) {
                         this.config = defaultConfig;
-                        console.log('Loaded default desktop config');
+                        console.log('✅ Loaded default desktop config from database');
                         return defaultConfig;
                     }
                     
                     // Hardcoded fallback
+                    console.warn('⚠️ Using hardcoded fallback config');
                     return this.getDefaultConfig();
                 } catch (error) {
-                    console.error('Error loading config:', error);
+                    console.error('💥 Critical error loading config:', error);
+                    console.warn('⚠️ Using hardcoded fallback config');
                     return this.getDefaultConfig();
                 }
             }
@@ -817,7 +837,12 @@
             }
             
             async persistIconPositions() {
-                if (!this.config) return;
+                if (!this.config) {
+                    console.warn('⚠️ Cannot save icon positions: no config loaded');
+                    return;
+                }
+                
+                console.log('💾 Saving icon positions for user:', this.userId || 'default');
                 
                 try {
                     const { error } = await this.supabase
@@ -829,21 +854,32 @@
                         .eq('user_id', this.userId || null)
                         .eq('desktop_version', 'webtoys-os-v3');
                     
-                    if (!error) {
-                        console.log('Saved icon positions');
+                    if (error) {
+                        console.error('❌ Error saving icon positions:', error.message, error.code);
+                        
+                        if (error.code === '42501' || error.message?.includes('401')) {
+                            console.error('🚨 Permission denied: Check RLS policies for wtaf_desktop_config table');
+                        }
+                    } else {
+                        console.log('✅ Successfully saved icon positions');
                     }
                 } catch (error) {
-                    console.error('Error saving positions:', error);
+                    console.error('💥 Critical error saving positions:', error);
                 }
             }
             
             async saveWidgetPosition(widgetId, position) {
-                if (!this.config) return;
+                if (!this.config) {
+                    console.warn('⚠️ Cannot save widget position: no config loaded');
+                    return;
+                }
                 
                 if (!this.config.widget_positions) {
                     this.config.widget_positions = {};
                 }
                 this.config.widget_positions[widgetId] = position;
+                
+                console.log('💾 Saving widget position for:', widgetId, position);
                 
                 try {
                     const { error } = await this.supabase
@@ -855,11 +891,17 @@
                         .eq('user_id', this.userId || null)
                         .eq('desktop_version', 'webtoys-os-v3');
                     
-                    if (!error) {
-                        console.log('Saved widget position');
+                    if (error) {
+                        console.error('❌ Error saving widget position:', error.message, error.code);
+                        
+                        if (error.code === '42501' || error.message?.includes('401')) {
+                            console.error('🚨 Permission denied: Check RLS policies for wtaf_desktop_config table');
+                        }
+                    } else {
+                        console.log('✅ Successfully saved widget position for:', widgetId);
                     }
                 } catch (error) {
-                    console.error('Error saving widget position:', error);
+                    console.error('💥 Critical error saving widget position:', error);
                 }
             }
         }
