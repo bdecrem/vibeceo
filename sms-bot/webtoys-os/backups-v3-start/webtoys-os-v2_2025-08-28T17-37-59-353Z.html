@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToyBox OS - Community Desktop</title>
+    <style>
+        /* Minimal structural CSS - themes handle the rest */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #desktop {
+            position: relative;
+            width: 100%;
+            height: calc(100vh - 22px);
+            padding: 8px;
+        }
+        
+        .desktop-icon {
+            position: absolute;
+            width: 75px;
+            text-align: center;
+            cursor: pointer;
+            padding: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+            z-index: 1;
+        }
+        
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 22px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 6px;
+            z-index: 2000;
+        }
+        
+        .trash-can {
+            position: absolute !important;
+            right: 20px;
+            bottom: 20px;
+        }
+        
+        #window-container {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+        
+        .desktop-window {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            min-width: 200px;
+            min-height: 150px;
+            z-index: 1000;
+        }
+        
+        .window-content {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        .window-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+    
+        /* Profile Icon Styles */
+        #profile-icon {
+            cursor: pointer;
+            padding: 0 8px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            user-select: none;
+        }
+        
+        #profile-icon:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+        
+        #username-display {
+            font-size: 11px;
+            font-family: Chicago, Geneva, sans-serif;
+            max-width: 100px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Login Modal Styles */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .auth-modal.active {
+            display: flex;
+        }
+        
+        .auth-dialog {
+            background: #c0c0c0;
+            border: 2px solid #000;
+            box-shadow: 
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #fff,
+                2px 2px 0 #000;
+            padding: 0;
+            width: 320px;
+            font-family: Chicago, Geneva, sans-serif;
+        }
+        
+        .auth-title {
+            background: linear-gradient(90deg, #000080, #1084d0);
+            color: white;
+            padding: 2px 4px;
+            font-size: 11px;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .auth-close {
+            width: 14px;
+            height: 14px;
+            border: 1px solid #000;
+            background: #c0c0c0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: monospace;
+            font-size: 10px;
+        }
+        
+        .auth-content {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .auth-screen {
+            display: none;
+        }
+        
+        .auth-screen.active {
+            display: block;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 6px;
+            margin: 8px 0;
+            border: 2px solid #000;
+            background: white;
+            font-family: Chicago, Geneva, sans-serif;
+            font-size: 12px;
+        }
+        
+        .auth-button {
+            background: #fff;
+            border: 2px solid #000;
+            padding: 6px 16px;
+            margin: 4px;
+            cursor: pointer;
+            font-family: Chicago, Geneva, sans-serif;
+            font-size: 11px;
+            box-shadow: 
+                inset -1px -1px 0 #808080,
+                inset 1px 1px 0 #fff;
+        }
+        
+        .auth-button:hover {
+            background: #000;
+            color: white;
+        }
+        
+        .auth-button:active {
+            box-shadow: 
+                inset 1px 1px 0 #808080,
+                inset -1px -1px 0 #fff;
+        }
+        
+        .auth-message {
+            font-size: 11px;
+            margin: 10px 0;
+            padding: 8px;
+            background: #ffffcc;
+            border: 1px solid #000;
+        }
+        
+        .auth-message.error {
+            background: #ffcccc;
+        }
+        
+        .auth-message.success {
+            background: #ccffcc;
+        }
+    </style>
+</head>
+<body class="theme-system7">
+    <div id="desktop">
+        
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    <!-- TEST Text Editor -->
+    <div class="desktop-icon" 
+         style="left: 720px; top: 80px;"
+         onclick="openWindowedApp('test-text-editor')"
+         title="TEST Text Editor">
+        <div class="icon">📝</div>
+        <div class="label">TEST</div>
+    </div>
+<!-- Detective Mystery Game -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 180px;"
+         onclick="openWindowedApp('detective-mystery')"
+         title="Detective Mystery">
+        <div class="icon">🕵️</div>
+        <div class="label">Detective Mystery</div>
+    </div>
+<!-- Fortune Cookie App -->
+    <div class="desktop-icon" 
+         style="left: 760px; top: 80px;"
+         onclick="openWindowedApp('fortune-cookie')"
+         title="Fortune Cookie - Click cookies to reveal fortunes">
+        <div class="icon">🥠</div>
+        <div class="label">Fortune Cookie</div>
+    </div>
+<!-- Calculator App -->
+    <div class="desktop-icon" 
+         style="left: 700px; top: 80px;"
+         onclick="openWindowedApp('calculator')"
+         title="Calculator">
+        <div class="icon">🧮</div>
+        <div class="label">Calculator</div>
+    </div>
+<!-- KidPix Paint App -->
+    <div class="desktop-icon" 
+         style="left: 700px; top: 80px;"
+         onclick="openWindowedApp('kidpix-paint')"
+         title="KidPix Paint - Fun drawing with stamps and effects">
+        <div class="icon">🎨</div>
+        <div class="label">Paint 98</div>
+    </div>
+<!-- No404 -->
+    <div class="desktop-icon" 
+         style="left: 720px; top: 380px;"
+         onclick="openWindowedApp('no404')"
+         title="No404">
+        <div class="icon">📝</div>
+        <div class="label">No404</div>
+    </div>
+<!-- BDTextT -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 280px;"
+         onclick="openWindowedApp('bdtextt')"
+         title="BDTextT">
+        <div class="icon">📝</div>
+        <div class="label">BDTextT</div>
+    </div>
+<!-- undefined -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 280px;"
+         onclick="openWindowedApp('undefined')"
+         title="undefined">
+        <div class="icon">undefined</div>
+        <div class="label">undefined</div>
+    </div>
+<!-- undefined -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 280px;"
+         onclick="openWindowedApp('undefined')"
+         title="undefined">
+        <div class="icon">undefined</div>
+        <div class="label">undefined</div>
+    </div>
+<!-- PAINTY Paint App -->
+    <div class="desktop-icon" 
+         style="left: 620px; top: 80px;"
+         onclick="openWindowedApp('painty')"
+         title="PAINTY Paint App">
+        <div class="icon">🎨</div>
+        <div class="label">PAINTY</div>
+    </div>
+<!-- TEXTY Text Editor -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 200px;"
+         onclick="openWindowedApp('texty')"
+         title="TEXTY Text Editor">
+        <div class="icon">📄</div>
+        <div class="label">TEXTY</div>
+    </div>
+<!-- Windowed Apps -->
+        <div class="desktop-icon" onclick="openWindowedApp('toybox-chat')">
+            <div class="icon">💬</div>
+            <div class="label">Chat</div>
+        </div>
+        <div class="desktop-icon" onclick="openWindowedApp('toybox-text-editor')">
+            <div class="icon">📝</div>
+            <div class="label">Text</div>
+        </div>
+        
+        <div class="desktop-icon" onclick="openWindowedApp('webtoysos-issue-tracker')">
+            <div class="icon">🔧</div>
+            <div class="label">Issue Tracker</div>
+        </div>
+
+            <div class="desktop-icon" onclick="openWindowedApp('toybox-lightning-puma-parasailing')">
+                <div class="icon">🎯</div>
+                <div class="label">Sudoku</div>
+            </div>
+        
+        <!-- Simple Apps -->
+        <div class="desktop-icon" style="left: 20px; top: 120px" 
+             onclick="alert('You rolled: ' + Math.ceil(Math.random() * 6))">
+            <div class="icon">🎲</div>
+            <div class="label">Dice</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 120px; top: 120px" 
+             onclick="localStorage.rockName=prompt('Name your pet rock:')||localStorage.rockName||'Rocky';alert('Your pet rock '+localStorage.rockName+' loves you!')">
+            <div class="icon">🪨</div>
+            <div class="label">Pet Rock</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 220px; top: 120px" 
+             onclick="const fortunes=['The future is bright!','Adventure awaits!','Be brave today!','Good luck is coming!'];alert('🥠 '+fortunes[Math.floor(Math.random()*fortunes.length)])">
+            <div class="icon">🥠</div>
+            <div class="label">Fortune</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 320px; top: 120px" 
+             onclick="changeBGColor()">
+            <div class="icon">🎨</div>
+            <div class="label">BG Color</div>
+        </div>
+        
+        <div class="desktop-icon" style="left: 420px; top: 120px" 
+             onclick="alert(new Date().toLocaleTimeString())">
+            <div class="icon">🕐</div>
+            <div class="label">Clock</div>
+        </div>
+        
+        <!-- About -->
+        
+            <div class="label">About</div>
+        </div>
+    </div>
+    
+    
+        <div class="desktop-icon" style="left: 320px; top: 20px" onclick="openWindowedApp('toybox-chat')"><div class="icon">🚀</div><div class="label">App Studio</div></div>
+        <div class="desktop-icon" onclick="openWindowedApp('toybox-issue-tracker')">
+            <div class="icon">🐛</div>
+            <div class="label">Issues</div>
+        </div>
+        <div class="desktop-icon" style="left: 420px; top: 20px" 
+             onclick="openWindowedApp("wordy")">
+            <div class="icon">📝</div>
+            <div class="label">Wordy</div>
+        </div>
+        <div class="desktop-icon" style="left: 520px; top: 20px" 
+             onclick="openWindowedApp("wordier")">
+            <div class="icon">📝</div>
+            <div class="label">Wordier</div>
+        </div>
+        <div class="desktop-icon" style="left: 120px; top: 220px" onclick="openWindowedApp('macpaint')"><div class="icon">🎨</div><div class="label">MacPaint</div></div>
+        <div class="desktop-icon" style="left: 220px; top: 220px" 
+             onclick="alert("Testing webhook system")">
+            <div class="icon">🔗</div>
+            <div class="label">Webhook Test</div>
+        </div>
+        <!-- Trash Can -->
+        <div class="desktop-icon trash-can" 
+             style="position: absolute; right: 20px; bottom: 60px;"
+             id="trashCan"
+             title="Drag icons here to remove them">
+            <div class="icon" style="font-size: 48px;">🗑️</div>
+            <div class="label">Trash</div>
+        </div>
+    
+    <!-- Bart by Bart -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 220px;"
+         onclick="openWindowedApp('bart')"
+         title="Bart">
+        <div class="icon">📝</div>
+        <div class="label">Bart</div>
+    </div>
+    
+    <!-- GM by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 320px;"
+         onclick="openWindowedApp('gm')"
+         title="GM">
+        <div class="icon">📝</div>
+        <div class="label">GM</div>
+    </div>
+    
+    <!-- Hi by hi -->
+    <div class="desktop-icon" 
+         style="left: 520px; top: 120px;"
+         onclick="openWindowedApp('hi')"
+         title="Hi">
+        <div class="icon">🎨</div>
+        <div class="label">Hi</div>
+    </div>
+    
+    <div class="menu-bar">
+        <div class="menu-left">
+            <div class="menu-title apple"></div>
+            <div class="menu-title">File</div>
+            <div class="menu-title">Edit</div>
+            <div class="menu-title">View</div>
+            <div class="menu-title" onclick="toggleSpecialMenu(event)">Special
+                <div class="dropdown-menu" id="specialMenu" style="display: none;">
+                    <div class="menu-item" onclick="cleanUpDesktop(event)">Clean Up</div>
+                </div>
+            </div>
+        </div>
+        <div class="menu-right">
+            
+            <div id="profile-icon" onclick="toggleAuth(event)">
+                <span id="profile-emoji">👤</span>
+                <span id="username-display"></span>
+            </div>
+            <div id="menu-clock" aria-label="Clock"></div>
+        </div>
+
+    <!-- BD by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 120px;"
+         onclick="openWindowedApp('bd')"
+         title="BD">
+        <div class="icon">📝</div>
+        <div class="label">BD</div>
+    </div>
+
+    <!-- BDpaint by bd -->
+    <div class="desktop-icon" 
+         style="left: 220px; top: 120px;"
+         onclick="openWindowedApp('bdpaint')"
+         title="BDpaint">
+        <div class="icon">🎨</div>
+        <div class="label">BDpaint</div>
+    </div>
+
+    <!-- Words by bd -->
+    <div class="desktop-icon" 
+         style="left: 320px; top: 120px;"
+         onclick="openWindowedApp('words')"
+         title="Words">
+        <div class="icon">📝</div>
+        <div class="label">Words</div>
+    </div>
+            
+            <div class="desktop-icon" onclick="openWindowedApp('macword')">
+                <div class="icon">📝</div>
+                <div class="label">MacWord</div>
+            </div>
+    </div>
+    
+    <script>
+    let currentToyBoxUser = null;
+        // Complete Window Manager and Desktop System
+        /**
+ * Community Desktop Window Manager
+ * Handles windowed apps with iframe content
+ * Designed to be added to desktop.html without breaking existing functionality
+ */
+
+class WindowManager {
+    constructor() {
+        this.windows = new Map();
+        this.zIndex = 1000;
+        this.activeWindow = null;
+        this.nextWindowId = 1;
+    }
+
+    /**
+     * Initialize the window manager
+     */
+    init() {
+        // Add window container to desktop if it doesn't exist
+        if (!document.getElementById('window-container')) {
+            const container = document.createElement('div');
+            container.id = 'window-container';
+            document.getElementById('desktop').appendChild(container);
+        }
+
+        // Add window styles if not already present
+        if (!document.getElementById('window-manager-styles')) {
+            this.injectStyles();
+        }
+    }
+
+    /**
+     * Open a new windowed app
+     */
+    openApp(appName, appUrl, options = {}) {
+        const defaults = {
+            width: 600,
+            height: 400,
+            x: 100 + (this.windows.size * 30),
+            y: 50 + (this.windows.size * 30),
+            icon: '📄',
+            resizable: true,
+            minimizable: true,
+            maximizable: true
+        };
+
+        const config = { ...defaults, ...options };
+        const windowId = `window-${this.nextWindowId++}`;
+
+        // Create window element
+        const windowEl = this.createWindow(windowId, appName, appUrl, config);
+        
+        // Add to container
+        document.getElementById('window-container').appendChild(windowEl);
+        
+        // Store window reference
+        this.windows.set(windowId, {
+            element: windowEl,
+            appName,
+            appUrl,
+            config,
+            state: 'normal',
+            zIndex: ++this.zIndex
+        });
+
+        // Make it active
+        this.focusWindow(windowId);
+        
+        // Make draggable
+        this.makeDraggable(windowEl);
+        
+        // Make resizable if enabled
+        if (config.resizable) {
+            this.makeResizable(windowEl);
+        }
+
+        return windowId;
+    }
+
+    /**
+     * Create window HTML structure
+     */
+    createWindow(windowId, appName, appUrl, config) {
+        const window = document.createElement('div');
+        window.className = 'desktop-window';
+        window.id = windowId;
+        window.style.width = config.width + 'px';
+        window.style.height = config.height + 'px';
+        window.style.left = config.x + 'px';
+        window.style.top = config.y + 'px';
+        window.style.zIndex = this.zIndex;
+
+        window.innerHTML = `
+            <div class="window-titlebar">
+                <div class="window-title">
+                    <span class="window-icon">${config.icon}</span>
+                    <span class="window-name">${appName}</span>
+                </div>
+                <div class="window-controls">
+                    ${config.minimizable ? '<button class="window-minimize" onclick="windowManager.minimizeWindow(\'' + windowId + '\')">_</button>' : ''}
+                    ${config.maximizable ? '<button class="window-maximize" onclick="windowManager.maximizeWindow(\'' + windowId + '\')">□</button>' : ''}
+                    <button class="window-close" onclick="windowManager.closeWindow('${windowId}')">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <iframe src="${appUrl}" frameborder="0" style="width:100%;height:100%;"></iframe>
+            </div>
+        `;
+
+        // Click to focus
+        window.addEventListener('mousedown', () => this.focusWindow(windowId));
+
+        return window;
+    }
+
+    /**
+     * Make window draggable
+     */
+    makeDraggable(windowEl) {
+        const titlebar = windowEl.querySelector('.window-titlebar');
+        let isDragging = false;
+        let startX, startY, initialX, initialY;
+
+        titlebar.addEventListener('mousedown', (e) => {
+            // Don't drag if clicking controls
+            if (e.target.closest('.window-controls')) return;
+            
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            initialX = windowEl.offsetLeft;
+            initialY = windowEl.offsetTop;
+            
+            titlebar.style.cursor = 'grabbing';
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            e.preventDefault();
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            
+            windowEl.style.left = (initialX + dx) + 'px';
+            windowEl.style.top = (initialY + dy) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+            titlebar.style.cursor = 'grab';
+        });
+    }
+
+    /**
+     * Make window resizable
+     */
+    makeResizable(windowEl) {
+        const resizeHandle = document.createElement('div');
+        resizeHandle.className = 'window-resize-handle';
+        windowEl.appendChild(resizeHandle);
+
+        let isResizing = false;
+        let startX, startY, startWidth, startHeight;
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+            isResizing = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = parseInt(windowEl.style.width, 10);
+            startHeight = parseInt(windowEl.style.height, 10);
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isResizing) return;
+            
+            const width = startWidth + (e.clientX - startX);
+            const height = startHeight + (e.clientY - startY);
+            
+            if (width > 200) windowEl.style.width = width + 'px';
+            if (height > 150) windowEl.style.height = height + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isResizing = false;
+        });
+    }
+
+    /**
+     * Focus a window (bring to front)
+     */
+    focusWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        // Remove active class from all windows
+        document.querySelectorAll('.desktop-window').forEach(w => {
+            w.classList.remove('active');
+        });
+
+        // Add active class and update z-index
+        windowData.element.classList.add('active');
+        windowData.element.style.zIndex = ++this.zIndex;
+        windowData.zIndex = this.zIndex;
+        
+        this.activeWindow = windowId;
+    }
+
+    /**
+     * Close a window
+     */
+    closeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        // Remove from DOM
+        windowData.element.remove();
+        
+        // Remove from map
+        this.windows.delete(windowId);
+        
+        // Update active window
+        if (this.activeWindow === windowId) {
+            this.activeWindow = null;
+        }
+    }
+
+    /**
+     * Minimize window (hide it)
+     */
+    minimizeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        windowData.element.style.display = 'none';
+        windowData.state = 'minimized';
+        
+        // TODO: Add to taskbar
+    }
+
+    /**
+     * Maximize/restore window
+     */
+    maximizeWindow(windowId) {
+        const windowData = this.windows.get(windowId);
+        if (!windowData) return;
+
+        if (windowData.state === 'maximized') {
+            // Restore
+            windowData.element.style.width = windowData.config.width + 'px';
+            windowData.element.style.height = windowData.config.height + 'px';
+            windowData.element.style.left = windowData.config.x + 'px';
+            windowData.element.style.top = windowData.config.y + 'px';
+            windowData.state = 'normal';
+        } else {
+            // Save current position
+            windowData.config.width = parseInt(windowData.element.style.width);
+            windowData.config.height = parseInt(windowData.element.style.height);
+            windowData.config.x = parseInt(windowData.element.style.left);
+            windowData.config.y = parseInt(windowData.element.style.top);
+            
+            // Maximize
+            windowData.element.style.width = 'calc(100% - 20px)';
+            windowData.element.style.height = 'calc(100% - 60px)';
+            windowData.element.style.left = '10px';
+            windowData.element.style.top = '10px';
+            windowData.state = 'maximized';
+        }
+    }
+
+    /**
+     * Inject CSS styles for windows
+     */
+    injectStyles() {
+        const styles = document.createElement('style');
+        styles.id = 'window-manager-styles';
+        styles.innerHTML = `
+            #window-container {
+            position: absolute;
+            top: 22px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 1000;
+        }
+            
+            .desktop-window {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            pointer-events: auto;
+            min-width: 200px;
+            min-height: 150px;
+            z-index: 1000;
+        }
+            
+            .desktop-window.active {
+                border-color: #ffffff #404040 #404040 #ffffff;
+                box-shadow: 3px 3px 15px rgba(0,0,0,0.4);
+            }
+            
+                                    .window-titlebar {
+                height: 28px;
+                background: linear-gradient(to right, #000080, #1084d0);
+                color: white;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                padding: 0 3px;
+                cursor: grab;
+                user-select: none;
+                border: none;
+                background-image: none;
+                background-repeat: no-repeat;
+            }
+            
+                        .desktop-window.active .window-titlebar {
+                background: linear-gradient(to right, #000080, #1084d0);
+                border: none;
+            }
+            
+            .desktop-window:not(.active) .window-titlebar {
+                background: linear-gradient(to right, #808080, #b5b5b5);
+                border: none;
+            }
+            
+                        .window-title {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 5px;
+                font-size: 12px;
+                font-weight: bold;
+                flex: 1;
+                text-align: center;
+            }
+            
+            .window-icon {
+                font-size: 16px;
+            }
+            
+                        .window-controls {
+                display: flex;
+                gap: 2px;
+                position: absolute;
+                right: 3px;
+                top: 50%;
+                transform: translateY(-50%);
+            }
+            
+            .window-controls button {
+                width: 20px;
+                height: 20px;
+                border: 2px solid;
+                border-color: #ffffff #404040 #404040 #ffffff;
+                background: #c0c0c0;
+                font-size: 12px;
+                line-height: 1;
+                cursor: pointer;
+                font-family: 'Tahoma', sans-serif;
+                padding: 0;
+            }
+            
+            .window-controls button:active {
+                border-color: #404040 #ffffff #ffffff #404040;
+            }
+            
+            .window-content {
+                flex: 1;
+                background: white;
+                border: 2px solid;
+                border-color: #808080 #ffffff #ffffff #808080;
+                overflow: hidden;
+            }
+            
+            .window-resize-handle {
+                position: absolute;
+                bottom: 0;
+                right: 0;
+                width: 15px;
+                height: 15px;
+                cursor: nwse-resize;
+                background: linear-gradient(135deg, transparent 50%, #808080 50%);
+            }
+        `;
+        document.head.appendChild(styles);
+    }
+}
+
+// Create global instance
+window.windowManager = new WindowManager();
+        
+        // Global functions for compatibility
+        function createWindow(appName, appUrl, options = {}) {
+            return window.windowManager.openApp(appName, appUrl, options);
+        }
+
+        function showWindow(appName, appUrl, options = {}) {
+            return window.windowManager.openApp(appName, appUrl, options);
+        }
+
+        // Enhanced openWindowedApp function
+        function openWindowedApp(appId) {
+            const app = window.windowedApps[appId];
+            if (!app) {
+                console.error('Unknown windowed app:', appId);
+                return;
+            }
+            
+            
+            
+            const windowId = window.windowManager.openApp(app.name, app.url, {
+                width: app.width || 800,
+                height: app.height || 600,
+                icon: app.icon || '📱',
+                resizable: true,
+                minimizable: true,
+                maximizable: true
+            });
+            
+            console.log('Opened ' + app.name + ' in window ' + windowId);
+            return windowId;
+        }
+        
+        
+        window.windowedApps = {
+            'toybox-issue-tracker': {
+                name: 'Issue Tracker',
+                url: '/public/toybox-issue-tracker',
+                icon: '🐛',
+                width: 700,
+                height: 600
+            },
+            'toybox-lightning-puma-parasailing': {
+                name: 'WTAF – Delusional App Generator',
+                url: '/public/toybox-lightning-puma-parasailing',
+                icon: '🎯',
+                width: 600,
+                height: 880
+            },
+            'toybox-wave-wood-deconstructing': {
+                name: 'WTAF – Delusional App Generator',
+                url: '/public/toybox-wave-wood-deconstructing',
+                icon: '📱',
+                width: 800,
+                height: 600
+            },
+
+        'MACPAINT-134526': {
+            name: 'MacPAINT',
+            url: '/community/MACPAINT-134526',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'MACPAINT-882258': {
+            name: 'MacPAINT',
+            url: '/community/MACPAINT-882258',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+            'toybox-bouncing-ball': {
+                name: 'Bouncing Ball',
+                url: '/public/toybox-bouncing-ball',
+                icon: '📱',
+                width: 800,
+                height: 600
+            },
+            
+            'toybox-chat': {
+                name: 'ToyBox Chat',
+                url: '/public/toybox-chat',
+                icon: '💬',
+                width: 600,
+                height: 500
+            },            'webtoysos-issue-tracker': {
+                name: 'Issue Tracker (Bart)',
+                url: '/public/webtoysos-issue-tracker',
+                icon: '🔧',
+                width: 900,
+                height: 700
+            },
+            'macword': {
+                name: 'MacWord',
+                url: '/public/macword',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+
+        'words': {
+            name: 'Words',
+            url: '/community/words',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'bdpaint': {
+            name: 'BDpaint',
+            url: '/community/bdpaint',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'bd': {
+            name: 'BD',
+            url: '/community/bd',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'hi': {
+            name: 'Hi',
+            url: '/hi/hi',
+            icon: '🎨',
+            width: 800,
+            height: 600
+        },
+
+        'gm': {
+            name: 'GM',
+            url: '/bd/gm',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+
+        'bart': {
+            name: 'Bart',
+            url: '/bart/bart',
+            icon: '📝',
+            width: 800,
+            height: 600
+        },
+            'community-notepad': {
+                name: 'Community Notepad',
+                url: '/public/community-notepad',
+                icon: '📝',
+                width: 600,
+                height: 400
+            },
+            'app-studio': {
+                name: 'App Studio',
+                url: '/public/app-studio',
+                icon: '🚀',
+                width: 800,
+                height: 600
+            },
+            'wordy': {
+                name: 'Wordy',
+                url: '/community/wordy',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+            'wordier': {
+                name: 'Wordier',
+                url: '/community/wordier',
+                icon: '📝',
+                width: 800,
+                height: 600
+            },
+            'macpaint': {
+                name: 'MacPaint',
+                url: '/community/macpaint',
+                icon: '🎨',
+                width: 800,
+                height: 600
+            },
+            'texty': {
+                name: 'TEXTY',
+                url: '/public/texty',
+                icon: '📄',
+                width: 700,
+                height: 500
+            },
+            'painty': {
+                name: 'PAINTY',
+                url: '/public/painty',
+                icon: '🎨',
+                width: 800,
+                height: 600
+            },
+            'undefined': {
+                name: 'undefined',
+                url: '/public/undefined',
+                icon: 'undefined',
+                width: 700,
+                height: 500
+            },
+            'bdtextt': {
+                name: 'BDTextT',
+                url: '/public/bdtextt',
+                icon: '📝',
+                width: 700,
+                height: 500
+            },
+            'no404': {
+                name: 'No404',
+                url: '/public/no404',
+                icon: '📝',
+                width: 700,
+                height: 500
+            },
+            'kidpix-paint': {
+                name: 'Paint 98',
+                url: '/public/paint-98',
+                icon: '🎨',
+                width: 800,
+                height: 600
+            },
+            'calculator': {
+                name: 'Calculator',
+                url: '/public/calculator',
+                icon: '🧮',
+                width: 320,
+                height: 450
+            },
+            'fortune-cookie': {
+                name: 'Fortune Cookie',
+                url: '/public/fortune-cookie',
+                icon: '🥠',
+                width: 600,
+                height: 500
+            },
+            'detective-mystery': {
+                name: 'Detective Mystery',
+                url: '/public/detective-mystery',
+                icon: '🕵️',
+                width: 850,
+                height: 600
+            },
+            'test-text-editor': {
+                name: 'TEST',
+                url: '/public/test-text-editor',
+                icon: '📝',
+                width: 600,
+                height: 400
+            },
+        };
+        
+        
+                // Enhanced desktop icon dragging with trash functionality
+        let draggedIcon = null;
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+
+        function setupDragForIcons() {
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            icons.forEach(function(icon) {
+                icon.addEventListener('mousedown', handleIconMouseDown);
+                icon.style.cursor = 'move';
+                icon.style.position = 'absolute';
+            });
+            
+            document.addEventListener('mousemove', handleIconDrag);
+            document.addEventListener('mouseup', handleIconDragEnd);
+        }
+
+        function handleIconMouseDown(event) {
+            const icon = event.currentTarget;
+            if (icon.classList.contains('trash-can')) return;
+            
+            // Store the start position to detect if it's a drag or click
+            const startX = event.clientX;
+            const startY = event.clientY;
+            let hasMoved = false;
+            let dragStarted = false;
+            
+            // Prepare for potential drag
+            draggedIcon = icon;
+            const rect = icon.getBoundingClientRect();
+            const desktop = document.querySelector('#desktop');
+            const desktopRect = desktop.getBoundingClientRect();
+            
+            dragOffset.x = event.clientX - rect.left;
+            dragOffset.y = event.clientY - rect.top;
+            
+            // Function to start dragging
+            function startDrag(e) {
+                const distance = Math.sqrt(
+                    Math.pow(e.clientX - startX, 2) + 
+                    Math.pow(e.clientY - startY, 2)
+                );
+                
+                // Only start dragging if moved more than 5 pixels
+                if (distance > 5 && !dragStarted) {
+                    dragStarted = true;
+                    isDragging = true;
+                    hasMoved = true;
+                    draggedIcon.style.opacity = '0.7';
+                    draggedIcon.style.zIndex = '1000';
+                    draggedIcon.style.pointerEvents = 'none';
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+            }
+            
+            // Function to end drag
+            function endDrag(e) {
+                document.removeEventListener('mousemove', startDrag);
+                document.removeEventListener('mouseup', endDrag);
+                
+                // If we didn't move, it's a click - don't prevent default, allow onclick to fire
+                if (!hasMoved) {
+                    draggedIcon = null;
+                    return;
+                }
+                
+                // Otherwise handle as drag end
+                if (isDragging) {
+                    handleIconDragEnd(e);
+                }
+            }
+            
+            document.addEventListener('mousemove', startDrag);
+            document.addEventListener('mouseup', endDrag);
+        }
+
+        function handleIconDrag(event) {
+            if (!isDragging || !draggedIcon) return;
+            
+            event.preventDefault();
+            
+            const desktop = document.querySelector('#desktop');
+            const desktopRect = desktop.getBoundingClientRect();
+            
+            let x = event.clientX - desktopRect.left - dragOffset.x;
+            let y = event.clientY - desktopRect.top - dragOffset.y;
+            
+            x = Math.max(0, Math.min(x, desktopRect.width - draggedIcon.offsetWidth));
+            y = Math.max(0, Math.min(y, desktopRect.height - draggedIcon.offsetHeight - 50));
+            
+            draggedIcon.style.left = x + 'px';
+            draggedIcon.style.top = y + 'px';
+            
+            // Check trash can highlighting
+            const trash = document.getElementById('trashCan');
+            if (trash) {
+                const trashRect = trash.getBoundingClientRect();
+                const iconRect = draggedIcon.getBoundingClientRect();
+                
+                const isOverTrash = (
+                    iconRect.left < trashRect.right &&
+                    iconRect.right > trashRect.left &&
+                    iconRect.top < trashRect.bottom &&
+                    iconRect.bottom > trashRect.top
+                );
+                
+                highlightTrash(isOverTrash);
+            }
+        }
+
+        async function handleIconDragEnd(event) {
+            if (!isDragging || !draggedIcon) return;
+            
+            isDragging = false;
+            
+            // Check if dropped on trash
+            const trash = document.getElementById('trashCan');
+            if (trash) {
+                const trashRect = trash.getBoundingClientRect();
+                const iconRect = draggedIcon.getBoundingClientRect();
+                
+                const isOverTrash = (
+                    iconRect.left < trashRect.right &&
+                    iconRect.right > trashRect.left &&
+                    iconRect.top < trashRect.bottom &&
+                    iconRect.bottom > trashRect.top
+                );
+                
+                if (isOverTrash) {
+                    const iconName = draggedIcon.querySelector('.label').textContent;
+                    if (confirm('Hide "' + iconName + '" from desktop?')) {
+                        draggedIcon.style.display = 'none';
+                        await saveIconPositions(); // After deletion
+                        showTrashFeedback(iconName);
+                        draggedIcon = null;
+                        highlightTrash(false);
+                        return;
+                    }
+                }
+                
+                highlightTrash(false);
+            }
+            
+            draggedIcon.style.opacity = '1';
+            draggedIcon.style.zIndex = '';
+            draggedIcon.style.pointerEvents = '';
+                
+                // Restore selection after drag
+                document.body.style.userSelect = '';
+                document.body.style.webkitUserSelect = '';
+                document.body.style.MozUserSelect = '';
+            
+            await saveIconPositions();
+            draggedIcon = null;
+        }
+
+        function highlightTrash(highlight) {
+            const trash = document.getElementById('trashCan');
+            if (!trash) return;
+            
+            if (highlight) {
+                trash.style.backgroundColor = 'rgba(255, 0, 0, 0.3)';
+                trash.style.border = '3px dashed red';
+                trash.style.transform = 'scale(1.1)';
+            } else {
+                trash.style.backgroundColor = '';
+                trash.style.border = '';
+                trash.style.transform = '';
+            }
+        }
+
+        function showTrashFeedback(iconName) {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
+            feedback.textContent = '"' + iconName + '" hidden from desktop';
+            document.body.appendChild(feedback);
+            
+            setTimeout(function() {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 2500);
+        }
+
+        async function loadIconPositions() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-desktop-layout&action_type=desktop_state&participant_id=global');
+                
+                if (!response.ok) {
+                    console.log('No saved layout found, using default positions');
+                    return;
+                }
+                
+                const result = await response.json();
+                const layoutData = result && result.length > 0 ? result[0] : null;
+                
+                if (layoutData && layoutData.content_data && layoutData.content_data.icons) {
+                    const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+                    const savedIcons = layoutData.content_data.icons;
+                    
+                    icons.forEach(function(icon) {
+                        const label = icon.querySelector('.label').textContent;
+                        const id = label.toLowerCase().replace(/[^a-z0-9]/g, '');
+                        
+                        if (savedIcons[id]) {
+                            const savedIcon = savedIcons[id];
+                            icon.style.left = savedIcon.x + 'px';
+                            icon.style.top = savedIcon.y + 'px';
+                            // Only hide if explicitly set to false - don't hide new icons
+                    if (savedIcon.visible === false) {
+                        icon.style.display = 'none';
+                    }
+                        }
+                    });
+                    
+                    console.log('✅ Desktop layout loaded from server');
+                }
+            } catch (error) {
+                console.error('Error loading desktop layout:', error);
+            }
+        }
+        
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            window.windowManager.init();
+            
+            setTimeout(async function() {
+                setupDragForIcons();
+                await loadIconPositions();
+                await loadBgColor();
+            }, 100);
+        });
+        
+        // ENHANCED DEBUG: Deep dive into TEXTY visibility
+        console.log('🔍 ENHANCED TEXTY DEBUG: Deep visibility check...');
+        setTimeout(function() {
+            const textyIcon = document.querySelector('[onclick*="texty"]');
+            if (textyIcon) {
+                console.log('🔍 TEXTY FOUND - Deep analysis:');
+                
+                // Check all CSS properties that affect visibility
+                const computedStyle = window.getComputedStyle(textyIcon);
+                console.log('CSS Properties:', {
+                    display: computedStyle.display,
+                    visibility: computedStyle.visibility,
+                    opacity: computedStyle.opacity,
+                    position: computedStyle.position,
+                    left: computedStyle.left,
+                    top: computedStyle.top,
+                    zIndex: computedStyle.zIndex,
+                    width: computedStyle.width,
+                    height: computedStyle.height,
+                    overflow: computedStyle.overflow
+                });
+                
+                // Check parent chain for hiding
+                let parent = textyIcon.parentElement;
+                let level = 0;
+                console.log('Parent chain analysis:');
+                while (parent && level < 5) {
+                    const pStyle = window.getComputedStyle(parent);
+                    console.log(`  Level ${level}: ${parent.tagName}${parent.className ? '.' + parent.className : ''}`, {
+                        display: pStyle.display,
+                        visibility: pStyle.visibility,
+                        opacity: pStyle.opacity,
+                        overflow: pStyle.overflow
+                    });
+                    parent = parent.parentElement;
+                    level++;
+                }
+                
+                // Check if it's actually in the DOM tree properly
+                console.log('DOM tree check:', {
+                    parentNode: textyIcon.parentNode ? textyIcon.parentNode.tagName : 'null',
+                    isConnected: textyIcon.isConnected,
+                    offsetParent: textyIcon.offsetParent ? textyIcon.offsetParent.tagName : 'null',
+                    clientRect: textyIcon.getBoundingClientRect()
+                });
+                
+                // FORCE OVERRIDE ALL HIDING METHODS
+                console.log('🔧 FORCING TEXTY TO BE VISIBLE...');
+                textyIcon.style.display = 'block !important';
+                textyIcon.style.visibility = 'visible !important';
+                textyIcon.style.opacity = '1 !important';
+                textyIcon.style.position = 'absolute !important';
+                textyIcon.style.left = '50px !important';
+                textyIcon.style.top = '50px !important';
+                textyIcon.style.zIndex = '999999 !important';
+                textyIcon.style.backgroundColor = 'red !important';
+                textyIcon.style.border = '5px solid yellow !important';
+                textyIcon.style.width = 'auto !important';
+                textyIcon.style.height = 'auto !important';
+                
+                // Also check parent containers
+                let p = textyIcon.parentElement;
+                while (p && p !== document.body) {
+                    p.style.overflow = 'visible !important';
+                    p = p.parentElement;
+                }
+                
+                console.log('🔧 FORCE COMPLETE - TEXTY should now be IMPOSSIBLE to miss!');
+                
+            } else {
+                console.log('❌ NO TEXTY ELEMENT FOUND AT ALL');
+            }
+        }, 3000);
+        
+        console.log('ToyBox OS Ready - Fixed Version');
+        
+        
+        // Persistent Background Color functionality
+        async function changeBgColor() {
+            // Generate random color
+            const randomColor = '#' + Math.floor(Math.random() * 16777215).toString(16);
+            
+            // Apply to body
+            document.body.style.background = randomColor;
+            
+            // Save to database using same ZAD system
+            await saveBgColor(randomColor);
+            
+            console.log('🎨 Background color changed to:', randomColor);
+        }
+        
+        async function saveBgColor(color) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-desktop-layout',
+                        participant_id: 'global',
+                        action_type: 'bg_color',
+                        content_data: {
+                            backgroundColor: color,
+                            lastModified: new Date().toISOString(),
+                            modifiedBy: 'user'
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Background color saved:', color);
+                } else {
+                    console.error('❌ Failed to save background color');
+                }
+            } catch (error) {
+                console.error('❌ Error saving background color:', error);
+            }
+        }
+        
+        async function loadBgColor() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-desktop-layout&action_type=bg_color&participant_id=global');
+                
+                if (!response.ok) {
+                    console.log('No saved background color found, using default');
+                    return;
+                }
+                
+                const result = await response.json();
+                const bgData = result && result.length > 0 ? result[0] : null;
+                
+                if (bgData && bgData.content_data && bgData.content_data.backgroundColor) {
+                    const savedColor = bgData.content_data.backgroundColor;
+                    document.body.style.background = savedColor;
+                    console.log('✅ Background color restored:', savedColor);
+                }
+            } catch (error) {
+                console.error('❌ Error loading background color:', error);
+            }
+        }
+        
+        
+        // Special menu dropdown functionality
+        function toggleSpecialMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('specialMenu');
+            const isVisible = menu.style.display !== 'none';
+            
+            // Close all other menus first
+            document.querySelectorAll('.dropdown-menu').forEach(m => m.style.display = 'none');
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Close menu when clicking elsewhere
+            if (!isVisible) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeSpecialMenu, { once: true });
+                }, 10);
+            }
+        }
+        
+        function closeSpecialMenu() {
+            document.getElementById('specialMenu').style.display = 'none';
+        }
+        
+        // Clean Up Desktop functionality
+        async function cleanUpDesktop(event) {
+            event.stopPropagation();
+            closeSpecialMenu();
+            
+            console.log('🧹 Cleaning up desktop...');
+            
+            const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+            const paddingTop = 80; // Top padding
+            const paddingLeft = 40; // Left padding
+            const iconWidth = 75; // Width of each icon
+            const iconHeight = 100; // Height including label
+            const spacingX = 20; // Horizontal spacing between icons
+            const spacingY = 20; // Vertical spacing between icons
+            const iconsPerRow = 6; // Icons per row
+            
+            let currentRow = 0;
+            let currentCol = 0;
+            
+            icons.forEach((icon, index) => {
+                // Skip if icon is hidden
+                if (icon.style.display === 'none') return;
+                
+                const x = paddingLeft + (currentCol * (iconWidth + spacingX));
+                const y = paddingTop + (currentRow * (iconHeight + spacingY));
+                
+                // Animate to new position
+                icon.style.transition = 'all 0.3s ease-out';
+                icon.style.left = x + 'px';
+                icon.style.top = y + 'px';
+                
+                currentCol++;
+                if (currentCol >= iconsPerRow) {
+                    currentCol = 0;
+                    currentRow++;
+                }
+            });
+            
+            // Remove transition after animation
+            setTimeout(() => {
+                icons.forEach(icon => {
+                    icon.style.transition = '';
+                });
+            }, 300);
+            
+            // Save the new positions
+            await saveIconPositions();
+            
+            console.log('✅ Desktop cleaned up!');
+            
+            // Show feedback
+            showCleanupFeedback();
+        }
+        
+        function showCleanupFeedback() {
+            const feedback = document.createElement('div');
+            feedback.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.8); color: white; padding: 15px 25px; border-radius: 8px; z-index: 10000; font-size: 16px; font-weight: bold;';
+            feedback.textContent = 'Desktop cleaned up!';
+            document.body.appendChild(feedback);
+            
+            setTimeout(() => {
+                if (document.body.contains(feedback)) {
+                    document.body.removeChild(feedback);
+                }
+            }, 2000);
+        }
+// ZAD-based persistent desktop layout system
+async function saveIconPositions() {
+    const icons = document.querySelectorAll('.desktop-icon:not(.trash-can)');
+    const iconData = {};
+    
+    icons.forEach(function(icon) {
+        const label = icon.querySelector('.label').textContent;
+        const id = label.toLowerCase().replace(/[^a-z0-9]/g, '');
+        iconData[id] = {
+            x: parseInt(icon.style.left) || 0,
+            y: parseInt(icon.style.top) || 0,
+            visible: icon.style.display !== 'none',
+            label: label
+        };
+    });
+    
+    try {
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: 'toybox-desktop-layout',
+                participant_id: 'global',
+                action_type: 'desktop_state',
+                content_data: {
+                    icons: iconData,
+                    lastModified: new Date().toISOString(),
+                    modifiedBy: 'user'
+                }
+            })
+        });
+        
+        if (response.ok) {
+            console.log('✅ Desktop layout saved for everyone');
+        }
+    } catch (error) {
+        console.error('Error saving desktop layout:', error);
+    }
+}
+
+async function deleteIconFromDesktop(iconElement) {
+    const label = iconElement.querySelector('.label').textContent;
+    iconElement.style.display = 'none';
+    await saveIconPositions();
+    console.log('🗑️ Deleted', label, 'from desktop for everyone');
+}
+
+        // System 7 Menu Clock
+        function updateMenuClock() {
+            const clockEl = document.getElementById('menu-clock');
+            if (clockEl) {
+                const now = new Date();
+                const hours = now.getHours() % 12 || 12;
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const ampm = now.getHours() >= 12 ? 'PM' : 'AM';
+                clockEl.textContent = hours + ':' + minutes + ' ' + ampm;
+            }
+        }
+        setInterval(updateMenuClock, 1000);
+        updateMenuClock(); // Initial call
+
+    // ToyBox OS Authentication System
+    let currentUser = null;
+    const AUTH_APP_ID = 'toybox-os-users';
+    
+    // Check for saved user on load
+    function initAuth() {
+        const savedUser = localStorage.getItem('toybox_user');
+        if (savedUser) {
+            try {
+                currentUser = JSON.parse(savedUser);
+                updateUIForUser();
+                broadcastAuthState();
+            } catch (e) {
+                console.error('Failed to restore user session:', e);
+                localStorage.removeItem('toybox_user');
+            }
+        }
+    }
+    
+    // ZAD Helper Functions for Auth
+    async function saveAuth(dataType, data) {
+        try {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: AUTH_APP_ID,
+                    data_type: dataType,
+                    content_data: data,
+                    participant_id: currentUser ? currentUser.id : 'anonymous',
+                    action_type: dataType
+                })
+            });
+            return await response.json();
+        } catch (error) {
+            console.error('Save error:', error);
+            return null;
+        }
+    }
+    
+    async function loadAuth(dataType) {
+        try {
+            const url = `/api/zad/load?app_id=${encodeURIComponent(AUTH_APP_ID)}&action_type=${encodeURIComponent(dataType)}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error(`Load failed: ${response.statusText}`);
+            }
+            
+            const result = await response.json();
+            
+            if (Array.isArray(result)) {
+                return result.map(record => ({
+                    ...record.content_data,
+                    _participant_id: record.participant_id,
+                    _created_at: record.created_at
+                }));
+            }
+            
+            return [];
+        } catch (error) {
+            console.error('Load error:', error);
+            return [];
+        }
+    }
+    
+    // UI Functions
+    function toggleAuth(event) {
+        if (event) { 
+            event.preventDefault();
+            event.stopPropagation(); 
+        }
+        openAuthModal();
+    }
+    
+    function openAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.style.display = 'block';
+            if (currentToyBoxUser) {
+                showProfileScreen();
+            } else {
+                showWelcomeScreen();
+            }
+        }
+    }
+    
+    function closeAuthModal() {
+        const modal = document.getElementById('authModal');
+        if (modal) {
+            modal.style.display = 'none';
+        }
+    }
+    
+    function closeAuth() {
+        document.getElementById('authModal').classList.remove('active');
+        clearMessages();
+    }
+    
+    function showScreen(screenId) {
+        document.querySelectorAll('.auth-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        clearMessages();
+    }
+    
+    function clearMessages() {
+        const loginMsg = document.getElementById('loginMessage');
+        const registerMsg = document.getElementById('registerMessage');
+        if (loginMsg) loginMsg.innerHTML = '';
+        if (registerMsg) registerMsg.innerHTML = '';
+    }
+    
+    function showMessage(elementId, message, type = '') {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.innerHTML = `<div class="auth-message ${type}">${message}</div>`;
+        }
+    }
+    
+    // Authentication Functions
+    async function register() {
+        const handle = document.getElementById('registerHandle').value.trim();
+        const pin = document.getElementById('registerPin').value;
+        const confirmPin = document.getElementById('confirmPin').value;
+        
+        if (handle.length < 3 || handle.length > 15) {
+            showMessage('registerMessage', 'Handle must be 3-15 characters', 'error');
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(pin)) {
+            showMessage('registerMessage', 'PIN must be exactly 4 digits', 'error');
+            return;
+        }
+        
+        if (pin !== confirmPin) {
+            showMessage('registerMessage', 'PINs do not match', 'error');
+            return;
+        }
+        
+        // Check if handle exists
+        const users = await loadAuth('user_registry');
+        const existingUser = users.find(u => u.handle === handle);
+        
+        if (existingUser) {
+            showMessage('registerMessage', 'Handle already taken', 'error');
+            return;
+        }
+        
+        // Create user
+        const userData = {
+            handle: handle,
+            pin: pin,
+            id: handle,
+            created: new Date().toISOString()
+        };
+        
+        currentUser = userData;
+        await saveAuth('user_registry', userData);
+        
+        // Save session
+        
+            console.log('=== ToyBox OS Debug ===');
+            console.log('Saving to localStorage:', userData);
+            localStorage.setItem('toybox_user', JSON.stringify(userData));
+            console.log('Saved! Can read back:', localStorage.getItem('toybox_user'));
+        
+        showMessage('registerMessage', 'Account created!', 'success');
+        setTimeout(() => {
+            updateUIForUser();
+            broadcastAuthState();
+            closeAuth();
+        }, 1000);
+    }
+    
+    async function login() {
+        const handle = document.getElementById('loginHandle').value.trim();
+        const pin = document.getElementById('loginPin').value;
+        
+        // Load all users
+        const users = await loadAuth('user_registry');
+        const user = users.find(u => 
+            u.handle && u.handle.toLowerCase() === handle.toLowerCase() && 
+            u.pin === pin
+        );
+        
+        if (!user) {
+            showMessage('loginMessage', 'Invalid handle or PIN', 'error');
+            return;
+        }
+        
+        currentUser = user;
+        localStorage.setItem('toybox_user', JSON.stringify(user));
+        
+        showMessage('loginMessage', 'Welcome back!', 'success');
+        setTimeout(() => {
+            updateUIForUser();
+            broadcastAuthState();
+            closeAuth();
+        }, 1000);
+    }
+    
+    function logout() {
+        currentUser = null;
+        localStorage.removeItem('toybox_user');
+        updateUIForUser();
+        broadcastAuthState();
+        closeAuth();
+    }
+    
+    // Update UI based on auth state
+    function updateUIForUser() {
+        const profileEmoji = document.getElementById('profile-emoji');
+        const usernameDisplay = document.getElementById('username-display');
+        
+        if (currentUser) {
+            profileEmoji.textContent = '👤';
+            usernameDisplay.textContent = currentUser.handle;
+        } else {
+            profileEmoji.textContent = '👤';
+            usernameDisplay.textContent = '';
+        }
+    }
+    
+    // Broadcast auth state to all apps
+    function broadcastAuthState() {
+        const windows = document.querySelectorAll('.desktop-window iframe');
+        windows.forEach(iframe => {
+            try {
+                iframe.contentWindow.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            } catch (e) {
+                console.error('Could not send auth to iframe:', e);
+            }
+        });
+    }
+    
+    // Modify openWindowedApp to notify new windows
+    const originalOpenWindowedApp = openWindowedApp;
+    openWindowedApp = function(appId) {
+        originalOpenWindowedApp(appId);
+        // Wait a bit for the window to load, then send auth
+        setTimeout(() => {
+            broadcastAuthState();
+        }, 2000);
+    };
+    
+    // Initialize auth on load
+    window.addEventListener('DOMContentLoaded', () => {
+        initAuth();
+    });
+
+
+    function showWelcomeScreen() {
+        document.getElementById('welcomeScreen').style.display = 'block';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showLoginScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'block';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showRegisterScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'block';
+        document.getElementById('profileScreen').style.display = 'none';
+    }
+    
+    function showProfileScreen() {
+        document.getElementById('welcomeScreen').style.display = 'none';
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('registerScreen').style.display = 'none';
+        document.getElementById('profileScreen').style.display = 'block';
+        if (currentToyBoxUser) {
+            document.getElementById('profileHandle').textContent = currentToyBoxUser.handle;
+        }
+    }
+    
+    async function doLogin() {
+        const handle = document.getElementById('loginHandle').value.trim();
+        const pin = document.getElementById('loginPin').value;
+        
+        if (!handle || !pin) {
+            document.getElementById('loginError').textContent = 'Please enter handle and PIN';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+            const users = await response.json();
+            
+            const user = users.find(u => 
+                u.content_data && 
+                u.content_data.handle === handle && 
+                u.content_data.pin === pin
+            );
+            
+            if (user) {
+                currentToyBoxUser = user.content_data;
+                currentUser = user.content_data; // SYNC: Keep both variables in sync
+                console.log('Saving existing user to localStorage:', currentToyBoxUser);
+            localStorage.setItem('toybox_user', JSON.stringify(currentToyBoxUser));
+            console.log('Saved! Can read back:', localStorage.getItem('toybox_user'));
+                updateProfileDisplay();
+                showProfileScreen();
+                broadcastAuth();
+            } else {
+                document.getElementById('loginError').textContent = 'Invalid handle or PIN';
+            }
+        } catch (error) {
+            document.getElementById('loginError').textContent = 'Login failed';
+        }
+    }
+    
+    async function doRegister() {
+        const handle = document.getElementById('regHandle').value.trim();
+        const pin = document.getElementById('regPin').value;
+        const confirmPin = document.getElementById('confirmPin').value;
+        
+        if (handle.length < 3 || handle.length > 15) {
+            document.getElementById('regError').textContent = 'Handle must be 3-15 characters';
+            return;
+        }
+        
+        if (!/^\d{4}$/.test(pin)) {
+            document.getElementById('regError').textContent = 'PIN must be 4 digits';
+            return;
+        }
+        
+        if (pin !== confirmPin) {
+            document.getElementById('regError').textContent = 'PINs do not match';
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
+            const users = await response.json();
+            
+            const exists = users.find(u => 
+                u.content_data && u.content_data.handle === handle
+            );
+            
+            if (exists) {
+                document.getElementById('regError').textContent = 'Handle already taken';
+                return;
+            }
+            
+            const userData = {
+                handle: handle,
+                pin: pin,
+                id: handle,
+                created: new Date().toISOString()
+            };
+            
+            const saveResponse = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: 'toybox-os-users',
+                    data_type: 'user_registry',
+                    content_data: userData,
+                    participant_id: handle,
+                    action_type: 'user_registry'
+                })
+            });
+            
+            if (saveResponse.ok) {
+                currentToyBoxUser = userData;
+        currentUser = userData; // SYNC: Keep both variables in sync
+                localStorage.setItem('toybox_user', JSON.stringify(userData));
+                updateProfileDisplay();
+                showProfileScreen();
+                broadcastAuth();
+            } else {
+                document.getElementById('regError').textContent = 'Registration failed';
+            }
+        } catch (error) {
+            document.getElementById('regError').textContent = 'Registration failed';
+        }
+    }
+    
+    function doLogout() {
+        currentToyBoxUser = null;
+        currentUser = null; // SYNC: Keep both variables in sync
+        localStorage.removeItem('toybox_user');
+        updateProfileDisplay();
+        closeAuthModal();
+        broadcastAuth();
+    }
+    
+    function updateProfileDisplay() {
+        const usernameDisplay = document.getElementById('username-display');
+        if (usernameDisplay) {
+            usernameDisplay.textContent = currentToyBoxUser ? currentToyBoxUser.handle : '';
+        }
+    }
+    
+    function broadcastAuth() {
+        const iframes = document.querySelectorAll('iframe');
+        iframes.forEach(iframe => {
+            try {
+                // Only broadcast if iframe is loaded and ready
+                if (iframe.contentWindow) {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                }
+            } catch (e) {
+                // Silently fail if iframe not ready
+            }
+        });
+    }
+
+    // Initialize auth on load
+    function initToyBoxAuth() {
+        const savedUser = localStorage.getItem('toybox_user');
+        if (savedUser) {
+            try {
+                currentToyBoxUser = JSON.parse(savedUser);
+                currentUser = currentToyBoxUser; // SYNC: Keep both variables in sync
+                updateProfileDisplay();
+            } catch (e) {
+                localStorage.removeItem('toybox_user');
+            }
+        }
+    }
+    
+    window.addEventListener('DOMContentLoaded', initToyBoxAuth);
+
+    // Handle auth requests from apps
+    window.addEventListener('message', function(event) {
+        if (event.data && event.data.type === 'REQUEST_AUTH') {
+            console.log('ToyBox OS received auth request, sending currentUser:', currentUser);
+            // Send current auth state back
+            if (event.source) {
+                event.source.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            }
+        }
+    });
+
+    // Background color changer function
+    function changeBGColor() {
+        const colors = [
+            '#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7',
+            '#DDA0DD', '#98D8C8', '#F7DC6F', '#BB8FCE', '#85C1E9',
+            '#F8C471', '#82E0AA', '#F1948A', '#85C1E9', '#D2B4DE',
+            '#A3E4D7', '#F9E79F', '#AED6F1', '#A9DFBF', '#F5B7B1'
+        ];
+        
+        const currentColor = document.body.style.backgroundColor;
+        let newColor;
+        
+        // Keep picking until we get a different color
+        do {
+            newColor = colors[Math.floor(Math.random() * colors.length)];
+        } while (newColor === currentColor && colors.length > 1);
+        
+        document.body.style.backgroundColor = newColor;
+        console.log('Background changed to:', newColor);
+    }
+    </script>
+
+    <!-- Auth Modal -->
+    <div id="authModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9999;">
+        <div style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #c0c0c0; border: 2px solid #000; padding: 0; width: 320px; box-shadow: 2px 2px 4px rgba(0,0,0,0.3);">
+            <div style="background: linear-gradient(90deg, #000080, #1084d0); color: white; padding: 4px 8px; font-size: 12px; display: flex; justify-content: space-between; align-items: center;">
+                <span>ToyBox OS Login</span>
+                <button onclick="closeAuthModal()" style="background: #c0c0c0; border: 1px solid #000; padding: 0 4px; cursor: pointer;">✕</button>
+            </div>
+            <div style="padding: 20px;">
+                <div id="authContent">
+                    <!-- Welcome Screen -->
+                    <div id="welcomeScreen" style="text-align: center;">
+                        <h3>Welcome to ToyBox OS</h3>
+                        <p style="font-size: 12px; margin: 16px 0;">Sign in to access personalized apps</p>
+                        <button onclick="showLoginScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign In</button>
+                        <button onclick="showRegisterScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Create Account</button>
+                    </div>
+                    
+                    <!-- Login Screen (hidden initially) -->
+                    <div id="loginScreen" style="display: none; text-align: center;">
+                        <h3>Sign In</h3>
+                        <input type="text" id="loginHandle" placeholder="Your Handle" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="loginPin" placeholder="4-digit PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <div id="loginError" style="color: red; font-size: 12px; margin: 8px 0;"></div>
+                        <button onclick="doLogin()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign In</button>
+                        <button onclick="showWelcomeScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Back</button>
+                    </div>
+                    
+                    <!-- Register Screen (hidden initially) -->
+                    <div id="registerScreen" style="display: none; text-align: center;">
+                        <h3>Create Account</h3>
+                        <input type="text" id="regHandle" placeholder="Choose Handle (3-15 chars)" maxlength="15" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="regPin" placeholder="Create 4-digit PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <input type="password" id="confirmPin" placeholder="Confirm PIN" maxlength="4" style="display: block; width: 100%; margin: 8px 0; padding: 6px;">
+                        <div id="regError" style="color: red; font-size: 12px; margin: 8px 0;"></div>
+                        <button onclick="doRegister()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Create Account</button>
+                        <button onclick="showWelcomeScreen()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Back</button>
+                    </div>
+                    
+                    <!-- Profile Screen (hidden initially) -->
+                    <div id="profileScreen" style="display: none; text-align: center;">
+                        <h3>Profile</h3>
+                        <p>Signed in as: <strong id="profileHandle"></strong></p>
+                        <button onclick="doLogout()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Sign Out</button>
+                        <button onclick="closeAuthModal()" style="padding: 6px 16px; margin: 4px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    <!-- MacPAINT by bd -->
+    <div class="desktop-icon" 
+         style="left: 20px; top: 20px;"
+         onclick="openWindowedApp('MACPAINT-882258')"
+         title="MacPAINT">
+        <div class="icon">🎨</div>
+        <div class="label">MacPAINT</div>
+    </div>
+
+    <!-- MacPAINT by bd -->
+    <div class="desktop-icon" 
+         style="left: 120px; top: 20px;"
+         onclick="openWindowedApp('MACPAINT-134526')"
+         title="MacPAINT">
+            <div class="icon">🎨</div>
+        <div class="label">MacPAINT</div>
+    </div>
+    
+    
+    </div>
+</body>
+</html>
