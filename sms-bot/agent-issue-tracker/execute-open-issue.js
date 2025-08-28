@@ -8,10 +8,21 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-dotenv.config({ path: '../.env.local' });
-
-const execAsync = promisify(exec);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const execAsync = promisify(exec);
+
+// Fix: Use absolute path for .env.local
+dotenv.config({ path: path.join(__dirname, '../.env.local') });
+
+// Debug: Check if environment variables are loaded
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    console.error('❌ Environment variables not loaded properly!');
+    console.error('   SUPABASE_URL:', process.env.SUPABASE_URL ? 'Set' : 'Missing');
+    console.error('   SUPABASE_SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? 'Set' : 'Missing');
+    console.error('   Looking for .env.local at:', path.join(__dirname, '../.env.local'));
+    process.exit(1);
+}
+
 const supabase = createClient(
     process.env.SUPABASE_URL,
     process.env.SUPABASE_SERVICE_KEY
@@ -112,6 +123,12 @@ function parseIssueDescription(description) {
 }
 
 async function executeOpenIssue() {
+    // Safety check - allow disabling the edit agent
+    if (fs.existsSync(path.join(__dirname, 'STOP-EDIT-AGENT.txt'))) {
+        console.log('⛔ EDIT AGENT IS DISABLED (STOP-EDIT-AGENT.txt exists)');
+        process.exit(0);
+    }
+    
     console.log('🔍 Looking for open issues...');
     
     // Fetch open issues
@@ -128,16 +145,16 @@ async function executeOpenIssue() {
         return;
     }
 
-    // Find the first open issue
+    // Find the first open or pending issue (Issues app creates with status 'pending')
     const openIssue = data.find(issue => {
         const content = typeof issue.content_data === 'string' 
             ? JSON.parse(issue.content_data) 
             : issue.content_data;
-        return content.status === 'open';
+        return content.status === 'open' || content.status === 'pending';
     });
 
     if (!openIssue) {
-        console.log('📭 No open issues found');
+        console.log('📭 No open or pending issues found');
         return;
     }
 
@@ -219,7 +236,9 @@ The project has deployment examples in community-desktop-v2/scripts/ that show h
         const duration = Math.round((Date.now() - startTime) / 1000);
         console.log(`✅ Claude completed in ${duration} seconds`);
         
+        let claudeOutput = '';
         if (stdout) {
+            claudeOutput = stdout;
             console.log('Claude output (first 500 chars):', stdout.substring(0, 500));
             console.log('Total output length:', stdout.length, 'chars');
         }
@@ -227,10 +246,30 @@ The project has deployment examples in community-desktop-v2/scripts/ that show h
             console.error('Claude stderr:', stderr);
         }
         
+        // Add Claude's output as a comment to the ticket
+        const editAgentComment = {
+            text: claudeOutput || 'Task completed successfully (no detailed output)',
+            author: 'Edit Agent',
+            authorRole: 'AGENT',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Initialize admin_comments array if it doesn't exist
+        if (!content.admin_comments) {
+            content.admin_comments = [];
+        }
+        
+        // Add the edit agent's comment
+        content.admin_comments.push(editAgentComment);
+        
         // Update issue status to completed
         content.status = 'completed';
         content.completedAt = new Date().toISOString();
-        content.resolution = 'Executed by Claude';
+        content.resolution = 'Executed by Claude Edit Agent';
+        
+        // Also store the output in a dedicated field for easier access
+        content.edit_agent_output = claudeOutput;
+        content.edit_agent_execution_time = `${duration} seconds`;
         
         await supabase
             .from('wtaf_zero_admin_collaborative')
@@ -245,6 +284,22 @@ The project has deployment examples in community-desktop-v2/scripts/ that show h
         
     } catch (error) {
         console.error('❌ Claude execution failed:', error);
+        
+        // Add error as a comment
+        const errorComment = {
+            text: `❌ Execution failed: ${error.message}`,
+            author: 'Edit Agent',
+            authorRole: 'AGENT',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Initialize admin_comments array if it doesn't exist
+        if (!content.admin_comments) {
+            content.admin_comments = [];
+        }
+        
+        // Add the error comment
+        content.admin_comments.push(errorComment);
         
         content.status = 'failed';
         content.error = error.message;
