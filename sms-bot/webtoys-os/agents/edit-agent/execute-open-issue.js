@@ -7,6 +7,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { deployApp } from '../../scripts/auto-deploy-app.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
@@ -285,9 +286,45 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
             .update({ content_data: JSON.stringify(content) })
             .eq('id', openIssue.id);
         
-        // Claude Code should handle all deployment and desktop integration
-        // The prompt includes clear instructions for what to do
-        console.log('\n📝 Claude Code should have handled deployment and any desktop integration needed');
+        // Check if any new HTML files were created in /apps directory
+        console.log('\n🔍 Checking for new apps to deploy...');
+        const appsDir = path.join(__dirname, '../../apps');
+        const files = fs.readdirSync(appsDir);
+        const htmlFiles = files.filter(f => f.endsWith('.html'));
+        
+        // Find the newest HTML file (likely the one just created)
+        let newestFile = null;
+        let newestTime = 0;
+        
+        for (const file of htmlFiles) {
+            const filePath = path.join(appsDir, file);
+            const stats = fs.statSync(filePath);
+            if (stats.mtimeMs > newestTime) {
+                newestTime = stats.mtimeMs;
+                newestFile = file;
+            }
+        }
+        
+        // If a file was created in the last 5 minutes, deploy it
+        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+        if (newestFile && newestTime > fiveMinutesAgo) {
+            console.log(`\n🚀 Auto-deploying newly created app: ${newestFile}`);
+            try {
+                const deployResult = await deployApp(newestFile);
+                console.log(`✅ Successfully deployed ${deployResult.appName} to desktop!`);
+                
+                // Add deployment info to issue
+                content.deployed_app = deployResult;
+                await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .update({ content_data: JSON.stringify(content) })
+                    .eq('id', openIssue.id);
+            } catch (deployError) {
+                console.error(`⚠️  Warning: Could not auto-deploy ${newestFile}:`, deployError.message);
+            }
+        } else {
+            console.log('📝 No new apps detected for auto-deployment');
+        }
 
         console.log('\n✅ Issue completed successfully!');
         

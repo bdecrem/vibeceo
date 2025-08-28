@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint - WebtoysOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Geneva', Arial, sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Menu bar */
+        .menu-bar {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #808080;
+            display: flex;
+            padding: 4px;
+            font-size: 12px;
+        }
+        
+        .menu-item {
+            padding: 4px 12px;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+        
+        .menu-item:hover {
+            background: #e0e0e0;
+            border: 1px solid #808080;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            background: #f0f0f0;
+            border-bottom: 1px solid #808080;
+            padding: 8px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px;
+            border: 1px solid #c0c0c0;
+            background: #ffffff;
+        }
+        
+        .tool-button {
+            padding: 6px 8px;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            border: 1px solid #808080;
+            cursor: pointer;
+            font-size: 11px;
+            min-width: 24px;
+            text-align: center;
+            user-select: none;
+        }
+        
+        .tool-button.active {
+            background: linear-gradient(to bottom, #c0c0c0, #a0a0a0);
+            border: 1px solid #404040;
+        }
+        
+        .tool-button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #d0d0d0);
+        }
+        
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #000;
+            cursor: pointer;
+            display: inline-block;
+        }
+        
+        .color-swatch.active {
+            border: 2px solid #ffffff;
+            box-shadow: 0 0 0 1px #000;
+        }
+        
+        .size-input {
+            width: 60px;
+            padding: 2px;
+            border: 1px solid #808080;
+            font-size: 11px;
+        }
+        
+        /* Canvas container */
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #c0c0c0;
+            padding: 20px;
+            overflow: auto;
+        }
+        
+        #canvas {
+            background: white;
+            border: 2px inset #c0c0c0;
+            cursor: crosshair;
+        }
+        
+        #canvas.hand {
+            cursor: grab;
+        }
+        
+        #canvas.hand:active {
+            cursor: grabbing;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: #f0f0f0;
+            border-top: 1px solid #808080;
+            padding: 2px 8px;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        /* Save dialog */
+        .dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #c0c0c0;
+            border: 2px outset #c0c0c0;
+            padding: 8px;
+            z-index: 1000;
+            min-width: 300px;
+            box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+        }
+        
+        .dialog-title {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: white;
+            padding: 2px 4px;
+            margin: -8px -8px 8px -8px;
+            font-weight: bold;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .dialog input {
+            width: 100%;
+            padding: 4px;
+            margin: 8px 0;
+            border: 1px inset #c0c0c0;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .dialog button {
+            padding: 4px 16px;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            border: 1px outset #c0c0c0;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .dialog button:active {
+            border: 1px inset #c0c0c0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-item" onclick="newCanvas()">New</div>
+        <div class="menu-item" onclick="saveImage()">Save</div>
+        <div class="menu-item" onclick="clearCanvas()">Clear</div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <!-- Tools -->
+        <div class="tool-group">
+            <div class="tool-button active" onclick="setTool('brush')" id="tool-brush">🖌️</div>
+            <div class="tool-button" onclick="setTool('eraser')" id="tool-eraser">🧽</div>
+            <div class="tool-button" onclick="setTool('line')" id="tool-line">📏</div>
+            <div class="tool-button" onclick="setTool('rectangle')" id="tool-rectangle">⬜</div>
+            <div class="tool-button" onclick="setTool('circle')" id="tool-circle">⭕</div>
+        </div>
+        
+        <!-- Colors -->
+        <div class="tool-group">
+            <div class="color-swatch active" style="background: #000000" onclick="setColor('#000000')"></div>
+            <div class="color-swatch" style="background: #ff0000" onclick="setColor('#ff0000')"></div>
+            <div class="color-swatch" style="background: #00ff00" onclick="setColor('#00ff00')"></div>
+            <div class="color-swatch" style="background: #0000ff" onclick="setColor('#0000ff')"></div>
+            <div class="color-swatch" style="background: #ffff00" onclick="setColor('#ffff00')"></div>
+            <div class="color-swatch" style="background: #ff00ff" onclick="setColor('#ff00ff')"></div>
+            <div class="color-swatch" style="background: #00ffff" onclick="setColor('#00ffff')"></div>
+            <div class="color-swatch" style="background: #ffffff" onclick="setColor('#ffffff')"></div>
+        </div>
+        
+        <!-- Brush Size -->
+        <div class="tool-group">
+            <label style="font-size: 11px;">Size:</label>
+            <input type="range" id="brushSize" min="1" max="20" value="3" onchange="setBrushSize(this.value)" style="width: 60px;">
+            <span id="sizeDisplay" style="font-size: 11px;">3</span>
+        </div>
+    </div>
+    
+    <!-- Canvas -->
+    <div class="canvas-container">
+        <canvas id="canvas" width="600" height="400"></canvas>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div id="status">Ready</div>
+        <div id="coordinates">x: 0, y: 0</div>
+        <div id="user-status">Not logged in</div>
+    </div>
+    
+    <!-- Save Dialog -->
+    <div id="saveDialog" class="dialog">
+        <div class="dialog-title">
+            Save Image
+            <span onclick="closeSaveDialog()" style="cursor: pointer;">×</span>
+        </div>
+        <label>Image name:</label>
+        <input type="text" id="saveFilename" placeholder="my-painting">
+        <div class="dialog-buttons">
+            <button onclick="closeSaveDialog()">Cancel</button>
+            <button onclick="performSave()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        window.APP_ID = 'paint-app';
+        
+        // Canvas and drawing state
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'brush';
+        let currentColor = '#000000';
+        let currentSize = 3;
+        let startX, startY;
+        let currentUser = null;
+        
+        // Initialize canvas
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        
+        // Listen for ToyBox OS authentication
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUserStatus();
+            }
+        });
+        
+        // Load auth from localStorage fallback
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserStatus();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Update user status display
+        function updateUserStatus() {
+            const userStatusEl = document.getElementById('user-status');
+            if (currentUser) {
+                userStatusEl.textContent = `User: ${currentUser.handle}`;
+            } else {
+                userStatusEl.textContent = 'Not logged in';
+            }
+        }
+        
+        // ZAD Helper Functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: currentUser?.handle || 'anonymous',
+                        action_type: dataType,
+                        content_data: data
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save error:', error);
+                return false;
+            }
+        }
+        
+        // Tool functions
+        function setTool(tool) {
+            currentTool = tool;
+            updateToolUI();
+            updateCursor();
+            updateStatus(`Tool: ${tool}`);
+        }
+        
+        function setColor(color) {
+            currentColor = color;
+            updateColorUI();
+            updateStatus(`Color: ${color}`);
+        }
+        
+        function setBrushSize(size) {
+            currentSize = parseInt(size);
+            document.getElementById('sizeDisplay').textContent = size;
+            updateStatus(`Brush size: ${size}px`);
+        }
+        
+        function updateToolUI() {
+            document.querySelectorAll('.tool-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`tool-${currentTool}`).classList.add('active');
+        }
+        
+        function updateColorUI() {
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function updateCursor() {
+            canvas.className = currentTool === 'hand' ? 'hand' : '';
+        }
+        
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            startX = e.clientX - rect.left;
+            startY = e.clientY - rect.top;
+            
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentSize;
+            ctx.globalCompositeOperation = currentTool === 'eraser' ? 'destination-out' : 'source-over';
+            
+            if (currentTool === 'brush' || currentTool === 'eraser') {
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+            }
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            // Update coordinates display
+            document.getElementById('coordinates').textContent = `x: ${Math.round(currentX)}, y: ${Math.round(currentY)}`;
+            
+            switch (currentTool) {
+                case 'brush':
+                case 'eraser':
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+                    break;
+                    
+                case 'line':
+                    redrawCanvas();
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(currentX, currentY);
+                    ctx.stroke();
+                    break;
+                    
+                case 'rectangle':
+                    redrawCanvas();
+                    const width = currentX - startX;
+                    const height = currentY - startY;
+                    ctx.strokeRect(startX, startY, width, height);
+                    break;
+                    
+                case 'circle':
+                    redrawCanvas();
+                    const radius = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+                    ctx.beginPath();
+                    ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                    break;
+            }
+        }
+        
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                saveCanvasState();
+            }
+        }
+        
+        // Canvas state management
+        let canvasHistory = [];
+        let historyIndex = -1;
+        
+        function saveCanvasState() {
+            historyIndex++;
+            if (historyIndex < canvasHistory.length) {
+                canvasHistory.length = historyIndex;
+            }
+            canvasHistory.push(canvas.toDataURL());
+        }
+        
+        function redrawCanvas() {
+            if (historyIndex >= 0 && historyIndex < canvasHistory.length) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = canvasHistory[historyIndex];
+            }
+        }
+        
+        // Menu functions
+        function newCanvas() {
+            if (confirm('Create new canvas? (Current drawing will be lost)')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                canvasHistory = [];
+                historyIndex = -1;
+                saveCanvasState();
+                updateStatus('New canvas created');
+            }
+        }
+        
+        function clearCanvas() {
+            if (confirm('Clear canvas? This cannot be undone.')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                saveCanvasState();
+                updateStatus('Canvas cleared');
+            }
+        }
+        
+        function saveImage() {
+            if (!currentUser) {
+                alert('Please login to save images');
+                return;
+            }
+            
+            document.getElementById('saveDialog').style.display = 'block';
+        }
+        
+        async function performSave() {
+            const filename = document.getElementById('saveFilename').value.trim();
+            if (!filename) {
+                alert('Please enter an image name');
+                return;
+            }
+            
+            const imageData = canvas.toDataURL('image/png');
+            const saveData = {
+                filename: filename,
+                imageData: imageData,
+                author: currentUser.handle,
+                timestamp: new Date().toISOString(),
+                width: canvas.width,
+                height: canvas.height
+            };
+            
+            const success = await save('painting', saveData);
+            if (success) {
+                updateStatus(`Saved: ${filename}`);
+                closeSaveDialog();
+            } else {
+                updateStatus('Save failed');
+            }
+        }
+        
+        function closeSaveDialog() {
+            document.getElementById('saveDialog').style.display = 'none';
+        }
+        
+        // Status updates
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+        
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch support for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveImage();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newCanvas();
+                        break;
+                    case 'z':
+                        e.preventDefault();
+                        // TODO: Implement undo
+                        break;
+                }
+            }
+        });
+        
+        // Mouse coordinate tracking
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.round(e.clientX - rect.left);
+            const y = Math.round(e.clientY - rect.top);
+            document.getElementById('coordinates').textContent = `x: ${x}, y: ${y}`;
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuth();
+            saveCanvasState(); // Save initial empty state
+            updateStatus('Ready - Paint App');
+            
+            // Request auth from parent if in iframe
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
