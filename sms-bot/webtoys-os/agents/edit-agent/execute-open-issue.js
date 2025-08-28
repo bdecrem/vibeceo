@@ -163,10 +163,16 @@ async function executeOpenIssue() {
         ? JSON.parse(openIssue.content_data) 
         : openIssue.content_data;
 
-    console.log(`\n✅ Found open issue #${content.issueNumber}:`);
-    console.log(`   Description: ${content.description}`);
-    console.log(`   Submitted by: ${content.submittedBy}`);
-    console.log(`   Priority: ${content.priority}`);
+    // V3 compatibility: Map fields appropriately
+    const issueNumber = openIssue.id;  // V3 uses database ID
+    const description = content.description || content.title || '';
+    const author = content.author || content.submittedBy || 'unknown';
+    const priority = content.priority || 'normal';
+
+    console.log(`\n✅ Found open issue #${issueNumber}:`);
+    console.log(`   Description: ${description}`);
+    console.log(`   Submitted by: ${author}`);
+    console.log(`   Priority: ${priority}`);
     
     // Update status to processing
     content.status = 'processing';
@@ -180,10 +186,10 @@ async function executeOpenIssue() {
     console.log('\n🤖 Executing issue with Claude...\n');
     
     // Create comprehensive prompt for Claude based on issue type
-    const parsed = parseIssueDescription(content.description);
+    const parsed = parseIssueDescription(description);  // Use the v3-compatible description
     
     // Simple, clear prompt that lets Claude Code use its full capabilities
-    let claudePrompt = `${content.description}
+    let claudePrompt = `${description}
 
 IMPORTANT: After completing this request, ensure that:
 

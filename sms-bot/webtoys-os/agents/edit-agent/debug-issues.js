@@ -23,11 +23,12 @@ async function debugIssues() {
     console.log('📋 Using APP_ID:', ISSUE_TRACKER_APP_ID);
     
     // Fetch ALL issues for this app_id
+    // V3 uses 'issue' action_type, not 'update_request'
     const { data, error } = await supabase
         .from('wtaf_zero_admin_collaborative')
         .select('*')
         .eq('app_id', ISSUE_TRACKER_APP_ID)
-        .eq('action_type', 'update_request')
+        .eq('action_type', 'issue')
         .order('created_at', { ascending: false })
         .limit(10);
 
@@ -40,12 +41,13 @@ async function debugIssues() {
     
     data.forEach((issue, idx) => {
         const content = typeof issue.content_data === 'string' ? JSON.parse(issue.content_data) : issue.content_data;
-        console.log(`Issue #${idx + 1}:`);
-        console.log(`  ID: ${issue.id}`);
+        console.log(`Issue #${issue.id}:`);  // Use database ID, not index
+        console.log(`  Database ID: ${issue.id}`);
         console.log(`  Status: ${content.status}`);
-        console.log(`  Issue Number: ${content.issueNumber}`);
+        console.log(`  Title: ${content.title}`);  // V3 uses 'title' not 'issueNumber'
         console.log(`  Description: ${content.description?.substring(0, 50)}...`);
-        console.log(`  Submitted By: ${content.submittedBy}`);
+        console.log(`  Author: ${content.author || content.submittedBy}`);  // V3 uses 'author'
+        console.log(`  Created: ${content.created || issue.created_at}`);
         console.log('---');
     });
 }
