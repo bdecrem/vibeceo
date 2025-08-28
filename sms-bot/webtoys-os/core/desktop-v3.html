@@ -750,12 +750,14 @@
                     // Try user config first
                     if (userId) {
                         console.log('🔍 Attempting to load user config...');
-                        const { data: userConfig, error: userError } = await this.supabase
+                        const { data: userConfigs, error: userError } = await this.supabase
                             .from('wtaf_desktop_config')
                             .select('*')
                             .eq('user_id', userId)
                             .eq('desktop_version', 'webtoys-os-v3')
-                            .single();
+                            .limit(1);  // Use limit instead of single to avoid 406 errors
+                        
+                        const userConfig = userConfigs?.[0];  // Get first result if any
                         
                         if (userError) {
                             console.warn('❌ User config error:', userError.message, userError.code);
@@ -770,12 +772,14 @@
                     
                     // Fall back to default config
                     console.log('🔍 Attempting to load default config...');
-                    const { data: defaultConfig, error: defaultError } = await this.supabase
+                    const { data: defaultConfigs, error: defaultError } = await this.supabase
                         .from('wtaf_desktop_config')
                         .select('*')
                         .is('user_id', null)
                         .eq('desktop_version', 'webtoys-os-v3')
-                        .single();
+                        .limit(1);  // Use limit instead of single to avoid 406 errors
+                    
+                    const defaultConfig = defaultConfigs?.[0];  // Get first result if any
                     
                     if (defaultError) {
                         console.warn('❌ Default config error:', defaultError.message, defaultError.code);
@@ -809,6 +813,7 @@
                     app_registry: [
                         { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad', width: 800, height: 600 },
                         { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker-v3', width: 900, height: 700 },
+                        { id: 'text-editor', name: 'Text Editor', icon: '✏️', url: 'apps/text-editor.html', width: 800, height: 600 },
                         { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', width: 700, height: 500 },
                         { id: 'about', name: 'About', icon: 'ℹ️', action: 'alert', message: 'WebtoysOS v3.0\\nModern Desktop Environment' }
                     ],
