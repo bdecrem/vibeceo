@@ -535,7 +535,18 @@
                 container.innerHTML = '<div class="loading">Loading issues...</div>';
                 
                 const data = await load('issue');
-                issues = data.filter(item => item.content_data && item.content_data.title);
+                // Parse content_data if it's a string
+                issues = data.map(item => {
+                    if (typeof item.content_data === 'string') {
+                        try {
+                            item.content_data = JSON.parse(item.content_data);
+                        } catch (e) {
+                            console.error('Failed to parse content_data:', e);
+                            return null;
+                        }
+                    }
+                    return item;
+                }).filter(item => item && item.content_data && (item.content_data.title || item.content_data.description));
                 
                 // Sort by creation date (newest first)
                 issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
@@ -560,6 +571,11 @@
                 const isOpen = ['open', 'processing', 'pending', 'new'].includes(status);
                 const isClosed = ['completed', 'closed', 'fixed', 'merged'].includes(status);
                 
+                // If both filters are on, show all
+                // If only one filter is on, show only that type
+                // If both filters are off, show nothing
+                if (!filters.open && !filters.closed) return false;
+                if (filters.open && filters.closed) return true;
                 return (isOpen && filters.open) || (isClosed && filters.closed);
             });
             
