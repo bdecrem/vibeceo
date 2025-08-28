@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fortune Cookie</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Georgia', 'Times New Roman', serif;
+            background: linear-gradient(135deg, #f5e6d3 0%, #e6ccb3 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .app-container {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #8b4513;
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .cookie-container {
+            position: relative;
+            margin: 40px 0;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .cookie-container:hover {
+            transform: scale(1.05);
+        }
+
+        .cookie {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .cookie-closed {
+            background: linear-gradient(135deg, #d4a574 0%, #c8956d 50%, #b8855f 100%);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            box-shadow: 
+                inset -5px -10px 15px rgba(0, 0, 0, 0.2),
+                0 10px 20px rgba(0, 0, 0, 0.3);
+            transform: rotate(-10deg);
+        }
+
+        .cookie-opened {
+            display: none;
+            flex-direction: row;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .cookie-half {
+            width: 90px;
+            height: 120px;
+            background: linear-gradient(135deg, #d4a574 0%, #c8956d 50%, #b8855f 100%);
+            border-radius: 45px 5px 45px 45px;
+            box-shadow: 
+                inset -3px -5px 10px rgba(0, 0, 0, 0.2),
+                5px 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .cookie-half:first-child {
+            transform: rotate(-20deg);
+        }
+
+        .cookie-half:last-child {
+            transform: rotate(20deg) scaleX(-1);
+        }
+
+        .fortune-paper {
+            background: #fff8dc;
+            padding: 8px 12px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            color: #2c1810;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+            transform: rotate(-5deg);
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-5deg);
+            white-space: nowrap;
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fortune-display {
+            margin-top: 30px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fortune-text {
+            font-size: 1.2em;
+            color: #2c1810;
+            font-style: italic;
+            line-height: 1.5;
+            padding: 20px;
+            background: rgba(255, 248, 220, 0.8);
+            border-radius: 10px;
+            border-left: 4px solid #d4a574;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .fortune-text.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .instructions {
+            color: #8b4513;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .new-fortune-btn {
+            background: linear-gradient(135deg, #d4a574 0%, #c8956d 100%);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .new-fortune-btn:hover {
+            background: linear-gradient(135deg, #c8956d 0%, #b8855f 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .new-fortune-btn:active {
+            transform: translateY(0);
+        }
+
+        @keyframes crackOpen {
+            0% { transform: rotate(-10deg) scale(1); }
+            50% { transform: rotate(-10deg) scale(1.1); }
+            100% { transform: rotate(0deg) scale(1); }
+        }
+
+        .cookie-cracking {
+            animation: crackOpen 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <h1>🥠 Fortune Cookie</h1>
+        
+        <div class="instructions">Click the cookie to reveal your fortune!</div>
+        
+        <div class="cookie-container" id="cookieContainer">
+            <div class="cookie cookie-closed" id="cookie">
+                <div class="cookie-opened" id="cookieOpened">
+                    <div class="cookie-half"></div>
+                    <div class="fortune-paper" id="fortunePaper"></div>
+                    <div class="cookie-half"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="fortune-display">
+            <div class="fortune-text" id="fortuneText"></div>
+        </div>
+        
+        <button class="new-fortune-btn" id="newFortuneBtn" style="display: none;">Get Another Fortune</button>
+    </div>
+
+    <script>
+        const fortunes = [
+            "Your future is bright and full of possibilities.",
+            "A journey of a thousand miles begins with a single step.",
+            "The best time to plant a tree was 20 years ago. The second best time is now.",
+            "You will find luck is just a matter of preparation meeting opportunity.",
+            "Believe in yourself and all that you are.",
+            "The only impossible journey is the one you never begin.",
+            "Your potential is endless, your possibilities infinite.",
+            "Every day is a chance to be better than yesterday.",
+            "Success is not the key to happiness. Happiness is the key to success.",
+            "The greatest glory is not in never falling, but in rising every time we fall.",
+            "What lies behind us and what lies before us are tiny matters compared to what lies within us.",
+            "Be yourself; everyone else is already taken.",
+            "Life is what happens to you while you're busy making other plans.",
+            "The way to get started is to quit talking and begin doing.",
+            "Innovation distinguishes between a leader and a follower.",
+            "Your limitation—it's only your imagination.",
+            "Push yourself, because no one else is going to do it for you.",
+            "Great things never come from comfort zones.",
+            "Dream it. Wish it. Do it.",
+            "Success doesn't just find you. You have to go out and get it.",
+            "The harder you work for something, the greater you'll feel when you achieve it.",
+            "Dream bigger. Do bigger.",
+            "Don't stop when you're tired. Stop when you're done.",
+            "Wake up with determination. Go to bed with satisfaction.",
+            "Do something today that your future self will thank you for.",
+            "Little things make big days.",
+            "It's going to be hard, but hard does not mean impossible.",
+            "Don't wait for opportunity. Create it.",
+            "Sometimes we're tested not to show our weaknesses, but to discover our strengths.",
+            "The key to success is to focus on goals, not obstacles.",
+            "Adventure awaits those who seek it.",
+            "Your kindness will return to you tenfold.",
+            "A small act of kindness can change someone's entire day.",
+            "The best is yet to come.",
+            "You are exactly where you need to be.",
+            "Trust the process and enjoy the journey.",
+            "Your smile is your superpower.",
+            "Today's accomplishments were yesterday's impossibilities.",
+            "You have the power to create the life you want.",
+            "Embrace uncertainty. Some of the most beautiful chapters in our lives won't have titles until much later."
+        ];
+
+        let isOpened = false;
+
+        const cookieContainer = document.getElementById('cookieContainer');
+        const cookie = document.getElementById('cookie');
+        const cookieOpened = document.getElementById('cookieOpened');
+        const fortunePaper = document.getElementById('fortunePaper');
+        const fortuneText = document.getElementById('fortuneText');
+        const newFortuneBtn = document.getElementById('newFortuneBtn');
+
+        function getRandomFortune() {
+            return fortunes[Math.floor(Math.random() * fortunes.length)];
+        }
+
+        function openCookie() {
+            if (isOpened) return;
+
+            isOpened = true;
+            const fortune = getRandomFortune();
+
+            // Add cracking animation
+            cookie.classList.add('cookie-cracking');
+
+            setTimeout(() => {
+                // Hide closed cookie and show opened cookie
+                cookie.classList.remove('cookie-closed');
+                cookie.classList.remove('cookie-cracking');
+                cookieOpened.style.display = 'flex';
+                
+                // Set fortune text in paper
+                fortunePaper.textContent = fortune.length > 15 ? fortune.substring(0, 15) + '...' : fortune;
+                
+                // Show full fortune below
+                setTimeout(() => {
+                    fortuneText.textContent = fortune;
+                    fortuneText.classList.add('show');
+                    newFortuneBtn.style.display = 'inline-block';
+                }, 500);
+            }, 500);
+        }
+
+        function resetCookie() {
+            isOpened = false;
+            
+            // Hide fortune and button
+            fortuneText.classList.remove('show');
+            newFortuneBtn.style.display = 'none';
+            
+            setTimeout(() => {
+                // Reset cookie appearance
+                cookieOpened.style.display = 'none';
+                cookie.classList.add('cookie-closed');
+                fortuneText.textContent = '';
+            }, 300);
+        }
+
+        cookieContainer.addEventListener('click', openCookie);
+        newFortuneBtn.addEventListener('click', resetCookie);
+
+        // Prevent text selection on cookie
+        cookieContainer.addEventListener('selectstart', (e) => e.preventDefault());
+    </script>
+</body>
+</html>
