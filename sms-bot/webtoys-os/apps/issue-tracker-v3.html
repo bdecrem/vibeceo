@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Tracker v3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: #f5f5f7;
+            color: #1d1d1f;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+        
+        .btn-secondary:hover {
+            background: #f8f8f8;
+        }
+        
+        .issues-container {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .issue-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+        }
+        
+        .issue-card:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        
+        .issue-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1d1d1f;
+            flex: 1;
+        }
+        
+        .issue-number {
+            color: #6e6e73;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .issue-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #6e6e73;
+            margin-bottom: 12px;
+        }
+        
+        .issue-description {
+            color: #333;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+        }
+        
+        .issue-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .issue-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .status-open {
+            background: #d4f4dd;
+            color: #14ae5c;
+        }
+        
+        .status-closed {
+            background: #fee;
+            color: #ec5962;
+        }
+        
+        .status-in-progress {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .comments-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .comment {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #6e6e73;
+        }
+        
+        .comment-body {
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6e6e73;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6e6e73;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6e6e73;
+        }
+        
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: #333;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Issue Tracker v3</h1>
+            <div class="stats">
+                <div class="stat">
+                    <span>📊</span>
+                    <span id="total-issues">0 issues</span>
+                </div>
+                <div class="stat">
+                    <span>✅</span>
+                    <span id="open-issues">0 open</span>
+                </div>
+                <div class="stat">
+                    <span>📁</span>
+                    <span id="closed-issues">0 closed</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="showNewIssueModal()">
+                <span>➕</span> New Issue
+            </button>
+            <button class="btn btn-secondary" onclick="loadIssues()">
+                <span>🔄</span> Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="toggleFilter('open')" id="filter-open">
+                <span>👁</span> Show Open
+            </button>
+            <button class="btn btn-secondary" onclick="toggleFilter('closed')" id="filter-closed">
+                <span>📦</span> Show Closed
+            </button>
+        </div>
+        
+        <div id="issues-container" class="issues-container">
+            <div class="loading">Loading issues...</div>
+        </div>
+    </div>
+    
+    <!-- New Issue Modal -->
+    <div id="new-issue-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Issue</h2>
+                <button class="close-btn" onclick="closeNewIssueModal()">×</button>
+            </div>
+            <form id="new-issue-form" onsubmit="createIssue(event)">
+                <div class="form-group">
+                    <label class="form-label" for="issue-title">Title</label>
+                    <input type="text" id="issue-title" class="form-input" required placeholder="Brief description of the issue">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="issue-description">Description</label>
+                    <textarea id="issue-description" class="form-textarea" required placeholder="Provide more details about the issue"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeNewIssueModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Issue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Comment Modal -->
+    <div id="comment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Comment</h2>
+                <button class="close-btn" onclick="closeCommentModal()">×</button>
+            </div>
+            <form id="comment-form" onsubmit="addComment(event)">
+                <input type="hidden" id="comment-issue-id">
+                <div class="form-group">
+                    <label class="form-label" for="comment-text">Comment</label>
+                    <textarea id="comment-text" class="form-textarea" required placeholder="Write your comment here"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        window.APP_ID = 'toybox-issue-tracker-v3';
+        
+        // State
+        let issues = [];
+        let currentUser = null;
+        let filters = {
+            open: true,
+            closed: true
+        };
+        
+        // ZAD Helper Functions
+        async function save(dataType, data) {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    data_type: dataType,
+                    content_data: data,
+                    participant_id: currentUser?.handle || 'anonymous',
+                    action_type: dataType
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save data');
+            }
+            
+            return response.json();
+        }
+        
+        async function load(dataType) {
+            const params = new URLSearchParams({
+                app_id: window.APP_ID,
+                action_type: dataType
+            });
+            
+            const response = await fetch('/api/zad/load?' + params);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load data');
+            }
+            
+            return response.json();
+        }
+        
+        async function update(recordId, newData) {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    record_id: recordId,  // This makes it an UPDATE
+                    content_data: newData,
+                    participant_id: currentUser?.handle || 'anonymous'
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to update data');
+            }
+            
+            return response.json();
+        }
+        
+        // Load authentication
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('Logged in as:', currentUser.handle);
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Listen for auth updates
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                console.log('Auth update:', currentUser);
+            }
+        });
+        
+        // Issue Management
+        async function loadIssues() {
+            try {
+                const container = document.getElementById('issues-container');
+                container.innerHTML = '<div class="loading">Loading issues...</div>';
+                
+                const data = await load('issue');
+                issues = data.filter(item => item.content_data && item.content_data.title);
+                
+                // Sort by creation date (newest first)
+                issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                
+                renderIssues();
+                updateStats();
+            } catch (error) {
+                console.error('Failed to load issues:', error);
+                document.getElementById('issues-container').innerHTML = 
+                    '<div class="empty-state"><h3>Failed to load issues</h3><p>Please try refreshing the page</p></div>';
+            }
+        }
+        
+        function renderIssues() {
+            const container = document.getElementById('issues-container');
+            
+            // Filter issues
+            const filteredIssues = issues.filter(issue => {
+                const status = issue.content_data.status || 'open';
+                return (status === 'open' && filters.open) || (status === 'closed' && filters.closed);
+            });
+            
+            if (filteredIssues.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No issues found</h3><p>Create your first issue to get started</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filteredIssues.map(issue => {
+                const data = issue.content_data;
+                const issueNumber = issue.id.substring(0, 8);
+                const status = data.status || 'open';
+                const comments = data.comments || [];
+                
+                return `
+                    <div class="issue-card" data-id="${issue.id}">
+                        <div class="issue-header">
+                            <h3 class="issue-title">${escapeHtml(data.title)}</h3>
+                            <span class="issue-number">#${issueNumber}</span>
+                        </div>
+                        <div class="issue-meta">
+                            <span>👤 ${escapeHtml(data.author || 'anonymous')}</span>
+                            <span>📅 ${formatDate(issue.created_at)}</span>
+                            <span>💬 ${comments.length} comments</span>
+                        </div>
+                        <div class="issue-description">${escapeHtml(data.description)}</div>
+                        ${comments.length > 0 ? renderComments(comments) : ''}
+                        <div class="issue-footer">
+                            <span class="status-badge status-${status}">${status}</span>
+                            <div class="issue-actions">
+                                <button class="btn btn-secondary" onclick="showCommentModal('${issue.id}')">
+                                    💬 Comment
+                                </button>
+                                ${status === 'open' ? 
+                                    `<button class="btn btn-secondary" onclick="closeIssue('${issue.id}')">
+                                        ✅ Close
+                                    </button>` : 
+                                    `<button class="btn btn-secondary" onclick="reopenIssue('${issue.id}')">
+                                        🔄 Reopen
+                                    </button>`
+                                }
+                                ${currentUser && (currentUser.handle === data.author || currentUser.handle === 'admin') ?
+                                    `<button class="btn btn-secondary" onclick="deleteIssue('${issue.id}')">
+                                        🗑️ Delete
+                                    </button>` : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderComments(comments) {
+            return `
+                <div class="comments-section">
+                    <h4 style="font-size: 14px; margin-bottom: 8px;">Comments</h4>
+                    ${comments.map(comment => `
+                        <div class="comment">
+                            <div class="comment-header">
+                                <span>👤 ${escapeHtml(comment.author || 'anonymous')}</span>
+                                <span>${formatDate(comment.timestamp)}</span>
+                            </div>
+                            <div class="comment-body">${escapeHtml(comment.text)}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+        
+        async function createIssue(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('issue-title').value;
+            const description = document.getElementById('issue-description').value;
+            
+            const issueData = {
+                title: title,
+                description: description,
+                status: 'open',
+                author: currentUser?.handle || 'anonymous',
+                comments: [],
+                created: new Date().toISOString()
+            };
+            
+            try {
+                await save('issue', issueData);
+                closeNewIssueModal();
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to create issue:', error);
+                alert('Failed to create issue. Please try again.');
+            }
+        }
+        
+        async function addComment(event) {
+            event.preventDefault();
+            
+            const issueId = document.getElementById('comment-issue-id').value;
+            const commentText = document.getElementById('comment-text').value;
+            
+            const issue = issues.find(i => i.id === issueId);
+            if (!issue) {
+                alert('Issue not found');
+                return;
+            }
+            
+            const comment = {
+                text: commentText,
+                author: currentUser?.handle || 'anonymous',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Update the issue with new comment
+            const updatedData = {
+                ...issue.content_data,
+                comments: [...(issue.content_data.comments || []), comment]
+            };
+            
+            try {
+                await update(issueId, updatedData);
+                closeCommentModal();
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to add comment:', error);
+                alert('Failed to add comment. Please try again.');
+            }
+        }
+        
+        async function closeIssue(issueId) {
+            const issue = issues.find(i => i.id === issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                status: 'closed',
+                closedAt: new Date().toISOString(),
+                closedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                await update(issueId, updatedData);
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to close issue:', error);
+                alert('Failed to close issue. Please try again.');
+            }
+        }
+        
+        async function reopenIssue(issueId) {
+            const issue = issues.find(i => i.id === issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                status: 'open',
+                reopenedAt: new Date().toISOString(),
+                reopenedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                await update(issueId, updatedData);
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to reopen issue:', error);
+                alert('Failed to reopen issue. Please try again.');
+            }
+        }
+        
+        async function deleteIssue(issueId) {
+            if (!confirm('Are you sure you want to delete this issue?')) return;
+            
+            // In a real app, we'd mark as deleted rather than removing
+            // For now, we'll update with a deleted flag
+            const issue = issues.find(i => i.id === issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                deleted: true,
+                deletedAt: new Date().toISOString(),
+                deletedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                await update(issueId, updatedData);
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to delete issue:', error);
+                alert('Failed to delete issue. Please try again.');
+            }
+        }
+        
+        // UI Functions
+        function showNewIssueModal() {
+            document.getElementById('new-issue-modal').classList.add('show');
+        }
+        
+        function closeNewIssueModal() {
+            document.getElementById('new-issue-modal').classList.remove('show');
+            document.getElementById('new-issue-form').reset();
+        }
+        
+        function showCommentModal(issueId) {
+            document.getElementById('comment-issue-id').value = issueId;
+            document.getElementById('comment-modal').classList.add('show');
+        }
+        
+        function closeCommentModal() {
+            document.getElementById('comment-modal').classList.remove('show');
+            document.getElementById('comment-form').reset();
+        }
+        
+        function toggleFilter(type) {
+            filters[type] = !filters[type];
+            const btn = document.getElementById(`filter-${type}`);
+            btn.style.opacity = filters[type] ? '1' : '0.5';
+            renderIssues();
+        }
+        
+        function updateStats() {
+            const total = issues.filter(i => !i.content_data.deleted).length;
+            const open = issues.filter(i => !i.content_data.deleted && (i.content_data.status || 'open') === 'open').length;
+            const closed = issues.filter(i => !i.content_data.deleted && i.content_data.status === 'closed').length;
+            
+            document.getElementById('total-issues').textContent = `${total} issues`;
+            document.getElementById('open-issues').textContent = `${open} open`;
+            document.getElementById('closed-issues').textContent = `${closed} closed`;
+        }
+        
+        // Utility Functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Close modals on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeNewIssueModal();
+                closeCommentModal();
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            loadIssues();
+            
+            // Refresh every 30 seconds
+            setInterval(loadIssues, 30000);
+        });
+    </script>
+</body>
+</html>
