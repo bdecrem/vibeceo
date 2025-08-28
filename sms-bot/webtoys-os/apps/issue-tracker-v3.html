@@ -563,9 +563,11 @@
                 return;
             }
             
-            container.innerHTML = filteredIssues.map(issue => {
+            container.innerHTML = filteredIssues.map((issue, index) => {
                 const data = issue.content_data;
-                const issueNumber = issue.id.substring(0, 8);
+                // ZAD returns numeric IDs
+                const issueId = issue.id;
+                const issueNumber = issueId ? `#${issueId}` : `#${index}`;
                 const status = data.status || 'open';
                 const comments = data.comments || [];
                 
@@ -573,7 +575,7 @@
                     <div class="issue-card" data-id="${issue.id}">
                         <div class="issue-header">
                             <h3 class="issue-title">${escapeHtml(data.title)}</h3>
-                            <span class="issue-number">#${issueNumber}</span>
+                            <span class="issue-number">${issueNumber}</span>
                         </div>
                         <div class="issue-meta">
                             <span>👤 ${escapeHtml(data.author || 'anonymous')}</span>
