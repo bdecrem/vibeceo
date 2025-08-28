@@ -1,0 +1,976 @@
+/* ==== WEBTOYSOS MODERN THEME FOUNDATION ==== */
+/* ryOS-inspired modern Mac styling with dynamic theming */
+
+:root {
+  /* Modern Color Palette (inspired by macOS) */
+  --os-color-primary: rgba(0, 0, 0, 0.85);
+  --os-color-secondary: rgba(255, 255, 255, 0.85);
+  --os-color-accent: rgba(0, 122, 255, 1);
+  --os-color-surface: rgba(248, 248, 248, 0.85);
+  --os-color-overlay: rgba(255, 255, 255, 0.3);
+  
+  /* Menu Bar Colors */
+  --os-menubar-bg: rgba(248, 248, 248, 0.85);
+  --os-menubar-border: rgba(0, 0, 0, 0.15);
+  --os-menubar-text: rgba(0, 0, 0, 0.85);
+  --os-menubar-text-hover: rgba(255, 255, 255, 1);
+  --os-menubar-hover-bg: rgba(0, 0, 0, 0.85);
+  
+  /* Desktop Colors */
+  --os-desktop-bg: #1e3a8a; /* Deep blue like ryOS */
+  --os-desktop-pattern: rgba(255, 255, 255, 0.03);
+  
+  /* Window Colors */
+  --os-window-bg: rgba(255, 255, 255, 0.95);
+  --os-window-border: rgba(0, 0, 0, 0.15);
+  --os-window-shadow: rgba(0, 0, 0, 0.25);
+  --os-window-titlebar-bg: rgba(240, 240, 240, 0.95);
+  --os-window-titlebar-active: rgba(230, 230, 230, 0.98);
+  
+  /* Icon Colors */
+  --os-icon-shadow: rgba(0, 0, 0, 0.25);
+  --os-icon-text-shadow: rgba(0, 0, 0, 0.9);
+  --os-icon-selected: rgba(0, 122, 255, 0.3);
+  
+  /* Typography */
+  --os-font-system: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "San Francisco", "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --os-font-ui: var(--os-font-system);
+  --os-font-display: var(--os-font-system);
+  
+  /* Effects */
+  --os-blur-amount: blur(20px);
+  --os-shadow-light: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --os-shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.2);
+  --os-shadow-heavy: 0 8px 24px rgba(0, 0, 0, 0.3);
+  --os-border-radius: 8px;
+  
+  /* Animation Curves (cubic-bezier for spring physics) */
+  --os-ease-out: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --os-ease-in-out: cubic-bezier(0.42, 0, 0.58, 1);
+  --os-ease-spring: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  --os-ease-bounce: cubic-bezier(0.68, -0.1, 0.265, 1.35);
+  
+  /* Timing */
+  --os-duration-fast: 0.15s;
+  --os-duration-normal: 0.25s;
+  --os-duration-slow: 0.35s;
+}
+
+/* Modern Reset - Remove pixelated rendering for smooth experience */
+* {
+  /* Modern smooth rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  image-rendering: auto;
+  text-rendering: optimizeLegibility;
+}
+
+/* Modern Body Styling */
+body {
+  font-family: var(--os-font-system) !important;
+  color: var(--os-color-primary);
+  /* Modern blue desktop background like ryOS */
+  background: var(--os-desktop-bg) !important;
+  /* Add subtle texture */
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(255,255,255,0.02) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(255,255,255,0.01) 0%, transparent 50%) !important;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Modern Desktop */
+#desktop {
+  background: transparent !important;
+  /* Remove old System 7 dotted pattern */
+  background-image: none !important;
+}
+
+
+/* ==== MODERN MENU BAR (ryOS-inspired) ==== */
+.menu-bar {
+  background: var(--os-menubar-bg) !important;
+  backdrop-filter: var(--os-blur-amount);
+  -webkit-backdrop-filter: var(--os-blur-amount);
+  border-bottom: 1px solid var(--os-menubar-border) !important;
+  box-shadow: var(--os-shadow-light);
+  font-family: var(--os-font-ui) !important;
+  color: var(--os-menubar-text) !important;
+  height: 28px !important; /* Slightly taller than System 7 */
+  line-height: 28px !important;
+  font-size: 13px !important;
+  font-weight: 500;
+  /* Add subtle text shadow for depth */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.menu-title {
+  font-weight: 500 !important;
+  padding: 0 12px !important;
+  font-size: 13px !important;
+  border-radius: 4px;
+  margin: 0 2px;
+  transition: all var(--os-duration-fast) var(--os-ease-out);
+  /* Modern subtle styling */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.menu-title:hover {
+  background: var(--os-menubar-hover-bg) !important;
+  color: var(--os-menubar-text-hover) !important;
+  /* Enhance text shadow on hover */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transform: translateY(-0.5px); /* Subtle lift effect */
+}
+
+.menu-title.apple {
+  font-size: 16px !important;
+  font-weight: 600;
+  padding: 0 10px !important;
+}
+
+#menu-clock {
+  font-weight: 500 !important;
+  font-size: 13px !important;
+  padding: 0 12px !important;
+  /* Modern digital clock styling */
+  font-feature-settings: "tnum"; /* Tabular numbers */
+  letter-spacing: 0.5px;
+}
+
+/* Modern Menu Dropdowns */
+.dropdown-menu {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: var(--os-blur-amount);
+  -webkit-backdrop-filter: var(--os-blur-amount);
+  border: 1px solid rgba(0, 0, 0, 0.15) !important;
+  border-radius: var(--os-border-radius);
+  box-shadow: var(--os-shadow-medium);
+  /* Remove old System 7 box shadow */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2), 
+              0 0 0 1px rgba(0, 0, 0, 0.05);
+}
+
+.menu-item {
+  padding: 8px 16px !important;
+  font-size: 13px !important;
+  transition: all var(--os-duration-fast) var(--os-ease-out);
+  border-radius: 6px;
+  margin: 4px 6px;
+}
+
+.menu-item:hover {
+  background: var(--os-color-accent) !important;
+  color: white !important;
+  transform: translateX(2px); /* Subtle slide effect */
+}
+
+
+/* ==== MODERN DESKTOP ICONS (ryOS-inspired) ==== */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+/* Special trash icon handling */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+
+/* ==== MODERN WINDOWS (ryOS-inspired) ==== */
+.desktop-window {
+  background: var(--os-window-bg) !important;
+  backdrop-filter: var(--os-blur-amount);
+  -webkit-backdrop-filter: var(--os-blur-amount);
+  border: 1px solid var(--os-window-border) !important;
+  border-radius: var(--os-border-radius);
+  box-shadow: var(--os-shadow-medium);
+  transition: all var(--os-duration-normal) var(--os-ease-out);
+}
+
+.desktop-window.active {
+  box-shadow: var(--os-shadow-heavy);
+  transform: translateY(-2px);
+  border-color: var(--os-color-accent);
+}
+
+.window-titlebar {
+  background: var(--os-window-titlebar-bg) !important;
+  backdrop-filter: var(--os-blur-amount);
+  -webkit-backdrop-filter: var(--os-blur-amount);
+  border-bottom: 1px solid var(--os-window-border) !important;
+  border-radius: var(--os-border-radius) var(--os-border-radius) 0 0;
+  height: 32px !important;
+  font-family: var(--os-font-ui);
+  transition: all var(--os-duration-fast) var(--os-ease-out);
+}
+
+.desktop-window.active .window-titlebar {
+  background: var(--os-window-titlebar-active) !important;
+  /* Remove System 7 striped pattern */
+  background-image: none !important;
+}
+
+.window-title {
+  color: var(--os-color-primary) !important;
+  font-size: 14px !important;
+  font-weight: 600;
+  text-align: center;
+  /* Modern text styling */
+  text-shadow: none;
+  letter-spacing: 0.25px;
+}
+
+.desktop-window.active .window-title {
+  color: var(--os-color-primary) !important;
+}
+
+/* Modern Window Controls */
+.window-controls {
+  left: 8px !important;
+  top: 50% !important; transform: translateY(-50%);
+  gap: 8px !important;
+}
+
+.window-controls button {
+  width: 16px !important;
+  height: 16px !important;
+  border-radius: 50% !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  transition: all var(--os-duration-fast) var(--os-ease-out);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+}
+
+/* macOS-style traffic light buttons */
+.window-controls .window-close {
+  background: linear-gradient(135deg, #ff6b6b, #ff5252) !important;
+}
+
+.window-controls .window-close:hover {
+  background: linear-gradient(135deg, #ff5252, #ff1744) !important;
+  transform: scale(1.1);
+}
+
+.window-controls .window-minimize {
+  background: linear-gradient(135deg, #ffc107, #ff9800) !important;
+}
+
+.window-controls .window-minimize:hover {
+  background: linear-gradient(135deg, #ff9800, #f57c00) !important;
+  transform: scale(1.1);
+}
+
+.window-controls .window-maximize {
+  background: linear-gradient(135deg, #4caf50, #388e3c) !important;
+}
+
+.window-controls .window-maximize:hover {
+  background: linear-gradient(135deg, #388e3c, #2e7d32) !important;
+  transform: scale(1.1);
+}
+
+/* Remove old System 7 button content */
+.window-controls button::after {
+  display: none !important;
+}
+
+/* Modern window content */
+.window-content {
+  background: var(--os-window-bg);
+  border-radius: 0 0 var(--os-border-radius) var(--os-border-radius);
+}
+
+/* Modern resize handle */
+.window-resize-handle {
+  background: linear-gradient(135deg, transparent 40%, rgba(0, 0, 0, 0.1) 50%) !important;
+  border-radius: 0 0 var(--os-border-radius) 0;
+  width: 20px !important;
+  height: 20px !important;
+}
+
+
+
+/* 
+ * Authentic System 7 CSS for WEBTOYS-OS
+ * Adapted from the desktop folder System 7 implementation
+ * Compatible with existing WEBTOYS-OS HTML structure
+ */
+
+/* === BASE RESET & SYSTEM 7 FOUNDATION === */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+    border-color: #000000;
+}
+
+body {
+    height: 100vh;
+    overflow: hidden;
+    background: #c0c0c0;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    color: #000000;
+    /* Authentic pixelated rendering */
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* === AUTHENTIC SYSTEM 7 DESKTOP === */
+#desktop {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 22px);
+    padding: 8px;
+    background: #c0c0c0;
+    /* Authentic System 7 dotted pattern */
+    background-image: radial-gradient(circle at 1px 1px, #808080 1px, transparent 0);
+    background-size: 4px 4px;
+    min-height: calc(100vh - 22px);
+    overflow: hidden;
+}
+
+/* === SYSTEM 7 MENU BAR === */
+.menu-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 22px;
+    background: #ffffff;
+    border-bottom: 1px solid #000000;
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    z-index: 2000;
+    font-size: 12px;
+}
+
+.menu-left {
+    display: flex;
+    align-items: center;
+}
+
+.menu-right {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+}
+
+.menu-title {
+    padding: 2px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    position: relative;
+}
+
+.menu-title:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+.menu-title.apple {
+    font-family: -apple-system, SF Symbols, system-ui;
+    font-size: 16px;
+    padding: 0 8px;
+}
+
+.menu-title.apple::before {
+    content: "";
+    font-family: -apple-system, SF Symbols, system-ui;
+}
+
+/* Menu Dropdowns */
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #808080;
+    z-index: 2100;
+    min-width: 120px;
+}
+
+.menu-item {
+    padding: 4px 16px;
+    font-size: 12px;
+    cursor: pointer;
+    border-bottom: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.menu-item:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+#menu-clock {
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+}
+
+/* === AUTHENTIC SYSTEM 7 DESKTOP ICONS === */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+/* Selected icon state */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+/* Special handling for trash */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+/* === AUTHENTIC SYSTEM 7 WINDOWS === */
+#window-container {
+    position: absolute;
+    top: 22px;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+}
+
+.desktop-window {
+    position: absolute;
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #808080;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    min-width: 200px;
+    min-height: 150px;
+}
+
+/* Active vs Inactive Window States */
+.desktop-window.active {
+    z-index: 100;
+}
+
+.desktop-window:not(.active) {
+    z-index: 50;
+}
+
+/* === AUTHENTIC SYSTEM 7 TITLE BARS === */
+.window-titlebar {
+    height: 20px;
+    background: #ffffff;
+    border-bottom: 1px solid #000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 4px;
+    font-weight: bold;
+    font-size: 11px;
+    cursor: move;
+    position: relative;
+}
+
+/* Active window title bar with striped pattern */
+.desktop-window.active .window-titlebar {
+    background: #c0c0c0;
+    color: #000000;
+}
+
+.desktop-window.active .window-titlebar::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: none;
+    pointer-events: none;
+}
+
+/* Inactive window title bar */
+.desktop-window:not(.active) .window-titlebar {
+    background: #ffffff;
+    color: #808080;
+}
+
+.window-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: bold;
+    position: relative;
+    z-index: 1;
+    background: inherit;
+    padding: 0 4px;
+}
+
+.window-icon {
+    font-size: 16px;
+}
+
+.window-name {
+    font-size: 11px;
+}
+
+.window-controls {
+    position: absolute;
+    right: 4px;
+    top: 50%; transform: translateY(-50%);
+    display: flex;
+    gap: 2px;
+    z-index: 2;
+}
+
+/* Window control buttons */
+.window-minimize,
+.window-maximize,
+.window-close {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #000000;
+    background: #ffffff;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Chicago', 'Geneva', monospace;
+    padding: 0;
+}
+
+.window-controls button:active {
+    background: #c0c0c0;
+}
+
+.window-close::after {
+    content: "×";
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.window-minimize::after {
+    content: "–";
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.window-maximize::after {
+    content: "□";
+    font-size: 8px;
+    font-weight: bold;
+}
+
+/* === WINDOW CONTENT AREA === */
+.window-content {
+    flex: 1;
+    background: #ffffff;
+    border: none;
+    overflow: hidden;
+    position: relative;
+}
+
+.window-content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: #ffffff;
+}
+
+/* === AUTHENTIC SYSTEM 7 SCROLLBARS === */
+.window-scrollbar {
+    background: #c0c0c0;
+    border: 1px solid #000000;
+}
+
+.window-scrollbar-thumb {
+    background: #ffffff;
+    border: 1px solid #000000;
+    cursor: pointer;
+}
+
+.window-scrollbar-thumb:hover {
+    background: #e0e0e0;
+}
+
+/* === WINDOW RESIZE HANDLE === */
+.window-resize-handle {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 15px;
+    height: 15px;
+    cursor: nw-resize;
+    background: none;
+}
+
+/* === AUTHENTIC SYSTEM 7 BUTTONS === */
+button {
+    background: #d0d0d0;
+    border: 2px outset #d0d0d0;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-family: "Chicago", "Geneva", monospace;
+    cursor: pointer;
+    color: #000000;
+}
+
+button:active {
+    border: 2px inset #d0d0d0;
+}
+
+button:hover {
+    background: #e0e0e0;
+}
+
+/* === DESKTOP SELECTION MARQUEE === */
+.desktop-selection-marquee {
+    position: absolute;
+    border: 1px dashed #000000;
+    background: rgba(0, 0, 0, 0.1);
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* === AUTHENTICATION MODAL === */
+.auth-modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.3);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.auth-modal.active {
+    display: flex;
+}
+
+.auth-dialog {
+    background: #ffffff;
+    border: 2px solid #000000;
+    box-shadow: 2px 2px 0px #808080;
+    padding: 0;
+    width: 320px;
+    font-family: "Chicago", "Geneva", monospace;
+}
+
+.auth-title {
+    background: #c0c0c0;
+    border-bottom: 1px solid #000000;
+    color: #000000;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.auth-title::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: none;
+    pointer-events: none;
+}
+
+.auth-close {
+    width: 16px;
+    height: 16px;
+    border: 1px solid #000000;
+    background: #ffffff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    font-size: 12px;
+    z-index: 1;
+}
+
+.auth-close::after {
+    content: "×";
+    font-weight: bold;
+}
+
+.auth-content {
+    padding: 20px;
+    text-align: center;
+}
+
+.auth-screen {
+    display: none;
+}
+
+.auth-screen.active {
+    display: block;
+}
+
+.auth-input {
+    width: 100%;
+    padding: 4px;
+    margin: 8px 0;
+    border: 2px inset #ffffff;
+    background: #ffffff;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 12px;
+    color: #000000;
+}
+
+.auth-button {
+    background: #d0d0d0;
+    border: 2px outset #d0d0d0;
+    padding: 6px 16px;
+    margin: 4px;
+    cursor: pointer;
+    font-family: "Chicago", "Geneva", monospace;
+    font-size: 11px;
+    color: #000000;
+}
+
+.auth-button:hover {
+    background: #e0e0e0;
+}
+
+.auth-button:active {
+    border: 2px inset #d0d0d0;
+}
+
+.auth-message {
+    font-size: 11px;
+    margin: 10px 0;
+    padding: 8px;
+    background: #ffffcc;
+    border: 1px solid #000000;
+}
+
+.auth-message.error {
+    background: #ffcccc;
+}
+
+.auth-message.success {
+    background: #ccffcc;
+}
+
+/* === PROFILE ICON SYSTEM 7 STYLING === */
+#profile-icon {
+    cursor: pointer;
+    padding: 2px 8px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    user-select: none;
+}
+
+#profile-icon:hover {
+    background: #000000;
+    color: #ffffff;
+}
+
+#username-display {
+    font-size: 11px;
+    font-family: "Chicago", "Geneva", monospace;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* === DRAG AND DROP FEEDBACK === */
+.desktop-icon {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    z-index: 1 !important;
+}
+
+/* Trash highlight when dragging over it */
+.trash-can.highlight {
+    background-color: rgba(255, 0, 0, 0.2) !important;
+    border: 2px dashed #ff0000 !important;
+    transform: scale(1.1);
+}
+
+/* === AUTHENTIC SYSTEM 7 TYPOGRAPHY === */
+@font-face {
+    font-family: 'Chicago';
+    src: local('Chicago'), local('Geneva');
+    font-display: swap;
+}
+
+/* Force pixelated rendering for all images */
+img {
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+/* === MISC SYSTEM 7 ELEMENTS === */
+.system7-separator {
+    height: 1px;
+    background: #808080;
+    margin: 4px 0;
+}
+
+/* Make sure no modern styling leaks through */
+input[type="text"],
+input[type="password"] {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+/* System 7 focus indicators */
+*:focus {
+    outline: 1px dashed #000000;
+    outline-offset: 1px;
+}
+
+/* System 7 scrollbars for window manager */
+.theme-system7 .system7-scrollbar { background:#d0d0d0; display:flex; border:1px inset #d0d0d0; }
+.theme-system7 .system7-scrollbar-vertical { flex-direction:column; }
+.theme-system7 .system7-scrollbar-horizontal { flex-direction:row; }
+
+.theme-system7 .system7-scrollbar .system7-scroll-arrow {
+  background:#d0d0d0; border:1px outset #d0d0d0; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0; box-sizing:border-box;
+}
+/* Fit arrows to track */
+.theme-system7 .system7-scrollbar-vertical .system7-scroll-arrow { width:100%; height:16px; }
+.theme-system7 .system7-scrollbar-horizontal .system7-scroll-arrow { width:16px; height:100%; }
+
+/* Arrow glyphs */
+.theme-system7 .system7-arrow-up    { width:0; height:0; border-left:3px solid transparent; border-right:3px solid transparent; border-bottom:4px solid #000; }
+.theme-system7 .system7-arrow-down  { width:0; height:0; border-left:3px solid transparent; border-right:3px solid transparent; border-top:4px solid #000; }
+.theme-system7 .system7-arrow-left  { width:0; height:0; border-top:3px solid transparent; border-bottom:3px solid transparent; border-right:4px solid #000; }
+.theme-system7 .system7-arrow-right { width:0; height:0; border-top:3px solid transparent; border-bottom:3px solid transparent; border-left:4px solid #000; }
+
+/* Track + thumb */
+.theme-system7 .system7-scroll-track { flex:1; position:relative; background:#fff; border:1px inset #d0d0d0; }
+.theme-system7 .system7-scroll-thumb { position:absolute; background:#d0d0d0; border:1px outset #d0d0d0; cursor:pointer; }
+
+.desktop-icon .label {
+    background: transparent !important;
+    border: none !important;
+    color: white !important;
+    text-shadow: 1px 1px 2px rgba(128, 128, 128, 0.8) !important;
+    font-weight: bold !important;
+    font-size: 11px !important;
+}
+.desktop-window {
+    z-index: 100 !important;
+}
+
+.window-container {
+    z-index: 100 !important;
+}
