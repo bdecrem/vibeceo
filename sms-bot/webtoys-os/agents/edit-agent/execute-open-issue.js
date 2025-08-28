@@ -208,7 +208,17 @@ IMPORTANT: After completing this request, ensure that:
    - Create complete, standalone HTML files with all code included
    - Follow existing project patterns and conventions
    - Apps should integrate with the v3 desktop system
-   - Test that your changes work correctly
+   - DO NOT start any web servers or try to open browsers
+   - DO NOT test the app by running it locally
+   - Just create the files and exit
+
+CRITICAL: This is running on a headless server. DO NOT:
+- Start any HTTP servers (no python -m http.server, no npm start, etc.)
+- Try to open any browsers or webpages
+- Run any interactive testing
+- Use any commands that would hang waiting for user input
+
+Just create the HTML file(s) and exit. The deployment will be handled automatically.
 
 The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
     
