@@ -383,10 +383,10 @@
                 <span>🔄</span> Refresh
             </button>
             <button class="btn btn-secondary" onclick="toggleFilter('open')" id="filter-open">
-                <span>👁</span> Show Open
+                <span>👁</span> <span id="filter-open-text">Show Open</span>
             </button>
             <button class="btn btn-secondary" onclick="toggleFilter('closed')" id="filter-closed">
-                <span>📦</span> Show Closed
+                <span>📦</span> <span id="filter-closed-text">Show Closed</span>
             </button>
         </div>
         
@@ -555,7 +555,12 @@
             // Filter issues
             const filteredIssues = issues.filter(issue => {
                 const status = issue.content_data.status || 'open';
-                return (status === 'open' && filters.open) || (status === 'closed' && filters.closed);
+                // Consider 'open', 'processing', 'pending' as open
+                // Consider 'completed', 'closed', 'fixed' as closed
+                const isOpen = ['open', 'processing', 'pending', 'new'].includes(status);
+                const isClosed = ['completed', 'closed', 'fixed', 'merged'].includes(status);
+                
+                return (isOpen && filters.open) || (isClosed && filters.closed);
             });
             
             if (filteredIssues.length === 0) {
@@ -773,14 +778,25 @@
         function toggleFilter(type) {
             filters[type] = !filters[type];
             const btn = document.getElementById(`filter-${type}`);
+            const textSpan = document.getElementById(`filter-${type}-text`);
+            
+            // Update button appearance and text
             btn.style.opacity = filters[type] ? '1' : '0.5';
+            if (textSpan) {
+                const label = type.charAt(0).toUpperCase() + type.slice(1);
+                textSpan.textContent = filters[type] ? `Hide ${label}` : `Show ${label}`;
+            }
+            
             renderIssues();
+            updateStats();
         }
         
         function updateStats() {
             const total = issues.filter(i => !i.content_data.deleted).length;
-            const open = issues.filter(i => !i.content_data.deleted && (i.content_data.status || 'open') === 'open').length;
-            const closed = issues.filter(i => !i.content_data.deleted && i.content_data.status === 'closed').length;
+            const openStatuses = ['open', 'processing', 'pending', 'new'];
+            const closedStatuses = ['completed', 'closed', 'fixed', 'merged'];
+            const open = issues.filter(i => !i.content_data.deleted && openStatuses.includes(i.content_data.status || 'open')).length;
+            const closed = issues.filter(i => !i.content_data.deleted && closedStatuses.includes(i.content_data.status)).length;
             
             document.getElementById('total-issues').textContent = `${total} issues`;
             document.getElementById('open-issues').textContent = `${open} open`;
@@ -819,6 +835,21 @@
         window.addEventListener('DOMContentLoaded', function() {
             loadAuth();
             loadIssues();
+            
+            // Initialize filter buttons
+            const openBtn = document.getElementById('filter-open');
+            const closedBtn = document.getElementById('filter-closed');
+            const openText = document.getElementById('filter-open-text');
+            const closedText = document.getElementById('filter-closed-text');
+            
+            if (openBtn) {
+                openBtn.style.opacity = filters.open ? '1' : '0.5';
+                if (openText) openText.textContent = filters.open ? 'Hide Open' : 'Show Open';
+            }
+            if (closedBtn) {
+                closedBtn.style.opacity = filters.closed ? '1' : '0.5';
+                if (closedText) closedText.textContent = filters.closed ? 'Hide Closed' : 'Show Closed';
+            }
             
             // Refresh every 30 seconds
             setInterval(loadIssues, 30000);
