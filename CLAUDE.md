@@ -66,6 +66,52 @@ const supabaseKey = 'eyJhbGc...actual-key-here...';
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 ```
 
+### CRITICAL: Supabase Anon Key Handling
+**THE SUPABASE ANON KEY IS PUBLIC BY DESIGN - BUT HANDLE IT CORRECTLY:**
+
+1. **Use the CORRECT anon key from `.env.local`**:
+   - Located in `web/.env.local` as `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+   - Format: `sb_publishable_` prefix (NOT the old JWT `eyJ...` format)
+   - This key is PUBLIC and safe to use in browser code
+
+2. **For browser/client code that needs Supabase**:
+   ```javascript
+   // ✅ CORRECT - Use the exact key from web/.env.local
+   const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+   const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+   ```
+
+3. **NEVER confuse anon key with service key**:
+   - **Anon key**: Public, safe for browser, has `sb_publishable_` prefix
+   - **Service key**: SECRET, server-only, NEVER expose to browser
+
+4. **Security Model**: See `sms-bot/documentation/security_practices.md` for full details on:
+   - Row Level Security (RLS) policies
+   - Which tables have public vs service-only access
+   - Why `wtaf_desktop_config` has public access (UI settings only)
+
+### CRITICAL: iframe and CORS Issues
+**When content runs in iframes, special considerations apply:**
+
+1. **Scripts loaded in iframe with `srcdoc`**:
+   ```html
+   <!-- ✅ CORRECT - Add crossorigin attribute for CDN scripts in iframes -->
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+   
+   <!-- ❌ WRONG - Missing crossorigin causes CORS issues in srcdoc iframes -->
+   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+   ```
+
+2. **Why this matters**:
+   - Pages served via iframe `srcdoc` have different origin than parent
+   - External scripts without `crossorigin` fail in this context
+   - Supabase API calls will get 401/CORS errors without proper setup
+
+3. **Testing iframe content**:
+   - Always test in actual iframe context, not standalone
+   - Check browser console for CORS errors
+   - Ensure all CDN scripts have `crossorigin="anonymous"`
+
 If you create test scripts:
 1. Put them in directories covered by .gitignore (`/sms-bot/scripts/`, `/web/scripts/`)
 2. Still use environment variables for all credentials
