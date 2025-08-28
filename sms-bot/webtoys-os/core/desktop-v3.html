@@ -7,6 +7,9 @@
     <meta name="mobile-web-app-capable" content="yes">
     <title>WebtoysOS v3 - Modern Desktop</title>
     
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         /* CSS Reset and Base Styles */
         * {
@@ -710,6 +713,142 @@
     </div>
     
     <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://uqjmhpbwhomemkvlerjh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxam1ocGJ3aG9tZW1rdmxlcmpoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzE4ODA3MzYsImV4cCI6MjA0NzQ1NjczNn0.YF6w7xSAxCUyUC7eoQKizpu6OwP1tNL38q3lEqfinE0';
+        const supabase = supabaseClient.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Desktop Config Client
+        class DesktopConfigClient {
+            constructor() {
+                this.supabase = supabase;
+                this.config = null;
+                this.userId = null;
+                this.saveTimeout = null;
+            }
+            
+            async loadConfig(userId = null) {
+                this.userId = userId;
+                
+                try {
+                    // Try user config first
+                    if (userId) {
+                        const { data: userConfig, error } = await this.supabase
+                            .from('wtaf_desktop_config')
+                            .select('*')
+                            .eq('user_id', userId)
+                            .eq('desktop_version', 'webtoys-os-v3')
+                            .single();
+                        
+                        if (userConfig && !error) {
+                            this.config = userConfig;
+                            console.log('Loaded user config for:', userId);
+                            return userConfig;
+                        }
+                    }
+                    
+                    // Fall back to default config
+                    const { data: defaultConfig, error } = await this.supabase
+                        .from('wtaf_desktop_config')
+                        .select('*')
+                        .is('user_id', null)
+                        .eq('desktop_version', 'webtoys-os-v3')
+                        .single();
+                    
+                    if (defaultConfig && !error) {
+                        this.config = defaultConfig;
+                        console.log('Loaded default desktop config');
+                        return defaultConfig;
+                    }
+                    
+                    // Hardcoded fallback
+                    return this.getDefaultConfig();
+                } catch (error) {
+                    console.error('Error loading config:', error);
+                    return this.getDefaultConfig();
+                }
+            }
+            
+            getDefaultConfig() {
+                return {
+                    app_registry: [
+                        { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad' },
+                        { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker' },
+                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat' },
+                        { id: 'about', name: 'About', icon: 'ℹ️', action: 'alert' }
+                    ],
+                    icon_positions: {},
+                    widget_positions: {},
+                    settings: {
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                    }
+                };
+            }
+            
+            async saveIconPosition(iconId, position) {
+                if (!this.config) return;
+                
+                // Update local
+                if (!this.config.icon_positions) {
+                    this.config.icon_positions = {};
+                }
+                this.config.icon_positions[iconId] = position;
+                
+                // Debounce save
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = setTimeout(() => {
+                    this.persistIconPositions();
+                }, 1000);
+            }
+            
+            async persistIconPositions() {
+                if (!this.config) return;
+                
+                try {
+                    const { error } = await this.supabase
+                        .from('wtaf_desktop_config')
+                        .update({
+                            icon_positions: this.config.icon_positions,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', this.userId || null)
+                        .eq('desktop_version', 'webtoys-os-v3');
+                    
+                    if (!error) {
+                        console.log('Saved icon positions');
+                    }
+                } catch (error) {
+                    console.error('Error saving positions:', error);
+                }
+            }
+            
+            async saveWidgetPosition(widgetId, position) {
+                if (!this.config) return;
+                
+                if (!this.config.widget_positions) {
+                    this.config.widget_positions = {};
+                }
+                this.config.widget_positions[widgetId] = position;
+                
+                try {
+                    const { error } = await this.supabase
+                        .from('wtaf_desktop_config')
+                        .update({
+                            widget_positions: this.config.widget_positions,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('user_id', this.userId || null)
+                        .eq('desktop_version', 'webtoys-os-v3');
+                    
+                    if (!error) {
+                        console.log('Saved widget position');
+                    }
+                } catch (error) {
+                    console.error('Error saving widget position:', error);
+                }
+            }
+        }
+        
         // Global state
         let currentUser = null;
         let authMode = 'login';
@@ -718,6 +857,7 @@
         let selectedIcons = new Set();
         let draggedIcon = null;
         let desktopConfig = null;
+        let configClient = new DesktopConfigClient();
         
         // App registry - will be loaded from config
         const windowedApps = {};
@@ -732,6 +872,7 @@
             initDragAndDrop();
             initMultiSelect();
             initTouchHandlers();
+            restoreWidgetPosition();
             console.log('✅ WebtoysOS v3 ready!');
         });
         
@@ -930,17 +1071,14 @@
         
         // Desktop Configuration
         async function loadDesktopConfig() {
-            // For now, use default config
-            // Later this will load from wtaf_desktop_config table
+            // Load from database
+            const config = await configClient.loadConfig(currentUser?.handle);
+            
             desktopConfig = {
-                apps: [
-                    { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad' },
-                    { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker' },
-                    { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat' },
-                    { id: 'about', name: 'About', icon: 'ℹ️', action: () => alert('WebtoysOS v3.0\\nModern Desktop Environment') }
-                ],
-                iconPositions: {},
-                settings: {
+                apps: config.app_registry || [],
+                iconPositions: config.icon_positions || {},
+                widgetPositions: config.widget_positions || {},
+                settings: config.settings || {
                     background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
                 }
             };
@@ -948,6 +1086,31 @@
             // Apply settings
             if (desktopConfig.settings.background) {
                 document.body.style.background = desktopConfig.settings.background;
+            }
+            
+            // Build windowedApps registry for easy lookup
+            desktopConfig.apps.forEach(app => {
+                windowedApps[app.id] = app;
+            });
+            
+            console.log('Loaded config:', desktopConfig);
+        }
+        
+        // Restore widget position from config
+        function restoreWidgetPosition() {
+            if (desktopConfig?.widgetPositions?.['chat-widget']) {
+                const widget = document.getElementById('chat-widget');
+                const pos = desktopConfig.widgetPositions['chat-widget'];
+                
+                if (pos.left) widget.style.left = pos.left;
+                if (pos.right) widget.style.right = pos.right;
+                if (pos.top) widget.style.top = pos.top;
+                if (pos.bottom) widget.style.bottom = pos.bottom;
+                
+                if (pos.minimized) {
+                    widget.classList.add('minimized');
+                    widgetMinimized = true;
+                }
             }
         }
         
@@ -986,8 +1149,8 @@
         }
         
         function handleIconClick(app) {
-            if (app.action) {
-                app.action();
+            if (app.action === 'alert' && app.message) {
+                alert(app.message.replace(/\\n/g, '\n'));
             } else if (app.url) {
                 openWindow(app);
             }
@@ -1413,6 +1576,20 @@
         }
         
         function stopDragWidget() {
+            if (draggedWidget) {
+                // Save widget position to database
+                const widget = draggedWidget;
+                const position = {
+                    left: widget.style.left,
+                    right: widget.style.right,
+                    top: widget.style.top,
+                    bottom: widget.style.bottom,
+                    minimized: widget.classList.contains('minimized')
+                };
+                
+                configClient.saveWidgetPosition('chat-widget', position);
+            }
+            
             draggedWidget = null;
             document.removeEventListener('mousemove', dragWidget);
             document.removeEventListener('mouseup', stopDragWidget);
