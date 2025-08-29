@@ -30,7 +30,7 @@ const supabase = createClient(
     process.env.SUPABASE_SERVICE_KEY
 );
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-direct-updates';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-issue-tracker-v3';
 
 // Note: All app creation, deployment, and desktop integration is now handled by Claude Code
 // The script just orchestrates and provides clear instructions to Claude Code
@@ -147,12 +147,15 @@ async function executeOpenIssue() {
         return;
     }
 
-    // Find the first open or pending issue (Issues app creates with status 'pending')
+    // Find the first open, pending, or processing issue that can be worked on
     const openIssue = data.find(issue => {
         const content = typeof issue.content_data === 'string' 
             ? JSON.parse(issue.content_data) 
             : issue.content_data;
-        return content.status === 'open' || content.status === 'pending';
+        // Skip deleted issues
+        if (content.deleted) return false;
+        // Look for any status that represents an actionable issue
+        return ['open', 'pending', 'new'].includes(content.status);
     });
 
     if (!openIssue) {
