@@ -611,7 +611,7 @@
                                 <button class="btn btn-secondary" onclick="showCommentModal('${issue.id}')">
                                     💬 Comment
                                 </button>
-                                ${status === 'open' ? 
+                                ${['open', 'processing', 'pending', 'new'].includes(status) ? 
                                     `<button class="btn btn-secondary" onclick="closeIssue('${issue.id}')">
                                         ✅ Close
                                     </button>` : 
@@ -713,7 +713,7 @@
             
             const updatedData = {
                 ...issue.content_data,
-                status: 'closed',
+                status: 'completed',
                 closedAt: new Date().toISOString(),
                 closedBy: currentUser?.handle || 'anonymous'
             };
@@ -810,7 +810,7 @@
         function updateStats() {
             const total = issues.filter(i => !i.content_data.deleted).length;
             const openStatuses = ['open', 'processing', 'pending', 'new'];
-            const closedStatuses = ['completed', 'closed', 'fixed', 'merged'];
+            const closedStatuses = ['completed', 'closed', 'fixed', 'merged', 'done'];
             const open = issues.filter(i => !i.content_data.deleted && openStatuses.includes(i.content_data.status || 'open')).length;
             const closed = issues.filter(i => !i.content_data.deleted && closedStatuses.includes(i.content_data.status)).length;
             
