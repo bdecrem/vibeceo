@@ -40,7 +40,7 @@ async function resizeSudokuWindow() {
     
     // Update the window dimensions for Sudoku Pro
     config.app_registry[sudokuIndex].width = 600;
-    config.app_registry[sudokuIndex].height = 700;  // Taller to show buttons below the game
+    config.app_registry[sudokuIndex].height = 750;  // Extra height for nice padding below buttons
     
     console.log('📱 Found Sudoku Pro:', config.app_registry[sudokuIndex]);
     
@@ -56,8 +56,8 @@ async function resizeSudokuWindow() {
         console.error('Error updating config:', updateError);
     } else {
         console.log('✅ Sudoku Pro window resized successfully!');
-        console.log('📐 New dimensions: 600px wide × 700px tall');
-        console.log('🎮 The buttons below the game board should now be visible');
+        console.log('📐 New dimensions: 600px wide × 750px tall');
+        console.log('🎮 The buttons below the game board now have nice padding');
         console.log('\n🔄 Refresh the desktop to see the changes:');
         console.log('   https://webtoys.ai/public/toybox-os-v3-test');
     }
