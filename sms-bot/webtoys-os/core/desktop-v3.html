@@ -187,6 +187,74 @@
             overflow: hidden;
         }
         
+        /* Resize Handles */
+        .resize-handle {
+            position: absolute;
+            background: transparent;
+            z-index: 10;
+        }
+        
+        .resize-n, .resize-s {
+            left: 0;
+            right: 0;
+            height: 8px;
+            cursor: ns-resize;
+        }
+        
+        .resize-n { top: 0; }
+        .resize-s { bottom: 0; }
+        
+        .resize-e, .resize-w {
+            top: 0;
+            bottom: 0;
+            width: 8px;
+            cursor: ew-resize;
+        }
+        
+        .resize-e { right: 0; }
+        .resize-w { left: 0; }
+        
+        .resize-ne, .resize-nw, .resize-se, .resize-sw {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .resize-ne {
+            top: 0;
+            right: 0;
+            cursor: nesw-resize;
+        }
+        
+        .resize-nw {
+            top: 0;
+            left: 0;
+            cursor: nwse-resize;
+        }
+        
+        .resize-se {
+            bottom: 0;
+            right: 0;
+            cursor: nwse-resize;
+        }
+        
+        .resize-sw {
+            bottom: 0;
+            left: 0;
+            cursor: nesw-resize;
+        }
+        
+        /* Visual indicator for resizable windows (optional) */
+        .desktop-window.resizable .resize-se::after {
+            content: '';
+            position: absolute;
+            bottom: 3px;
+            right: 3px;
+            width: 10px;
+            height: 10px;
+            border-right: 2px solid #ccc;
+            border-bottom: 2px solid #ccc;
+        }
+        
         .window-titlebar {
             height: 36px;
             background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
@@ -1228,6 +1296,13 @@
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
             windowDiv.style.zIndex = nextWindowZ++;
+            windowDiv.dataset.appId = app.id;
+            
+            // Determine if window is resizable
+            const isResizable = app.resizable === true;
+            if (isResizable) {
+                windowDiv.classList.add('resizable');
+            }
             
             // Position and size
             if (isMobile) {
@@ -1237,18 +1312,37 @@
                 windowDiv.style.width = '100%';
                 windowDiv.style.height = 'calc(100% - 32px)';
             } else {
-                // Centered on desktop
-                // Special size for Sudoku Pro to show buttons
-                if (app.id === 'sudoku-pro') {
-                    windowDiv.style.width = '600px';
-                    windowDiv.style.height = '700px';
-                } else {
-                    windowDiv.style.width = '800px';
-                    windowDiv.style.height = '600px';
-                }
+                // Use app-specific dimensions or defaults
+                const width = app.width || 800;
+                const height = app.height || 600;
+                
+                windowDiv.style.width = width + 'px';
+                windowDiv.style.height = height + 'px';
                 windowDiv.style.top = '50%';
                 windowDiv.style.left = '50%';
                 windowDiv.style.transform = 'translate(-50%, -50%)';
+                
+                // Set min/max constraints for resizable windows
+                if (isResizable) {
+                    windowDiv.style.minWidth = (app.minWidth || 400) + 'px';
+                    windowDiv.style.minHeight = (app.minHeight || 300) + 'px';
+                    if (app.maxWidth) windowDiv.style.maxWidth = app.maxWidth + 'px';
+                    if (app.maxHeight) windowDiv.style.maxHeight = app.maxHeight + 'px';
+                }
+            }
+            
+            let resizeHandles = '';
+            if (isResizable && !isMobile) {
+                resizeHandles = `
+                    <div class="resize-handle resize-n" data-resize="n"></div>
+                    <div class="resize-handle resize-e" data-resize="e"></div>
+                    <div class="resize-handle resize-s" data-resize="s"></div>
+                    <div class="resize-handle resize-w" data-resize="w"></div>
+                    <div class="resize-handle resize-ne" data-resize="ne"></div>
+                    <div class="resize-handle resize-se" data-resize="se"></div>
+                    <div class="resize-handle resize-sw" data-resize="sw"></div>
+                    <div class="resize-handle resize-nw" data-resize="nw"></div>
+                `;
             }
             
             windowDiv.innerHTML = `
@@ -1263,15 +1357,24 @@
                 <div class="window-content">
                     <iframe src="${app.url}" onload="setupIframeAuth(this)"></iframe>
                 </div>
+                ${resizeHandles}
             `;
             
             document.getElementById('window-container').appendChild(windowDiv);
             windows.push({ id: windowId, app: app });
             
             // Focus window on click
-            windowDiv.addEventListener('mousedown', () => {
-                windowDiv.style.zIndex = nextWindowZ++;
+            windowDiv.addEventListener('mousedown', (e) => {
+                // Don't focus if clicking resize handle
+                if (!e.target.classList.contains('resize-handle')) {
+                    windowDiv.style.zIndex = nextWindowZ++;
+                }
             });
+            
+            // Initialize resize handles if resizable
+            if (isResizable && !isMobile) {
+                initResizeHandles(windowDiv);
+            }
         }
         
         function closeWindow(windowId) {
@@ -1360,6 +1463,108 @@
             draggedWindow = null;
             document.removeEventListener('mousemove', dragWindow);
             document.removeEventListener('mouseup', stopDragWindow);
+        }
+        
+        // Window Resizing
+        let resizingWindow = null;
+        let resizeDirection = null;
+        let resizeStart = { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0 };
+        
+        function initResizeHandles(windowDiv) {
+            const handles = windowDiv.querySelectorAll('.resize-handle');
+            handles.forEach(handle => {
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startResize(e, windowDiv, handle.dataset.resize);
+                });
+            });
+        }
+        
+        function startResize(event, windowDiv, direction) {
+            resizingWindow = windowDiv;
+            resizeDirection = direction;
+            
+            const rect = windowDiv.getBoundingClientRect();
+            resizeStart = {
+                x: event.clientX,
+                y: event.clientY,
+                width: rect.width,
+                height: rect.height,
+                top: rect.top,
+                left: rect.left
+            };
+            
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+            document.body.style.cursor = getCursorForDirection(direction);
+        }
+        
+        function doResize(event) {
+            if (!resizingWindow) return;
+            
+            const deltaX = event.clientX - resizeStart.x;
+            const deltaY = event.clientY - resizeStart.y;
+            
+            let newWidth = resizeStart.width;
+            let newHeight = resizeStart.height;
+            let newTop = resizeStart.top;
+            let newLeft = resizeStart.left;
+            
+            // Handle horizontal resizing
+            if (resizeDirection.includes('e')) {
+                newWidth = Math.max(400, resizeStart.width + deltaX);
+            }
+            if (resizeDirection.includes('w')) {
+                newWidth = Math.max(400, resizeStart.width - deltaX);
+                newLeft = resizeStart.left + deltaX;
+            }
+            
+            // Handle vertical resizing
+            if (resizeDirection.includes('s')) {
+                newHeight = Math.max(300, resizeStart.height + deltaY);
+            }
+            if (resizeDirection.includes('n')) {
+                newHeight = Math.max(300, resizeStart.height - deltaY);
+                newTop = resizeStart.top + deltaY;
+            }
+            
+            // Apply new dimensions
+            resizingWindow.style.width = newWidth + 'px';
+            resizingWindow.style.height = newHeight + 'px';
+            
+            // Apply new position for n/w resizing
+            if (resizeDirection.includes('n')) {
+                resizingWindow.style.top = newTop + 'px';
+            }
+            if (resizeDirection.includes('w')) {
+                resizingWindow.style.left = newLeft + 'px';
+            }
+            
+            // Clear transform when resizing
+            resizingWindow.style.transform = 'none';
+        }
+        
+        function stopResize() {
+            resizingWindow = null;
+            resizeDirection = null;
+            document.removeEventListener('mousemove', doResize);
+            document.removeEventListener('mouseup', stopResize);
+            document.body.style.cursor = '';
+        }
+        
+        function getCursorForDirection(direction) {
+            const cursors = {
+                'n': 'ns-resize',
+                's': 'ns-resize',
+                'e': 'ew-resize',
+                'w': 'ew-resize',
+                'ne': 'nesw-resize',
+                'sw': 'nesw-resize',
+                'nw': 'nwse-resize',
+                'se': 'nwse-resize'
+            };
+            return cursors[direction] || 'default';
         }
         
         // Icon Drag and Drop
