@@ -1,5 +1,15 @@
 # Agent Issue Tracker - Critical Rules for Claude Code
 
+## 🚨 CRITICAL: WebtoysOS v3 Authentication System 🚨
+
+**IMPORTANT**: When creating apps that need user authentication, see `AUTH-DOCUMENTATION.md` for complete details on how the desktop broadcasts auth to apps via postMessage.
+
+Quick summary:
+- Desktop handles all login/logout
+- Apps receive auth via `TOYBOX_AUTH` postMessage
+- User object contains `handle` and `participantId`
+- Apps should NEVER create their own login forms
+
 ## 🚨 CRITICAL: CRON COMPATIBILITY FIXES 🚨
 
 **STOP! READ THIS FIRST BEFORE MAKING ANY CHANGES!**

@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Words - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: #2d2d30;
+            padding: 8px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3e3e42;
+        }
+
+        .app-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #cccccc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-badge {
+            background: #007acc;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        /* Main Layout */
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 200px;
+            background: #252526;
+            border-right: 1px solid #3e3e42;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 12px;
+            border-bottom: 1px solid #3e3e42;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: #969696;
+            letter-spacing: 0.5px;
+        }
+
+        .document-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px 0;
+        }
+
+        .document-item {
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.1s;
+        }
+
+        .document-item:hover {
+            background: #2a2d2e;
+        }
+
+        .document-item.active {
+            background: #094771;
+        }
+
+        .document-name {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .delete-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: #f48771;
+            cursor: pointer;
+            padding: 2px 6px;
+            font-size: 16px;
+            line-height: 1;
+        }
+
+        .document-item:hover .delete-btn {
+            display: block;
+        }
+
+        .new-document-btn {
+            margin: 8px;
+            padding: 8px;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background 0.2s;
+        }
+
+        .new-document-btn:hover {
+            background: #005a9e;
+        }
+
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor-header {
+            background: #2d2d30;
+            padding: 8px 16px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .document-title {
+            flex: 1;
+            background: transparent;
+            border: 1px solid transparent;
+            color: #cccccc;
+            font-size: 14px;
+            padding: 4px 8px;
+            border-radius: 4px;
+            outline: none;
+        }
+
+        .document-title:hover {
+            border-color: #3e3e42;
+        }
+
+        .document-title:focus {
+            border-color: #007acc;
+            background: #1e1e1e;
+        }
+
+        .save-indicator {
+            font-size: 12px;
+            color: #969696;
+            padding: 4px 8px;
+            background: #1e1e1e;
+            border-radius: 4px;
+        }
+
+        .save-indicator.saving {
+            color: #ffd700;
+        }
+
+        .save-indicator.saved {
+            color: #4ec9b0;
+        }
+
+        .editor {
+            flex: 1;
+            padding: 16px;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: none;
+            outline: none;
+            resize: none;
+            overflow-y: auto;
+        }
+
+        /* Word count */
+        .editor-footer {
+            background: #252526;
+            padding: 4px 16px;
+            border-top: 1px solid #3e3e42;
+            font-size: 12px;
+            color: #969696;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Login Prompt */
+        .login-prompt {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #1e1e1e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+            z-index: 1000;
+        }
+
+        .login-prompt h2 {
+            color: #cccccc;
+            font-size: 24px;
+            font-weight: 300;
+        }
+
+        .login-prompt p {
+            color: #969696;
+            font-size: 14px;
+        }
+
+        .login-icon {
+            font-size: 48px;
+            color: #007acc;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="app-title">
+            📝 Words
+        </div>
+        <div class="user-badge">
+            User: <span id="username">Not logged in</span>
+        </div>
+    </div>
+
+    <!-- Login Prompt -->
+    <div id="login-prompt" class="login-prompt">
+        <div class="login-icon">🔐</div>
+        <h2>Please log in to use Words</h2>
+        <p>Click the user icon in the desktop menu bar to log in</p>
+    </div>
+
+    <!-- Main App -->
+    <div id="app-content" class="main-container hidden">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">Documents</div>
+            <div id="document-list" class="document-list"></div>
+            <button class="new-document-btn" onclick="createNewDocument()">+ New Document</button>
+        </div>
+
+        <!-- Editor -->
+        <div class="editor-container">
+            <div class="editor-header">
+                <input type="text" id="document-title" class="document-title" placeholder="Untitled Document" />
+                <span id="save-indicator" class="save-indicator">Saved</span>
+            </div>
+            <textarea id="editor" class="editor" placeholder="Start typing..."></textarea>
+            <div class="editor-footer">
+                <span id="word-count">0 words</span>
+                <span id="char-count">0 characters</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        const APP_ID = 'toybox-words';
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        
+        // State
+        let currentUser = null;
+        let documents = [];
+        let currentDocumentId = null;
+        let saveTimeout = null;
+        let isModified = false;
+
+        // Initialize Supabase
+        const { createClient } = window.supabase;
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Listen for auth from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateAuthDisplay();
+                
+                if (currentUser) {
+                    loadUserDocuments();
+                } else {
+                    clearUserData();
+                }
+            }
+        });
+
+        function updateAuthDisplay() {
+            const username = document.getElementById('username');
+            const loginPrompt = document.getElementById('login-prompt');
+            const appContent = document.getElementById('app-content');
+
+            if (currentUser) {
+                username.textContent = currentUser.handle;
+                loginPrompt.classList.add('hidden');
+                appContent.classList.remove('hidden');
+            } else {
+                username.textContent = 'Not logged in';
+                loginPrompt.classList.remove('hidden');
+                appContent.classList.add('hidden');
+            }
+        }
+
+        async function loadUserDocuments() {
+            if (!currentUser) return;
+
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .select('*')
+                    .eq('app_id', APP_ID)
+                    .eq('participant_id', currentUser.participantId)
+                    .order('updated_at', { ascending: false });
+
+                if (!error && data) {
+                    documents = data.map(item => ({
+                        id: item.id,
+                        title: item.content_data.title || 'Untitled',
+                        content: item.content_data.content || '',
+                        updatedAt: item.updated_at
+                    }));
+                    renderDocumentList();
+                    
+                    // Load first document or create new if none exist
+                    if (documents.length > 0) {
+                        loadDocument(documents[0].id);
+                    } else {
+                        createNewDocument();
+                    }
+                }
+            } catch (err) {
+                console.error('Error loading documents:', err);
+            }
+        }
+
+        function clearUserData() {
+            documents = [];
+            currentDocumentId = null;
+            document.getElementById('document-list').innerHTML = '';
+            document.getElementById('document-title').value = '';
+            document.getElementById('editor').value = '';
+            updateWordCount();
+        }
+
+        function renderDocumentList() {
+            const listEl = document.getElementById('document-list');
+            listEl.innerHTML = '';
+
+            documents.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'document-item';
+                if (doc.id === currentDocumentId) {
+                    item.classList.add('active');
+                }
+                
+                item.innerHTML = `
+                    <span class="document-name">${escapeHtml(doc.title)}</span>
+                    <button class="delete-btn" onclick="event.stopPropagation(); deleteDocument('${doc.id}')" title="Delete">×</button>
+                `;
+                
+                item.onclick = () => loadDocument(doc.id);
+                listEl.appendChild(item);
+            });
+        }
+
+        function loadDocument(docId) {
+            // Save current document if modified
+            if (isModified && currentDocumentId) {
+                saveDocument();
+            }
+
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                currentDocumentId = doc.id;
+                document.getElementById('document-title').value = doc.title;
+                document.getElementById('editor').value = doc.content;
+                updateWordCount();
+                isModified = false;
+                updateSaveIndicator('saved');
+                renderDocumentList();
+            }
+        }
+
+        async function createNewDocument() {
+            if (!currentUser) return;
+
+            const newDoc = {
+                title: 'Untitled Document',
+                content: ''
+            };
+
+            try {
+                const { data, error } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .insert({
+                        app_id: APP_ID,
+                        participant_id: currentUser.participantId,
+                        content_data: newDoc
+                    })
+                    .select()
+                    .single();
+
+                if (!error && data) {
+                    documents.unshift({
+                        id: data.id,
+                        title: newDoc.title,
+                        content: newDoc.content,
+                        updatedAt: data.updated_at
+                    });
+                    loadDocument(data.id);
+                }
+            } catch (err) {
+                console.error('Error creating document:', err);
+            }
+        }
+
+        async function saveDocument() {
+            if (!currentUser || !currentDocumentId) return;
+
+            const title = document.getElementById('document-title').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+
+            updateSaveIndicator('saving');
+
+            try {
+                const { error } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .update({
+                        content_data: { title, content },
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', currentDocumentId);
+
+                if (!error) {
+                    // Update local state
+                    const doc = documents.find(d => d.id === currentDocumentId);
+                    if (doc) {
+                        doc.title = title;
+                        doc.content = content;
+                    }
+                    isModified = false;
+                    updateSaveIndicator('saved');
+                    renderDocumentList();
+                }
+            } catch (err) {
+                console.error('Error saving document:', err);
+                updateSaveIndicator('error');
+            }
+        }
+
+        async function deleteDocument(docId) {
+            if (!currentUser || !confirm('Delete this document?')) return;
+
+            try {
+                const { error } = await supabase
+                    .from('wtaf_zero_admin_collaborative')
+                    .delete()
+                    .eq('id', docId);
+
+                if (!error) {
+                    documents = documents.filter(d => d.id !== docId);
+                    renderDocumentList();
+                    
+                    if (docId === currentDocumentId) {
+                        if (documents.length > 0) {
+                            loadDocument(documents[0].id);
+                        } else {
+                            createNewDocument();
+                        }
+                    }
+                }
+            } catch (err) {
+                console.error('Error deleting document:', err);
+            }
+        }
+
+        function updateSaveIndicator(status) {
+            const indicator = document.getElementById('save-indicator');
+            indicator.className = 'save-indicator';
+            
+            switch(status) {
+                case 'saving':
+                    indicator.textContent = 'Saving...';
+                    indicator.classList.add('saving');
+                    break;
+                case 'saved':
+                    indicator.textContent = 'Saved';
+                    indicator.classList.add('saved');
+                    break;
+                case 'error':
+                    indicator.textContent = 'Error saving';
+                    break;
+            }
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            document.getElementById('word-count').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+            document.getElementById('char-count').textContent = `${chars} character${chars !== 1 ? 's' : ''}`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-save on changes
+        document.getElementById('editor').addEventListener('input', function() {
+            isModified = true;
+            updateWordCount();
+            updateSaveIndicator('modified');
+            
+            // Clear existing timeout
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+            
+            // Save after 1 second of inactivity
+            saveTimeout = setTimeout(() => {
+                saveDocument();
+            }, 1000);
+        });
+
+        document.getElementById('document-title').addEventListener('input', function() {
+            isModified = true;
+            updateSaveIndicator('modified');
+            
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+            }
+            
+            saveTimeout = setTimeout(() => {
+                saveDocument();
+            }, 1000);
+        });
+
+        // Save on page unload
+        window.addEventListener('beforeunload', function(e) {
+            if (isModified) {
+                saveDocument();
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+
+        // Initial setup
+        updateAuthDisplay();
+    </script>
+
+    <!-- Load Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+</body>
+</html>
