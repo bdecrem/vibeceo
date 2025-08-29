@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System 7 Semantic Test App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #c0c0c0;
+            margin: 20px;
+            padding: 0;
+        }
+        .desktop {
+            min-height: 500px;
+            position: relative;
+        }
+    </style>
+</head>
+<body class="theme-system7">
+    <div class="desktop">
+        <!-- Test App Window with Semantic Classes -->
+        <div class="app-window" style="width: 400px; height: 300px; position: absolute; top: 50px; left: 50px;">
+            <!-- App Title Bar -->
+            <div class="app-titlebar">
+                <div class="app-close-box"></div>
+                <div class="app-title">Task Manager</div>
+                <div class="app-zoom-box"></div>
+            </div>
+            
+            <!-- App Content -->
+            <div class="app-content">
+                <div class="app-header">
+                    Daily Tasks
+                </div>
+                
+                <div class="app-section">
+                    <div class="app-section-title">Today's Tasks</div>
+                    <div class="app-section-content">
+                        <ul class="app-list">
+                            <li class="app-list-item">Review System 7 theme</li>
+                            <li class="app-list-item selected">Test semantic markup</li>
+                            <li class="app-list-item">Update builders</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                    <input type="text" class="app-input" placeholder="Add new task..." style="width: 200px;">
+                    <button class="app-button primary">Add Task</button>
+                </div>
+                
+                <div style="margin-top: 12px;">
+                    <button class="app-button">Save</button>
+                    <button class="app-button">Cancel</button>
+                    <button class="app-button" disabled>Export</button>
+                </div>
+            </div>
+            
+            <!-- Resize Handle -->
+            <div class="app-resize-handle"></div>
+        </div>
+        
+        <!-- Second Test Window - Simple Notes App -->
+        <div class="app-window" style="width: 350px; height: 250px; position: absolute; top: 120px; left: 200px;">
+            <div class="app-titlebar">
+                <div class="app-close-box"></div>
+                <div class="app-title">Quick Notes</div>
+                <div class="app-zoom-box"></div>
+            </div>
+            
+            <div class="app-content">
+                <textarea class="app-textarea" style="width: 100%; height: 120px; margin-bottom: 8px;" placeholder="Write your notes here...">This is a test of the System 7 themed semantic markup.
+
+The app windows should have:
+- Striped title bars
+- Close and zoom boxes
+- Proper scrollbars
+- System 7 typography</textarea>
+                
+                <div>
+                    <select class="app-select">
+                        <option>Personal</option>
+                        <option>Work</option>
+                        <option>Ideas</option>
+                    </select>
+                    <button class="app-button">Save Note</button>
+                </div>
+            </div>
+            
+            <div class="app-resize-handle"></div>
+        </div>
+        
+        <!-- Test Dialog -->
+        <div class="app-dialog" style="top: 300px; left: 300px; width: 280px;">
+            <div class="app-dialog-title">Confirm Action</div>
+            <div class="app-dialog-content">
+                <p class="app-text">Are you sure you want to delete this task?</p>
+                <p class="app-text app-text-small">This action cannot be undone.</p>
+                
+                <div style="text-align: center; margin-top: 16px;">
+                    <button class="app-button primary">Delete</button>
+                    <button class="app-button">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple test interactions
+        document.addEventListener('DOMContentLoaded', function() {
+            // Test list item selection
+            const listItems = document.querySelectorAll('.app-list-item');
+            listItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    listItems.forEach(li => li.classList.remove('selected'));
+                    this.classList.add('selected');
+                });
+            });
+            
+            // Test close boxes
+            const closeBoxes = document.querySelectorAll('.app-close-box');
+            closeBoxes.forEach(box => {
+                box.addEventListener('click', function() {
+                    const window = this.closest('.app-window, .app-dialog');
+                    if (window) {
+                        window.style.display = 'none';
+                    }
+                });
+            });
+            
+            console.log('🎨 System 7 semantic test app loaded');
+            console.log('✅ Semantic classes working:', {
+                appWindows: document.querySelectorAll('.app-window').length,
+                appTitlebars: document.querySelectorAll('.app-titlebar').length,
+                appButtons: document.querySelectorAll('.app-button').length,
+                appInputs: document.querySelectorAll('.app-input').length
+            });
+        });
+    </script>
+</body>
+</html>

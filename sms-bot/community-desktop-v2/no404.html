@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>No404 - Terminal Editor</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&display=swap');
+        
+        :root {
+            --terminal-bg: #0a0a0a;
+            --terminal-green: #00ff41;
+            --terminal-green-dim: #00cc33;
+            --terminal-green-bright: #66ff66;
+            --terminal-orange: #ff8c00;
+            --terminal-red: #ff4444;
+            --terminal-blue: #00ccff;
+            --terminal-purple: #cc66ff;
+            --terminal-gray: #333333;
+            --terminal-gray-light: #666666;
+            --cursor-blink: 1s;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'JetBrains Mono', 'Consolas', 'Monaco', monospace;
+            background: var(--terminal-bg);
+            color: var(--terminal-green);
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Terminal scanlines effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                rgba(0, 255, 65, 0.03) 0px,
+                transparent 1px,
+                transparent 2px,
+                rgba(0, 255, 65, 0.03) 3px
+            );
+            pointer-events: none;
+            z-index: 1000;
+        }
+
+        /* Terminal header with minimal branding */
+        .terminal-header {
+            padding: 8px 16px;
+            background: rgba(0, 255, 65, 0.05);
+            border-bottom: 1px solid var(--terminal-green-dim);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .terminal-title {
+            color: var(--terminal-green-bright);
+            font-weight: 600;
+        }
+
+        .terminal-status {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .status-indicator {
+            background: var(--terminal-green-dim);
+            color: var(--terminal-bg);
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-indicator.offline {
+            background: var(--terminal-red);
+        }
+
+        /* Main terminal container */
+        .terminal-container {
+            height: calc(100vh - 40px);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        /* Terminal command bar - minimal and sleek */
+        .terminal-bar {
+            padding: 12px 16px;
+            background: rgba(0, 255, 65, 0.02);
+            border-bottom: 1px solid rgba(0, 255, 65, 0.1);
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            font-size: 12px;
+        }
+
+        .terminal-prompt {
+            color: var(--terminal-green);
+            font-weight: 500;
+            margin-right: 8px;
+        }
+
+        .terminal-filename {
+            background: transparent;
+            border: none;
+            color: var(--terminal-green-bright);
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 400;
+            outline: none;
+            border-bottom: 1px solid transparent;
+            padding: 2px 4px;
+            min-width: 120px;
+        }
+
+        .terminal-filename:focus {
+            border-bottom-color: var(--terminal-green);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .terminal-commands {
+            margin-left: auto;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+
+        .terminal-cmd {
+            background: none;
+            border: none;
+            color: var(--terminal-green-dim);
+            font-family: inherit;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            padding: 4px 0;
+            border-bottom: 1px solid transparent;
+        }
+
+        .terminal-cmd:hover {
+            color: var(--terminal-green-bright);
+            border-bottom-color: var(--terminal-green);
+        }
+
+        .terminal-cmd.primary {
+            color: var(--terminal-orange);
+        }
+
+        .terminal-cmd.primary:hover {
+            color: var(--terminal-green-bright);
+        }
+
+        /* Main editor area */
+        .terminal-editor {
+            flex: 1;
+            background: transparent;
+            color: var(--terminal-green);
+            border: none;
+            outline: none;
+            padding: 24px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            font-weight: 400;
+            letter-spacing: 0.3px;
+        }
+
+        .terminal-editor::placeholder {
+            color: var(--terminal-gray-light);
+            font-style: italic;
+        }
+
+        /* Terminal footer - minimal stats */
+        .terminal-footer {
+            padding: 8px 16px;
+            background: rgba(0, 255, 65, 0.02);
+            border-top: 1px solid rgba(0, 255, 65, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .terminal-stats {
+            display: flex;
+            gap: 24px;
+        }
+
+        .terminal-stat {
+            color: var(--terminal-green-dim);
+        }
+
+        .terminal-stat span {
+            color: var(--terminal-green-bright);
+            font-weight: 500;
+        }
+
+        .terminal-version {
+            color: var(--terminal-gray-light);
+        }
+
+        /* Toast notifications - terminal style */
+        .terminal-toast {
+            position: fixed;
+            top: 60px;
+            right: 16px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid var(--terminal-green);
+            color: var(--terminal-green-bright);
+            padding: 12px 16px;
+            border-radius: 0;
+            font-size: 12px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateX(100%);
+            transition: all 0.3s ease;
+            z-index: 2000;
+            font-family: inherit;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            max-width: 300px;
+        }
+
+        .terminal-toast.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .terminal-toast.error {
+            border-color: var(--terminal-red);
+            color: var(--terminal-red);
+        }
+
+        .terminal-toast.success {
+            border-color: var(--terminal-green);
+            color: var(--terminal-green-bright);
+        }
+
+        /* Hidden file input */
+        .file-input {
+            display: none;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .terminal-header {
+                padding: 6px 12px;
+                font-size: 10px;
+            }
+            
+            .terminal-bar {
+                padding: 8px 12px;
+                flex-wrap: wrap;
+                gap: 4px;
+            }
+            
+            .terminal-commands {
+                margin-left: 0;
+                margin-top: 8px;
+                width: 100%;
+            }
+            
+            .terminal-filename {
+                min-width: 100px;
+                font-size: 11px;
+            }
+            
+            .terminal-editor {
+                padding: 16px 12px;
+                font-size: 13px;
+            }
+            
+            .terminal-footer {
+                padding: 6px 12px;
+                font-size: 9px;
+            }
+            
+            .terminal-stats {
+                gap: 12px;
+            }
+        }
+
+        /* Selection styling */
+        ::selection {
+            background: rgba(0, 255, 65, 0.3);
+            color: var(--terminal-green-bright);
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--terminal-bg);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--terminal-gray);
+            border-radius: 0;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--terminal-green-dim);
+        }
+
+        /* Terminal cursor effect */
+        .cursor-blink::after {
+            content: '█';
+            color: var(--terminal-green-bright);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        /* Subtle glow effect */
+        .terminal-editor:focus {
+            text-shadow: 0 0 2px rgba(0, 255, 65, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <!-- Terminal Header -->
+    <div class="terminal-header">
+        <div class="terminal-title">No404://terminal_editor</div>
+        <div class="terminal-status">
+            <div class="status-indicator" id="userStatus">offline</div>
+            <div class="status-indicator" id="connectionStatus">ready</div>
+        </div>
+    </div>
+
+    <!-- Terminal Container -->
+    <div class="terminal-container">
+        <!-- Terminal Command Bar -->
+        <div class="terminal-bar">
+            <span class="terminal-prompt">~$</span>
+            <input type="text" class="terminal-filename" id="filename" placeholder="untitled.txt" value="untitled.txt">
+            
+            <div class="terminal-commands">
+                <button class="terminal-cmd" onclick="newFile()">new</button>
+                <button class="terminal-cmd" onclick="openCloudFile()">open</button>
+                <button class="terminal-cmd primary" onclick="saveToCloud()">save</button>
+                <button class="terminal-cmd" onclick="openFile()">import</button>
+                <button class="terminal-cmd" onclick="clearEditor()">clear</button>
+                <button class="terminal-cmd" onclick="showHelp()">help</button>
+            </div>
+        </div>
+
+        <!-- Terminal Editor -->
+        <textarea class="terminal-editor" id="editor" placeholder="// Start typing your code here...
+// This is your terminal text editor
+// Use Ctrl+S to save to cloud
+// Use Ctrl+O to open from cloud"></textarea>
+
+        <!-- Terminal Footer -->
+        <div class="terminal-footer">
+            <div class="terminal-stats">
+                <div class="terminal-stat">lines: <span id="lineCount">1</span></div>
+                <div class="terminal-stat">words: <span id="wordCount">0</span></div>
+                <div class="terminal-stat">chars: <span id="charCount">0</span></div>
+            </div>
+            <div class="terminal-version">no404 v3.0 // terminal_edition</div>
+        </div>
+    </div>
+
+    <!-- Hidden file input -->
+    <input type="file" class="file-input" id="fileInput" accept=".txt,.md,.js,.css,.html,.json,.xml,.csv,.log,.py,.go,.rs,.ts,.jsx,.tsx,.vue,.svelte,.php,.rb,.sh,.yml,.yaml,.toml,.ini,.env" onchange="handleFileLoad(event)">
+    
+    <!-- Terminal Toast -->
+    <div class="terminal-toast" id="toast"></div>
+
+    <script>
+        const editor = document.getElementById('editor');
+        const filenameInput = document.getElementById('filename');
+        const fileInput = document.getElementById('fileInput');
+        const userStatus = document.getElementById('userStatus');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const lineCount = document.getElementById('lineCount');
+        const wordCount = document.getElementById('wordCount');
+        const charCount = document.getElementById('charCount');
+        const toast = document.getElementById('toast');
+
+        // App configuration for ZAD system
+        window.APP_ID = 'no404-terminal-editor';
+        
+        // User authentication state
+        let currentUser = null;
+        let hasUnsavedChanges = false;
+        let userFiles = [];
+        
+        // ZAD API Helper Functions
+        async function save(dataType, data) {
+            const participantId = currentUser ? currentUser.handle : 'anonymous';
+            
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: participantId,
+                    data_type: dataType,
+                    action_type: dataType,
+                    content_data: data
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save data');
+            }
+            
+            return await response.json();
+        }
+        
+        async function load(dataType) {
+            const participantId = currentUser ? currentUser.handle : 'anonymous';
+            
+            const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}&participant_id=${participantId}`);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load data');
+            }
+            
+            const data = await response.json();
+            return data.map(item => item.content_data).filter(Boolean);
+        }
+        
+        // User Authentication Functions
+        function updateUserStatus() {
+            if (currentUser) {
+                userStatus.textContent = `${currentUser.handle}@online`;
+                userStatus.classList.remove('offline');
+            } else {
+                userStatus.textContent = 'offline';
+                userStatus.classList.add('offline');
+            }
+        }
+        
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserStatus();
+                    loadUserFiles();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Listen for auth updates from ToyBox OS
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                console.log('Received auth update:', event.data.user);
+                currentUser = event.data.user;
+                updateUserStatus();
+                
+                if (currentUser) {
+                    loadUserFiles();
+                    showToast('Connection established', false);
+                } else {
+                    userFiles = [];
+                    showToast('Connection lost', true);
+                }
+            }
+        });
+        
+        // Request current auth state when app loads
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+        });
+
+        // Cloud file management
+        async function loadUserFiles() {
+            if (!currentUser) {
+                userFiles = [];
+                return;
+            }
+            
+            try {
+                userFiles = await load('saved_file');
+                console.log('Loaded user files:', userFiles);
+            } catch (error) {
+                console.error('Error loading user files:', error);
+                userFiles = [];
+            }
+        }
+        
+        async function saveToCloud() {
+            if (!currentUser) {
+                showToast('Auth required for cloud save', true);
+                return;
+            }
+            
+            const content = editor.value;
+            let filename = filenameInput.value.trim();
+            
+            if (!filename) {
+                filename = 'untitled.txt';
+                filenameInput.value = filename;
+            }
+            
+            if (!content.trim()) {
+                showToast('Cannot save empty file', true);
+                return;
+            }
+            
+            try {
+                setConnectionStatus('saving...');
+                
+                const fileData = {
+                    filename: filename,
+                    content: content,
+                    timestamp: new Date().toISOString(),
+                    id: `${filename}_${Date.now()}`
+                };
+                
+                await save('saved_file', fileData);
+                hasUnsavedChanges = false;
+                setConnectionStatus('saved');
+                showToast(`${filename} > cloud`, false);
+                
+                // Reload user files list
+                await loadUserFiles();
+            } catch (error) {
+                console.error('Error saving to cloud:', error);
+                showToast('Save failed', true);
+                setConnectionStatus('error');
+            }
+        }
+        
+        async function openCloudFile() {
+            if (!currentUser) {
+                showToast('Auth required for cloud access', true);
+                return;
+            }
+            
+            await loadUserFiles();
+            
+            if (userFiles.length === 0) {
+                showToast('No cloud files found', true);
+                return;
+            }
+            
+            // Create file selection dialog - terminal style
+            const fileList = userFiles
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map((file, index) => 
+                    `${index + 1}. ${file.filename} [${new Date(file.timestamp).toLocaleDateString()}]`
+                ).join('\n');
+            
+            const selection = prompt(`SELECT FILE TO LOAD:\n\n${fileList}\n\nEnter file number:`);
+            
+            if (!selection) return;
+            
+            const fileIndex = parseInt(selection) - 1;
+            if (fileIndex >= 0 && fileIndex < userFiles.length) {
+                const selectedFile = userFiles[fileIndex];
+                
+                if (hasUnsavedChanges && !confirm('UNSAVED CHANGES DETECTED\nContinue loading file?')) {
+                    return;
+                }
+                
+                editor.value = selectedFile.content;
+                filenameInput.value = selectedFile.filename;
+                hasUnsavedChanges = false;
+                setConnectionStatus('loaded');
+                updateStats();
+                showToast(`${selectedFile.filename} < cloud`, false);
+            } else {
+                showToast('Invalid selection', true);
+            }
+        }
+        
+        // Initialize editor
+        function initEditor() {
+            editor.focus();
+            updateStats();
+            updateUserStatus();
+            setConnectionStatus('ready');
+            
+            // Auto-save to cloud every 60 seconds if user is logged in
+            setInterval(autoSaveToCloud, 60000);
+            
+            // Restore from localStorage if available
+            restoreFromAutoSave();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const text = editor.value;
+            const lines = text.split('\n').length;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+
+            lineCount.textContent = lines;
+            wordCount.textContent = words;
+            charCount.textContent = chars;
+        }
+
+        // Set connection status
+        function setConnectionStatus(message) {
+            connectionStatus.textContent = message;
+            if (message !== 'ready') {
+                setTimeout(() => {
+                    connectionStatus.textContent = 'ready';
+                }, 3000);
+            }
+        }
+
+        // Handle text changes
+        editor.addEventListener('input', () => {
+            updateStats();
+            hasUnsavedChanges = true;
+            setConnectionStatus('modified');
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        newFile();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            openCloudFile();
+                        } else {
+                            openFile();
+                        }
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            saveFile(); // Local download
+                        } else {
+                            saveToCloud(); // Cloud save
+                        }
+                        break;
+                }
+            }
+        });
+
+        // New file
+        function newFile() {
+            if (hasUnsavedChanges && !confirm('UNSAVED CHANGES DETECTED\nCreate new file anyway?')) {
+                return;
+            }
+            
+            editor.value = '';
+            filenameInput.value = 'untitled.txt';
+            hasUnsavedChanges = false;
+            setConnectionStatus('new file');
+            updateStats();
+            editor.focus();
+            showToast('New file created', false);
+        }
+
+        // Open file
+        function openFile() {
+            fileInput.click();
+        }
+
+        // Handle file load
+        function handleFileLoad(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (hasUnsavedChanges && !confirm('UNSAVED CHANGES DETECTED\nLoad file anyway?')) {
+                    return;
+                }
+                
+                editor.value = e.target.result;
+                filenameInput.value = file.name;
+                hasUnsavedChanges = false;
+                setConnectionStatus('loaded');
+                updateStats();
+                showToast(`${file.name} loaded`, false);
+            };
+            
+            reader.onerror = () => {
+                showToast('File load error', true);
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Save file (local download)
+        function saveFile() {
+            const content = editor.value;
+            let filename = filenameInput.value.trim();
+            
+            if (!filename) {
+                filename = 'untitled.txt';
+                filenameInput.value = filename;
+            }
+
+            // Create download
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            setConnectionStatus('downloaded');
+            showToast(`${filename} downloaded`, false);
+        }
+
+        // Clear editor
+        function clearEditor() {
+            if (hasUnsavedChanges && !confirm('UNSAVED CHANGES DETECTED\nClear editor anyway?')) {
+                return;
+            }
+            
+            editor.value = '';
+            hasUnsavedChanges = false;
+            setConnectionStatus('cleared');
+            updateStats();
+            editor.focus();
+            showToast('Editor cleared', false);
+        }
+
+        // Auto-save functionality
+        function autoSave() {
+            if (editor.value.trim()) {
+                localStorage.setItem('no404_terminal_autosave', JSON.stringify({
+                    content: editor.value,
+                    filename: filenameInput.value,
+                    timestamp: Date.now()
+                }));
+            }
+        }
+        
+        // Auto-save to cloud (if user is logged in)
+        async function autoSaveToCloud() {
+            if (!currentUser || !hasUnsavedChanges || !editor.value.trim()) {
+                return;
+            }
+            
+            try {
+                const autoSaveData = {
+                    filename: `${filenameInput.value || 'untitled.txt'}.autosave`,
+                    content: editor.value,
+                    timestamp: new Date().toISOString(),
+                    id: `autosave_${Date.now()}`,
+                    isAutoSave: true
+                };
+                
+                await save('saved_file', autoSaveData);
+                console.log('Auto-saved to cloud');
+            } catch (error) {
+                console.error('Auto-save to cloud failed:', error);
+            }
+        }
+
+        // Restore from auto-save
+        function restoreFromAutoSave() {
+            const saved = localStorage.getItem('no404_terminal_autosave');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    const timeDiff = Date.now() - data.timestamp;
+                    
+                    // Only restore if less than 24 hours old and has content
+                    if (timeDiff < 24 * 60 * 60 * 1000 && data.content.trim()) {
+                        if (confirm('AUTO-SAVE DETECTED\nRestore previous session?')) {
+                            editor.value = data.content;
+                            filenameInput.value = data.filename || 'untitled.txt';
+                            setConnectionStatus('restored');
+                            updateStats();
+                            hasUnsavedChanges = true;
+                            showToast('Session restored', false);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error restoring auto-save:', e);
+                }
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, isError = false) {
+            toast.textContent = message;
+            toast.className = `terminal-toast ${isError ? 'error' : 'success'}`;
+            
+            // Trigger animation
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            // Hide after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Warn about unsaved changes
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = 'UNSAVED CHANGES DETECTED';
+                return e.returnValue;
+            }
+        });
+
+        // Handle file drops
+        editor.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+        });
+
+        editor.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('text/') || file.name.match(/\.(txt|md|js|ts|jsx|tsx|css|html|json|xml|csv|log|py|go|rs|vue|svelte|php|rb|sh|yml|yaml|toml|ini|env)$/i)) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        if (hasUnsavedChanges && !confirm('UNSAVED CHANGES DETECTED\nLoad dropped file anyway?')) {
+                            return;
+                        }
+                        
+                        editor.value = e.target.result;
+                        filenameInput.value = file.name;
+                        hasUnsavedChanges = false;
+                        setConnectionStatus('loaded');
+                        updateStats();
+                        showToast(`${file.name} loaded`, false);
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showToast('Unsupported file type', true);
+                }
+            }
+        });
+
+        // Show help dialog
+        function showHelp() {
+            const helpText = `NO404 TERMINAL EDITOR v3.0
+//////////////////////////////////
+
+KEYBOARD SHORTCUTS:
+Ctrl+N      New file
+Ctrl+O      Open from cloud  
+Ctrl+S      Save to cloud
+Shift+Ctrl+O  Import local file
+Shift+Ctrl+S  Download file
+
+FEATURES:
+• Terminal-style interface
+• Cloud sync with ToyBox OS auth
+• Auto-save every 60 seconds
+• Drag & drop file loading  
+• Real-time statistics
+• Multiple file format support
+
+SUPPORTED FORMATS:
+txt, md, js, ts, jsx, tsx, css, html,
+json, xml, csv, py, go, rs, vue, svelte,
+php, rb, sh, yml, yaml, toml, ini, env
+
+AUTHENTICATION:
+Login to ToyBox OS to enable cloud features
+Offline mode available for local editing
+
+//////////////////////////////////
+Happy coding! 🚀`;
+            
+            alert(helpText);
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', initEditor);
+        
+        // Auto-save to localStorage every 30 seconds
+        setInterval(autoSave, 30000);
+    </script>
+</body>
+</html>

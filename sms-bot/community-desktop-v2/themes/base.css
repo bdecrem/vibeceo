@@ -1,0 +1,169 @@
+/* ToyBox OS Base Theme - Core structural styles */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+#desktop {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 22px); /* leave room for menu bar */
+  padding: 8px;
+}
+
+.desktop-icon {
+  position: absolute;
+  width: 75px;
+  text-align: center;
+  cursor: pointer;
+  padding: 4px;
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  user-select: none;
+}
+
+.desktop-icon .icon {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.desktop-icon .label {
+  font-size: 11px;
+  line-height: 1.2;
+  word-wrap: break-word;
+  max-width: 75px;
+}
+
+/* Menu bar (top) */
+.menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 6px;
+  z-index: 2000;
+}
+
+.menu-left {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.menu-title {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 8px;
+  cursor: pointer;
+  user-select: none;
+}
+
+#menu-clock {
+  font-size: 12px;
+  line-height: 22px;
+  padding: 0 8px;
+  user-select: none;
+}
+
+/* Trash can specific */
+.trash-can {
+  position: absolute !important;
+  right: 20px;
+  bottom: 20px;
+}
+
+#window-container {
+  position: absolute;
+  top: 22px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.desktop-window {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  pointer-events: auto;
+  min-width: 200px;
+  min-height: 150px;
+}
+
+.window-titlebar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px;
+  height: 18px;
+  cursor: move;
+  user-select: none;
+}
+
+.window-title {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.window-controls {
+  display: flex;
+  gap: 4px;
+}
+
+.window-controls button {
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  appearance: none;
+}
+
+.window-content {
+  flex: 1;
+  overflow: hidden;
+  background: white;
+}
+
+.window-content iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.window-resize-handle {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
+}

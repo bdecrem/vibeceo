@@ -1,0 +1,524 @@
+#!/usr/bin/env node
+
+import { createClient } from '@supabase/supabase-js';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+
+// Load environment variables
+const result = dotenv.config({ path: '../.env.local' });
+if (result.error) {
+    console.error('Error loading .env.local:', result.error.message);
+    process.exit(1);
+}
+
+const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+
+async function updateAppStudio() {
+    try {
+        console.log('🚀 Updating App Studio with System 7 design...');
+        
+        // Read current App Studio content
+        const currentHTML = fs.readFileSync('app-studio-current.html', 'utf8');
+        
+        // Create new System 7 style App Studio
+        const newHTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Studio</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Geneva', 'Chicago', 'Tahoma', sans-serif;
+            background: #c0c0c0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-size: 12px;
+        }
+
+        /* System 7 Window Header */
+        .window-header {
+            height: 20px;
+            background: repeating-linear-gradient(
+                to right,
+                #E0E0E0 0px,
+                #E0E0E0 1px,
+                #000000 1px,
+                #000000 2px
+            );
+            border-bottom: 1px solid #000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .window-title {
+            color: #ffffff;
+            font-size: 12px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            background: #c0c0c0;
+        }
+
+        .form-section {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #000000;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #000000;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 4px 6px;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            font-family: inherit;
+            font-size: 12px;
+            background: white;
+        }
+
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+
+        /* System 7 Dropdown */
+        select {
+            height: 22px;
+            line-height: 18px;
+        }
+
+        /* Submit Button */
+        .submit-section {
+            display: flex;
+            justify-content: center;
+            margin-top: 15px;
+        }
+
+        button {
+            padding: 6px 16px;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            background: #c0c0c0;
+            font-weight: normal;
+            font-size: 12px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+
+        button:hover {
+            background: #d0d0d0;
+        }
+
+        button:active {
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Previous Apps Section */
+        .apps-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            background: white;
+            margin-top: 10px;
+        }
+
+        .app-item {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e0e0e0;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .app-item:last-child {
+            border-bottom: none;
+        }
+
+        .app-item:hover {
+            background: #0000ff;
+            color: white;
+        }
+
+        .app-name {
+            font-weight: bold;
+        }
+
+        .app-type {
+            font-size: 10px;
+            color: #666;
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 2px;
+        }
+
+        .app-item:hover .app-type {
+            background: rgba(255,255,255,0.2);
+            color: #ccc;
+        }
+
+        .pagination {
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .pagination button {
+            margin: 0 2px;
+            padding: 4px 8px;
+            font-size: 11px;
+        }
+
+        .status-message {
+            background: #fffef0;
+            border: 1px solid #ddd;
+            padding: 8px;
+            margin-top: 10px;
+            font-size: 11px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="window-header">
+        <div class="window-title">App Studio</div>
+    </div>
+
+    <div class="content">
+        <!-- Your Name Section -->
+        <div class="form-section">
+            <div class="section-title">Your Name</div>
+            <div class="form-group">
+                <input type="text" id="submitterName" placeholder="Enter your name" maxlength="50">
+            </div>
+        </div>
+
+        <!-- App Type Selection -->
+        <div class="form-section">
+            <div class="section-title">What Kind of App?</div>
+            <div class="form-group">
+                <select id="appType">
+                    <option value="simple">App</option>
+                    <option value="interactive">Interactive App</option>
+                    <option value="windowed">Windowed App</option>
+                    <option value="game">Game</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- App Details -->
+        <div class="form-section">
+            <div class="section-title">App Details</div>
+            <div class="form-group">
+                <label>App Name</label>
+                <input type="text" id="appName" placeholder="What should your app be called?" maxlength="30">
+            </div>
+            <div class="form-group">
+                <label>What should it do?</label>
+                <textarea id="appFunction" placeholder="Describe what your app should do when someone clicks it..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Icon (emoji)</label>
+                <input type="text" id="appIcon" placeholder="🎮" maxlength="2">
+            </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="submit-section">
+            <button onclick="submitApp()" id="submitButton">Submit App</button>
+        </div>
+
+        <div id="statusMessage" class="status-message" style="display: none;"></div>
+
+        <!-- Previously Created Apps -->
+        <div class="form-section">
+            <div class="section-title">Previously Created Apps</div>
+            <div id="appsList" class="apps-list">
+                <div style="padding: 20px; text-align: center; color: #666;">Loading apps...</div>
+            </div>
+            <div id="pagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <script>
+        // App configuration
+        window.APP_ID = 'app-studio';
+        window.WEBHOOK_URL = 'https://hook.us2.make.com/7h7vxk4hshkk1m9bgiqxq7bwqdbtjsrg';
+
+        let currentPage = 1;
+        const appsPerPage = 25;
+        let allApps = [];
+
+        // ZAD helper functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        data_type: dataType,
+                        content_data: data,
+                        participant_id: localStorage.getItem('studio_participant_id') || 'anonymous',
+                        action_type: 'save'
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Save error:', error);
+                return null;
+            }
+        }
+
+        async function load(dataType) {
+            try {
+                const response = await fetch('/api/zad/load', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        data_type: dataType
+                    })
+                });
+                const result = await response.json();
+                return result.data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        // Submit app function
+        async function submitApp() {
+            const submitterName = document.getElementById('submitterName').value.trim();
+            const appType = document.getElementById('appType').value;
+            const appName = document.getElementById('appName').value.trim();
+            const appFunction = document.getElementById('appFunction').value.trim();
+            const appIcon = document.getElementById('appIcon').value.trim();
+
+            // Validation
+            if (!submitterName) {
+                showStatus('Please enter your name', 'error');
+                return;
+            }
+            if (!appName) {
+                showStatus('Please enter an app name', 'error');
+                return;
+            }
+            if (!appFunction) {
+                showStatus('Please describe what your app should do', 'error');
+                return;
+            }
+            if (!appIcon) {
+                showStatus('Please choose an emoji icon', 'error');
+                return;
+            }
+
+            document.getElementById('submitButton').disabled = true;
+            showStatus('Submitting your app...', 'info');
+
+            try {
+                // Save submission to ZAD
+                const submission = {
+                    submitterName,
+                    appType,
+                    appName,
+                    appFunction,
+                    appIcon,
+                    timestamp: new Date().toISOString()
+                };
+
+                await save('submission', submission);
+                
+                // Send to webhook for processing
+                const response = await fetch(window.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        appName,
+                        appFunction,
+                        appIcon,
+                        appType,
+                        submitterName,
+                        source: 'app-studio'
+                    })
+                });
+
+                if (response.ok) {
+                    showStatus('✅ App submitted successfully! It will appear on the desktop soon.', 'success');
+                    // Clear form
+                    document.getElementById('appName').value = '';
+                    document.getElementById('appFunction').value = '';
+                    document.getElementById('appIcon').value = '';
+                    // Reload apps list
+                    loadApps();
+                } else {
+                    throw new Error('Submission failed');
+                }
+            } catch (error) {
+                console.error('Submission error:', error);
+                showStatus('❌ Failed to submit app. Please try again.', 'error');
+            } finally {
+                document.getElementById('submitButton').disabled = false;
+            }
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('statusMessage');
+            statusDiv.textContent = message;
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = type === 'error' ? '#ffe6e6' : 
+                                        type === 'success' ? '#e6ffe6' : '#fffef0';
+            statusDiv.style.borderColor = type === 'error' ? '#ff9999' : 
+                                          type === 'success' ? '#99ff99' : '#ddd';
+        }
+
+        // Load and display apps
+        async function loadApps() {
+            try {
+                const submissions = await load('submission');
+                allApps = submissions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                displayApps();
+            } catch (error) {
+                console.error('Error loading apps:', error);
+                document.getElementById('appsList').innerHTML = 
+                    '<div style="padding: 20px; text-align: center; color: #ff0000;">Error loading apps</div>';
+            }
+        }
+
+        function displayApps() {
+            const startIndex = (currentPage - 1) * appsPerPage;
+            const endIndex = startIndex + appsPerPage;
+            const pageApps = allApps.slice(startIndex, endIndex);
+
+            const appsList = document.getElementById('appsList');
+            
+            if (pageApps.length === 0) {
+                appsList.innerHTML = '<div style="padding: 20px; text-align: center; color: #666;">No apps created yet</div>';
+            } else {
+                appsList.innerHTML = pageApps.map(app => \`
+                    <div class="app-item">
+                        <div>
+                            <span class="app-name">\${app.appIcon} \${app.appName}</span>
+                            <div style="font-size: 10px; color: #666; margin-top: 2px;">by \${app.submitterName}</div>
+                        </div>
+                        <span class="app-type">\${app.appType}</span>
+                    </div>
+                \`).join('');
+            }
+
+            updatePagination();
+        }
+
+        function updatePagination() {
+            const totalPages = Math.ceil(allApps.length / appsPerPage);
+            const paginationDiv = document.getElementById('pagination');
+            
+            if (totalPages <= 1) {
+                paginationDiv.innerHTML = '';
+                return;
+            }
+
+            let paginationHTML = '';
+            
+            if (currentPage > 1) {
+                paginationHTML += '<button onclick="changePage(1)">First</button>';
+                paginationHTML += '<button onclick="changePage(' + (currentPage - 1) + ')">Prev</button>';
+            }
+            
+            for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+                const isCurrentPage = i === currentPage;
+                paginationHTML += \`<button onclick="changePage(\${i})" \${isCurrentPage ? 'disabled' : ''}>\${i}</button>\`;
+            }
+            
+            if (currentPage < totalPages) {
+                paginationHTML += '<button onclick="changePage(' + (currentPage + 1) + ')">Next</button>';
+                paginationHTML += '<button onclick="changePage(' + totalPages + ')">Last</button>';
+            }
+            
+            paginationDiv.innerHTML = paginationHTML;
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            displayApps();
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            loadApps();
+        });
+    </script>
+</body>
+</html>`;
+
+        // Update the App Studio in Supabase
+        const { error } = await supabase
+            .from('wtaf_content')
+            .update({ 
+                html_content: newHTML,
+                updated_at: new Date().toISOString()
+            })
+            .eq('user_slug', 'public')
+            .eq('app_slug', 'app-studio');
+            
+        if (error) {
+            throw new Error('Failed to update App Studio: ' + error.message);
+        }
+        
+        console.log('✅ App Studio updated successfully!');
+        console.log('📋 Changes made:');
+        console.log('   1. ❌ Removed ugly header → ✅ System 7 window-style header');
+        console.log('   2. ❌ Removed 4 buttons → ✅ Pulldown menu (App selected by default)');
+        console.log('   3. ✅ Added previously created apps list with pagination (25 per page)');
+        console.log('🔗 Live at: https://webtoys.ai/public/app-studio');
+        
+    } catch (error) {
+        console.error('❌ Error updating App Studio:', error);
+        process.exit(1);
+    }
+}
+
+// Run the script
+updateAppStudio();
