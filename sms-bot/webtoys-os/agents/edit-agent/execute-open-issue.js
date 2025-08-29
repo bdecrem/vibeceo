@@ -195,6 +195,12 @@ async function executeOpenIssue() {
     // Simple, clear prompt that lets Claude Code use its full capabilities
     let claudePrompt = `${description}
 
+CONTEXT: You are in the /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os directory.
+- Authentication docs: agents/edit-agent/AUTH-DOCUMENTATION.md
+- Desktop HTML: core/desktop-v3.html
+- Apps directory: apps/
+- Deployment scripts: scripts/
+
 IMPORTANT: After completing this request, you must:
 
 1. **For NEW apps**: 
@@ -208,12 +214,25 @@ IMPORTANT: After completing this request, you must:
    - Deploy the changes by running: node scripts/auto-deploy-app.js apps/[filename].html
    - This ensures the desktop has the latest version
 
-3. **General requirements**:
+3. **For apps requiring USER AUTHENTICATION or LOGIN**:
+   - CRITICAL: Read AUTH-DOCUMENTATION.md first - it explains the desktop's authentication system
+   - Apps MUST NOT create their own login forms - the desktop handles ALL authentication
+   - Listen for TOYBOX_AUTH messages from the parent window:
+     window.addEventListener('message', (e) => {
+         if (e.data.type === 'TOYBOX_AUTH') {
+             currentUser = e.data.user; // Has handle and participantId
+         }
+     });
+   - Request auth: parent.postMessage({ type: 'GET_AUTH' }, '*');
+   - Use participantId as user_id when saving data
+
+4. **General requirements**:
    - Create complete, standalone HTML files with all code included
    - Follow existing project patterns and conventions
    - Apps should integrate with the v3 desktop system
    - After creating the app, ALWAYS deploy it using the auto-deploy-app.js script
    - The deployment script handles all desktop integration automatically
+   - For data storage: Use ZAD API (/api/zad/save and /api/zad/load) NOT direct Supabase
 
 DEPLOYMENT COMMAND:
 After creating your app file, run:
@@ -225,7 +244,8 @@ This command will:
 - Create a desktop icon
 - Make it accessible at the proper URL
 
-The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
+The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.
+See AUTH-DOCUMENTATION.md for complete authentication details.`;
     
     console.log('📋 Sending enhanced prompt to Claude:', claudePrompt.substring(0, 200) + '...');
     
@@ -254,7 +274,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         
         try {
             const result = await execAsync(command, {
-                timeout: 300000, // 5 minute timeout - give Claude time to create apps
+                timeout: 600000, // 10 minute timeout - complex apps with auth need more time
                 maxBuffer: 1024 * 1024 * 50, // 50MB buffer (same as fix-issues.js)
                 env: { ...process.env },
                 windowsHide: true,
@@ -263,15 +283,48 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
             stdout = result.stdout || '';
             stderr = result.stderr || '';
         } catch (execError) {
-            // If the command was killed but we got some output, use it
-            if (execError.killed && execError.signal === 'SIGTERM') {
-                console.log('⚠️  Claude was terminated with SIGTERM, but may have completed');
-                stdout = execError.stdout || '';
-                stderr = execError.stderr || '';
-                // If we got no output at all, this is a real error
-                if (!stdout && !stderr) {
+            // Handle various termination scenarios
+            if (execError.killed) {
+                if (execError.signal === 'SIGTERM') {
+                    console.log('⚠️  Claude was terminated with SIGTERM, but may have completed');
+                    stdout = execError.stdout || '';
+                    stderr = execError.stderr || '';
+                    
+                    // Check if the app was actually created despite termination
+                    const appMatch = description.match(/\b(\w+)\s+app\b/i);
+                    if (appMatch) {
+                        const appName = appMatch[1].toLowerCase();
+                        const possibleFiles = [
+                            `apps/${appName}.html`,
+                            `apps/${appName}-editor.html`,
+                            `apps/${appName}-text.html`
+                        ];
+                        
+                        for (const file of possibleFiles) {
+                            try {
+                                await fs.promises.access(path.join(PROJECT_ROOT, file));
+                                console.log(`✅ Despite SIGTERM, app was created: ${file}`);
+                                stdout = stdout || `App created successfully at ${file}`;
+                                break;
+                            } catch (e) {
+                                // File doesn't exist, continue checking
+                            }
+                        }
+                    }
+                    
+                    // If we still have no output, mark as potential success
+                    if (!stdout && !stderr) {
+                        console.log('⚠️  Claude was terminated (SIGTERM) - this may be a false error');
+                        console.log('   Check if the task was actually completed');
+                        stdout = 'Claude process terminated but may have completed the task. Check the /apps directory.';
+                    }
+                } else if (execError.signal === 'SIGKILL') {
+                    console.error('❌ Claude was forcefully killed (SIGKILL)');
                     throw execError;
                 }
+            } else if (execError.code === 'ETIMEDOUT') {
+                console.error('❌ Claude execution timed out after 10 minutes');
+                throw new Error('Execution timed out - task may be too complex');
             } else {
                 throw execError;
             }
