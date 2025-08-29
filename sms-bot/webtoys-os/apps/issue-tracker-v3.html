@@ -374,6 +374,8 @@
             }
         }
     </style>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="container">
@@ -464,6 +466,11 @@
         // Configuration
         window.APP_ID = 'toybox-issue-tracker-v3';
         
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
         // State
         let issues = [];
         let currentUser = null;
@@ -471,61 +478,6 @@
             open: true,
             closed: true
         };
-        
-        // ZAD Helper Functions
-        async function save(dataType, data) {
-            const response = await fetch('/api/zad/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    app_id: window.APP_ID,
-                    data_type: dataType,
-                    content_data: data,
-                    participant_id: currentUser?.handle || 'anonymous',
-                    action_type: dataType
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to save data');
-            }
-            
-            return response.json();
-        }
-        
-        async function load(dataType) {
-            const params = new URLSearchParams({
-                app_id: window.APP_ID,
-                action_type: dataType
-            });
-            
-            const response = await fetch('/api/zad/load?' + params);
-            
-            if (!response.ok) {
-                throw new Error('Failed to load data');
-            }
-            
-            return response.json();
-        }
-        
-        async function update(recordId, newData) {
-            const response = await fetch('/api/zad/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    app_id: window.APP_ID,
-                    record_id: recordId,  // This makes it an UPDATE
-                    content_data: newData,
-                    participant_id: currentUser?.handle || 'anonymous'
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Failed to update data');
-            }
-            
-            return response.json();
-        }
         
         // Load authentication
         function loadAuth() {
@@ -554,22 +506,24 @@
                 const container = document.getElementById('issues-container');
                 container.innerHTML = '<div class="loading">Loading issues...</div>';
                 
-                const data = await load('issue');
-                // Parse content_data if it's a string
-                issues = data.map(item => {
-                    if (typeof item.content_data === 'string') {
-                        try {
-                            item.content_data = JSON.parse(item.content_data);
-                        } catch (e) {
-                            console.error('Failed to parse content_data:', e);
-                            return null;
-                        }
-                    }
-                    return item;
-                }).filter(item => item && item.content_data && (item.content_data.title || item.content_data.description) && !item.content_data.deleted);
+                // Load issues from new table
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .select('*')
+                    .eq('app_id', window.APP_ID)
+                    .eq('action_type', 'issue')
+                    .order('created_at', { ascending: false });
                 
-                // Sort by creation date (newest first)
-                issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+                if (error) {
+                    throw error;
+                }
+                
+                // Filter out deleted issues
+                issues = (data || []).filter(item => 
+                    item.content_data && 
+                    (item.content_data.title || item.content_data.description) && 
+                    !item.content_data.deleted
+                );
                 
                 renderIssues();
                 updateStats();
@@ -606,9 +560,9 @@
             
             container.innerHTML = filteredIssues.map((issue, index) => {
                 const data = issue.content_data;
-                // ZAD returns numeric IDs
+                // Database returns numeric IDs
                 const issueId = issue.id;
-                const issueNumber = issueId ? `#${issueId}` : `#${index}`;
+                const issueNumber = `#${issueId}`;
                 const status = data.status || 'open';
                 const comments = data.comments || [];
                 
@@ -684,7 +638,19 @@
             };
             
             try {
-                await save('issue', issueData);
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .insert({
+                        app_id: window.APP_ID,
+                        action_type: 'issue',
+                        participant_id: currentUser?.handle || 'anonymous',
+                        content_data: issueData
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
                 closeNewIssueModal();
                 await loadIssues();
             } catch (error) {
@@ -699,7 +665,7 @@
             const issueId = document.getElementById('comment-issue-id').value;
             const commentText = document.getElementById('comment-text').value;
             
-            const issue = issues.find(i => i.id === issueId);
+            const issue = issues.find(i => i.id == issueId);
             if (!issue) {
                 alert('Issue not found');
                 return;
@@ -718,7 +684,18 @@
             };
             
             try {
-                await update(issueId, updatedData);
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
                 closeCommentModal();
                 await loadIssues();
             } catch (error) {
@@ -728,7 +705,7 @@
         }
         
         async function closeIssue(issueId) {
-            const issue = issues.find(i => i.id === issueId);
+            const issue = issues.find(i => i.id == issueId);
             if (!issue) return;
             
             const updatedData = {
@@ -739,7 +716,18 @@
             };
             
             try {
-                await update(issueId, updatedData);
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
                 await loadIssues();
             } catch (error) {
                 console.error('Failed to close issue:', error);
@@ -748,7 +736,7 @@
         }
         
         async function reopenIssue(issueId) {
-            const issue = issues.find(i => i.id === issueId);
+            const issue = issues.find(i => i.id == issueId);
             if (!issue) return;
             
             const updatedData = {
@@ -759,7 +747,18 @@
             };
             
             try {
-                await update(issueId, updatedData);
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
                 await loadIssues();
             } catch (error) {
                 console.error('Failed to reopen issue:', error);
@@ -770,9 +769,8 @@
         async function deleteIssue(issueId) {
             if (!confirm('Are you sure you want to delete this issue?')) return;
             
-            // In a real app, we'd mark as deleted rather than removing
-            // For now, we'll update with a deleted flag
-            const issue = issues.find(i => i.id === issueId);
+            // Soft delete - mark as deleted rather than removing
+            const issue = issues.find(i => i.id == issueId);
             if (!issue) return;
             
             const updatedData = {
@@ -783,7 +781,18 @@
             };
             
             try {
-                await update(issueId, updatedData);
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
                 await loadIssues();
             } catch (error) {
                 console.error('Failed to delete issue:', error);
