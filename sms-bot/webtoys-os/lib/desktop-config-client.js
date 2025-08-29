@@ -80,8 +80,7 @@ class DesktopConfigClient {
             app_registry: [
                 { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad', width: 800, height: 600 },
                 { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker', width: 900, height: 700 },
-                { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', width: 700, height: 500 },
-                { id: 'about', name: 'About', icon: 'ℹ️', action: 'alert', message: 'WebtoysOS v3.0\\nModern Desktop Environment' }
+                { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', width: 700, height: 500 }
             ],
             icon_positions: {},
             widget_positions: {},
