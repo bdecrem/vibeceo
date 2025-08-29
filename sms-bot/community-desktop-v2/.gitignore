@@ -1,0 +1,16 @@
+# Backup files
+backups/
+*.backup.html
+*_backup.html
+*_backup.css
+
+# Temporary fix files (now organized in scripts/)
+scripts/temp-*.js
+scripts/debug-*.js
+
+# Local test files
+current-toybox-os.html
+TOYBOX_OS_FIX_SUMMARY.md
+
+# OS files
+.DS_Store

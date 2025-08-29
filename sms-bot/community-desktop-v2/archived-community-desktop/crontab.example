@@ -1,0 +1,24 @@
+# WEBTOYS Issue Tracker - Crontab Configuration
+# 
+# To install:
+# 1. Copy this file and replace YOUR_GITHUB_TOKEN with actual token from: gh auth token
+# 2. Run: crontab -e
+# 3. Paste the configuration below
+#
+# To check if running: tail -f /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.log
+#
+# IMPORTANT: After system updates, verify paths are still correct:
+# - Node.js: /usr/local/bin/node
+# - GitHub CLI: /opt/homebrew/bin/gh (referenced in scripts)
+# - Claude CLI: /Users/bartdecrem/.local/bin/claude (referenced in scripts)
+
+# Run full pipeline every 3 minutes (reformulate, fix, create PRs)
+*/3 * * * * HOME=/Users/bartdecrem GH_TOKEN=YOUR_GITHUB_TOKEN GITHUB_TOKEN=YOUR_GITHUB_TOKEN ENABLE_AUTO_FIX=true PROJECT_ROOT=/Users/bartdecrem/Documents/code/vibeceo8/sms-bot /usr/local/bin/node /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.js >> /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.log 2>&1
+
+# Alternative configurations:
+
+# Run every 20 minutes (less aggressive)
+# */20 * * * * HOME=/Users/bartdecrem GH_TOKEN=YOUR_GITHUB_TOKEN GITHUB_TOKEN=YOUR_GITHUB_TOKEN ENABLE_AUTO_FIX=true PROJECT_ROOT=/Users/bartdecrem/Documents/code/vibeceo8/sms-bot /usr/local/bin/node /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.js >> /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.log 2>&1
+
+# Run only reformulation (no auto-fix)
+# */5 * * * * HOME=/Users/bartdecrem GH_TOKEN=YOUR_GITHUB_TOKEN GITHUB_TOKEN=YOUR_GITHUB_TOKEN ENABLE_AUTO_FIX=false PROJECT_ROOT=/Users/bartdecrem/Documents/code/vibeceo8/sms-bot /usr/local/bin/node /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.js --reformulate >> /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/agent-issue-tracker/monitor.log 2>&1

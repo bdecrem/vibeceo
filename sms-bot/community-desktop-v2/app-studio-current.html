@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>App Studio - Create Desktop Apps</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Tahoma', 'Segoe UI', sans-serif;
+            background: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header Bar */
+        .header {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .header-icon {
+            font-size: 24px;
+        }
+
+        .header-title {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* Main Content */
+        .content {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f0f0f0;
+        }
+
+        .form-section {
+            background: white;
+            border: 2px solid #c0c0c0;
+            border-radius: 0;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: inset -1px -1px #808080, inset 1px 1px #ffffff;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #000080;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 13px;
+            color: #333;
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            font-family: inherit;
+            font-size: 13px;
+            background: white;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* App Type Selector */
+        .app-type-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .app-type-card {
+            border: 2px solid #c0c0c0;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .app-type-card:hover {
+            background: #e8f4ff;
+            border-color: #0078d4;
+        }
+
+        .app-type-card.selected {
+            background: #0078d4;
+            color: white;
+            border-color: #000080;
+        }
+
+        .app-type-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .app-type-name {
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .app-type-desc {
+            font-size: 11px;
+            margin-top: 4px;
+            opacity: 0.8;
+        }
+
+        /* Examples */
+        .examples {
+            background: #fffef0;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 12px;
+            border-radius: 3px;
+        }
+
+        .example-item {
+            margin: 5px 0;
+            padding-left: 15px;
+            position: relative;
+        }
+
+        .example-item:before {
+            content: "→";
+            position: absolute;
+            left: 0;
+        }
+
+        /* Submit Button */
+        .submit-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            background: #c0c0c0;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            min-width: 100px;
+        }
+
+        button:hover {
+            background: #d0d0d0;
+        }
+
+        button:active {
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding-top: 11px;
+            padding-left: 21px;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .submit-button {
+            background: #0078d4;
+            color: white;
+        }
+
+        /* Status Messages */
+        .status {
+            padding: 10px;
+            margin-top: 15px;
+            border: 2px solid;
+            display: none;
+            font-size: 13px;
+        }
+
+        .status.success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+            display: block;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+            display: block;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+            display: block;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #0078d4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Your Name Input */
+        .name-input-group {
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .name-input-group input {
+            flex: 1;
+        }
+
+        .name-input-group button {
+            padding: 8px 15px;
+            min-width: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-icon">🚀</span>
+        <span class="header-title">App Studio - Create Desktop Apps for ToyBox OS</span>
+    </div>
+
+    <div class="content">
+        <!-- Your Name Section -->
+        <div class="form-section">
+            <div class="section-title">
+                <span>👤</span>
+                <span>Your Name</span>
+            </div>
+            <div class="name-input-group">
+                <input type="text" id="submitterName" placeholder="Enter your name (or stay anonymous)" maxlength="50">
+                <button onclick="saveName()">Save</button>
+            </div>
+        </div>
+
+        <!-- App Type Selection -->
+        <div class="form-section">
+            <div class="section-title">
+                <span>🎯</span>
+                <span>What Kind of App?</span>
+            </div>
+            <div class="app-type-grid">
+                <div class="app-type-card" data-type="simple" onclick="selectAppType('simple')">
+                    <div class="app-type-icon">🎲</div>
+                    <div class="app-type-name">Simple Toy</div>
+                    <div class="app-type-desc">Quick action or fun message</div>
+                </div>
+                <div class="app-type-card" data-type="interactive" onclick="selectAppType('interactive')">
+                    <div class="app-type-icon">🎮</div>
+                    <div class="app-type-name">Interactive</div>
+                    <div class="app-type-desc">Get input, show results</div>
+                </div>
+                <div class="app-type-card" data-type="visual" onclick="selectAppType('visual')">
+                    <div class="app-type-icon">🎨</div>
+                    <div class="app-type-name">Visual Effect</div>
+                    <div class="app-type-desc">Change colors or styles</div>
+                </div>
+                <div class="app-type-card" data-type="windowed" onclick="selectAppType('windowed')">
+                    <div class="app-type-icon">🪟</div>
+                    <div class="app-type-name">Windowed App</div>
+                    <div class="app-type-desc">Opens in its own window</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- App Details -->
+        <div class="form-section">
+            <div class="section-title">
+                <span>✏️</span>
+                <span>Describe Your App</span>
+            </div>
+            
+            <div class="form-group">
+                <label for="appName">App Name (keep it short and fun!)</label>
+                <input type="text" id="appName" placeholder="e.g., Lucky Dice, Compliment Bot, Color Chaos" maxlength="30">
+            </div>
+
+            <div class="form-group">
+                <label for="appFunction">What should your app do?</label>
+                <textarea id="appFunction" placeholder="Describe what happens when someone clicks your app. Be creative but keep it simple!"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="appIcon">Choose an Icon (optional)</label>
+                <input type="text" id="appIcon" placeholder="Enter an emoji like 🎲 or leave blank for auto-selection" maxlength="2">
+            </div>
+
+            <div class="examples" id="examples" style="display: none;">
+                <strong>Examples for <span id="exampleType"></span>:</strong>
+                <div id="exampleList"></div>
+            </div>
+        </div>
+
+        <!-- Submit Section -->
+        <div class="form-section">
+            <div class="submit-section">
+                <div>
+                    <button onclick="clearForm()">Clear</button>
+                    <button onclick="randomIdea()">🎲 Random Idea</button>
+                </div>
+                <button class="submit-button" onclick="submitApp()" id="submitBtn">
+                    Submit App to Desktop
+                </button>
+            </div>
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        window.APP_ID = 'toybox-app-studio';
+        window.WEBHOOK_URL = 'https://webtoys-agents.ngrok.app/webhook/toybox-apps';
+        
+        // ZAD helper functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        data_type: dataType,
+                        content_data: data,
+                        participant_id: localStorage.getItem('studio_participant_id') || 'anonymous',
+                        action_type: 'save'
+                    })
+                });
+                return await response.json();
+            } catch (error) {
+                console.error('Save error:', error);
+                return null;
+            }
+        }
+
+        async function load(dataType) {
+            try {
+                const response = await fetch('/api/zad/load', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        data_type: dataType
+                    })
+                });
+                const result = await response.json();
+                return result.data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        // App type examples
+        const examples = {
+            simple: [
+                "A dice that always rolls your lucky number",
+                "A button that shows a random dad joke",
+                "A magic 8-ball that only gives positive answers",
+                "A countdown to the weekend"
+            ],
+            interactive: [
+                "Ask for a name and generate a superhero identity",
+                "A calculator that adds random compliments",
+                "A fortune teller that asks your mood first",
+                "A pet rock you can name and talk to"
+            ],
+            visual: [
+                "Click to make the screen do a barrel roll",
+                "Rainbow mode that cycles through colors",
+                "Matrix rain effect toggle",
+                "Disco mode with flashing colors"
+            ],
+            windowed: [
+                "A sticky notes app for quick thoughts",
+                "A simple drawing pad",
+                "A todo list that celebrates completions",
+                "A mini music maker"
+            ]
+        };
+
+        // Random ideas generator
+        const randomIdeas = [
+            { name: "Dice of Destiny", desc: "Roll a d20 for your fate", type: "simple" },
+            { name: "Vibe Check", desc: "Rate the current vibe from 1-10", type: "interactive" },
+            { name: "Disco Mode", desc: "Turn the desktop into a dance floor", type: "visual" },
+            { name: "Fortune Cookie", desc: "Click for wisdom (results may vary)", type: "simple" },
+            { name: "Compliment Bot", desc: "Get a personalized compliment", type: "interactive" },
+            { name: "Pet Rock", desc: "A rock that remembers its name", type: "interactive" },
+            { name: "Chaos Button", desc: "Randomly change something on screen", type: "visual" },
+            { name: "Dad Joke Pro", desc: "Premium dad jokes on demand", type: "simple" },
+            { name: "Mood Ring", desc: "Shows your mood in colors", type: "visual" },
+            { name: "Lucky Number", desc: "Find out today's lucky number", type: "simple" }
+        ];
+
+        let selectedType = null;
+
+        // Load saved name
+        window.addEventListener('load', () => {
+            const savedName = localStorage.getItem('studio_submitter_name');
+            if (savedName) {
+                document.getElementById('submitterName').value = savedName;
+            }
+            
+            // Generate participant ID if needed
+            if (!localStorage.getItem('studio_participant_id')) {
+                localStorage.setItem('studio_participant_id', 'user_' + Math.random().toString(36).substr(2, 9));
+            }
+        });
+
+        function saveName() {
+            const name = document.getElementById('submitterName').value.trim();
+            if (name) {
+                localStorage.setItem('studio_submitter_name', name);
+                showStatus('info', 'Name saved! It will be used for your submissions.');
+            }
+        }
+
+        function selectAppType(type) {
+            selectedType = type;
+            
+            // Update UI
+            document.querySelectorAll('.app-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.querySelector(`[data-type="${type}"]`).classList.add('selected');
+            
+            // Show examples
+            const examplesDiv = document.getElementById('examples');
+            const exampleList = document.getElementById('exampleList');
+            const exampleType = document.getElementById('exampleType');
+            
+            examplesDiv.style.display = 'block';
+            exampleType.textContent = document.querySelector(`[data-type="${type}"] .app-type-name`).textContent;
+            
+            exampleList.innerHTML = examples[type].map(ex => 
+                `<div class="example-item">${ex}</div>`
+            ).join('');
+        }
+
+        function clearForm() {
+            document.getElementById('appName').value = '';
+            document.getElementById('appFunction').value = '';
+            document.getElementById('appIcon').value = '';
+            selectedType = null;
+            document.querySelectorAll('.app-type-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+            document.getElementById('examples').style.display = 'none';
+            hideStatus();
+        }
+
+        function randomIdea() {
+            const idea = randomIdeas[Math.floor(Math.random() * randomIdeas.length)];
+            document.getElementById('appName').value = idea.name;
+            document.getElementById('appFunction').value = idea.desc;
+            selectAppType(idea.type);
+        }
+
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = `status ${type}`;
+            status.innerHTML = message;
+        }
+
+        function hideStatus() {
+            document.getElementById('status').className = 'status';
+        }
+
+        async function submitApp() {
+            const appName = document.getElementById('appName').value.trim();
+            const appFunction = document.getElementById('appFunction').value.trim();
+            const appIcon = document.getElementById('appIcon').value.trim();
+            const submitterName = document.getElementById('submitterName').value.trim() || 'Anonymous';
+            
+            // Validation
+            if (!appName || !appFunction) {
+                showStatus('error', 'Please provide both an app name and description!');
+                return;
+            }
+            
+            if (!selectedType) {
+                showStatus('error', 'Please select what kind of app you want to create!');
+                return;
+            }
+            
+            // Disable submit button
+            const submitBtn = document.getElementById('submitBtn');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = 'Submitting... <span class="spinner"></span>';
+            
+            try {
+                // Save to ZAD for record keeping
+                const submission = {
+                    appName,
+                    appFunction,
+                    appIcon,
+                    appType: selectedType,
+                    submitterName,
+                    timestamp: new Date().toISOString()
+                };
+                
+                await save('submission', submission);
+                
+                // Send to webhook for processing
+                const response = await fetch(window.WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        appName,
+                        appFunction,
+                        appIcon,
+                        appType: selectedType,
+                        submitterName,
+                        source: 'app-studio'
+                    })
+                });
+                
+                if (response.ok) {
+                    showStatus('success', `🎉 "${appName}" submitted! It will appear on the desktop in ~2 minutes after processing.`);
+                    
+                    // Clear form after success
+                    setTimeout(() => {
+                        clearForm();
+                        hideStatus();
+                    }, 5000);
+                } else {
+                    throw new Error('Webhook request failed');
+                }
+                
+            } catch (error) {
+                console.error('Submission error:', error);
+                showStatus('error', 'Failed to submit app. Please try again or contact support.');
+            } finally {
+                // Re-enable button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = 'Submit App to Desktop';
+            }
+        }
+    </script>
+</body>
+</html>

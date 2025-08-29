@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System 7 Notepad Test</title>
+    <style>
+        /* System 7 Theme for ToyBox OS */
+
+        /* Base structural styles that themes need */
+        .menu-left {
+          display: flex;
+          align-items: center;
+          gap: 0;
+        }
+
+        .menu-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .menu-title {
+          font-size: 12px;
+          line-height: 22px;
+          padding: 0 8px;
+          cursor: pointer;
+          user-select: none;
+        }
+
+        #menu-clock {
+          font-size: 12px;
+          line-height: 22px;
+          padding: 0 8px;
+          user-select: none;
+        }
+
+        .desktop-icon .icon {
+          font-size: 32px;
+          line-height: 1;
+        }
+
+        .desktop-icon .label {
+          font-size: 11px;
+          line-height: 1.2;
+          word-wrap: break-word;
+          max-width: 75px;
+        }
+
+        .window-titlebar {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 0 4px;
+          height: 18px;
+          cursor: move;
+          user-select: none;
+        }
+
+        .window-title {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 12px;
+          font-weight: bold;
+        }
+
+        .window-controls {
+          display: flex;
+          gap: 4px;
+        }
+
+        .window-controls button {
+          width: 14px;
+          height: 14px;
+          padding: 0;
+          cursor: pointer;
+          border: none;
+          background: transparent;
+          appearance: none;
+        }
+
+        .window-resize-handle {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          width: 12px;
+          height: 12px;
+          cursor: nwse-resize;
+        }
+
+        /* Chicago-like font (fallback to system fonts) */
+        @font-face {
+          font-family: 'Chicago';
+          src: local('Chicago'), local('Charcoal'), local('Geneva');
+          font-weight: normal;
+          font-style: normal;
+        }
+
+        /* Theme variables */
+        .theme-system7 {
+          --sys7-bg: #BFBFBF;
+          --sys7-border: #000000;
+          --sys7-text: #000000;
+          --sys7-title: #000000;
+          --sys7-menu-bg: #FFFFFF;
+          --sys7-window-bg: #FFFFFF;
+          --sys7-titlebar-bg: #E0E0E0;
+          --sys7-titlebar-pattern: #C0C0C0;
+        }
+
+        /* Body and desktop */
+        body.theme-system7 {
+          background:
+            repeating-linear-gradient(0deg, #C6C6C6 0 1px, #BFBFBF 1px 2px);
+          color: var(--sys7-text);
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          -webkit-font-smoothing: none;
+          -moz-osx-font-smoothing: auto;
+          image-rendering: pixelated;
+          margin: 0;
+          padding: 20px;
+          min-height: 100vh;
+        }
+
+        /* Windows - Enhanced to match System 7 screenshot */
+        .theme-system7 .desktop-window {
+          background: var(--sys7-window-bg);
+          border: 2px solid var(--sys7-border);
+          box-shadow: none;
+          border-radius: 0;
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          width: 500px;
+          height: 400px;
+          position: relative;
+        }
+
+        .theme-system7 .desktop-window.active {
+          border-color: var(--sys7-border);
+          z-index: 1000;
+        }
+
+        /* System 7 Title Bar with Horizontal Lines Pattern */
+        .theme-system7 .window-titlebar {
+          background: 
+            repeating-linear-gradient(
+              to bottom,
+              var(--sys7-titlebar-bg) 0px,
+              var(--sys7-titlebar-bg) 1px,
+              var(--sys7-titlebar-pattern) 1px,
+              var(--sys7-titlebar-pattern) 2px
+            );
+          border-bottom: 1px solid var(--sys7-border);
+          height: 20px;
+          cursor: move;
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .theme-system7 .desktop-window.active .window-titlebar {
+          background: 
+            repeating-linear-gradient(
+              to bottom,
+              #000000 0px,
+              #000000 1px,
+              #404040 1px,
+              #404040 2px
+            );
+        }
+
+        /* Window Title - Centered like in System 7 */
+        .theme-system7 .window-title {
+          color: var(--sys7-title);
+          font-size: 12px;
+          font-weight: bold;
+          text-align: center;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          white-space: nowrap;
+          pointer-events: none;
+          text-shadow: none;
+        }
+
+        .theme-system7 .desktop-window.active .window-title {
+          color: var(--sys7-menu-bg);
+        }
+
+        /* System 7 Close Box - Left Side */
+        .theme-system7 .window-controls {
+          position: absolute;
+          left: 6px;
+          top: 50%;
+          transform: translateY(-50%);
+          gap: 0;
+          z-index: 1;
+        }
+
+        .theme-system7 .window-controls button {
+          width: 11px;
+          height: 11px;
+          border: 1px solid var(--sys7-border);
+          background: var(--sys7-menu-bg);
+          font-size: 8px;
+          line-height: 1;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 0;
+        }
+
+        .theme-system7 .window-controls button:active {
+          background: var(--sys7-border);
+          color: var(--sys7-menu-bg);
+        }
+
+        /* Close box styling to match System 7 */
+        .theme-system7 .window-controls .window-close {
+          position: relative;
+        }
+
+        .theme-system7 .window-controls .window-close::after {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 5px;
+          height: 5px;
+          background: var(--sys7-border);
+          border-radius: 0;
+        }
+
+        .theme-system7 .window-controls .window-close:active::after {
+          background: var(--sys7-menu-bg);
+        }
+
+        /* Hide maximize/minimize for authentic System 7 look */
+        .theme-system7 .window-controls .window-maximize,
+        .theme-system7 .window-controls .window-minimize {
+          display: none;
+        }
+
+        /* Window Content Area */
+        .theme-system7 .window-content {
+          border: none;
+          background: var(--sys7-window-bg);
+          padding: 8px;
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          font-size: 12px;
+          line-height: 1.4;
+          color: var(--sys7-text);
+          height: calc(100% - 20px - 1px); /* Subtract title bar height and border */
+          overflow: auto;
+        }
+
+        /* System 7 Scroll Bar Styling */
+        .theme-system7 .window-content::-webkit-scrollbar {
+          width: 16px;
+          background: var(--sys7-titlebar-bg);
+          border-left: 1px solid var(--sys7-border);
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-track {
+          background: 
+            repeating-linear-gradient(
+              45deg,
+              var(--sys7-titlebar-bg) 0px,
+              var(--sys7-titlebar-bg) 2px,
+              var(--sys7-titlebar-pattern) 2px,
+              var(--sys7-titlebar-pattern) 4px
+            );
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-thumb {
+          background: var(--sys7-menu-bg);
+          border: 1px solid var(--sys7-border);
+          border-radius: 0;
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-thumb:hover {
+          background: var(--sys7-titlebar-pattern);
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-button {
+          background: var(--sys7-menu-bg);
+          border: 1px solid var(--sys7-border);
+          height: 16px;
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-button:single-button:vertical:decrement {
+          border-bottom: none;
+        }
+
+        .theme-system7 .window-content::-webkit-scrollbar-button:single-button:vertical:increment {
+          border-top: none;
+        }
+
+        /* System 7 Window Resize Handle */
+        .theme-system7 .window-resize-handle {
+          background: 
+            repeating-linear-gradient(
+              135deg,
+              var(--sys7-titlebar-bg) 0px,
+              var(--sys7-titlebar-bg) 2px,
+              var(--sys7-border) 2px,
+              var(--sys7-border) 3px,
+              var(--sys7-titlebar-bg) 3px,
+              var(--sys7-titlebar-bg) 5px
+            );
+          width: 15px;
+          height: 15px;
+        }
+
+        /* Text selection */
+        .theme-system7 ::selection {
+          background: var(--sys7-border);
+          color: var(--sys7-menu-bg);
+        }
+
+        /* Form Elements in System 7 Style */
+        .theme-system7 input,
+        .theme-system7 textarea,
+        .theme-system7 select {
+          border: 1px solid var(--sys7-border);
+          background: var(--sys7-menu-bg);
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          font-size: 12px;
+          padding: 2px 4px;
+          border-radius: 0;
+        }
+
+        .theme-system7 button {
+          border: 1px solid var(--sys7-border);
+          background: var(--sys7-titlebar-bg);
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          font-size: 12px;
+          padding: 4px 8px;
+          border-radius: 0;
+          cursor: pointer;
+        }
+
+        .theme-system7 button:active {
+          background: var(--sys7-border);
+          color: var(--sys7-menu-bg);
+        }
+
+        /* Windowed App Body Styling */
+        body.theme-system7 .window-content,
+        body.theme-system7.windowed-app {
+          font-family: 'Chicago', 'Geneva', 'Charcoal', Helvetica, Arial, sans-serif;
+          font-size: 12px;
+          background: var(--sys7-window-bg);
+          color: var(--sys7-text);
+          -webkit-font-smoothing: none;
+          -moz-osx-font-smoothing: auto;
+        }
+
+        /* Windowed App Toolbar */
+        body.theme-system7 .toolbar {
+          background: var(--sys7-titlebar-bg);
+          border-bottom: 1px solid var(--sys7-border);
+          padding: 4px 8px;
+          display: flex;
+          gap: 8px;
+          align-items: center;
+        }
+
+        /* Windowed App Status Bar */
+        body.theme-system7 .status-bar {
+          background: var(--sys7-titlebar-bg);
+          border-top: 1px solid var(--sys7-border);
+          padding: 4px 8px;
+          font-size: 11px;
+          position: fixed;
+          bottom: 0;
+          left: 0;
+          right: 0;
+        }
+
+        /* Test specific styles */
+        textarea#editor {
+          width: 100%;
+          height: 300px;
+          border: none;
+          resize: none;
+          outline: none;
+          font-family: inherit;
+        }
+    </style>
+</head>
+<body class="theme-system7 windowed-app">
+    <div class="desktop-window active">
+        <div class="window-titlebar">
+            <div class="window-controls">
+                <button class="window-close" onclick="alert('Close button works!')"></button>
+            </div>
+            <div class="window-title">System 7 Notepad Test</div>
+        </div>
+        <div class="window-content">
+            <div class="toolbar">
+                <button onclick="clearEditor()">New</button>
+                <button onclick="saveDocument()">Save</button>
+                <button onclick="loadDocument()">Open</button>
+            </div>
+            <textarea id="editor" placeholder="Welcome to System 7!
+
+We hope you will enjoy the many new features and power of System 7. To get an overview of the new features, look at the Before You Install HyperCard stack provided on a separate disk. It explains and demonstrates many of the enhancements that will make it easier for you to manage and manipulate your data!
+
+If you have not done so already, run the Compatibility Checker to make the upgrade."></textarea>
+            <div class="status-bar">
+                <span id="status">Ready</span>
+            </div>
+        </div>
+        <div class="window-resize-handle"></div>
+    </div>
+
+    <script>
+        window.APP_ID = 'sys7-notepad-test';
+
+        function clearEditor() {
+            document.getElementById('editor').value = '';
+            updateStatus('Document cleared');
+        }
+
+        function saveDocument() {
+            const content = document.getElementById('editor').value;
+            localStorage.setItem(window.APP_ID + '_document', content);
+            updateStatus('Document saved');
+        }
+
+        function loadDocument() {
+            const content = localStorage.getItem(window.APP_ID + '_document');
+            if (content) {
+                document.getElementById('editor').value = content;
+                updateStatus('Document loaded');
+            } else {
+                updateStatus('No saved document found');
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+            setTimeout(() => {
+                document.getElementById('status').textContent = 'Ready';
+            }, 2000);
+        }
+
+        // Auto-save every 30 seconds
+        setInterval(() => {
+            const content = document.getElementById('editor').value;
+            if (content.trim()) {
+                localStorage.setItem(window.APP_ID + '_autosave', content);
+                updateStatus('Auto-saved');
+            }
+        }, 30000);
+
+        // Load auto-saved content on startup
+        document.addEventListener('DOMContentLoaded', () => {
+            const autosaved = localStorage.getItem(window.APP_ID + '_autosave');
+            if (autosaved && !document.getElementById('editor').value.trim()) {
+                document.getElementById('editor').value = autosaved;
+                updateStatus('Auto-saved content restored');
+            }
+        });
+    </script>
+</body>
+</html>

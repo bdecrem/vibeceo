@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>w0rdz - Word Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Header */
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #3498db, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 5px 15px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+        }
+        
+        .user-icon {
+            width: 24px;
+            height: 24px;
+            background: #3498db;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            background: white;
+            border-bottom: 1px solid #ddd;
+            padding: 10px 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .toolbar-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding-right: 15px;
+            border-right: 1px solid #ddd;
+        }
+        
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+        
+        .toolbar-btn {
+            padding: 6px 10px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 32px;
+            height: 32px;
+        }
+        
+        .toolbar-btn:hover {
+            background: #f0f0f0;
+            border-color: #3498db;
+        }
+        
+        .toolbar-btn.active {
+            background: #3498db;
+            color: white;
+            border-color: #3498db;
+        }
+        
+        select {
+            padding: 6px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            height: 32px;
+        }
+        
+        input[type="color"] {
+            width: 32px;
+            height: 32px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        
+        /* Document area */
+        .document-container {
+            flex: 1;
+            background: #e0e0e0;
+            overflow-y: auto;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .document {
+            background: white;
+            width: 100%;
+            max-width: 816px;
+            min-height: 1056px;
+            padding: 72px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            outline: none;
+            font-size: 12pt;
+            line-height: 1.5;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: #34495e;
+            color: white;
+            padding: 5px 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+        }
+        
+        .status-group {
+            display: flex;
+            gap: 20px;
+        }
+        
+        /* Login prompt */
+        .login-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        
+        .login-prompt {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            text-align: center;
+            max-width: 400px;
+        }
+        
+        .login-prompt h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        
+        .login-prompt p {
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .login-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+        
+        /* Document list */
+        .doc-list {
+            position: fixed;
+            top: 120px;
+            left: -300px;
+            width: 280px;
+            height: calc(100vh - 160px);
+            background: white;
+            border-right: 1px solid #ddd;
+            transition: left 0.3s;
+            z-index: 100;
+            overflow-y: auto;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        }
+        
+        .doc-list.open {
+            left: 0;
+        }
+        
+        .doc-list-header {
+            padding: 15px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+            font-weight: bold;
+        }
+        
+        .doc-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .doc-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .doc-item.active {
+            background: #e3f2fd;
+            border-left: 3px solid #3498db;
+        }
+        
+        .doc-title {
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+        
+        .doc-date {
+            font-size: 11px;
+            color: #999;
+        }
+        
+        .new-doc-btn {
+            padding: 12px 15px;
+            background: #3498db;
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .new-doc-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login overlay -->
+    <div id="loginOverlay" class="login-overlay">
+        <div class="login-prompt">
+            <div class="login-icon">🔒</div>
+            <h2>Authentication Required</h2>
+            <p>Please log in via the ToyBox desktop to use w0rdz</p>
+            <p style="font-size: 11px; margin-top: 20px; color: #95a5a6;">
+                Click the user icon in the desktop menu bar to log in
+            </p>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="logo">w0rdz</div>
+        <div class="user-info">
+            <div class="user-icon" id="userIcon">👤</div>
+            <span id="username">Not logged in</span>
+        </div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="toggleDocList()" title="Documents">📁</button>
+            <button class="toolbar-btn" onclick="newDocument()" title="New Document">📄</button>
+            <button class="toolbar-btn" onclick="saveDocument()" title="Save">💾</button>
+        </div>
+        
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatText('bold')" title="Bold"><b>B</b></button>
+            <button class="toolbar-btn" onclick="formatText('italic')" title="Italic"><i>I</i></button>
+            <button class="toolbar-btn" onclick="formatText('underline')" title="Underline"><u>U</u></button>
+            <button class="toolbar-btn" onclick="formatText('strikeThrough')" title="Strikethrough"><s>S</s></button>
+        </div>
+        
+        <div class="toolbar-group">
+            <select onchange="formatText('fontName', this.value)">
+                <option value="Arial">Arial</option>
+                <option value="Times New Roman">Times</option>
+                <option value="Courier New">Courier</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Verdana">Verdana</option>
+                <option value="Comic Sans MS">Comic Sans</option>
+            </select>
+            
+            <select onchange="formatText('fontSize', this.value)">
+                <option value="1">8pt</option>
+                <option value="2">10pt</option>
+                <option value="3" selected>12pt</option>
+                <option value="4">14pt</option>
+                <option value="5">18pt</option>
+                <option value="6">24pt</option>
+                <option value="7">36pt</option>
+            </select>
+            
+            <input type="color" onchange="formatText('foreColor', this.value)" title="Text Color">
+            <input type="color" value="#ffff00" onchange="formatText('hiliteColor', this.value)" title="Highlight">
+        </div>
+        
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatText('justifyLeft')" title="Align Left">⬅</button>
+            <button class="toolbar-btn" onclick="formatText('justifyCenter')" title="Center">⬌</button>
+            <button class="toolbar-btn" onclick="formatText('justifyRight')" title="Align Right">➡</button>
+            <button class="toolbar-btn" onclick="formatText('justifyFull')" title="Justify">☰</button>
+        </div>
+        
+        <div class="toolbar-group">
+            <button class="toolbar-btn" onclick="formatText('insertUnorderedList')" title="Bullet List">•</button>
+            <button class="toolbar-btn" onclick="formatText('insertOrderedList')" title="Numbered List">1.</button>
+            <button class="toolbar-btn" onclick="formatText('outdent')" title="Decrease Indent">⇤</button>
+            <button class="toolbar-btn" onclick="formatText('indent')" title="Increase Indent">⇥</button>
+        </div>
+    </div>
+    
+    <!-- Document list sidebar -->
+    <div id="docList" class="doc-list">
+        <div class="new-doc-btn" onclick="newDocument()">+ New Document</div>
+        <div class="doc-list-header">My Documents</div>
+        <div id="docListContent"></div>
+    </div>
+    
+    <!-- Document area -->
+    <div class="document-container">
+        <div id="document" class="document" contenteditable="true" spellcheck="true">
+            Start typing your document here...
+        </div>
+    </div>
+    
+    <!-- Status bar -->
+    <div class="status-bar">
+        <div class="status-group">
+            <span id="wordCount">Words: 0</span>
+            <span id="charCount">Characters: 0</span>
+        </div>
+        <div class="status-group">
+            <span id="saveStatus">Ready</span>
+            <span id="docName">Untitled Document</span>
+        </div>
+    </div>
+    
+    <script>
+        // Authentication state
+        let currentUser = null;
+        
+        // Document state
+        let currentDocId = null;
+        let documents = [];
+        let autoSaveTimer = null;
+        
+        // Listen for authentication from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateAuthDisplay();
+                
+                if (currentUser) {
+                    // User logged in - load their documents
+                    loadDocuments();
+                } else {
+                    // User logged out - clear everything
+                    clearUserData();
+                }
+            }
+        });
+        
+        function updateAuthDisplay() {
+            const loginOverlay = document.getElementById('loginOverlay');
+            const username = document.getElementById('username');
+            const userIcon = document.getElementById('userIcon');
+            
+            if (currentUser) {
+                loginOverlay.style.display = 'none';
+                username.textContent = currentUser.handle;
+                userIcon.textContent = currentUser.handle.charAt(0).toUpperCase();
+                document.getElementById('document').contentEditable = true;
+            } else {
+                loginOverlay.style.display = 'flex';
+                username.textContent = 'Not logged in';
+                userIcon.textContent = '👤';
+                document.getElementById('document').contentEditable = false;
+            }
+        }
+        
+        async function loadDocuments() {
+            if (!currentUser) return;
+            
+            try {
+                const response = await fetch(`/api/zad/load?app_id=w0rdz&participant_id=${currentUser.participantId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data && data.length > 0) {
+                        // Get the most recent record (ZAD returns array)
+                        const userData = data[0].content_data;
+                        documents = userData.documents || [];
+                        updateDocumentList();
+                        
+                        // Load the last opened document or create new
+                        if (documents.length > 0) {
+                            loadDocument(documents[0].id);
+                        } else {
+                            newDocument();
+                        }
+                    } else {
+                        // No documents yet, create first one
+                        newDocument();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading documents:', error);
+                newDocument();
+            }
+        }
+        
+        function clearUserData() {
+            documents = [];
+            currentDocId = null;
+            document.getElementById('document').innerHTML = 'Please log in to use w0rdz';
+            document.getElementById('docListContent').innerHTML = '';
+            updateStatus('Logged out');
+        }
+        
+        async function saveDocument() {
+            if (!currentUser) {
+                updateStatus('Please log in to save');
+                return;
+            }
+            
+            const content = document.getElementById('document').innerHTML;
+            const title = extractTitle(content);
+            
+            if (!currentDocId) {
+                currentDocId = generateId();
+            }
+            
+            // Update or add document
+            const docIndex = documents.findIndex(d => d.id === currentDocId);
+            const docData = {
+                id: currentDocId,
+                title: title,
+                content: content,
+                lastModified: new Date().toISOString(),
+                wordCount: countWords(content),
+                charCount: content.replace(/<[^>]*>/g, '').length
+            };
+            
+            if (docIndex >= 0) {
+                documents[docIndex] = docData;
+            } else {
+                documents.unshift(docData);
+            }
+            
+            // Save to database
+            try {
+                await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'w0rdz',
+                        participant_id: currentUser.participantId,
+                        content_data: {
+                            documents: documents,
+                            lastAccessed: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                updateStatus('Saved');
+                updateDocumentList();
+                
+                // Update document name in status bar
+                document.getElementById('docName').textContent = title || 'Untitled Document';
+                
+            } catch (error) {
+                console.error('Error saving document:', error);
+                updateStatus('Save failed');
+            }
+        }
+        
+        function newDocument() {
+            currentDocId = generateId();
+            document.getElementById('document').innerHTML = '';
+            document.getElementById('document').focus();
+            document.getElementById('docName').textContent = 'New Document';
+            updateStatus('New document created');
+            updateCounts();
+        }
+        
+        function loadDocument(docId) {
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                currentDocId = doc.id;
+                document.getElementById('document').innerHTML = doc.content;
+                document.getElementById('docName').textContent = doc.title || 'Untitled Document';
+                updateDocumentList();
+                updateCounts();
+                updateStatus('Document loaded');
+            }
+        }
+        
+        function deleteDocument(docId) {
+            if (confirm('Delete this document?')) {
+                documents = documents.filter(d => d.id !== docId);
+                if (currentDocId === docId) {
+                    if (documents.length > 0) {
+                        loadDocument(documents[0].id);
+                    } else {
+                        newDocument();
+                    }
+                }
+                saveDocument();
+            }
+        }
+        
+        function updateDocumentList() {
+            const listContent = document.getElementById('docListContent');
+            listContent.innerHTML = '';
+            
+            documents.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = 'doc-item' + (doc.id === currentDocId ? ' active' : '');
+                item.onclick = () => loadDocument(doc.id);
+                
+                const date = new Date(doc.lastModified);
+                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                
+                item.innerHTML = `
+                    <div class="doc-title">${doc.title || 'Untitled Document'}</div>
+                    <div class="doc-date">${dateStr}</div>
+                `;
+                
+                listContent.appendChild(item);
+            });
+        }
+        
+        function toggleDocList() {
+            const docList = document.getElementById('docList');
+            docList.classList.toggle('open');
+        }
+        
+        function formatText(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('document').focus();
+        }
+        
+        function updateCounts() {
+            const content = document.getElementById('document').innerHTML;
+            const text = content.replace(/<[^>]*>/g, '');
+            
+            document.getElementById('wordCount').textContent = 'Words: ' + countWords(content);
+            document.getElementById('charCount').textContent = 'Characters: ' + text.length;
+        }
+        
+        function countWords(html) {
+            const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+            return text ? text.split(' ').length : 0;
+        }
+        
+        function extractTitle(html) {
+            const text = html.replace(/<[^>]*>/g, '').trim();
+            const firstLine = text.split('\n')[0];
+            return firstLine.substring(0, 50) || 'Untitled Document';
+        }
+        
+        function updateStatus(message) {
+            const status = document.getElementById('saveStatus');
+            status.textContent = message;
+            setTimeout(() => {
+                status.textContent = 'Ready';
+            }, 3000);
+        }
+        
+        function generateId() {
+            return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Auto-save
+        document.getElementById('document').addEventListener('input', function() {
+            updateCounts();
+            
+            // Clear existing timer
+            if (autoSaveTimer) {
+                clearTimeout(autoSaveTimer);
+            }
+            
+            // Set new timer for auto-save
+            autoSaveTimer = setTimeout(() => {
+                if (currentUser) {
+                    saveDocument();
+                }
+            }, 5000); // Auto-save after 5 seconds of inactivity
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveDocument();
+                        break;
+                    case 'b':
+                        e.preventDefault();
+                        formatText('bold');
+                        break;
+                    case 'i':
+                        e.preventDefault();
+                        formatText('italic');
+                        break;
+                    case 'u':
+                        e.preventDefault();
+                        formatText('underline');
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newDocument();
+                        break;
+                }
+            }
+        });
+        
+        // Initial setup
+        updateAuthDisplay();
+        updateCounts();
+        
+        // Request auth from desktop on load
+        if (parent !== window) {
+            parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+    </script>
+</body>
+</html>
