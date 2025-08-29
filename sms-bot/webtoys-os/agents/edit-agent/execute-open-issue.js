@@ -261,6 +261,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         const duration = Math.round((Date.now() - startTime) / 1000);
         console.log(`✅ Claude completed in ${duration} seconds`);
         
+        // Capture the full Claude output
         let claudeOutput = '';
         if (stdout) {
             claudeOutput = stdout;
@@ -269,11 +270,24 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         }
         if (stderr) {
             console.error('Claude stderr:', stderr);
+            claudeOutput += '\n\nSTDERR:\n' + stderr;
         }
         
-        // Add Claude's output as a comment to the ticket
+        // Create the full console output comment
+        const fullConsoleOutput = `## Edit Agent Execution Log
+
+### Claude Code Output:
+
+${claudeOutput || 'No output captured'}
+
+### Execution Details:
+- Duration: ${duration} seconds
+- Issue ID: #${issueNumber}
+- Completed at: ${new Date().toISOString()}`;
+        
+        // Add the full console output as a comment to the ticket
         const editAgentComment = {
-            text: claudeOutput || 'Task completed successfully (no detailed output)',
+            text: fullConsoleOutput,
             author: 'Edit Agent',
             authorRole: 'AGENT',
             timestamp: new Date().toISOString()
@@ -292,13 +306,14 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         content.completedAt = new Date().toISOString();
         content.resolution = 'Executed by Claude Edit Agent';
         
-        // Also store the output in a dedicated field for easier access
-        content.edit_agent_output = claudeOutput;
+        // Also store the full output in a dedicated field for easier access
+        content.edit_agent_output = fullConsoleOutput;
         content.edit_agent_execution_time = `${duration} seconds`;
+        content.claude_raw_output = claudeOutput;
         
         await supabase
             .from('webtoys_issue_tracker_data')
-            .update({ content_data: JSON.stringify(content) })
+            .update({ content_data: content })
             .eq('id', openIssue.id);
         
         console.log('\n✅ Issue completed successfully!');
@@ -332,7 +347,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         
         await supabase
             .from('webtoys_issue_tracker_data')
-            .update({ content_data: JSON.stringify(content) })
+            .update({ content_data: content })
             .eq('id', openIssue.id);
     }
 }
