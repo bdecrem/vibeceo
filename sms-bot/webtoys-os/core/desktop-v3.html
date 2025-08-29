@@ -1238,8 +1238,14 @@
                 windowDiv.style.height = 'calc(100% - 32px)';
             } else {
                 // Centered on desktop
-                windowDiv.style.width = '800px';
-                windowDiv.style.height = '600px';
+                // Special size for Sudoku Pro to show buttons
+                if (app.id === 'sudoku-pro') {
+                    windowDiv.style.width = '600px';
+                    windowDiv.style.height = '700px';
+                } else {
+                    windowDiv.style.width = '800px';
+                    windowDiv.style.height = '600px';
+                }
                 windowDiv.style.top = '50%';
                 windowDiv.style.left = '50%';
                 windowDiv.style.transform = 'translate(-50%, -50%)';
