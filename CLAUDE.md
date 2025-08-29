@@ -383,6 +383,27 @@ Then RESTART the SMS listener if it's currently running.
 No restart needed - changes take effect on next SMS request.
 ```
 
+## Automated Agents (Mac Mini)
+
+Three automated agents run on the Mac Mini via cron:
+
+### 1. **WEBTOYS.AI ISSUE TRACKER AGENT**
+- **Location**: `/sms-bot/agent-issue-tracker/`
+- **Purpose**: Processes issues from webtoys.ai/bart/issue-tracker, creates PRs for fixes
+- **Cron**: Runs every minute
+
+### 2. **WTAF REVISE AGENT**
+- **Location**: `/sms-bot/webtoys-edit-agent/`
+- **Purpose**: Handles `--revise` SMS commands to edit existing Webtoys
+- **Cron**: Runs every 10 minutes
+
+### 3. **WEBTOYS OS V3 EDIT AGENT**
+- **Location**: `/sms-bot/webtoys-os/agents/edit-agent/`
+- **Purpose**: Processes issues from toybox-issue-tracker-v3 (Community Desktop)
+- **Cron**: Runs every 2 minutes
+
+**Note**: These agents are independent systems that won't interfere with normal development.
+
 ## Git Commit and Push Rules
 
 **Claude Code can commit anytime. For PUSHES the user needs to approve those requests.**

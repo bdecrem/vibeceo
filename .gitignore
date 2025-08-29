@@ -49,6 +49,10 @@ next-env.d.ts
 .dropbox.attr
 .dropbox.cache
 
+# Crontab backups (contain tokens)
+crontab-backup-*.txt
+**/crontab-backup-*.txt
+
 # Discord Bot
 /discord-bot/dist
 /discord-bot/node_modules
