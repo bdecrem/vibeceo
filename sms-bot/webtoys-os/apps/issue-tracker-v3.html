@@ -179,6 +179,26 @@
             color: #856404;
         }
         
+        .status-processing {
+            background: #e1f5fe;
+            color: #0277bd;
+        }
+        
+        .status-completed {
+            background: #fee;
+            color: #ec5962;
+        }
+        
+        .status-pending {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .status-new {
+            background: #d4f4dd;
+            color: #14ae5c;
+        }
+        
         .comments-section {
             margin-top: 16px;
             padding-top: 16px;
@@ -546,7 +566,7 @@
                         }
                     }
                     return item;
-                }).filter(item => item && item.content_data && (item.content_data.title || item.content_data.description));
+                }).filter(item => item && item.content_data && (item.content_data.title || item.content_data.description) && !item.content_data.deleted);
                 
                 // Sort by creation date (newest first)
                 issues.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
