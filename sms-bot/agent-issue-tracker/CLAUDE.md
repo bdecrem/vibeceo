@@ -1,3 +1,6 @@
+This is the ISSUE TRACKER agent for Webtoys.ai
+
+
 # Agent Issue Tracker - Critical Rules for Claude Code
 
 ## 🚨 CRITICAL: CRON COMPATIBILITY FIXES 🚨
