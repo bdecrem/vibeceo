@@ -249,11 +249,33 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         console.log('⏳ This may take several minutes for complex tasks...');
         
         const startTime = Date.now();
-        const { stdout, stderr } = await execAsync(command, {
-            timeout: 300000, // 5 minute timeout - give Claude time to create apps
-            maxBuffer: 1024 * 1024 * 50, // 50MB buffer (same as fix-issues.js)
-            env: { ...process.env }
-        });
+        let stdout = '';
+        let stderr = '';
+        
+        try {
+            const result = await execAsync(command, {
+                timeout: 300000, // 5 minute timeout - give Claude time to create apps
+                maxBuffer: 1024 * 1024 * 50, // 50MB buffer (same as fix-issues.js)
+                env: { ...process.env },
+                windowsHide: true,
+                shell: '/bin/bash'
+            });
+            stdout = result.stdout || '';
+            stderr = result.stderr || '';
+        } catch (execError) {
+            // If the command was killed but we got some output, use it
+            if (execError.killed && execError.signal === 'SIGTERM') {
+                console.log('⚠️  Claude was terminated with SIGTERM, but may have completed');
+                stdout = execError.stdout || '';
+                stderr = execError.stderr || '';
+                // If we got no output at all, this is a real error
+                if (!stdout && !stderr) {
+                    throw execError;
+                }
+            } else {
+                throw execError;
+            }
+        }
         
         // Clean up temp file
         await fs.promises.unlink(tempFile).catch(() => {});
@@ -322,8 +344,11 @@ ${claudeOutput || 'No output captured'}
         if (error.killed && error.signal === 'SIGKILL') {
             console.error('❌ Claude execution timed out after 5 minutes');
             console.error('   The task may have been too complex or Claude encountered an issue');
+        } else if (error.killed && error.signal === 'SIGTERM') {
+            console.error('⚠️  Claude was terminated (SIGTERM) - this may be a false error');
+            console.error('   Check if the task was actually completed');
         } else {
-            console.error('❌ Claude execution failed:', error);
+            console.error('❌ Claude execution failed:', error.message || error);
         }
         
         // Add error as a comment
@@ -352,4 +377,10 @@ ${claudeOutput || 'No output captured'}
     }
 }
 
-executeOpenIssue();
+// Run the main function and ensure clean exit
+executeOpenIssue().then(() => {
+    process.exit(0);
+}).catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+});
