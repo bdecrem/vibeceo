@@ -7,7 +7,7 @@ import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { deployApp } from '../../scripts/auto-deploy-app.js';
+// Note: deployApp is no longer imported - Claude will handle deployment directly
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
@@ -195,33 +195,35 @@ async function executeOpenIssue() {
     // Simple, clear prompt that lets Claude Code use its full capabilities
     let claudePrompt = `${description}
 
-IMPORTANT: After completing this request, ensure that:
+IMPORTANT: After completing this request, you must:
 
 1. **For NEW apps**: 
-   - Create the app HTML file in the /apps directory
+   - Create the app HTML file in the /apps directory with a descriptive filename (e.g., calculator.html, paint.html)
    - The app should be a standalone HTML file with all code included
-   - Add it to the WebtoysOS v3 desktop at /core/desktop-v3.html
-   - Update the desktop's app registry to include the new app
+   - Deploy it by running: node scripts/auto-deploy-app.js apps/[filename].html
+   - This will automatically add it to the desktop and make it accessible
 
 2. **For MODIFIED apps**:
    - Update the existing app file in the /apps directory
-   - Ensure changes maintain compatibility with the desktop
+   - Deploy the changes by running: node scripts/auto-deploy-app.js apps/[filename].html
+   - This ensures the desktop has the latest version
 
 3. **General requirements**:
    - Create complete, standalone HTML files with all code included
    - Follow existing project patterns and conventions
    - Apps should integrate with the v3 desktop system
-   - DO NOT start any web servers or try to open browsers
-   - DO NOT test the app by running it locally
-   - Just create the files and exit
+   - After creating the app, ALWAYS deploy it using the auto-deploy-app.js script
+   - The deployment script handles all desktop integration automatically
 
-CRITICAL: This is running on a headless server. DO NOT:
-- Start any HTTP servers (no python -m http.server, no npm start, etc.)
-- Try to open any browsers or webpages
-- Run any interactive testing
-- Use any commands that would hang waiting for user input
+DEPLOYMENT COMMAND:
+After creating your app file, run:
+node scripts/auto-deploy-app.js apps/[your-app-name].html
 
-Just create the HTML file(s) and exit. The deployment will be handled automatically.
+This command will:
+- Deploy the app to Supabase
+- Add it to the desktop app registry
+- Create a desktop icon
+- Make it accessible at the proper URL
 
 The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
     
@@ -234,7 +236,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         console.log('🚀 Executing Claude...');
         
         // Use the v3 webtoys-os directory structure
-        const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os';
+        const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os';  // Keep v3 directory
         
         // Write prompt to temp file to avoid shell escaping issues (same as fix-issues.js)
         const tempFile = path.join('/tmp', `execute-open-issue-${Date.now()}.txt`);
@@ -248,7 +250,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         
         const startTime = Date.now();
         const { stdout, stderr } = await execAsync(command, {
-            timeout: 300000, // 5 minute timeout
+            timeout: 300000, // 5 minute timeout - give Claude time to create apps
             maxBuffer: 1024 * 1024 * 50, // 50MB buffer (same as fix-issues.js)
             env: { ...process.env }
         });
@@ -299,50 +301,15 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
             .update({ content_data: JSON.stringify(content) })
             .eq('id', openIssue.id);
         
-        // Check if any new HTML files were created in /apps directory
-        console.log('\n🔍 Checking for new apps to deploy...');
-        const appsDir = path.join(__dirname, '../../apps');
-        const files = fs.readdirSync(appsDir);
-        const htmlFiles = files.filter(f => f.endsWith('.html'));
-        
-        // Find the newest HTML file (likely the one just created)
-        let newestFile = null;
-        let newestTime = 0;
-        
-        for (const file of htmlFiles) {
-            const filePath = path.join(appsDir, file);
-            const stats = fs.statSync(filePath);
-            if (stats.mtimeMs > newestTime) {
-                newestTime = stats.mtimeMs;
-                newestFile = file;
-            }
-        }
-        
-        // If a file was created in the last 5 minutes, deploy it
-        const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-        if (newestFile && newestTime > fiveMinutesAgo) {
-            console.log(`\n🚀 Auto-deploying newly created app: ${newestFile}`);
-            try {
-                const deployResult = await deployApp(newestFile);
-                console.log(`✅ Successfully deployed ${deployResult.appName} to desktop!`);
-                
-                // Add deployment info to issue
-                content.deployed_app = deployResult;
-                await supabase
-                    .from('wtaf_zero_admin_collaborative')
-                    .update({ content_data: JSON.stringify(content) })
-                    .eq('id', openIssue.id);
-            } catch (deployError) {
-                console.error(`⚠️  Warning: Could not auto-deploy ${newestFile}:`, deployError.message);
-            }
-        } else {
-            console.log('📝 No new apps detected for auto-deployment');
-        }
-
         console.log('\n✅ Issue completed successfully!');
         
     } catch (error) {
-        console.error('❌ Claude execution failed:', error);
+        if (error.killed && error.signal === 'SIGKILL') {
+            console.error('❌ Claude execution timed out after 5 minutes');
+            console.error('   The task may have been too complex or Claude encountered an issue');
+        } else {
+            console.error('❌ Claude execution failed:', error);
+        }
         
         // Add error as a comment
         const errorComment = {
