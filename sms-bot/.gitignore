@@ -35,3 +35,7 @@ Thumbs.db
 
 # Generated test files with credentials
 test-scripts/*-generated.html
+
+# Crontab backups (contain tokens)
+crontab-backup-*.txt
+**/crontab-backup-*.txt
