@@ -31,19 +31,39 @@ The `currentUser` object contains:
 
 ## App Side (Any app in /apps)
 
-Apps should listen for auth broadcasts from the desktop:
+Apps should use a **dual authentication approach** for reliability:
 
 ```javascript
 // Add this to any app that needs auth:
 let currentUser = null;
 
-// Listen for auth from desktop
+// STEP 1: Initialize from localStorage (immediate access)
+function loadAuthFromStorage() {
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        try {
+            currentUser = JSON.parse(savedUser);
+            console.log('Loaded auth from storage:', currentUser.handle);
+            updateAuthDisplay();
+        } catch (e) {
+            console.error('Failed to parse saved user:', e);
+        }
+    }
+}
+
+// STEP 2: Listen for auth broadcasts from desktop (real-time updates)
 window.addEventListener('message', function(event) {
     if (event.data && event.data.type === 'TOYBOX_AUTH') {
         currentUser = event.data.user;
         // Update UI based on auth state
         updateAuthDisplay();
     }
+});
+
+// STEP 3: Initialize on app load
+document.addEventListener('DOMContentLoaded', function() {
+    loadAuthFromStorage(); // Get immediate auth from localStorage
+    // Desktop will send TOYBOX_AUTH message when iframe loads
 });
 
 function updateAuthDisplay() {
@@ -60,6 +80,11 @@ function updateAuthDisplay() {
     }
 }
 ```
+
+**Why Dual Approach?**
+- **localStorage**: Provides immediate access to auth state on app load
+- **postMessage**: Keeps auth in sync when user logs in/out while app is open
+- This prevents race conditions where the TOYBOX_AUTH message might not arrive in time
 
 ## Data Storage
 
@@ -128,7 +153,22 @@ const response = await fetch(`/api/zad/load?app_id=my-app&participant_id=${curre
     <script>
         let currentUser = null;
 
-        // Listen for auth from desktop
+        // Load auth from localStorage (immediate access)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('Loaded auth from storage:', currentUser.handle);
+                    return true;
+                } catch (e) {
+                    console.error('Failed to parse saved user:', e);
+                }
+            }
+            return false;
+        }
+
+        // Listen for auth from desktop (real-time updates)
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'TOYBOX_AUTH') {
                 currentUser = event.data.user;
@@ -189,8 +229,16 @@ const response = await fetch(`/api/zad/load?app_id=my-app&participant_id=${curre
             });
         }
 
-        // Initial check
-        updateAuthDisplay();
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try localStorage first for immediate auth
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadUserData();
+            } else {
+                updateAuthDisplay();
+            }
+        });
     </script>
 </body>
 </html>
