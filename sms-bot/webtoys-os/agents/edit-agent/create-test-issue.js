@@ -18,15 +18,16 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-direct-updates';
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-issue-tracker-v3';
 
 async function createTestIssue() {
     const issue = {
-        title: "Fix button color issue",
-        description: "fix the login button color to be more visible on the main page",
+        title: "Test Issue - Verify Tracker v3 is Working",
+        description: "This is a test issue created to verify that the Issue Tracker v3 is working correctly. This issue should appear in the tracker with status 'open' and can be used to test commenting, closing, and reopening functionality.",
         status: "open",
-        priority: "medium",
-        created_by: "bart"
+        author: "test-user",
+        comments: [],
+        created: new Date().toISOString()
     };
 
     console.log('Using app ID:', ISSUE_TRACKER_APP_ID);
@@ -35,8 +36,8 @@ async function createTestIssue() {
         .from('wtaf_zero_admin_collaborative')
         .insert({
             app_id: ISSUE_TRACKER_APP_ID,
-            action_type: 'update_request',
-            participant_id: 'bart',
+            action_type: 'issue',
+            participant_id: 'test-user',
             content_data: JSON.stringify(issue)
         });
 
