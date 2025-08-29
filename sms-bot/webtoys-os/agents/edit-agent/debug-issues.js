@@ -25,7 +25,7 @@ async function debugIssues() {
     // Fetch ALL issues for this app_id
     // V3 uses 'issue' action_type, not 'update_request'
     const { data, error } = await supabase
-        .from('wtaf_zero_admin_collaborative')
+        .from('webtoys_issue_tracker_data')
         .select('*')
         .eq('app_id', ISSUE_TRACKER_APP_ID)
         .eq('action_type', 'issue')

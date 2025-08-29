@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>T3xt Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: #1e1e1e;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+            color: #d4d4d4;
+        }
+        
+        /* Header */
+        .header {
+            background: #2d2d30;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            align-items: center;
+            padding: 8px 16px;
+            gap: 16px;
+        }
+        
+        .logo {
+            font-weight: bold;
+            font-size: 16px;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .menu-bar {
+            display: flex;
+            gap: 4px;
+            flex: 1;
+        }
+        
+        .menu-item {
+            padding: 6px 12px;
+            cursor: pointer;
+            user-select: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+            font-size: 14px;
+        }
+        
+        .menu-item:hover {
+            background: #3e3e42;
+        }
+        
+        .dropdown {
+            position: relative;
+        }
+        
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            background: #252526;
+            min-width: 180px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            z-index: 1000;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        
+        .dropdown-content a {
+            color: #d4d4d4;
+            padding: 8px 16px;
+            text-decoration: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+            font-size: 13px;
+        }
+        
+        .dropdown-content a:hover {
+            background: #3e3e42;
+        }
+        
+        .dropdown.active .dropdown-content {
+            display: block;
+        }
+        
+        .shortcut {
+            color: #808080;
+            font-size: 11px;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            background: #252526;
+            border-bottom: 1px solid #3e3e42;
+            padding: 8px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .tool-btn {
+            padding: 6px 12px;
+            background: #3e3e42;
+            border: 1px solid #464647;
+            cursor: pointer;
+            font-size: 13px;
+            color: #d4d4d4;
+            border-radius: 4px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .tool-btn:hover {
+            background: #4e4e52;
+            transform: translateY(-1px);
+        }
+        
+        .tool-btn:active {
+            transform: translateY(0);
+        }
+        
+        .separator {
+            width: 1px;
+            height: 20px;
+            background: #3e3e42;
+        }
+        
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: #1e1e1e;
+        }
+        
+        .line-numbers {
+            background: #1e1e1e;
+            color: #858585;
+            padding: 12px 8px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 21px;
+            text-align: right;
+            user-select: none;
+            min-width: 40px;
+            border-right: 1px solid #2d2d30;
+        }
+        
+        .editor {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 21px;
+            resize: none;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            tab-size: 4;
+        }
+        
+        .editor::selection {
+            background: #264f78;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: #007acc;
+            padding: 4px 16px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+        }
+        
+        .status-left {
+            display: flex;
+            gap: 16px;
+        }
+        
+        .status-right {
+            display: flex;
+            gap: 16px;
+        }
+        
+        /* Find/Replace dialog */
+        .find-replace {
+            position: absolute;
+            top: 60px;
+            right: 20px;
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 4px;
+            padding: 12px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+            z-index: 1001;
+        }
+        
+        .find-replace.active {
+            display: block;
+        }
+        
+        .find-replace input {
+            background: #3e3e42;
+            border: 1px solid #464647;
+            color: #d4d4d4;
+            padding: 6px 8px;
+            margin: 4px 0;
+            width: 200px;
+            border-radius: 3px;
+            font-size: 13px;
+        }
+        
+        .find-replace button {
+            background: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+        
+        .find-replace button:hover {
+            background: #1177bb;
+        }
+        
+        /* Theme variations */
+        body.light-theme {
+            background: #ffffff;
+            color: #333333;
+        }
+        
+        body.light-theme .header {
+            background: #f3f3f3;
+            border-bottom-color: #e0e0e0;
+        }
+        
+        body.light-theme .toolbar {
+            background: #f8f8f8;
+            border-bottom-color: #e0e0e0;
+        }
+        
+        body.light-theme .editor-container {
+            background: #ffffff;
+        }
+        
+        body.light-theme .editor {
+            background: #ffffff;
+            color: #333333;
+        }
+        
+        body.light-theme .line-numbers {
+            background: #f8f8f8;
+            color: #999999;
+            border-right-color: #e0e0e0;
+        }
+        
+        body.light-theme .tool-btn {
+            background: #ffffff;
+            border-color: #d0d0d0;
+            color: #333333;
+        }
+        
+        body.light-theme .dropdown-content {
+            background: #ffffff;
+            border-color: #e0e0e0;
+        }
+        
+        body.light-theme .dropdown-content a {
+            color: #333333;
+        }
+        
+        body.light-theme .status-bar {
+            background: #007acc;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">T3XT</div>
+        <div class="menu-bar">
+            <div class="dropdown menu-item" onclick="toggleDropdown(this)">
+                File
+                <div class="dropdown-content">
+                    <a href="#" onclick="newFile()">New <span class="shortcut">Ctrl+N</span></a>
+                    <a href="#" onclick="openFile()">Open <span class="shortcut">Ctrl+O</span></a>
+                    <a href="#" onclick="saveFile()">Save <span class="shortcut">Ctrl+S</span></a>
+                    <a href="#" onclick="saveAsFile()">Save As <span class="shortcut">Ctrl+Shift+S</span></a>
+                </div>
+            </div>
+            <div class="dropdown menu-item" onclick="toggleDropdown(this)">
+                Edit
+                <div class="dropdown-content">
+                    <a href="#" onclick="undo()">Undo <span class="shortcut">Ctrl+Z</span></a>
+                    <a href="#" onclick="redo()">Redo <span class="shortcut">Ctrl+Y</span></a>
+                    <a href="#" onclick="cut()">Cut <span class="shortcut">Ctrl+X</span></a>
+                    <a href="#" onclick="copy()">Copy <span class="shortcut">Ctrl+C</span></a>
+                    <a href="#" onclick="paste()">Paste <span class="shortcut">Ctrl+V</span></a>
+                    <a href="#" onclick="selectAll()">Select All <span class="shortcut">Ctrl+A</span></a>
+                    <a href="#" onclick="toggleFind()">Find <span class="shortcut">Ctrl+F</span></a>
+                </div>
+            </div>
+            <div class="dropdown menu-item" onclick="toggleDropdown(this)">
+                View
+                <div class="dropdown-content">
+                    <a href="#" onclick="toggleTheme()">Toggle Theme</a>
+                    <a href="#" onclick="toggleLineNumbers()">Toggle Line Numbers</a>
+                    <a href="#" onclick="toggleWordWrap()">Toggle Word Wrap</a>
+                    <a href="#" onclick="increaseFontSize()">Increase Font Size <span class="shortcut">Ctrl++</span></a>
+                    <a href="#" onclick="decreaseFontSize()">Decrease Font Size <span class="shortcut">Ctrl+-</span></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="toolbar">
+        <button class="tool-btn" onclick="newFile()">📄 New</button>
+        <button class="tool-btn" onclick="openFile()">📂 Open</button>
+        <button class="tool-btn" onclick="saveFile()">💾 Save</button>
+        <div class="separator"></div>
+        <button class="tool-btn" onclick="undo()">↶ Undo</button>
+        <button class="tool-btn" onclick="redo()">↷ Redo</button>
+        <div class="separator"></div>
+        <button class="tool-btn" onclick="cut()">✂️ Cut</button>
+        <button class="tool-btn" onclick="copy()">📋 Copy</button>
+        <button class="tool-btn" onclick="paste()">📌 Paste</button>
+        <div class="separator"></div>
+        <button class="tool-btn" onclick="toggleFind()">🔍 Find</button>
+    </div>
+    
+    <div class="editor-container">
+        <div class="line-numbers" id="lineNumbers">1</div>
+        <textarea class="editor" id="editor" placeholder="Start typing or paste your text here..." spellcheck="false"></textarea>
+    </div>
+    
+    <div class="status-bar">
+        <div class="status-left">
+            <span id="fileName">Untitled</span>
+            <span id="wordCount">0 words</span>
+            <span id="charCount">0 characters</span>
+        </div>
+        <div class="status-right">
+            <span id="lineCol">Ln 1, Col 1</span>
+            <span id="encoding">UTF-8</span>
+        </div>
+    </div>
+    
+    <div class="find-replace" id="findReplace">
+        <input type="text" id="findInput" placeholder="Find..." />
+        <br>
+        <button onclick="findNext()">Find Next</button>
+        <button onclick="findPrev()">Find Previous</button>
+        <button onclick="replaceOne()">Replace</button>
+        <button onclick="replaceAll()">Replace All</button>
+        <br>
+        <input type="text" id="replaceInput" placeholder="Replace with..." />
+    </div>
+    
+    <input type="file" id="fileInput" style="display: none;" accept=".txt,.md,.js,.html,.css,.json,.xml,.csv" />
+    
+    <script>
+        let currentFileName = 'Untitled';
+        let isDirty = false;
+        let history = [];
+        let historyIndex = -1;
+        let wordWrap = false;
+        let showLineNumbers = true;
+        let fontSize = 14;
+        
+        const editor = document.getElementById('editor');
+        const lineNumbers = document.getElementById('lineNumbers');
+        const fileInput = document.getElementById('fileInput');
+        
+        // Initialize
+        updateLineNumbers();
+        updateStatus();
+        saveToHistory();
+        
+        // Event listeners
+        editor.addEventListener('input', () => {
+            isDirty = true;
+            updateLineNumbers();
+            updateStatus();
+            saveToHistory();
+        });
+        
+        editor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = editor.scrollTop;
+        });
+        
+        editor.addEventListener('keyup', updateCursorPosition);
+        editor.addEventListener('click', updateCursorPosition);
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        newFile();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        openFile();
+                        break;
+                    case 's':
+                        e.preventDefault();
+                        if (e.shiftKey) {
+                            saveAsFile();
+                        } else {
+                            saveFile();
+                        }
+                        break;
+                    case 'z':
+                        e.preventDefault();
+                        undo();
+                        break;
+                    case 'y':
+                        e.preventDefault();
+                        redo();
+                        break;
+                    case 'f':
+                        e.preventDefault();
+                        toggleFind();
+                        break;
+                    case '=':
+                    case '+':
+                        e.preventDefault();
+                        increaseFontSize();
+                        break;
+                    case '-':
+                        e.preventDefault();
+                        decreaseFontSize();
+                        break;
+                }
+            }
+        });
+        
+        // File operations
+        function newFile() {
+            if (isDirty && !confirm('You have unsaved changes. Do you want to continue?')) {
+                return;
+            }
+            editor.value = '';
+            currentFileName = 'Untitled';
+            isDirty = false;
+            document.getElementById('fileName').textContent = currentFileName;
+            updateLineNumbers();
+            updateStatus();
+            history = [];
+            historyIndex = -1;
+            saveToHistory();
+        }
+        
+        function openFile() {
+            fileInput.click();
+        }
+        
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    editor.value = e.target.result;
+                    currentFileName = file.name;
+                    isDirty = false;
+                    document.getElementById('fileName').textContent = currentFileName;
+                    updateLineNumbers();
+                    updateStatus();
+                    history = [];
+                    historyIndex = -1;
+                    saveToHistory();
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        function saveFile() {
+            const blob = new Blob([editor.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = currentFileName.endsWith('.txt') ? currentFileName : currentFileName + '.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+            isDirty = false;
+        }
+        
+        function saveAsFile() {
+            const fileName = prompt('Enter file name:', currentFileName);
+            if (fileName) {
+                currentFileName = fileName;
+                document.getElementById('fileName').textContent = currentFileName;
+                saveFile();
+            }
+        }
+        
+        // Edit operations
+        function undo() {
+            if (historyIndex > 0) {
+                historyIndex--;
+                editor.value = history[historyIndex];
+                updateLineNumbers();
+                updateStatus();
+            }
+        }
+        
+        function redo() {
+            if (historyIndex < history.length - 1) {
+                historyIndex++;
+                editor.value = history[historyIndex];
+                updateLineNumbers();
+                updateStatus();
+            }
+        }
+        
+        function cut() {
+            document.execCommand('cut');
+        }
+        
+        function copy() {
+            document.execCommand('copy');
+        }
+        
+        function paste() {
+            document.execCommand('paste');
+        }
+        
+        function selectAll() {
+            editor.select();
+        }
+        
+        // View operations
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+        
+        function toggleLineNumbers() {
+            showLineNumbers = !showLineNumbers;
+            lineNumbers.style.display = showLineNumbers ? 'block' : 'none';
+        }
+        
+        function toggleWordWrap() {
+            wordWrap = !wordWrap;
+            editor.style.whiteSpace = wordWrap ? 'pre-wrap' : 'pre';
+            editor.style.wordWrap = wordWrap ? 'break-word' : 'normal';
+        }
+        
+        function increaseFontSize() {
+            fontSize = Math.min(fontSize + 2, 24);
+            editor.style.fontSize = fontSize + 'px';
+            lineNumbers.style.fontSize = fontSize + 'px';
+            editor.style.lineHeight = (fontSize * 1.5) + 'px';
+            lineNumbers.style.lineHeight = (fontSize * 1.5) + 'px';
+        }
+        
+        function decreaseFontSize() {
+            fontSize = Math.max(fontSize - 2, 10);
+            editor.style.fontSize = fontSize + 'px';
+            lineNumbers.style.fontSize = fontSize + 'px';
+            editor.style.lineHeight = (fontSize * 1.5) + 'px';
+            lineNumbers.style.lineHeight = (fontSize * 1.5) + 'px';
+        }
+        
+        // Find/Replace
+        function toggleFind() {
+            const findReplace = document.getElementById('findReplace');
+            findReplace.classList.toggle('active');
+            if (findReplace.classList.contains('active')) {
+                document.getElementById('findInput').focus();
+            }
+        }
+        
+        function findNext() {
+            const searchTerm = document.getElementById('findInput').value;
+            if (!searchTerm) return;
+            
+            const text = editor.value;
+            const selectionStart = editor.selectionEnd;
+            const index = text.indexOf(searchTerm, selectionStart);
+            
+            if (index !== -1) {
+                editor.setSelectionRange(index, index + searchTerm.length);
+                editor.focus();
+            } else {
+                // Wrap around to beginning
+                const wrapIndex = text.indexOf(searchTerm);
+                if (wrapIndex !== -1) {
+                    editor.setSelectionRange(wrapIndex, wrapIndex + searchTerm.length);
+                    editor.focus();
+                }
+            }
+        }
+        
+        function findPrev() {
+            const searchTerm = document.getElementById('findInput').value;
+            if (!searchTerm) return;
+            
+            const text = editor.value;
+            const selectionStart = editor.selectionStart;
+            const index = text.lastIndexOf(searchTerm, selectionStart - 1);
+            
+            if (index !== -1) {
+                editor.setSelectionRange(index, index + searchTerm.length);
+                editor.focus();
+            }
+        }
+        
+        function replaceOne() {
+            const findText = document.getElementById('findInput').value;
+            const replaceText = document.getElementById('replaceInput').value;
+            
+            if (!findText) return;
+            
+            const selectionStart = editor.selectionStart;
+            const selectionEnd = editor.selectionEnd;
+            const selectedText = editor.value.substring(selectionStart, selectionEnd);
+            
+            if (selectedText === findText) {
+                editor.setRangeText(replaceText);
+                findNext();
+            } else {
+                findNext();
+            }
+        }
+        
+        function replaceAll() {
+            const findText = document.getElementById('findInput').value;
+            const replaceText = document.getElementById('replaceInput').value;
+            
+            if (!findText) return;
+            
+            editor.value = editor.value.replaceAll(findText, replaceText);
+            updateLineNumbers();
+            updateStatus();
+            saveToHistory();
+        }
+        
+        // Helper functions
+        function updateLineNumbers() {
+            const lines = editor.value.split('\n').length;
+            let lineNumbersText = '';
+            for (let i = 1; i <= lines; i++) {
+                lineNumbersText += i + '\n';
+            }
+            lineNumbers.textContent = lineNumbersText;
+        }
+        
+        function updateStatus() {
+            const text = editor.value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            document.getElementById('wordCount').textContent = `${words} words`;
+            document.getElementById('charCount').textContent = `${chars} characters`;
+        }
+        
+        function updateCursorPosition() {
+            const pos = editor.selectionStart;
+            const textBeforeCursor = editor.value.substring(0, pos);
+            const lines = textBeforeCursor.split('\n');
+            const currentLine = lines.length;
+            const currentCol = lines[lines.length - 1].length + 1;
+            
+            document.getElementById('lineCol').textContent = `Ln ${currentLine}, Col ${currentCol}`;
+        }
+        
+        function saveToHistory() {
+            // Limit history
+            if (history.length > 50) {
+                history = history.slice(-50);
+            }
+            
+            // Remove any history after current index
+            history = history.slice(0, historyIndex + 1);
+            
+            // Add current state
+            history.push(editor.value);
+            historyIndex = history.length - 1;
+        }
+        
+        function toggleDropdown(element) {
+            // Close all other dropdowns
+            document.querySelectorAll('.dropdown').forEach(dropdown => {
+                if (dropdown !== element) {
+                    dropdown.classList.remove('active');
+                }
+            });
+            
+            // Toggle current dropdown
+            element.classList.toggle('active');
+        }
+        
+        // Close dropdowns when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.dropdown')) {
+                document.querySelectorAll('.dropdown').forEach(dropdown => {
+                    dropdown.classList.remove('active');
+                });
+            }
+        });
+    </script>
+</body>
+</html>
