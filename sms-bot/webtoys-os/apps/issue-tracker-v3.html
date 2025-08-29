@@ -212,6 +212,22 @@
             margin-bottom: 8px;
         }
         
+        .agent-comment {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .agent-comment .comment-header {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .agent-comment .comment-body {
+            color: white;
+            white-space: pre-wrap;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+        }
+        
         .comment-header {
             display: flex;
             justify-content: space-between;
@@ -565,6 +581,10 @@
                 const issueNumber = `#${issueId}`;
                 const status = data.status || 'open';
                 const comments = data.comments || [];
+                const adminComments = data.admin_comments || [];
+                const allComments = [...comments, ...adminComments].sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
                 
                 return `
                     <div class="issue-card" data-id="${issue.id}">
@@ -575,10 +595,10 @@
                         <div class="issue-meta">
                             <span>👤 ${escapeHtml(data.author || 'anonymous')}</span>
                             <span>📅 ${formatDate(issue.created_at)}</span>
-                            <span>💬 ${comments.length} comments</span>
+                            <span>💬 ${allComments.length} comments</span>
                         </div>
                         <div class="issue-description">${escapeHtml(data.description)}</div>
-                        ${comments.length > 0 ? renderComments(comments) : ''}
+                        ${allComments.length > 0 ? renderComments(allComments) : ''}
                         <div class="issue-footer">
                             <span class="status-badge status-${status}">${status}</span>
                             <div class="issue-actions">
@@ -609,17 +629,36 @@
             return `
                 <div class="comments-section">
                     <h4 style="font-size: 14px; margin-bottom: 8px;">Comments</h4>
-                    ${comments.map(comment => `
-                        <div class="comment">
+                    ${comments.map(comment => {
+                        const isAgent = comment.authorRole === 'AGENT' || comment.author === 'Edit Agent';
+                        return `
+                        <div class="comment ${isAgent ? 'agent-comment' : ''}">
                             <div class="comment-header">
-                                <span>👤 ${escapeHtml(comment.author || 'anonymous')}</span>
+                                <span>${isAgent ? '🤖' : '👤'} ${escapeHtml(comment.author || 'anonymous')}</span>
                                 <span>${formatDate(comment.timestamp)}</span>
                             </div>
-                            <div class="comment-body">${escapeHtml(comment.text)}</div>
+                            <div class="comment-body">${isAgent ? formatAgentComment(comment.text) : escapeHtml(comment.text)}</div>
                         </div>
-                    `).join('')}
+                    `}).join('')}
                 </div>
             `;
+        }
+        
+        function formatAgentComment(text) {
+            // For agent comments, preserve formatting but escape HTML
+            return text
+                .split('\n')
+                .map(line => {
+                    if (line.startsWith('##')) {
+                        return `<strong>${escapeHtml(line.replace(/^#+\s*/, ''))}</strong>`;
+                    } else if (line.startsWith('###')) {
+                        return `<em>${escapeHtml(line.replace(/^#+\s*/, ''))}</em>`;
+                    } else if (line.startsWith('-')) {
+                        return `• ${escapeHtml(line.substring(1).trim())}`;
+                    }
+                    return escapeHtml(line);
+                })
+                .join('<br>');
         }
         
         async function createIssue(event) {
