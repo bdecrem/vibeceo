@@ -135,7 +135,7 @@ async function executeOpenIssue() {
     
     // Fetch open issues
     const { data, error } = await supabase
-        .from('wtaf_zero_admin_collaborative')
+        .from('webtoys_issue_tracker_data')
         .select('*')
         .eq('app_id', ISSUE_TRACKER_APP_ID)
         .in('action_type', ['update_request', 'issue'])
@@ -183,8 +183,8 @@ async function executeOpenIssue() {
     content.processedAt = new Date().toISOString();
     
     await supabase
-        .from('wtaf_zero_admin_collaborative')
-        .update({ content_data: JSON.stringify(content) })
+        .from('webtoys_issue_tracker_data')
+        .update({ content_data: content })
         .eq('id', openIssue.id);
     
     console.log('\n🤖 Executing issue with Claude...\n');
@@ -297,7 +297,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         content.edit_agent_execution_time = `${duration} seconds`;
         
         await supabase
-            .from('wtaf_zero_admin_collaborative')
+            .from('webtoys_issue_tracker_data')
             .update({ content_data: JSON.stringify(content) })
             .eq('id', openIssue.id);
         
@@ -331,7 +331,7 @@ The v3 desktop is at /core/desktop-v3.html and apps go in the /apps directory.`;
         content.error = error.message;
         
         await supabase
-            .from('wtaf_zero_admin_collaborative')
+            .from('webtoys_issue_tracker_data')
             .update({ content_data: JSON.stringify(content) })
             .eq('id', openIssue.id);
     }

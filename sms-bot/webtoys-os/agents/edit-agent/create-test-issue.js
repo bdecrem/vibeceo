@@ -6,7 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-dotenv.config({ path: path.join(__dirname, '../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../../.env.local') });
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
@@ -33,12 +33,12 @@ async function createTestIssue() {
     console.log('Using app ID:', ISSUE_TRACKER_APP_ID);
 
     const { data, error } = await supabase
-        .from('wtaf_zero_admin_collaborative')
+        .from('webtoys_issue_tracker_data')
         .insert({
             app_id: ISSUE_TRACKER_APP_ID,
             action_type: 'issue',
             participant_id: 'test-user',
-            content_data: JSON.stringify(issue)
+            content_data: issue
         });
 
     if (error) {
