@@ -2,10 +2,12 @@
 
 ## 🚨 CRITICAL: Read This First
 
-**WebtoysOS (also called ToyBox OS or Community Desktop) is a DATABASE-CENTRIC system**
+**WebtoysOS (BUILD PLAY SHARE) is a DATABASE-CENTRIC system**
 - The desktop and apps live in Supabase tables, NOT in local files
 - Local HTML files are just templates that get deployed to the database
 - NEVER confuse local files with deployed apps - they are separate!
+- Title: BUILD PLAY SHARE
+- Live URL: https://webtoys.ai/public/toybox-os-v3-test
 
 ## System Architecture
 
@@ -14,7 +16,7 @@
 ```
 /sms-bot/webtoys-os/
 ├── core/                    # Desktop and window manager
-│   └── desktop-v3.html     # The main desktop (deployed to database)
+│   └── desktop-v3-modern-new.html  # The main desktop (deployed to database)
 ├── apps/                    # All WebtoysOS applications
 │   ├── issue-tracker-v3.html
 │   ├── t3xt.html

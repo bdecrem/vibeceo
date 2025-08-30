@@ -4,6 +4,10 @@
 
 **WebtoysOS** (also known as **Community Desktop** or **ToyBox OS**) is a browser-based windowed operating system that serves as a "super Webtoys app" - a special case application that leverages Webtoys.ai infrastructure to create a "desktop in the cloud" that users can collectively use AND help build.
 
+**Current Version**: WebtoysOS v3
+**Live URL**: https://webtoys.ai/public/toybox-os-v3-test
+**Title**: BUILD PLAY SHARE
+
 ## 🎯 CRITICAL DISTINCTION: WebtoysOS as a "Super Webtoys App"
 
 ### WebtoysOS - The Special Case
@@ -47,31 +51,35 @@ Webtoys.ai (SMS System)           WebtoysOS ("Super App")
 
 ### Understanding Where WebtoysOS Lives
 
-**WebtoysOS exists in TWO places:**
+**WebtoysOS v3 exists in TWO places:**
 
 #### 1. Development Infrastructure (Local Files)
 ```
-/sms-bot/community-desktop-v2/       # Development "mission control"
-├── scripts/                         # Database update scripts
-│   ├── safe-update-wrapper.js      # CRITICAL: Database backup system
-│   ├── safe-css-wrapper.js         # CSS backup functionality
-│   ├── update-toybox.js            # Primary database update script
-│   └── [various fix scripts]       # Individual database modifications
-├── backups/                         # Database content backups (git-ignored)
-│   ├── toybox-os_*.html           # HTML backups with timestamps
-│   └── css/                       # Theme CSS backups
-├── themes/                         # Local theme development
-├── prompts/                        # Templates for new apps
-└── CLAUDE.md                       # Local documentation
+/sms-bot/webtoys-os/                # WebtoysOS v3 development
+├── apps/                           # Individual app HTML files
+│   ├── issue-tracker-v3.html     # Issue Tracker app
+│   ├── sudoku.html                # Sudoku game
+│   ├── flappy-bird.html          # Flappy Bird game
+│   └── [other apps].html         # Various desktop apps
+├── core/                          # Desktop and window manager
+│   └── desktop-v3-modern-new.html # Main desktop environment
+├── scripts/                       # Deployment and management
+│   ├── auto-deploy-app.js        # Deploy any app to desktop
+│   ├── set-desktop-og-image.js   # Set OG image for desktop
+│   └── [deployment scripts]      # Various deployment tools
+├── agents/                        # Automated agents
+│   └── edit-agent/               # Processes issues from tracker
+├── backups/                       # Automatic backups (git-ignored)
+└── CLAUDE.md                      # Development documentation
 ```
 
 #### 2. Live Application (Database)
-- **Location**: Supabase `wtaf_content` table as the `webtoys-os` app
-- **Plus**: System 7 theme in `wtaf_themes` table
-- **Contains**: The ACTUAL running desktop OS that users see
-- **URL**: https://webtoys.ai/public/toybox-os
+- **Desktop**: Supabase `wtaf_content` table (`toybox-os-v3-test`)
+- **Apps**: Individual entries in `wtaf_content` (e.g., `toybox-sudoku`)
+- **Config**: `wtaf_desktop_config` table for app registry and settings
+- **URL**: https://webtoys.ai/public/toybox-os-v3-test
 
-**⚠️ DEPRECATED**: `/sms-bot/community-desktop/` - DO NOT USE
+**⚠️ DEPRECATED**: `/sms-bot/community-desktop/` and `/sms-bot/community-desktop-v2/` - DO NOT USE
 
 ### Why This Split Architecture Exists
 
@@ -150,24 +158,32 @@ node scripts/css-backup-manager.js restore system7-theme_latest-backup.css
 ### Primary Tables
 
 #### wtaf_content
-Stores all HTML pages including ToyBox OS and its apps:
-- `user_slug`: 'public' for ToyBox OS apps
-- `app_slug`: 'toybox-os', 'community-notepad', etc.
+Stores all HTML pages including WebtoysOS and its apps:
+- `user_slug`: 'public' for WebtoysOS apps
+- `app_slug`: 'toybox-os-v3-test', 'toybox-sudoku', etc.
 - `html_content`: Complete HTML including embedded JavaScript
-- `theme_id`: Links to theme CSS
+- `og_image_url`: OpenGraph image URL for social sharing
+- `og_image_override`: Boolean flag to use custom OG image
+
+#### wtaf_desktop_config
+Desktop configuration and app registry:
+- `desktop_version`: 'webtoys-os-v3'
+- `app_registry`: JSON array of all registered apps
+- `icon_positions`: JSON object with desktop icon coordinates
+- `user_settings`: Theme preferences and settings
 
 #### wtaf_zero_admin_collaborative (ZAD)
 Stores all app data and user information:
 - `app_id`: UUID or app identifier
-- `action_type`: Data category (e.g., 'user_registry', 'update_request')
-- `participant_id`: User identifier
+- `action_type`: Data category (e.g., 'user_registry', 'save_data')
+- `participant_id`: User identifier (format: HANDLE_PIN)
 - `content_data`: JSONB with actual data
 
-#### wtaf_themes
-Stores theme CSS:
-- `id`: Theme UUID
-- `css_content`: Complete CSS for theme
-- `name`: Theme name (e.g., 'System 7')
+#### webtoys_issue_tracker_data
+Issue tracker system (direct Supabase access):
+- `app_id`: 'toybox-issue-tracker-v3'
+- `content_data`: JSONB with issue details
+- `status`: 'open', 'processing', 'completed', 'failed'
 
 ## User Authentication System
 
@@ -295,39 +311,50 @@ async function load(dataType) {
 </html>
 ```
 
-### Deployment Process
+### Deployment Process (WebtoysOS v3)
 
-1. **Create the app HTML** following the template
-2. **Deploy to Supabase**:
-```javascript
-const { error } = await supabase
-    .from('wtaf_content')
-    .insert({
-        user_slug: 'public',
-        app_slug: 'your-app-name',
-        html_content: yourHTML,
-        original_prompt: 'App description'
-    });
+1. **Create the app HTML** in `/sms-bot/webtoys-os/apps/`
+2. **Deploy using auto-deploy script**:
+```bash
+cd /sms-bot/webtoys-os
+node scripts/auto-deploy-app.js apps/your-app.html 🎯
+# Last parameter is the icon emoji (optional)
 ```
 
-3. **Register in ToyBox OS**:
+This automatically:
+- Deploys HTML to Supabase `wtaf_content` table
+- Registers app in `wtaf_desktop_config` app_registry
+- Sets icon position on desktop
+- Makes app accessible at `/public/toybox-your-app`
+
+3. **Manual deployment (if needed)**:
 ```javascript
-// Add to window.windowedApps registry in toybox-os.html
-window.windowedApps['your-app'] = {
+// Deploy to Supabase
+await supabase.from('wtaf_content').upsert({
+    user_slug: 'public',
+    app_slug: 'toybox-your-app',
+    html_content: yourHTML
+});
+
+// Register in desktop config
+const { data: config } = await supabase
+    .from('wtaf_desktop_config')
+    .select('app_registry')
+    .eq('desktop_version', 'webtoys-os-v3')
+    .single();
+
+config.app_registry.push({
+    id: 'your-app',
     name: 'Your App',
-    url: '/public/your-app-name',
+    url: '/public/toybox-your-app',
     icon: '🎯',
     width: 800,
     height: 600
-};
-```
+});
 
-4. **Add desktop icon**:
-```html
-<div class="desktop-icon" onclick="openWindowedApp('your-app')">
-    <div class="icon">🎯</div>
-    <div class="label">Your App</div>
-</div>
+await supabase.from('wtaf_desktop_config').update({
+    app_registry: config.app_registry
+}).eq('desktop_version', 'webtoys-os-v3');
 ```
 
 ## Common APIs and Patterns
@@ -462,31 +489,32 @@ npm run dev
 ## Quick Command Reference
 
 ```bash
-# Update WebtoysOS HTML in database
-cd /Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/sms-bot/community-desktop-v2
-node scripts/update-toybox.js html "Added new feature"
+# Deploy an app to WebtoysOS
+cd /sms-bot/webtoys-os
+node scripts/auto-deploy-app.js apps/my-app.html 🎯
 
-# Update theme CSS in database
-node scripts/update-toybox.js css "Updated colors"
+# Set OG image for desktop
+node scripts/set-desktop-og-image.js
 
-# Restore database from backup
-node scripts/update-toybox-os.js backups/toybox-os_latest-backup.html
+# Check issues in tracker
+ISSUE_TRACKER_APP_ID=toybox-issue-tracker-v3 node agents/edit-agent/debug-issues.js
 
-# Create test issue (Issue Tracker)
-node scripts/create-test-issue.js
+# Process open issues
+ISSUE_TRACKER_APP_ID=toybox-issue-tracker-v3 node agents/edit-agent/execute-open-issue.js
 
-# Fix specific issue
-node scripts/fix-[issue-name].js
+# Monitor edit agent logs
+tail -f agents/edit-agent/edit-agent-v3.log
 ```
 
 ## Important Files Reference
 
-- **Main Desktop**: Lives in Supabase `wtaf_content` table (NOT a local file)
-- **Safe Update**: `scripts/safe-update-wrapper.js` (modifies database safely)
-- **Local Docs**: `community-desktop-v2/CLAUDE.md`
+- **Main Desktop**: `toybox-os-v3-test` in Supabase
+- **Desktop URL**: https://webtoys.ai/public/toybox-os-v3-test  
+- **Local Template**: `webtoys-os/core/desktop-v3-modern-new.html`
+- **Auto Deploy**: `webtoys-os/scripts/auto-deploy-app.js`
 - **This File**: `sms-bot/documentation/webtoys-os.md`
-- **ZAD Docs**: `sms-bot/documentation/ZAD-API-REFERENCE.md`
-- **Backup Location**: `backups/` folder (database content backups)
+- **Dev Docs**: `sms-bot/webtoys-os/CLAUDE.md`
+- **Auth Docs**: `agents/edit-agent/AUTH-DOCUMENTATION.md`
 
 ## Support & Troubleshooting
 
@@ -504,5 +532,5 @@ Remember:
 
 ---
 
-*Last Updated: August 2025*
-*Version: 2.0 (WebtoysOS - Community Desktop V2)*
+*Last Updated: August 30, 2025*
+*Version: 3.0 (WebtoysOS v3 - BUILD PLAY SHARE)*
