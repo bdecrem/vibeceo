@@ -580,9 +580,19 @@ setTimeout(function() {
 		// Serve desktop apps directly without iframe wrapper
 		if (isDesktopApp) {
 			console.log('🖥️ Serving desktop app directly without iframe wrapper');
-			// Return the HTML content directly as a component
+			// Return a client-side redirect script
 			return (
-				<div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+				<html>
+					<head>
+						<meta httpEquiv="refresh" content={`0;url=/api/wtaf/raw?user=${encodeURIComponent(user_slug)}&slug=${encodeURIComponent(app_slug)}`} />
+						<script dangerouslySetInnerHTML={{
+							__html: `window.location.href = '/api/wtaf/raw?user=${encodeURIComponent(user_slug)}&slug=${encodeURIComponent(app_slug)}';`
+						}} />
+					</head>
+					<body>
+						Redirecting to desktop...
+					</body>
+				</html>
 			);
 		}
 
