@@ -49,6 +49,8 @@ const DEFAULT_ICONS = {
     'text': '📝',
     'editor': '📝',
     'notepad': '📝',
+    'flappy': '🐦',
+    'bird': '🐦',
     'game': '🎮',
     'music': '🎵',
     'chat': '💬',
@@ -122,11 +124,49 @@ async function deployApp(filename, iconOverride = null) {
     const appName = generateAppName(filename);
     const appIcon = iconOverride || guessIcon(appName);
     
+    // Try to detect canvas dimensions from HTML for games
+    let appWidth = 800;
+    let appHeight = 600;
+    let resizable = true;
+    
+    // Check for window metadata first
+    const windowMetaMatch = htmlContent.match(/<meta\s+name=["']window:[^"']+["']\s+content=["']([^"']+)["']/);
+    if (windowMetaMatch) {
+        const metaContent = windowMetaMatch[1];
+        const widthMatch = metaContent.match(/width=(\d+)/);
+        const heightMatch = metaContent.match(/height=(\d+)/);
+        const resizableMatch = metaContent.match(/resizable=(true|false)/);
+        
+        if (widthMatch) appWidth = parseInt(widthMatch[1]);
+        if (heightMatch) appHeight = parseInt(heightMatch[1]);
+        if (resizableMatch) resizable = resizableMatch[1] === 'true';
+        
+        console.log(`   Detected window metadata: ${appWidth}x${appHeight}, resizable: ${resizable}`);
+    } else {
+        // Check for canvas element with width/height attributes
+        const canvasMatch = htmlContent.match(/<canvas[^>]+width=["'](\d+)["'][^>]+height=["'](\d+)["']/);
+        if (canvasMatch) {
+            appWidth = parseInt(canvasMatch[1]);
+            appHeight = parseInt(canvasMatch[2]);
+            resizable = false; // Games with fixed canvas should not be resizable
+            console.log(`   Detected canvas size: ${appWidth}x${appHeight}`);
+        } else {
+            // Check for explicit window size in a comment or meta tag
+            const sizeMatch = htmlContent.match(/<!--\s*window-size:\s*(\d+)x(\d+)\s*-->/);
+            if (sizeMatch) {
+                appWidth = parseInt(sizeMatch[1]);
+                appHeight = parseInt(sizeMatch[2]);
+                console.log(`   Detected window size from comment: ${appWidth}x${appHeight}`);
+            }
+        }
+    }
+    
     console.log(`\n📦 App Metadata:`);
     console.log(`   Slug: ${appSlug}`);
     console.log(`   ID: ${appId}`);
     console.log(`   Name: ${appName}`);
     console.log(`   Icon: ${appIcon}`);
+    console.log(`   Dimensions: ${appWidth}x${appHeight} (resizable: ${resizable})`);
     
     // Step 2: Deploy to Supabase
     console.log(`\n📤 Deploying to Supabase...`);
@@ -206,8 +246,9 @@ async function deployApp(filename, iconOverride = null) {
         name: appName,
         url: `/public/${appSlug}`,
         icon: appIcon,
-        width: 800,
-        height: 600,
+        width: appWidth,
+        height: appHeight,
+        resizable: resizable,
         category: 'apps'
     };
     

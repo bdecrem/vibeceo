@@ -13,10 +13,18 @@
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-            background: #f5f5f7;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%);
+            background-size: 600% 600%;
+            animation: gradientShift 15s ease infinite;
             color: #1d1d1f;
             padding: 20px;
             line-height: 1.6;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
         
         .container {
@@ -25,12 +33,13 @@
         }
         
         .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 50%, #66D9EF 100%);
             color: white;
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 16px;
             margin-bottom: 24px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 30px rgba(255, 107, 157, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
         }
         
         .header h1 {
@@ -73,23 +82,27 @@
         }
         
         .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 100%);
             color: white;
+            font-weight: 600;
         }
         
         .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.5);
         }
         
         .btn-secondary {
-            background: white;
-            color: #333;
-            border: 1px solid #ddd;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 245, 0.95));
+            color: #FF6B9D;
+            border: 2px solid rgba(255, 107, 157, 0.3);
+            font-weight: 500;
         }
         
         .btn-secondary:hover {
-            background: #f8f8f8;
+            background: linear-gradient(135deg, #FFE5EC, #FFF9E6);
+            transform: translateY(-1px);
+            border-color: #FF6B9D;
         }
         
         .issues-container {
@@ -98,16 +111,19 @@
         }
         
         .issue-card {
-            background: white;
-            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+            border-radius: 16px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            background-clip: padding-box;
         }
         
         .issue-card:hover {
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-            transform: translateY(-1px);
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.25);
+            transform: translateY(-2px) scale(1.02);
+            border-color: rgba(255, 107, 157, 0.2);
         }
         
         .issue-header {
@@ -120,28 +136,33 @@
         .issue-title {
             font-size: 18px;
             font-weight: 600;
-            color: #1d1d1f;
+            background: linear-gradient(45deg, #FF6B9D, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             flex: 1;
         }
         
         .issue-number {
-            color: #6e6e73;
+            color: #C594FF;
             font-size: 14px;
-            font-weight: 500;
+            font-weight: 600;
         }
         
         .issue-meta {
             display: flex;
             gap: 16px;
             font-size: 13px;
-            color: #6e6e73;
+            color: #8B7AA8;
             margin-bottom: 12px;
+            font-weight: 500;
         }
         
         .issue-description {
-            color: #333;
+            color: #5A4A6B;
             margin-bottom: 16px;
             white-space: pre-wrap;
+            line-height: 1.6;
         }
         
         .issue-footer {
@@ -158,45 +179,54 @@
         }
         
         .status-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
+            padding: 6px 14px;
+            border-radius: 20px;
             font-size: 12px;
-            font-weight: 500;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .status-open {
-            background: #d4f4dd;
-            color: #14ae5c;
+            background: linear-gradient(135deg, #90EE90, #98FB98);
+            color: white;
+            box-shadow: 0 2px 8px rgba(144, 238, 144, 0.3);
         }
         
         .status-closed {
-            background: #fee;
-            color: #ec5962;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
         }
         
         .status-in-progress {
-            background: #fff3cd;
-            color: #856404;
+            background: linear-gradient(135deg, #FEC860, #FFD700);
+            color: white;
+            box-shadow: 0 2px 8px rgba(254, 200, 96, 0.3);
         }
         
         .status-processing {
-            background: #e1f5fe;
-            color: #0277bd;
+            background: linear-gradient(135deg, #66D9EF, #4FC3F7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 217, 239, 0.3);
         }
         
         .status-completed {
-            background: #fee;
-            color: #ec5962;
+            background: linear-gradient(135deg, #C594FF, #B47EFF);
+            color: white;
+            box-shadow: 0 2px 8px rgba(197, 148, 255, 0.3);
         }
         
         .status-pending {
-            background: #f3e5f5;
-            color: #7b1fa2;
+            background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
         }
         
         .status-new {
-            background: #d4f4dd;
-            color: #14ae5c;
+            background: linear-gradient(135deg, #98D8C8, #B2E1D4);
+            color: white;
+            box-shadow: 0 2px 8px rgba(152, 216, 200, 0.3);
         }
         
         .comments-section {
@@ -206,7 +236,7 @@
         }
         
         .comment {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, #FFF5F7, #F0F4FF);
             padding: 12px;
             border-radius: 8px;
             margin-bottom: 8px;
@@ -260,11 +290,12 @@
         }
         
         .modal-content {
-            background: white;
-            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+            border-radius: 20px;
             padding: 24px;
             max-width: 600px;
             width: 90%;
+            border: 3px solid rgba(255, 107, 157, 0.2);
             max-height: 80vh;
             overflow-y: auto;
             animation: slideUp 0.3s;
@@ -310,16 +341,19 @@
         
         .form-input, .form-textarea {
             width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 8px;
+            padding: 12px;
+            border: 2px solid rgba(255, 107, 157, 0.2);
+            border-radius: 12px;
             font-size: 14px;
-            transition: border-color 0.2s;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 240, 245, 0.9));
         }
         
         .form-input:focus, .form-textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: #FF6B9D;
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+            transform: scale(1.02);
         }
         
         .form-textarea {
@@ -337,19 +371,34 @@
         .loading {
             text-align: center;
             padding: 40px;
-            color: #6e6e73;
+            background: linear-gradient(45deg, #FF6B9D, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
         }
         
         .empty-state {
             text-align: center;
             padding: 60px 20px;
-            color: #6e6e73;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 245, 0.95));
+            border-radius: 20px;
+            border: 2px dashed rgba(255, 107, 157, 0.3);
         }
         
         .empty-state h3 {
-            font-size: 20px;
-            margin-bottom: 8px;
-            color: #333;
+            font-size: 24px;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+        
+        .empty-state p {
+            color: #8B7AA8;
+            font-weight: 500;
         }
         
         @keyframes fadeIn {
