@@ -44,6 +44,11 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 			return notFound();
 		}
 
+		// Check if this is a desktop app that should be served directly
+		const isDesktopApp = app_slug.includes('toybox-os') || 
+		                     app_slug.includes('webtoys-os') || 
+		                     app_slug === 'desktop-v3';
+
 		let htmlContent = data.html_content;
 
 		// Check if there's a current revision to load instead
@@ -569,6 +574,17 @@ setTimeout(function() {
 			isFromInternalNav, 
 			showNavigation 
 		});
+
+		// Serve desktop apps directly without iframe wrapper
+		if (isDesktopApp) {
+			console.log('🖥️ Serving desktop app directly without iframe wrapper');
+			return new Response(htmlContent, {
+				headers: {
+					'Content-Type': 'text/html; charset=utf-8',
+					'Cache-Control': 'no-cache, no-store, must-revalidate',
+				}
+			});
+		}
 
 		// Conditionally render with or without navigation
 		if (showNavigation) {
