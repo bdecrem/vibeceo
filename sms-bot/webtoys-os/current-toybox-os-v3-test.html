@@ -5,273 +5,317 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>WebtoysOS v3 - Modern Desktop</title>
+    <title>WebtoysOS - Modern Playground</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     
     <!-- Supabase Client -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
     
     <style>
-        /* CSS Reset and Base Styles */
+        /* CSS Reset and Variables */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        :root {
+            --purple: #C47AFF;
+            --coral: #FF6B6B;
+            --warm-yellow: #FFD93D;
+            --mint-green: #98D8C8;
+            --deep-blue: #4E89E3;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-heavy: rgba(255, 255, 255, 0.25);
+            --shadow-soft: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
         }
         
         html, body {
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             font-size: 14px;
             touch-action: manipulation;
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%);
+            background-size: 600% 600%;
+            animation: gradientShift 15s ease infinite;
             position: relative;
         }
         
-        /* Menu Bar - Mobile Responsive */
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 25%; }
+            50% { background-position: 50% 100%; }
+            75% { background-position: 25% 0%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating orbs */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            top: -100px;
+            left: -100px;
+        }
+        
+        .orb-2 {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, #f093fb, #feca57);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* Top Bar */
         .menu-bar {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            height: 32px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+            height: auto;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0 12px;
-            z-index: 10000;
-            user-select: none;
+            padding: 16px;
+            z-index: 100;
+            pointer-events: none;
         }
         
-        .menu-left {
-            display: flex;
-            align-items: center;
-            gap: 16px;
+        .menu-bar > * {
+            pointer-events: auto;
         }
         
-        .menu-logo {
+        /* Score Display */
+        .score-display {
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
             font-weight: 600;
-            font-size: 16px;
-            color: #333;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px var(--shadow-soft);
         }
         
-        .menu-right {
+        .score-value {
+            color: var(--warm-yellow);
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+        }
+        
+        /* User Display */
+        .user-display {
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 10px 16px;
+            box-shadow: 0 8px 32px var(--shadow-soft);
             display: flex;
             align-items: center;
             gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
         }
         
-        .menu-time {
-            font-size: 13px;
-            color: #666;
+        .user-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--shadow-medium);
         }
         
-        #profile-icon {
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--coral), var(--warm-yellow));
+            border-radius: 12px;
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 4px 8px;
-            background: rgba(0, 0, 0, 0.05);
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background 0.2s;
+            justify-content: center;
+            font-size: 20px;
         }
         
-        #profile-icon:hover {
-            background: rgba(0, 0, 0, 0.1);
+        .user-info {
+            display: flex;
+            flex-direction: column;
         }
         
-        #profile-icon:active {
-            background: rgba(0, 0, 0, 0.15);
+        .user-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
         }
         
-        /* Desktop - Mobile First Grid */
+        .user-name {
+            font-family: 'Comfortaa', cursive;
+            font-size: 16px;
+            color: white;
+            font-weight: 700;
+        }
+        
+        /* Desktop Area */
         #desktop {
             position: absolute;
-            top: 32px;
+            top: 80px;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 80px;
             padding: 20px;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
         
+        /* Mobile-first grid */
         .desktop-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-            gap: 20px;
-            max-width: 1200px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 1400px;
             margin: 0 auto;
         }
         
-        /* Desktop Icons - Touch Friendly */
+        /* Desktop Icons */
         .desktop-icon {
+            width: 100%;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 8px;
-            padding: 12px 8px;
+            padding: 8px;
             cursor: pointer;
-            border-radius: 8px;
-            transition: all 0.2s;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: manipulation;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
+            border-radius: 12px;
         }
         
         .desktop-icon:hover {
-            background: rgba(255, 255, 255, 0.1);
-            transform: scale(1.05);
+            transform: translateY(-5px) scale(1.05);
         }
         
         .desktop-icon:active {
-            transform: scale(0.95);
+            transform: scale(0.98);
         }
         
         .desktop-icon.selected {
-            background: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.4);
+            background: rgba(255, 255, 255, 0.1);
         }
         
         .desktop-icon .icon {
-            font-size: 40px;
-            line-height: 1;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+            width: 56px;
+            height: 56px;
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+        
+        .desktop-icon:hover .icon {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 12px 36px var(--shadow-medium);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Icon types */
+        .icon.type-game {
+            background: linear-gradient(135deg, rgba(255, 217, 61, 0.3), rgba(255, 107, 107, 0.3));
+        }
+        
+        .icon.type-system {
+            background: linear-gradient(135deg, rgba(78, 137, 227, 0.3), rgba(152, 216, 200, 0.3));
+        }
+        
+        .icon.type-creative {
+            background: linear-gradient(135deg, rgba(196, 122, 255, 0.3), rgba(255, 107, 107, 0.3));
+        }
+        
+        .icon.type-productivity {
+            background: linear-gradient(135deg, rgba(152, 216, 200, 0.3), rgba(78, 137, 227, 0.3));
         }
         
         .desktop-icon .label {
-            font-size: 12px;
+            font-family: 'Comfortaa', cursive;
+            font-size: 11px;
+            font-weight: 600;
             color: white;
             text-align: center;
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 2px 8px var(--shadow-medium);
             max-width: 100%;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
+            line-height: 1.3;
         }
         
-        /* Window Container */
-        #window-container {
-            position: fixed;
-            top: 32px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            pointer-events: none;
-            z-index: 1000;
-        }
-        
-        /* Window Styles */
+        /* Windows - Modern Glass */
         .desktop-window {
             position: absolute;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-            display: flex;
-            flex-direction: column;
-            pointer-events: auto;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px var(--shadow-medium);
             min-width: 300px;
             min-height: 200px;
             overflow: hidden;
-        }
-        
-        /* Resize Handles */
-        .resize-handle {
-            position: absolute;
-            background: transparent;
-            z-index: 10;
-        }
-        
-        .resize-n, .resize-s {
-            left: 0;
-            right: 0;
-            height: 8px;
-            cursor: ns-resize;
-        }
-        
-        .resize-n { top: 0; }
-        .resize-s { bottom: 0; }
-        
-        .resize-e, .resize-w {
-            top: 0;
-            bottom: 0;
-            width: 8px;
-            cursor: ew-resize;
-        }
-        
-        .resize-e { right: 0; }
-        .resize-w { left: 0; }
-        
-        .resize-ne, .resize-nw, .resize-se, .resize-sw {
-            width: 16px;
-            height: 16px;
-        }
-        
-        .resize-ne {
-            top: 0;
-            right: 0;
-            cursor: nesw-resize;
-        }
-        
-        .resize-nw {
-            top: 0;
-            left: 0;
-            cursor: nwse-resize;
-        }
-        
-        .resize-se {
-            bottom: 0;
-            right: 0;
-            cursor: nwse-resize;
-        }
-        
-        .resize-sw {
-            bottom: 0;
-            left: 0;
-            cursor: nesw-resize;
-        }
-        
-        /* Visual indicator for resizable windows (optional) */
-        .desktop-window.resizable .resize-se::after {
-            content: '';
-            position: absolute;
-            bottom: 3px;
-            right: 3px;
-            width: 10px;
-            height: 10px;
-            border-right: 2px solid #ccc;
-            border-bottom: 2px solid #ccc;
-        }
-        
-        .window-titlebar {
-            height: 36px;
-            background: linear-gradient(180deg, #f0f0f0 0%, #e0e0e0 100%);
-            border-bottom: 1px solid #ccc;
             display: flex;
-            align-items: center;
+            flex-direction: column;
+        }
+        
+        .window-header {
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            display: flex;
             justify-content: space-between;
-            padding: 0 12px;
+            align-items: center;
             cursor: move;
             user-select: none;
-            border-radius: 8px 8px 0 0;
         }
         
         .window-title {
+            font-family: 'Comfortaa', cursive;
             font-size: 14px;
-            font-weight: 500;
-            color: #333;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .window-controls {
@@ -284,29 +328,32 @@
             height: 12px;
             border-radius: 50%;
             cursor: pointer;
-            transition: opacity 0.2s;
+            transition: all 0.2s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
         }
         
         .window-control:hover {
-            opacity: 0.8;
+            transform: scale(1.2);
+            filter: brightness(1.2);
         }
         
         .window-control.close {
-            background: #ff5f57;
+            background: #FF6B6B;
         }
         
         .window-control.minimize {
-            background: #ffbd2e;
+            background: #FFD93D;
         }
         
         .window-control.maximize {
-            background: #28c940;
+            background: #51CF66;
         }
         
         .window-content {
             flex: 1;
-            overflow: auto;
-            background: white;
+            overflow: hidden;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
         }
         
         .window-content iframe {
@@ -315,7 +362,108 @@
             border: none;
         }
         
-        /* Authentication Modal */
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            background: transparent;
+        }
+        
+        .resize-handle-se {
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            cursor: se-resize;
+        }
+        
+        /* Taskbar */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            z-index: 90;
+        }
+        
+        .start-button {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
+            border-radius: 14px;
+            box-shadow: 0 6px 20px var(--shadow-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px var(--shadow-medium);
+        }
+        
+        .taskbar-apps {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            padding: 0 12px;
+            overflow-x: auto;
+        }
+        
+        .taskbar-app {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .taskbar-app:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .taskbar-app.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--warm-yellow);
+            box-shadow: 0 6px 20px var(--shadow-soft);
+        }
+        
+        /* Clock */
+        .clock-widget {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            font-family: 'Comfortaa', cursive;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Auth Modal */
         #auth-modal {
             display: none;
             position: fixed;
@@ -323,23 +471,28 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 20000;
-            justify-content: center;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
             align-items: center;
+            justify-content: center;
         }
         
-        #auth-modal.show {
+        #auth-modal.active {
             display: flex;
         }
         
         .auth-container {
-            background: white;
-            border-radius: 12px;
-            padding: 24px;
+            background: var(--glass-heavy);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 32px;
             width: 90%;
             max-width: 400px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px var(--shadow-medium);
         }
         
         .auth-header {
@@ -348,378 +501,386 @@
         }
         
         .auth-header h2 {
+            font-family: 'Comfortaa', cursive;
             font-size: 24px;
+            font-weight: 700;
+            color: white;
             margin-bottom: 8px;
+        }
+        
+        .auth-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
         }
         
         .auth-tabs {
             display: flex;
             gap: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
         
         .auth-tab {
             flex: 1;
-            padding: 8px;
-            border: 2px solid #e0e0e0;
-            background: white;
-            border-radius: 6px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-weight: 600;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
+            transition: all 0.3s;
         }
         
         .auth-tab.active {
-            background: #667eea;
-            color: white;
-            border-color: #667eea;
-        }
-        
-        .auth-form {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
+            border-color: transparent;
         }
         
         .auth-input {
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 6px;
-            font-size: 16px;
-            transition: border-color 0.2s;
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
         }
         
         .auth-input:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--warm-yellow);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
         }
         
         .auth-button {
+            width: 100%;
             padding: 12px;
-            background: #667eea;
-            color: white;
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
             border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 500;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s;
+            margin-bottom: 12px;
         }
         
         .auth-button:hover {
-            background: #5a67d8;
-        }
-        
-        .auth-button:active {
-            background: #4c51bf;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-medium);
         }
         
         .auth-close {
-            margin-top: 12px;
-            padding: 8px;
-            background: #f0f0f0;
-            border: none;
-            border-radius: 6px;
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.3s;
         }
         
         .auth-close:hover {
-            background: #e0e0e0;
+            background: rgba(255, 255, 255, 0.2);
         }
         
-        /* Mobile Optimizations */
-        @media (max-width: 768px) {
+        /* Achievement Popup */
+        .achievement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 24px 32px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 20px 60px var(--shadow-medium);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .achievement.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .achievement-title {
+            font-family: 'Comfortaa', cursive;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--warm-yellow);
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+        }
+        
+        .achievement-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: white;
+        }
+        
+        /* Click effect */
+        .click-effect {
+            position: absolute;
+            pointer-events: none;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: clickRipple 0.6s ease-out;
+            z-index: 500;
+        }
+        
+        @keyframes clickRipple {
+            from {
+                transform: scale(0);
+                opacity: 1;
+            }
+            to {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+        
+        /* Coin animation */
+        .coin {
+            position: absolute;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, var(--warm-yellow), var(--coral));
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 400;
+            font-family: 'Comfortaa', cursive;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 4px 12px var(--shadow-soft);
+            animation: coinFloat 1s ease-out forwards;
+        }
+        
+        @keyframes coinFloat {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px) scale(0.8) rotate(10deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Mobile Responsive - Tablet */
+        @media (min-width: 768px) {
             .desktop-grid {
-                grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
-                gap: 15px;
-                padding: 0;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
             }
             
             .desktop-icon .icon {
+                width: 64px;
+                height: 64px;
                 font-size: 32px;
             }
             
             .desktop-icon .label {
-                font-size: 11px;
+                font-size: 12px;
+            }
+            
+            .taskbar {
+                height: 70px;
+            }
+            
+            .start-button {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            
+            .taskbar-app {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+            }
+        }
+        
+        /* Desktop */
+        @media (min-width: 1024px) {
+            .desktop-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 24px;
+            }
+            
+            .desktop-icon .icon {
+                width: 72px;
+                height: 72px;
+                font-size: 36px;
+                border-radius: 20px;
+            }
+            
+            .desktop-icon .label {
+                font-size: 13px;
             }
             
             #desktop {
-                padding: 15px;
+                top: 90px;
+                bottom: 80px;
+                padding: 24px;
             }
             
-            /* Windows go fullscreen on mobile */
+            .taskbar {
+                height: 80px;
+                gap: 20px;
+                padding: 0 24px;
+            }
+            
+            .start-button {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+                border-radius: 18px;
+            }
+            
+            .taskbar-app {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+                border-radius: 16px;
+            }
+            
+            .menu-bar {
+                padding: 18px 24px;
+            }
+            
+            .score-display {
+                padding: 12px 22px;
+                font-size: 15px;
+            }
+            
+            .user-display {
+                padding: 10px 18px;
+            }
+            
+            .user-avatar {
+                width: 38px;
+                height: 38px;
+                font-size: 22px;
+            }
+            
+            .user-name {
+                font-size: 16px;
+            }
+        }
+        
+        /* Mobile specific */
+        @media (max-width: 767px) {
+            #desktop {
+                padding: 12px;
+                top: 70px;
+                bottom: 60px;
+            }
+            
+            .menu-bar {
+                padding: 12px;
+            }
+            
+            .score-display {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+            
+            .user-display {
+                padding: 8px 12px;
+            }
+            
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+            }
+            
+            .user-label {
+                font-size: 9px;
+            }
+            
+            .user-name {
+                font-size: 14px;
+            }
+            
+            /* Windows fullscreen on mobile */
             .desktop-window {
                 position: fixed !important;
-                top: 32px !important;
+                top: 0 !important;
                 left: 0 !important;
                 right: 0 !important;
                 bottom: 0 !important;
                 width: 100% !important;
-                height: calc(100% - 32px) !important;
+                height: 100% !important;
                 border-radius: 0 !important;
+                max-width: none !important;
+                max-height: none !important;
             }
             
-            .window-titlebar {
-                border-radius: 0 !important;
+            .window-header {
+                border-radius: 0;
+            }
+            
+            .clock-widget {
+                padding: 6px 10px;
+                font-size: 11px;
             }
         }
         
-        /* Drag and Drop Visual Feedback */
+        /* Utility classes */
+        .hidden {
+            display: none !important;
+        }
+        
         .dragging {
             opacity: 0.5;
-            transform: scale(1.1);
         }
         
-        .drag-over {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        /* Loading State */
+        /* Loading state */
         .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            color: white;
-            font-size: 18px;
-        }
-        
-        /* Chat Widget Styles */
-        .desktop-widget {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            width: 320px;
-            height: 420px;
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-            display: flex;
-            flex-direction: column;
-            z-index: 500; /* Below windows but above desktop */
-            transition: all 0.3s ease;
-            user-select: none;
-        }
-        
-        .desktop-widget.minimized {
-            height: 48px;
-            width: 200px;
-        }
-        
-        .desktop-widget.minimized .widget-body {
-            display: none;
-        }
-        
-        .widget-header {
-            height: 48px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 12px 12px 0 0;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 16px;
-            color: white;
-            cursor: move;
-        }
-        
-        .widget-header span {
-            font-weight: 500;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .widget-minimize {
-            background: rgba(255, 255, 255, 0.2);
-            border: none;
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 4px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-            font-size: 16px;
-            line-height: 1;
-        }
-        
-        .widget-minimize:hover {
-            background: rgba(255, 255, 255, 0.3);
-        }
-        
-        .widget-body {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        .widget-messages {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .chat-message {
-            padding: 8px 12px;
-            border-radius: 8px;
-            max-width: 80%;
-            word-wrap: break-word;
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .chat-message.user {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            align-self: flex-end;
-            margin-left: auto;
-        }
-        
-        .chat-message.agent {
-            background: #f0f0f0;
-            color: #333;
-            align-self: flex-start;
-        }
-        
-        .chat-message.system {
-            background: #fff3cd;
-            color: #856404;
-            align-self: center;
-            font-size: 12px;
-            text-align: center;
-        }
-        
-        .widget-input-area {
-            padding: 12px;
-            border-top: 1px solid #e0e0e0;
-            display: flex;
-            gap: 8px;
-        }
-        
-        #chat-input {
-            flex: 1;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 20px;
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        
-        #chat-input:focus {
-            border-color: #667eea;
-        }
-        
-        .chat-send {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            color: white;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.2s;
-        }
-        
-        .chat-send:hover {
-            transform: scale(1.1);
-        }
-        
-        .chat-send:active {
-            transform: scale(0.95);
-        }
-        
-        .widget-status {
-            padding: 4px 12px;
-            background: #f8f9fa;
-            border-top: 1px solid #e0e0e0;
-            font-size: 11px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background: #28a745;
-            animation: pulse 2s infinite;
+            animation: pulse 1.5s ease-in-out infinite;
         }
         
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        
-        .status-dot.offline {
-            background: #dc3545;
-            animation: none;
-        }
-        
-        .status-dot.connecting {
-            background: #ffc107;
-        }
-        
-        /* Mobile Chat Widget */
-        @media (max-width: 768px) {
-            .desktop-widget {
-                bottom: 0;
-                right: 0;
-                left: 0;
-                width: 100%;
-                height: 300px;
-                border-radius: 20px 20px 0 0;
-            }
-            
-            .desktop-widget.minimized {
-                height: 48px;
-                width: 150px;
-                left: auto;
-                bottom: 60px;
-                right: 20px;
-                border-radius: 24px;
-            }
-            
-            .widget-header {
-                border-radius: 20px 20px 0 0;
-            }
-            
-            .desktop-widget.minimized .widget-header {
-                border-radius: 24px;
-            }
-        }
     </style>
 </head>
 <body>
-    <!-- Menu Bar -->
+    <!-- Background orbs -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <!-- Top Bar -->
     <div class="menu-bar">
-        <div class="menu-left">
-            <span class="menu-logo">🎮 WebtoysOS</span>
+        <div class="score-display">
+            SCORE: <span class="score-value" id="score">0</span>
         </div>
-        <div class="menu-right">
-            <span class="menu-time" id="menu-time">--:--</span>
-            <div id="profile-icon" onclick="toggleAuth(event)">
-                <span id="profile-emoji">👤</span>
-                <span id="username-display">Login</span>
+        <div class="user-display" id="user-display" onclick="toggleAuth(event)">
+            <div class="user-avatar" id="profile-emoji">👤</div>
+            <div class="user-info">
+                <div class="user-label" id="user-label">CLICK TO</div>
+                <div class="user-name" id="username-display">Login</div>
             </div>
         </div>
     </div>
@@ -734,26 +895,11 @@
     <!-- Window Container -->
     <div id="window-container"></div>
     
-    <!-- Chat Widget -->
-    <div id="chat-widget" class="desktop-widget">
-        <div class="widget-header" onmousedown="startDragWidget(event)">
-            <span>💬 Quick Chat</span>
-            <button class="widget-minimize" onclick="toggleWidget()">−</button>
-        </div>
-        <div class="widget-body">
-            <div class="widget-messages" id="chat-messages">
-                <div class="chat-message system">Welcome! Ask me to create apps or fix issues.</div>
-            </div>
-            <div class="widget-input-area">
-                <input type="text" id="chat-input" placeholder="Ask for a new app..." 
-                       onkeypress="if(event.key==='Enter') sendChat()">
-                <button class="chat-send" onclick="sendChat()">→</button>
-            </div>
-            <div class="widget-status">
-                <span class="status-dot" id="chat-status"></span>
-                <span id="chat-status-text">Ready</span>
-            </div>
-        </div>
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <div class="start-button" id="start-button">🏠</div>
+        <div class="taskbar-apps" id="taskbar-apps"></div>
+        <div class="clock-widget" id="menu-time">--:--</div>
     </div>
     
     <!-- Authentication Modal -->
@@ -776,29 +922,26 @@
                 <button class="auth-close" onclick="closeAuth()">Cancel</button>
             </div>
             
-            <div id="auth-message" style="color: red; text-align: center; margin-top: 12px; display: none;"></div>
+            <div id="auth-message" style="color: #ff6464; text-align: center; margin-top: 12px; display: none;"></div>
         </div>
     </div>
     
+    <!-- Achievement Popup -->
+    <div class="achievement" id="achievement">
+        <div class="achievement-title">ACHIEVEMENT!</div>
+        <div class="achievement-text">Welcome to WebtoysOS!</div>
+    </div>
+    
     <script>
-        // Initialize Supabase - using the WORKING keys from web/.env.local
+        // Initialize Supabase
         const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
         const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
         
-        // The CDN version exports to window.supabase
         let supabaseInstance = null;
         if (typeof supabase !== 'undefined') {
             supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         } else {
             console.error('Supabase library not loaded!');
-            // Create a mock client so the page doesn't break
-            supabaseInstance = {
-                from: () => ({
-                    select: () => Promise.resolve({ data: null, error: 'Supabase not loaded' }),
-                    update: () => Promise.resolve({ error: 'Supabase not loaded' }),
-                    insert: () => Promise.resolve({ error: 'Supabase not loaded' })
-                })
-            };
         }
         
         // Desktop Config Client
@@ -812,66 +955,44 @@
             
             async loadConfig(userId = null) {
                 this.userId = userId;
-                console.log('🔄 Loading desktop config for user:', userId || 'anonymous');
+                console.log('🔄 Loading desktop config...');
                 
                 try {
                     // Try user config first
                     if (userId) {
-                        console.log('🔍 Attempting to load user config...');
-                        const { data: userConfigs, error: userError } = await this.supabase
+                        const { data: userConfigs } = await this.supabase
                             .from('wtaf_desktop_config')
                             .select('*')
                             .eq('user_id', userId)
                             .eq('desktop_version', 'webtoys-os-v3')
-                            .limit(1);  // Use limit instead of single to avoid 406 errors
+                            .limit(1);
                         
-                        const userConfig = userConfigs?.[0];  // Get first result if any
-                        
-                        if (userError) {
-                            console.warn('❌ User config error:', userError.message, userError.code);
-                        }
-                        
-                        if (userConfig && !userError) {
-                            this.config = userConfig;
-                            console.log('✅ Loaded user config for:', userId);
-                            return userConfig;
+                        if (userConfigs?.[0]) {
+                            this.config = userConfigs[0];
+                            console.log('✅ Loaded user config');
+                            return userConfigs[0];
                         }
                     }
                     
                     // Fall back to default config
-                    console.log('🔍 Attempting to load default config...');
-                    const { data: defaultConfigs, error: defaultError } = await this.supabase
+                    const { data: defaultConfigs } = await this.supabase
                         .from('wtaf_desktop_config')
                         .select('*')
                         .is('user_id', null)
                         .eq('desktop_version', 'webtoys-os-v3')
-                        .limit(1);  // Use limit instead of single to avoid 406 errors
+                        .limit(1);
                     
-                    const defaultConfig = defaultConfigs?.[0];  // Get first result if any
-                    
-                    if (defaultError) {
-                        console.warn('❌ Default config error:', defaultError.message, defaultError.code);
-                        
-                        // If it's a 401 error, show more helpful info
-                        if (defaultError.code === '42501' || defaultError.message?.includes('401')) {
-                            console.error('🚨 RLS Policy Issue: The anon key cannot access wtaf_desktop_config table.');
-                            console.error('🔧 Fix: Run the RLS policy fix script in Supabase.');
-                            console.error('📁 Script location: /scripts/fix-desktop-config-rls-policies.sql');
-                        }
+                    if (defaultConfigs?.[0]) {
+                        this.config = defaultConfigs[0];
+                        console.log('✅ Loaded default config');
+                        return defaultConfigs[0];
                     }
                     
-                    if (defaultConfig && !defaultError) {
-                        this.config = defaultConfig;
-                        console.log('✅ Loaded default desktop config from database');
-                        return defaultConfig;
-                    }
-                    
-                    // Hardcoded fallback
+                    // Hardcoded fallback with modern icons
                     console.warn('⚠️ Using hardcoded fallback config');
                     return this.getDefaultConfig();
                 } catch (error) {
-                    console.error('💥 Critical error loading config:', error);
-                    console.warn('⚠️ Using hardcoded fallback config');
+                    console.error('💥 Error loading config:', error);
                     return this.getDefaultConfig();
                 }
             }
@@ -879,17 +1000,18 @@
             getDefaultConfig() {
                 return {
                     app_registry: [
-                        { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad', width: 800, height: 600 },
-                        { id: 'issue-tracker', name: 'Issue Tracker', icon: '📋', url: '/public/toybox-issue-tracker-v3', width: 900, height: 700 },
-                        { id: 'text-editor', name: 'Text Editor', icon: '✏️', url: 'apps/text-editor.html', width: 800, height: 600 },
-                        { id: 'paint', name: 'Paint', icon: '🎨', url: 'apps/paint.html', width: 800, height: 600 },
-                        { id: 'fortune-cookie', name: 'Fortune Cookie', icon: '🥠', url: 'apps/fortune-cookie.html', width: 600, height: 700 },
-                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', width: 700, height: 500 }
+                        { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad', type: 'productivity', width: 800, height: 600 },
+                        { id: 'issue-tracker', name: 'Bug Tracker', icon: '🐛', url: '/public/toybox-issue-tracker-v3', type: 'system', width: 900, height: 700 },
+                        { id: 'textz', name: 'TextZ', icon: '📄', url: '/public/toybox-textz', type: 'productivity', width: 800, height: 600 },
+                        { id: 'paint', name: 'Paint', icon: '🎨', url: 'apps/paint.html', type: 'creative', width: 800, height: 600 },
+                        { id: 'fortune', name: 'Magic 8', icon: '🔮', url: 'apps/fortune-cookie.html', type: 'game', width: 600, height: 700 },
+                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true },
+                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', type: 'system', width: 700, height: 500 }
                     ],
                     icon_positions: {},
                     widget_positions: {},
                     settings: {
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+                        background: 'gradient'
                     }
                 };
             }
@@ -897,85 +1019,33 @@
             async saveIconPosition(iconId, position) {
                 if (!this.config) return;
                 
-                // Update local
                 if (!this.config.icon_positions) {
                     this.config.icon_positions = {};
                 }
+                
                 this.config.icon_positions[iconId] = position;
                 
-                // Debounce save
                 clearTimeout(this.saveTimeout);
-                this.saveTimeout = setTimeout(() => {
-                    this.persistIconPositions();
-                }, 1000);
+                this.saveTimeout = setTimeout(() => this.saveConfig(), 1000);
             }
             
-            async persistIconPositions() {
-                if (!this.config) {
-                    console.warn('⚠️ Cannot save icon positions: no config loaded');
-                    return;
-                }
-                
-                console.log('💾 Saving icon positions for user:', this.userId || 'default');
+            async saveConfig() {
+                if (!this.config) return;
                 
                 try {
-                    const { error } = await this.supabase
+                    await this.supabase
                         .from('wtaf_desktop_config')
                         .update({
                             icon_positions: this.config.icon_positions,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('user_id', this.userId || null)
-                        .eq('desktop_version', 'webtoys-os-v3');
-                    
-                    if (error) {
-                        console.error('❌ Error saving icon positions:', error.message, error.code);
-                        
-                        if (error.code === '42501' || error.message?.includes('401')) {
-                            console.error('🚨 Permission denied: Check RLS policies for wtaf_desktop_config table');
-                        }
-                    } else {
-                        console.log('✅ Successfully saved icon positions');
-                    }
-                } catch (error) {
-                    console.error('💥 Critical error saving positions:', error);
-                }
-            }
-            
-            async saveWidgetPosition(widgetId, position) {
-                if (!this.config) {
-                    console.warn('⚠️ Cannot save widget position: no config loaded');
-                    return;
-                }
-                
-                if (!this.config.widget_positions) {
-                    this.config.widget_positions = {};
-                }
-                this.config.widget_positions[widgetId] = position;
-                
-                console.log('💾 Saving widget position for:', widgetId, position);
-                
-                try {
-                    const { error } = await this.supabase
-                        .from('wtaf_desktop_config')
-                        .update({
                             widget_positions: this.config.widget_positions,
+                            settings: this.config.settings,
                             updated_at: new Date().toISOString()
                         })
-                        .eq('user_id', this.userId || null)
-                        .eq('desktop_version', 'webtoys-os-v3');
+                        .eq('id', this.config.id);
                     
-                    if (error) {
-                        console.error('❌ Error saving widget position:', error.message, error.code);
-                        
-                        if (error.code === '42501' || error.message?.includes('401')) {
-                            console.error('🚨 Permission denied: Check RLS policies for wtaf_desktop_config table');
-                        }
-                    } else {
-                        console.log('✅ Successfully saved widget position for:', widgetId);
-                    }
+                    console.log('💾 Config saved');
                 } catch (error) {
-                    console.error('💥 Critical error saving widget position:', error);
+                    console.error('❌ Failed to save config:', error);
                 }
             }
         }
@@ -989,45 +1059,123 @@
         let draggedIcon = null;
         let desktopConfig = null;
         let configClient = new DesktopConfigClient();
-        
-        // App registry - will be loaded from config
-        const windowedApps = {};
+        let score = 0;
+        let clickCount = 0;
         
         // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 WebtoysOS v3 initializing...');
-            initClock();
-            await loadAuth();
-            await loadDesktopConfig();
-            renderDesktop();
-            initDragAndDrop();
-            initMultiSelect();
-            initTouchHandlers();
-            restoreWidgetPosition();
-            console.log('✅ WebtoysOS v3 ready!');
+        document.addEventListener('DOMContentLoaded', async function() {
+            await initializeDesktop();
+            updateClock();
+            setInterval(updateClock, 1000);
+            loadAuthFromStorage();
+            setupClickEffects();
+            loadScore();
         });
         
-        // Clock
-        function initClock() {
-            const updateTime = () => {
-                const now = new Date();
-                const time = now.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit',
-                    hour12: false 
-                });
-                document.getElementById('menu-time').textContent = time;
-            };
-            updateTime();
-            setInterval(updateTime, 1000);
+        async function initializeDesktop() {
+            try {
+                const config = await configClient.loadConfig(currentUser?.id);
+                // Fix: Properly structure the config for renderDesktop()
+                desktopConfig = {
+                    app_registry: config.app_registry || [],
+                    icon_positions: config.icon_positions || {},
+                    widget_positions: config.widget_positions || {},
+                    settings: config.settings || {}
+                };
+                renderDesktop();
+                console.log('🎮 WebtoysOS Modern Playground initialized');
+            } catch (error) {
+                console.error('Failed to initialize desktop:', error);
+                desktopConfig = configClient.getDefaultConfig();
+                renderDesktop();
+            }
         }
         
-        // Authentication System
-        async function loadAuth() {
+        // Score system
+        function loadScore() {
+            const savedScore = localStorage.getItem('toybox_score');
+            if (savedScore) {
+                score = parseInt(savedScore) || 0;
+                updateScoreDisplay();
+            }
+        }
+        
+        function updateScore(points) {
+            score += points;
+            updateScoreDisplay();
+            localStorage.setItem('toybox_score', score);
+            
+            // Achievements
+            if (clickCount === 1) {
+                showAchievement('First Click!');
+            } else if (score >= 100 && score < 110) {
+                showAchievement('Century Mark!');
+            } else if (score >= 500 && score < 510) {
+                showAchievement('High Scorer!');
+            } else if (score >= 1000 && score < 1010) {
+                showAchievement('WebtoysOS Legend!');
+            }
+        }
+        
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = score.toLocaleString();
+        }
+        
+        function showAchievement(text) {
+            const achievement = document.getElementById('achievement');
+            achievement.querySelector('.achievement-text').textContent = text;
+            achievement.classList.add('show');
+            setTimeout(() => {
+                achievement.classList.remove('show');
+            }, 2500);
+        }
+        
+        // Click effects
+        function setupClickEffects() {
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('.taskbar') || 
+                    e.target.closest('.menu-bar') || 
+                    e.target.closest('.desktop-window') ||
+                    e.target.closest('#auth-modal')) return;
+                
+                clickCount++;
+                updateScore(10);
+                
+                // Create click effect
+                const effect = document.createElement('div');
+                effect.className = 'click-effect';
+                effect.style.left = e.clientX - 20 + 'px';
+                effect.style.top = e.clientY - 20 + 'px';
+                document.body.appendChild(effect);
+                setTimeout(() => effect.remove(), 600);
+                
+                // Create coin
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                coin.textContent = '+10';
+                coin.style.left = e.clientX - 25 + 'px';
+                coin.style.top = e.clientY - 15 + 'px';
+                document.body.appendChild(coin);
+                setTimeout(() => coin.remove(), 1000);
+            });
+        }
+        
+        // Auth functions
+        function loadAuthFromStorage() {
             const savedUser = localStorage.getItem('toybox_user');
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    // Ensure uppercase handle and participantId
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                            localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        }
+                    }
                     updateAuthDisplay();
                     broadcastAuth();
                 } catch (e) {
@@ -1040,95 +1188,81 @@
         function toggleAuth(event) {
             event.stopPropagation();
             if (currentUser) {
-                // Show logout option
-                if (confirm('Do you want to logout?')) {
+                if (confirm('Log out?')) {
                     logout();
                 }
             } else {
-                document.getElementById('auth-modal').classList.add('show');
+                document.getElementById('auth-modal').classList.add('active');
+                document.getElementById('auth-handle').focus();
             }
         }
         
         function closeAuth() {
-            document.getElementById('auth-modal').classList.remove('show');
+            document.getElementById('auth-modal').classList.remove('active');
             document.getElementById('auth-message').style.display = 'none';
         }
         
         function switchAuthTab(mode) {
             authMode = mode;
             const tabs = document.querySelectorAll('.auth-tab');
-            tabs.forEach(tab => {
-                tab.classList.toggle('active', tab.textContent.toLowerCase() === mode);
-            });
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
             const button = document.querySelector('.auth-button');
-            button.textContent = mode === 'login' ? 'Login' : 'Create Account';
+            button.textContent = mode === 'login' ? 'Login' : 'Register';
         }
         
         async function handleAuth() {
             const handle = document.getElementById('auth-handle').value.trim();
             const pin = document.getElementById('auth-pin').value;
+            const messageEl = document.getElementById('auth-message');
             
-            // Validation
             if (!handle || handle.length < 3) {
-                showAuthError('Username must be at least 3 characters');
+                messageEl.textContent = 'Username must be at least 3 characters';
+                messageEl.style.display = 'block';
                 return;
             }
             
-            if (!/^\d{4}$/.test(pin)) {
-                showAuthError('PIN must be exactly 4 digits');
+            if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                messageEl.textContent = 'PIN must be exactly 4 digits';
+                messageEl.style.display = 'block';
                 return;
             }
             
             if (authMode === 'login') {
-                await login(handle, pin);
+                // Login logic
+                const response = await fetch(`/api/zad/load?app_id=desktop-auth&participant_id=${handle.toUpperCase()}_${pin}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const user = data.find(d => d.participant_id === `${handle.toUpperCase()}_${pin}`);
+                    
+                    if (user) {
+                        currentUser = user.content_data;
+                        // Ensure proper format
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        updateAuthDisplay();
+                        broadcastAuth();
+                        closeAuth();
+                        showAchievement(`Welcome back, ${currentUser.handle}!`);
+                    } else {
+                        messageEl.textContent = 'Invalid username or PIN';
+                        messageEl.style.display = 'block';
+                    }
+                }
             } else {
-                await register(handle, pin);
-            }
-        }
-        
-        async function login(handle, pin) {
-            try {
-                const response = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
-                const users = await response.json();
-                
-                const user = users.find(u => 
-                    u.content_data && 
-                    u.content_data.handle === handle && 
-                    u.content_data.pin === pin
-                );
-                
-                if (user) {
-                    currentUser = user.content_data;
-                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
-                    updateAuthDisplay();
-                    broadcastAuth();
-                    closeAuth();
-                    console.log('✅ Logged in as:', handle);
-                } else {
-                    showAuthError('Invalid username or PIN');
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                showAuthError('Login failed. Please try again.');
-            }
-        }
-        
-        async function register(handle, pin) {
-            try {
-                // Check if user exists
-                const checkResponse = await fetch('/api/zad/load?app_id=toybox-os-users&action_type=user_registry');
-                const users = await checkResponse.json();
-                
-                if (users.some(u => u.content_data && u.content_data.handle === handle)) {
-                    showAuthError('Username already taken');
-                    return;
-                }
-                
-                // Create new user
+                // Register logic
+                const upperHandle = handle.toUpperCase();
                 const userData = {
-                    handle: handle,
+                    handle: upperHandle,
                     pin: pin,
-                    id: handle,
+                    participantId: `${upperHandle}_${pin}`,
+                    id: upperHandle,
                     created: new Date().toISOString()
                 };
                 
@@ -1136,9 +1270,9 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        app_id: 'toybox-os-users',
-                        participant_id: handle,
-                        action_type: 'user_registry',
+                        app_id: 'desktop-auth',
+                        participant_id: userData.participantId,
+                        action_type: 'register',
                         content_data: userData
                     })
                 });
@@ -1149,13 +1283,11 @@
                     updateAuthDisplay();
                     broadcastAuth();
                     closeAuth();
-                    console.log('✅ Registered as:', handle);
+                    showAchievement(`Welcome to WebtoysOS, ${upperHandle}!`);
                 } else {
-                    showAuthError('Registration failed. Please try again.');
+                    messageEl.textContent = 'Registration failed. Try again.';
+                    messageEl.style.display = 'block';
                 }
-            } catch (error) {
-                console.error('Registration error:', error);
-                showAuthError('Registration failed. Please try again.');
             }
         }
         
@@ -1164,24 +1296,22 @@
             localStorage.removeItem('toybox_user');
             updateAuthDisplay();
             broadcastAuth();
-            console.log('👋 Logged out');
-        }
-        
-        function showAuthError(message) {
-            const errorDiv = document.getElementById('auth-message');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-            setTimeout(() => {
-                errorDiv.style.display = 'none';
-            }, 3000);
+            showAchievement('Logged out successfully');
         }
         
         function updateAuthDisplay() {
-            const display = document.getElementById('username-display');
+            const userLabel = document.getElementById('user-label');
+            const username = document.getElementById('username-display');
+            const profileEmoji = document.getElementById('profile-emoji');
+            
             if (currentUser) {
-                display.textContent = currentUser.handle;
+                userLabel.textContent = 'LOGGED IN';
+                username.textContent = currentUser.handle;
+                profileEmoji.textContent = '😎';
             } else {
-                display.textContent = 'Login';
+                userLabel.textContent = 'CLICK TO';
+                username.textContent = 'Login';
+                profileEmoji.textContent = '👤';
             }
         }
         
@@ -1195,518 +1325,353 @@
                         user: currentUser
                     }, '*');
                 } catch (e) {
-                    // Silent fail if iframe not ready
+                    console.error('Failed to send auth to iframe:', e);
                 }
             });
         }
         
-        // Desktop Configuration
-        async function loadDesktopConfig() {
-            // Load from database
-            const config = await configClient.loadConfig(currentUser?.handle);
-            
-            desktopConfig = {
-                apps: config.app_registry || [],
-                iconPositions: config.icon_positions || {},
-                widgetPositions: config.widget_positions || {},
-                settings: config.settings || {
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-                }
-            };
-            
-            // Apply settings
-            if (desktopConfig.settings.background) {
-                document.body.style.background = desktopConfig.settings.background;
-            }
-            
-            // Build windowedApps registry for easy lookup
-            desktopConfig.apps.forEach(app => {
-                windowedApps[app.id] = app;
-            });
-            
-            console.log('Loaded config:', desktopConfig);
-        }
-        
-        // Restore widget position from config
-        function restoreWidgetPosition() {
-            if (desktopConfig?.widgetPositions?.['chat-widget']) {
-                const widget = document.getElementById('chat-widget');
-                const pos = desktopConfig.widgetPositions['chat-widget'];
-                
-                if (pos.left) widget.style.left = pos.left;
-                if (pos.right) widget.style.right = pos.right;
-                if (pos.top) widget.style.top = pos.top;
-                if (pos.bottom) widget.style.bottom = pos.bottom;
-                
-                if (pos.minimized) {
-                    widget.classList.add('minimized');
-                    widgetMinimized = true;
-                }
-            }
-        }
-        
-        // Desktop Rendering
+        // Desktop rendering
         function renderDesktop() {
             const grid = document.getElementById('desktop-grid');
             grid.innerHTML = '';
             
-            desktopConfig.apps.forEach((app, index) => {
-                const icon = document.createElement('div');
-                icon.className = 'desktop-icon';
-                icon.dataset.appId = app.id;
-                icon.draggable = true;
+            if (!desktopConfig || !desktopConfig.app_registry) {
+                console.error('No app registry found');
+                return;
+            }
+            
+            desktopConfig.app_registry.forEach(app => {
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'desktop-icon';
+                iconDiv.dataset.appId = app.id;
+                iconDiv.draggable = true;
                 
-                // Position from saved config or default grid
-                const savedPos = desktopConfig.iconPositions[app.id];
-                if (savedPos && savedPos.gridColumn) {
-                    icon.style.gridColumn = savedPos.gridColumn;
-                    icon.style.gridRow = savedPos.gridRow;
-                }
+                const iconEl = document.createElement('div');
+                iconEl.className = `icon ${app.type ? 'type-' + app.type : ''}`;
+                iconEl.textContent = app.icon || '📱';
                 
-                icon.innerHTML = `
-                    <div class="icon">${app.icon}</div>
-                    <div class="label">${app.name}</div>
-                `;
+                const labelEl = document.createElement('div');
+                labelEl.className = 'label';
+                labelEl.textContent = app.name;
                 
-                // Click/touch handler
-                icon.addEventListener('click', (e) => {
-                    if (!e.shiftKey && !e.ctrlKey && !e.metaKey) {
-                        handleIconClick(app);
+                iconDiv.appendChild(iconEl);
+                iconDiv.appendChild(labelEl);
+                
+                // Double click to open
+                iconDiv.addEventListener('dblclick', () => openWindow(app));
+                
+                // Touch support - single tap on mobile
+                let touchTimer;
+                let tapCount = 0;
+                iconDiv.addEventListener('touchstart', (e) => {
+                    tapCount++;
+                    if (tapCount === 1) {
+                        touchTimer = setTimeout(() => {
+                            openWindow(app);
+                            tapCount = 0;
+                        }, 300);
+                    } else {
+                        clearTimeout(touchTimer);
+                        openWindow(app);
+                        tapCount = 0;
                     }
                 });
+                iconDiv.addEventListener('touchend', () => {
+                    // Touch end handled in touchstart
+                });
                 
-                grid.appendChild(icon);
+                grid.appendChild(iconDiv);
             });
         }
         
-        function handleIconClick(app) {
-            if (app.action === 'alert' && app.message) {
-                alert(app.message.replace(/\\n/g, '\n'));
-            } else if (app.url) {
-                openWindow(app);
-            }
-        }
-        
-        // Window Management
+        // Window management
         function openWindow(app) {
-            const windowId = 'window-' + Date.now();
-            const isMobile = window.innerWidth <= 768;
+            // Check if window already exists
+            const existingWindow = windows.find(w => w.app.id === app.id);
+            if (existingWindow) {
+                focusWindow(existingWindow.id);
+                return;
+            }
             
+            console.log('Opening app:', app.name);
+            
+            const windowId = 'window-' + Date.now();
             const windowDiv = document.createElement('div');
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
+            windowDiv.style.width = (app.width || 600) + 'px';
+            windowDiv.style.height = (app.height || 400) + 'px';
+            windowDiv.style.left = '50%';
+            windowDiv.style.top = '50%';
+            windowDiv.style.transform = 'translate(-50%, -50%)';
             windowDiv.style.zIndex = nextWindowZ++;
-            windowDiv.dataset.appId = app.id;
             
-            // Determine if window is resizable
-            const isResizable = app.resizable === true;
-            if (isResizable) {
-                windowDiv.classList.add('resizable');
-            }
-            
-            // Position and size
-            if (isMobile) {
-                // Fullscreen on mobile
-                windowDiv.style.top = '0';
-                windowDiv.style.left = '0';
-                windowDiv.style.width = '100%';
-                windowDiv.style.height = 'calc(100% - 32px)';
-            } else {
-                // Use app-specific dimensions or defaults
-                const width = app.width || 800;
-                const height = app.height || 600;
-                
-                windowDiv.style.width = width + 'px';
-                windowDiv.style.height = height + 'px';
-                windowDiv.style.top = '50%';
-                windowDiv.style.left = '50%';
-                windowDiv.style.transform = 'translate(-50%, -50%)';
-                
-                // Set min/max constraints for resizable windows
-                if (isResizable) {
-                    windowDiv.style.minWidth = (app.minWidth || 400) + 'px';
-                    windowDiv.style.minHeight = (app.minHeight || 300) + 'px';
-                    if (app.maxWidth) windowDiv.style.maxWidth = app.maxWidth + 'px';
-                    if (app.maxHeight) windowDiv.style.maxHeight = app.maxHeight + 'px';
-                }
-            }
-            
-            let resizeHandles = '';
-            if (isResizable && !isMobile) {
-                resizeHandles = `
-                    <div class="resize-handle resize-n" data-resize="n"></div>
-                    <div class="resize-handle resize-e" data-resize="e"></div>
-                    <div class="resize-handle resize-s" data-resize="s"></div>
-                    <div class="resize-handle resize-w" data-resize="w"></div>
-                    <div class="resize-handle resize-ne" data-resize="ne"></div>
-                    <div class="resize-handle resize-se" data-resize="se"></div>
-                    <div class="resize-handle resize-sw" data-resize="sw"></div>
-                    <div class="resize-handle resize-nw" data-resize="nw"></div>
-                `;
-            }
-            
-            windowDiv.innerHTML = `
-                <div class="window-titlebar" onmousedown="startDragWindow(event, '${windowId}')">
-                    <div class="window-title">${app.name}</div>
-                    <div class="window-controls">
-                        <div class="window-control minimize" onclick="minimizeWindow('${windowId}')"></div>
-                        <div class="window-control maximize" onclick="maximizeWindow('${windowId}')"></div>
-                        <div class="window-control close" onclick="closeWindow('${windowId}')"></div>
-                    </div>
+            // Window header
+            const header = document.createElement('div');
+            header.className = 'window-header';
+            header.innerHTML = `
+                <div class="window-title">
+                    <span>${app.icon || '📱'}</span>
+                    <span>${app.name}</span>
                 </div>
-                <div class="window-content">
-                    <iframe src="${app.url}" onload="setupIframeAuth(this)"></iframe>
+                <div class="window-controls">
+                    <div class="window-control close" onclick="closeWindow('${windowId}')"></div>
+                    <div class="window-control minimize" onclick="minimizeWindow('${windowId}')"></div>
+                    <div class="window-control maximize" onclick="maximizeWindow('${windowId}')"></div>
                 </div>
-                ${resizeHandles}
             `;
+            
+            // Window content
+            const content = document.createElement('div');
+            content.className = 'window-content';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = app.url.startsWith('http') ? app.url : 
+                        app.url.startsWith('/') ? `https://webtoys.ai${app.url}` : 
+                        `apps/${app.url}`;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.onload = () => {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                    console.log('Auth sent to app:', app.name);
+                } catch (e) {
+                    console.error('Failed to send auth to app:', e);
+                }
+            };
+            
+            content.appendChild(iframe);
+            windowDiv.appendChild(header);
+            windowDiv.appendChild(content);
+            
+            // Add resize handle if resizable
+            if (app.resizable) {
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'resize-handle resize-handle-se';
+                windowDiv.appendChild(resizeHandle);
+                setupResize(windowDiv, resizeHandle);
+            }
             
             document.getElementById('window-container').appendChild(windowDiv);
             windows.push({ id: windowId, app: app });
             
-            // Focus window on click
-            windowDiv.addEventListener('mousedown', (e) => {
-                // Don't focus if clicking resize handle
-                if (!e.target.classList.contains('resize-handle')) {
-                    windowDiv.style.zIndex = nextWindowZ++;
-                }
-            });
+            // Add to taskbar
+            updateTaskbar();
             
-            // Initialize resize handles if resizable
-            if (isResizable && !isMobile) {
-                initResizeHandles(windowDiv);
-            }
+            // Make draggable
+            setupDragging(windowDiv, header);
+            
+            showAchievement(`Opened ${app.name}!`);
+            updateScore(5);
         }
         
         function closeWindow(windowId) {
-            const windowDiv = document.getElementById(windowId);
-            if (windowDiv) {
-                windowDiv.remove();
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.remove();
                 windows = windows.filter(w => w.id !== windowId);
+                updateTaskbar();
             }
         }
         
         function minimizeWindow(windowId) {
-            // TODO: Implement minimize to taskbar
-            const windowDiv = document.getElementById(windowId);
-            if (windowDiv) {
-                windowDiv.style.display = 'none';
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.style.display = 'none';
+                updateTaskbar();
             }
         }
         
         function maximizeWindow(windowId) {
-            const windowDiv = document.getElementById(windowId);
-            if (windowDiv) {
-                if (windowDiv.dataset.maximized === 'true') {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                const isMaximized = windowEl.dataset.maximized === 'true';
+                
+                if (isMaximized) {
                     // Restore
-                    windowDiv.style.width = windowDiv.dataset.originalWidth;
-                    windowDiv.style.height = windowDiv.dataset.originalHeight;
-                    windowDiv.style.top = windowDiv.dataset.originalTop;
-                    windowDiv.style.left = windowDiv.dataset.originalLeft;
-                    windowDiv.style.transform = windowDiv.dataset.originalTransform;
-                    windowDiv.dataset.maximized = 'false';
+                    windowEl.style.width = windowEl.dataset.originalWidth;
+                    windowEl.style.height = windowEl.dataset.originalHeight;
+                    windowEl.style.left = windowEl.dataset.originalLeft;
+                    windowEl.style.top = windowEl.dataset.originalTop;
+                    windowEl.style.transform = windowEl.dataset.originalTransform;
+                    windowEl.dataset.maximized = 'false';
                 } else {
                     // Maximize
-                    windowDiv.dataset.originalWidth = windowDiv.style.width;
-                    windowDiv.dataset.originalHeight = windowDiv.style.height;
-                    windowDiv.dataset.originalTop = windowDiv.style.top;
-                    windowDiv.dataset.originalLeft = windowDiv.style.left;
-                    windowDiv.dataset.originalTransform = windowDiv.style.transform;
+                    windowEl.dataset.originalWidth = windowEl.style.width;
+                    windowEl.dataset.originalHeight = windowEl.style.height;
+                    windowEl.dataset.originalLeft = windowEl.style.left;
+                    windowEl.dataset.originalTop = windowEl.style.top;
+                    windowEl.dataset.originalTransform = windowEl.style.transform;
                     
-                    windowDiv.style.width = '100%';
-                    windowDiv.style.height = 'calc(100% - 32px)';
-                    windowDiv.style.top = '0';
-                    windowDiv.style.left = '0';
-                    windowDiv.style.transform = 'none';
-                    windowDiv.dataset.maximized = 'true';
+                    windowEl.style.width = '100%';
+                    windowEl.style.height = 'calc(100% - 80px)';
+                    windowEl.style.left = '0';
+                    windowEl.style.top = '0';
+                    windowEl.style.transform = 'none';
+                    windowEl.dataset.maximized = 'true';
                 }
             }
         }
         
-        function setupIframeAuth(iframe) {
-            // Send auth state to newly loaded iframe
-            try {
-                iframe.contentWindow.postMessage({
-                    type: 'TOYBOX_AUTH',
-                    user: currentUser
-                }, '*');
-            } catch (e) {
-                console.error('Failed to send auth to iframe:', e);
+        function focusWindow(windowId) {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.style.display = 'flex';
+                windowEl.style.zIndex = nextWindowZ++;
             }
         }
         
-        // Window Dragging
-        let draggedWindow = null;
-        let dragOffset = { x: 0, y: 0 };
-        
-        function startDragWindow(event, windowId) {
-            if (event.target.closest('.window-controls')) return;
+        function updateTaskbar() {
+            const taskbarApps = document.getElementById('taskbar-apps');
+            taskbarApps.innerHTML = '';
             
-            draggedWindow = document.getElementById(windowId);
-            const rect = draggedWindow.getBoundingClientRect();
-            dragOffset.x = event.clientX - rect.left;
-            dragOffset.y = event.clientY - rect.top;
-            
-            document.addEventListener('mousemove', dragWindow);
-            document.addEventListener('mouseup', stopDragWindow);
-            event.preventDefault();
-        }
-        
-        function dragWindow(event) {
-            if (!draggedWindow) return;
-            
-            draggedWindow.style.left = (event.clientX - dragOffset.x) + 'px';
-            draggedWindow.style.top = (event.clientY - dragOffset.y) + 'px';
-            draggedWindow.style.transform = 'none';
-        }
-        
-        function stopDragWindow() {
-            draggedWindow = null;
-            document.removeEventListener('mousemove', dragWindow);
-            document.removeEventListener('mouseup', stopDragWindow);
-        }
-        
-        // Window Resizing
-        let resizingWindow = null;
-        let resizeDirection = null;
-        let resizeStart = { x: 0, y: 0, width: 0, height: 0, top: 0, left: 0 };
-        
-        function initResizeHandles(windowDiv) {
-            const handles = windowDiv.querySelectorAll('.resize-handle');
-            handles.forEach(handle => {
-                handle.addEventListener('mousedown', (e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    startResize(e, windowDiv, handle.dataset.resize);
-                });
+            windows.forEach(w => {
+                const appBtn = document.createElement('div');
+                appBtn.className = 'taskbar-app';
+                const windowEl = document.getElementById(w.id);
+                if (windowEl && windowEl.style.display !== 'none') {
+                    appBtn.classList.add('active');
+                }
+                appBtn.textContent = w.app.icon || '📱';
+                appBtn.onclick = () => focusWindow(w.id);
+                taskbarApps.appendChild(appBtn);
             });
         }
         
-        function startResize(event, windowDiv, direction) {
-            resizingWindow = windowDiv;
-            resizeDirection = direction;
+        // Dragging
+        function setupDragging(element, handle) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
             
-            const rect = windowDiv.getBoundingClientRect();
-            resizeStart = {
-                x: event.clientX,
-                y: event.clientY,
-                width: rect.width,
-                height: rect.height,
-                top: rect.top,
-                left: rect.left
-            };
+            handle.addEventListener('mousedown', startDrag);
+            handle.addEventListener('touchstart', startDrag, { passive: false });
             
-            document.addEventListener('mousemove', doResize);
-            document.addEventListener('mouseup', stopResize);
-            document.body.style.cursor = getCursorForDirection(direction);
-        }
-        
-        function doResize(event) {
-            if (!resizingWindow) return;
-            
-            const deltaX = event.clientX - resizeStart.x;
-            const deltaY = event.clientY - resizeStart.y;
-            
-            let newWidth = resizeStart.width;
-            let newHeight = resizeStart.height;
-            let newTop = resizeStart.top;
-            let newLeft = resizeStart.left;
-            
-            // Handle horizontal resizing
-            if (resizeDirection.includes('e')) {
-                newWidth = Math.max(400, resizeStart.width + deltaX);
-            }
-            if (resizeDirection.includes('w')) {
-                newWidth = Math.max(400, resizeStart.width - deltaX);
-                newLeft = resizeStart.left + deltaX;
+            function startDrag(e) {
+                isDragging = true;
+                element.style.zIndex = nextWindowZ++;
+                
+                if (e.type === 'touchstart') {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                } else {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                }
+                
+                const rect = element.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', drag, { passive: false });
+                document.addEventListener('touchend', stopDrag);
             }
             
-            // Handle vertical resizing
-            if (resizeDirection.includes('s')) {
-                newHeight = Math.max(300, resizeStart.height + deltaY);
-            }
-            if (resizeDirection.includes('n')) {
-                newHeight = Math.max(300, resizeStart.height - deltaY);
-                newTop = resizeStart.top + deltaY;
-            }
-            
-            // Apply new dimensions
-            resizingWindow.style.width = newWidth + 'px';
-            resizingWindow.style.height = newHeight + 'px';
-            
-            // Apply new position for n/w resizing
-            if (resizeDirection.includes('n')) {
-                resizingWindow.style.top = newTop + 'px';
-            }
-            if (resizeDirection.includes('w')) {
-                resizingWindow.style.left = newLeft + 'px';
-            }
-            
-            // Clear transform when resizing
-            resizingWindow.style.transform = 'none';
-        }
-        
-        function stopResize() {
-            resizingWindow = null;
-            resizeDirection = null;
-            document.removeEventListener('mousemove', doResize);
-            document.removeEventListener('mouseup', stopResize);
-            document.body.style.cursor = '';
-        }
-        
-        function getCursorForDirection(direction) {
-            const cursors = {
-                'n': 'ns-resize',
-                's': 'ns-resize',
-                'e': 'ew-resize',
-                'w': 'ew-resize',
-                'ne': 'nesw-resize',
-                'sw': 'nesw-resize',
-                'nw': 'nwse-resize',
-                'se': 'nwse-resize'
-            };
-            return cursors[direction] || 'default';
-        }
-        
-        // Icon Drag and Drop
-        function initDragAndDrop() {
-            const icons = document.querySelectorAll('.desktop-icon');
-            
-            icons.forEach(icon => {
-                icon.addEventListener('dragstart', handleDragStart);
-                icon.addEventListener('dragend', handleDragEnd);
-            });
-            
-            const grid = document.getElementById('desktop-grid');
-            grid.addEventListener('dragover', handleDragOver);
-            grid.addEventListener('drop', handleDrop);
-        }
-        
-        function handleDragStart(e) {
-            draggedIcon = this;
-            this.classList.add('dragging');
-            e.dataTransfer.effectAllowed = 'move';
-            e.dataTransfer.setData('text/html', this.innerHTML);
-        }
-        
-        function handleDragEnd(e) {
-            this.classList.remove('dragging');
-            draggedIcon = null;
-        }
-        
-        function handleDragOver(e) {
-            if (e.preventDefault) {
+            function drag(e) {
+                if (!isDragging) return;
+                
                 e.preventDefault();
-            }
-            e.dataTransfer.dropEffect = 'move';
-            return false;
-        }
-        
-        function handleDrop(e) {
-            if (e.stopPropagation) {
-                e.stopPropagation();
-            }
-            
-            if (draggedIcon && draggedIcon !== this) {
-                // Get drop position relative to grid
-                const grid = document.getElementById('desktop-grid');
-                const rect = grid.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
                 
-                // Calculate grid position (assuming 120px icon width + gap)
-                const iconSize = 120; // icon width + gap
-                const gridColumn = Math.floor(x / iconSize) + 1;
-                const gridRow = Math.floor(y / iconSize) + 1;
-                
-                // Update icon position in DOM
-                draggedIcon.style.gridColumn = gridColumn;
-                draggedIcon.style.gridRow = gridRow;
-                
-                // Save position to database
-                const iconId = draggedIcon.getAttribute('data-app-id');
-                if (iconId && window.desktopConfig) {
-                    const position = {
-                        gridColumn: gridColumn,
-                        gridRow: gridRow,
-                        x: null, // Not using absolute positioning
-                        y: null
-                    };
-                    window.desktopConfig.saveIconPosition(iconId, position);
-                    console.log(`Saved position for ${iconId}:`, position);
+                let currentX, currentY;
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                } else {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
                 }
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                
+                element.style.left = (initialX + deltaX) + 'px';
+                element.style.top = (initialY + deltaY) + 'px';
+                element.style.transform = 'none';
             }
             
-            return false;
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', drag);
+                document.removeEventListener('touchend', stopDrag);
+            }
         }
         
-        // Multi-select
-        function initMultiSelect() {
-            const icons = document.querySelectorAll('.desktop-icon');
+        // Resizing
+        function setupResize(element, handle) {
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
             
-            icons.forEach(icon => {
-                icon.addEventListener('click', (e) => {
-                    if (e.shiftKey || e.ctrlKey || e.metaKey) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        toggleIconSelection(icon);
-                    }
-                });
-            });
+            handle.addEventListener('mousedown', startResize);
+            handle.addEventListener('touchstart', startResize, { passive: false });
             
-            // Clear selection when clicking desktop
-            document.getElementById('desktop').addEventListener('click', (e) => {
-                if (e.target.id === 'desktop' || e.target.classList.contains('desktop-grid')) {
-                    clearIconSelection();
+            function startResize(e) {
+                isResizing = true;
+                
+                if (e.type === 'touchstart') {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                } else {
+                    startX = e.clientX;
+                    startY = e.clientY;
                 }
-            });
-        }
-        
-        function toggleIconSelection(icon) {
-            if (selectedIcons.has(icon)) {
-                selectedIcons.delete(icon);
-                icon.classList.remove('selected');
-            } else {
-                selectedIcons.add(icon);
-                icon.classList.add('selected');
+                
+                startWidth = parseInt(window.getComputedStyle(element).width, 10);
+                startHeight = parseInt(window.getComputedStyle(element).height, 10);
+                
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+                document.addEventListener('touchmove', resize, { passive: false });
+                document.addEventListener('touchend', stopResize);
+            }
+            
+            function resize(e) {
+                if (!isResizing) return;
+                
+                e.preventDefault();
+                
+                let currentX, currentY;
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                } else {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+                }
+                
+                const newWidth = startWidth + (currentX - startX);
+                const newHeight = startHeight + (currentY - startY);
+                
+                element.style.width = Math.max(300, newWidth) + 'px';
+                element.style.height = Math.max(200, newHeight) + 'px';
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+                document.removeEventListener('touchmove', resize);
+                document.removeEventListener('touchend', stopResize);
             }
         }
         
-        function clearIconSelection() {
-            selectedIcons.forEach(icon => {
-                icon.classList.remove('selected');
-            });
-            selectedIcons.clear();
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('menu-time').textContent = `${hours}:${minutes}`;
         }
         
-        // Touch Handlers for Mobile
-        function initTouchHandlers() {
-            const icons = document.querySelectorAll('.desktop-icon');
-            
-            icons.forEach(icon => {
-                let touchTimer;
-                
-                icon.addEventListener('touchstart', (e) => {
-                    touchTimer = setTimeout(() => {
-                        // Long press for multi-select
-                        toggleIconSelection(icon);
-                        e.preventDefault();
-                    }, 500);
-                });
-                
-                icon.addEventListener('touchend', () => {
-                    clearTimeout(touchTimer);
-                });
-                
-                icon.addEventListener('touchmove', () => {
-                    clearTimeout(touchTimer);
-                });
-            });
-        }
-        
-        // Listen for auth requests from iframes
-        window.addEventListener('message', (event) => {
-            if (event.data && event.data.type === 'REQUEST_AUTH') {
-                // Send current auth state
+        // Message handling
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'GET_AUTH') {
                 event.source.postMessage({
                     type: 'TOYBOX_AUTH',
                     user: currentUser
@@ -1714,195 +1679,29 @@
             }
         });
         
-        // Chat Widget Functions
-        let widgetMinimized = false;
-        let chatWebSocket = null;
-        let chatReconnectTimer = null;
-        
-        function toggleWidget() {
-            const widget = document.getElementById('chat-widget');
-            widgetMinimized = !widgetMinimized;
-            widget.classList.toggle('minimized', widgetMinimized);
-        }
-        
-        function addMessage(text, type = 'system') {
-            const messages = document.getElementById('chat-messages');
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `chat-message ${type}`;
-            messageDiv.textContent = text;
-            messages.appendChild(messageDiv);
-            messages.scrollTop = messages.scrollHeight;
-        }
-        
-        function sendChat() {
-            const input = document.getElementById('chat-input');
-            const message = input.value.trim();
-            
-            if (!message) return;
-            
-            // Add user message to UI
-            addMessage(message, 'user');
-            input.value = '';
-            
-            // For now, simulate agent response
-            // Later this will connect to real WebSocket
-            setTimeout(() => {
-                if (message.toLowerCase().includes('app')) {
-                    addMessage('I can help you create a new app! What kind of app would you like?', 'agent');
-                } else if (message.toLowerCase().includes('issue')) {
-                    addMessage('I can help fix issues. Please describe the problem.', 'agent');
-                } else if (message.toLowerCase().includes('hello') || message.toLowerCase().includes('hi')) {
-                    addMessage(`Hello${currentUser ? ' ' + currentUser.handle : ''}! I can help you create apps or fix issues.`, 'agent');
-                } else {
-                    addMessage('I understand you want: "' + message + '". This feature will connect to the edit agent soon!', 'agent');
-                }
-            }, 500 + Math.random() * 500);
-            
-            // If WebSocket is connected, send the message
-            if (chatWebSocket && chatWebSocket.readyState === WebSocket.OPEN) {
-                chatWebSocket.send(JSON.stringify({
-                    type: 'chat_message',
-                    user: currentUser?.handle || 'anonymous',
-                    message: message,
-                    timestamp: new Date().toISOString()
-                }));
+        // Space key bonus
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.target.closest('input')) {
+                e.preventDefault();
+                document.body.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 500);
+                updateScore(50);
+                showAchievement('Space Bonus! +50');
             }
-        }
-        
-        function connectChatAgent() {
-            // This will connect to the edit agent WebSocket
-            // For now, we'll skip the actual connection but show the structure
-            updateChatStatus('connecting');
-            
-            // Uncomment when WebSocket server is ready:
-            /*
-            chatWebSocket = new WebSocket('ws://localhost:8080/agent');
-            
-            chatWebSocket.onopen = () => {
-                console.log('✅ Connected to edit agent');
-                updateChatStatus('online');
-                clearTimeout(chatReconnectTimer);
-            };
-            
-            chatWebSocket.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.message) {
-                        addMessage(data.message, 'agent');
-                    }
-                    if (data.appCreated) {
-                        addMessage('✨ New app created! Refreshing desktop...', 'system');
-                        setTimeout(() => loadDesktopConfig(), 1000);
-                    }
-                } catch (e) {
-                    console.error('Failed to parse agent message:', e);
-                }
-            };
-            
-            chatWebSocket.onerror = (error) => {
-                console.error('WebSocket error:', error);
-                updateChatStatus('offline');
-            };
-            
-            chatWebSocket.onclose = () => {
-                updateChatStatus('offline');
-                // Attempt to reconnect after 5 seconds
-                chatReconnectTimer = setTimeout(connectChatAgent, 5000);
-            };
-            */
-            
-            // For now, just show as ready (not connected to real agent yet)
-            setTimeout(() => updateChatStatus('ready'), 1000);
-        }
-        
-        function updateChatStatus(status) {
-            const statusDot = document.getElementById('chat-status');
-            const statusText = document.getElementById('chat-status-text');
-            
-            statusDot.className = 'status-dot';
-            
-            switch(status) {
-                case 'online':
-                    statusText.textContent = 'Connected';
-                    break;
-                case 'offline':
-                    statusDot.classList.add('offline');
-                    statusText.textContent = 'Offline';
-                    break;
-                case 'connecting':
-                    statusDot.classList.add('connecting');
-                    statusText.textContent = 'Connecting...';
-                    break;
-                case 'ready':
-                    statusText.textContent = 'Ready (Demo Mode)';
-                    break;
-                default:
-                    statusText.textContent = 'Ready';
-            }
-        }
-        
-        // Widget Dragging
-        let draggedWidget = null;
-        let widgetDragOffset = { x: 0, y: 0 };
-        
-        function startDragWidget(event) {
-            if (event.target.closest('.widget-minimize')) return;
-            
-            draggedWidget = document.getElementById('chat-widget');
-            const rect = draggedWidget.getBoundingClientRect();
-            widgetDragOffset.x = event.clientX - rect.left;
-            widgetDragOffset.y = event.clientY - rect.top;
-            
-            document.addEventListener('mousemove', dragWidget);
-            document.addEventListener('mouseup', stopDragWidget);
-            event.preventDefault();
-        }
-        
-        function dragWidget(event) {
-            if (!draggedWidget) return;
-            
-            const newLeft = event.clientX - widgetDragOffset.x;
-            const newTop = event.clientY - widgetDragOffset.y;
-            
-            // Keep widget within viewport
-            const maxLeft = window.innerWidth - draggedWidget.offsetWidth;
-            const maxTop = window.innerHeight - draggedWidget.offsetHeight;
-            
-            draggedWidget.style.left = Math.max(0, Math.min(newLeft, maxLeft)) + 'px';
-            draggedWidget.style.top = Math.max(32, Math.min(newTop, maxTop)) + 'px';
-            draggedWidget.style.right = 'auto';
-            draggedWidget.style.bottom = 'auto';
-        }
-        
-        function stopDragWidget() {
-            if (draggedWidget) {
-                // Save widget position to database
-                const widget = draggedWidget;
-                const position = {
-                    left: widget.style.left,
-                    right: widget.style.right,
-                    top: widget.style.top,
-                    bottom: widget.style.bottom,
-                    minimized: widget.classList.contains('minimized')
-                };
-                
-                configClient.saveWidgetPosition('chat-widget', position);
-            }
-            
-            draggedWidget = null;
-            document.removeEventListener('mousemove', dragWidget);
-            document.removeEventListener('mouseup', stopDragWidget);
-        }
-        
-        // Initialize chat on load
-        document.addEventListener('DOMContentLoaded', () => {
-            // Existing initialization...
-            // Add chat initialization
-            setTimeout(() => {
-                addMessage('💡 Tip: You can drag this chat window anywhere on screen!', 'system');
-                connectChatAgent();
-            }, 2000);
         });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>

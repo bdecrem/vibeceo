@@ -53,13 +53,17 @@ export async function fetchCurrentDesktop(isTest = true) {
         .select('html_content, updated_at, app_slug')
         .eq('user_slug', 'public')
         .eq('app_slug', appSlug)
-        .single();
+        .limit(1);
     
     if (error) {
         throw new Error(`Failed to fetch desktop: ${error.message}`);
     }
     
-    return data;
+    if (!data || data.length === 0) {
+        throw new Error(`Desktop not found: ${appSlug}`);
+    }
+    
+    return data[0];
 }
 
 /**

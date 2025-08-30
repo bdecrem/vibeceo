@@ -45,17 +45,15 @@
         }
         
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%);
-            background-size: 600% 600%;
-            animation: gradientShift 15s ease infinite;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #feca57 75%, #ff6b6b 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 20s ease infinite;
             position: relative;
         }
         
         @keyframes gradientShift {
             0% { background-position: 0% 50%; }
-            25% { background-position: 100% 25%; }
-            50% { background-position: 50% 100%; }
-            75% { background-position: 25% 0%; }
+            50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
         }
         
@@ -739,51 +737,49 @@
             
             #desktop {
                 top: 90px;
-                bottom: 80px;
                 padding: 24px;
             }
             
             .taskbar {
                 height: 80px;
-                gap: 20px;
-                padding: 0 24px;
+                padding: 0 20px;
             }
             
             .start-button {
-                width: 60px;
-                height: 60px;
-                font-size: 30px;
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
                 border-radius: 18px;
             }
             
             .taskbar-app {
-                width: 56px;
-                height: 56px;
-                font-size: 28px;
+                width: 50px;
+                height: 50px;
+                font-size: 26px;
                 border-radius: 16px;
             }
             
             .menu-bar {
-                padding: 18px 24px;
+                padding: 20px 24px;
             }
             
             .score-display {
-                padding: 12px 22px;
-                font-size: 15px;
+                padding: 14px 24px;
+                font-size: 16px;
             }
             
             .user-display {
-                padding: 10px 18px;
+                padding: 12px 20px;
             }
             
             .user-avatar {
-                width: 38px;
-                height: 38px;
-                font-size: 22px;
+                width: 40px;
+                height: 40px;
+                font-size: 24px;
             }
             
             .user-name {
-                font-size: 16px;
+                font-size: 18px;
             }
         }
         
@@ -1352,26 +1348,15 @@
                 iconDiv.appendChild(labelEl);
                 
                 // Double click to open
-                iconDiv.addEventListener('dblclick', () => openWindow(app));
+                iconDiv.addEventListener('dblclick', () => openApp(app));
                 
-                // Touch support - single tap on mobile
+                // Touch support
                 let touchTimer;
-                let tapCount = 0;
                 iconDiv.addEventListener('touchstart', (e) => {
-                    tapCount++;
-                    if (tapCount === 1) {
-                        touchTimer = setTimeout(() => {
-                            openWindow(app);
-                            tapCount = 0;
-                        }, 300);
-                    } else {
-                        clearTimeout(touchTimer);
-                        openWindow(app);
-                        tapCount = 0;
-                    }
+                    touchTimer = setTimeout(() => openApp(app), 500);
                 });
                 iconDiv.addEventListener('touchend', () => {
-                    // Touch end handled in touchstart
+                    clearTimeout(touchTimer);
                 });
                 
                 grid.appendChild(iconDiv);
@@ -1379,15 +1364,12 @@
         }
         
         // Window management
-        function openWindow(app) {
-            // Check if window already exists
+        function openApp(app) {
             const existingWindow = windows.find(w => w.app.id === app.id);
             if (existingWindow) {
                 focusWindow(existingWindow.id);
                 return;
             }
-            
-            console.log('Opening app:', app.name);
             
             const windowId = 'window-' + Date.now();
             const windowDiv = document.createElement('div');
@@ -1422,17 +1404,13 @@
             const iframe = document.createElement('iframe');
             iframe.src = app.url.startsWith('http') ? app.url : 
                         app.url.startsWith('/') ? `https://webtoys.ai${app.url}` : 
-                        `apps/${app.url}`;
-            iframe.style.width = '100%';
-            iframe.style.height = '100%';
-            iframe.style.border = 'none';
+                        app.url;
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.postMessage({
                         type: 'TOYBOX_AUTH',
                         user: currentUser
                     }, '*');
-                    console.log('Auth sent to app:', app.name);
                 } catch (e) {
                     console.error('Failed to send auth to app:', e);
                 }
