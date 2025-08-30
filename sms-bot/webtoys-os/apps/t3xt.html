@@ -290,6 +290,246 @@
         body.light-theme .status-bar {
             background: #007acc;
         }
+        
+        /* Leaderboard Styles */
+        .leaderboard-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .leaderboard-modal.active {
+            display: flex;
+        }
+        
+        .leaderboard-container {
+            background: #252526;
+            border: 1px solid #3e3e42;
+            border-radius: 15px;
+            padding: 20px;
+            width: 90%;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .leaderboard-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+        
+        .leaderboard-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-tab {
+            flex: 1;
+            padding: 10px;
+            background: #3e3e42;
+            border: none;
+            border-radius: 8px;
+            color: #d4d4d4;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .leaderboard-tab.active {
+            background: linear-gradient(45deg, #00ff88, #00cc6f);
+            color: white;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            margin-bottom: 6px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            color: #333;
+            font-weight: 600;
+            transition: transform 0.2s;
+        }
+        
+        .leaderboard-entry:hover {
+            transform: translateX(5px);
+        }
+        
+        .leaderboard-entry.gold {
+            background: linear-gradient(135deg, #FFD700, #FFED4E);
+        }
+        
+        .leaderboard-entry.silver {
+            background: linear-gradient(135deg, #C0C0C0, #E8E8E8);
+        }
+        
+        .leaderboard-entry.bronze {
+            background: linear-gradient(135deg, #CD7F32, #E4A853);
+        }
+        
+        .leaderboard-entry.current-user {
+            border: 2px solid #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+        
+        .leaderboard-rank {
+            font-size: 18px;
+            font-weight: bold;
+            width: 35px;
+        }
+        
+        .leaderboard-name {
+            flex: 1;
+            font-size: 15px;
+            text-transform: uppercase;
+            padding: 0 12px;
+        }
+        
+        .leaderboard-score {
+            font-size: 16px;
+            font-weight: bold;
+            color: #007acc;
+        }
+        
+        .no-scores {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 30px;
+            font-style: italic;
+        }
+        
+        .leaderboard-close {
+            width: 100%;
+            padding: 12px;
+            background: #3e3e42;
+            color: #d4d4d4;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background 0.2s;
+        }
+        
+        .leaderboard-close:hover {
+            background: #4e4e52;
+        }
+        
+        .auth-status {
+            text-align: center;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+        
+        .logged-in-user {
+            color: #00ff88;
+            font-weight: bold;
+        }
+        
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .header {
+                padding: 6px 12px;
+            }
+            
+            .logo {
+                font-size: 14px;
+            }
+            
+            .menu-item {
+                padding: 4px 8px;
+                font-size: 12px;
+            }
+            
+            .toolbar {
+                padding: 6px;
+                overflow-x: auto;
+                white-space: nowrap;
+            }
+            
+            .tool-btn {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            
+            .status-bar {
+                padding: 3px 12px;
+                font-size: 11px;
+            }
+            
+            .dropdown-content {
+                min-width: 150px;
+            }
+            
+            .dropdown-content a {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            
+            .leaderboard-container {
+                padding: 15px;
+            }
+            
+            .leaderboard-title {
+                font-size: 20px;
+            }
+            
+            .leaderboard-entry {
+                padding: 8px 10px;
+            }
+            
+            .leaderboard-rank {
+                font-size: 16px;
+                width: 30px;
+            }
+            
+            .leaderboard-name {
+                font-size: 13px;
+            }
+            
+            .leaderboard-score {
+                font-size: 14px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .menu-bar {
+                display: none;
+            }
+            
+            .toolbar {
+                display: flex;
+                flex-wrap: wrap;
+            }
+            
+            .separator {
+                display: none;
+            }
+            
+            .tool-btn {
+                flex: 0 0 auto;
+                margin: 2px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -300,9 +540,11 @@
                 File
                 <div class="dropdown-content">
                     <a href="#" onclick="newFile()">New <span class="shortcut">Ctrl+N</span></a>
-                    <a href="#" onclick="openFile()">Open <span class="shortcut">Ctrl+O</span></a>
-                    <a href="#" onclick="saveFile()">Save <span class="shortcut">Ctrl+S</span></a>
+                    <a href="#" onclick="openLocalFile()">Open Local File <span class="shortcut">Ctrl+O</span></a>
+                    <a href="#" onclick="openSavedDocument()">Open Saved Document</a>
+                    <a href="#" onclick="saveFile()">Save Locally <span class="shortcut">Ctrl+S</span></a>
                     <a href="#" onclick="saveAsFile()">Save As <span class="shortcut">Ctrl+Shift+S</span></a>
+                    <a href="#" onclick="saveToSupabase()">Save to Cloud</a>
                 </div>
             </div>
             <div class="dropdown menu-item" onclick="toggleDropdown(this)">
@@ -325,6 +567,7 @@
                     <a href="#" onclick="toggleWordWrap()">Toggle Word Wrap</a>
                     <a href="#" onclick="increaseFontSize()">Increase Font Size <span class="shortcut">Ctrl++</span></a>
                     <a href="#" onclick="decreaseFontSize()">Decrease Font Size <span class="shortcut">Ctrl+-</span></a>
+                    <a href="#" onclick="showLeaderboard()">Leaderboard <span class="shortcut">🏆</span></a>
                 </div>
             </div>
         </div>
@@ -332,7 +575,7 @@
     
     <div class="toolbar">
         <button class="tool-btn" onclick="newFile()">📄 New</button>
-        <button class="tool-btn" onclick="openFile()">📂 Open</button>
+        <button class="tool-btn" onclick="openSavedDocument()">📂 Open</button>
         <button class="tool-btn" onclick="saveFile()">💾 Save</button>
         <div class="separator"></div>
         <button class="tool-btn" onclick="undo()">↶ Undo</button>
@@ -343,6 +586,8 @@
         <button class="tool-btn" onclick="paste()">📌 Paste</button>
         <div class="separator"></div>
         <button class="tool-btn" onclick="toggleFind()">🔍 Find</button>
+        <div class="separator"></div>
+        <button class="tool-btn" onclick="showLeaderboard()">🏆 Leaderboard</button>
     </div>
     
     <div class="editor-container">
@@ -375,7 +620,45 @@
     
     <input type="file" id="fileInput" style="display: none;" accept=".txt,.md,.js,.html,.css,.json,.xml,.csv" />
     
+    <!-- Leaderboard Modal -->
+    <div class="leaderboard-modal" id="leaderboardModal">
+        <div class="leaderboard-container">
+            <div class="leaderboard-title">🏆 T3XT Leaderboard</div>
+            
+            <div class="auth-status" id="authStatus"></div>
+            
+            <div class="leaderboard-tabs">
+                <button class="leaderboard-tab active" onclick="switchLeaderboardTab('words')">Most Words</button>
+                <button class="leaderboard-tab" onclick="switchLeaderboardTab('documents')">Most Documents</button>
+            </div>
+            
+            <div id="leaderboardList">
+                <div class="no-scores">Loading leaderboard...</div>
+            </div>
+            
+            <button class="leaderboard-close" onclick="closeLeaderboard()">Close</button>
+        </div>
+    </div>
+    
+    <!-- Document Browser Modal -->
+    <div id="documentBrowser" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; align-items: center; justify-content: center;">
+        <div style="background: #252526; border: 1px solid #3e3e42; border-radius: 8px; padding: 20px; width: 600px; max-height: 80vh; overflow-y: auto;">
+            <h2 style="color: #00ff88; margin-bottom: 16px;">Open Document</h2>
+            <div id="documentList" style="margin-bottom: 16px;"></div>
+            <div style="display: flex; gap: 8px; justify-content: flex-end;">
+                <button onclick="closeBrowser()" style="padding: 8px 16px; background: #3e3e42; border: 1px solid #464647; color: #d4d4d4; border-radius: 4px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        
+        // ZAD Configuration for leaderboard
+        window.APP_ID = 't3xt-leaderboard';
+        
         let currentFileName = 'Untitled';
         let isDirty = false;
         let history = [];
@@ -383,6 +666,9 @@
         let wordWrap = false;
         let showLineNumbers = true;
         let fontSize = 14;
+        let currentUser = null;
+        let currentDocumentId = null;
+        let currentLeaderboardTab = 'words';
         
         const editor = document.getElementById('editor');
         const lineNumbers = document.getElementById('lineNumbers');
@@ -392,6 +678,71 @@
         updateLineNumbers();
         updateStatus();
         saveToHistory();
+        
+        // Load Supabase client
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        script.crossOrigin = 'anonymous';
+        script.onload = () => {
+            window.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        };
+        document.head.appendChild(script);
+        
+        // Authentication handling
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    updateAuthDisplay();
+                } catch (e) {
+                    console.error('Failed to load saved auth:', e);
+                    localStorage.removeItem('toybox_user');
+                }
+            }
+        }
+        
+        function updateAuthDisplay() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser) {
+                authStatus.innerHTML = `Logged in as <span class="logged-in-user">${currentUser.handle}</span>`;
+            } else {
+                authStatus.innerHTML = 'Not logged in - Stats won\'t be saved to leaderboard';
+            }
+        }
+        
+        // Listen for auth messages from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                }
+                updateAuthDisplay();
+            }
+        });
+        
+        // Request auth from parent
+        if (window.parent !== window) {
+            parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+        
+        // Load auth from storage
+        loadAuthFromStorage();
         
         // Event listeners
         editor.addEventListener('input', () => {
@@ -418,7 +769,11 @@
                         break;
                     case 'o':
                         e.preventDefault();
-                        openFile();
+                        if (e.shiftKey) {
+                            openSavedDocument();
+                        } else {
+                            openLocalFile();
+                        }
                         break;
                     case 's':
                         e.preventDefault();
@@ -469,8 +824,191 @@
             saveToHistory();
         }
         
-        function openFile() {
+        function openLocalFile() {
             fileInput.click();
+        }
+        
+        function openFile() {
+            openSavedDocument();
+        }
+        
+        async function openSavedDocument() {
+            if (!currentUser) {
+                alert('Please log in to access saved documents');
+                return;
+            }
+            
+            if (!window.supabase) {
+                alert('Loading database connection, please try again...');
+                return;
+            }
+            
+            // Show the document browser
+            const browser = document.getElementById('documentBrowser');
+            browser.style.display = 'flex';
+            
+            // Load documents from Supabase
+            const documentList = document.getElementById('documentList');
+            documentList.innerHTML = '<div style="color: #808080;">Loading documents...</div>';
+            
+            try {
+                // Query for documents saved by this user
+                const { data, error } = await window.supabase
+                    .from('wtaf_content')
+                    .select('id, app_slug, html_content, created_at, updated_at')
+                    .eq('user_slug', currentUser.handle.toLowerCase())
+                    .like('html_content', '%T3XT_DOCUMENT%')
+                    .order('updated_at', { ascending: false });
+                
+                if (error) {
+                    console.error('Error loading documents:', error);
+                    documentList.innerHTML = '<div style="color: #ff6b6b;">Error loading documents</div>';
+                    return;
+                }
+                
+                if (!data || data.length === 0) {
+                    documentList.innerHTML = '<div style="color: #808080;">No saved documents found</div>';
+                    return;
+                }
+                
+                // Display documents
+                documentList.innerHTML = '';
+                data.forEach(doc => {
+                    // Extract document metadata from HTML content
+                    const match = doc.html_content.match(/<!-- T3XT_DOCUMENT: (.*?) -->/);
+                    let docData = { title: doc.app_slug, content: '' };
+                    
+                    if (match) {
+                        try {
+                            docData = JSON.parse(match[1]);
+                        } catch (e) {
+                            console.error('Error parsing document data:', e);
+                        }
+                    }
+                    
+                    const docItem = document.createElement('div');
+                    docItem.style.cssText = 'padding: 12px; background: #3e3e42; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;';
+                    docItem.onmouseover = () => docItem.style.background = '#4e4e52';
+                    docItem.onmouseout = () => docItem.style.background = '#3e3e42';
+                    
+                    const updated = new Date(doc.updated_at).toLocaleString();
+                    docItem.innerHTML = `
+                        <div style="color: #d4d4d4; font-size: 14px; font-weight: bold;">${docData.title || doc.app_slug}</div>
+                        <div style="color: #808080; font-size: 12px; margin-top: 4px;">Last modified: ${updated}</div>
+                        <div style="color: #808080; font-size: 12px;">${docData.content ? docData.content.substring(0, 100) + '...' : 'Empty document'}</div>
+                    `;
+                    
+                    docItem.onclick = () => loadDocument(doc.id, docData);
+                    documentList.appendChild(docItem);
+                });
+            } catch (e) {
+                console.error('Error:', e);
+                documentList.innerHTML = '<div style="color: #ff6b6b;">Error loading documents</div>';
+            }
+        }
+        
+        function loadDocument(docId, docData) {
+            currentDocumentId = docId;
+            currentFileName = docData.title || 'Untitled';
+            editor.value = docData.content || '';
+            document.getElementById('fileName').textContent = currentFileName;
+            isDirty = false;
+            updateLineNumbers();
+            updateStatus();
+            history = [];
+            historyIndex = -1;
+            saveToHistory();
+            closeBrowser();
+        }
+        
+        function closeBrowser() {
+            document.getElementById('documentBrowser').style.display = 'none';
+        }
+        
+        async function saveToSupabase() {
+            if (!currentUser) {
+                alert('Please log in to save documents to the cloud');
+                return;
+            }
+            
+            if (!window.supabase) {
+                alert('Loading database connection, please try again...');
+                return;
+            }
+            
+            const fileName = prompt('Enter document name:', currentFileName);
+            if (!fileName) return;
+            
+            currentFileName = fileName;
+            document.getElementById('fileName').textContent = currentFileName;
+            
+            const documentData = {
+                title: currentFileName,
+                content: editor.value,
+                savedAt: new Date().toISOString()
+            };
+            
+            // Create HTML wrapper for the document
+            const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+    <title>${currentFileName} - T3XT Document</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <!-- T3XT_DOCUMENT: ${JSON.stringify(documentData).replace(/-->/g, '-- >')} -->
+    <h1>${currentFileName}</h1>
+    <pre>${editor.value.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+</body>
+</html>`;
+            
+            try {
+                const appSlug = 't3xt-doc-' + Date.now();
+                
+                if (currentDocumentId) {
+                    // Update existing document
+                    const { error } = await window.supabase
+                        .from('wtaf_content')
+                        .update({ 
+                            html_content: htmlContent,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', currentDocumentId);
+                    
+                    if (error) {
+                        console.error('Error updating document:', error);
+                        alert('Failed to save document');
+                    } else {
+                        alert('Document saved successfully!');
+                        isDirty = false;
+                    }
+                } else {
+                    // Create new document
+                    const { data, error } = await window.supabase
+                        .from('wtaf_content')
+                        .insert({ 
+                            user_slug: currentUser.handle.toLowerCase(),
+                            app_slug: appSlug,
+                            html_content: htmlContent,
+                            is_public: false
+                        })
+                        .select();
+                    
+                    if (error) {
+                        console.error('Error saving document:', error);
+                        alert('Failed to save document');
+                    } else {
+                        currentDocumentId = data[0].id;
+                        alert('Document saved successfully!');
+                        isDirty = false;
+                        // Update leaderboard stats
+                        await updateLeaderboardStats();
+                    }
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                alert('Failed to save document');
+            }
         }
         
         fileInput.addEventListener('change', (e) => {
@@ -714,6 +1252,149 @@
                 document.querySelectorAll('.dropdown').forEach(dropdown => {
                     dropdown.classList.remove('active');
                 });
+            }
+        });
+        
+        // Leaderboard Functions
+        async function updateLeaderboardStats() {
+            if (!currentUser) return;
+            
+            // Count words in current document
+            const text = editor.value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            
+            // Load existing stats
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&participant_id=${currentUser.participantId}&action_type=user_stats`);
+                let userStats = null;
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const existing = data.find(d => d.participant_id === currentUser.participantId);
+                    if (existing) {
+                        userStats = existing.content_data;
+                    }
+                }
+                
+                if (!userStats) {
+                    userStats = {
+                        handle: currentUser.handle,
+                        totalWords: 0,
+                        totalDocuments: 0,
+                        longestDocument: 0,
+                        lastUpdated: new Date().toISOString()
+                    };
+                }
+                
+                // Update stats
+                userStats.totalWords += words;
+                userStats.totalDocuments += 1;
+                userStats.longestDocument = Math.max(userStats.longestDocument, words);
+                userStats.lastUpdated = new Date().toISOString();
+                
+                // Save updated stats
+                await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: currentUser.participantId,
+                        action_type: 'user_stats',
+                        content_data: userStats
+                    })
+                });
+                
+                console.log('Leaderboard stats updated');
+            } catch (error) {
+                console.error('Failed to update leaderboard stats:', error);
+            }
+        }
+        
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=user_stats`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.map(item => item.content_data).filter(stats => stats);
+                }
+            } catch (error) {
+                console.error('Failed to load leaderboard:', error);
+            }
+            return [];
+        }
+        
+        async function displayLeaderboard() {
+            const stats = await loadLeaderboard();
+            const listEl = document.getElementById('leaderboardList');
+            
+            if (stats.length === 0) {
+                listEl.innerHTML = '<div class="no-scores">No data yet. Be the first to save a document!</div>';
+                return;
+            }
+            
+            // Sort based on current tab
+            if (currentLeaderboardTab === 'words') {
+                stats.sort((a, b) => (b.totalWords || 0) - (a.totalWords || 0));
+            } else {
+                stats.sort((a, b) => (b.totalDocuments || 0) - (a.totalDocuments || 0));
+            }
+            
+            // Take top 10
+            const topStats = stats.slice(0, 10);
+            
+            listEl.innerHTML = topStats.map((userStats, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'gold';
+                else if (rank === 2) rankClass = 'silver';
+                else if (rank === 3) rankClass = 'bronze';
+                
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
+                
+                const isCurrentUser = currentUser && userStats.handle === currentUser.handle;
+                const userClass = isCurrentUser ? 'current-user' : '';
+                
+                const score = currentLeaderboardTab === 'words' 
+                    ? `${userStats.totalWords || 0} words`
+                    : `${userStats.totalDocuments || 0} docs`;
+                
+                return `
+                    <div class="leaderboard-entry ${rankClass} ${userClass}">
+                        <div class="leaderboard-rank">${medal}</div>
+                        <div class="leaderboard-name">${userStats.handle || 'ANON'}</div>
+                        <div class="leaderboard-score">${score}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function showLeaderboard() {
+            document.getElementById('leaderboardModal').classList.add('active');
+            displayLeaderboard();
+        }
+        
+        function closeLeaderboard() {
+            document.getElementById('leaderboardModal').classList.remove('active');
+        }
+        
+        function switchLeaderboardTab(tab) {
+            currentLeaderboardTab = tab;
+            
+            // Update tab styles
+            const tabs = document.querySelectorAll('.leaderboard-tab');
+            tabs.forEach(t => t.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            // Refresh leaderboard
+            displayLeaderboard();
+        }
+        
+        // Initialize on page load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuthFromStorage();
+            // Request auth state from parent (if in iframe)
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
             }
         });
     </script>

@@ -532,6 +532,11 @@ setTimeout(function() {
 		];
 		
 		// Check if referer is from the desktop - these should NOT show navigation
+		console.log('🔍 DEBUG - Referer analysis:', {
+			referer,
+			refererExists: !!referer
+		});
+		
 		const isFromDesktop = referer ? 
 			(() => {
 				try {
@@ -539,23 +544,45 @@ setTimeout(function() {
 					const pathname = refererUrl.pathname;
 					const searchParams = refererUrl.searchParams;
 					
+					console.log('🔍 DEBUG - Parsed referer:', {
+						fullReferer: referer,
+						pathname,
+						searchParamsString: refererUrl.search,
+						slug: searchParams.get('slug'),
+						user: searchParams.get('user')
+					});
+					
 					// Check if referer is from /api/wtaf/raw with desktop slugs
 					if (pathname === '/api/wtaf/raw') {
 						const slug = searchParams.get('slug');
+						console.log('🔍 DEBUG - Raw API check:', {
+							isRawAPI: true,
+							slug,
+							hasDesktopSlug: slug && (slug.includes('toybox-os') || slug.includes('webtoys-os') || slug.includes('desktop-v3'))
+						});
+						
 						if (slug && (slug.includes('toybox-os') || slug.includes('webtoys-os') || slug.includes('desktop-v3'))) {
-							console.log('🖥️ Detected desktop referer from raw API:', referer);
+							console.log('🖥️ ✅ Detected desktop referer from raw API:', referer);
 							return true;
 						}
 					}
 					
 					// Check if referer pathname contains desktop identifiers
-					if (pathname.includes('toybox-os') || pathname.includes('webtoys-os') || pathname.includes('desktop-v3')) {
-						console.log('🖥️ Detected desktop referer from pathname:', referer);
+					const pathnameHasDesktop = pathname.includes('toybox-os') || pathname.includes('webtoys-os') || pathname.includes('desktop-v3');
+					console.log('🔍 DEBUG - Pathname check:', {
+						pathname,
+						pathnameHasDesktop
+					});
+					
+					if (pathnameHasDesktop) {
+						console.log('🖥️ ✅ Detected desktop referer from pathname:', referer);
 						return true;
 					}
 					
+					console.log('🔍 DEBUG - No desktop detected');
 					return false;
 				} catch (e) {
+					console.log('🔍 DEBUG - URL parsing error:', e.message);
 					return false;
 				}
 			})() :
@@ -600,17 +627,31 @@ setTimeout(function() {
 			
 		const showNavigation = isDemoMode || (isFromInternalNav && !isFromDesktop);
 
-		console.log('🔍 Navigation decision:', { 
+		console.log('🔍 FINAL Navigation decision:', { 
 			referer, 
 			isDemoMode, 
 			isFromDesktop,
 			isFromInternalNav, 
-			showNavigation 
+			showNavigation,
+			'WILL_SHOW_NAVBAR': showNavigation ? 'YES - with WTAFAppViewer' : 'NO - clean iframe only'
 		});
+		
+		// TEMPORARY DEBUG: If this is a sudoku app, add debug info to HTML
+		if (app_slug === 'toybox-sudoku') {
+			const debugInfo = `
+<!-- DEBUG INFO:
+referer: ${referer}
+isDemoMode: ${isDemoMode}
+isFromDesktop: ${isFromDesktop}
+isFromInternalNav: ${isFromInternalNav}
+showNavigation: ${showNavigation}
+-->`;
+			htmlContent = debugInfo + htmlContent;
+		}
 
 		// Serve desktop apps directly without iframe wrapper
 		if (isDesktopApp) {
-			console.log('🖥️ Serving desktop app directly without iframe wrapper');
+			console.log('🖥️ TAKING PATH: Desktop app redirect (isDesktopApp=true)');
 			// Return a client-side redirect script
 			return (
 				<html>
@@ -629,6 +670,7 @@ setTimeout(function() {
 
 		// Conditionally render with or without navigation
 		if (showNavigation) {
+			console.log('🔍 TAKING PATH: WTAFAppViewer with navbar (showNavigation=true)');
 			// Internal navigation - show nav bar
 			return (
 				<>
@@ -644,6 +686,7 @@ setTimeout(function() {
 				</>
 			);
 		} else {
+			console.log('🔍 TAKING PATH: Clean iframe only (showNavigation=false)');
 			// Direct link - clean iframe only with superpower auth bridge
 			return (
 				<>
@@ -901,15 +944,22 @@ export async function generateMetadata({ params }: PageProps) {
 		
 		const pageUrl = `https://www.wtaf.me/wtaf/${user_slug}/${app_slug}`;
 		
-		// Use consistent branding title instead of user prompt
-		const title = 'WTAF – Delusional App Generator';
+		// Special handling for WebtoysOS desktop
+		const isWebtoysDesktop = app_slug === 'toybox-os-v3-test';
+		
+		// Use custom title for WebtoysOS, otherwise use standard branding
+		const title = isWebtoysDesktop ? 'BUILD PLAY SHARE' : 'WTAF – Delusional App Generator';
+		const ogTitle = isWebtoysDesktop ? 'BUILD PLAY SHARE' : "SHIP FROM YOUR FLIP PHONE";
+		const description = isWebtoysDesktop 
+			? "BUILD PLAY SHARE - WebtoysOS Community Desktop" 
+			: "Vibecoded chaos, shipped via SMS.";
 
 		return {
 			title,
-			description: "Vibecoded chaos, shipped via SMS.",
+			description,
 			openGraph: {
-				title: "SHIP FROM YOUR FLIP PHONE",
-				description: "Vibecoded chaos, shipped via SMS.",
+				title: ogTitle,
+				description,
 				url: pageUrl,
 				images: [
 					{
@@ -923,8 +973,8 @@ export async function generateMetadata({ params }: PageProps) {
 			},
 			twitter: {
 				card: 'summary_large_image',
-				title: "SHIP FROM YOUR FLIP PHONE",
-				description: "Vibecoded chaos, shipped via SMS.",
+				title: ogTitle,
+				description,
 				images: [ogImageUrl],
 			},
 		};
