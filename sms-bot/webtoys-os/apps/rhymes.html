@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="window:rhymes" content="width=900,height=650,resizable=true">
     <title>RHYMES - Poetry & Rhyme Editor</title>
     <style>
@@ -10,6 +10,7 @@
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
         }
 
         body {
@@ -23,60 +24,60 @@
 
         .header {
             background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
-            padding: 10px 20px;
+            padding: 8px 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-height: 44px;
         }
 
         .title {
-            font-size: 24px;
+            font-size: 18px;
             color: white;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 5px;
         }
 
         .title .icon {
-            font-size: 30px;
+            font-size: 20px;
             animation: bounce 2s infinite;
         }
 
         @keyframes bounce {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-5px); }
+            50% { transform: translateY(-3px); }
         }
 
         .toolbar {
             display: flex;
-            gap: 10px;
+            gap: 5px;
         }
 
         .btn {
             background: white;
             color: #764ba2;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 10px;
             border-radius: 20px;
             cursor: pointer;
             font-weight: bold;
             transition: all 0.3s;
             font-family: inherit;
+            font-size: 12px;
+            min-height: 32px;
         }
 
-        .btn:hover {
+        .btn:hover, .btn:active {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(0,0,0,0.2);
         }
 
-        .btn:active {
-            transform: scale(0.95);
-        }
-
         .main-container {
             display: flex;
+            flex-direction: column;
             flex: 1;
             overflow: hidden;
         }
@@ -86,22 +87,18 @@
             display: flex;
             flex-direction: column;
             background: rgba(255, 255, 255, 0.95);
-            margin: 20px;
-            margin-right: 10px;
-            border-radius: 15px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
 
         .document-title {
-            padding: 15px;
+            padding: 10px;
             background: rgba(240, 147, 251, 0.2);
             border-bottom: 2px solid rgba(240, 147, 251, 0.3);
         }
 
         .document-title input {
             width: 100%;
-            font-size: 18px;
+            font-size: 16px;
             font-weight: bold;
             border: none;
             background: transparent;
@@ -110,88 +107,130 @@
             font-family: inherit;
         }
 
-        .document-title input::placeholder {
-            color: rgba(118, 75, 162, 0.5);
-        }
-
         #editor {
             flex: 1;
-            padding: 20px;
+            padding: 10px;
             font-size: 16px;
-            line-height: 1.8;
+            line-height: 1.6;
             border: none;
             outline: none;
             resize: none;
             font-family: 'Georgia', serif;
             color: #333;
             background: transparent;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .rhyme-panel {
-            width: 250px;
             background: rgba(255, 255, 255, 0.95);
-            margin: 20px;
-            margin-left: 10px;
-            border-radius: 15px;
             display: flex;
             flex-direction: column;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            height: 180px;
+            border-top: 3px solid rgba(250, 112, 154, 0.3);
         }
 
         .rhyme-header {
-            padding: 15px;
+            padding: 8px 10px;
             background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
             color: white;
             font-weight: bold;
-            border-radius: 15px 15px 0 0;
             text-align: center;
             text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+            font-size: 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .current-word {
-            padding: 10px 15px;
-            background: rgba(250, 112, 154, 0.1);
-            border-bottom: 1px solid rgba(250, 112, 154, 0.2);
-            font-weight: bold;
-            color: #fa709a;
-            text-align: center;
+            font-size: 12px;
+            background: rgba(255, 255, 255, 0.3);
+            padding: 2px 8px;
+            border-radius: 10px;
         }
 
-        .rhyme-list {
+        .ai-toggle {
+            background: rgba(255, 255, 255, 0.3);
+            border: none;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .ai-toggle.active {
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .rhyme-content {
             flex: 1;
             overflow-y: auto;
-            padding: 15px;
+            -webkit-overflow-scrolling: touch;
+            padding: 10px;
         }
 
-        .rhyme-word {
+        .suggestion-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chip {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 8px 12px;
-            margin: 5px 0;
+            padding: 6px 12px;
             border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s;
-            text-align: center;
             font-size: 14px;
+            white-space: nowrap;
+            animation: slideIn 0.3s ease-out;
         }
 
-        .rhyme-word:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
-        .rhyme-word:active {
+        .chip:active {
             transform: scale(0.95);
+        }
+
+        .chip.ai-suggestion {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+        }
+
+        .loading-dots {
+            display: inline-block;
+            font-size: 20px;
+            letter-spacing: 2px;
+            animation: loading 1.4s infinite;
+        }
+
+        @keyframes loading {
+            0%, 60%, 100% { opacity: 0.2; }
+            20% { opacity: 1; }
         }
 
         .status-bar {
             background: rgba(255, 255, 255, 0.9);
-            padding: 8px 20px;
+            padding: 6px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
+            min-height: 30px;
         }
 
         .word-count {
@@ -204,72 +243,7 @@
             font-style: italic;
         }
 
-        .generate-panel {
-            background: rgba(255, 220, 100, 0.2);
-            padding: 15px;
-            margin: 0 15px 15px 15px;
-            border-radius: 10px;
-            border: 2px dashed #fee140;
-        }
-
-        .generate-input {
-            width: 100%;
-            padding: 8px;
-            border: 2px solid #fee140;
-            border-radius: 8px;
-            outline: none;
-            font-family: inherit;
-            margin-bottom: 10px;
-        }
-
-        .generate-btn {
-            width: 100%;
-            background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .generate-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-
-        .generate-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading-spinner.active {
-            display: block;
-        }
-
-        .spinner {
-            border: 3px solid rgba(250, 112, 154, 0.3);
-            border-top: 3px solid #fa709a;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            animation: spin 1s linear infinite;
-            margin: 0 auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* File browser modal */
+        /* Modal styles */
         .modal {
             display: none;
             position: fixed;
@@ -281,6 +255,7 @@
             justify-content: center;
             align-items: center;
             z-index: 1000;
+            padding: 20px;
         }
 
         .modal.active {
@@ -289,19 +264,20 @@
 
         .modal-content {
             background: white;
-            padding: 30px;
+            padding: 20px;
             border-radius: 15px;
-            width: 500px;
+            width: 100%;
+            max-width: 500px;
             max-height: 70vh;
             overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
 
         .modal-header {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: bold;
             color: #764ba2;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .file-list {
@@ -319,19 +295,113 @@
             transition: all 0.3s;
         }
 
-        .file-item:hover {
-            transform: translateX(5px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        .file-item:active {
+            transform: scale(0.98);
         }
 
         .file-date {
             font-size: 11px;
             opacity: 0.8;
+            margin-top: 4px;
         }
 
         .close-modal {
-            margin-top: 20px;
+            margin-top: 15px;
             width: 100%;
+        }
+
+        /* Desktop styles */
+        @media (min-width: 768px) {
+            .header {
+                padding: 10px 20px;
+            }
+
+            .title {
+                font-size: 24px;
+                gap: 10px;
+            }
+
+            .title .icon {
+                font-size: 30px;
+            }
+
+            .btn {
+                padding: 8px 16px;
+                font-size: 14px;
+            }
+
+            .toolbar {
+                gap: 10px;
+            }
+
+            .main-container {
+                flex-direction: row;
+            }
+
+            .editor-panel {
+                flex: 1;
+                margin: 20px;
+                margin-right: 10px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            }
+
+            .document-title {
+                padding: 15px;
+            }
+
+            .document-title input {
+                font-size: 18px;
+            }
+
+            #editor {
+                padding: 20px;
+                font-size: 16px;
+                line-height: 1.8;
+            }
+
+            .rhyme-panel {
+                width: 300px;
+                height: auto;
+                margin: 20px;
+                margin-left: 10px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+                border-top: none;
+            }
+
+            .rhyme-header {
+                border-radius: 15px 15px 0 0;
+                padding: 12px 15px;
+                font-size: 16px;
+            }
+
+            .current-word {
+                font-size: 14px;
+            }
+
+            .rhyme-content {
+                padding: 15px;
+            }
+
+            .chip {
+                padding: 8px 14px;
+                font-size: 14px;
+            }
+
+            .status-bar {
+                padding: 8px 20px;
+                font-size: 12px;
+            }
+
+            .modal-content {
+                padding: 30px;
+            }
+
+            .modal-header {
+                font-size: 20px;
+                margin-bottom: 20px;
+            }
         }
     </style>
 </head>
@@ -339,13 +409,12 @@
     <div class="header">
         <div class="title">
             <span class="icon">✨</span>
-            <span>RHYMES - Poetry Studio</span>
+            <span>RHYMES</span>
         </div>
         <div class="toolbar">
-            <button class="btn" onclick="newDocument()">📝 New</button>
-            <button class="btn" onclick="openDocument()">📂 Open</button>
-            <button class="btn" onclick="saveDocument()">💾 Save</button>
-            <button class="btn" onclick="generatePoetry()">🎭 Generate</button>
+            <button class="btn" onclick="newDocument()">📝</button>
+            <button class="btn" onclick="openDocument()">📂</button>
+            <button class="btn" onclick="saveDocument()">💾</button>
         </div>
     </div>
 
@@ -354,29 +423,17 @@
             <div class="document-title">
                 <input type="text" id="docTitle" placeholder="Untitled Poem..." value="Untitled Poem">
             </div>
-            <textarea id="editor" placeholder="Start writing your poetry here... Type any word and see rhymes appear in the sidebar!"></textarea>
+            <textarea id="editor" placeholder="Start writing your poetry here..."></textarea>
         </div>
 
         <div class="rhyme-panel">
-            <div class="rhyme-header">🎵 Rhyme Helper</div>
-            <div class="current-word" id="currentWord">Select a word...</div>
-            
-            <div class="generate-panel">
-                <input type="text" class="generate-input" id="generatePrompt" 
-                       placeholder="e.g., 'Write a poem about stars'">
-                <button class="generate-btn" onclick="generateWithAI()">
-                    ✨ Generate with AI
-                </button>
+            <div class="rhyme-header">
+                <span class="current-word" id="currentWord">Type to see magic...</span>
+                <button class="ai-toggle" id="aiToggle" onclick="toggleAI()">AI: ON</button>
             </div>
-
-            <div class="loading-spinner" id="loadingSpinner">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px; color: #fa709a;">Finding rhymes...</p>
-            </div>
-
-            <div class="rhyme-list" id="rhymeList">
-                <div style="text-align: center; color: #999; padding: 20px;">
-                    Type or select a word to see rhymes!
+            <div class="rhyme-content">
+                <div class="suggestion-chips" id="suggestions">
+                    <div style="color: #999; font-size: 14px;">Start typing to see rhymes & suggestions!</div>
                 </div>
             </div>
         </div>
@@ -384,7 +441,7 @@
 
     <div class="status-bar">
         <div class="word-count">
-            Words: <span id="wordCount">0</span> | Characters: <span id="charCount">0</span>
+            <span id="wordCount">0</span> words
         </div>
         <div class="save-status" id="saveStatus">Ready</div>
     </div>
@@ -393,9 +450,7 @@
     <div class="modal" id="fileModal">
         <div class="modal-content">
             <div class="modal-header">📚 Your Saved Poems</div>
-            <div class="file-list" id="fileList">
-                <!-- Files will be loaded here -->
-            </div>
+            <div class="file-list" id="fileList"></div>
             <button class="btn close-modal" onclick="closeModal()">Cancel</button>
         </div>
     </div>
@@ -407,68 +462,73 @@
         let currentDocId = null;
         let lastSaved = '';
         let autoSaveTimer = null;
+        let aiEnabled = true;
+        let lastWord = '';
+        let aiSuggestionTimer = null;
 
-        // Common rhyme patterns database
+        // Common rhyme patterns database (simplified for mobile)
         const rhymePatterns = {
-            'at': ['cat', 'hat', 'bat', 'mat', 'rat', 'sat', 'fat', 'chat', 'flat', 'that'],
-            'ay': ['day', 'way', 'say', 'may', 'pay', 'play', 'stay', 'gray', 'bay', 'ray'],
-            'ight': ['night', 'light', 'sight', 'might', 'fight', 'right', 'bright', 'flight', 'tight', 'height'],
-            'ake': ['make', 'take', 'lake', 'wake', 'bake', 'shake', 'brake', 'fake', 'snake', 'cake'],
-            'all': ['ball', 'call', 'fall', 'wall', 'tall', 'small', 'hall', 'mall', 'stall'],
-            'ame': ['name', 'same', 'game', 'came', 'flame', 'frame', 'blame', 'shame', 'tame'],
-            'an': ['man', 'can', 'ran', 'pan', 'fan', 'plan', 'tan', 'van', 'scan', 'span'],
-            'ank': ['bank', 'tank', 'rank', 'sank', 'blank', 'frank', 'plank', 'thank', 'drank'],
-            'ap': ['map', 'cap', 'tap', 'gap', 'lap', 'nap', 'wrap', 'snap', 'trap', 'clap'],
-            'ash': ['cash', 'dash', 'crash', 'flash', 'trash', 'splash', 'bash', 'mash', 'slash'],
-            'ate': ['gate', 'late', 'rate', 'date', 'plate', 'state', 'wait', 'great', 'fate', 'hate'],
-            'ave': ['save', 'wave', 'gave', 'brave', 'cave', 'grave', 'shave', 'pave', 'rave'],
-            'eat': ['beat', 'seat', 'meat', 'heat', 'neat', 'treat', 'wheat', 'feat', 'cheat'],
-            'ell': ['bell', 'tell', 'sell', 'well', 'fell', 'shell', 'smell', 'spell', 'yell', 'dwell'],
-            'est': ['best', 'rest', 'test', 'west', 'nest', 'chest', 'guest', 'quest', 'fest'],
-            'ice': ['nice', 'price', 'twice', 'rice', 'dice', 'slice', 'spice', 'mice', 'vice'],
-            'ick': ['pick', 'sick', 'quick', 'stick', 'thick', 'trick', 'click', 'brick', 'tick'],
-            'ide': ['ride', 'side', 'wide', 'hide', 'slide', 'pride', 'guide', 'tide', 'bride'],
-            'ight': ['night', 'light', 'right', 'fight', 'sight', 'might', 'bright', 'flight', 'tight'],
-            'ill': ['will', 'still', 'hill', 'fill', 'kill', 'bill', 'chill', 'skill', 'spill', 'drill'],
-            'in': ['win', 'pin', 'thin', 'skin', 'spin', 'twin', 'chin', 'bin', 'tin', 'sin'],
-            'ine': ['line', 'mine', 'fine', 'wine', 'shine', 'pine', 'dine', 'spine', 'nine'],
-            'ing': ['ring', 'sing', 'king', 'thing', 'spring', 'bring', 'wing', 'sting', 'swing'],
-            'ink': ['think', 'drink', 'sink', 'link', 'pink', 'wink', 'shrink', 'blink', 'ink'],
-            'ip': ['ship', 'trip', 'tip', 'slip', 'chip', 'flip', 'grip', 'skip', 'clip', 'dip'],
-            'it': ['sit', 'hit', 'fit', 'bit', 'split', 'quit', 'kit', 'wit', 'knit', 'pit'],
-            'ock': ['rock', 'clock', 'block', 'lock', 'stock', 'shock', 'dock', 'knock', 'sock'],
-            'og': ['dog', 'log', 'fog', 'hog', 'jog', 'blog', 'frog', 'clog'],
-            'old': ['cold', 'gold', 'hold', 'told', 'bold', 'fold', 'old', 'sold', 'mold'],
-            'op': ['stop', 'top', 'shop', 'drop', 'hop', 'pop', 'crop', 'chop', 'mop'],
-            'ore': ['more', 'store', 'before', 'core', 'score', 'shore', 'wore', 'bore', 'tore'],
-            'ot': ['hot', 'not', 'got', 'lot', 'shot', 'spot', 'pot', 'dot', 'plot', 'knot'],
-            'out': ['about', 'shout', 'out', 'scout', 'sprout', 'doubt', 'route', 'trout'],
-            'ow': ['now', 'how', 'cow', 'bow', 'wow', 'plow', 'brow', 'vow'],
-            'uck': ['luck', 'duck', 'truck', 'stuck', 'buck', 'tuck', 'chuck', 'pluck'],
-            'ug': ['bug', 'hug', 'rug', 'mug', 'tug', 'drug', 'plug', 'shrug', 'jug'],
-            'ump': ['jump', 'bump', 'pump', 'dump', 'lump', 'stump', 'thump', 'clump'],
-            'unk': ['junk', 'trunk', 'bunk', 'chunk', 'dunk', 'funk', 'punk', 'sunk']
+            'at': ['cat', 'hat', 'bat', 'mat', 'rat', 'sat', 'that'],
+            'ay': ['day', 'way', 'say', 'may', 'play', 'stay', 'gray'],
+            'ight': ['night', 'light', 'right', 'might', 'bright', 'flight'],
+            'ake': ['make', 'take', 'wake', 'bake', 'shake', 'cake'],
+            'all': ['ball', 'call', 'fall', 'wall', 'tall', 'small'],
+            'ame': ['name', 'same', 'game', 'came', 'flame', 'frame'],
+            'ate': ['gate', 'late', 'rate', 'date', 'great', 'state'],
+            'eat': ['beat', 'seat', 'heat', 'neat', 'treat', 'wheat'],
+            'ell': ['bell', 'tell', 'sell', 'well', 'fell', 'spell'],
+            'ice': ['nice', 'price', 'twice', 'rice', 'dice', 'slice'],
+            'ide': ['ride', 'side', 'wide', 'hide', 'slide', 'pride'],
+            'ine': ['line', 'mine', 'fine', 'wine', 'shine', 'pine'],
+            'ing': ['ring', 'sing', 'king', 'thing', 'bring', 'wing'],
+            'old': ['cold', 'gold', 'hold', 'told', 'bold', 'sold'],
+            'ore': ['more', 'store', 'before', 'core', 'score', 'shore'],
+            'ow': ['now', 'how', 'cow', 'bow', 'wow', 'vow']
         };
+
+        // Helper functions for participant ID
+        function getParticipantId() {
+            return currentUser?.handle || 'anonymous';
+        }
+
+        function getUsername() {
+            return currentUser?.handle || 'anonymous';
+        }
+
+        function getAppId() {
+            return window.APP_ID;
+        }
 
         // ZAD helper functions
         async function save(dataType, data) {
-            const response = await fetch('/api/zad/save', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    app_id: window.APP_ID,
-                    participant_id: currentUser?.handle || 'anonymous',
-                    action_type: dataType,
-                    content_data: data
-                })
-            });
-            return response.ok;
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        participant_id: getParticipantId(),
+                        participant_data: { userLabel: getUsername(), username: getUsername() },
+                        action_type: dataType,
+                        content_data: data
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save error:', error);
+                return false;
+            }
         }
 
         async function load(dataType) {
-            const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`);
-            const data = await response.json();
-            return data || [];
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${getAppId()}&action_type=${dataType}`);
+                const data = await response.json();
+                return data || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
         }
 
         async function generateText(prompt, options = {}) {
@@ -477,21 +537,37 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        app_id: window.APP_ID,
-                        participant_id: currentUser?.handle || 'anonymous',
+                        app_id: getAppId(),
+                        participant_id: getParticipantId(),
+                        participant_data: { userLabel: getUsername(), username: getUsername() },
                         action_type: 'generate_text',
                         content_data: { 
                             prompt: prompt,
-                            maxTokens: options.maxTokens || 500,
+                            maxTokens: options.maxTokens || 100,
                             temperature: options.temperature || 0.9,
-                            systemPrompt: options.systemPrompt || 'You are a creative poetry assistant. Write beautiful, rhyming poetry.'
+                            systemPrompt: options.systemPrompt || 'You are a creative poetry assistant helping with rhymes and word suggestions.'
                         }
                     })
                 });
                 
-                if (!response.ok) throw new Error('Generation failed');
+                if (!response.ok) {
+                    console.error('Generate text failed:', response.status);
+                    return '';
+                }
+                
                 const result = await response.json();
-                return result.data?.generated_text || '';
+                console.log('Generate text result:', result);
+                
+                // The response comes back in result.data
+                if (result.data && typeof result.data === 'string') {
+                    return result.data;
+                } else if (result.data && result.data.generated_text) {
+                    return result.data.generated_text;
+                } else if (typeof result === 'string') {
+                    return result;
+                }
+                
+                return '';
             } catch (error) {
                 console.error('Generate text error:', error);
                 return '';
@@ -512,62 +588,115 @@
         }
 
         function updateUI() {
-            const username = currentUser?.handle || 'anonymous';
-            document.getElementById('saveStatus').textContent = `Logged in as ${username}`;
+            const username = getUsername();
+            document.getElementById('saveStatus').textContent = username === 'anonymous' ? 'Not logged in' : `@${username}`;
         }
 
-        // Find rhymes for a word
-        function findRhymes(word) {
+        // Toggle AI
+        function toggleAI() {
+            aiEnabled = !aiEnabled;
+            const toggle = document.getElementById('aiToggle');
+            toggle.textContent = aiEnabled ? 'AI: ON' : 'AI: OFF';
+            toggle.classList.toggle('active', aiEnabled);
+            
+            if (lastWord && aiEnabled) {
+                updateSuggestions(lastWord);
+            }
+        }
+
+        // Find local rhymes
+        function findLocalRhymes(word) {
             if (!word) return [];
             word = word.toLowerCase().trim();
             
             // Find matching rhyme pattern
             for (const [pattern, rhymes] of Object.entries(rhymePatterns)) {
                 if (word.endsWith(pattern.slice(1))) {
-                    return rhymes.filter(r => r !== word);
+                    return rhymes.filter(r => r !== word).slice(0, 5);
                 }
                 if (rhymes.includes(word)) {
-                    return rhymes.filter(r => r !== word);
+                    return rhymes.filter(r => r !== word).slice(0, 5);
                 }
             }
             
-            // Simple fallback: find words with same ending (last 2-3 letters)
+            // Fallback: find words with same ending
             const ending = word.slice(-2);
             const possibleRhymes = [];
             for (const rhymes of Object.values(rhymePatterns)) {
                 possibleRhymes.push(...rhymes.filter(r => r.endsWith(ending) && r !== word));
             }
-            return [...new Set(possibleRhymes)].slice(0, 10);
+            return [...new Set(possibleRhymes)].slice(0, 5);
         }
 
-        // Update rhyme list
-        function updateRhymeList(word) {
-            const rhymeList = document.getElementById('rhymeList');
+        // Update suggestions
+        async function updateSuggestions(word) {
+            const suggestionsEl = document.getElementById('suggestions');
             const currentWordEl = document.getElementById('currentWord');
-            const spinner = document.getElementById('loadingSpinner');
             
-            if (!word) {
-                currentWordEl.textContent = 'Select a word...';
-                rhymeList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">Type or select a word to see rhymes!</div>';
+            if (!word || word.length < 2) {
+                currentWordEl.textContent = 'Type to see magic...';
+                suggestionsEl.innerHTML = '<div style="color: #999; font-size: 14px;">Start typing to see rhymes & suggestions!</div>';
                 return;
             }
             
             currentWordEl.textContent = word;
-            spinner.classList.add('active');
             
-            // Simulate finding rhymes with a small delay for better UX
-            setTimeout(() => {
-                const rhymes = findRhymes(word);
-                spinner.classList.remove('active');
-                
-                if (rhymes.length > 0) {
-                    rhymeList.innerHTML = rhymes.map(rhyme => 
-                        `<div class="rhyme-word" onclick="insertWord('${rhyme}')">${rhyme}</div>`
-                    ).join('');
-                } else {
-                    rhymeList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No rhymes found. Try another word!</div>';
-                }
-            }, 300);
+            // Show local rhymes immediately
+            const localRhymes = findLocalRhymes(word);
+            let html = '';
+            
+            if (localRhymes.length > 0) {
+                html = localRhymes.map(rhyme => 
+                    `<div class="chip" onclick="insertWord('${rhyme}')">${rhyme}</div>`
+                ).join('');
+            }
+            
+            // Add loading indicator for AI suggestions
+            if (aiEnabled) {
+                html += '<div class="chip ai-suggestion"><span class="loading-dots">...</span></div>';
+            }
+            
+            suggestionsEl.innerHTML = html;
+            
+            // Get AI suggestions if enabled
+            if (aiEnabled) {
+                clearTimeout(aiSuggestionTimer);
+                aiSuggestionTimer = setTimeout(async () => {
+                    const aiSuggestions = await generateText(
+                        `Give me 3-5 creative words that rhyme with "${word}" for poetry. Return ONLY comma-separated words, no explanations.`,
+                        {
+                            maxTokens: 50,
+                            temperature: 0.9,
+                            systemPrompt: 'You are a rhyming assistant. Return ONLY comma-separated rhyming words, nothing else.'
+                        }
+                    );
+                    
+                    if (aiSuggestions) {
+                        const aiWords = aiSuggestions.split(',')
+                            .map(w => w.trim())
+                            .filter(w => w && w.length > 0 && !localRhymes.includes(w))
+                            .slice(0, 3);
+                        
+                        if (aiWords.length > 0) {
+                            // Remove loading indicator and add AI suggestions
+                            let updatedHtml = localRhymes.map(rhyme => 
+                                `<div class="chip" onclick="insertWord('${rhyme}')">${rhyme}</div>`
+                            ).join('');
+                            
+                            updatedHtml += aiWords.map(aiWord => 
+                                `<div class="chip ai-suggestion" onclick="insertWord('${aiWord}')">${aiWord} ✨</div>`
+                            ).join('');
+                            
+                            suggestionsEl.innerHTML = updatedHtml;
+                        } else {
+                            // Remove loading indicator if no AI suggestions
+                            suggestionsEl.innerHTML = localRhymes.map(rhyme => 
+                                `<div class="chip" onclick="insertWord('${rhyme}')">${rhyme}</div>`
+                            ).join('');
+                        }
+                    }
+                }, 800); // Wait a bit before calling AI
+            }
         }
 
         // Insert word at cursor
@@ -588,40 +717,21 @@
         }
 
         // Handle editor input
-        let lastWord = '';
         document.getElementById('editor').addEventListener('input', function(e) {
             updateWordCount();
             
-            // Auto-save after 2 seconds of no typing
-            clearTimeout(autoSaveTimer);
-            if (currentDocId) {
-                autoSaveTimer = setTimeout(() => {
-                    saveDocument(true);
-                }, 2000);
-            }
-        });
-
-        // Handle word selection
-        document.getElementById('editor').addEventListener('mouseup', function(e) {
-            const selection = window.getSelection().toString().trim();
-            if (selection && selection.split(' ').length === 1) {
-                updateRhymeList(selection);
-            }
-        });
-
-        // Handle cursor position change to detect current word
-        document.getElementById('editor').addEventListener('keyup', function(e) {
+            // Get current word at cursor
             const editor = e.target;
             const cursorPos = editor.selectionStart;
             const text = editor.value;
             
             // Find word at cursor
             let start = cursorPos;
-            let end = cursorPos;
-            
             while (start > 0 && text[start - 1] !== ' ' && text[start - 1] !== '\n') {
                 start--;
             }
+            
+            let end = cursorPos;
             while (end < text.length && text[end] !== ' ' && text[end] !== '\n') {
                 end++;
             }
@@ -629,7 +739,18 @@
             const word = text.substring(start, end).trim();
             if (word && word !== lastWord) {
                 lastWord = word;
-                updateRhymeList(word);
+                updateSuggestions(word);
+            } else if (!word) {
+                lastWord = '';
+                updateSuggestions('');
+            }
+            
+            // Auto-save
+            clearTimeout(autoSaveTimer);
+            if (currentDocId) {
+                autoSaveTimer = setTimeout(() => {
+                    saveDocument(true);
+                }, 3000);
             }
         });
 
@@ -637,13 +758,12 @@
         function updateWordCount() {
             const text = document.getElementById('editor').value;
             const words = text.trim().split(/\s+/).filter(w => w.length > 0);
-            document.getElementById('wordCount').textContent = words.length;
-            document.getElementById('charCount').textContent = text.length;
+            document.getElementById('wordCount').textContent = words.length || 0;
         }
 
         // New document
         function newDocument() {
-            if (document.getElementById('editor').value && !confirm('Create new document? Unsaved changes will be lost.')) {
+            if (document.getElementById('editor').value && !confirm('Create new? Unsaved changes will be lost.')) {
                 return;
             }
             
@@ -651,8 +771,8 @@
             document.getElementById('docTitle').value = 'Untitled Poem';
             document.getElementById('editor').value = '';
             updateWordCount();
-            updateRhymeList('');
-            document.getElementById('saveStatus').textContent = 'New document';
+            updateSuggestions('');
+            document.getElementById('saveStatus').textContent = 'New';
         }
 
         // Save document
@@ -669,7 +789,7 @@
                 id: currentDocId || Date.now().toString(),
                 title: title,
                 content: content,
-                author: currentUser?.handle || 'anonymous',
+                author: getUsername(),
                 updatedAt: new Date().toISOString()
             };
             
@@ -678,10 +798,10 @@
             
             if (success) {
                 lastSaved = content;
-                const status = isAutoSave ? 'Auto-saved' : 'Saved';
-                document.getElementById('saveStatus').textContent = `${status} at ${new Date().toLocaleTimeString()}`;
+                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('saveStatus').textContent = isAutoSave ? `Auto ${time}` : `Saved ${time}`;
             } else {
-                document.getElementById('saveStatus').textContent = 'Save failed';
+                document.getElementById('saveStatus').textContent = 'Failed';
             }
         }
 
@@ -695,18 +815,26 @@
             
             const allDocs = await load('poem_document');
             const userDocs = allDocs.filter(doc => 
-                doc.content_data.author === (currentUser?.handle || 'anonymous')
+                doc.author === getUsername()
             );
             
             if (userDocs.length === 0) {
                 fileList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No saved poems yet!</div>';
             } else {
-                fileList.innerHTML = userDocs
-                    .sort((a, b) => new Date(b.content_data.updatedAt) - new Date(a.content_data.updatedAt))
+                // Sort by date and deduplicate by ID (take most recent)
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    if (!uniqueDocs[doc.id] || new Date(doc.updatedAt) > new Date(uniqueDocs[doc.id].updatedAt)) {
+                        uniqueDocs[doc.id] = doc;
+                    }
+                });
+                
+                fileList.innerHTML = Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
                     .map(doc => `
-                        <div class="file-item" onclick="loadDocument('${doc.content_data.id}')">
-                            <div>${doc.content_data.title}</div>
-                            <div class="file-date">Last modified: ${new Date(doc.content_data.updatedAt).toLocaleString()}</div>
+                        <div class="file-item" onclick="loadDocument('${doc.id}')">
+                            <div>${doc.title}</div>
+                            <div class="file-date">${new Date(doc.updatedAt).toLocaleDateString()}</div>
                         </div>
                     `).join('');
             }
@@ -715,76 +843,19 @@
         // Load document
         async function loadDocument(docId) {
             const allDocs = await load('poem_document');
-            const doc = allDocs.find(d => d.content_data.id === docId);
+            // Get most recent version of this document
+            const docVersions = allDocs.filter(d => d.id === docId);
+            const doc = docVersions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
             
             if (doc) {
-                currentDocId = doc.content_data.id;
-                document.getElementById('docTitle').value = doc.content_data.title;
-                document.getElementById('editor').value = doc.content_data.content;
+                currentDocId = doc.id;
+                document.getElementById('docTitle').value = doc.title;
+                document.getElementById('editor').value = doc.content;
                 updateWordCount();
-                lastSaved = doc.content_data.content;
-                document.getElementById('saveStatus').textContent = 'Document loaded';
+                lastSaved = doc.content;
+                document.getElementById('saveStatus').textContent = 'Loaded';
                 closeModal();
             }
-        }
-
-        // Generate poetry
-        async function generatePoetry() {
-            const topic = prompt('What should the poem be about?', 'love and stars');
-            if (!topic) return;
-            
-            document.getElementById('saveStatus').textContent = 'Generating poetry...';
-            
-            const generatedText = await generateText(
-                `Write a beautiful rhyming poem about ${topic}. Make it 8-12 lines long with good rhythm and rhyme.`,
-                {
-                    maxTokens: 300,
-                    temperature: 0.9,
-                    systemPrompt: 'You are a talented poet. Create beautiful, emotional poetry with perfect rhyme and rhythm.'
-                }
-            );
-            
-            if (generatedText) {
-                const editor = document.getElementById('editor');
-                const currentContent = editor.value;
-                editor.value = currentContent + (currentContent ? '\n\n' : '') + generatedText;
-                updateWordCount();
-                document.getElementById('saveStatus').textContent = 'Poetry generated!';
-            } else {
-                document.getElementById('saveStatus').textContent = 'Generation failed';
-            }
-        }
-
-        // Generate with AI from sidebar
-        async function generateWithAI() {
-            const prompt = document.getElementById('generatePrompt').value;
-            if (!prompt) {
-                alert('Please enter a prompt for AI generation!');
-                return;
-            }
-            
-            const btn = event.target;
-            btn.disabled = true;
-            btn.textContent = '⏳ Generating...';
-            
-            const generatedText = await generateText(
-                prompt + '. Create a beautiful poem with rhyme and rhythm.',
-                {
-                    maxTokens: 400,
-                    temperature: 0.9
-                }
-            );
-            
-            if (generatedText) {
-                const editor = document.getElementById('editor');
-                const currentContent = editor.value;
-                editor.value = currentContent + (currentContent ? '\n\n' : '') + generatedText;
-                updateWordCount();
-                document.getElementById('generatePrompt').value = '';
-            }
-            
-            btn.disabled = false;
-            btn.textContent = '✨ Generate with AI';
         }
 
         // Close modal
@@ -795,6 +866,11 @@
         // Initialize
         updateWordCount();
         updateUI();
+        
+        // Focus editor on desktop
+        if (window.innerWidth >= 768) {
+            document.getElementById('editor').focus();
+        }
     </script>
 </body>
 </html>
