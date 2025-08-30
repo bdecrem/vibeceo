@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test T3XT Leaderboard</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 15px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        button {
+            padding: 10px 20px;
+            background: #007acc;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #005a9e;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f0f0;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 T3XT Leaderboard Test</h1>
+        
+        <p>This page tests the T3XT leaderboard functionality directly via the ZAD API.</p>
+        
+        <div class="status" id="status">Ready to test...</div>
+        
+        <div>
+            <button onclick="testSaveStats()">Test Save Stats</button>
+            <button onclick="testLoadStats()">Test Load Stats</button>
+            <button onclick="clearStats()">Clear My Stats</button>
+            <button onclick="generateDemoData()">Generate Demo Data</button>
+        </div>
+        
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const APP_ID = 't3xt-leaderboard';
+        let currentUser = null;
+        
+        // Load auth from localStorage
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser && currentUser.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+                    }
+                }
+                document.getElementById('status').innerHTML = `✅ Logged in as: ${currentUser.handle}`;
+                document.getElementById('status').className = 'status success';
+            } else {
+                document.getElementById('status').innerHTML = '❌ Not logged in - please log in via WebtoysOS desktop first';
+                document.getElementById('status').className = 'status error';
+            }
+        }
+        
+        async function testSaveStats() {
+            if (!currentUser) {
+                alert('Please log in via WebtoysOS desktop first');
+                return;
+            }
+            
+            const stats = {
+                handle: currentUser.handle,
+                totalWords: Math.floor(Math.random() * 10000) + 1000,
+                totalDocuments: Math.floor(Math.random() * 50) + 5,
+                longestDocument: Math.floor(Math.random() * 5000) + 500,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: currentUser.participantId,
+                        action_type: 'user_stats',
+                        content_data: stats
+                    })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('results').innerHTML = 
+                        `✅ Stats saved successfully!\n\n` +
+                        JSON.stringify(stats, null, 2);
+                } else {
+                    document.getElementById('results').innerHTML = 
+                        `❌ Failed to save stats: ${response.status}`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function testLoadStats() {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=user_stats`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    const stats = data.map(item => item.content_data);
+                    
+                    // Sort by total words
+                    stats.sort((a, b) => (b.totalWords || 0) - (a.totalWords || 0));
+                    
+                    document.getElementById('results').innerHTML = 
+                        `✅ Loaded ${stats.length} user stats:\n\n` +
+                        stats.map((s, i) => 
+                            `${i + 1}. ${s.handle}: ${s.totalWords} words, ${s.totalDocuments} docs`
+                        ).join('\n') +
+                        '\n\nFull data:\n' +
+                        JSON.stringify(stats, null, 2);
+                } else {
+                    document.getElementById('results').innerHTML = 
+                        `❌ Failed to load stats: ${response.status}`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function clearStats() {
+            if (!currentUser) {
+                alert('Please log in via WebtoysOS desktop first');
+                return;
+            }
+            
+            if (!confirm('Clear your stats from the leaderboard?')) {
+                return;
+            }
+            
+            // Save empty stats
+            const stats = {
+                handle: currentUser.handle,
+                totalWords: 0,
+                totalDocuments: 0,
+                longestDocument: 0,
+                lastUpdated: new Date().toISOString()
+            };
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: currentUser.participantId,
+                        action_type: 'user_stats',
+                        content_data: stats
+                    })
+                });
+                
+                if (response.ok) {
+                    document.getElementById('results').innerHTML = 
+                        `✅ Stats cleared successfully!`;
+                } else {
+                    document.getElementById('results').innerHTML = 
+                        `❌ Failed to clear stats: ${response.status}`;
+                }
+            } catch (error) {
+                document.getElementById('results').innerHTML = 
+                    `❌ Error: ${error.message}`;
+            }
+        }
+        
+        async function generateDemoData() {
+            const demoUsers = [
+                { handle: 'ALICE', participantId: 'ALICE_1234' },
+                { handle: 'BOB', participantId: 'BOB_5678' },
+                { handle: 'CHARLIE', participantId: 'CHARLIE_9012' },
+                { handle: 'DIANA', participantId: 'DIANA_3456' },
+                { handle: 'EVE', participantId: 'EVE_7890' }
+            ];
+            
+            let results = [];
+            
+            for (const user of demoUsers) {
+                const stats = {
+                    handle: user.handle,
+                    totalWords: Math.floor(Math.random() * 50000) + 5000,
+                    totalDocuments: Math.floor(Math.random() * 100) + 10,
+                    longestDocument: Math.floor(Math.random() * 10000) + 1000,
+                    lastUpdated: new Date().toISOString()
+                };
+                
+                try {
+                    const response = await fetch('/api/zad/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            app_id: APP_ID,
+                            participant_id: user.participantId,
+                            action_type: 'user_stats',
+                            content_data: stats
+                        })
+                    });
+                    
+                    if (response.ok) {
+                        results.push(`✅ ${user.handle}: ${stats.totalWords} words`);
+                    } else {
+                        results.push(`❌ ${user.handle}: Failed`);
+                    }
+                } catch (error) {
+                    results.push(`❌ ${user.handle}: ${error.message}`);
+                }
+            }
+            
+            document.getElementById('results').innerHTML = 
+                `Demo data generation results:\n\n${results.join('\n')}`;
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', loadAuth);
+    </script>
+</body>
+</html>

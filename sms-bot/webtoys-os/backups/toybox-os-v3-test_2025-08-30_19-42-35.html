@@ -729,66 +729,6 @@
             }
         }
         
-        /* Background Changer Widget */
-        .bg-changer-widget {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--purple), var(--coral), var(--warm-yellow));
-            background-size: 300% 300%;
-            animation: colorWheel 3s ease infinite;
-            cursor: pointer;
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2), 
-                        inset 0 2px 4px rgba(255, 255, 255, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-            z-index: 100;
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-        }
-        
-        .bg-changer-widget:hover {
-            transform: scale(1.1) rotate(180deg);
-            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 
-                        inset 0 2px 4px rgba(255, 255, 255, 0.7);
-        }
-        
-        .bg-changer-widget:active {
-            transform: scale(0.95);
-        }
-        
-        .bg-changer-icon {
-            font-size: 28px;
-            animation: spin 8s linear infinite;
-        }
-        
-        @keyframes colorWheel {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-        
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-        }
-        
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.2); }
-            100% { transform: scale(1); }
-        }
-        
-        /* Gradient transition */
-        body.gradient-transition {
-            transition: background 1s ease;
-        }
-        
         /* Achievement Popup */
         .achievement {
             position: fixed;
@@ -981,16 +921,6 @@
         
         /* Mobile specific */
         @media (max-width: 767px) {
-            .bg-changer-widget {
-                bottom: 70px;  /* Above the taskbar on mobile */
-                left: 15px;
-                width: 50px;
-                height: 50px;
-            }
-            
-            .bg-changer-icon {
-                font-size: 24px;
-            }
             #desktop {
                 padding: 12px;
                 top: 70px;
@@ -1128,11 +1058,6 @@
         </div>
     </div>
     
-    <!-- Background Changer Widget -->
-    <div class="bg-changer-widget" onclick="changeBackground()" title="Click to change background!">
-        <div class="bg-changer-icon">🎨</div>
-    </div>
-    
     <!-- Achievement Popup -->
     <div class="achievement" id="achievement">
         <div class="achievement-title">ACHIEVEMENT!</div>
@@ -1150,105 +1075,6 @@
             console.log('✅ Supabase client initialized');
         } else {
             console.error('❌ Supabase library not loaded!');
-        }
-        
-        // Background Gradient Presets - Gorgeous combinations
-        const GRADIENTS = [
-            // Original vibrant
-            'linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%)',
-            
-            // Sunset Paradise
-            'linear-gradient(135deg, #ff6b9d 0%, #feca57 25%, #ff8177 50%, #ff0844 75%, #c33764 100%)',
-            
-            // Ocean Dream
-            'linear-gradient(135deg, #2E3192 0%, #1BFFFF 33%, #09C6F9 66%, #045DE9 100%)',
-            
-            // Northern Lights
-            'linear-gradient(135deg, #00d2ff 0%, #3a47d5 25%, #d400ff 50%, #3a47d5 75%, #00d2ff 100%)',
-            
-            // Cotton Candy
-            'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 25%, #ffb7d5 50%, #e3a7d5 75%, #b8a9c6 100%)',
-            
-            // Tropical Paradise
-            'linear-gradient(135deg, #16A085 0%, #2ECC71 25%, #3498DB 50%, #9B59B6 75%, #E74C3C 100%)',
-            
-            // Aurora Borealis
-            'linear-gradient(135deg, #43cea2 0%, #185a9d 25%, #ba5370 50%, #f4e2d8 75%, #43cea2 100%)',
-            
-            // Cosmic Nebula
-            'linear-gradient(135deg, #0F2027 0%, #203A43 25%, #2C5364 50%, #764ba2 75%, #f093fb 100%)',
-            
-            // Peachy Keen
-            'linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #ff9a9e 50%, #fecfef 75%, #fecfef 100%)',
-            
-            // Electric Violet
-            'linear-gradient(135deg, #4776E6 0%, #8E54E9 25%, #B06AB3 50%, #DD5E89 75%, #F7BB97 100%)',
-            
-            // Forest Mist
-            'linear-gradient(135deg, #134E5E 0%, #71B280 25%, #659999 50%, #f4791f 75%, #134E5E 100%)',
-            
-            // Candy Shop
-            'linear-gradient(135deg, #D3CCE3 0%, #E9E4F0 20%, #ffeaa7 40%, #fab1a0 60%, #ff7675 80%, #fd79a8 100%)',
-            
-            // Deep Space
-            'linear-gradient(135deg, #000428 0%, #004e92 25%, #1e3c72 50%, #2a5298 75%, #7e57c2 100%)',
-            
-            // Miami Vice
-            'linear-gradient(135deg, #ec008c 0%, #fc6767 25%, #fec837 50%, #5cb85c 75%, #00bcd4 100%)',
-            
-            // Lavender Dreams
-            'linear-gradient(135deg, #C471F5 0%, #FA71CD 25%, #ff9a9e 50%, #fecfef 75%, #fda085 100%)',
-            
-            // Fire & Ice
-            'linear-gradient(135deg, #00416A 0%, #799F0C 25%, #FFE000 50%, #FF8008 75%, #FF0080 100%)',
-            
-            // Bubble Gum
-            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 20%, #fecfef 40%, #fad0c4 60%, #ffd1ff 80%, #ffecd2 100%)',
-            
-            // Mystic River
-            'linear-gradient(135deg, #330867 0%, #30cfd0 25%, #a8ff78 50%, #78ffd6 75%, #330867 100%)'
-        ];
-        
-        let currentGradientIndex = 0;
-        
-        // Change background gradient
-        function changeBackground() {
-            currentGradientIndex = (currentGradientIndex + 1) % GRADIENTS.length;
-            const newGradient = GRADIENTS[currentGradientIndex];
-            
-            // Add transition class
-            document.body.classList.add('gradient-transition');
-            
-            // Change the gradient
-            document.body.style.background = newGradient;
-            document.body.style.backgroundSize = '600% 600%';
-            
-            // Remove transition class after animation
-            setTimeout(() => {
-                document.body.classList.remove('gradient-transition');
-            }, 1000);
-            
-            // Save preference
-            localStorage.setItem('desktopGradient', currentGradientIndex);
-            
-            // Fun animation on the widget
-            const widget = document.querySelector('.bg-changer-widget');
-            widget.style.animation = 'none';
-            setTimeout(() => {
-                widget.style.animation = 'colorWheel 3s ease infinite, pulse 0.5s ease';
-            }, 10);
-        }
-        
-        // Load saved gradient on startup
-        function loadSavedGradient() {
-            const saved = localStorage.getItem('desktopGradient');
-            if (saved !== null) {
-                currentGradientIndex = parseInt(saved);
-                if (currentGradientIndex >= 0 && currentGradientIndex < GRADIENTS.length) {
-                    document.body.style.background = GRADIENTS[currentGradientIndex];
-                    document.body.style.backgroundSize = '600% 600%';
-                }
-            }
         }
         
         // Desktop Config Client
@@ -1374,8 +1200,6 @@
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
             console.log('📄 DOM Content Loaded!');
-            console.log('🎨 Loading saved gradient...');
-            loadSavedGradient();
             console.log('🔧 Initializing desktop...');
             await initializeDesktop();
             console.log('⏰ Setting up clock...');
