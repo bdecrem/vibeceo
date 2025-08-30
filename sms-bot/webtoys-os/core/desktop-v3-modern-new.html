@@ -938,10 +938,11 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
         
         let supabaseInstance = null;
-        if (typeof supabase !== 'undefined') {
-            supabaseInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        if (typeof window.supabase !== 'undefined') {
+            supabaseInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
         } else {
-            console.error('Supabase library not loaded!');
+            console.error('❌ Supabase library not loaded!');
         }
         
         // Desktop Config Client
@@ -1062,19 +1063,32 @@
         let score = 0;
         let clickCount = 0;
         
+        console.log('🎯 Script loaded, waiting for DOM...');
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📄 DOM Content Loaded!');
+            console.log('🔧 Initializing desktop...');
             await initializeDesktop();
+            console.log('⏰ Setting up clock...');
             updateClock();
             setInterval(updateClock, 1000);
+            console.log('🔑 Loading auth from storage...');
             loadAuthFromStorage();
+            console.log('✨ Setting up click effects...');
             setupClickEffects();
+            console.log('🏆 Loading score...');
             loadScore();
+            console.log('✅ All initialization complete!');
         });
         
         async function initializeDesktop() {
+            console.log('🚀 Starting desktop initialization...');
             try {
+                console.log('📝 Loading config from configClient...');
                 const config = await configClient.loadConfig(currentUser?.id);
+                console.log('📝 Config loaded:', config);
+                
                 // Fix: Properly structure the config for renderDesktop()
                 desktopConfig = {
                     app_registry: config.app_registry || [],
@@ -1082,11 +1096,16 @@
                     widget_positions: config.widget_positions || {},
                     settings: config.settings || {}
                 };
+                console.log('📝 Desktop config structured:', desktopConfig);
+                console.log('📱 App registry has', desktopConfig.app_registry.length, 'apps');
+                
                 renderDesktop();
                 console.log('🎮 WebtoysOS Modern Playground initialized');
             } catch (error) {
-                console.error('Failed to initialize desktop:', error);
+                console.error('❌ Failed to initialize desktop:', error);
+                console.log('🔄 Falling back to default config...');
                 desktopConfig = configClient.getDefaultConfig();
+                console.log('📝 Default config:', desktopConfig);
                 renderDesktop();
             }
         }
@@ -1332,15 +1351,24 @@
         
         // Desktop rendering
         function renderDesktop() {
+            console.log('🖥️ Rendering desktop...');
             const grid = document.getElementById('desktop-grid');
-            grid.innerHTML = '';
-            
-            if (!desktopConfig || !desktopConfig.app_registry) {
-                console.error('No app registry found');
+            if (!grid) {
+                console.error('❌ Desktop grid element not found!');
                 return;
             }
             
-            desktopConfig.app_registry.forEach(app => {
+            grid.innerHTML = '';
+            console.log('🧹 Grid cleared');
+            
+            if (!desktopConfig || !desktopConfig.app_registry) {
+                console.error('❌ No app registry found in desktopConfig:', desktopConfig);
+                return;
+            }
+            
+            console.log('📱 Rendering', desktopConfig.app_registry.length, 'apps');
+            desktopConfig.app_registry.forEach((app, index) => {
+                console.log(`📱 Rendering app ${index + 1}:`, app.name, app.icon);
                 const iconDiv = document.createElement('div');
                 iconDiv.className = 'desktop-icon';
                 iconDiv.dataset.appId = app.id;

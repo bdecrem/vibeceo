@@ -580,9 +580,10 @@ setTimeout(function() {
 		// Serve desktop apps directly without iframe wrapper
 		if (isDesktopApp) {
 			console.log('🖥️ Serving desktop app directly without iframe wrapper');
-			// Use Next.js redirect to the raw API endpoint
-			const { redirect } = await import('next/navigation');
-			redirect(`/api/wtaf/raw?user=${user_slug}&slug=${app_slug}`);
+			// Return the HTML content directly as a component
+			return (
+				<div dangerouslySetInnerHTML={{ __html: htmlContent }} />
+			);
 		}
 
 		// Conditionally render with or without navigation
