@@ -554,9 +554,7 @@
 
         // Listen for authentication
         window.addEventListener('message', function(event) {
-            console.log('📨 Received message:', event.data);
             if (event.data && event.data.type === 'TOYBOX_AUTH') {
-                console.log('🔐 Received auth data:', event.data.user);
                 currentUser = event.data.user;
                 if (currentUser) {
                     if (currentUser.handle) {
@@ -566,7 +564,6 @@
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
                 }
-                console.log('✅ Current user set:', currentUser);
                 updateUI();
             }
         });
@@ -578,7 +575,6 @@
 
         function updateUI() {
             const username = getUsername();
-            console.log('🔄 Updating UI with username:', username);
             if (username === 'anonymous') {
                 document.getElementById('saveStatus').textContent = 'Not logged in';
             } else {

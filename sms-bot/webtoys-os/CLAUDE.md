@@ -229,6 +229,155 @@ parent.postMessage({ type: 'GET_AUTH' }, '*');
 
 ## Data Storage Patterns
 
+### 🚨 CRITICAL: ZAD Save/Load Pattern - GET THIS RIGHT EVERY TIME! 🚨
+
+**We keep getting this wrong. Follow this EXACT pattern for document save/load:**
+
+#### The Correct Pattern (COPY THIS EXACTLY):
+
+```javascript
+// 1. ALWAYS get participantId in correct format
+function getParticipantId() {
+    const currentUser = getCurrentUser(); // Your auth method
+    if (!currentUser?.handle || !currentUser?.pin) return null;
+    
+    // CRITICAL: MUST be UPPERCASE_HANDLE_PIN format
+    return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+}
+
+// 2. SAVE documents correctly
+async function saveDocument(docId, title, content) {
+    const participantId = getParticipantId();
+    if (!participantId) {
+        alert('Please log in first');
+        return;
+    }
+    
+    const response = await fetch('/api/zad/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            app_id: 'your-app-id',
+            participant_id: participantId,
+            action_type: 'document',  // REQUIRED for filtering
+            content_data: {
+                id: docId,
+                title: title,
+                content: content,
+                author: currentUser.handle.toUpperCase(),
+                updatedAt: new Date().toISOString()
+            }
+        })
+    });
+    
+    if (!response.ok) {
+        console.error('Save failed:', await response.text());
+        return false;
+    }
+    
+    return true;
+}
+
+// 3. LOAD documents with proper filtering and deduplication
+async function loadDocuments() {
+    const participantId = getParticipantId();
+    if (!participantId) return [];
+    
+    // Load with action_type filter
+    const response = await fetch(`/api/zad/load?app_id=your-app-id&action_type=document`);
+    const allDocs = await response.json();
+    
+    // CRITICAL: ZAD returns FLATTENED data, not nested in content_data!
+    // The actual document data is directly on the object
+    
+    // Filter for current user's documents
+    const userDocs = allDocs.filter(doc => 
+        doc.participant_id === participantId
+    );
+    
+    // CRITICAL: ZAD is append-only, deduplicate by latest timestamp
+    const uniqueDocs = {};
+    userDocs.forEach(doc => {
+        // Access properties DIRECTLY on doc, not doc.content_data
+        const docId = doc.id || doc.content_data?.id;
+        const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+        
+        if (!uniqueDocs[docId] || 
+            new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+            uniqueDocs[docId] = {
+                id: docId,
+                title: doc.title || doc.content_data?.title || 'Untitled',
+                content: doc.content || doc.content_data?.content || '',
+                author: doc.author || doc.content_data?.author,
+                updatedAt: docTime,
+                participant_id: doc.participant_id
+            };
+        }
+    });
+    
+    // Return as array sorted by most recent
+    return Object.values(uniqueDocs)
+        .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+}
+```
+
+#### Common Mistakes We Keep Making:
+
+1. **❌ WRONG**: Expecting nested `content_data` in load response
+   ```javascript
+   // WRONG - ZAD flattens the data
+   const title = doc.content_data.title;
+   ```
+   **✅ CORRECT**: Access properties directly
+   ```javascript
+   // CORRECT - properties are flattened
+   const title = doc.title || doc.content_data?.title;
+   ```
+
+2. **❌ WRONG**: Not handling append-only nature
+   ```javascript
+   // WRONG - returns duplicates
+   return userDocs;
+   ```
+   **✅ CORRECT**: Deduplicate by ID and timestamp
+   ```javascript
+   // CORRECT - deduplicate by latest version
+   const uniqueDocs = {};
+   userDocs.forEach(doc => {
+       if (!uniqueDocs[doc.id] || doc.updatedAt > uniqueDocs[doc.id].updatedAt) {
+           uniqueDocs[doc.id] = doc;
+       }
+   });
+   ```
+
+3. **❌ WRONG**: Lowercase participant_id
+   ```javascript
+   // WRONG - causes data isolation
+   participant_id: `${handle}_${pin}`
+   ```
+   **✅ CORRECT**: Always uppercase
+   ```javascript
+   // CORRECT - consistent format
+   participant_id: `${handle.toUpperCase()}_${pin}`
+   ```
+
+4. **❌ WRONG**: Missing action_type
+   ```javascript
+   // WRONG - can't filter data properly
+   await fetch('/api/zad/save', {
+       body: JSON.stringify({
+           app_id: 'my-app',
+           participant_id: participantId,
+           content_data: data  // Missing action_type!
+       })
+   });
+   ```
+   **✅ CORRECT**: Always include action_type
+   ```javascript
+   // CORRECT - enables filtering
+   action_type: 'document',  // or 'save_data', 'note', etc.
+   ```
+
 ### For Regular Apps (ZAD API)
 **CRITICAL: Must use correct participant_id format and action_type**
 
