@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WordToys - Playful Writing</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comic Sans MS', 'Chalkboard SE', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            color: #333;
+        }
+        
+        /* Auth prompt */
+        #auth-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        #auth-prompt h2 {
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+        
+        /* Header */
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            font-size: 24px;
+            margin-right: 5px;
+        }
+        
+        .app-title {
+            font-weight: bold;
+            font-size: 18px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .user-info {
+            margin-left: auto;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            background: rgba(118, 75, 162, 0.1);
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        .user-icon {
+            width: 24px;
+            height: 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+        }
+        
+        /* Document list */
+        .document-list {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px;
+            max-height: 150px;
+            overflow-y: auto;
+            display: none;
+            border-bottom: 2px solid rgba(118, 75, 162, 0.2);
+        }
+        
+        .document-list.show {
+            display: block;
+        }
+        
+        .doc-item {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .doc-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        
+        .doc-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border: 2px solid #764ba2;
+        }
+        
+        .doc-icon {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        
+        .doc-name {
+            flex: 1;
+            font-weight: 500;
+        }
+        
+        .doc-date {
+            font-size: 11px;
+            color: #666;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            border-bottom: 2px solid rgba(118, 75, 162, 0.2);
+        }
+        
+        .tool-btn {
+            background: white;
+            border: 2px solid transparent;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-family: inherit;
+        }
+        
+        .tool-btn:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        .tool-btn:active {
+            transform: translateY(0);
+        }
+        
+        .tool-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .tool-separator {
+            width: 2px;
+            background: rgba(118, 75, 162, 0.2);
+            margin: 0 5px;
+        }
+        
+        /* Editor */
+        .editor-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 10px;
+            border-radius: 15px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .doc-title {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            background: none;
+            border: none;
+            border-bottom: 2px solid rgba(118, 75, 162, 0.2);
+            margin-bottom: 10px;
+            color: #333;
+            font-family: inherit;
+        }
+        
+        .doc-title:focus {
+            outline: none;
+            border-bottom-color: #764ba2;
+        }
+        
+        #editor {
+            flex: 1;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            resize: none;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: transparent;
+            color: #333;
+        }
+        
+        #editor:focus {
+            outline: none;
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: #666;
+            border-top: 1px solid rgba(118, 75, 162, 0.2);
+        }
+        
+        .word-count {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .save-status {
+            color: #28a745;
+        }
+        
+        .save-status.saving {
+            color: #ffc107;
+        }
+        
+        /* Fun animations */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .saving-indicator {
+            display: none;
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            animation: bounce 0.5s ease-in-out infinite;
+        }
+        
+        .saving-indicator.show {
+            display: block;
+        }
+        
+        /* Mobile optimizations */
+        @media (max-width: 600px) {
+            .toolbar {
+                padding: 8px;
+            }
+            
+            .tool-btn {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+            
+            .tool-btn span {
+                display: none;
+            }
+            
+            .editor-container {
+                margin: 5px;
+                padding: 10px;
+            }
+            
+            #editor {
+                font-size: 14px;
+            }
+            
+            .document-list {
+                max-height: 120px;
+            }
+        }
+        
+        /* Color picker */
+        .color-picker {
+            display: none;
+            position: absolute;
+            background: white;
+            padding: 10px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            gap: 5px;
+            flex-wrap: wrap;
+            max-width: 200px;
+            z-index: 1000;
+        }
+        
+        .color-picker.show {
+            display: flex;
+        }
+        
+        .color-option {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s;
+        }
+        
+        .color-option:hover {
+            transform: scale(1.2);
+            border-color: #333;
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth prompt -->
+    <div id="auth-prompt">
+        <h2>🎨 Welcome to WordToys!</h2>
+        <p>Please log in via the desktop to start writing</p>
+    </div>
+    
+    <!-- Main app (hidden until auth) -->
+    <div id="app" style="display: none; height: 100%; display: flex; flex-direction: column;">
+        <!-- Header -->
+        <div class="header">
+            <span class="logo">🎨</span>
+            <span class="app-title">WordToys</span>
+            <div class="user-info">
+                <div class="user-icon" id="user-avatar">👤</div>
+                <span id="username">Guest</span>
+            </div>
+        </div>
+        
+        <!-- Document list -->
+        <div class="document-list" id="doc-list">
+            <div class="doc-item" onclick="createNewDocument()">
+                <span class="doc-icon">➕</span>
+                <span class="doc-name">Create New Document</span>
+            </div>
+        </div>
+        
+        <!-- Toolbar -->
+        <div class="toolbar">
+            <button class="tool-btn" onclick="toggleDocList()" title="Documents">
+                📁 <span>Files</span>
+            </button>
+            <button class="tool-btn" onclick="saveDocument()" title="Save">
+                💾 <span>Save</span>
+            </button>
+            <div class="tool-separator"></div>
+            <button class="tool-btn" onclick="formatText('bold')" title="Bold">
+                <strong>B</strong>
+            </button>
+            <button class="tool-btn" onclick="formatText('italic')" title="Italic">
+                <em>I</em>
+            </button>
+            <button class="tool-btn" onclick="formatText('underline')" title="Underline">
+                <u>U</u>
+            </button>
+            <div class="tool-separator"></div>
+            <button class="tool-btn" onclick="insertEmoji('😊')" title="Happy">
+                😊
+            </button>
+            <button class="tool-btn" onclick="insertEmoji('❤️')" title="Heart">
+                ❤️
+            </button>
+            <button class="tool-btn" onclick="insertEmoji('⭐')" title="Star">
+                ⭐
+            </button>
+            <button class="tool-btn" onclick="insertEmoji('🎉')" title="Party">
+                🎉
+            </button>
+            <div class="tool-separator"></div>
+            <button class="tool-btn" onclick="changeTextSize('increase')" title="Bigger">
+                A+
+            </button>
+            <button class="tool-btn" onclick="changeTextSize('decrease')" title="Smaller">
+                A-
+            </button>
+        </div>
+        
+        <!-- Editor -->
+        <div class="editor-container">
+            <input type="text" class="doc-title" id="doc-title" placeholder="Untitled Document" />
+            <textarea id="editor" placeholder="Start writing your story... ✨"></textarea>
+        </div>
+        
+        <!-- Status bar -->
+        <div class="status-bar">
+            <div class="word-count">
+                <span>Words: <span id="word-count">0</span></span>
+                <span>Characters: <span id="char-count">0</span></span>
+            </div>
+            <div class="save-status" id="save-status">Ready</div>
+        </div>
+    </div>
+    
+    <!-- Saving indicator -->
+    <div class="saving-indicator" id="saving-indicator">
+        💫 Saving...
+    </div>
+    
+    <!-- Color picker -->
+    <div class="color-picker" id="color-picker">
+        <div class="color-option" style="background: #FF6B6B" onclick="applyColor('#FF6B6B')"></div>
+        <div class="color-option" style="background: #4ECDC4" onclick="applyColor('#4ECDC4')"></div>
+        <div class="color-option" style="background: #45B7D1" onclick="applyColor('#45B7D1')"></div>
+        <div class="color-option" style="background: #96CEB4" onclick="applyColor('#96CEB4')"></div>
+        <div class="color-option" style="background: #FECA57" onclick="applyColor('#FECA57')"></div>
+        <div class="color-option" style="background: #A29BFE" onclick="applyColor('#A29BFE')"></div>
+    </div>
+    
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentDocument = null;
+        let documents = [];
+        let autoSaveTimer = null;
+        let currentFontSize = 16;
+        
+        // Authentication setup (following AUTH-DOCUMENTATION.md)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    
+                    // CRITICAL: Ensure handle is uppercase and participantId is set
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                            localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        }
+                    }
+                    
+                    console.log('Loaded auth from storage:', currentUser.handle, 'participantId:', currentUser.participantId);
+                    return true;
+                } catch (e) {
+                    console.error('Failed to parse saved user:', e);
+                }
+            }
+            return false;
+        }
+        
+        // Listen for auth updates from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                const wasLoggedOut = !currentUser;
+                currentUser = event.data.user;
+                
+                // CRITICAL: Ensure proper format for ZAD API
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                
+                updateAuthDisplay();
+                
+                if (currentUser) {
+                    console.log('Received auth from desktop:', currentUser.handle, 'participantId:', currentUser.participantId);
+                    if (wasLoggedOut) {
+                        loadDocuments();
+                    }
+                } else {
+                    console.log('User logged out');
+                    clearUserData();
+                }
+            }
+        });
+        
+        function updateAuthDisplay() {
+            if (currentUser) {
+                document.getElementById('auth-prompt').style.display = 'none';
+                document.getElementById('app').style.display = 'flex';
+                document.getElementById('username').textContent = currentUser.handle;
+                
+                // Set user avatar to first letter
+                const firstLetter = currentUser.handle.charAt(0).toUpperCase();
+                document.getElementById('user-avatar').textContent = firstLetter;
+            } else {
+                document.getElementById('auth-prompt').style.display = 'block';
+                document.getElementById('app').style.display = 'none';
+            }
+        }
+        
+        function clearUserData() {
+            documents = [];
+            currentDocument = null;
+            document.getElementById('editor').value = '';
+            document.getElementById('doc-title').value = '';
+            updateDocumentList();
+        }
+        
+        // Document management
+        async function loadDocuments() {
+            if (!currentUser) return;
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            try {
+                const response = await fetch(`/api/zad/load?app_id=wordtoys&action_type=save_documents&participant_id=${participantId}`);
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    // CRITICAL: Filter for current user's data
+                    const userData = data.filter(d => d.participant_id === participantId);
+                    
+                    if (userData.length > 0) {
+                        // Get most recent (already sorted by created_at desc)
+                        const latestData = userData[0];
+                        documents = latestData.content_data.documents || [];
+                        console.log('Loaded', documents.length, 'documents');
+                        
+                        updateDocumentList();
+                        
+                        // Load the first document if available
+                        if (documents.length > 0) {
+                            loadDocument(0);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+        
+        async function saveDocument() {
+            if (!currentUser) {
+                alert('Please log in to save documents');
+                return;
+            }
+            
+            showSavingIndicator();
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            // Update current document
+            const title = document.getElementById('doc-title').value || 'Untitled';
+            const content = document.getElementById('editor').value;
+            
+            if (currentDocument === null) {
+                // Create new document
+                currentDocument = documents.length;
+                documents.push({
+                    title: title,
+                    content: content,
+                    created: Date.now(),
+                    updated: Date.now()
+                });
+            } else {
+                // Update existing document
+                documents[currentDocument] = {
+                    ...documents[currentDocument],
+                    title: title,
+                    content: content,
+                    updated: Date.now()
+                };
+            }
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'wordtoys',
+                        participant_id: participantId,
+                        action_type: 'save_documents',
+                        content_data: { documents }
+                    })
+                });
+                
+                if (response.ok) {
+                    updateSaveStatus('Saved!');
+                    updateDocumentList();
+                    hideSavingIndicator();
+                } else {
+                    updateSaveStatus('Save failed');
+                    hideSavingIndicator();
+                }
+            } catch (error) {
+                console.error('Save failed:', error);
+                updateSaveStatus('Save failed');
+                hideSavingIndicator();
+            }
+        }
+        
+        function createNewDocument() {
+            currentDocument = null;
+            document.getElementById('doc-title').value = '';
+            document.getElementById('editor').value = '';
+            updateWordCount();
+            document.getElementById('doc-list').classList.remove('show');
+        }
+        
+        function loadDocument(index) {
+            if (index >= 0 && index < documents.length) {
+                currentDocument = index;
+                const doc = documents[index];
+                document.getElementById('doc-title').value = doc.title || '';
+                document.getElementById('editor').value = doc.content || '';
+                updateWordCount();
+                updateDocumentList();
+                document.getElementById('doc-list').classList.remove('show');
+            }
+        }
+        
+        function deleteDocument(index) {
+            if (confirm('Delete this document?')) {
+                documents.splice(index, 1);
+                if (currentDocument === index) {
+                    createNewDocument();
+                } else if (currentDocument > index) {
+                    currentDocument--;
+                }
+                saveDocument();
+            }
+        }
+        
+        function updateDocumentList() {
+            const list = document.getElementById('doc-list');
+            list.innerHTML = `
+                <div class="doc-item" onclick="createNewDocument()">
+                    <span class="doc-icon">➕</span>
+                    <span class="doc-name">Create New Document</span>
+                </div>
+            `;
+            
+            documents.forEach((doc, index) => {
+                const item = document.createElement('div');
+                item.className = 'doc-item';
+                if (index === currentDocument) {
+                    item.className += ' active';
+                }
+                
+                const date = new Date(doc.updated || doc.created);
+                const dateStr = date.toLocaleDateString();
+                
+                item.innerHTML = `
+                    <span class="doc-icon">📄</span>
+                    <span class="doc-name">${doc.title || 'Untitled'}</span>
+                    <span class="doc-date">${dateStr}</span>
+                `;
+                
+                item.onclick = () => loadDocument(index);
+                list.appendChild(item);
+            });
+        }
+        
+        // Editor functions
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            document.getElementById('editor').focus();
+        }
+        
+        function insertEmoji(emoji) {
+            const editor = document.getElementById('editor');
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const text = editor.value;
+            
+            editor.value = text.substring(0, start) + emoji + text.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + emoji.length;
+            editor.focus();
+            
+            updateWordCount();
+        }
+        
+        function changeTextSize(direction) {
+            if (direction === 'increase' && currentFontSize < 30) {
+                currentFontSize += 2;
+            } else if (direction === 'decrease' && currentFontSize > 10) {
+                currentFontSize -= 2;
+            }
+            document.getElementById('editor').style.fontSize = currentFontSize + 'px';
+        }
+        
+        function toggleDocList() {
+            document.getElementById('doc-list').classList.toggle('show');
+        }
+        
+        // UI helpers
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            document.getElementById('word-count').textContent = words;
+            document.getElementById('char-count').textContent = chars;
+        }
+        
+        function updateSaveStatus(status) {
+            const element = document.getElementById('save-status');
+            element.textContent = status;
+            
+            if (status === 'Saving...') {
+                element.className = 'save-status saving';
+            } else {
+                element.className = 'save-status';
+            }
+        }
+        
+        function showSavingIndicator() {
+            document.getElementById('saving-indicator').classList.add('show');
+            updateSaveStatus('Saving...');
+        }
+        
+        function hideSavingIndicator() {
+            setTimeout(() => {
+                document.getElementById('saving-indicator').classList.remove('show');
+            }, 500);
+        }
+        
+        // Auto-save
+        function setupAutoSave() {
+            const editor = document.getElementById('editor');
+            const title = document.getElementById('doc-title');
+            
+            [editor, title].forEach(element => {
+                element.addEventListener('input', () => {
+                    updateWordCount();
+                    
+                    // Clear existing timer
+                    if (autoSaveTimer) {
+                        clearTimeout(autoSaveTimer);
+                    }
+                    
+                    // Set new timer for auto-save
+                    updateSaveStatus('Typing...');
+                    autoSaveTimer = setTimeout(() => {
+                        saveDocument();
+                    }, 2000); // Auto-save after 2 seconds of inactivity
+                });
+            });
+        }
+        
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            // Try localStorage first for immediate auth
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadDocuments();
+            } else {
+                updateAuthDisplay();
+            }
+            
+            setupAutoSave();
+            updateWordCount();
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.ctrlKey || e.metaKey) {
+                    switch(e.key) {
+                        case 's':
+                            e.preventDefault();
+                            saveDocument();
+                            break;
+                        case 'b':
+                            e.preventDefault();
+                            formatText('bold');
+                            break;
+                        case 'i':
+                            e.preventDefault();
+                            formatText('italic');
+                            break;
+                        case 'u':
+                            e.preventDefault();
+                            formatText('underline');
+                            break;
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
