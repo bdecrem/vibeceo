@@ -1028,16 +1028,11 @@
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
-                    // Ensure handle is uppercase and participantId is set for saved users
-                    if (currentUser) {
-                        if (currentUser.handle) {
-                            currentUser.handle = currentUser.handle.toUpperCase();
-                        }
-                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
-                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
-                            // Update localStorage with uppercase handle and participantId
-                            localStorage.setItem('toybox_user', JSON.stringify(currentUser));
-                        }
+                    // Ensure participantId is set for saved users
+                    if (currentUser && !currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+                        // Update localStorage with participantId
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
                     }
                     updateAuthDisplay();
                     broadcastAuth();
@@ -1110,18 +1105,15 @@
                 
                 if (user) {
                     currentUser = user.content_data;
-                    // Ensure handle is uppercase and participantId is set for login
-                    if (currentUser.handle) {
-                        currentUser.handle = currentUser.handle.toUpperCase();
-                    }
+                    // Ensure participantId is set for login
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
-                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
                     }
                     localStorage.setItem('toybox_user', JSON.stringify(currentUser));
                     updateAuthDisplay();
                     broadcastAuth();
                     closeAuth();
-                    console.log('✅ Logged in as:', currentUser.handle);
+                    console.log('✅ Logged in as:', handle);
                 } else {
                     showAuthError('Invalid username or PIN');
                 }
@@ -1142,13 +1134,12 @@
                     return;
                 }
                 
-                // Create new user (uppercase handle for ZAD API)
-                const upperHandle = handle.toUpperCase();
+                // Create new user
                 const userData = {
-                    handle: upperHandle,
+                    handle: handle,
                     pin: pin,
-                    participantId: `${upperHandle}_${pin}`,  // Format required by ZAD API
-                    id: upperHandle,
+                    participantId: `${handle}_${pin}`,  // Format required by ZAD API
+                    id: handle,
                     created: new Date().toISOString()
                 };
                 

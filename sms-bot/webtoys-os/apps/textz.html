@@ -329,6 +329,133 @@
             margin-bottom: 16px;
             opacity: 0.5;
         }
+        
+        /* Document browser modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: #252526;
+            border: 2px solid #00ff88;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.3);
+        }
+        
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid #3e3e42;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: #ff6464;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: rgba(255, 100, 100, 0.2);
+        }
+        
+        .modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .documents-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        
+        .document-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .document-card:hover {
+            background: rgba(0, 255, 136, 0.1);
+            border-color: #00ff88;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+        }
+        
+        .document-card-icon {
+            font-size: 32px;
+            margin-bottom: 12px;
+            text-align: center;
+        }
+        
+        .document-card-title {
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #e0e0e0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .document-card-preview {
+            font-size: 12px;
+            color: #808080;
+            margin-bottom: 8px;
+            height: 40px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+        
+        .document-card-date {
+            font-size: 11px;
+            color: #606060;
+            margin-top: auto;
+        }
     </style>
 </head>
 <body>
@@ -342,6 +469,10 @@
             <button class="btn btn-primary" id="newDoc" title="New Document">
                 <span>📄</span>
                 <span>New</span>
+            </button>
+            <button class="btn" id="openDoc" title="Open Document">
+                <span>📂</span>
+                <span>Open</span>
             </button>
             <button class="btn" id="saveDoc" title="Save Document">
                 <span>💾</span>
@@ -409,6 +540,21 @@
         <div id="saveStatus">Ready</div>
     </div>
     
+    <!-- Document Browser Modal -->
+    <div class="modal-overlay" id="documentBrowser">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📂 Open Document</div>
+                <button class="modal-close" onclick="closeDocumentBrowser()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="documents-grid" id="documentsGrid">
+                    <!-- Document cards will be added here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Authentication state
         let currentUser = null;
@@ -439,6 +585,12 @@
             if (savedUser) {
                 try {
                     currentUser = JSON.parse(savedUser);
+                    
+                    // Ensure participantId is set if not provided (uppercase handle)
+                    if (currentUser && !currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    
                     console.log('Loaded auth from storage:', currentUser.handle);
                     return true;
                 } catch (e) {
@@ -453,6 +605,12 @@
             if (event.data && event.data.type === 'TOYBOX_AUTH') {
                 const wasLoggedOut = !currentUser;
                 currentUser = event.data.user;
+                
+                // Ensure participantId is set if not provided (uppercase handle)
+                if (currentUser && !currentUser.participantId && currentUser.handle && currentUser.pin) {
+                    currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                }
+                
                 updateAuthDisplay();
                 
                 if (currentUser) {
@@ -474,6 +632,7 @@
                 userBadge.classList.remove('logged-out');
                 loginPrompt.style.display = 'none';
                 document.getElementById('newDoc').disabled = false;
+                document.getElementById('openDoc').disabled = false;
                 document.getElementById('saveDoc').disabled = false;
                 sidebar.classList.remove('hidden');
             } else {
@@ -481,6 +640,7 @@
                 userBadge.classList.add('logged-out');
                 loginPrompt.style.display = 'block';
                 document.getElementById('newDoc').disabled = true;
+                document.getElementById('openDoc').disabled = true;
                 document.getElementById('saveDoc').disabled = true;
                 sidebar.classList.add('hidden');
             }
@@ -500,21 +660,40 @@
         async function loadDocuments() {
             if (!currentUser) return;
             
+            // Construct participant_id from handle and pin (uppercase handle)
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
             try {
-                const response = await fetch(`/api/zad/load?app_id=textz-editor&participant_id=${currentUser.participantId}`);
+                // Load with action_type to get only document saves
+                const response = await fetch(`/api/zad/load?app_id=textz-editor&action_type=save_documents&participant_id=${participantId}`);
                 if (response.ok) {
                     const data = await response.json();
                     if (data && data.length > 0) {
-                        // Get the most recent data entry
-                        const latestData = data[data.length - 1];
-                        documents = latestData.content_data.documents || [];
-                        renderDocumentList();
-                        
-                        // Load the first document if available
-                        if (documents.length > 0 && !currentDocId) {
-                            loadDocument(documents[0].id);
+                        // Filter for this user's data and get the most recent
+                        const userDocs = data.filter(d => d.participant_id === participantId);
+                        if (userDocs.length > 0) {
+                            // Get the most recent save
+                            const latestData = userDocs[0];  // Already sorted by created_at desc
+                            documents = latestData.content_data.documents || [];
+                            console.log('Loaded documents:', documents.length, 'documents for user:', participantId);
+                            renderDocumentList();
+                            
+                            // Load the first document if available
+                            if (documents.length > 0 && !currentDocId) {
+                                loadDocument(documents[0].id);
+                            }
+                        } else {
+                            console.log('No documents found for user:', participantId);
+                            documents = [];
+                            renderDocumentList();
                         }
+                    } else {
+                        console.log('No documents in database for app: textz-editor');
+                        documents = [];
+                        renderDocumentList();
                     }
+                } else {
+                    console.error('Failed to load documents, status:', response.status);
                 }
             } catch (error) {
                 console.error('Failed to load documents:', error);
@@ -524,6 +703,9 @@
         // Save all documents
         async function saveDocuments() {
             if (!currentUser) return;
+            
+            // Construct participant_id from handle and pin (uppercase handle)
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
             
             // Update current document in the array
             if (currentDocId) {
@@ -544,7 +726,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         app_id: 'textz-editor',
-                        participant_id: currentUser.participantId,
+                        participant_id: participantId,
+                        action_type: 'save_documents',  // Add action_type for ZAD API
                         content_data: {
                             documents: documents,
                             lastModified: new Date().toISOString()
@@ -553,6 +736,8 @@
                 });
                 
                 if (response.ok) {
+                    const result = await response.json();
+                    console.log('Documents saved successfully:', result);
                     saveStatus.textContent = 'Saved';
                     hasUnsavedChanges = false;
                     setTimeout(() => {
@@ -560,6 +745,10 @@
                         autoSaveStatus.style.display = 'none';
                     }, 2000);
                     renderDocumentList();
+                } else {
+                    console.error('Failed to save, status:', response.status);
+                    const errorText = await response.text();
+                    console.error('Save error:', errorText);
                 }
             } catch (error) {
                 console.error('Failed to save documents:', error);
@@ -699,6 +888,7 @@
         });
         
         document.getElementById('newDoc').addEventListener('click', createNewDocument);
+        document.getElementById('openDoc').addEventListener('click', openDocumentBrowser);
         document.getElementById('saveDoc').addEventListener('click', saveDocuments);
         document.getElementById('downloadDoc').addEventListener('click', downloadDocument);
         
@@ -745,17 +935,76 @@
             // Try localStorage first for immediate auth
             if (loadAuthFromStorage()) {
                 updateAuthDisplay();
+                console.log('Loading documents for authenticated user...');
                 loadDocuments();
             } else {
                 updateAuthDisplay();
+                console.log('No authenticated user found');
             }
             
             updateCounts();
         });
         
+        // Open document browser modal
+        function openDocumentBrowser() {
+            if (!currentUser) {
+                alert('Please log in to open documents');
+                return;
+            }
+            
+            const modal = document.getElementById('documentBrowser');
+            const grid = document.getElementById('documentsGrid');
+            
+            if (documents.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 40px;">
+                        <div class="empty-state-icon">📝</div>
+                        <p style="color: #808080;">No documents yet</p>
+                        <p style="font-size: 12px; color: #606060; margin-top: 8px;">Create your first document!</p>
+                    </div>
+                `;
+            } else {
+                grid.innerHTML = documents.map(doc => {
+                    const date = new Date(doc.updatedAt).toLocaleDateString();
+                    const preview = doc.content.substring(0, 100).replace(/\n/g, ' ');
+                    return `
+                        <div class="document-card" onclick="openDocumentFromBrowser('${doc.id}')">
+                            <div class="document-card-icon">📄</div>
+                            <div class="document-card-title">${doc.title}</div>
+                            <div class="document-card-preview">${preview || 'Empty document'}</div>
+                            <div class="document-card-date">Modified: ${date}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+            
+            modal.classList.add('active');
+        }
+        
+        // Close document browser modal
+        function closeDocumentBrowser() {
+            const modal = document.getElementById('documentBrowser');
+            modal.classList.remove('active');
+        }
+        
+        // Open document from browser
+        function openDocumentFromBrowser(docId) {
+            loadDocument(docId);
+            closeDocumentBrowser();
+        }
+        
+        // Close modal on outside click
+        document.getElementById('documentBrowser').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDocumentBrowser();
+            }
+        });
+        
         // Make functions available globally for onclick handlers
         window.loadDocument = loadDocument;
         window.deleteDocument = deleteDocument;
+        window.openDocumentFromBrowser = openDocumentFromBrowser;
+        window.closeDocumentBrowser = closeDocumentBrowser;
     </script>
 </body>
 </html>

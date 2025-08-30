@@ -164,20 +164,45 @@ tail -f agents/edit-agent/edit-agent-v3.log
 
 ## Authentication System
 
-WebtoysOS uses a handle + PIN system:
-- **Handle**: 3-15 characters, alphanumeric
+### 🚨 CRITICAL: Authentication Requirements 🚨
+
+**See `agents/edit-agent/AUTH-DOCUMENTATION.md` for COMPLETE implementation details**
+
+WebtoysOS uses a handle + PIN system with STRICT requirements:
+- **Handle**: 3-15 characters, alphanumeric, MUST BE UPPERCASE
 - **PIN**: 4 digits
-- Stored in `participant_id` as `HANDLE_PIN`
+- **participant_id**: MUST be `UPPERCASE_HANDLE_PIN` (e.g., `JOHN_1234`)
 
-Apps access auth via postMessage:
+### Common Authentication Failures
+1. **Lowercase handles** - Causes data isolation, can't find saved data
+2. **Missing participantId** - ZAD API calls fail
+3. **No localStorage fallback** - Race conditions on app load
+4. **Missing action_type** - Can't filter data properly
+
+### Correct Implementation (MUST USE BOTH)
 ```javascript
-// Request auth from desktop
-parent.postMessage({ type: 'GET_AUTH' }, '*');
+// STEP 1: Load from localStorage (immediate)
+function loadAuthFromStorage() {
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        // CRITICAL: Ensure uppercase and participantId
+        if (currentUser) {
+            if (currentUser.handle) {
+                currentUser.handle = currentUser.handle.toUpperCase();
+            }
+            if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            }
+        }
+    }
+}
 
-// Receive auth
+// STEP 2: Listen for postMessage (real-time)
 window.addEventListener('message', (e) => {
-    if (e.data.type === 'AUTH_RESPONSE') {
-        const { handle, participantId } = e.data;
+    if (e.data.type === 'TOYBOX_AUTH') {
+        currentUser = e.data.user;
+        // Fix format same as above
     }
 });
 ```
@@ -202,21 +227,29 @@ parent.postMessage({ type: 'GET_AUTH' }, '*');
 
 ## Data Storage Patterns
 
-### For Regular Apps
-Use ZAD API endpoints:
+### For Regular Apps (ZAD API)
+**CRITICAL: Must use correct participant_id format and action_type**
+
 ```javascript
-// Save data
+// CORRECT: Save data with proper format
+const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+
 await fetch('/api/zad/save', {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
         app_id: 'my-app',
-        participant_id: userId,
+        participant_id: participantId,  // UPPERCASE_HANDLE_PIN
+        action_type: 'save_data',       // REQUIRED for filtering
         content_data: data
     })
 });
 
-// Load data
-await fetch('/api/zad/load?app_id=my-app');
+// CORRECT: Load and filter data
+const response = await fetch(`/api/zad/load?app_id=my-app&action_type=save_data&participant_id=${participantId}`);
+const data = await response.json();
+// CRITICAL: Filter for current user only
+const userData = data.filter(d => d.participant_id === participantId);
 ```
 
 ### For System Apps (Issue Tracker)
@@ -276,13 +309,29 @@ node scripts/auto-deploy-app.js apps/my-app.html
 ```
 
 ### Issue: Auth not working
-**Solution**: Apps must be in iframe on desktop to receive auth.
+**Solution**: 
+1. Apps must be in iframe on desktop to receive auth
+2. Check localStorage AND postMessage listeners
+3. Verify handle is UPPERCASE
+4. Confirm participantId format: `UPPERCASE_HANDLE_PIN`
 Test at: https://webtoys.ai/public/toybox-os-v3-test
 
-### Issue: Data not saving
-**Solution**: Check if using correct table and have proper keys:
-- Browser apps: Use ANON key
-- Scripts: Use SERVICE key
+### Issue: Data not saving / Open dialog empty
+**Solution**: Authentication format issues:
+1. **participantId must be uppercase**: `JOHN_1234` not `john_1234`
+2. **Include action_type**: Required for filtering data
+3. **Filter load results**: Must filter by participant_id
+4. **Check console logs**: Look for participantId format
+
+Example fix:
+```javascript
+// WRONG - lowercase handle, no action_type
+participant_id: `${handle}_${pin}`
+
+// CORRECT - uppercase, with action_type
+participant_id: `${handle.toUpperCase()}_${pin}`,
+action_type: 'save_data'
+```
 
 ### Issue: Icon not showing on desktop
 **Solution**: Check desktop config was updated:

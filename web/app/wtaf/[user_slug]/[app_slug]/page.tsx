@@ -47,7 +47,9 @@ export default async function WTAFAppPage({ params, searchParams }: PageProps) {
 		// Check if this is a desktop app that should be served directly
 		const isDesktopApp = app_slug.includes('toybox-os') || 
 		                     app_slug.includes('webtoys-os') || 
-		                     app_slug === 'desktop-v3';
+		                     app_slug.includes('desktop-v3');
+		
+		console.log('🖥️ Desktop detection:', { app_slug, isDesktopApp });
 
 		let htmlContent = data.html_content;
 
