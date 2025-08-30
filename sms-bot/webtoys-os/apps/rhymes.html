@@ -707,7 +707,10 @@
             modal.classList.add('active');
             
             const allDocs = await load('poem_document');
+            console.log('Loaded docs:', allDocs); // Debug log
+            
             const participantId = getParticipantId();
+            // ZAD returns flattened data - properties are directly on the object
             const userDocs = allDocs.filter(doc => 
                 doc.participant_id === participantId || doc.author === getUsername()
             );
@@ -715,22 +718,40 @@
             if (userDocs.length === 0) {
                 fileList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No saved poems yet!</div>';
             } else {
-                // Deduplicate by ID
+                // Deduplicate by ID - ZAD is append-only so we need latest version
                 const uniqueDocs = {};
                 userDocs.forEach(doc => {
-                    if (!uniqueDocs[doc.id] || new Date(doc.updatedAt) > new Date(uniqueDocs[doc.id].updatedAt)) {
+                    // Check if this is a newer version
+                    if (!uniqueDocs[doc.id] || 
+                        (doc.updatedAt && new Date(doc.updatedAt) > new Date(uniqueDocs[doc.id].updatedAt))) {
                         uniqueDocs[doc.id] = doc;
                     }
                 });
                 
-                fileList.innerHTML = Object.values(uniqueDocs)
-                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
-                    .map(doc => `
-                        <div class="file-item" onclick="loadDocument('${doc.id}')">
-                            <div>${doc.title}</div>
-                            <div class="file-date">${new Date(doc.updatedAt).toLocaleDateString()}</div>
-                        </div>
-                    `).join('');
+                // Sort by date and create file list
+                const sortedDocs = Object.values(uniqueDocs)
+                    .filter(doc => doc.title && doc.id) // Ensure we have required fields
+                    .sort((a, b) => {
+                        const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(0);
+                        const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(0);
+                        return dateB - dateA;
+                    });
+                
+                if (sortedDocs.length === 0) {
+                    fileList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No saved poems yet!</div>';
+                } else {
+                    fileList.innerHTML = sortedDocs.map(doc => {
+                        const dateStr = doc.updatedAt 
+                            ? new Date(doc.updatedAt).toLocaleDateString() 
+                            : 'Unknown date';
+                        return `
+                            <div class="file-item" onclick="loadDocument('${doc.id}')">
+                                <div>${doc.title || 'Untitled'}</div>
+                                <div class="file-date">${dateStr}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
             }
         }
 
@@ -738,17 +759,31 @@
         async function loadDocument(docId) {
             const allDocs = await load('poem_document');
             const participantId = getParticipantId();
+            
+            // Filter for user's docs
             const userDocs = allDocs.filter(d => 
                 d.participant_id === participantId || d.author === getUsername()
             );
             
+            // Get all versions of this document and pick the latest
             const docVersions = userDocs.filter(d => d.id === docId);
-            const doc = docVersions.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0];
+            
+            if (docVersions.length === 0) {
+                alert('Document not found');
+                return;
+            }
+            
+            // Sort by date to get latest version (ZAD is append-only)
+            const doc = docVersions.sort((a, b) => {
+                const dateA = a.updatedAt ? new Date(a.updatedAt) : new Date(0);
+                const dateB = b.updatedAt ? new Date(b.updatedAt) : new Date(0);
+                return dateB - dateA;
+            })[0];
             
             if (doc) {
                 currentDocId = doc.id;
-                document.getElementById('docTitle').value = doc.title;
-                document.getElementById('editor').value = doc.content;
+                document.getElementById('docTitle').value = doc.title || 'Untitled Poem';
+                document.getElementById('editor').value = doc.content || '';
                 updateWordCount();
                 document.getElementById('saveStatus').textContent = 'Loaded';
                 closeModal();

@@ -178,6 +178,12 @@ async function executeOpenIssue() {
     console.log(`   Submitted by: ${author}`);
     console.log(`   Priority: ${priority}`);
     
+    // Log if there are comments to process
+    const totalComments = (content.comments?.length || 0) + (content.admin_comments?.length || 0);
+    if (totalComments > 0) {
+        console.log(`   💬 Comments: ${totalComments} comment(s) found - will include in prompt`);
+    }
+    
     // Update status to processing
     content.status = 'processing';
     content.processedAt = new Date().toISOString();
@@ -192,9 +198,24 @@ async function executeOpenIssue() {
     // Create comprehensive prompt for Claude based on issue type
     const parsed = parseIssueDescription(description);  // Use the v3-compatible description
     
+    // Get any comments from the issue to include in the prompt
+    const allComments = [...(content.comments || []), ...(content.admin_comments || [])];
+    
     // Simple, clear prompt that lets Claude Code use its full capabilities
-    let claudePrompt = `${description}
-
+    let claudePrompt = description;
+    
+    // Include comments if they exist so Claude can address feedback
+    if (allComments.length > 0) {
+        claudePrompt += '\n\n📝 COMMENTS/FEEDBACK ON THIS ISSUE:\n';
+        allComments.forEach(comment => {
+            const commentAuthor = comment.author || 'anonymous';
+            const commentDate = comment.timestamp ? new Date(comment.timestamp).toLocaleString() : '';
+            claudePrompt += `\n[${commentAuthor}${commentDate ? ' on ' + commentDate : ''}]: ${comment.text}`;
+        });
+        claudePrompt += '\n\n⚠️ Please carefully address the above feedback in your solution.\n';
+    }
+    
+    claudePrompt += `
 CONTEXT: You are in the /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os directory.
 - Authentication docs: agents/edit-agent/AUTH-DOCUMENTATION.md
 - Desktop HTML: core/desktop-v3.html
