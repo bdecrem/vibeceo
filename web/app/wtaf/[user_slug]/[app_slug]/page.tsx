@@ -531,6 +531,34 @@ setTimeout(function() {
 			'/',  // Main homepage (for Fresh From The Oven and example cards)
 		];
 		
+		// Check if referer is from the desktop - these should NOT show navigation
+		const isFromDesktop = referer ? 
+			(() => {
+				try {
+					const refererUrl = new URL(referer);
+					const pathname = refererUrl.pathname;
+					const searchParams = refererUrl.searchParams;
+					
+					// Check if referer is from /api/wtaf/raw with desktop slugs
+					if (pathname === '/api/wtaf/raw') {
+						const slug = searchParams.get('slug');
+						if (slug && (slug.includes('toybox-os') || slug.includes('webtoys-os') || slug.includes('desktop-v3'))) {
+							return true;
+						}
+					}
+					
+					// Check if referer pathname contains desktop identifiers
+					if (pathname.includes('toybox-os') || pathname.includes('webtoys-os') || pathname.includes('desktop-v3')) {
+						return true;
+					}
+					
+					return false;
+				} catch (e) {
+					return false;
+				}
+			})() :
+			false;
+
 		// Check if referer is from a wtaf.me internal navigation page
 		const isFromInternalNav = referer ? 
 			internalNavPages.some(page => {
@@ -565,7 +593,7 @@ setTimeout(function() {
 					// If URL parsing fails, don't show nav
 					return false;
 				}
-			}) :
+			}) && !isFromDesktop : // Exclude desktop referers from internal nav
 			false;
 			
 		const showNavigation = isDemoMode || isFromInternalNav;
@@ -573,6 +601,7 @@ setTimeout(function() {
 		console.log('🔍 Navigation decision:', { 
 			referer, 
 			isDemoMode, 
+			isFromDesktop,
 			isFromInternalNav, 
 			showNavigation 
 		});
