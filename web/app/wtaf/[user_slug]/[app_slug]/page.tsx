@@ -543,12 +543,14 @@ setTimeout(function() {
 					if (pathname === '/api/wtaf/raw') {
 						const slug = searchParams.get('slug');
 						if (slug && (slug.includes('toybox-os') || slug.includes('webtoys-os') || slug.includes('desktop-v3'))) {
+							console.log('🖥️ Detected desktop referer from raw API:', referer);
 							return true;
 						}
 					}
 					
 					// Check if referer pathname contains desktop identifiers
 					if (pathname.includes('toybox-os') || pathname.includes('webtoys-os') || pathname.includes('desktop-v3')) {
+						console.log('🖥️ Detected desktop referer from pathname:', referer);
 						return true;
 					}
 					
@@ -560,7 +562,7 @@ setTimeout(function() {
 			false;
 
 		// Check if referer is from a wtaf.me internal navigation page
-		const isFromInternalNav = referer ? 
+		const isFromInternalNav = referer && !isFromDesktop ? 
 			internalNavPages.some(page => {
 				// Extract the pathname from the full referer URL
 				try {
@@ -593,10 +595,10 @@ setTimeout(function() {
 					// If URL parsing fails, don't show nav
 					return false;
 				}
-			}) && !isFromDesktop : // Exclude desktop referers from internal nav
+			}) :
 			false;
 			
-		const showNavigation = isDemoMode || isFromInternalNav;
+		const showNavigation = isDemoMode || (isFromInternalNav && !isFromDesktop);
 
 		console.log('🔍 Navigation decision:', { 
 			referer, 
