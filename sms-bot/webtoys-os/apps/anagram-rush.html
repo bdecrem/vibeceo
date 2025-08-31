@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANAGRAM RUSH - WebtoysOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f5576c;
+        }
+
+        .level-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .scrambled-word {
+            text-align: center;
+            margin: 30px 0;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 15px;
+            border: 3px solid #f5576c;
+        }
+
+        .scrambled-letters {
+            font-size: 2.5em;
+            font-weight: bold;
+            letter-spacing: 10px;
+            color: #f5576c;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .hint {
+            margin-top: 15px;
+            color: #999;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .input-area {
+            margin-bottom: 20px;
+        }
+
+        .word-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            transition: all 0.3s;
+        }
+
+        .word-input:focus {
+            outline: none;
+            border-color: #f5576c;
+            transform: scale(1.02);
+        }
+
+        .word-input.correct {
+            border-color: #48bb78;
+            background: #c6f6d5;
+            animation: success 0.5s;
+        }
+
+        .word-input.error {
+            border-color: #ff6b6b;
+            animation: shake 0.5s;
+        }
+
+        @keyframes success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ffd89b;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ffc66d;
+            transform: translateY(-2px);
+        }
+
+        .btn-hint {
+            background: #a8edea;
+            color: #333;
+        }
+
+        .btn-hint:hover {
+            background: #7dd3ce;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .message.error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .leaderboard {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .leaderboard h3 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .leaderboard-entry:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-rank {
+            font-weight: bold;
+            color: #f5576c;
+            margin-right: 10px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #333;
+        }
+
+        .leaderboard-score {
+            font-weight: bold;
+            color: #f093fb;
+        }
+
+        .streak-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ffd89b 0%, #ffab6d 100%);
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            animation: bounceIn 0.5s;
+        }
+
+        .streak-indicator.active {
+            display: block;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .loading {
+            text-align: center;
+            color: #f5576c;
+            padding: 20px;
+        }
+
+        .auth-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #f5576c;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .scrambled-letters {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-status" id="authStatus">Not logged in</div>
+    <div class="streak-indicator" id="streakIndicator">🔥 Streak: 0</div>
+    
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🎯 ANAGRAM RUSH</h1>
+            <p>Unscramble the words as fast as you can!</p>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Words</div>
+                <div class="stat-value" id="wordsComplete">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="timeElapsed">0:00</div>
+            </div>
+        </div>
+
+        <div class="level-indicator" id="levelIndicator">
+            Level 1 - Easy (3-4 letters)
+        </div>
+
+        <div id="message"></div>
+
+        <div class="scrambled-word" id="scrambledWord">
+            <div class="scrambled-letters" id="scrambledLetters">READY?</div>
+            <div class="hint" id="hint"></div>
+        </div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                class="word-input" 
+                id="wordInput" 
+                placeholder="TYPE YOUR ANSWER" 
+                disabled
+                autocomplete="off"
+                spellcheck="false"
+            />
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="startBtn">START GAME</button>
+            <button class="btn btn-hint" id="hintBtn" disabled>GET HINT (-50 pts)</button>
+            <button class="btn btn-secondary" id="skipBtn" disabled>SKIP WORD</button>
+        </div>
+
+        <div class="leaderboard">
+            <h3>🏆 Top Anagram Masters</h3>
+            <div id="leaderboardList" class="loading">Loading leaderboard...</div>
+        </div>
+    </div>
+
+    <script>
+        // Word lists by difficulty
+        const wordLists = {
+            easy: [
+                { word: 'CAT', hint: 'A common pet' },
+                { word: 'DOG', hint: 'Man\'s best friend' },
+                { word: 'TREE', hint: 'Has leaves and branches' },
+                { word: 'FISH', hint: 'Lives in water' },
+                { word: 'BIRD', hint: 'Can fly' },
+                { word: 'MOON', hint: 'Shines at night' },
+                { word: 'STAR', hint: 'Twinkles in the sky' },
+                { word: 'BOOK', hint: 'You read this' },
+                { word: 'RAIN', hint: 'Falls from clouds' },
+                { word: 'SNOW', hint: 'White and cold' }
+            ],
+            medium: [
+                { word: 'BEACH', hint: 'Sandy shore' },
+                { word: 'PLANT', hint: 'Grows in soil' },
+                { word: 'HOUSE', hint: 'Where you live' },
+                { word: 'PHONE', hint: 'Communication device' },
+                { word: 'MUSIC', hint: 'Sounds and melodies' },
+                { word: 'DREAM', hint: 'Happens when you sleep' },
+                { word: 'CLOUD', hint: 'Floats in the sky' },
+                { word: 'SMILE', hint: 'Shows happiness' },
+                { word: 'OCEAN', hint: 'Large body of water' },
+                { word: 'BREAD', hint: 'Common food item' }
+            ],
+            hard: [
+                { word: 'PUZZLE', hint: 'Brain teaser' },
+                { word: 'GALAXY', hint: 'Collection of stars' },
+                { word: 'DRAGON', hint: 'Mythical creature' },
+                { word: 'CASTLE', hint: 'Medieval fortress' },
+                { word: 'RHYTHM', hint: 'Musical beat' },
+                { word: 'KNIGHT', hint: 'Armored warrior' },
+                { word: 'PLANET', hint: 'Orbits the sun' },
+                { word: 'BRIDGE', hint: 'Crosses water' },
+                { word: 'JUNGLE', hint: 'Dense forest' },
+                { word: 'WIZARD', hint: 'Magic user' }
+            ],
+            expert: [
+                { word: 'ELOQUENT', hint: 'Well-spoken' },
+                { word: 'TREASURE', hint: 'Hidden wealth' },
+                { word: 'SYMPHONY', hint: 'Orchestra music' },
+                { word: 'ABSOLUTE', hint: 'Complete and total' },
+                { word: 'MAGNETIC', hint: 'Attracts metal' },
+                { word: 'BIRTHDAY', hint: 'Annual celebration' },
+                { word: 'QUESTION', hint: 'Needs an answer' },
+                { word: 'ELEPHANT', hint: 'Large mammal' },
+                { word: 'UNIVERSE', hint: 'Everything that exists' },
+                { word: 'CHAMPION', hint: 'Winner or victor' }
+            ]
+        };
+
+        // Game state
+        let gameState = {
+            isPlaying: false,
+            score: 0,
+            wordsComplete: 0,
+            currentLevel: 1,
+            currentWord: null,
+            currentScrambled: '',
+            streak: 0,
+            hintsUsed: 0,
+            startTime: null,
+            elapsedTime: 0,
+            timerInterval: null
+        };
+
+        // Auth state
+        let currentUser = null;
+
+        // Initialize auth
+        function initAuth() {
+            // Load from localStorage first
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser && currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        updateAuthStatus();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved user:', e);
+                }
+            }
+
+            // Listen for auth messages
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                    currentUser = e.data.user;
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthStatus();
+                }
+            });
+
+            // Request auth from parent
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser && currentUser.handle) {
+                authStatus.textContent = `Player: ${currentUser.handle}`;
+            } else {
+                authStatus.textContent = 'Playing as Guest';
+            }
+        }
+
+        // Scramble a word
+        function scrambleWord(word) {
+            const letters = word.split('');
+            for (let i = letters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [letters[i], letters[j]] = [letters[j], letters[i]];
+            }
+            // Make sure it's actually scrambled
+            const scrambled = letters.join('');
+            if (scrambled === word && word.length > 2) {
+                return scrambleWord(word);
+            }
+            return scrambled;
+        }
+
+        // Get word for current level
+        function getWordForLevel() {
+            let difficulty;
+            if (gameState.currentLevel <= 3) difficulty = 'easy';
+            else if (gameState.currentLevel <= 6) difficulty = 'medium';
+            else if (gameState.currentLevel <= 9) difficulty = 'hard';
+            else difficulty = 'expert';
+
+            const words = wordLists[difficulty];
+            return words[Math.floor(Math.random() * words.length)];
+        }
+
+        // Update level display
+        function updateLevelDisplay() {
+            const levelIndicator = document.getElementById('levelIndicator');
+            let difficulty;
+            if (gameState.currentLevel <= 3) difficulty = 'Easy (3-4 letters)';
+            else if (gameState.currentLevel <= 6) difficulty = 'Medium (5 letters)';
+            else if (gameState.currentLevel <= 9) difficulty = 'Hard (6 letters)';
+            else difficulty = 'Expert (7-8 letters)';
+            
+            levelIndicator.textContent = `Level ${gameState.currentLevel} - ${difficulty}`;
+        }
+
+        // Start new game
+        function startGame() {
+            gameState = {
+                isPlaying: true,
+                score: 0,
+                wordsComplete: 0,
+                currentLevel: 1,
+                currentWord: null,
+                currentScrambled: '',
+                streak: 0,
+                hintsUsed: 0,
+                startTime: Date.now(),
+                elapsedTime: 0,
+                timerInterval: null
+            };
+
+            // Update UI
+            document.getElementById('score').textContent = '0';
+            document.getElementById('wordsComplete').textContent = '0';
+            document.getElementById('timeElapsed').textContent = '0:00';
+            document.getElementById('wordInput').disabled = false;
+            document.getElementById('wordInput').value = '';
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('skipBtn').disabled = false;
+            document.getElementById('startBtn').textContent = 'RESTART';
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('hint').textContent = '';
+            
+            // Start timer
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+            
+            // Load first word
+            nextWord();
+        }
+
+        // Update timer
+        function updateTimer() {
+            gameState.elapsedTime = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(gameState.elapsedTime / 60);
+            const seconds = gameState.elapsedTime % 60;
+            document.getElementById('timeElapsed').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        // Load next word
+        function nextWord() {
+            gameState.currentWord = getWordForLevel();
+            gameState.currentScrambled = scrambleWord(gameState.currentWord.word);
+            
+            document.getElementById('scrambledLetters').textContent = gameState.currentScrambled;
+            document.getElementById('hint').textContent = '';
+            document.getElementById('wordInput').value = '';
+            document.getElementById('wordInput').focus();
+            
+            updateLevelDisplay();
+        }
+
+        // Check answer
+        function checkAnswer() {
+            const input = document.getElementById('wordInput');
+            const answer = input.value.trim().toUpperCase();
+            
+            if (answer === gameState.currentWord.word) {
+                // Correct!
+                gameState.wordsComplete++;
+                gameState.streak++;
+                
+                // Calculate score (more points for speed and no hints)
+                let points = gameState.currentWord.word.length * 100;
+                if (gameState.elapsedTime < gameState.wordsComplete * 10) {
+                    points += 50; // Speed bonus
+                }
+                if (!document.getElementById('hint').textContent) {
+                    points += 100; // No hint bonus
+                }
+                
+                gameState.score += points;
+                
+                // Update UI
+                document.getElementById('score').textContent = gameState.score;
+                document.getElementById('wordsComplete').textContent = gameState.wordsComplete;
+                
+                // Show streak
+                if (gameState.streak >= 3) {
+                    const streakIndicator = document.getElementById('streakIndicator');
+                    streakIndicator.textContent = `🔥 Streak: ${gameState.streak}`;
+                    streakIndicator.classList.add('active');
+                }
+                
+                // Visual feedback
+                input.classList.add('correct');
+                setTimeout(() => input.classList.remove('correct'), 500);
+                
+                showMessage(`Correct! +${points} points!`, 'success');
+                
+                // Level up every 3 words
+                if (gameState.wordsComplete % 3 === 0) {
+                    gameState.currentLevel++;
+                    showMessage(`Level ${gameState.currentLevel} unlocked!`, 'success');
+                }
+                
+                // Next word
+                setTimeout(nextWord, 1000);
+            }
+        }
+
+        // Show hint
+        function showHint() {
+            if (gameState.score >= 50) {
+                gameState.score -= 50;
+                document.getElementById('score').textContent = gameState.score;
+                document.getElementById('hint').textContent = `Hint: ${gameState.currentWord.hint}`;
+                gameState.hintsUsed++;
+            } else {
+                showMessage('Not enough points for a hint!', 'error');
+            }
+        }
+
+        // Skip word
+        function skipWord() {
+            gameState.streak = 0;
+            document.getElementById('streakIndicator').classList.remove('active');
+            showMessage('Word skipped! Streak lost.', 'error');
+            nextWord();
+        }
+
+        // End game
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            
+            document.getElementById('wordInput').disabled = true;
+            document.getElementById('hintBtn').disabled = true;
+            document.getElementById('skipBtn').disabled = true;
+            document.getElementById('startBtn').textContent = 'START GAME';
+            
+            const avgTime = Math.floor(gameState.elapsedTime / Math.max(gameState.wordsComplete, 1));
+            showMessage(`Game complete! Score: ${gameState.score} | Words: ${gameState.wordsComplete} | Avg time: ${avgTime}s`, 'success');
+            
+            if (gameState.score > 0) {
+                saveScore();
+            }
+        }
+
+        // Save score
+        async function saveScore() {
+            if (!currentUser || !currentUser.participantId) {
+                console.log('No user logged in, score not saved');
+                return;
+            }
+
+            const scoreData = {
+                handle: currentUser.handle,
+                score: gameState.score,
+                wordsComplete: gameState.wordsComplete,
+                level: gameState.currentLevel,
+                time: gameState.elapsedTime,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-anagram-rush',
+                        participant_id: currentUser.participantId,
+                        action_type: 'high_score',
+                        content_data: scoreData
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Score saved successfully');
+                    loadLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
+        }
+
+        // Load leaderboard
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-anagram-rush&action_type=high_score');
+                const data = await response.json();
+                
+                // Process and sort scores
+                const scores = data.map(entry => ({
+                    handle: entry.content_data.handle || 'Anonymous',
+                    score: entry.content_data.score,
+                    wordsComplete: entry.content_data.wordsComplete,
+                    level: entry.content_data.level
+                }));
+
+                // Get top scores per player
+                const topScores = {};
+                scores.forEach(score => {
+                    if (!topScores[score.handle] || topScores[score.handle].score < score.score) {
+                        topScores[score.handle] = score;
+                    }
+                });
+
+                // Sort and get top 10
+                const sortedScores = Object.values(topScores)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10);
+
+                displayLeaderboard(sortedScores);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                document.getElementById('leaderboardList').innerHTML = '<p style="color: #999;">Failed to load leaderboard</p>';
+            }
+        }
+
+        // Display leaderboard
+        function displayLeaderboard(scores) {
+            const leaderboardList = document.getElementById('leaderboardList');
+            
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<p style="color: #999;">No scores yet. Be the first!</p>';
+                return;
+            }
+
+            leaderboardList.innerHTML = scores.map((score, index) => `
+                <div class="leaderboard-entry">
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-name">${score.handle}</span>
+                    <span class="leaderboard-score">${score.score} pts (L${score.level})</span>
+                </div>
+            `).join('');
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = text;
+            
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('hintBtn').addEventListener('click', showHint);
+        document.getElementById('skipBtn').addEventListener('click', skipWord);
+        
+        document.getElementById('wordInput').addEventListener('input', (e) => {
+            if (gameState.isPlaying) {
+                checkAnswer();
+            }
+        });
+
+        // Initialize
+        initAuth();
+        loadLeaderboard();
+        
+        // Refresh leaderboard periodically
+        setInterval(loadLeaderboard, 30000);
+    </script>
+</body>
+</html>
