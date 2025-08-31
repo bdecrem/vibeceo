@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WORD GRID - WebtoysOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 700px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #43e97b;
+        }
+
+        .timer {
+            color: #ff6b6b;
+        }
+
+        .grid-container {
+            display: flex;
+            justify-content: center;
+            margin: 30px 0;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            max-width: 320px;
+        }
+
+        .letter-cell {
+            width: 70px;
+            height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8em;
+            font-weight: bold;
+            background: white;
+            border: 3px solid #38f9d7;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+            text-transform: uppercase;
+        }
+
+        .letter-cell:hover {
+            background: #e6fffb;
+            transform: scale(1.05);
+        }
+
+        .letter-cell.selected {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .letter-cell.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .current-word {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: #f0f9ff;
+            border-radius: 10px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .current-word-text {
+            font-size: 1.8em;
+            font-weight: bold;
+            letter-spacing: 5px;
+            color: #38f9d7;
+            text-transform: uppercase;
+        }
+
+        .found-words {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f7f7f7;
+            border-radius: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .found-words h4 {
+            color: #43e97b;
+            margin-bottom: 10px;
+        }
+
+        .word-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .found-word {
+            padding: 5px 10px;
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.9em;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 233, 123, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ffd89b;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ffc66d;
+            transform: translateY(-2px);
+        }
+
+        .btn-clear {
+            background: #ff9a9e;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #ff6b6b;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .message.error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .message.info {
+            background: #bee3f8;
+            color: #2c5282;
+        }
+
+        .leaderboard {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .leaderboard h3 {
+            background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .leaderboard-entry:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-rank {
+            font-weight: bold;
+            color: #43e97b;
+            margin-right: 10px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #333;
+        }
+
+        .leaderboard-score {
+            font-weight: bold;
+            color: #38f9d7;
+        }
+
+        .loading {
+            text-align: center;
+            color: #43e97b;
+            padding: 20px;
+        }
+
+        .auth-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #43e97b;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .letter-cell {
+                width: 60px;
+                height: 60px;
+                font-size: 1.5em;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-status" id="authStatus">Not logged in</div>
+    
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">📝 WORD GRID</h1>
+            <p>Find all the hidden words!</p>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value timer" id="timer">2:00</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Words</div>
+                <div class="stat-value" id="wordCount">0</div>
+            </div>
+        </div>
+
+        <div id="message"></div>
+
+        <div class="current-word">
+            <div class="current-word-text" id="currentWord">-</div>
+        </div>
+
+        <div class="grid-container">
+            <div class="letter-grid" id="letterGrid">
+                <!-- Grid cells will be generated here -->
+            </div>
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="startBtn">START GAME</button>
+            <button class="btn btn-clear" id="clearBtn" disabled>CLEAR</button>
+            <button class="btn btn-secondary" id="submitBtn" disabled>SUBMIT WORD</button>
+        </div>
+
+        <div class="found-words">
+            <h4>Found Words (<span id="foundCount">0</span>)</h4>
+            <div class="word-list" id="foundWordsList"></div>
+        </div>
+
+        <div class="leaderboard">
+            <h3>🏆 Top Word Hunters</h3>
+            <div id="leaderboardList" class="loading">Loading leaderboard...</div>
+        </div>
+    </div>
+
+    <script>
+        // Common 3-letter words for validation (simplified dictionary)
+        const validWords = new Set([
+            // 3-letter words
+            'ace', 'age', 'ago', 'aid', 'aim', 'air', 'all', 'and', 'ant', 'any', 'ape', 'apt', 'arc', 'are', 'ark', 'arm', 'art', 'ash', 'ask', 'ate',
+            'bad', 'bag', 'ban', 'bar', 'bat', 'bay', 'bed', 'bee', 'bet', 'bid', 'big', 'bin', 'bit', 'bow', 'box', 'boy', 'bud', 'bug', 'bun', 'bus', 'but', 'buy',
+            'cab', 'can', 'cap', 'car', 'cat', 'cog', 'cop', 'cot', 'cow', 'cry', 'cub', 'cup', 'cut',
+            'dad', 'dam', 'day', 'den', 'dew', 'did', 'die', 'dig', 'dim', 'din', 'dip', 'dog', 'dot', 'dry', 'dub', 'due', 'dug', 'dye',
+            'ear', 'eat', 'egg', 'ego', 'elf', 'elm', 'end', 'era', 'eve', 'eye',
+            'fab', 'fad', 'fan', 'far', 'fat', 'fax', 'fed', 'fee', 'few', 'fib', 'fig', 'fin', 'fir', 'fit', 'fix', 'fly', 'foe', 'fog', 'for', 'fox', 'fry', 'fun', 'fur',
+            'gag', 'gap', 'gas', 'gay', 'gel', 'gem', 'get', 'gig', 'gin', 'god', 'got', 'gum', 'gun', 'gut', 'guy', 'gym',
+            'had', 'hag', 'ham', 'has', 'hat', 'hay', 'hen', 'her', 'hew', 'hey', 'hid', 'him', 'hip', 'his', 'hit', 'hog', 'hop', 'hot', 'how', 'hub', 'hue', 'hug', 'hum', 'hut',
+            'ice', 'icy', 'ill', 'ink', 'inn', 'ion', 'its',
+            'jab', 'jag', 'jam', 'jar', 'jaw', 'jay', 'jet', 'jig', 'job', 'jog', 'joy', 'jug',
+            'keg', 'ken', 'key', 'kid', 'kin', 'kit',
+            'lab', 'lad', 'lag', 'lap', 'law', 'lax', 'lay', 'led', 'leg', 'let', 'lid', 'lie', 'lip', 'lit', 'log', 'lot', 'low', 'lug',
+            'mad', 'man', 'map', 'mat', 'max', 'may', 'men', 'met', 'mid', 'mix', 'mob', 'mod', 'mom', 'mop', 'mud', 'mug',
+            'nag', 'nap', 'net', 'new', 'nil', 'nit', 'nod', 'nor', 'not', 'now', 'nun', 'nut',
+            'oak', 'oar', 'oat', 'odd', 'off', 'oil', 'old', 'one', 'opt', 'orb', 'ore', 'our', 'out', 'owe', 'owl', 'own',
+            'pad', 'pal', 'pan', 'par', 'pat', 'paw', 'pay', 'pea', 'peg', 'pen', 'per', 'pet', 'pie', 'pig', 'pin', 'pit', 'ply', 'pod', 'pop', 'pot', 'pro', 'pry', 'pub', 'pug', 'pun', 'pup', 'put',
+            'rag', 'ram', 'ran', 'rap', 'rat', 'raw', 'ray', 'red', 'ref', 'rep', 'rev', 'rib', 'rid', 'rig', 'rim', 'rip', 'rob', 'rod', 'roe', 'rot', 'row', 'rub', 'rug', 'rum', 'run', 'rut', 'rye',
+            'sac', 'sad', 'sag', 'sap', 'sat', 'saw', 'say', 'sea', 'see', 'set', 'sew', 'she', 'shy', 'sic', 'sim', 'sip', 'sir', 'sis', 'sit', 'six', 'ski', 'sky', 'sly', 'sob', 'sod', 'son', 'sop', 'sow', 'soy', 'spa', 'spy', 'sty', 'sub', 'sue', 'sum', 'sun', 'sup',
+            'tab', 'tad', 'tag', 'tan', 'tap', 'tar', 'tat', 'tax', 'tea', 'tee', 'ten', 'the', 'thy', 'tic', 'tie', 'tin', 'tip', 'toe', 'tog', 'ton', 'too', 'top', 'tot', 'tow', 'toy', 'try', 'tub', 'tug', 'tux', 'two',
+            'urn', 'use',
+            'van', 'vat', 'vet', 'via', 'vie', 'vow',
+            'wad', 'wag', 'war', 'was', 'wax', 'way', 'web', 'wed', 'wee', 'wet', 'who', 'why', 'wig', 'win', 'wit', 'woe', 'wok', 'won', 'woo', 'wow',
+            'yak', 'yam', 'yap', 'yaw', 'yay', 'yea', 'yen', 'yes', 'yet', 'yew', 'yin', 'you', 'yow', 'yuk', 'yum', 'yup',
+            'zag', 'zap', 'zed', 'zee', 'zen', 'zig', 'zip', 'zit', 'zoo',
+            // 4-letter words
+            'able', 'acid', 'aged', 'aide', 'ally', 'also', 'area', 'army', 'atom', 'auto', 'away',
+            'baby', 'back', 'bake', 'ball', 'band', 'bank', 'barn', 'base', 'bath', 'beam', 'bean', 'bear', 'beat', 'been', 'bell', 'belt', 'bend', 'bent', 'best', 'bike', 'bill', 'bind', 'bird', 'bite', 'blow', 'blue', 'boat', 'body', 'bold', 'bolt', 'bomb', 'bond', 'bone', 'book', 'boom', 'boot', 'born', 'boss', 'both', 'bowl', 'bulk', 'burn', 'busy',
+            'cafe', 'cage', 'cake', 'call', 'calm', 'came', 'camp', 'card', 'care', 'cart', 'case', 'cash', 'cast', 'cell', 'chat', 'chip', 'city', 'clay', 'clip', 'club', 'coal', 'coat', 'code', 'coin', 'cold', 'come', 'cook', 'cool', 'cope', 'copy', 'cord', 'core', 'corn', 'cost', 'crew', 'crop', 'crow', 'cure', 'cute',
+            'damp', 'dark', 'data', 'date', 'dawn', 'days', 'dead', 'deal', 'dean', 'dear', 'debt', 'deck', 'deep', 'deer', 'deny', 'desk', 'dial', 'dice', 'diet', 'dime', 'dirt', 'dish', 'disk', 'dive', 'dock', 'does', 'doll', 'done', 'door', 'dose', 'down', 'drag', 'draw', 'drew', 'drip', 'drop', 'drug', 'drum', 'dual', 'duck', 'dull', 'dumb', 'dump', 'dune', 'dunk', 'dusk', 'dust', 'duty',
+            'each', 'earl', 'earn', 'ease', 'east', 'easy', 'echo', 'edge', 'edit', 'else', 'emit', 'even', 'ever', 'evil', 'exam', 'exit',
+            'face', 'fact', 'fade', 'fail', 'fair', 'fake', 'fall', 'fame', 'fare', 'farm', 'fast', 'fate', 'fear', 'feat', 'feed', 'feel', 'feet', 'fell', 'felt', 'fern', 'fest', 'file', 'fill', 'film', 'find', 'fine', 'fire', 'firm', 'fish', 'fist', 'five', 'flag', 'flat', 'flee', 'flew', 'flex', 'flip', 'flow', 'foam', 'fold', 'folk', 'fond', 'font', 'food', 'fool', 'foot', 'ford', 'fork', 'form', 'fort', 'foul', 'four', 'fowl', 'free', 'from', 'fuel', 'full', 'fund', 'funk', 'fury', 'fuse',
+            'gain', 'game', 'gang', 'gate', 'gave', 'gaze', 'gear', 'germ', 'gift', 'girl', 'give', 'glad', 'glow', 'glue', 'goal', 'goat', 'goes', 'gold', 'golf', 'gone', 'good', 'gore', 'gown', 'grab', 'grad', 'gray', 'grew', 'grey', 'grid', 'grim', 'grin', 'grip', 'grit', 'grow', 'gulf', 'gull', 'guru', 'gust',
+            'hack', 'hail', 'hair', 'half', 'hall', 'halt', 'hand', 'hang', 'hard', 'harm', 'hash', 'hate', 'haul', 'have', 'hawk', 'haze', 'head', 'heal', 'heap', 'hear', 'heat', 'heck', 'heed', 'heel', 'held', 'helm', 'help', 'hemp', 'herb', 'herd', 'here', 'hero', 'hide', 'high', 'hike', 'hill', 'hilt', 'hind', 'hint', 'hire', 'hold', 'hole', 'holy', 'home', 'hone', 'hood', 'hoof', 'hook', 'hoop', 'hope', 'horn', 'hose', 'host', 'hour', 'howl', 'huge', 'hulk', 'hull', 'hump', 'hung', 'hunt', 'hurt', 'hush', 'husk', 'hymn', 'hype',
+            // ... (more words can be added)
+        ]);
+
+        // Letter distributions for better game balance
+        const letterDistribution = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
+
+        // Game state
+        let gameState = {
+            isPlaying: false,
+            timeLeft: 120,
+            score: 0,
+            foundWords: new Set(),
+            currentWord: [],
+            selectedCells: [],
+            grid: [],
+            timerInterval: null,
+            possibleWords: new Set()
+        };
+
+        // Auth state
+        let currentUser = null;
+
+        // Initialize auth
+        function initAuth() {
+            // Load from localStorage first
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser && currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        updateAuthStatus();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved user:', e);
+                }
+            }
+
+            // Listen for auth messages
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                    currentUser = e.data.user;
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthStatus();
+                }
+            });
+
+            // Request auth from parent
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser && currentUser.handle) {
+                authStatus.textContent = `Player: ${currentUser.handle}`;
+            } else {
+                authStatus.textContent = 'Playing as Guest';
+            }
+        }
+
+        // Generate a new grid
+        function generateGrid() {
+            const grid = [];
+            for (let i = 0; i < 16; i++) {
+                const letter = letterDistribution[Math.floor(Math.random() * letterDistribution.length)];
+                grid.push(letter);
+            }
+            return grid;
+        }
+
+        // Create grid display
+        function displayGrid() {
+            const gridElement = document.getElementById('letterGrid');
+            gridElement.innerHTML = '';
+            
+            gameState.grid.forEach((letter, index) => {
+                const cell = document.createElement('div');
+                cell.className = 'letter-cell';
+                cell.textContent = letter;
+                cell.dataset.index = index;
+                
+                cell.addEventListener('click', () => selectCell(index));
+                gridElement.appendChild(cell);
+            });
+        }
+
+        // Check if two cells are adjacent
+        function areAdjacent(index1, index2) {
+            const row1 = Math.floor(index1 / 4);
+            const col1 = index1 % 4;
+            const row2 = Math.floor(index2 / 4);
+            const col2 = index2 % 4;
+            
+            const rowDiff = Math.abs(row1 - row2);
+            const colDiff = Math.abs(col1 - col2);
+            
+            return rowDiff <= 1 && colDiff <= 1 && !(rowDiff === 0 && colDiff === 0);
+        }
+
+        // Select a cell
+        function selectCell(index) {
+            if (!gameState.isPlaying) return;
+            
+            const cells = document.querySelectorAll('.letter-cell');
+            const cell = cells[index];
+            
+            // If clicking an already selected cell, check if it's the last one
+            if (gameState.selectedCells.includes(index)) {
+                // If it's the last selected cell, deselect it
+                if (gameState.selectedCells[gameState.selectedCells.length - 1] === index) {
+                    gameState.selectedCells.pop();
+                    gameState.currentWord.pop();
+                    cell.classList.remove('selected');
+                    updateCurrentWord();
+                }
+                return;
+            }
+            
+            // Check if cell is adjacent to last selected cell (or is the first cell)
+            if (gameState.selectedCells.length === 0 || 
+                areAdjacent(gameState.selectedCells[gameState.selectedCells.length - 1], index)) {
+                
+                gameState.selectedCells.push(index);
+                gameState.currentWord.push(gameState.grid[index]);
+                cell.classList.add('selected');
+                updateCurrentWord();
+            }
+        }
+
+        // Update current word display
+        function updateCurrentWord() {
+            const word = gameState.currentWord.join('');
+            document.getElementById('currentWord').textContent = word || '-';
+        }
+
+        // Clear current selection
+        function clearSelection() {
+            gameState.selectedCells = [];
+            gameState.currentWord = [];
+            document.querySelectorAll('.letter-cell').forEach(cell => {
+                cell.classList.remove('selected');
+            });
+            updateCurrentWord();
+        }
+
+        // Submit word
+        function submitWord() {
+            if (!gameState.isPlaying || gameState.currentWord.length < 3) {
+                showMessage('Words must be at least 3 letters!', 'error');
+                return;
+            }
+            
+            const word = gameState.currentWord.join('').toLowerCase();
+            
+            // Check if word was already found
+            if (gameState.foundWords.has(word)) {
+                showMessage('Word already found!', 'error');
+                clearSelection();
+                return;
+            }
+            
+            // Check if word is valid
+            if (validWords.has(word)) {
+                // Add to found words
+                gameState.foundWords.add(word);
+                
+                // Calculate score (more points for longer words)
+                let points = 0;
+                if (word.length === 3) points = 100;
+                else if (word.length === 4) points = 200;
+                else if (word.length === 5) points = 400;
+                else if (word.length === 6) points = 600;
+                else if (word.length === 7) points = 1000;
+                else points = 1500;
+                
+                gameState.score += points;
+                
+                // Update UI
+                document.getElementById('score').textContent = gameState.score;
+                document.getElementById('wordCount').textContent = gameState.foundWords.size;
+                document.getElementById('foundCount').textContent = gameState.foundWords.size;
+                
+                // Add to found words list
+                const wordElement = document.createElement('span');
+                wordElement.className = 'found-word';
+                wordElement.textContent = word.toUpperCase();
+                document.getElementById('foundWordsList').appendChild(wordElement);
+                
+                showMessage(`+${points} points!`, 'success');
+                clearSelection();
+            } else {
+                showMessage('Not a valid word!', 'error');
+                clearSelection();
+            }
+        }
+
+        // Start new game
+        function startGame() {
+            gameState = {
+                isPlaying: true,
+                timeLeft: 120,
+                score: 0,
+                foundWords: new Set(),
+                currentWord: [],
+                selectedCells: [],
+                grid: generateGrid(),
+                timerInterval: null,
+                possibleWords: new Set()
+            };
+            
+            // Update UI
+            document.getElementById('score').textContent = '0';
+            document.getElementById('wordCount').textContent = '0';
+            document.getElementById('foundCount').textContent = '0';
+            document.getElementById('timer').textContent = '2:00';
+            document.getElementById('foundWordsList').innerHTML = '';
+            document.getElementById('currentWord').textContent = '-';
+            document.getElementById('clearBtn').disabled = false;
+            document.getElementById('submitBtn').disabled = false;
+            document.getElementById('startBtn').textContent = 'RESTART';
+            document.getElementById('message').innerHTML = '';
+            
+            // Display grid
+            displayGrid();
+            
+            // Start timer
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        // Update timer
+        function updateTimer() {
+            gameState.timeLeft--;
+            const minutes = Math.floor(gameState.timeLeft / 60);
+            const seconds = gameState.timeLeft % 60;
+            document.getElementById('timer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (gameState.timeLeft <= 10) {
+                document.getElementById('timer').style.color = '#ff4444';
+            }
+            
+            if (gameState.timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        // End game
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            
+            document.getElementById('clearBtn').disabled = true;
+            document.getElementById('submitBtn').disabled = true;
+            document.getElementById('startBtn').textContent = 'START GAME';
+            
+            showMessage(`Game Over! Final Score: ${gameState.score} points with ${gameState.foundWords.size} words found!`, 'info');
+            
+            if (gameState.score > 0) {
+                saveScore();
+            }
+        }
+
+        // Save score
+        async function saveScore() {
+            if (!currentUser || !currentUser.participantId) {
+                console.log('No user logged in, score not saved');
+                return;
+            }
+
+            const scoreData = {
+                handle: currentUser.handle,
+                score: gameState.score,
+                wordsFound: gameState.foundWords.size,
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-word-grid',
+                        participant_id: currentUser.participantId,
+                        action_type: 'high_score',
+                        content_data: scoreData
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Score saved successfully');
+                    loadLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
+        }
+
+        // Load leaderboard
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-word-grid&action_type=high_score');
+                const data = await response.json();
+                
+                // Process and sort scores
+                const scores = data.map(entry => ({
+                    handle: entry.content_data.handle || 'Anonymous',
+                    score: entry.content_data.score,
+                    wordsFound: entry.content_data.wordsFound
+                }));
+
+                // Get top scores per player
+                const topScores = {};
+                scores.forEach(score => {
+                    if (!topScores[score.handle] || topScores[score.handle].score < score.score) {
+                        topScores[score.handle] = score;
+                    }
+                });
+
+                // Sort and get top 10
+                const sortedScores = Object.values(topScores)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10);
+
+                displayLeaderboard(sortedScores);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                document.getElementById('leaderboardList').innerHTML = '<p style="color: #999;">Failed to load leaderboard</p>';
+            }
+        }
+
+        // Display leaderboard
+        function displayLeaderboard(scores) {
+            const leaderboardList = document.getElementById('leaderboardList');
+            
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<p style="color: #999;">No scores yet. Be the first!</p>';
+                return;
+            }
+
+            leaderboardList.innerHTML = scores.map((score, index) => `
+                <div class="leaderboard-entry">
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-name">${score.handle}</span>
+                    <span class="leaderboard-score">${score.score} pts (${score.wordsFound} words)</span>
+                </div>
+            `).join('');
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = text;
+            
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('clearBtn').addEventListener('click', clearSelection);
+        document.getElementById('submitBtn').addEventListener('click', submitWord);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (!gameState.isPlaying) return;
+            
+            if (e.key === 'Enter') {
+                submitWord();
+            } else if (e.key === 'Escape' || e.key === ' ') {
+                e.preventDefault();
+                clearSelection();
+            }
+        });
+
+        // Initialize
+        initAuth();
+        loadLeaderboard();
+        
+        // Refresh leaderboard periodically
+        setInterval(loadLeaderboard, 30000);
+    </script>
+</body>
+</html>

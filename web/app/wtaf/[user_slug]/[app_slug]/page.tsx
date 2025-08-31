@@ -582,7 +582,7 @@ setTimeout(function() {
 					console.log('🔍 DEBUG - No desktop detected');
 					return false;
 				} catch (e) {
-					console.log('🔍 DEBUG - URL parsing error:', e.message);
+					console.log('🔍 DEBUG - URL parsing error:', e instanceof Error ? e.message : String(e));
 					return false;
 				}
 			})() :
