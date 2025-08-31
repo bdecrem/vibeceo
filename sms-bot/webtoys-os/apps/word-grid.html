@@ -18,14 +18,15 @@
             min-height: 100vh;
             display: flex;
             justify-content: center;
-            align-items: center;
-            padding: 20px;
+            align-items: flex-start;
+            padding: 5px;
+            padding-top: 3px;
         }
 
         .game-container {
             background: white;
             border-radius: 20px;
-            padding: 30px;
+            padding: 10px;
             max-width: 700px;
             width: 100%;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -33,23 +34,23 @@
 
         .game-header {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 5px;
         }
 
         .game-title {
-            font-size: 2.5em;
+            font-size: 1.8em;
             background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
         }
 
         .game-stats {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 20px;
-            padding: 15px;
+            margin-bottom: 5px;
+            padding: 5px;
             background: #f7f7f7;
             border-radius: 10px;
         }
@@ -59,13 +60,13 @@
         }
 
         .stat-label {
-            font-size: 0.9em;
+            font-size: 0.8em;
             color: #666;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
 
         .stat-value {
-            font-size: 1.5em;
+            font-size: 1.2em;
             font-weight: bold;
             color: #43e97b;
         }
@@ -77,7 +78,7 @@
         .grid-container {
             display: flex;
             justify-content: center;
-            margin: 30px 0;
+            margin: 8px 0;
         }
 
         .letter-grid {
@@ -123,30 +124,30 @@
 
         .current-word {
             text-align: center;
-            margin: 20px 0;
-            padding: 15px;
+            margin: 5px 0;
+            padding: 6px;
             background: #f0f9ff;
-            border-radius: 10px;
-            min-height: 60px;
+            border-radius: 8px;
+            min-height: 35px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         .current-word-text {
-            font-size: 1.8em;
+            font-size: 1.4em;
             font-weight: bold;
-            letter-spacing: 5px;
+            letter-spacing: 3px;
             color: #38f9d7;
             text-transform: uppercase;
         }
 
         .found-words {
-            margin: 20px 0;
-            padding: 15px;
+            margin: 8px 0;
+            padding: 8px;
             background: #f7f7f7;
             border-radius: 10px;
-            max-height: 200px;
+            max-height: 100px;
             overflow-y: auto;
         }
 
@@ -177,14 +178,14 @@
 
         .buttons {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .btn {
             flex: 1;
-            padding: 15px;
-            font-size: 1.1em;
+            padding: 10px;
+            font-size: 1em;
             border: none;
             border-radius: 10px;
             cursor: pointer;
@@ -252,8 +253,8 @@
         }
 
         .leaderboard {
-            margin-top: 30px;
-            padding: 20px;
+            margin-top: 10px;
+            padding: 10px;
             background: #f7f7f7;
             border-radius: 10px;
         }
@@ -303,41 +304,96 @@
             padding: 20px;
         }
 
-        .auth-status {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            padding: 8px 15px;
-            background: rgba(255,255,255,0.9);
-            border-radius: 20px;
-            font-size: 0.9em;
-            color: #43e97b;
-        }
 
         @media (max-width: 600px) {
             .game-container {
-                padding: 20px;
+                padding: 8px;
             }
             
             .game-title {
-                font-size: 2em;
+                font-size: 1.3em;
+                margin-bottom: 3px;
+            }
+            
+            .game-header p {
+                font-size: 0.85em;
+                margin-bottom: 3px;
+            }
+            
+            .letter-grid {
+                gap: 5px;
+                max-width: 260px;
             }
             
             .letter-cell {
-                width: 60px;
-                height: 60px;
-                font-size: 1.5em;
+                width: 58px;
+                height: 58px;
+                font-size: 1.4em;
+                border: 2px solid #38f9d7;
             }
             
             .buttons {
-                flex-direction: column;
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 5px;
+                margin-bottom: 8px;
+            }
+            
+            .btn {
+                padding: 10px 5px;
+                font-size: 0.85em;
+            }
+            
+            #startBtn {
+                grid-column: span 2;
+            }
+            
+            .current-word-text {
+                font-size: 1.2em;
+                letter-spacing: 2px;
+            }
+            
+            .stat-label {
+                font-size: 0.7em;
+            }
+            
+            .stat-value {
+                font-size: 1em;
+            }
+            
+            .message {
+                padding: 6px;
+                font-size: 0.85em;
+                margin-bottom: 6px;
+            }
+            
+            .found-words {
+                max-height: 80px;
+            }
+            
+            .found-words h4 {
+                font-size: 0.9em;
+                margin-bottom: 5px;
+            }
+            
+            .found-word {
+                font-size: 0.8em;
+                padding: 3px 8px;
+            }
+            
+            .leaderboard h3 {
+                font-size: 1.1em;
+                margin-bottom: 8px;
+            }
+            
+            .leaderboard-entry {
+                padding: 6px;
+                font-size: 0.85em;
             }
         }
     </style>
 </head>
 <body>
-    <div class="auth-status" id="authStatus">Not logged in</div>
-    
     <div class="game-container">
         <div class="game-header">
             <h1 class="game-title">📝 WORD GRID</h1>
@@ -374,7 +430,7 @@
         <div class="buttons">
             <button class="btn btn-primary" id="startBtn">START GAME</button>
             <button class="btn btn-clear" id="clearBtn" disabled>CLEAR</button>
-            <button class="btn btn-secondary" id="submitBtn" disabled>SUBMIT WORD</button>
+            <button class="btn btn-secondary" id="submitBtn" disabled>SUBMIT</button>
         </div>
 
         <div class="found-words">
@@ -389,44 +445,48 @@
     </div>
 
     <script>
-        // Common 3-letter words for validation (simplified dictionary)
-        const validWords = new Set([
-            // 3-letter words
-            'ace', 'age', 'ago', 'aid', 'aim', 'air', 'all', 'and', 'ant', 'any', 'ape', 'apt', 'arc', 'are', 'ark', 'arm', 'art', 'ash', 'ask', 'ate',
-            'bad', 'bag', 'ban', 'bar', 'bat', 'bay', 'bed', 'bee', 'bet', 'bid', 'big', 'bin', 'bit', 'bow', 'box', 'boy', 'bud', 'bug', 'bun', 'bus', 'but', 'buy',
-            'cab', 'can', 'cap', 'car', 'cat', 'cog', 'cop', 'cot', 'cow', 'cry', 'cub', 'cup', 'cut',
-            'dad', 'dam', 'day', 'den', 'dew', 'did', 'die', 'dig', 'dim', 'din', 'dip', 'dog', 'dot', 'dry', 'dub', 'due', 'dug', 'dye',
-            'ear', 'eat', 'egg', 'ego', 'elf', 'elm', 'end', 'era', 'eve', 'eye',
-            'fab', 'fad', 'fan', 'far', 'fat', 'fax', 'fed', 'fee', 'few', 'fib', 'fig', 'fin', 'fir', 'fit', 'fix', 'fly', 'foe', 'fog', 'for', 'fox', 'fry', 'fun', 'fur',
-            'gag', 'gap', 'gas', 'gay', 'gel', 'gem', 'get', 'gig', 'gin', 'god', 'got', 'gum', 'gun', 'gut', 'guy', 'gym',
-            'had', 'hag', 'ham', 'has', 'hat', 'hay', 'hen', 'her', 'hew', 'hey', 'hid', 'him', 'hip', 'his', 'hit', 'hog', 'hop', 'hot', 'how', 'hub', 'hue', 'hug', 'hum', 'hut',
-            'ice', 'icy', 'ill', 'ink', 'inn', 'ion', 'its',
-            'jab', 'jag', 'jam', 'jar', 'jaw', 'jay', 'jet', 'jig', 'job', 'jog', 'joy', 'jug',
-            'keg', 'ken', 'key', 'kid', 'kin', 'kit',
-            'lab', 'lad', 'lag', 'lap', 'law', 'lax', 'lay', 'led', 'leg', 'let', 'lid', 'lie', 'lip', 'lit', 'log', 'lot', 'low', 'lug',
-            'mad', 'man', 'map', 'mat', 'max', 'may', 'men', 'met', 'mid', 'mix', 'mob', 'mod', 'mom', 'mop', 'mud', 'mug',
-            'nag', 'nap', 'net', 'new', 'nil', 'nit', 'nod', 'nor', 'not', 'now', 'nun', 'nut',
-            'oak', 'oar', 'oat', 'odd', 'off', 'oil', 'old', 'one', 'opt', 'orb', 'ore', 'our', 'out', 'owe', 'owl', 'own',
-            'pad', 'pal', 'pan', 'par', 'pat', 'paw', 'pay', 'pea', 'peg', 'pen', 'per', 'pet', 'pie', 'pig', 'pin', 'pit', 'ply', 'pod', 'pop', 'pot', 'pro', 'pry', 'pub', 'pug', 'pun', 'pup', 'put',
-            'rag', 'ram', 'ran', 'rap', 'rat', 'raw', 'ray', 'red', 'ref', 'rep', 'rev', 'rib', 'rid', 'rig', 'rim', 'rip', 'rob', 'rod', 'roe', 'rot', 'row', 'rub', 'rug', 'rum', 'run', 'rut', 'rye',
-            'sac', 'sad', 'sag', 'sap', 'sat', 'saw', 'say', 'sea', 'see', 'set', 'sew', 'she', 'shy', 'sic', 'sim', 'sip', 'sir', 'sis', 'sit', 'six', 'ski', 'sky', 'sly', 'sob', 'sod', 'son', 'sop', 'sow', 'soy', 'spa', 'spy', 'sty', 'sub', 'sue', 'sum', 'sun', 'sup',
-            'tab', 'tad', 'tag', 'tan', 'tap', 'tar', 'tat', 'tax', 'tea', 'tee', 'ten', 'the', 'thy', 'tic', 'tie', 'tin', 'tip', 'toe', 'tog', 'ton', 'too', 'top', 'tot', 'tow', 'toy', 'try', 'tub', 'tug', 'tux', 'two',
-            'urn', 'use',
-            'van', 'vat', 'vet', 'via', 'vie', 'vow',
-            'wad', 'wag', 'war', 'was', 'wax', 'way', 'web', 'wed', 'wee', 'wet', 'who', 'why', 'wig', 'win', 'wit', 'woe', 'wok', 'won', 'woo', 'wow',
-            'yak', 'yam', 'yap', 'yaw', 'yay', 'yea', 'yen', 'yes', 'yet', 'yew', 'yin', 'you', 'yow', 'yuk', 'yum', 'yup',
-            'zag', 'zap', 'zed', 'zee', 'zen', 'zig', 'zip', 'zit', 'zoo',
-            // 4-letter words
-            'able', 'acid', 'aged', 'aide', 'ally', 'also', 'area', 'army', 'atom', 'auto', 'away',
-            'baby', 'back', 'bake', 'ball', 'band', 'bank', 'barn', 'base', 'bath', 'beam', 'bean', 'bear', 'beat', 'been', 'bell', 'belt', 'bend', 'bent', 'best', 'bike', 'bill', 'bind', 'bird', 'bite', 'blow', 'blue', 'boat', 'body', 'bold', 'bolt', 'bomb', 'bond', 'bone', 'book', 'boom', 'boot', 'born', 'boss', 'both', 'bowl', 'bulk', 'burn', 'busy',
-            'cafe', 'cage', 'cake', 'call', 'calm', 'came', 'camp', 'card', 'care', 'cart', 'case', 'cash', 'cast', 'cell', 'chat', 'chip', 'city', 'clay', 'clip', 'club', 'coal', 'coat', 'code', 'coin', 'cold', 'come', 'cook', 'cool', 'cope', 'copy', 'cord', 'core', 'corn', 'cost', 'crew', 'crop', 'crow', 'cure', 'cute',
-            'damp', 'dark', 'data', 'date', 'dawn', 'days', 'dead', 'deal', 'dean', 'dear', 'debt', 'deck', 'deep', 'deer', 'deny', 'desk', 'dial', 'dice', 'diet', 'dime', 'dirt', 'dish', 'disk', 'dive', 'dock', 'does', 'doll', 'done', 'door', 'dose', 'down', 'drag', 'draw', 'drew', 'drip', 'drop', 'drug', 'drum', 'dual', 'duck', 'dull', 'dumb', 'dump', 'dune', 'dunk', 'dusk', 'dust', 'duty',
-            'each', 'earl', 'earn', 'ease', 'east', 'easy', 'echo', 'edge', 'edit', 'else', 'emit', 'even', 'ever', 'evil', 'exam', 'exit',
-            'face', 'fact', 'fade', 'fail', 'fair', 'fake', 'fall', 'fame', 'fare', 'farm', 'fast', 'fate', 'fear', 'feat', 'feed', 'feel', 'feet', 'fell', 'felt', 'fern', 'fest', 'file', 'fill', 'film', 'find', 'fine', 'fire', 'firm', 'fish', 'fist', 'five', 'flag', 'flat', 'flee', 'flew', 'flex', 'flip', 'flow', 'foam', 'fold', 'folk', 'fond', 'font', 'food', 'fool', 'foot', 'ford', 'fork', 'form', 'fort', 'foul', 'four', 'fowl', 'free', 'from', 'fuel', 'full', 'fund', 'funk', 'fury', 'fuse',
-            'gain', 'game', 'gang', 'gate', 'gave', 'gaze', 'gear', 'germ', 'gift', 'girl', 'give', 'glad', 'glow', 'glue', 'goal', 'goat', 'goes', 'gold', 'golf', 'gone', 'good', 'gore', 'gown', 'grab', 'grad', 'gray', 'grew', 'grey', 'grid', 'grim', 'grin', 'grip', 'grit', 'grow', 'gulf', 'gull', 'guru', 'gust',
-            'hack', 'hail', 'hair', 'half', 'hall', 'halt', 'hand', 'hang', 'hard', 'harm', 'hash', 'hate', 'haul', 'have', 'hawk', 'haze', 'head', 'heal', 'heap', 'hear', 'heat', 'heck', 'heed', 'heel', 'held', 'helm', 'help', 'hemp', 'herb', 'herd', 'here', 'hero', 'hide', 'high', 'hike', 'hill', 'hilt', 'hind', 'hint', 'hire', 'hold', 'hole', 'holy', 'home', 'hone', 'hood', 'hoof', 'hook', 'hoop', 'hope', 'horn', 'hose', 'host', 'hour', 'howl', 'huge', 'hulk', 'hull', 'hump', 'hung', 'hunt', 'hurt', 'hush', 'husk', 'hymn', 'hype',
-            // ... (more words can be added)
-        ]);
+        // Dictionary will be loaded from shared WebtoysOS dictionary
+        let validWords = new Set();
+        let dictionaryLoaded = false;
+        
+        // Load dictionary from shared source
+        async function loadDictionary() {
+            try {
+                console.log('Loading dictionary from WebtoysOS shared source...');
+                const response = await fetch('https://webtoys.ai/public/toybox-dictionary');
+                const html = await response.text();
+                
+                // Extract dictionary from the HTML (handle HTML-encoded quotes)
+                const match = html.match(/window\.WEBTOYS_DICTIONARY = (\[.*?\]);/s);
+                if (match) {
+                    // Decode HTML entities
+                    const jsonStr = match[1].replace(/&quot;/g, '"');
+                    const words = JSON.parse(jsonStr);
+                    validWords = new Set(words);
+                    dictionaryLoaded = true;
+                    console.log(`Loaded ${validWords.size} words from shared dictionary`);
+                    showMessage(`Dictionary loaded: ${validWords.size.toLocaleString()} words`, 'success');
+                    return true;
+                }
+            } catch (error) {
+                console.error('Failed to load dictionary:', error);
+            }
+            
+            // Fallback to minimal dictionary if loading fails
+            console.log('Using fallback dictionary');
+            validWords = new Set([
+                // Basic fallback words for testing
+                'ace', 'age', 'ago', 'aid', 'aim', 'air', 'all', 'and', 'ant', 'any',
+                'bad', 'bag', 'ban', 'bar', 'bat', 'bay', 'bed', 'bee', 'bet', 'bid',
+                'cab', 'can', 'cap', 'car', 'cat', 'cog', 'cop', 'cot', 'cow', 'cry',
+                'dad', 'dam', 'day', 'den', 'dew', 'did', 'die', 'dig', 'dim', 'din',
+                'ear', 'eat', 'egg', 'ego', 'elf', 'elm', 'end', 'era', 'eve', 'eye',
+                'game', 'word', 'grid', 'play', 'test', 'fun', 'win', 'score', 'time'
+            ]);
+            dictionaryLoaded = true;
+            showMessage('Using basic dictionary (network issue)', 'error');
+            return false;
+        }
 
         // Letter distributions for better game balance
         const letterDistribution = 'AAAAAAAAABBCCDDDDEEEEEEEEEEEEFFGGGHHIIIIIIIIIJKLLLLMMNNNNNNOOOOOOOOPPQRRRRRRSSSSTTTTTTUUUUVVWWXYYZ';
@@ -488,12 +548,7 @@
         }
 
         function updateAuthStatus() {
-            const authStatus = document.getElementById('authStatus');
-            if (currentUser && currentUser.handle) {
-                authStatus.textContent = `Player: ${currentUser.handle}`;
-            } else {
-                authStatus.textContent = 'Playing as Guest';
-            }
+            // Auth status display removed for space optimization
         }
 
         // Generate a new grid
@@ -815,6 +870,13 @@
         // Initialize
         initAuth();
         loadLeaderboard();
+        
+        // Load dictionary after all functions are defined
+        setTimeout(() => {
+            loadDictionary().then(() => {
+                console.log('Word Grid ready with dictionary');
+            });
+        }, 100);
         
         // Refresh leaderboard periodically
         setInterval(loadLeaderboard, 30000);

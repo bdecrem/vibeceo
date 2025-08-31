@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Memory Tiles Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: white;
+        }
+        
+        #auth-prompt {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-top: 100px;
+        }
+        
+        #auth-prompt h2 {
+            margin-bottom: 10px;
+        }
+        
+        #game-container {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button.active {
+            background: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        #game-board {
+            display: grid;
+            gap: 10px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .game-board-easy {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        
+        .game-board-medium {
+            grid-template-columns: repeat(6, 1fr);
+        }
+        
+        .game-board-hard {
+            grid-template-columns: repeat(8, 1fr);
+        }
+        
+        .tile {
+            aspect-ratio: 1;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            transition: all 0.3s ease;
+            position: relative;
+            min-height: 60px;
+        }
+        
+        .tile:hover:not(.flipped):not(.matched) {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .tile.flipped {
+            background: rgba(255, 255, 255, 0.9);
+            transform: rotateY(180deg);
+        }
+        
+        .tile.matched {
+            background: rgba(76, 175, 80, 0.7);
+            animation: matchPulse 0.5s ease;
+            pointer-events: none;
+        }
+        
+        .tile.hide-content {
+            color: transparent;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        @keyframes matchPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        .victory-message {
+            background: rgba(76, 175, 80, 0.9);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            animation: slideIn 0.5s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .high-scores {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+        
+        .high-scores h3 {
+            margin-bottom: 15px;
+        }
+        
+        .score-list {
+            list-style: none;
+        }
+        
+        .score-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .timer {
+            font-size: 20px;
+            font-weight: bold;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="auth-prompt">
+        <h2>🎮 Memory Tiles Game</h2>
+        <p>Please log in via the desktop to play and save your scores!</p>
+    </div>
+    
+    <div id="game-container">
+        <div class="header">
+            <div class="user-info">
+                <span>Playing as: <strong id="username">Guest</strong></span>
+            </div>
+            <div class="timer" id="timer">Time: 0:00</div>
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Moves</span>
+                    <span class="stat-value" id="moves">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Matches</span>
+                    <span class="stat-value" id="matches">0</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button onclick="setDifficulty('easy')" id="easy-btn" class="active">Easy (18 tiles)</button>
+            <button onclick="setDifficulty('medium')" id="medium-btn">Medium (24 tiles)</button>
+            <button onclick="setDifficulty('hard')" id="hard-btn">Hard (32 tiles)</button>
+            <button onclick="startNewGame()">New Game</button>
+        </div>
+        
+        <div id="game-board" class="game-board-easy"></div>
+        
+        <div id="victory-message" class="victory-message" style="display: none;">
+            <h2>🎉 Congratulations!</h2>
+            <p>You completed the game in <span id="final-moves">0</span> moves!</p>
+            <p>Time: <span id="final-time">0:00</span></p>
+            <button onclick="startNewGame()">Play Again</button>
+        </div>
+        
+        <div class="high-scores">
+            <h3>🏆 Your Best Scores</h3>
+            <ul class="score-list" id="score-list">
+                <li class="score-item">No scores yet</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        // Global variables
+        let currentUser = null;
+        let gameState = {
+            tiles: [],
+            flippedTiles: [],
+            matchedPairs: 0,
+            moves: 0,
+            difficulty: 'easy',
+            startTime: null,
+            timerInterval: null,
+            isProcessing: false
+        };
+        
+        const emojis = {
+            easy: ['🎈', '🎨', '🎪', '🎭', '🎯', '🎲', '🎸', '🎺', '🎻'],
+            medium: ['🌟', '🌈', '🌺', '🌸', '🌼', '🌻', '🌹', '🌷', '🌵', '🌳', '🌲', '🌴'],
+            hard: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵', '🐔']
+        };
+        
+        // Authentication functions
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                            localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        }
+                    }
+                    console.log('Loaded auth from storage:', currentUser.handle, 'participantId:', currentUser.participantId);
+                    return true;
+                } catch (e) {
+                    console.error('Failed to parse saved user:', e);
+                }
+            }
+            return false;
+        }
+        
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                const wasLoggedOut = !currentUser;
+                currentUser = event.data.user;
+                
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                
+                updateAuthDisplay();
+                
+                if (currentUser && wasLoggedOut) {
+                    loadHighScores();
+                    startNewGame();
+                } else if (!currentUser) {
+                    clearGameData();
+                }
+            }
+        });
+        
+        function updateAuthDisplay() {
+            if (currentUser) {
+                document.getElementById('username').textContent = currentUser.handle;
+                document.getElementById('auth-prompt').style.display = 'none';
+                document.getElementById('game-container').style.display = 'block';
+            } else {
+                document.getElementById('auth-prompt').style.display = 'block';
+                document.getElementById('game-container').style.display = 'none';
+            }
+        }
+        
+        // Game functions
+        function setDifficulty(difficulty) {
+            gameState.difficulty = difficulty;
+            
+            // Update button states
+            document.querySelectorAll('.controls button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.getElementById(`${difficulty}-btn`).classList.add('active');
+            
+            // Update grid class
+            const board = document.getElementById('game-board');
+            board.className = `game-board-${difficulty}`;
+            
+            startNewGame();
+        }
+        
+        function shuffleArray(array) {
+            const shuffled = [...array];
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+        
+        function startNewGame() {
+            // Clear timer
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            
+            // Reset game state
+            gameState.tiles = [];
+            gameState.flippedTiles = [];
+            gameState.matchedPairs = 0;
+            gameState.moves = 0;
+            gameState.startTime = Date.now();
+            gameState.isProcessing = false;
+            
+            // Update UI
+            document.getElementById('moves').textContent = '0';
+            document.getElementById('matches').textContent = '0';
+            document.getElementById('timer').textContent = 'Time: 0:00';
+            document.getElementById('victory-message').style.display = 'none';
+            
+            // Get emoji set for difficulty
+            const emojiSet = emojis[gameState.difficulty];
+            let tileCount;
+            let pairCount;
+            
+            switch(gameState.difficulty) {
+                case 'easy':
+                    tileCount = 18;
+                    pairCount = 9;
+                    break;
+                case 'medium':
+                    tileCount = 24;
+                    pairCount = 12;
+                    break;
+                case 'hard':
+                    tileCount = 32;
+                    pairCount = 16;
+                    break;
+            }
+            
+            // Create pairs
+            const selectedEmojis = emojiSet.slice(0, pairCount);
+            const pairs = [];
+            selectedEmojis.forEach(emoji => {
+                pairs.push(emoji, emoji);
+            });
+            
+            // Shuffle and assign to tiles
+            gameState.tiles = shuffleArray(pairs);
+            
+            // Create board
+            const board = document.getElementById('game-board');
+            board.innerHTML = '';
+            
+            gameState.tiles.forEach((emoji, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'tile hide-content';
+                tile.textContent = emoji;
+                tile.dataset.index = index;
+                tile.addEventListener('click', () => flipTile(index));
+                board.appendChild(tile);
+            });
+            
+            // Start timer
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+        }
+        
+        function updateTimer() {
+            if (!gameState.startTime) return;
+            
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            document.getElementById('timer').textContent = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function flipTile(index) {
+            if (gameState.isProcessing) return;
+            if (gameState.flippedTiles.includes(index)) return;
+            
+            const tiles = document.querySelectorAll('.tile');
+            const tile = tiles[index];
+            
+            if (tile.classList.contains('matched')) return;
+            if (tile.classList.contains('flipped')) return;
+            
+            // Flip the tile
+            tile.classList.add('flipped');
+            tile.classList.remove('hide-content');
+            gameState.flippedTiles.push(index);
+            
+            // Check for match
+            if (gameState.flippedTiles.length === 2) {
+                gameState.moves++;
+                document.getElementById('moves').textContent = gameState.moves;
+                
+                gameState.isProcessing = true;
+                const [first, second] = gameState.flippedTiles;
+                
+                if (gameState.tiles[first] === gameState.tiles[second]) {
+                    // Match found!
+                    setTimeout(() => {
+                        tiles[first].classList.add('matched');
+                        tiles[second].classList.add('matched');
+                        gameState.matchedPairs++;
+                        document.getElementById('matches').textContent = gameState.matchedPairs;
+                        
+                        gameState.flippedTiles = [];
+                        gameState.isProcessing = false;
+                        
+                        // Check for victory
+                        const totalPairs = gameState.tiles.length / 2;
+                        if (gameState.matchedPairs === totalPairs) {
+                            endGame();
+                        }
+                    }, 500);
+                } else {
+                    // No match, flip back
+                    setTimeout(() => {
+                        tiles[first].classList.remove('flipped');
+                        tiles[first].classList.add('hide-content');
+                        tiles[second].classList.remove('flipped');
+                        tiles[second].classList.add('hide-content');
+                        
+                        gameState.flippedTiles = [];
+                        gameState.isProcessing = false;
+                    }, 1000);
+                }
+            }
+        }
+        
+        function endGame() {
+            clearInterval(gameState.timerInterval);
+            
+            const elapsed = Math.floor((Date.now() - gameState.startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60);
+            const seconds = elapsed % 60;
+            const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            document.getElementById('final-moves').textContent = gameState.moves;
+            document.getElementById('final-time').textContent = timeString;
+            document.getElementById('victory-message').style.display = 'block';
+            
+            // Save score
+            if (currentUser) {
+                saveHighScore({
+                    difficulty: gameState.difficulty,
+                    moves: gameState.moves,
+                    time: elapsed,
+                    timeString: timeString,
+                    date: new Date().toISOString()
+                });
+            }
+        }
+        
+        // Data persistence functions
+        async function saveHighScore(score) {
+            if (!currentUser) return;
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            // Load existing scores
+            const response = await fetch(`/api/zad/load?app_id=memory-tiles&action_type=high_scores&participant_id=${participantId}`);
+            
+            let scores = [];
+            if (response.ok) {
+                const data = await response.json();
+                const userScores = data.filter(d => d.participant_id === participantId);
+                if (userScores.length > 0) {
+                    // Get most recent score data
+                    scores = userScores[0].content_data?.scores || [];
+                }
+            }
+            
+            // Add new score
+            scores.push(score);
+            
+            // Sort by difficulty and then by moves (lower is better)
+            scores.sort((a, b) => {
+                if (a.difficulty !== b.difficulty) {
+                    const diffOrder = { easy: 0, medium: 1, hard: 2 };
+                    return diffOrder[a.difficulty] - diffOrder[b.difficulty];
+                }
+                return a.moves - b.moves;
+            });
+            
+            // Keep top 10 per difficulty
+            const topScores = [];
+            ['easy', 'medium', 'hard'].forEach(diff => {
+                const diffScores = scores.filter(s => s.difficulty === diff).slice(0, 10);
+                topScores.push(...diffScores);
+            });
+            
+            // Save updated scores
+            const saveResponse = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: 'memory-tiles',
+                    participant_id: participantId,
+                    action_type: 'high_scores',
+                    content_data: { scores: topScores }
+                })
+            });
+            
+            if (saveResponse.ok) {
+                console.log('Score saved successfully');
+                displayHighScores(topScores);
+            } else {
+                console.error('Failed to save score:', await saveResponse.text());
+            }
+        }
+        
+        async function loadHighScores() {
+            if (!currentUser) return;
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            const response = await fetch(`/api/zad/load?app_id=memory-tiles&action_type=high_scores&participant_id=${participantId}`);
+            
+            if (response.ok) {
+                const data = await response.json();
+                const userScores = data.filter(d => d.participant_id === participantId);
+                
+                if (userScores.length > 0) {
+                    const scores = userScores[0].content_data?.scores || [];
+                    displayHighScores(scores);
+                }
+            }
+        }
+        
+        function displayHighScores(scores) {
+            const scoreList = document.getElementById('score-list');
+            
+            if (scores.length === 0) {
+                scoreList.innerHTML = '<li class="score-item">No scores yet</li>';
+                return;
+            }
+            
+            scoreList.innerHTML = '';
+            
+            // Group by difficulty
+            ['easy', 'medium', 'hard'].forEach(difficulty => {
+                const diffScores = scores.filter(s => s.difficulty === difficulty);
+                if (diffScores.length > 0) {
+                    const header = document.createElement('li');
+                    header.className = 'score-item';
+                    header.style.fontWeight = 'bold';
+                    header.textContent = difficulty.charAt(0).toUpperCase() + difficulty.slice(1);
+                    scoreList.appendChild(header);
+                    
+                    diffScores.slice(0, 3).forEach((score, index) => {
+                        const item = document.createElement('li');
+                        item.className = 'score-item';
+                        item.innerHTML = `
+                            <span>${index + 1}. ${score.moves} moves</span>
+                            <span>${score.timeString}</span>
+                        `;
+                        scoreList.appendChild(item);
+                    });
+                }
+            });
+        }
+        
+        function clearGameData() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            gameState = {
+                tiles: [],
+                flippedTiles: [],
+                matchedPairs: 0,
+                moves: 0,
+                difficulty: 'easy',
+                startTime: null,
+                timerInterval: null,
+                isProcessing: false
+            };
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadHighScores();
+                startNewGame();
+            } else {
+                updateAuthDisplay();
+            }
+        });
+    </script>
+</body>
+</html>
