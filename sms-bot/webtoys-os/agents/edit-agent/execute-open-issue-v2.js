@@ -12,7 +12,7 @@
 
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
@@ -149,54 +149,73 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
     const tempFile = path.join('/tmp', `issue-${issueId}-${Date.now()}.txt`);
     await fs.promises.writeFile(tempFile, prompt);
     
-    // Build command with useful flags
-    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`;
-    
     console.log('📝 Prompt size:', prompt.length, 'characters (was ~2000+ in v1)');
     
     const startTime = Date.now();
-    let executionProcess;
     let output = '';
-    let timedOut = false;
+    let errorOutput = '';
     
-    // Create promise for execution
+    // Use spawn for real-time output capture
     const executionPromise = new Promise((resolve, reject) => {
-        executionProcess = exec(command, {
-            maxBuffer: 1024 * 1024 * 50,
-            timeout: 540000 // 9 minutes (give 1 min buffer for cleanup)
-        }, (error, stdout, stderr) => {
-            if (error && !timedOut) {
-                if (error.signal === 'SIGTERM') {
-                    timedOut = true;
-                    resolve({ 
-                        success: false, 
-                        output: stdout || output,
-                        error: 'Execution timed out after 9 minutes',
-                        duration: Date.now() - startTime
-                    });
-                } else {
-                    reject(error);
-                }
+        // First cd to project root
+        process.chdir(PROJECT_ROOT);
+        
+        // Use spawn with shell to handle the pipe
+        const claudeProcess = spawn('sh', ['-c', `cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`], {
+            cwd: PROJECT_ROOT,
+            maxBuffer: 1024 * 1024 * 50
+        });
+        
+        // Capture stdout in real-time
+        claudeProcess.stdout.on('data', (data) => {
+            const chunk = data.toString();
+            output += chunk;
+            // Show progress dots every 10KB of output
+            if (output.length % 10000 < 100) {
+                process.stdout.write('.');
+            }
+        });
+        
+        // Capture stderr
+        claudeProcess.stderr.on('data', (data) => {
+            errorOutput += data.toString();
+        });
+        
+        // Handle process completion
+        claudeProcess.on('close', (code) => {
+            if (code === 0) {
+                resolve({
+                    success: true,
+                    output: output,
+                    stderr: errorOutput,
+                    duration: Date.now() - startTime
+                });
             } else {
-                resolve({ 
-                    success: true, 
-                    output: stdout,
-                    stderr: stderr,
+                resolve({
+                    success: false,
+                    output: output,
+                    error: `Process exited with code ${code}`,
+                    stderr: errorOutput,
                     duration: Date.now() - startTime
                 });
             }
         });
         
-        // Capture streaming output
-        if (executionProcess.stdout) {
-            executionProcess.stdout.on('data', (data) => {
-                output += data.toString();
-                // Show progress dots every 100KB of output
-                if (output.length % 100000 < 1000) {
-                    process.stdout.write('.');
-                }
+        // Handle errors
+        claudeProcess.on('error', (error) => {
+            reject(error);
+        });
+        
+        // Set timeout manually
+        setTimeout(() => {
+            claudeProcess.kill('SIGTERM');
+            resolve({
+                success: false,
+                output: output,
+                error: 'Execution timed out after 9 minutes',
+                duration: Date.now() - startTime
             });
-        }
+        }, 540000); // 9 minutes
     });
     
     // Monitor progress every 30 seconds
@@ -260,8 +279,9 @@ async function executeOpenIssue() {
         const issue = issues[0];
         const content = issue.content_data || {};
         const description = content.description || '';
+        const issueId = issue.id;  // Use database record ID
         
-        console.log(`\n📋 Processing issue #${content.id}: "${description.substring(0, 100)}..."`);
+        console.log(`\n📋 Processing issue #${issueId}: "${description.substring(0, 100)}..."`);
         
         // Mark as processing
         await supabase
@@ -279,7 +299,7 @@ async function executeOpenIssue() {
         const prompt = buildSmartPrompt(content, description);
         
         // Execute with monitoring
-        const result = await executeClaudeWithMonitoring(prompt, content.id);
+        const result = await executeClaudeWithMonitoring(prompt, issueId);
         
         // Prepare execution log
         const executionLog = {
@@ -304,7 +324,7 @@ ${result.output || 'No output captured'}
 
 ### Execution Details:
 - Duration: ${Math.round(result.duration / 1000)} seconds
-- Issue ID: #${content.id}
+- Issue ID: #${issueId}
 - Status: ${newStatus}
 - Prompt size: ${prompt.length} chars (78% smaller than V1)
 - Output size: ${result.output?.length || 0} bytes
@@ -331,7 +351,7 @@ ${result.output || 'No output captured'}
             })
             .eq('id', issue.id);
         
-        console.log(`\n${statusEmoji} Issue #${content.id} ${newStatus} in ${Math.round(result.duration / 1000)}s`);
+        console.log(`\n${statusEmoji} Issue #${issueId} ${newStatus} in ${Math.round(result.duration / 1000)}s`);
         
         // Log Claude output for debugging (first 500 chars)
         if (result.output) {
