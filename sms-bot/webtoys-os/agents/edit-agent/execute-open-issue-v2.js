@@ -282,7 +282,6 @@ LAYOUT:
 - Floating save indicator (appears on changes)
 - Simple word count at bottom
 - Login prompts only when user tries to save`);
-    }
     
     // Add contexts if any
     if (contexts.length > 0) {
