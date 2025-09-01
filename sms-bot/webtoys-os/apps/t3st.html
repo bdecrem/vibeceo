@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>T3xt Editor</title>
+    <title>T3st Editor</title>
     <style>
         * {
             margin: 0;
@@ -534,7 +534,7 @@
 </head>
 <body>
     <div class="header">
-        <div class="logo">T3XT</div>
+        <div class="logo">T3ST</div>
         <div class="menu-bar">
             <div class="dropdown menu-item" onclick="toggleDropdown(this)">
                 File
@@ -623,7 +623,7 @@
     <!-- Leaderboard Modal -->
     <div class="leaderboard-modal" id="leaderboardModal">
         <div class="leaderboard-container">
-            <div class="leaderboard-title">🏆 T3XT Leaderboard</div>
+            <div class="leaderboard-title">🏆 T3ST Leaderboard</div>
             
             <div class="auth-status" id="authStatus"></div>
             
@@ -657,7 +657,7 @@
         const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
         
         // ZAD Configuration for leaderboard
-        window.APP_ID = 't3xt-leaderboard';
+        window.APP_ID = 't3st-leaderboard';
         
         let currentFileName = 'Untitled';
         let isDirty = false;
@@ -674,7 +674,8 @@
         const lineNumbers = document.getElementById('lineNumbers');
         const fileInput = document.getElementById('fileInput');
         
-        // Initialize
+        // Initialize with empty editor
+        editor.value = '';
         updateLineNumbers();
         updateStatus();
         saveToHistory();
@@ -834,12 +835,12 @@
         
         async function openSavedDocument() {
             if (!currentUser) {
-                alert('Please log in to access saved documents');
+                alert('Please log in through the desktop to access saved documents');
                 return;
             }
             
             if (!window.supabase) {
-                alert('Loading database connection, please try again...');
+                setTimeout(() => openSavedDocument(), 1000);
                 return;
             }
             
@@ -852,53 +853,58 @@
             documentList.innerHTML = '<div style="color: #808080;">Loading documents...</div>';
             
             try {
-                // Query for documents saved by this user
-                const { data, error } = await window.supabase
-                    .from('wtaf_content')
-                    .select('id, app_slug, html_content, created_at, updated_at')
-                    .eq('user_slug', currentUser.handle.toLowerCase())
-                    .like('html_content', '%T3XT_DOCUMENT%')
-                    .order('updated_at', { ascending: false });
+                // Use ZAD API to load documents
+                const response = await fetch(`/api/zad/load?app_id=t3st-documents&participant_id=${currentUser.participantId}&action_type=document`);
                 
-                if (error) {
-                    console.error('Error loading documents:', error);
+                if (!response.ok) {
                     documentList.innerHTML = '<div style="color: #ff6b6b;">Error loading documents</div>';
                     return;
                 }
                 
+                const data = await response.json();
+                
                 if (!data || data.length === 0) {
-                    documentList.innerHTML = '<div style="color: #808080;">No saved documents found</div>';
+                    documentList.innerHTML = '<div style="color: #808080;">No saved documents found. Create and save your first document!</div>';
                     return;
                 }
                 
+                // Filter for current user's documents and deduplicate
+                const userDocs = data.filter(d => d.participant_id === currentUser.participantId);
+                const uniqueDocs = {};
+                
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            updatedAt: docTime
+                        };
+                    }
+                });
+                
+                const docs = Object.values(uniqueDocs).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                
                 // Display documents
                 documentList.innerHTML = '';
-                data.forEach(doc => {
-                    // Extract document metadata from HTML content
-                    const match = doc.html_content.match(/<!-- T3XT_DOCUMENT: (.*?) -->/);
-                    let docData = { title: doc.app_slug, content: '' };
-                    
-                    if (match) {
-                        try {
-                            docData = JSON.parse(match[1]);
-                        } catch (e) {
-                            console.error('Error parsing document data:', e);
-                        }
-                    }
-                    
+                docs.forEach(doc => {
                     const docItem = document.createElement('div');
                     docItem.style.cssText = 'padding: 12px; background: #3e3e42; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;';
                     docItem.onmouseover = () => docItem.style.background = '#4e4e52';
                     docItem.onmouseout = () => docItem.style.background = '#3e3e42';
                     
-                    const updated = new Date(doc.updated_at).toLocaleString();
+                    const updated = doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : 'Unknown';
+                    const preview = doc.content ? doc.content.substring(0, 100) : '';
                     docItem.innerHTML = `
-                        <div style="color: #d4d4d4; font-size: 14px; font-weight: bold;">${docData.title || doc.app_slug}</div>
+                        <div style="color: #d4d4d4; font-size: 14px; font-weight: bold;">${doc.title}</div>
                         <div style="color: #808080; font-size: 12px; margin-top: 4px;">Last modified: ${updated}</div>
-                        <div style="color: #808080; font-size: 12px;">${docData.content ? docData.content.substring(0, 100) + '...' : 'Empty document'}</div>
+                        <div style="color: #808080; font-size: 12px;">${preview}${preview.length >= 100 ? '...' : ''}</div>
                     `;
                     
-                    docItem.onclick = () => loadDocument(doc.id, docData);
+                    docItem.onclick = () => loadDocument(doc.id, doc);
                     documentList.appendChild(docItem);
                 });
             } catch (e) {
@@ -927,12 +933,7 @@
         
         async function saveToSupabase() {
             if (!currentUser) {
-                alert('Please log in to save documents to the cloud');
-                return;
-            }
-            
-            if (!window.supabase) {
-                alert('Loading database connection, please try again...');
+                alert('Please log in through the desktop to save documents');
                 return;
             }
             
@@ -942,68 +943,37 @@
             currentFileName = fileName;
             document.getElementById('fileName').textContent = currentFileName;
             
+            const docId = currentDocumentId || 'doc_' + Date.now();
             const documentData = {
+                id: docId,
                 title: currentFileName,
                 content: editor.value,
-                savedAt: new Date().toISOString()
+                author: currentUser.handle.toUpperCase(),
+                updatedAt: new Date().toISOString()
             };
             
-            // Create HTML wrapper for the document
-            const htmlContent = `<!DOCTYPE html>
-<html>
-<head>
-    <title>${currentFileName} - T3XT Document</title>
-    <meta charset="UTF-8">
-</head>
-<body>
-    <!-- T3XT_DOCUMENT: ${JSON.stringify(documentData).replace(/-->/g, '-- >')} -->
-    <h1>${currentFileName}</h1>
-    <pre>${editor.value.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-</body>
-</html>`;
-            
             try {
-                const appSlug = 't3xt-doc-' + Date.now();
+                // Save using ZAD API
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 't3st-documents',
+                        participant_id: currentUser.participantId,
+                        action_type: 'document',
+                        content_data: documentData
+                    })
+                });
                 
-                if (currentDocumentId) {
-                    // Update existing document
-                    const { error } = await window.supabase
-                        .from('wtaf_content')
-                        .update({ 
-                            html_content: htmlContent,
-                            updated_at: new Date().toISOString()
-                        })
-                        .eq('id', currentDocumentId);
-                    
-                    if (error) {
-                        console.error('Error updating document:', error);
-                        alert('Failed to save document');
-                    } else {
-                        alert('Document saved successfully!');
-                        isDirty = false;
-                    }
+                if (!response.ok) {
+                    console.error('Save failed:', await response.text());
+                    alert('Failed to save document');
                 } else {
-                    // Create new document
-                    const { data, error } = await window.supabase
-                        .from('wtaf_content')
-                        .insert({ 
-                            user_slug: currentUser.handle.toLowerCase(),
-                            app_slug: appSlug,
-                            html_content: htmlContent,
-                            is_public: false
-                        })
-                        .select();
-                    
-                    if (error) {
-                        console.error('Error saving document:', error);
-                        alert('Failed to save document');
-                    } else {
-                        currentDocumentId = data[0].id;
-                        alert('Document saved successfully!');
-                        isDirty = false;
-                        // Update leaderboard stats
-                        await updateLeaderboardStats();
-                    }
+                    currentDocumentId = docId;
+                    alert('Document saved successfully!');
+                    isDirty = false;
+                    // Update leaderboard stats
+                    await updateLeaderboardStats();
                 }
             } catch (e) {
                 console.error('Error:', e);
@@ -1391,6 +1361,11 @@
         
         // Initialize on page load
         window.addEventListener('DOMContentLoaded', function() {
+            // Clear editor on fresh load
+            editor.value = '';
+            updateLineNumbers();
+            updateStatus();
+            
             loadAuthFromStorage();
             // Request auth state from parent (if in iframe)
             if (window.parent !== window) {
