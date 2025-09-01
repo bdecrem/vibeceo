@@ -1431,8 +1431,16 @@
             ]
         };
         
-        // Load dictionary from shared source
+        // Load dictionary from shared source - DISABLED for better gameplay
         async function loadDictionary() {
+            // DISABLED: Dictionary contains obscure words like ORT, ILK, etc. that make the game frustrating
+            // We only use our curated list of common, fun words
+            console.log('Dictionary loading disabled - using curated common words only');
+            dictionaryLoaded = false;
+            updateStatus('Ready with fun words!');
+            return false;
+            
+            /* Original dictionary code - kept for reference but NEVER USED
             try {
                 console.log('Loading dictionary for Anagram Rush...');
                 const response = await fetch('https://webtoys.ai/public/toybox-dictionary');
@@ -1463,6 +1471,7 @@
             dictionaryLoaded = false;
             updateStatus('Using basic word list');
             return false;
+            */
         }
         
         // Generate a hint for a word (always shows a letter position)
