@@ -1,0 +1,321 @@
+#!/usr/bin/env node
+
+/**
+ * Edit Agent V2 - Improved execution with minimal prompts and better monitoring
+ * 
+ * Key improvements:
+ * - 90% less prompt boilerplate
+ * - Smart context injection only when needed
+ * - Progress monitoring and graceful timeouts
+ * - Better error recovery
+ */
+
+import dotenv from 'dotenv';
+import { createClient } from '@supabase/supabase-js';
+import { exec } from 'child_process';
+import { promisify } from 'util';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const execAsync = promisify(exec);
+
+// Load environment variables
+dotenv.config({ path: path.join(__dirname, '.env') });
+dotenv.config({ path: path.join(__dirname, '../../../.env.local') });
+
+// Verify environment
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    console.error('❌ Missing required environment variables');
+    process.exit(1);
+}
+
+const supabase = createClient(
+    process.env.SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_KEY
+);
+
+const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-issue-tracker-v3';
+const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os';
+const CLAUDE_PATH = '/Users/bartdecrem/.local/bin/claude';
+
+// Minimal context templates - only what's absolutely necessary
+const CONTEXT_TEMPLATES = {
+    auth_required: `
+Note: This app needs authentication. Apps receive auth via postMessage from the desktop.
+See AUTH-DOCUMENTATION.md for details. Do NOT create login forms.`,
+    
+    new_app: `
+After creating the app, deploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
+    
+    modify_app: `
+After modifying, redeploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
+    
+    data_storage: `
+Use ZAD API for data: /api/zad/save and /api/zad/load (NOT direct Supabase)`
+};
+
+/**
+ * Build a minimal, focused prompt based on issue analysis
+ */
+function buildSmartPrompt(issue, description) {
+    let prompt = description;
+    const lower = description.toLowerCase();
+    
+    // Add comments if they provide useful feedback
+    const comments = [...(issue.comments || []), ...(issue.admin_comments || [])];
+    if (comments.length > 0) {
+        const relevantComments = comments.filter(c => 
+            c.text && c.text.length > 10 && !c.text.includes('Processing')
+        );
+        
+        if (relevantComments.length > 0) {
+            prompt += '\n\nUser feedback:\n';
+            relevantComments.slice(-3).forEach(c => { // Only last 3 comments
+                prompt += `- ${c.text}\n`;
+            });
+        }
+    }
+    
+    // Add minimal context only when needed
+    const contexts = [];
+    
+    // Check if authentication is needed
+    if (lower.includes('login') || lower.includes('user') || lower.includes('auth') || 
+        lower.includes('save') || lower.includes('personal')) {
+        contexts.push(CONTEXT_TEMPLATES.auth_required);
+    }
+    
+    // Check if it's a new app
+    if (lower.includes('create') || lower.includes('build') || lower.includes('make')) {
+        contexts.push(CONTEXT_TEMPLATES.new_app);
+    }
+    
+    // Check if it's modifying existing
+    if (lower.includes('update') || lower.includes('fix') || lower.includes('modify') || 
+        lower.includes('change') || lower.includes('add')) {
+        contexts.push(CONTEXT_TEMPLATES.modify_app);
+    }
+    
+    // Check if data storage is needed
+    if (lower.includes('save') || lower.includes('store') || lower.includes('data') || 
+        lower.includes('database')) {
+        contexts.push(CONTEXT_TEMPLATES.data_storage);
+    }
+    
+    // Add contexts if any
+    if (contexts.length > 0) {
+        prompt += '\n\n---\n' + contexts.join('\n');
+    }
+    
+    // Add working directory context (always needed)
+    prompt += `\n\nYou're in: ${PROJECT_ROOT}`;
+    
+    return prompt;
+}
+
+/**
+ * Execute Claude with better monitoring and timeout handling
+ */
+async function executeClaudeWithMonitoring(prompt, issueId) {
+    console.log('🚀 Starting Claude execution for issue #' + issueId);
+    
+    // Write prompt to temp file
+    const tempFile = path.join('/tmp', `issue-${issueId}-${Date.now()}.txt`);
+    await fs.promises.writeFile(tempFile, prompt);
+    
+    // Build command with useful flags
+    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`;
+    
+    console.log('📝 Prompt size:', prompt.length, 'characters (was ~2000+ in v1)');
+    
+    const startTime = Date.now();
+    let executionProcess;
+    let output = '';
+    let timedOut = false;
+    
+    // Create promise for execution
+    const executionPromise = new Promise((resolve, reject) => {
+        executionProcess = exec(command, {
+            maxBuffer: 1024 * 1024 * 50,
+            timeout: 540000 // 9 minutes (give 1 min buffer for cleanup)
+        }, (error, stdout, stderr) => {
+            if (error && !timedOut) {
+                if (error.signal === 'SIGTERM') {
+                    timedOut = true;
+                    resolve({ 
+                        success: false, 
+                        output: stdout || output,
+                        error: 'Execution timed out after 9 minutes',
+                        duration: Date.now() - startTime
+                    });
+                } else {
+                    reject(error);
+                }
+            } else {
+                resolve({ 
+                    success: true, 
+                    output: stdout,
+                    stderr: stderr,
+                    duration: Date.now() - startTime
+                });
+            }
+        });
+        
+        // Capture streaming output
+        if (executionProcess.stdout) {
+            executionProcess.stdout.on('data', (data) => {
+                output += data.toString();
+                // Show progress dots every 100KB of output
+                if (output.length % 100000 < 1000) {
+                    process.stdout.write('.');
+                }
+            });
+        }
+    });
+    
+    // Monitor progress every 30 seconds
+    const progressInterval = setInterval(() => {
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        console.log(`\n⏱️  ${elapsed}s elapsed, output size: ${output.length} bytes`);
+        
+        // If we have substantial output, it's probably working
+        if (output.length > 1000) {
+            console.log('✅ Claude is actively working...');
+        } else if (elapsed > 120) {
+            console.log('⚠️  Low output after 2 minutes - task might be stuck');
+        }
+    }, 30000);
+    
+    try {
+        const result = await executionPromise;
+        clearInterval(progressInterval);
+        
+        // Clean up temp file
+        try {
+            await fs.promises.unlink(tempFile);
+        } catch (e) {
+            // Ignore cleanup errors
+        }
+        
+        return result;
+    } catch (error) {
+        clearInterval(progressInterval);
+        console.error('❌ Execution error:', error.message);
+        throw error;
+    }
+}
+
+/**
+ * Main execution function
+ */
+async function executeOpenIssue() {
+    try {
+        console.log('🔍 Checking for open issues...');
+        
+        // Get open issues
+        const { data: issues, error } = await supabase
+            .from('webtoys_issue_tracker_data')
+            .select('*')
+            .eq('app_id', ISSUE_TRACKER_APP_ID)
+            .in('content_data->>status', ['open', 'new'])
+            .order('created_at', { ascending: true })
+            .limit(1);
+        
+        if (error) {
+            console.error('❌ Database error:', error);
+            return;
+        }
+        
+        if (!issues || issues.length === 0) {
+            console.log('✅ No open issues to process');
+            return;
+        }
+        
+        const issue = issues[0];
+        const content = issue.content_data || {};
+        const description = content.description || '';
+        
+        console.log(`\n📋 Processing issue #${content.id}: "${description.substring(0, 100)}..."`);
+        
+        // Mark as processing
+        await supabase
+            .from('webtoys_issue_tracker_data')
+            .update({
+                content_data: {
+                    ...content,
+                    status: 'processing',
+                    processing_started: new Date().toISOString()
+                }
+            })
+            .eq('id', issue.id);
+        
+        // Build smart, minimal prompt
+        const prompt = buildSmartPrompt(content, description);
+        
+        // Execute with monitoring
+        const result = await executeClaudeWithMonitoring(prompt, content.id);
+        
+        // Prepare execution log
+        const executionLog = {
+            timestamp: new Date().toISOString(),
+            duration_seconds: Math.round(result.duration / 1000),
+            success: result.success,
+            output_size: result.output?.length || 0,
+            prompt_size: prompt.length,
+            version: 'v2'
+        };
+        
+        // Update issue with result
+        const newStatus = result.success ? 'completed' : 'failed';
+        const statusEmoji = result.success ? '✅' : '❌';
+        
+        await supabase
+            .from('webtoys_issue_tracker_data')
+            .update({
+                content_data: {
+                    ...content,
+                    status: newStatus,
+                    processing_completed: new Date().toISOString(),
+                    execution_log: executionLog,
+                    admin_comments: [
+                        ...(content.admin_comments || []),
+                        {
+                            text: `${statusEmoji} Edit Agent V2 Execution Log\n\n${result.success ? 'Task completed successfully' : 'Task failed: ' + (result.error || 'Unknown error')}\n\nDuration: ${Math.round(result.duration / 1000)}s\nOutput size: ${result.output?.length || 0} bytes\n\n${result.success ? 'Check the /apps directory for results.' : 'Review the error and try again.'}`,
+                            author: 'Edit Agent V2',
+                            timestamp: new Date().toISOString()
+                        }
+                    ]
+                }
+            })
+            .eq('id', issue.id);
+        
+        console.log(`\n${statusEmoji} Issue #${content.id} ${newStatus} in ${Math.round(result.duration / 1000)}s`);
+        
+        // Log Claude output for debugging (first 500 chars)
+        if (result.output) {
+            console.log('\n📄 Claude output preview:');
+            console.log(result.output.substring(0, 500) + '...');
+        }
+        
+    } catch (error) {
+        console.error('❌ Fatal error:', error);
+        process.exit(1);
+    }
+}
+
+// Run if executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+    executeOpenIssue()
+        .then(() => {
+            console.log('\n✅ Edit Agent V2 execution complete');
+            process.exit(0);
+        })
+        .catch(error => {
+            console.error('❌ Edit Agent V2 failed:', error);
+            process.exit(1);
+        });
+}
+
+export { executeOpenIssue, buildSmartPrompt };
