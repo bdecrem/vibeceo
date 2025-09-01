@@ -177,6 +177,16 @@ Multiple users can access same data via common app identifier.`);
 - Display scores as: [Rank] [Handle] [Score]`);
     }
     
+    // Modern design principles (ALWAYS include)
+    contexts.push(`DESIGN PRINCIPLES:
+- Think like a 2025 designer, not a 1980s engineer
+- Clean minimal UI - content is king
+- NO redundant user info (desktop shows it)
+- NO export/import buttons
+- Use subtle gradients for accents only
+- Floating save buttons that appear on change
+- Modern fonts and smooth animations`);
+    
     // Deployment reminder (always include but keep minimal)
     contexts.push(`Deploy: node scripts/auto-deploy-app.js apps/[filename].html`);
     

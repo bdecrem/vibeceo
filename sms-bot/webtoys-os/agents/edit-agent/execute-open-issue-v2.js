@@ -255,15 +255,33 @@ async function loadLeaderboard() {
         contexts.push(`For drawing apps: Use canvas element, include color picker, brush size, and clear/save functions`);
     }
     
-    // CRITICAL: Ensure complete implementations
-    if (contexts.length > 0) {
-        contexts.push(`
-IMPORTANT: Create a COMPLETE, working implementation:
-- All features must be fully functional
-- Include proper error handling
-- Test all edge cases
-- Make it visually polished with modern CSS
-- Ensure mobile responsiveness`);
+    // CRITICAL: Modern design principles
+    contexts.push(`
+🎨 DESIGN REQUIREMENTS - Think like a 2025 designer, NOT a 1980s engineer:
+
+DO:
+- Clean, minimal interfaces with focus on content
+- Subtle animations and transitions (0.2s ease)
+- Modern fonts (Inter, DM Sans, system fonts)
+- Soft shadows and rounded corners (8-12px)
+- Floating action buttons that appear when needed
+- Glassmorphism and backdrop-filter effects
+- Gradient accents (not overwhelming backgrounds)
+
+DON'T:
+- Show user info (it's on the desktop already!)
+- Add Export/Import/Print buttons (this isn't 1995)
+- Create complex toolbars with 20 buttons
+- Leave empty space or split screens with no content
+- Use harsh borders or sharp corners
+- Add unnecessary status bars or panels
+
+LAYOUT:
+- Sidebar for navigation (if needed)
+- Main content area takes priority
+- Floating save indicator (appears on changes)
+- Simple word count at bottom
+- Login prompts only when user tries to save`);
     }
     
     // Add contexts if any
