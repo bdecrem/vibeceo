@@ -627,6 +627,24 @@ When user creates an app via SMS, automatically:
 { "headless": true, "defaultViewport": { "width": 390, "height": 844 } }
 ```
 
+## Supabase MCP Server (Available in Claude Code)
+
+When using Claude Code, the Supabase MCP server provides direct database access through tools like:
+- `mcp__supabase__list_tables` - View database schema
+- `mcp__supabase__execute_sql` - Query data (read-only by default)
+- `mcp__supabase__apply_migration` - Apply schema changes
+- `mcp__supabase__search_docs` - Search Supabase documentation
+- `mcp__supabase__generate_typescript_types` - Generate TypeScript types from schema
+- `mcp__supabase__get_logs` - Fetch service logs for debugging
+- `mcp__supabase__get_advisors` - Check security/performance recommendations
+
+**Note**: These tools are for development/debugging. Production code must still follow the architecture rules:
+- SMS bot code uses storage-manager.ts only
+- WebtoysOS updates use safe-update-wrapper.js
+- ZAD apps use /api/zad endpoints only
+
+The MCP server is automatically available in Claude Code - no configuration needed in the project.
+
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->
 <!-- DO NOT EDIT MANUALLY -->
