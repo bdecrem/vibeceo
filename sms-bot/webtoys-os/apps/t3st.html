@@ -581,6 +581,15 @@
         <button class="tool-btn" onclick="undo()">↶ Undo</button>
         <button class="tool-btn" onclick="redo()">↷ Redo</button>
         <div class="separator"></div>
+        <button class="tool-btn" onclick="formatText('bold')" title="Bold">𝐁</button>
+        <button class="tool-btn" onclick="formatText('italic')" title="Italic">𝐼</button>
+        <button class="tool-btn" onclick="insertEmoji('✨')" title="Sparkles">✨</button>
+        <button class="tool-btn" onclick="insertEmoji('🎉')" title="Party">🎉</button>
+        <button class="tool-btn" onclick="insertEmoji('💡')" title="Idea">💡</button>
+        <button class="tool-btn" onclick="insertEmoji('🔥')" title="Fire">🔥</button>
+        <button class="tool-btn" onclick="insertEmoji('❤️')" title="Heart">❤️</button>
+        <button class="tool-btn" onclick="insertEmoji('🚀')" title="Rocket">🚀</button>
+        <div class="separator"></div>
         <button class="tool-btn" onclick="cut()">✂️ Cut</button>
         <button class="tool-btn" onclick="copy()">📋 Copy</button>
         <button class="tool-btn" onclick="paste()">📌 Paste</button>
@@ -641,12 +650,15 @@
     </div>
     
     <!-- Document Browser Modal -->
-    <div id="documentBrowser" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; display: flex; align-items: center; justify-content: center;">
-        <div style="background: #252526; border: 1px solid #3e3e42; border-radius: 8px; padding: 20px; width: 600px; max-height: 80vh; overflow-y: auto;">
-            <h2 style="color: #00ff88; margin-bottom: 16px;">Open Document</h2>
-            <div id="documentList" style="margin-bottom: 16px;"></div>
-            <div style="display: flex; gap: 8px; justify-content: flex-end;">
-                <button onclick="closeBrowser()" style="padding: 8px 16px; background: #3e3e42; border: 1px solid #464647; color: #d4d4d4; border-radius: 4px; cursor: pointer;">Cancel</button>
+    <div id="documentBrowser" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.9); z-index: 2000; align-items: center; justify-content: center;">
+        <div style="background: linear-gradient(135deg, #2d2d30 0%, #252526 100%); border: 1px solid #00ff88; border-radius: 12px; padding: 24px; width: 90%; max-width: 700px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,255,136,0.2);">
+            <h2 style="color: #00ff88; margin-bottom: 20px; font-size: 24px; text-shadow: 0 0 10px rgba(0,255,136,0.5); display: flex; align-items: center; gap: 12px;">
+                <span>📂</span>
+                <span>Your Saved Documents</span>
+            </h2>
+            <div id="documentList" style="flex: 1; overflow-y: auto; margin-bottom: 20px; padding-right: 8px;"></div>
+            <div style="display: flex; gap: 12px; justify-content: flex-end; padding-top: 16px; border-top: 1px solid #3e3e42;">
+                <button onclick="closeBrowser()" style="padding: 10px 20px; background: #3e3e42; border: none; color: #d4d4d4; border-radius: 6px; cursor: pointer; font-size: 14px; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(0,0,0,0.2);" onmouseover="this.style.background='#4e4e52'" onmouseout="this.style.background='#3e3e42'">Cancel</button>
             </div>
         </div>
     </div>
@@ -888,20 +900,39 @@
                 
                 const docs = Object.values(uniqueDocs).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
                 
-                // Display documents
+                // Display documents with improved UI
                 documentList.innerHTML = '';
                 docs.forEach(doc => {
                     const docItem = document.createElement('div');
-                    docItem.style.cssText = 'padding: 12px; background: #3e3e42; border-radius: 4px; margin-bottom: 8px; cursor: pointer; transition: background 0.2s;';
-                    docItem.onmouseover = () => docItem.style.background = '#4e4e52';
-                    docItem.onmouseout = () => docItem.style.background = '#3e3e42';
+                    docItem.style.cssText = 'padding: 16px; background: linear-gradient(135deg, #1e1e1e 0%, #252526 100%); border: 1px solid #3e3e42; border-radius: 8px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s ease; position: relative; overflow: hidden;';
+                    docItem.onmouseover = () => {
+                        docItem.style.background = 'linear-gradient(135deg, #2d2d30 0%, #3e3e42 100%)';
+                        docItem.style.borderColor = '#00ff88';
+                        docItem.style.transform = 'translateX(4px)';
+                        docItem.style.boxShadow = '0 4px 16px rgba(0,255,136,0.2)';
+                    };
+                    docItem.onmouseout = () => {
+                        docItem.style.background = 'linear-gradient(135deg, #1e1e1e 0%, #252526 100%)';
+                        docItem.style.borderColor = '#3e3e42';
+                        docItem.style.transform = 'translateX(0)';
+                        docItem.style.boxShadow = 'none';
+                    };
                     
                     const updated = doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : 'Unknown';
-                    const preview = doc.content ? doc.content.substring(0, 100) : '';
+                    const wordCount = doc.content ? doc.content.split(/\s+/).filter(word => word.length > 0).length : 0;
+                    const preview = doc.content ? doc.content.substring(0, 80) : '';
                     docItem.innerHTML = `
-                        <div style="color: #d4d4d4; font-size: 14px; font-weight: bold;">${doc.title}</div>
-                        <div style="color: #808080; font-size: 12px; margin-top: 4px;">Last modified: ${updated}</div>
-                        <div style="color: #808080; font-size: 12px;">${preview}${preview.length >= 100 ? '...' : ''}</div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                            <span style="font-size: 20px;">📝</span>
+                            <div style="color: #d4d4d4; font-size: 16px; font-weight: 500;">${doc.title}</div>
+                        </div>
+                        <div style="color: #808080; font-size: 13px; display: flex; align-items: center; gap: 16px; margin-bottom: 8px;">
+                            <span>📅 ${new Date(doc.updatedAt).toLocaleDateString()}</span>
+                            <span>🕐 ${new Date(doc.updatedAt).toLocaleTimeString()}</span>
+                            <span>📊 ${wordCount} words</span>
+                        </div>
+                        <div style="color: #a0a0a0; font-size: 12px; font-style: italic; padding: 8px; background: rgba(0,0,0,0.2); border-radius: 4px; border-left: 2px solid #00ff88;">${preview}${preview.length >= 80 ? '...' : ''}</div>
+                        <div style="position: absolute; top: 50%; right: 16px; transform: translateY(-50%); color: #00ff88; opacity: 0.3; font-size: 24px; transition: opacity 0.3s;">→</div>
                     `;
                     
                     docItem.onclick = () => loadDocument(doc.id, doc);
@@ -929,6 +960,54 @@
         
         function closeBrowser() {
             document.getElementById('documentBrowser').style.display = 'none';
+        }
+        
+        // Text formatting functions
+        function formatText(format) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const selectedText = editor.value.substring(start, end);
+            
+            if (!selectedText) {
+                alert('Please select some text first');
+                return;
+            }
+            
+            let formattedText = '';
+            if (format === 'bold') {
+                // Convert to bold unicode characters
+                formattedText = selectedText.replace(/[a-z]/g, char => 
+                    String.fromCharCode(char.charCodeAt(0) - 97 + 0x1D41A)
+                ).replace(/[A-Z]/g, char => 
+                    String.fromCharCode(char.charCodeAt(0) - 65 + 0x1D400)
+                );
+            } else if (format === 'italic') {
+                // Convert to italic unicode characters
+                formattedText = selectedText.replace(/[a-z]/g, char => 
+                    String.fromCharCode(char.charCodeAt(0) - 97 + 0x1D44E)
+                ).replace(/[A-Z]/g, char => 
+                    String.fromCharCode(char.charCodeAt(0) - 65 + 0x1D434)
+                );
+            }
+            
+            const newText = editor.value.substring(0, start) + formattedText + editor.value.substring(end);
+            editor.value = newText;
+            editor.setSelectionRange(start, start + formattedText.length);
+            editor.focus();
+            updateStatus();
+            saveToHistory();
+        }
+        
+        // Insert emoji at cursor position
+        function insertEmoji(emoji) {
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const newText = editor.value.substring(0, start) + emoji + editor.value.substring(end);
+            editor.value = newText;
+            editor.setSelectionRange(start + emoji.length, start + emoji.length);
+            editor.focus();
+            updateStatus();
+            saveToHistory();
         }
         
         async function saveToSupabase() {
