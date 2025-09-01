@@ -63,6 +63,30 @@ function buildSmartPrompt(issue, description) {
     let prompt = description;
     const lower = description.toLowerCase();
     
+    // Check if this is a reopened issue needing conversation
+    if (issue.trigger_conversation === true || issue.status === 'admin_discussion') {
+        // This is a reopened issue - handle differently
+        const comments = [...(issue.comments || []), ...(issue.admin_comments || [])];
+        const lastComment = comments[comments.length - 1];
+        
+        if (lastComment && lastComment.text === 'Issue reopened for further discussion') {
+            // Reopened WITHOUT additional comment - ask for clarification
+            prompt = `This issue was reopened but no specific feedback was provided.\n\n`;
+            prompt += `Original issue: ${description}\n\n`;
+            prompt += `Please create a simple HTML comment block explaining:\n`;
+            prompt += `1. Why this might have been reopened\n`;
+            prompt += `2. What clarification is needed to proceed\n`;
+            prompt += `3. Suggest next steps\n\n`;
+            prompt += `Output format: Just an HTML comment block that can be added to the issue.`;
+            return prompt; // Return early - no need for other context
+        } else if (lastComment) {
+            // Reopened WITH comment - focus on addressing it
+            prompt = `Issue reopened with feedback: "${lastComment.text}"\n\n`;
+            prompt += `Original request: ${description}\n\n`;
+            prompt += `Address the feedback and implement necessary changes.`;
+        }
+    }
+    
     // Add comments if they provide useful feedback
     const comments = [...(issue.comments || []), ...(issue.admin_comments || [])];
     if (comments.length > 0) {
@@ -214,12 +238,12 @@ async function executeOpenIssue() {
     try {
         console.log('🔍 Checking for open issues...');
         
-        // Get open issues
+        // Get open issues (including admin_discussion for reopened issues)
         const { data: issues, error } = await supabase
             .from('webtoys_issue_tracker_data')
             .select('*')
             .eq('app_id', ISSUE_TRACKER_APP_ID)
-            .in('content_data->>status', ['open', 'new'])
+            .in('content_data->>status', ['open', 'new', 'admin_discussion'])
             .order('created_at', { ascending: true })
             .limit(1);
         
