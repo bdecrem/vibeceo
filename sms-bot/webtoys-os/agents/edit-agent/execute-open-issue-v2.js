@@ -105,10 +105,31 @@ function buildSmartPrompt(issue, description) {
     // Add minimal context only when needed
     const contexts = [];
     
-    // Check if authentication is needed
-    if (lower.includes('login') || lower.includes('user') || lower.includes('auth') || 
-        lower.includes('save') || lower.includes('personal')) {
-        contexts.push(CONTEXT_TEMPLATES.auth_required);
+    // ALWAYS include auth for apps that save/load user content
+    const needsUserContent = lower.includes('save') || lower.includes('load') || 
+        lower.includes('store') || lower.includes('personal') || lower.includes('user') ||
+        lower.includes('document') || lower.includes('note') || lower.includes('todo') ||
+        lower.includes('list') || lower.includes('editor') || lower.includes('writer') ||
+        lower.includes('processor') || lower.includes('manage');
+    
+    if (needsUserContent) {
+        contexts.push(`CRITICAL: This app needs user authentication!
+- Use WebtoysOS desktop authentication (handle + PIN)
+- Listen for TOYBOX_AUTH messages from parent window
+- If user not logged in, prompt to sign up/login when they try to save/load
+- Use ZAD API with participant_id for all storage
+See AUTH-DOCUMENTATION.md for implementation`);
+        contexts.push(CONTEXT_TEMPLATES.data_storage);
+    }
+    
+    // ALWAYS include leaderboard for games
+    if (lower.includes('game') || lower.includes('play') || lower.includes('score') || 
+        lower.includes('puzzle') || lower.includes('arcade')) {
+        contexts.push(`CRITICAL: Games MUST have a leaderboard!
+- Use WebtoysOS authentication for player names
+- Store scores in ZAD with action_type: 'leaderboard'
+- Display top 10 scores with player handles
+- If not logged in, prompt to login to save score`);
     }
     
     // Check if it's a new app
@@ -120,12 +141,6 @@ function buildSmartPrompt(issue, description) {
     if (lower.includes('update') || lower.includes('fix') || lower.includes('modify') || 
         lower.includes('change') || lower.includes('add')) {
         contexts.push(CONTEXT_TEMPLATES.modify_app);
-    }
-    
-    // Check if data storage is needed
-    if (lower.includes('save') || lower.includes('store') || lower.includes('data') || 
-        lower.includes('database')) {
-        contexts.push(CONTEXT_TEMPLATES.data_storage);
     }
     
     // Add contexts if any

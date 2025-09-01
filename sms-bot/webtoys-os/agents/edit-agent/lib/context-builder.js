@@ -75,6 +75,13 @@ export function analyzeIssue(description) {
         }
     }
     
+    // Games ALWAYS need leaderboard
+    if (analysis.appType === 'game') {
+        analysis.features.push('leaderboard');
+        analysis.features.push('auth'); // Need auth for leaderboard
+        analysis.features.push('data'); // Need data storage for scores
+    }
+    
     // Detect required features
     for (const [feature, pattern] of Object.entries(FEATURE_PATTERNS)) {
         if (pattern.test(description)) {
@@ -116,11 +123,15 @@ Never use direct Supabase access.`
         contexts.push(`Modifying existing app: ${analysis.targetApp}.html in /apps directory`);
     }
     
-    // Authentication context
-    if (analysis.features.includes('auth')) {
-        contexts.push(`Authentication: Apps receive user data via postMessage from desktop.
-Listen for TOYBOX_AUTH messages. Do NOT create login forms.
-See AUTH-DOCUMENTATION.md for implementation details.`);
+    // Authentication context - CRITICAL for user content apps
+    if (analysis.features.includes('auth') || analysis.features.includes('data')) {
+        contexts.push(`CRITICAL Authentication Requirements:
+- Apps that save/load user content MUST use desktop auth
+- Listen for TOYBOX_AUTH messages from parent window
+- If user not logged in when saving/loading, prompt to sign up/login
+- Use participant_id format: HANDLE_PIN (uppercase)
+- Do NOT create your own login forms
+See AUTH-DOCUMENTATION.md for full implementation.`);
     }
     
     // Data storage context
@@ -154,6 +165,16 @@ Multiple users can access same data via common app identifier.`);
         if (!analysis.features.includes('data')) {
             contexts.push(CONTEXT_TEMPLATES.data_storage);
         }
+    }
+    
+    // Game-specific context
+    if (analysis.appType === 'game' || analysis.features.includes('leaderboard')) {
+        contexts.push(`MANDATORY Game Requirements:
+- MUST include a leaderboard showing top 10 scores
+- Use WebtoysOS auth for player names (handle display)
+- Store scores with ZAD API using action_type: 'leaderboard'
+- If not logged in, prompt to login when saving score
+- Display scores as: [Rank] [Handle] [Score]`);
     }
     
     // Deployment reminder (always include but keep minimal)
