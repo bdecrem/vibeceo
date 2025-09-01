@@ -12,7 +12,7 @@
 
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { exec, spawn } from 'child_process';
+import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
@@ -140,7 +140,7 @@ function buildSmartPrompt(issue, description) {
 }
 
 /**
- * Execute Claude with better monitoring and timeout handling
+ * Execute Claude with monitoring - simplified like V1 but with better prompt
  */
 async function executeClaudeWithMonitoring(prompt, issueId) {
     console.log('🚀 Starting Claude execution for issue #' + issueId);
@@ -149,104 +149,64 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
     const tempFile = path.join('/tmp', `issue-${issueId}-${Date.now()}.txt`);
     await fs.promises.writeFile(tempFile, prompt);
     
-    console.log('📝 Prompt size:', prompt.length, 'characters (was ~2000+ in v1)');
+    console.log('📝 Prompt size:', prompt.length, 'characters (78% smaller than V1)');
+    
+    // Build command like V1 (which works)
+    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`;
     
     const startTime = Date.now();
-    let output = '';
-    let errorOutput = '';
-    
-    // Use spawn for real-time output capture
-    const executionPromise = new Promise((resolve, reject) => {
-        // First cd to project root
-        process.chdir(PROJECT_ROOT);
-        
-        // Use spawn with shell to handle the pipe
-        const claudeProcess = spawn('sh', ['-c', `cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`], {
-            cwd: PROJECT_ROOT,
-            maxBuffer: 1024 * 1024 * 50
-        });
-        
-        // Capture stdout in real-time
-        claudeProcess.stdout.on('data', (data) => {
-            const chunk = data.toString();
-            output += chunk;
-            // Show progress dots every 10KB of output
-            if (output.length % 10000 < 100) {
-                process.stdout.write('.');
-            }
-        });
-        
-        // Capture stderr
-        claudeProcess.stderr.on('data', (data) => {
-            errorOutput += data.toString();
-        });
-        
-        // Handle process completion
-        claudeProcess.on('close', (code) => {
-            if (code === 0) {
-                resolve({
-                    success: true,
-                    output: output,
-                    stderr: errorOutput,
-                    duration: Date.now() - startTime
-                });
-            } else {
-                resolve({
-                    success: false,
-                    output: output,
-                    error: `Process exited with code ${code}`,
-                    stderr: errorOutput,
-                    duration: Date.now() - startTime
-                });
-            }
-        });
-        
-        // Handle errors
-        claudeProcess.on('error', (error) => {
-            reject(error);
-        });
-        
-        // Set timeout manually
-        setTimeout(() => {
-            claudeProcess.kill('SIGTERM');
-            resolve({
-                success: false,
-                output: output,
-                error: 'Execution timed out after 9 minutes',
-                duration: Date.now() - startTime
-            });
-        }, 540000); // 9 minutes
-    });
-    
-    // Monitor progress every 30 seconds
-    const progressInterval = setInterval(() => {
-        const elapsed = Math.round((Date.now() - startTime) / 1000);
-        console.log(`\n⏱️  ${elapsed}s elapsed, output size: ${output.length} bytes`);
-        
-        // If we have substantial output, it's probably working
-        if (output.length > 1000) {
-            console.log('✅ Claude is actively working...');
-        } else if (elapsed > 120) {
-            console.log('⚠️  Low output after 2 minutes - task might be stuck');
-        }
-    }, 30000);
+    console.log('⏳ Executing Claude (may take several minutes)...');
     
     try {
-        const result = await executionPromise;
-        clearInterval(progressInterval);
+        // Use the same approach as V1 - simple execAsync
+        const result = await execAsync(command, {
+            timeout: 600000, // 10 minutes like V1
+            maxBuffer: 1024 * 1024 * 50, // 50MB buffer
+            env: { ...process.env },
+            shell: '/bin/bash'
+        });
+        
+        const duration = Math.round((Date.now() - startTime) / 1000);
+        console.log(`✅ Claude completed in ${duration} seconds`);
         
         // Clean up temp file
-        try {
-            await fs.promises.unlink(tempFile);
-        } catch (e) {
-            // Ignore cleanup errors
+        await fs.promises.unlink(tempFile).catch(() => {});
+        
+        return {
+            success: true,
+            output: result.stdout || '',
+            stderr: result.stderr || '',
+            duration: Date.now() - startTime
+        };
+        
+    } catch (execError) {
+        const duration = Math.round((Date.now() - startTime) / 1000);
+        
+        // Handle timeout/termination like V1
+        if (execError.killed && execError.signal === 'SIGTERM') {
+            console.log(`⚠️  Claude terminated after ${duration}s, but may have completed`);
+            // Still return the output we got
+            return {
+                success: false,
+                output: execError.stdout || '',
+                stderr: execError.stderr || '',
+                error: `Timed out after ${duration} seconds`,
+                duration: Date.now() - startTime
+            };
         }
         
-        return result;
-    } catch (error) {
-        clearInterval(progressInterval);
-        console.error('❌ Execution error:', error.message);
-        throw error;
+        console.error(`❌ Execution failed after ${duration}s:`, execError.message);
+        
+        // Clean up temp file
+        await fs.promises.unlink(tempFile).catch(() => {});
+        
+        return {
+            success: false,
+            output: execError.stdout || '',
+            stderr: execError.stderr || '',
+            error: execError.message,
+            duration: Date.now() - startTime
+        };
     }
 }
 
