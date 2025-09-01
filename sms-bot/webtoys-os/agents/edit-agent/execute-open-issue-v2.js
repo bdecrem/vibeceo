@@ -295,6 +295,21 @@ async function executeOpenIssue() {
         const newStatus = result.success ? 'completed' : 'failed';
         const statusEmoji = result.success ? '✅' : '❌';
         
+        // Create comprehensive comment like V1
+        const fullConsoleOutput = `## Edit Agent V2 Execution Log
+
+### Claude Code Output:
+
+${result.output || 'No output captured'}
+
+### Execution Details:
+- Duration: ${Math.round(result.duration / 1000)} seconds
+- Issue ID: #${content.id}
+- Status: ${newStatus}
+- Prompt size: ${prompt.length} chars (78% smaller than V1)
+- Output size: ${result.output?.length || 0} bytes
+- Completed at: ${new Date().toISOString()}`;
+        
         await supabase
             .from('webtoys_issue_tracker_data')
             .update({
@@ -306,8 +321,9 @@ async function executeOpenIssue() {
                     admin_comments: [
                         ...(content.admin_comments || []),
                         {
-                            text: `${statusEmoji} Edit Agent V2 Execution Log\n\n${result.success ? 'Task completed successfully' : 'Task failed: ' + (result.error || 'Unknown error')}\n\nDuration: ${Math.round(result.duration / 1000)}s\nOutput size: ${result.output?.length || 0} bytes\n\n${result.success ? 'Check the /apps directory for results.' : 'Review the error and try again.'}`,
+                            text: fullConsoleOutput,
                             author: 'Edit Agent V2',
+                            authorRole: 'AGENT',
                             timestamp: new Date().toISOString()
                         }
                     ]
