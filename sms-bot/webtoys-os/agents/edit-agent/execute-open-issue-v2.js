@@ -47,13 +47,18 @@ Note: This app needs authentication. Apps receive auth via postMessage from the 
 See AUTH-DOCUMENTATION.md for details. Do NOT create login forms.`,
     
     new_app: `
-After creating the app, deploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
+Create the app in the apps/ directory, then deploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
     
     modify_app: `
 After modifying, redeploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
     
     data_storage: `
-Use ZAD API for data: /api/zad/save and /api/zad/load (NOT direct Supabase)`
+MANDATORY: Use ZAD API for ALL data storage:
+- Save: POST to /api/zad/save with {app_id, participant_id, action_type, content_data}
+- Load: GET from /api/zad/load?app_id=X&action_type=Y
+- NEVER use direct Supabase access
+- ALWAYS include action_type for filtering
+- ALWAYS filter load results by participant_id`
 };
 
 /**
@@ -110,26 +115,120 @@ function buildSmartPrompt(issue, description) {
         lower.includes('store') || lower.includes('personal') || lower.includes('user') ||
         lower.includes('document') || lower.includes('note') || lower.includes('todo') ||
         lower.includes('list') || lower.includes('editor') || lower.includes('writer') ||
-        lower.includes('processor') || lower.includes('manage');
+        lower.includes('processor') || lower.includes('manage') || lower.includes('track') ||
+        lower.includes('keep') || lower.includes('record') || lower.includes('data');
     
     if (needsUserContent) {
-        contexts.push(`CRITICAL: This app needs user authentication!
-- Use WebtoysOS desktop authentication (handle + PIN)
-- Listen for TOYBOX_AUTH messages from parent window
-- If user not logged in, prompt to sign up/login when they try to save/load
-- Use ZAD API with participant_id for all storage
-See AUTH-DOCUMENTATION.md for implementation`);
+        contexts.push(`CRITICAL: This app REQUIRES authentication! Copy this EXACT code:
+
+// Global auth state
+let currentUser = null;
+
+// Load auth from localStorage (immediate)
+function loadAuthFromStorage() {
+    const savedUser = localStorage.getItem('toybox_user');
+    if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        if (currentUser) {
+            if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+            if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                currentUser.participantId = \`\${currentUser.handle.toUpperCase()}_\${currentUser.pin}\`;
+            }
+        }
+    }
+    return !!currentUser;
+}
+
+// Listen for auth from desktop (real-time)
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'TOYBOX_AUTH') {
+        currentUser = e.data.user;
+        if (currentUser) {
+            if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+            if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                currentUser.participantId = \`\${currentUser.handle.toUpperCase()}_\${currentUser.pin}\`;
+            }
+        }
+        updateAuthDisplay();
+        if (currentUser) loadUserData();
+    }
+});
+
+// Initialize on load
+document.addEventListener('DOMContentLoaded', () => {
+    if (loadAuthFromStorage()) {
+        updateAuthDisplay();
+        loadUserData();
+    }
+});
+
+// For ZAD saves, ALWAYS use:
+const participantId = currentUser?.participantId || \`\${currentUser?.handle?.toUpperCase()}_\${currentUser?.pin}\`;`);
         contexts.push(CONTEXT_TEMPLATES.data_storage);
     }
     
     // ALWAYS include leaderboard for games
     if (lower.includes('game') || lower.includes('play') || lower.includes('score') || 
-        lower.includes('puzzle') || lower.includes('arcade')) {
-        contexts.push(`CRITICAL: Games MUST have a leaderboard!
-- Use WebtoysOS authentication for player names
-- Store scores in ZAD with action_type: 'leaderboard'
-- Display top 10 scores with player handles
-- If not logged in, prompt to login to save score`);
+        lower.includes('puzzle') || lower.includes('arcade') || lower.includes('challenge')) {
+        contexts.push(`CRITICAL: Games MUST have a leaderboard! Copy this EXACT pattern:
+
+// Leaderboard HTML
+<div id="leaderboard">
+    <h3>🏆 Top Scores</h3>
+    <ol id="scoreList"></ol>
+</div>
+
+// Save score function
+async function saveScore(score) {
+    if (!currentUser) {
+        alert('Please log in to save your score!');
+        return;
+    }
+    
+    const participantId = currentUser.participantId || \`\${currentUser.handle.toUpperCase()}_\${currentUser.pin}\`;
+    
+    await fetch('/api/zad/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            app_id: 'your-game-id',
+            participant_id: participantId,
+            action_type: 'leaderboard',
+            content_data: {
+                score: score,
+                player: currentUser.handle.toUpperCase(),
+                timestamp: Date.now()
+            }
+        })
+    });
+    
+    loadLeaderboard();
+}
+
+// Load and display leaderboard
+async function loadLeaderboard() {
+    const response = await fetch('/api/zad/load?app_id=your-game-id&action_type=leaderboard');
+    const scores = await response.json();
+    
+    // Get best score per player
+    const bestScores = {};
+    scores.forEach(s => {
+        const player = s.content_data?.player || s.player;
+        const score = s.content_data?.score || s.score;
+        if (!bestScores[player] || score > bestScores[player]) {
+            bestScores[player] = score;
+        }
+    });
+    
+    // Sort and display top 10
+    const sorted = Object.entries(bestScores)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+    
+    document.getElementById('scoreList').innerHTML = sorted
+        .map(([player, score]) => \`<li>\${player}: \${score}</li>\`)
+        .join('');
+}`);
     }
     
     // Check if it's a new app
@@ -141,6 +240,30 @@ See AUTH-DOCUMENTATION.md for implementation`);
     if (lower.includes('update') || lower.includes('fix') || lower.includes('modify') || 
         lower.includes('change') || lower.includes('add')) {
         contexts.push(CONTEXT_TEMPLATES.modify_app);
+    }
+    
+    // Additional guidance for specific app types
+    if (lower.includes('calculator') || lower.includes('calc')) {
+        contexts.push(`For calculator apps: Include full numeric keypad, clear button, and history of calculations`);
+    }
+    
+    if (lower.includes('timer') || lower.includes('clock') || lower.includes('stopwatch')) {
+        contexts.push(`For timer apps: Include start/stop/reset buttons, visual countdown, and optional sound alerts`);
+    }
+    
+    if (lower.includes('draw') || lower.includes('paint') || lower.includes('sketch')) {
+        contexts.push(`For drawing apps: Use canvas element, include color picker, brush size, and clear/save functions`);
+    }
+    
+    // CRITICAL: Ensure complete implementations
+    if (contexts.length > 0) {
+        contexts.push(`
+IMPORTANT: Create a COMPLETE, working implementation:
+- All features must be fully functional
+- Include proper error handling
+- Test all edge cases
+- Make it visually polished with modern CSS
+- Ensure mobile responsiveness`);
     }
     
     // Add contexts if any
