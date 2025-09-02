@@ -246,23 +246,105 @@
             display: block;
         }
 
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 101;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mobile-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            margin: 4px auto;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
         @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
             .sidebar {
-                width: 100%;
-                position: absolute;
+                width: 280px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
                 z-index: 100;
                 transform: translateX(-100%);
                 transition: transform 0.3s;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.1);
             }
             
             .sidebar.open {
                 transform: translateX(0);
             }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .editor-header {
+                padding: 20px 20px 20px 70px;
+            }
+
+            .mobile-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.3);
+                z-index: 99;
+            }
+
+            .mobile-backdrop.show {
+                display: block;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="sidebar">
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
         <div>
             <div class="logo">KWords ✨</div>
         </div>
@@ -338,6 +420,11 @@
             document.getElementById('editor').value = '';
             updateWordCount();
             document.querySelectorAll('.doc-item').forEach(d => d.classList.remove('active'));
+            
+            // Close mobile menu after creating new document
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
         }
 
         async function saveDoc() {
@@ -443,6 +530,11 @@
             
             document.querySelectorAll('.doc-item').forEach(d => d.classList.remove('active'));
             element.classList.add('active');
+            
+            // Close mobile menu after selecting a document
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
         }
 
         function updateWordCount() {
@@ -459,6 +551,31 @@
         function closeLogin() {
             document.getElementById('overlay').classList.remove('show');
             document.getElementById('loginModal').classList.remove('show');
+        }
+
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const backdrop = document.getElementById('mobileBackdrop');
+            
+            if (sidebar.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                sidebar.classList.add('open');
+                menuBtn.classList.add('active');
+                backdrop.classList.add('show');
+            }
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const backdrop = document.getElementById('mobileBackdrop');
+            
+            sidebar.classList.remove('open');
+            menuBtn.classList.remove('active');
+            backdrop.classList.remove('show');
         }
 
         // Auto-save setup
