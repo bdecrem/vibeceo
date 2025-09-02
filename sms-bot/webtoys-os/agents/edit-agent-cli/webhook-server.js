@@ -15,11 +15,35 @@ import { spawn } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Load environment variables
+// Load environment variables - try multiple locations
 dotenv.config({ path: path.join(__dirname, '../../../../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../../.env.local') });
+dotenv.config({ path: path.join(__dirname, '../../../.env') });
+
+// Verify required environment variables
+if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    console.error('❌ Missing required environment variables!');
+    console.error('   Please ensure SUPABASE_URL and SUPABASE_SERVICE_KEY are set in:');
+    console.error('   /Users/bartdecrem/Documents/code/vibeceo8/sms-bot/.env.local');
+    process.exit(1);
+}
 
 const app = express();
 app.use(express.json());
+
+// CORS - Allow requests from webtoys.ai
+app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    
+    // Handle preflight requests
+    if (req.method === 'OPTIONS') {
+        return res.sendStatus(200);
+    }
+    
+    next();
+});
 
 // Initialize Supabase
 const supabase = createClient(
@@ -45,9 +69,62 @@ app.get('/health', (req, res) => {
 });
 
 /**
- * Receive edit request from Issue Tracker
+ * Webhook endpoint for Issue Tracker notifications
  */
-app.post('/edit', async (req, res) => {
+app.post('/webhook', async (req, res) => {
+    console.log(`\n🔔 Webhook notification received at ${new Date().toISOString()}`);
+    
+    try {
+        const { type, issue } = req.body;
+        
+        if (type !== 'new_issue' || !issue) {
+            return res.json({ 
+                success: false, 
+                message: 'Not a new issue notification' 
+            });
+        }
+        
+        const issueData = issue.content_data || {};
+        console.log(`  📝 New issue: ${issueData.title}`);
+        console.log(`  👤 Author: ${issueData.author || 'anonymous'}`);
+        
+        // Queue the issue for processing
+        const editRequest = {
+            id: `issue-${issue.id}`,
+            issueId: issue.id,
+            appSlug: issueData.targetApp || 'toybox-os-v3-test',
+            description: issueData.description || '',
+            title: issueData.title || 'Untitled Issue',
+            author: issueData.author || 'anonymous',
+            status: 'pending',
+            timestamp: new Date().toISOString()
+        };
+        
+        // Add to queue
+        await queueEdit(editRequest);
+        
+        // Start worker if not already running
+        startWorkerIfNeeded();
+        
+        res.json({ 
+            success: true, 
+            message: 'Issue queued for processing',
+            requestId: editRequest.id
+        });
+        
+    } catch (error) {
+        console.error('❌ Error handling webhook:', error);
+        res.status(500).json({ 
+            error: 'Failed to process webhook',
+            details: error.message 
+        });
+    }
+});
+
+/**
+ * Receive edit request from Issue Tracker (legacy endpoint)
+ */
+app.post(['/edit', '/webhook'], async (req, res) => {
     console.log(`\n📥 Received edit request at ${new Date().toISOString()}`);
     
     try {
@@ -159,12 +236,15 @@ app.post('/trigger', async (req, res) => {
     
     try {
         // Check for open issues in the tracker
+        // Note: status is inside content_data JSONB field
         const { data: issues, error } = await supabase
             .from('webtoys_issue_tracker_data')
             .select('*')
             .eq('app_id', 'toybox-issue-tracker-v3')
-            .in('status', ['open', 'new'])
-            .order('created_at', { ascending: true })
+            .eq('action_type', 'issue')
+            .eq('content_data->>status', 'open')
+            .or('content_data->deleted.is.null,content_data->>deleted.neq.true')
+            .order('created_at', { ascending: false })
             .limit(1);
         
         if (error) throw error;

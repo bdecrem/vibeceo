@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>Calculator</title>
+    <style>
+        body {
+            background-color: green;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        
+        .calculator {
+            width: 300px;
+            margin: 50px auto;
+            background: #f0f0f0;
+            border: 2px solid #333;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+        }
+        
+        .display {
+            background: #444;
+            color: #0ff;
+            font-size: 2em;
+            padding: 10px;
+            text-align: right;
+            margin-bottom: 10px;
+            min-height: 40px;
+            border-radius: 5px;
+            overflow: hidden;
+            word-wrap: break-word;
+        }
+        
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        
+        button {
+            padding: 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background: #666;
+            color: white;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #777;
+        }
+        
+        button:active {
+            background: #555;
+            transform: scale(0.98);
+        }
+        
+        button.operator {
+            background: #ff9500;
+        }
+        
+        button.operator:hover {
+            background: #ffb143;
+        }
+        
+        button.equals {
+            background: #4CAF50;
+            grid-column: span 2;
+        }
+        
+        button.equals:hover {
+            background: #5cbf60;
+        }
+        
+        button.clear {
+            background: #f44336;
+            grid-column: span 2;
+        }
+        
+        button.clear:hover {
+            background: #f66;
+        }
+        
+        button.zero {
+            grid-column: span 2;
+        }
+    </style>
+</head>
+<body>
+    <div class='calculator'>
+        <div class='display' id='display'>0</div>
+        <div class='buttons'>
+            <button class='clear' onclick='clearDisplay()'>C</button>
+            <button onclick='appendToDisplay("/")'>/</button>
+            <button class='operator' onclick='appendToDisplay("*")'>*</button>
+            
+            <button onclick='appendToDisplay("7")'>7</button>
+            <button onclick='appendToDisplay("8")'>8</button>
+            <button onclick='appendToDisplay("9")'>9</button>
+            <button class='operator' onclick='appendToDisplay("-")'>-</button>
+            
+            <button onclick='appendToDisplay("4")'>4</button>
+            <button onclick='appendToDisplay("5")'>5</button>
+            <button onclick='appendToDisplay("6")'>6</button>
+            <button class='operator' onclick='appendToDisplay("+")'>+</button>
+            
+            <button onclick='appendToDisplay("1")'>1</button>
+            <button onclick='appendToDisplay("2")'>2</button>
+            <button onclick='appendToDisplay("3")'>3</button>
+            <button onclick='appendToDisplay(".")'>.</button>
+            
+            <button class='zero' onclick='appendToDisplay("0")'>0</button>
+            <button class='equals' onclick='calculate()'>=</button>
+        </div>
+    </div>
+    
+    <script>
+        let display = document.getElementById('display');
+        let currentInput = '0';
+        let shouldResetDisplay = false;
+        
+        function updateDisplay() {
+            display.textContent = currentInput;
+        }
+        
+        function clearDisplay() {
+            currentInput = '0';
+            shouldResetDisplay = false;
+            updateDisplay();
+        }
+        
+        function appendToDisplay(value) {
+            if (shouldResetDisplay && !isNaN(value)) {
+                currentInput = '';
+                shouldResetDisplay = false;
+            }
+            
+            if (currentInput === '0' && !isNaN(value)) {
+                currentInput = value;
+            } else if (currentInput === '0' && value === '.') {
+                currentInput = '0.';
+            } else {
+                currentInput += value;
+            }
+            
+            updateDisplay();
+        }
+        
+        function calculate() {
+            try {
+                let result = eval(currentInput);
+                currentInput = result.toString();
+                shouldResetDisplay = true;
+                updateDisplay();
+            } catch (error) {
+                currentInput = 'Error';
+                shouldResetDisplay = true;
+                updateDisplay();
+            }
+        }
+    </script>
+</body>
+</html>

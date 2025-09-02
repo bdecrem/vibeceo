@@ -1,0 +1,53 @@
+Edit Agent CLI Status Summary
+
+  ✅ What's Built
+
+  - Complete webhook-based edit agent using Claude CLI (not API)
+  - Architecture: Webhook Server → Worker → Claude CLI → Deploy
+  - Location: /sms-bot/webtoys-os/agents/edit-agent-cli/
+  - Scripts: start-all.sh, webhook-server.js, worker.js
+  - Running on: Port 3032 with ngrok tunnel
+
+  🔧 What's Fixed
+
+  - ✅ Environment variables loading correctly
+  - ✅ Database queries using correct field structure
+  (content_data->>status not status)
+  - ✅ Issue status updates working properly
+  - ✅ ngrok tunnel established: https://03ffa53d166c.ngrok.app
+
+  📍 Current Status
+
+  The agent is RUNNING but NOT CONNECTED to anything automatic
+
+  - Manual trigger works: curl -X POST 
+  https://03ffa53d166c.ngrok.app/trigger
+  - Can process issues from the database when triggered
+  - Uses Claude CLI for powerful editing (same as --revise command)
+
+  ❌ What's Missing
+
+  - No automatic triggering - Issue Tracker doesn't know about this
+  agent
+  - No cron job - Unlike V2 agent which runs every 2 minutes
+  - Not integrated - Issue Tracker still only works with V2 agent
+
+  🎯 To Make It Fully Functional
+
+  Would need ONE of these:
+  1. Update Issue Tracker to POST to webhook when issues are
+  submitted
+  2. Add a cron job that calls the trigger endpoint every X minutes
+  3. Keep it manual - Run when you want to process issues
+
+  💡 Key Difference from V2
+
+  | V2 Agent (Current)          | CLI Agent (New)   |
+  |-----------------------------|-------------------|
+  | Runs automatically via cron | Manual start/stop |
+  | Uses Anthropic API          | Uses Claude CLI   |
+  | Always processing           | On-demand only    |
+  | Can't turn off easily       | Full control      |
+
+  Bottom line: It's a powerful tool that's ready to use, but needs
+  to be manually triggered. Works great, just not automated yet!
