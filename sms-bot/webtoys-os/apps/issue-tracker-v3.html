@@ -475,6 +475,9 @@
             <button class="btn btn-secondary" onclick="toggleFilter('closed')" id="filter-closed">
                 <span>📦</span> <span id="filter-closed-text">Show Closed</span>
             </button>
+            <button class="btn btn-secondary" onclick="showWebhookSettings()">
+                <span>⚙️</span> Webhook
+            </button>
         </div>
         
         <div id="issues-container" class="issues-container">
@@ -503,6 +506,30 @@
                     <button type="submit" class="btn btn-primary">Create Issue</button>
                 </div>
             </form>
+        </div>
+    </div>
+    
+    <!-- Webhook Settings Modal -->
+    <div id="webhook-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Agent CLI Webhook Settings</h2>
+                <button class="close-btn" onclick="closeWebhookModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="webhook-url">Webhook URL</label>
+                <input type="text" id="webhook-url" class="form-input" placeholder="https://your-ngrok-url.ngrok.app">
+                <small style="color: #666; display: block; margin-top: 8px;">
+                    Enter the ngrok URL for your Edit Agent CLI webhook server.<br>
+                    Leave empty to disable webhook notifications.
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeWebhookModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveWebhookSettings()">
+                    <span>💾</span> Save Settings
+                </button>
+            </div>
         </div>
     </div>
     
@@ -739,6 +766,9 @@
                 
                 if (error) throw error;
                 
+                // Trigger webhook notification to Edit Agent CLI
+                await triggerWebhook(data);
+                
                 closeNewIssueModal();
                 await loadIssues();
             } catch (error) {
@@ -941,6 +971,88 @@
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;
+        }
+        
+        // Webhook notification for Edit Agent CLI
+        async function triggerWebhook(issueData) {
+            // Check if webhook URL is configured
+            const webhookUrl = localStorage.getItem('edit_agent_webhook_url');
+            if (!webhookUrl) {
+                console.log('No webhook URL configured for Edit Agent CLI');
+                return;
+            }
+            
+            try {
+                const response = await fetch(webhookUrl + '/webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'new_issue',
+                        issue: issueData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Edit Agent CLI notified of new issue');
+                } else {
+                    console.error('Failed to notify Edit Agent CLI:', response.status);
+                }
+            } catch (error) {
+                // Silently fail - webhook is optional
+                console.error('Webhook notification failed:', error);
+            }
+        }
+        
+        // Configure webhook URL (can be called from console or settings)
+        window.configureWebhook = function(url) {
+            if (url) {
+                localStorage.setItem('edit_agent_webhook_url', url);
+                console.log('Webhook URL configured:', url);
+            } else {
+                localStorage.removeItem('edit_agent_webhook_url');
+                console.log('Webhook URL removed');
+            }
+        };
+        
+        // Webhook Settings Modal Functions
+        function showWebhookSettings() {
+            const modal = document.getElementById('webhook-modal');
+            const urlInput = document.getElementById('webhook-url');
+            
+            // Load current webhook URL
+            const currentUrl = localStorage.getItem('edit_agent_webhook_url') || '';
+            urlInput.value = currentUrl;
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeWebhookModal() {
+            document.getElementById('webhook-modal').style.display = 'none';
+        }
+        
+        function saveWebhookSettings() {
+            const urlInput = document.getElementById('webhook-url');
+            const url = urlInput.value.trim();
+            
+            if (url) {
+                // Validate URL format
+                try {
+                    new URL(url);
+                    window.configureWebhook(url);
+                    alert('✅ Webhook URL saved! New issues will trigger the Edit Agent CLI.');
+                } catch (e) {
+                    alert('❌ Invalid URL format. Please enter a valid URL.');
+                    return;
+                }
+            } else {
+                window.configureWebhook(null);
+                alert('Webhook notifications disabled.');
+            }
+            
+            closeWebhookModal();
         }
         
         function formatDate(dateString) {

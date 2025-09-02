@@ -1,0 +1,177 @@
+[
+  {
+    "id": "issue-9999",
+    "issueId": 9999,
+    "appSlug": "theme-test",
+    "description": "change the background color to green",
+    "author": "test-user",
+    "status": "completed",
+    "timestamp": "2025-09-01T23:07:17.366Z",
+    "processedAt": "2025-09-01T23:08:45.725Z",
+    "result": {
+      "success": true,
+      "summary": "Successfully edited theme-test",
+      "changes": "<!DOCTYPE html>\n<html lang='en'>\n<head>\n    <meta charset='UTF-8'>\n    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n    <title>Theme Test</title>\n    <style>\n        body {\n            background-color: green;\n            margin: 0;\n            padding: 0;\n        }\n    </style>\n</head>\n<body>\n    <div id='desktop'>\n        <div class='desktop-icon' style='left: 20px; top: 20px'>\n            <div class='icon'>🎨</div>\n            <div class='label'>Theme Test</div>\n    "
+    }
+  },
+  {
+    "id": "issue-3445",
+    "issueId": 3445,
+    "appSlug": "toybox-os-v3-test",
+    "description": "create a simple text editor called BartWord\n",
+    "author": "BART",
+    "status": "failed",
+    "timestamp": "2025-09-01T23:08:29.310Z",
+    "processedAt": "2025-09-01T23:08:45.799Z"
+  },
+  {
+    "id": "issue-5001",
+    "issueId": 5001,
+    "appSlug": "theme-test",
+    "description": "Replace the current theme-test content with a simple calculator that has buttons for numbers 0-9 and operations +, -, *, / and = with a display area",
+    "title": "Add basic calculator to theme-test",
+    "author": "claude-agent-test",
+    "status": "completed",
+    "timestamp": "2025-09-01T23:10:24.003Z",
+    "processedAt": "2025-09-01T23:14:31.228Z",
+    "result": {
+      "success": true,
+      "summary": "Successfully edited theme-test",
+      "changes": "<!DOCTYPE html>\n<html lang='en'>\n<head>\n    <meta charset='UTF-8'>\n    <meta name='viewport' content='width=device-width, initial-scale=1.0'>\n    <title>Calculator</title>\n    <style>\n        body {\n            background-color: green;\n            margin: 0;\n            padding: 0;\n            font-family: Arial, sans-serif;\n        }\n        \n        .calculator {\n            width: 300px;\n            margin: 50px auto;\n            background: #f0f0f0;\n            border: 2px solid #333;\n      "
+    }
+  },
+  {
+    "id": "issue-3460",
+    "issueId": 3460,
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple text editor called Bart",
+    "title": "make a simple text editor",
+    "author": "BART",
+    "status": "failed",
+    "timestamp": "2025-09-01T23:24:33.467Z",
+    "processedAt": "2025-09-01T23:36:33.916Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Command failed: /Users/bartdecrem/.local/bin/claude --print < \"/var/folders/wh/k496crpd6td_x9fj33sk0rfw0000gn/T/edit-issue-issue-3460.md\"\n"
+    }
+  },
+  {
+    "id": "issue-9998",
+    "issueId": 9998,
+    "appSlug": "toybox-os-v3-test",
+    "description": "This is a test issue to verify webhook functionality",
+    "title": "Test Webhook Issue",
+    "author": "webhook-test",
+    "status": "failed",
+    "timestamp": "2025-09-01T23:28:29.531Z",
+    "processedAt": "2025-09-01T23:48:34.737Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Command failed: /Users/bartdecrem/.local/bin/claude --print < \"/var/folders/wh/k496crpd6td_x9fj33sk0rfw0000gn/T/edit-issue-issue-9998.md\"\n"
+    }
+  },
+  {
+    "id": "issue-3461",
+    "issueId": 3461,
+    "appSlug": "toybox-os-v3-test",
+    "description": "Add a basic calculator widget to the desktop with number buttons 0-9 and basic operations",
+    "title": "Add a simple calculator widget",
+    "author": "edit-agent-test",
+    "status": "failed",
+    "timestamp": "2025-09-01T23:29:15.728Z",
+    "processedAt": "2025-09-02T00:00:35.181Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Command failed: /Users/bartdecrem/.local/bin/claude --print < \"/var/folders/wh/k496crpd6td_x9fj33sk0rfw0000gn/T/edit-issue-issue-3461.md\"\n"
+    }
+  },
+  {
+    "id": "issue-test-1",
+    "issueId": "test-1",
+    "appSlug": "toybox-os-v3-test",
+    "description": "Add a simple text editor called B3rt to the desktop",
+    "author": "Test User",
+    "status": "failed",
+    "timestamp": "2025-09-02T16:04:10.822Z",
+    "processedAt": "2025-09-02T16:16:11.195Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Command failed: /Users/bartdecrem/.local/bin/claude --print < \"/var/folders/wh/k496crpd6td_x9fj33sk0rfw0000gn/T/edit-issue-issue-test-1.md\"\n"
+    }
+  },
+  {
+    "id": "issue-test-3",
+    "issueId": "test-3",
+    "appSlug": "toybox-os-v3-test",
+    "description": "Make a simple calculator app",
+    "author": "Test User",
+    "status": "failed",
+    "timestamp": "2025-09-02T16:26:07.691Z",
+    "processedAt": "2025-09-02T16:26:07.797Z",
+    "result": {
+      "success": false,
+      "error": "executeClaudeWithSpawn is not defined"
+    }
+  },
+  {
+    "id": "issue-test-4",
+    "issueId": "test-4",
+    "appSlug": "toybox-os-v3-test",
+    "description": "Create a Sudoku game",
+    "author": "Test User",
+    "status": "failed",
+    "timestamp": "2025-09-02T16:27:33.313Z",
+    "processedAt": "2025-09-02T16:30:57.023Z",
+    "result": {
+      "success": false,
+      "error": "Failed to deploy app: duplicate key value violates unique constraint \"wtaf_content_user_slug_app_slug_key\""
+    }
+  },
+  {
+    "id": "issue-test-12",
+    "issueId": "test-12",
+    "appSlug": "toybox-os-v3-test",
+    "description": "add a simple word processor. Call it BREAT",
+    "author": "Test User",
+    "status": "failed",
+    "timestamp": "2025-09-02T16:41:04.722Z",
+    "processedAt": "2025-09-02T16:53:05.003Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Command failed: /Users/bartdecrem/.local/bin/claude --print < \"/var/folders/wh/k496crpd6td_x9fj33sk0rfw0000gn/T/edit-issue-issue-test-12.md\"\n"
+    }
+  },
+  {
+    "id": "issue-test-13",
+    "issueId": "test-13",
+    "appSlug": "toybox-os-v3-test",
+    "description": "add a simple word processor. Call it BRAT",
+    "author": "Test User",
+    "status": "completed",
+    "timestamp": "2025-09-02T16:58:54.371Z",
+    "processedAt": "2025-09-02T17:01:35.256Z",
+    "result": {
+      "success": true,
+      "summary": "Created BRAT app and added to desktop",
+      "appUrl": "https://webtoys.ai/public/toybox-brat",
+      "changes": "New app created: BRAT with icon 📱"
+    }
+  },
+  {
+    "id": "issue-3464",
+    "issueId": 3464,
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple paint app and call it bdPAINT",
+    "title": "make a simple Paint app",
+    "author": "BART",
+    "status": "completed",
+    "timestamp": "2025-09-02T17:26:03.972Z",
+    "processedAt": "2025-09-02T17:28:51.401Z",
+    "result": {
+      "success": true,
+      "summary": "Created Paint app and added to desktop",
+      "appUrl": "https://webtoys.ai/public/toybox-paint-2",
+      "changes": "New app created: Paint with icon 🎨"
+    }
+  }
+]
