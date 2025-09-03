@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAX - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn.secondary {
+            background: #6c757d;
+        }
+        
+        .btn.danger {
+            background: #dc3545;
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .document-info {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            border-radius: 8px 8px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .document-title {
+            flex: 1;
+            font-size: 16px;
+            padding: 6px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 4px;
+            background: white;
+            font-weight: 500;
+        }
+        
+        .document-title:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .status {
+            font-size: 13px;
+            color: #6c757d;
+            min-width: 100px;
+            text-align: right;
+        }
+        
+        .status.saved {
+            color: #28a745;
+        }
+        
+        .status.modified {
+            color: #ffc107;
+        }
+        
+        .editor {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            border: none;
+            border-radius: 0 0 8px 8px;
+            background: rgba(255, 255, 255, 0.95);
+            resize: none;
+            color: #2c3e50;
+        }
+        
+        .editor:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 1);
+        }
+        
+        .file-list {
+            position: fixed;
+            right: -300px;
+            top: 0;
+            width: 300px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: -2px 0 10px rgba(0,0,0,0.1);
+            transition: right 0.3s ease;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+        
+        .file-list.open {
+            right: 0;
+        }
+        
+        .file-list-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .file-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+        
+        .file-item:hover {
+            background: #f8f9fa;
+        }
+        
+        .file-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        }
+        
+        .file-name {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .file-meta {
+            font-size: 12px;
+            color: #6c757d;
+        }
+        
+        .user-info {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 6px;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @media (max-width: 768px) {
+            .toolbar {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .document-info {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .status {
+                text-align: center;
+            }
+            
+            .editor {
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">SAX</div>
+        <div class="toolbar">
+            <button class="btn" onclick="newDocument()">New</button>
+            <button class="btn" onclick="saveDocument()">Save</button>
+            <button class="btn secondary" onclick="toggleFileList()">My Files</button>
+            <div class="user-info" id="userInfo">Not logged in</div>
+        </div>
+    </div>
+    
+    <div class="editor-container">
+        <div class="document-info">
+            <input type="text" class="document-title" id="documentTitle" placeholder="Untitled Document" value="Untitled Document">
+            <div class="status" id="status">Ready</div>
+        </div>
+        <textarea class="editor" id="editor" placeholder="Start typing your document here..."></textarea>
+    </div>
+    
+    <div class="file-list" id="fileList">
+        <div class="file-list-header">
+            <h3>My Documents</h3>
+            <button class="close-btn" onclick="toggleFileList()">&times;</button>
+        </div>
+        <div id="fileListContent"></div>
+    </div>
+
+    <script>
+        window.APP_ID = 'sax-editor';
+        let currentUser = null;
+        let currentDocId = null;
+        let lastSavedContent = '';
+        let isModified = false;
+
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUserInfo();
+                loadDocuments();
+            }
+        });
+
+        function updateUserInfo() {
+            const userInfo = document.getElementById('userInfo');
+            if (currentUser && currentUser.handle) {
+                userInfo.textContent = `👤 ${currentUser.handle.toUpperCase()}`;
+            } else {
+                userInfo.textContent = 'Not logged in';
+            }
+        }
+
+        async function save(dataType, data) {
+            const participantId = currentUser ? 
+                `${currentUser.handle.toUpperCase()}_${currentUser.pin}` : 'anonymous';
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: participantId,
+                        action_type: dataType,
+                        content_data: data
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save error:', error);
+                return false;
+            }
+        }
+
+        async function load(dataType) {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`);
+                return await response.json() || [];
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        async function saveDocument() {
+            if (!currentUser) {
+                alert('Please log in to save documents');
+                return;
+            }
+
+            const title = document.getElementById('documentTitle').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+            
+            if (!currentDocId) {
+                currentDocId = generateId();
+            }
+
+            const documentData = {
+                id: currentDocId,
+                title: title,
+                content: content,
+                author: currentUser.handle.toUpperCase(),
+                updatedAt: new Date().toISOString()
+            };
+
+            const success = await save('document', documentData);
+            
+            if (success) {
+                lastSavedContent = content;
+                isModified = false;
+                updateStatus('Saved', true);
+                loadDocuments();
+            } else {
+                alert('Failed to save document');
+            }
+        }
+
+        async function loadDocuments() {
+            if (!currentUser) return;
+
+            const participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const allDocs = await load('document');
+            
+            const userDocs = allDocs.filter(doc => 
+                doc.participant_id === participantId
+            );
+
+            const uniqueDocs = {};
+            userDocs.forEach(doc => {
+                const docId = doc.id || doc.content_data?.id;
+                const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                
+                if (!uniqueDocs[docId] || 
+                    new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                    uniqueDocs[docId] = {
+                        id: docId,
+                        title: doc.title || doc.content_data?.title || 'Untitled',
+                        content: doc.content || doc.content_data?.content || '',
+                        author: doc.author || doc.content_data?.author,
+                        updatedAt: docTime
+                    };
+                }
+            });
+
+            const sortedDocs = Object.values(uniqueDocs)
+                .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+            displayDocuments(sortedDocs);
+        }
+
+        function displayDocuments(documents) {
+            const fileListContent = document.getElementById('fileListContent');
+            fileListContent.innerHTML = '';
+
+            if (documents.length === 0) {
+                fileListContent.innerHTML = '<div class="file-item"><div class="file-name">No documents yet</div></div>';
+                return;
+            }
+
+            documents.forEach(doc => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                if (doc.id === currentDocId) {
+                    fileItem.classList.add('active');
+                }
+                
+                const date = new Date(doc.updatedAt).toLocaleDateString();
+                fileItem.innerHTML = `
+                    <div class="file-name">${doc.title}</div>
+                    <div class="file-meta">Modified: ${date}</div>
+                `;
+                
+                fileItem.onclick = () => openDocument(doc);
+                fileListContent.appendChild(fileItem);
+            });
+        }
+
+        function openDocument(doc) {
+            if (isModified) {
+                if (!confirm('You have unsaved changes. Continue without saving?')) {
+                    return;
+                }
+            }
+
+            currentDocId = doc.id;
+            document.getElementById('documentTitle').value = doc.title;
+            document.getElementById('editor').value = doc.content;
+            lastSavedContent = doc.content;
+            isModified = false;
+            updateStatus('Opened');
+            toggleFileList();
+        }
+
+        function newDocument() {
+            if (isModified) {
+                if (!confirm('You have unsaved changes. Continue without saving?')) {
+                    return;
+                }
+            }
+
+            currentDocId = null;
+            document.getElementById('documentTitle').value = 'Untitled Document';
+            document.getElementById('editor').value = '';
+            lastSavedContent = '';
+            isModified = false;
+            updateStatus('New document');
+        }
+
+        function toggleFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.classList.toggle('open');
+            if (fileList.classList.contains('open') && currentUser) {
+                loadDocuments();
+            }
+        }
+
+        function updateStatus(text, saved = false) {
+            const status = document.getElementById('status');
+            status.textContent = text;
+            status.className = saved ? 'status saved' : 'status';
+            
+            if (saved) {
+                setTimeout(() => {
+                    status.textContent = 'Ready';
+                    status.className = 'status';
+                }, 2000);
+            }
+        }
+
+        document.getElementById('editor').addEventListener('input', function() {
+            const currentContent = this.value;
+            if (currentContent !== lastSavedContent) {
+                isModified = true;
+                updateStatus('Modified');
+            } else {
+                isModified = false;
+                updateStatus('Ready');
+            }
+        });
+
+        document.getElementById('documentTitle').addEventListener('input', function() {
+            if (!isModified) {
+                isModified = true;
+                updateStatus('Modified');
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveDocument();
+            }
+        });
+
+        parent.postMessage({ type: 'GET_AUTH' }, '*');
+
+        updateStatus('Ready');
+    </script>
+</body>
+</html>
