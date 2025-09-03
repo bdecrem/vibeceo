@@ -173,5 +173,68 @@
       "appUrl": "https://webtoys.ai/public/toybox-paint-2",
       "changes": "New app created: Paint with icon 🎨"
     }
+  },
+  {
+    "id": "issue-test-paint-rigid",
+    "issueId": "test-paint-rigid",
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple paint app and call it bd",
+    "author": "Test User",
+    "status": "failed",
+    "timestamp": "2025-09-02T22:58:38.754Z",
+    "processedAt": "2025-09-02T23:03:00.000Z",
+    "result": {
+      "success": false,
+      "error": "Worker timeout - Claude CLI took too long"
+    }
+  },
+  {
+    "id": "issue-3465",
+    "issueId": 3465,
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple text editor and called it SAX",
+    "title": "make a simple text editor",
+    "author": "BART",
+    "status": "completed",
+    "timestamp": "2025-09-03T18:00:07.933Z",
+    "processedAt": "2025-09-03T18:03:36.813Z",
+    "result": {
+      "success": true,
+      "summary": "Created Text Editor app and added to desktop",
+      "appUrl": "https://webtoys.ai/public/toybox-text-editor-2",
+      "changes": "New app created: Text Editor with icon 📝"
+    }
+  },
+  {
+    "id": "issue-3466",
+    "issueId": 3466,
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple text editor and called it SAX\n",
+    "title": "make a simple text editor and called it SAX",
+    "author": "BART",
+    "status": "failed",
+    "timestamp": "2025-09-03T18:02:14.662Z",
+    "processedAt": "2025-09-03T18:03:44.270Z",
+    "result": {
+      "success": false,
+      "error": "Claude CLI failed: Claude CLI exited with code null: "
+    }
+  },
+  {
+    "id": "issue-3467",
+    "issueId": 3467,
+    "appSlug": "toybox-os-v3-test",
+    "description": "make a simple text editor call it BRET",
+    "title": "make a simple text editor",
+    "author": "BART",
+    "status": "completed",
+    "timestamp": "2025-09-03T18:05:08.904Z",
+    "processedAt": "2025-09-03T18:06:36.935Z",
+    "result": {
+      "success": true,
+      "summary": "Created Text Editor app and added to desktop",
+      "appUrl": "https://webtoys.ai/public/toybox-text-editor-3",
+      "changes": "New app created: Text Editor with icon 📝"
+    }
   }
 ]
