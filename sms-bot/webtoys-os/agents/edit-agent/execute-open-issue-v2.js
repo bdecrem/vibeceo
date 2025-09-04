@@ -369,6 +369,47 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
  * Main execution function
  */
 async function executeOpenIssue() {
+    // Lock file to prevent multiple instances
+    const lockFile = path.join(__dirname, '.agent.lock');
+    
+    // Check if another instance is running
+    if (fs.existsSync(lockFile)) {
+        try {
+            const lockData = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
+            const lockAge = Date.now() - lockData.timestamp;
+            
+            // If lock is less than 10 minutes old, another instance is probably running
+            if (lockAge < 600000) {
+                console.log('⚠️ Another instance is already running (lock age:', Math.round(lockAge/1000), 'seconds)');
+                console.log('   Skipping this run to prevent overlapping executions');
+                return;
+            } else {
+                console.log('🔓 Stale lock detected (', Math.round(lockAge/60000), 'minutes old), removing...');
+            }
+        } catch (e) {
+            console.log('⚠️ Invalid lock file, removing...');
+        }
+    }
+    
+    // Create lock file
+    fs.writeFileSync(lockFile, JSON.stringify({
+        pid: process.pid,
+        timestamp: Date.now(),
+        startTime: new Date().toISOString()
+    }));
+    
+    // Ensure lock is removed on exit
+    const cleanup = () => {
+        if (fs.existsSync(lockFile)) {
+            fs.unlinkSync(lockFile);
+            console.log('🔓 Lock file removed');
+        }
+    };
+    
+    process.on('exit', cleanup);
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
+    
     try {
         console.log('🔍 Checking for open issues...');
         
@@ -484,11 +525,21 @@ ${result.output || 'No output captured'}
 if (import.meta.url === `file://${process.argv[1]}`) {
     executeOpenIssue()
         .then(() => {
+            // Clean up lock file before exiting
+            const lockFile = path.join(__dirname, '.agent.lock');
+            if (fs.existsSync(lockFile)) {
+                fs.unlinkSync(lockFile);
+            }
             console.log('\n✅ Edit Agent V2 execution complete');
             process.exit(0);
         })
         .catch(error => {
             console.error('❌ Edit Agent V2 failed:', error);
+            // Clean up lock file on error
+            const lockFile = path.join(__dirname, '.agent.lock');
+            if (fs.existsSync(lockFile)) {
+                fs.unlinkSync(lockFile);
+            }
             process.exit(1);
         });
 }
