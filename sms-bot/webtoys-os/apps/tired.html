@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TIRED - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2a2a2a;
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border-bottom: 1px solid #3a3a3a;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .status {
+            margin-left: auto;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-info {
+            font-size: 12px;
+            color: #666;
+            padding: 0 10px;
+            border-left: 1px solid #3a3a3a;
+        }
+
+        .toolbar {
+            background: #252525;
+            padding: 8px 10px;
+            display: flex;
+            gap: 5px;
+            border-bottom: 1px solid #3a3a3a;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            padding: 6px 12px;
+            background: #3a3a3a;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background: #4a4a4a;
+        }
+
+        .btn:active {
+            background: #5a5a5a;
+        }
+
+        .btn.primary {
+            background: #4a7c59;
+        }
+
+        .btn.primary:hover {
+            background: #5a8c69;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .line-numbers {
+            background: #1f1f1f;
+            color: #5a5a5a;
+            padding: 15px 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            user-select: none;
+            min-width: 50px;
+            text-align: right;
+            border-right: 1px solid #2a2a2a;
+            overflow-y: hidden;
+        }
+
+        #editor {
+            flex: 1;
+            padding: 15px;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: none;
+            outline: none;
+            resize: none;
+            overflow-y: auto;
+        }
+
+        #editor::selection {
+            background: #3a3a3a;
+        }
+
+        .footer {
+            background: #2a2a2a;
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #3a3a3a;
+            font-size: 12px;
+            color: #666;
+            flex-shrink: 0;
+        }
+
+        .footer-left {
+            display: flex;
+            gap: 20px;
+        }
+
+        /* Document list modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: #2a2a2a;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 70vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #3a3a3a;
+        }
+
+        .modal-header {
+            padding: 15px;
+            border-bottom: 1px solid #3a3a3a;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: #666;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .close-btn:hover {
+            color: #999;
+        }
+
+        .doc-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .doc-item {
+            padding: 10px;
+            background: #1a1a1a;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .doc-item:hover {
+            background: #333;
+        }
+
+        .doc-title {
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .doc-meta {
+            font-size: 12px;
+            color: #666;
+        }
+
+        .empty-state {
+            padding: 40px;
+            text-align: center;
+            color: #666;
+        }
+
+        /* Saved indicator */
+        .saved-indicator {
+            position: fixed;
+            top: 60px;
+            right: 20px;
+            background: #4a7c59;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 13px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .saved-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="title">TIRED</span>
+        <input type="text" id="doc-title" placeholder="Untitled Document" 
+               style="background: #1a1a1a; border: 1px solid #3a3a3a; color: #e0e0e0; 
+                      padding: 5px 10px; border-radius: 4px; font-size: 13px; width: 300px;">
+        <div class="status">
+            <span id="word-count">0 words</span>
+            <span id="char-count">0 chars</span>
+        </div>
+        <div class="user-info" id="user-info">Not logged in</div>
+    </div>
+
+    <div class="toolbar">
+        <button class="btn" onclick="newDocument()">New</button>
+        <button class="btn" onclick="openDocList()">Open</button>
+        <button class="btn primary" onclick="saveDocument()">Save</button>
+        <button class="btn" onclick="downloadDocument()">Download</button>
+        <button class="btn" onclick="clearDocument()">Clear</button>
+    </div>
+
+    <div class="editor-container">
+        <div class="line-numbers" id="line-numbers">1</div>
+        <textarea id="editor" placeholder="Start typing... or paste your text here"></textarea>
+    </div>
+
+    <div class="footer">
+        <div class="footer-left">
+            <span>Line <span id="line-num">1</span></span>
+            <span>Col <span id="col-num">1</span></span>
+        </div>
+        <div class="footer-right">
+            <span id="last-saved">Never saved</span>
+        </div>
+    </div>
+
+    <!-- Document List Modal -->
+    <div class="modal" id="doc-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span class="modal-title">Open Document</span>
+                <button class="close-btn" onclick="closeDocList()">&times;</button>
+            </div>
+            <div class="doc-list" id="doc-list">
+                <div class="empty-state">No saved documents yet</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saved Indicator -->
+    <div class="saved-indicator" id="saved-indicator">Document saved!</div>
+
+    <script>
+        let currentUser = null;
+        let currentDocId = null;
+
+        // Listen for auth from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                currentUser = e.data.user;
+                if (currentUser.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                }
+                if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                    currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                }
+                updateUserInfo();
+                loadDocuments(); // Load user's documents when authenticated
+            }
+        });
+
+        // Request auth on load
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+
+        // Also check localStorage
+        const savedUser = localStorage.getItem('toybox_user');
+        if (savedUser) {
+            try {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser?.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                }
+                if (currentUser && !currentUser.participantId && currentUser.handle && currentUser.pin) {
+                    currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                }
+                updateUserInfo();
+            } catch (e) {
+                console.error('Error parsing saved user:', e);
+            }
+        }
+
+        function updateUserInfo() {
+            const userInfo = document.getElementById('user-info');
+            if (currentUser?.handle) {
+                userInfo.textContent = `User: ${currentUser.handle}`;
+            }
+        }
+
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            return currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        // Editor functionality
+        const editor = document.getElementById('editor');
+        const docTitle = document.getElementById('doc-title');
+        const lineNumbers = document.getElementById('line-numbers');
+        const wordCount = document.getElementById('word-count');
+        const charCount = document.getElementById('char-count');
+        const lineNum = document.getElementById('line-num');
+        const colNum = document.getElementById('col-num');
+        const lastSaved = document.getElementById('last-saved');
+
+        // Update stats
+        function updateStats() {
+            const text = editor.value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            wordCount.textContent = `${words} words`;
+            charCount.textContent = `${chars} chars`;
+            
+            // Update line numbers
+            const lines = text.split('\n').length;
+            let lineNumbersText = '';
+            for (let i = 1; i <= lines; i++) {
+                lineNumbersText += i + '\n';
+            }
+            lineNumbers.textContent = lineNumbersText;
+        }
+
+        // Update cursor position
+        function updateCursorPosition() {
+            const text = editor.value;
+            const cursorPos = editor.selectionStart;
+            const textBeforeCursor = text.substring(0, cursorPos);
+            const lines = textBeforeCursor.split('\n');
+            const currentLine = lines.length;
+            const currentCol = lines[lines.length - 1].length + 1;
+            
+            lineNum.textContent = currentLine;
+            colNum.textContent = currentCol;
+        }
+
+        // Sync scroll between editor and line numbers
+        editor.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = editor.scrollTop;
+        });
+
+        editor.addEventListener('input', updateStats);
+        editor.addEventListener('keyup', updateCursorPosition);
+        editor.addEventListener('click', updateCursorPosition);
+
+        // Document functions
+        function newDocument() {
+            if (editor.value && !confirm('Unsaved changes will be lost. Continue?')) {
+                return;
+            }
+            editor.value = '';
+            docTitle.value = '';
+            currentDocId = null;
+            lastSaved.textContent = 'Never saved';
+            updateStats();
+        }
+
+        function generateDocId() {
+            return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        async function saveDocument() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                alert('Please log in to save documents');
+                return;
+            }
+
+            const title = docTitle.value || 'Untitled Document';
+            const content = editor.value;
+            
+            if (!currentDocId) {
+                currentDocId = generateDocId();
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-tired',
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocId,
+                            title: title,
+                            content: content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showSavedIndicator();
+                    lastSaved.textContent = 'Saved at ' + new Date().toLocaleTimeString();
+                } else {
+                    console.error('Save failed:', await response.text());
+                    alert('Failed to save document');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error saving document');
+            }
+        }
+
+        function showSavedIndicator() {
+            const indicator = document.getElementById('saved-indicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        async function loadDocuments() {
+            const participantId = getParticipantId();
+            if (!participantId) return [];
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=toybox-tired&action_type=document`);
+                if (!response.ok) {
+                    console.error('Load failed:', response.status);
+                    return [];
+                }
+                
+                const allDocs = await response.json();
+                
+                // Filter for current user's documents
+                const userDocs = allDocs.filter(doc => 
+                    doc.participant_id === participantId
+                );
+                
+                // Deduplicate by latest timestamp
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime
+                        };
+                    }
+                });
+                
+                return Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        async function openDocList() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                alert('Please log in to open documents');
+                return;
+            }
+
+            const docs = await loadDocuments();
+            const docList = document.getElementById('doc-list');
+            
+            if (docs.length === 0) {
+                docList.innerHTML = '<div class="empty-state">No saved documents yet</div>';
+            } else {
+                docList.innerHTML = docs.map(doc => `
+                    <div class="doc-item" onclick="loadDocument('${doc.id}', '${encodeURIComponent(doc.title)}', '${encodeURIComponent(doc.content)}')">
+                        <div class="doc-title">${doc.title}</div>
+                        <div class="doc-meta">
+                            Last updated: ${new Date(doc.updatedAt).toLocaleString()}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('doc-modal').classList.add('active');
+        }
+
+        function loadDocument(id, title, content) {
+            currentDocId = id;
+            docTitle.value = decodeURIComponent(title);
+            editor.value = decodeURIComponent(content);
+            updateStats();
+            updateCursorPosition();
+            closeDocList();
+            lastSaved.textContent = 'Loaded from saved';
+        }
+
+        function closeDocList() {
+            document.getElementById('doc-modal').classList.remove('active');
+        }
+
+        function clearDocument() {
+            if (confirm('Clear all text?')) {
+                editor.value = '';
+                updateStats();
+            }
+        }
+
+        function downloadDocument() {
+            const title = docTitle.value || 'untitled';
+            const content = editor.value;
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = title + '.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Tab key support
+        editor.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = editor.selectionStart;
+                const end = editor.selectionEnd;
+                editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
+                editor.selectionStart = editor.selectionEnd = start + 4;
+            }
+        });
+
+        // Initialize
+        updateStats();
+        updateCursorPosition();
+    </script>
+</body>
+</html>
