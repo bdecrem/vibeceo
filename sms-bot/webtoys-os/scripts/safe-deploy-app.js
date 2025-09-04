@@ -27,7 +27,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * Create change manifest entry
  */
 async function updateChangeManifest(entry) {
-    const manifestPath = path.join(__dirname, '../change-manifest.json');
+    // Always use absolute path to webtoys-os directory for manifest
+    const manifestPath = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os/change-manifest.json';
     
     let manifest = [];
     if (fs.existsSync(manifestPath)) {
@@ -106,8 +107,9 @@ async function safeDeployApp(filename, icon, options = {}) {
                 
                 console.log(`✅ Committed: ${commitHash}`);
                 
-                // Push to GitHub (optional, based on environment)
-                if (process.env.AUTO_PUSH === 'true') {
+                // Push to GitHub (default true for Edit Agent, can be disabled)
+                const shouldPush = process.env.AUTO_PUSH !== 'false';
+                if (shouldPush) {
                     console.log('📤 Pushing to GitHub...');
                     try {
                         await execAsync('git push');
@@ -115,6 +117,8 @@ async function safeDeployApp(filename, icon, options = {}) {
                     } catch (pushError) {
                         console.warn('⚠️ Push failed (continuing anyway):', pushError.message);
                     }
+                } else {
+                    console.log('⏭️ Skipping push (AUTO_PUSH=false)');
                 }
             } else {
                 console.log('ℹ️ No changes to commit');
