@@ -5,363 +5,352 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Fortune Cookie</title>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700&family=Inter:wght@400;500;600&display=swap');
+        
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-            background: radial-gradient(ellipse at top, #ffeaa7 0%, #fdcb6e 40%, #e17055 100%);
-            min-height: 100vh;
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            min-height: 100vh;
             overflow: hidden;
             position: relative;
         }
-
-        /* Animated background particles */
-        .particle {
-            position: absolute;
-            width: 4px;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.6);
-            border-radius: 50%;
-            animation: particleFloat 15s infinite linear;
+        
+        .app-container {
+            width: 600px;
+            height: 500px;
+            padding: 32px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
         }
-
-        @keyframes particleFloat {
-            0% {
-                transform: translateY(100vh) translateX(0);
-                opacity: 0;
-            }
-            10% {
-                opacity: 1;
-            }
-            90% {
-                opacity: 1;
-            }
-            100% {
-                transform: translateY(-100vh) translateX(100px);
-                opacity: 0;
-            }
-        }
-
-        .container {
-            text-align: center;
-            max-width: 500px;
-            width: 100%;
-            z-index: 10;
-        }
-
+        
         h1 {
-            color: white;
-            font-size: 2.8rem;
-            font-weight: 800;
-            margin-bottom: 3rem;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.1);
-            letter-spacing: -1px;
-            animation: titleGlow 3s ease-in-out infinite;
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 24px;
+            text-align: center;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
-
-        @keyframes titleGlow {
-            0%, 100% { text-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-            50% { text-shadow: 0 4px 30px rgba(255,255,255,0.5); }
+        
+        .fortune-area {
+            flex: 1;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-
+        
         .cookie-container {
             position: relative;
-            width: 300px;
-            height: 300px;
-            margin: 0 auto 2rem;
             cursor: pointer;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
+        
         .cookie-container:hover {
             transform: scale(1.05);
         }
-
-        .cookie-container:active {
-            transform: scale(0.98);
-        }
-
+        
         .cookie {
-            width: 260px;
+            width: 180px;
             height: 180px;
+            font-size: 120px;
+            user-select: none;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2));
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .cookie.cracking {
+            animation: crack 0.5s ease-out forwards;
+        }
+        
+        @keyframes crack {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.2) rotate(-5deg); }
+            100% { transform: scale(0.8) rotate(10deg); opacity: 0; }
+        }
+        
+        .fortune-paper {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-radius: 130px 130px 130px 130px / 90px 90px 90px 90px;
-            box-shadow: 
-                0 20px 40px rgba(0,0,0,0.15),
-                inset 0 2px 5px rgba(255,255,255,0.5),
-                inset 0 -3px 5px rgba(0,0,0,0.1);
-            transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-        }
-
-        .cookie.cracked {
-            animation: crack 0.6s ease-out;
-        }
-
-        @keyframes crack {
-            0% { transform: translate(-50%, -50%) rotate(0); }
-            20% { transform: translate(-50%, -50%) rotate(-5deg) scale(1.1); }
-            40% { transform: translate(-50%, -50%) rotate(5deg) scale(1.15); }
-            60% { transform: translate(-50%, -50%) rotate(-3deg) scale(1.1); }
-            100% { transform: translate(-50%, -50%) rotate(0) scale(1); }
-        }
-
-        .cookie::before,
-        .cookie::after {
-            content: '';
-            position: absolute;
-            width: 6px;
-            height: 6px;
-            background: rgba(0,0,0,0.08);
-            border-radius: 50%;
-        }
-
-        .cookie::before {
-            top: 40%;
-            left: 25%;
-        }
-
-        .cookie::after {
-            bottom: 40%;
-            right: 28%;
-        }
-
-        .fortune-slip {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%) scale(0) rotateX(90deg);
-            width: 85%;
-            max-width: 280px;
-            background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 
-                0 15px 35px rgba(0,0,0,0.15),
-                0 0 0 1px rgba(0,0,0,0.03);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
+            padding: 24px;
+            border-radius: 16px;
+            min-width: 320px;
+            max-width: 420px;
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
             opacity: 0;
-            transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-            z-index: 20;
+            pointer-events: none;
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .fortune-slip.revealed {
-            transform: translate(-50%, -50%) scale(1) rotateX(0);
+        
+        .fortune-paper.show {
             opacity: 1;
-            animation: floatPaper 3s ease-in-out infinite;
+            pointer-events: auto;
+            animation: unfold 0.8s ease-out;
         }
-
-        @keyframes floatPaper {
-            0%, 100% { transform: translate(-50%, -50%) translateY(0) scale(1) rotateX(0); }
-            50% { transform: translate(-50%, -48%) translateY(-5px) scale(1) rotateX(0); }
+        
+        @keyframes unfold {
+            0% { 
+                transform: translate(-50%, -50%) scale(0.3) rotateX(180deg);
+            }
+            100% { 
+                transform: translate(-50%, -50%) scale(1) rotateX(0deg);
+            }
         }
-
+        
         .fortune-text {
-            color: #2d3436;
-            font-size: 1.05rem;
-            line-height: 1.7;
-            font-weight: 500;
-            font-style: italic;
-            margin-bottom: 20px;
-            position: relative;
-            padding: 0 10px;
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 18px;
+            color: #4a5568;
+            text-align: center;
+            margin-bottom: 16px;
+            line-height: 1.6;
         }
-
+        
         .lucky-numbers {
-            display: flex;
-            gap: 8px;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 15px;
-            padding-top: 15px;
-            border-top: 1px solid #e9ecef;
+            text-align: center;
+            padding-top: 16px;
+            border-top: 1px dashed rgba(74, 85, 104, 0.2);
         }
-
-        .lucky-number {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        
+        .lucky-numbers-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .numbers {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        
+        .number {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
-            font-size: 0.9rem;
-            box-shadow: 0 4px 10px rgba(102, 126, 234, 0.3);
-            animation: numberPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            animation-fill-mode: both;
+            font-weight: 600;
+            font-size: 14px;
         }
-
-        .lucky-number:nth-child(1) { animation-delay: 0.1s; }
-        .lucky-number:nth-child(2) { animation-delay: 0.2s; }
-        .lucky-number:nth-child(3) { animation-delay: 0.3s; }
-        .lucky-number:nth-child(4) { animation-delay: 0.4s; }
-        .lucky-number:nth-child(5) { animation-delay: 0.5s; }
-
-        @keyframes numberPop {
-            0% { transform: scale(0) rotate(180deg); opacity: 0; }
-            100% { transform: scale(1) rotate(0); opacity: 1; }
+        
+        .new-cookie-btn {
+            margin-top: 20px;
+            padding: 12px 32px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.15));
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50px;
+            color: rgba(255, 255, 255, 0.95);
+            font-family: 'Comfortaa', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
         }
-
-        .hint {
-            color: rgba(255, 255, 255, 0.9);
-            font-size: 1.1rem;
-            font-weight: 500;
-            margin-top: 2rem;
-            animation: pulse 2s ease-in-out infinite;
+        
+        .new-cookie-btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.25));
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.9; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(0.98); }
-        }
-
-        /* Confetti effect */
-        .confetti {
+        
+        .sparkles {
             position: absolute;
-            width: 10px;
-            height: 10px;
-            background: linear-gradient(135deg, #ff6b6b, #ffd93d);
-            animation: confettiFall 3s linear;
-            animation-fill-mode: forwards;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
         }
-
-        @keyframes confettiFall {
+        
+        .sparkle {
+            position: absolute;
+            color: #ffd700;
+            font-size: 20px;
+            animation: sparkle 1s ease-out forwards;
+            opacity: 0;
+        }
+        
+        @keyframes sparkle {
             0% {
-                transform: translateY(-100vh) rotate(0deg);
+                opacity: 0;
+                transform: scale(0) rotate(0deg);
+            }
+            50% {
                 opacity: 1;
+                transform: scale(1.2) rotate(180deg);
             }
             100% {
-                transform: translateY(100vh) rotate(720deg);
                 opacity: 0;
+                transform: scale(0.8) rotate(360deg) translateY(-30px);
             }
         }
-
-        /* Save indicator */
-        .save-bubble {
+        
+        .history-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .history-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+        
+        .history-panel {
+            position: absolute;
+            top: 70px;
+            right: 20px;
+            width: 250px;
+            max-height: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .history-panel.show {
+            opacity: 1;
+            pointer-events: auto;
+            transform: translateY(0);
+        }
+        
+        .history-title {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #4a5568;
+            margin-bottom: 12px;
+        }
+        
+        .history-item {
+            padding: 8px;
+            margin-bottom: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            font-size: 12px;
+            color: #4a5568;
+        }
+        
+        .save-indicator {
             position: fixed;
             top: 30px;
-            right: 30px;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            color: #2d3436;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.85));
             padding: 12px 24px;
             border-radius: 50px;
             font-weight: 600;
+            font-size: 14px;
+            color: #4a5568;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
             opacity: 0;
-            transform: translateY(-20px) scale(0.8);
-            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            pointer-events: none;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
-        .save-bubble.show {
+        
+        .save-indicator.show {
+            transform: translateX(-50%) translateY(0);
             opacity: 1;
-            transform: translateY(0) scale(1);
-        }
-
-        /* History panel */
-        .history-panel {
-            position: fixed;
-            bottom: 30px;
-            left: 30px;
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 16px;
-            padding: 20px;
-            width: 280px;
-            max-height: 250px;
-            overflow-y: auto;
-            opacity: 0;
-            transform: translateX(-20px);
-            transition: all 0.5s ease;
-        }
-
-        .history-panel.visible {
-            opacity: 1;
-            transform: translateX(0);
-        }
-
-        .history-panel h3 {
-            color: white;
-            font-size: 0.9rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 15px;
-        }
-
-        .history-item {
-            background: rgba(255, 255, 255, 0.1);
-            padding: 10px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            color: rgba(255, 255, 255, 0.95);
-            font-size: 0.85rem;
-            line-height: 1.4;
-            border-left: 3px solid rgba(255, 255, 255, 0.5);
-        }
-
-        @media (max-width: 640px) {
-            h1 { font-size: 2.2rem; }
-            .cookie-container { width: 260px; height: 260px; }
-            .cookie { width: 220px; height: 150px; }
-            .history-panel { 
-                left: 20px; 
-                bottom: 20px; 
-                right: 20px;
-                width: auto;
-            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>✨ Fortune Cookie</h1>
+    <div class="app-container">
+        <h1>🥠 Fortune Cookie</h1>
         
-        <div class="cookie-container" onclick="openFortune()">
-            <div class="cookie" id="cookie"></div>
-            <div class="fortune-slip" id="fortuneSlip">
-                <div class="fortune-text" id="fortuneText"></div>
-                <div class="lucky-numbers" id="luckyNumbers"></div>
-            </div>
+        <button class="history-btn" onclick="toggleHistory()">📜</button>
+        
+        <div class="history-panel" id="historyPanel">
+            <div class="history-title">Recent Fortunes</div>
+            <div id="historyList"></div>
         </div>
         
-        <p class="hint" id="hint">Click the cookie to reveal your fortune</p>
+        <div class="fortune-area">
+            <div class="cookie-container" onclick="crackCookie()">
+                <div class="cookie" id="cookie">🥠</div>
+                <div class="sparkles" id="sparkles"></div>
+            </div>
+            
+            <div class="fortune-paper" id="fortunePaper">
+                <div class="fortune-text" id="fortuneText"></div>
+                <div class="lucky-numbers">
+                    <div class="lucky-numbers-label">Lucky Numbers</div>
+                    <div class="numbers" id="luckyNumbers"></div>
+                </div>
+            </div>
+            
+            <button class="new-cookie-btn" onclick="newCookie()" style="display: none;" id="newBtn">
+                Get New Cookie 🥠
+            </button>
+        </div>
     </div>
-
-    <div class="save-bubble" id="saveBubble">✨ Fortune saved!</div>
-
-    <div class="history-panel" id="historyPanel">
-        <h3>Recent Fortunes</h3>
-        <div id="historyList"></div>
-    </div>
-
+    
+    <div class="save-indicator" id="saveIndicator">✨ Fortune saved!</div>
+    
     <script>
-        // Global auth state
+        // Global state
         let currentUser = null;
-        let isOpen = false;
         let fortuneHistory = [];
-
+        let isAnimating = false;
+        
         // Load auth from localStorage (immediate)
         function loadAuthFromStorage() {
             const savedUser = localStorage.getItem('toybox_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
                 if (currentUser) {
-                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
@@ -369,142 +358,144 @@
             }
             return !!currentUser;
         }
-
+        
         // Listen for auth from desktop (real-time)
         window.addEventListener('message', (e) => {
             if (e.data && e.data.type === 'TOYBOX_AUTH') {
                 currentUser = e.data.user;
                 if (currentUser) {
-                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
+                    loadUserData();
                 }
-                if (currentUser) loadUserData();
             }
         });
-
+        
         const fortunes = [
-            "A moment of patience in a moment of anger saves you a hundred moments of regret.",
-            "Your creative energy will bring unexpected rewards today.",
-            "The answer you seek is hidden in the question itself.",
-            "A chance meeting will open doors you didn't know existed.",
-            "Your kindness today will echo through eternity.",
-            "Something wonderful is about to happen when you least expect it.",
-            "The path ahead is clearer than it appears—trust your instincts.",
-            "Your next laugh will heal more than just your spirit.",
-            "An old friend will bring new opportunities.",
-            "The universe is aligning in your favor—be ready.",
-            "Your unique perspective is about to solve a big problem.",
-            "Today's small step is tomorrow's giant leap.",
-            "Someone is thinking of you with gratitude right now.",
-            "Your courage will inspire someone to change their life.",
-            "The best surprise of your life is just around the corner.",
-            "Your intuition is especially strong today—follow it.",
-            "A creative solution will present itself in your dreams.",
-            "The love you give will return to you multiplied.",
-            "Your persistence is about to pay off spectacularly.",
-            "An unexpected compliment will brighten your whole week.",
-            "The thing you're worried about will work out beautifully.",
-            "Your smile today will be someone's favorite memory.",
-            "A door you thought was closed is actually just waiting.",
-            "Your next 'yes' will lead to an amazing adventure.",
-            "The magic you seek is already within you."
+            "A journey of a thousand miles begins with a single step.",
+            "Your creativity will lead you to great success.",
+            "Good things come to those who wait, but better things come to those who work.",
+            "An unexpected opportunity will knock on your door soon.",
+            "Your kindness will be rewarded in unexpected ways.",
+            "The best time to plant a tree was 20 years ago. The second best time is now.",
+            "You will discover a hidden talent within yourself.",
+            "A smile is your passport to the hearts of others.",
+            "Your persistence will pay off in ways you cannot imagine.",
+            "New adventures are on the horizon.",
+            "Trust your intuition; it will guide you well.",
+            "You are closer to your goals than you think.",
+            "A pleasant surprise is waiting for you around the corner.",
+            "Your positive attitude will inspire others today.",
+            "The answer you seek is within you.",
+            "Great opportunities are coming your way.",
+            "Your hard work will soon be recognized.",
+            "Happiness is not a destination, but a way of traveling.",
+            "You will make a valuable connection soon.",
+            "Your dreams are within reach; keep pushing forward.",
+            "A change in your routine will bring positive results.",
+            "You have the power to create your own luck.",
+            "Someone special will enter your life soon.",
+            "Your generosity will come back to you tenfold.",
+            "The universe is conspiring in your favor.",
+            "You will overcome a challenge with flying colors.",
+            "Your next big idea will change everything.",
+            "Patience and persistence will lead to success.",
+            "You are exactly where you need to be.",
+            "A long-cherished dream will soon become reality."
         ];
-
-        // Create background particles
-        function createParticles() {
-            for (let i = 0; i < 20; i++) {
-                const particle = document.createElement('div');
-                particle.className = 'particle';
-                particle.style.left = Math.random() * 100 + '%';
-                particle.style.animationDelay = Math.random() * 15 + 's';
-                particle.style.animationDuration = (15 + Math.random() * 10) + 's';
-                document.body.appendChild(particle);
+        
+        function crackCookie() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            const cookie = document.getElementById('cookie');
+            const fortunePaper = document.getElementById('fortunePaper');
+            const fortuneText = document.getElementById('fortuneText');
+            const luckyNumbers = document.getElementById('luckyNumbers');
+            const newBtn = document.getElementById('newBtn');
+            
+            // Add cracking animation
+            cookie.classList.add('cracking');
+            
+            // Create sparkles
+            createSparkles();
+            
+            // Get random fortune
+            const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+            fortuneText.textContent = randomFortune;
+            
+            // Generate lucky numbers
+            const numbers = generateLuckyNumbers();
+            luckyNumbers.innerHTML = numbers.map(n => 
+                `<div class="number">${n}</div>`
+            ).join('');
+            
+            // Save if logged in
+            if (currentUser) {
+                saveFortune(randomFortune, numbers);
             }
+            
+            // Add to history
+            addToHistory(randomFortune, numbers);
+            
+            // Show fortune after animation
+            setTimeout(() => {
+                fortunePaper.classList.add('show');
+                newBtn.style.display = 'block';
+            }, 500);
         }
-
+        
+        function newCookie() {
+            const cookie = document.getElementById('cookie');
+            const fortunePaper = document.getElementById('fortunePaper');
+            const newBtn = document.getElementById('newBtn');
+            const sparkles = document.getElementById('sparkles');
+            
+            // Reset everything
+            cookie.classList.remove('cracking');
+            fortunePaper.classList.remove('show');
+            newBtn.style.display = 'none';
+            sparkles.innerHTML = '';
+            
+            setTimeout(() => {
+                isAnimating = false;
+            }, 100);
+        }
+        
         function generateLuckyNumbers() {
             const numbers = [];
-            while (numbers.length < 5) {
+            while (numbers.length < 6) {
                 const num = Math.floor(Math.random() * 49) + 1;
-                if (!numbers.includes(num)) numbers.push(num);
+                if (!numbers.includes(num)) {
+                    numbers.push(num);
+                }
             }
             return numbers.sort((a, b) => a - b);
         }
-
-        function createConfetti(x, y) {
-            for (let i = 0; i < 15; i++) {
-                setTimeout(() => {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    confetti.style.left = (x + (Math.random() - 0.5) * 100) + 'px';
-                    confetti.style.top = (y - 50) + 'px';
-                    confetti.style.width = (5 + Math.random() * 5) + 'px';
-                    confetti.style.height = confetti.style.width;
-                    confetti.style.background = `hsl(${Math.random() * 360}, 70%, 60%)`;
-                    document.body.appendChild(confetti);
-                    setTimeout(() => confetti.remove(), 3000);
-                }, i * 30);
+        
+        function createSparkles() {
+            const sparkles = document.getElementById('sparkles');
+            sparkles.innerHTML = '';
+            
+            for (let i = 0; i < 8; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = '✨';
+                sparkle.style.left = `${Math.random() * 100}%`;
+                sparkle.style.top = `${Math.random() * 100}%`;
+                sparkle.style.animationDelay = `${Math.random() * 0.5}s`;
+                sparkles.appendChild(sparkle);
             }
         }
-
-        function openFortune() {
-            const cookie = document.getElementById('cookie');
-            const fortuneSlip = document.getElementById('fortuneSlip');
-            const fortuneText = document.getElementById('fortuneText');
-            const luckyNumbers = document.getElementById('luckyNumbers');
-            const hint = document.getElementById('hint');
-            
-            if (isOpen) {
-                fortuneSlip.classList.remove('revealed');
-                cookie.classList.remove('cracked');
-                isOpen = false;
-                hint.textContent = 'Click the cookie to reveal your fortune';
-                setTimeout(() => {
-                    fortuneText.textContent = '';
-                    luckyNumbers.innerHTML = '';
-                }, 500);
-                return;
-            }
-            
-            // Get new fortune
-            const fortune = fortunes[Math.floor(Math.random() * fortunes.length)];
-            const numbers = generateLuckyNumbers();
-            
-            // Animate cookie crack
-            cookie.classList.add('cracked');
-            
-            // Create confetti effect
-            const rect = cookie.getBoundingClientRect();
-            createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
-            
-            // Show fortune
-            setTimeout(() => {
-                fortuneText.textContent = fortune;
-                luckyNumbers.innerHTML = numbers
-                    .map(n => `<div class="lucky-number">${n}</div>`)
-                    .join('');
-                fortuneSlip.classList.add('revealed');
-                isOpen = true;
-                hint.textContent = 'Click again for another fortune';
-                
-                // Save if logged in
-                if (currentUser) {
-                    saveFortune(fortune, numbers);
-                }
-                
-                // Add to local history
-                fortuneHistory.unshift({ fortune, numbers, timestamp: new Date() });
-                if (fortuneHistory.length > 5) fortuneHistory.pop();
-                updateHistory();
-            }, 300);
-        }
-
+        
         async function saveFortune(fortune, numbers) {
             if (!currentUser?.participantId) return;
             
-            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const participantId = currentUser.participantId;
             
             try {
                 const response = await fetch('/api/zad/save', {
@@ -525,26 +516,28 @@
                 
                 if (response.ok) {
                     showSaveIndicator();
-                    loadUserData();
                 }
             } catch (err) {
                 console.error('Save failed:', err);
             }
         }
-
+        
         async function loadUserData() {
             if (!currentUser?.participantId) return;
             
-            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const participantId = currentUser.participantId;
             
             try {
                 const response = await fetch(`/api/zad/load?app_id=toybox-fortune-cookie&action_type=fortune`);
+                if (!response.ok) return;
+                
                 const data = await response.json();
                 
-                // Filter and deduplicate
+                // Filter for current user's fortunes
                 const userFortunes = data.filter(d => d.participant_id === participantId);
-                const uniqueFortunes = {};
                 
+                // Deduplicate by ID and timestamp
+                const uniqueFortunes = {};
                 userFortunes.forEach(item => {
                     const id = item.id || item.content_data?.id || item.timestamp;
                     const timestamp = item.timestamp || item.content_data?.timestamp || item.created_at;
@@ -558,43 +551,98 @@
                     }
                 });
                 
+                // Sort by most recent
                 fortuneHistory = Object.values(uniqueFortunes)
+                    .filter(f => f.fortune)
                     .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                    .slice(0, 5);
+                    .slice(0, 10);
                 
-                updateHistory();
+                updateHistoryDisplay();
             } catch (err) {
                 console.error('Load failed:', err);
             }
         }
-
-        function updateHistory() {
-            if (fortuneHistory.length === 0) return;
+        
+        function addToHistory(fortune, numbers) {
+            // Only add to local history if not already saved to cloud
+            if (!currentUser) {
+                fortuneHistory.unshift({
+                    fortune: fortune,
+                    numbers: numbers,
+                    timestamp: new Date().toISOString()
+                });
+                
+                // Keep only last 10 fortunes
+                if (fortuneHistory.length > 10) {
+                    fortuneHistory.pop();
+                }
+                
+                updateHistoryDisplay();
+            } else {
+                // If logged in, reload from server to get updated list
+                loadUserData();
+            }
+        }
+        
+        function updateHistoryDisplay() {
+            const historyList = document.getElementById('historyList');
             
+            if (fortuneHistory.length === 0) {
+                historyList.innerHTML = '<div class="history-item">No fortunes yet!</div>';
+                return;
+            }
+            
+            historyList.innerHTML = fortuneHistory.map(item => {
+                const time = new Date(item.timestamp).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                });
+                const fortuneText = item.fortune || 'Unknown fortune';
+                const truncated = fortuneText.length > 60 ? 
+                    fortuneText.substring(0, 60) + '...' : fortuneText;
+                    
+                return `
+                    <div class="history-item">
+                        <div style="font-weight: 500; margin-bottom: 4px;">${time}</div>
+                        <div style="font-size: 11px; line-height: 1.4;">${truncated}</div>
+                        ${item.numbers ? `
+                            <div style="margin-top: 4px; font-size: 10px; color: #718096;">
+                                Numbers: ${item.numbers.join(', ')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleHistory() {
             const panel = document.getElementById('historyPanel');
-            const list = document.getElementById('historyList');
-            
-            panel.classList.add('visible');
-            list.innerHTML = fortuneHistory
-                .map(item => {
-                    const text = item.fortune || '';
-                    const truncated = text.length > 60 ? text.substring(0, 60) + '...' : text;
-                    return `<div class="history-item">${truncated}</div>`;
-                })
-                .join('');
+            panel.classList.toggle('show');
         }
-
+        
         function showSaveIndicator() {
-            const bubble = document.getElementById('saveBubble');
-            bubble.classList.add('show');
-            setTimeout(() => bubble.classList.remove('show'), 2000);
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
         }
-
+        
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            createParticles();
+            updateHistoryDisplay();
             if (loadAuthFromStorage()) {
                 loadUserData();
+            }
+        });
+        
+        // Close history panel when clicking outside
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('historyPanel');
+            const btn = document.querySelector('.history-btn');
+            
+            if (!panel.contains(e.target) && e.target !== btn) {
+                panel.classList.remove('show');
             }
         });
     </script>
