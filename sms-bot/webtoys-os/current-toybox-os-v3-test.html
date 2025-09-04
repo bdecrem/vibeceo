@@ -290,8 +290,6 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             box-shadow: 0 20px 60px var(--shadow-medium);
-            min-width: 300px;
-            min-height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -353,13 +351,15 @@
             flex: 1;
             overflow: hidden;
             position: relative;
-            background: rgba(255, 255, 255, 0.02);
+            background: white;  /* White background for app content */
+            display: flex;
         }
         
         .window-content iframe {
             width: 100%;
             height: 100%;
             border: none;
+            background: white;  /* Ensure iframe has white background */
         }
         
         /* Resize handles */
@@ -608,15 +608,17 @@
             background: var(--glass);
             display: flex;
             flex-direction: column;
-            animation: slideIn 0.3s ease-out;
+            animation: popIn 0.2s ease-out;
         }
         
-        @keyframes slideIn {
+        @keyframes popIn {
             from {
-                transform: translateX(100%);
+                opacity: 0;
+                transform: scale(0.95);
             }
             to {
-                transform: translateX(0);
+                opacity: 1;
+                transform: scale(1);
             }
         }
         
@@ -639,12 +641,14 @@
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            font-size: 20px;
+            font-size: 28px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
+            line-height: 1;
+            padding-bottom: 2px;
         }
         
         .mobile-back-btn:hover {
@@ -1315,8 +1319,7 @@
                         { id: 'textz', name: 'TextZ', icon: '📄', url: '/public/toybox-textz', type: 'productivity', width: 800, height: 600 },
                         { id: 'paint', name: 'Paint', icon: '🎨', url: 'apps/paint.html', type: 'creative', width: 800, height: 600 },
                         { id: 'fortune', name: 'Magic 8', icon: '🔮', url: 'apps/fortune-cookie.html', type: 'game', width: 600, height: 700 },
-                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true },
-                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', type: 'system', width: 700, height: 500 }
+                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true }
                     ],
                     icon_positions: {},
                     widget_positions: {},
@@ -1560,39 +1563,61 @@
             }
             
             if (authMode === 'login') {
-                // Login logic
-                const response = await fetch(`/api/zad/load?app_id=desktop-auth&participant_id=${handle.toUpperCase()}_${pin}`);
+                // Login logic - case-insensitive
+                const normalizedHandle = handle.toLowerCase();
+                const response = await fetch(`/api/zad/load?app_id=desktop-auth`);
                 if (response.ok) {
                     const data = await response.json();
-                    const user = data.find(d => d.participant_id === `${handle.toUpperCase()}_${pin}`);
+                    // Find user with case-insensitive comparison
+                    const user = data.find(d => {
+                        const storedHandle = d.content_data?.handle?.toLowerCase();
+                        return storedHandle === normalizedHandle && d.content_data?.pin === pin;
+                    });
                     
                     if (user) {
                         currentUser = user.content_data;
-                        // Ensure proper format
-                        if (currentUser.handle) {
-                            currentUser.handle = currentUser.handle.toUpperCase();
+                        // Use display_name for UI, handle for data operations
+                        if (!currentUser.display_name) {
+                            currentUser.display_name = currentUser.handle; // Fallback for old accounts
                         }
-                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
-                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        if (!currentUser.participantId) {
+                            currentUser.participantId = `${normalizedHandle}_${pin}`;
                         }
                         localStorage.setItem('toybox_user', JSON.stringify(currentUser));
                         updateAuthDisplay();
                         broadcastAuth();
                         closeAuth();
-                        showAchievement(`Welcome back, ${currentUser.handle}!`);
+                        showAchievement(`Welcome back, ${currentUser.display_name}!`);
                     } else {
                         messageEl.textContent = 'Invalid username or PIN';
                         messageEl.style.display = 'block';
                     }
                 }
             } else {
-                // Register logic
-                const upperHandle = handle.toUpperCase();
+                // Register logic - preserve case for display
+                const normalizedHandle = handle.toLowerCase();
+                
+                // Check if username already exists (case-insensitive)
+                const checkResponse = await fetch(`/api/zad/load?app_id=desktop-auth`);
+                if (checkResponse.ok) {
+                    const existingUsers = await checkResponse.json();
+                    const userExists = existingUsers.some(u => 
+                        u.content_data?.handle?.toLowerCase() === normalizedHandle
+                    );
+                    
+                    if (userExists) {
+                        messageEl.textContent = `Username "${handle}" is already taken`;
+                        messageEl.style.display = 'block';
+                        return;
+                    }
+                }
+                
                 const userData = {
-                    handle: upperHandle,
+                    handle: normalizedHandle,        // Lowercase for uniqueness
+                    display_name: handle,             // Preserve original casing
                     pin: pin,
-                    participantId: `${upperHandle}_${pin}`,
-                    id: upperHandle,
+                    participantId: `${normalizedHandle}_${pin}`,
+                    id: normalizedHandle,
                     created: new Date().toISOString()
                 };
                 
@@ -1613,7 +1638,7 @@
                     updateAuthDisplay();
                     broadcastAuth();
                     closeAuth();
-                    showAchievement(`Welcome to WebtoysOS, ${upperHandle}!`);
+                    showAchievement(`Welcome to WebtoysOS, ${handle}!`);
                 } else {
                     messageEl.textContent = 'Registration failed. Try again.';
                     messageEl.style.display = 'block';
@@ -1636,7 +1661,7 @@
             
             if (currentUser) {
                 userLabel.textContent = 'LOGGED IN';
-                username.textContent = currentUser.handle;
+                username.textContent = currentUser.display_name || currentUser.handle;
                 profileEmoji.textContent = '😎';
             } else {
                 userLabel.textContent = 'CLICK TO';
@@ -1757,8 +1782,13 @@
             const windowDiv = document.createElement('div');
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
-            windowDiv.style.width = (app.width || 600) + 'px';
-            windowDiv.style.height = (app.height || 400) + 'px';
+            
+            // Use exact app dimensions - windows should wrap tightly around content
+            const appWidth = app.width || 800;
+            const appHeight = app.height || 600;
+            
+            windowDiv.style.width = appWidth + 'px';
+            windowDiv.style.height = appHeight + 'px';
             windowDiv.style.left = '50%';
             windowDiv.style.top = '50%';
             windowDiv.style.transform = 'translate(-50%, -50%)';
@@ -1782,6 +1812,7 @@
             // Window content
             const content = document.createElement('div');
             content.className = 'window-content';
+            content.style.background = 'white';  // Ensure white background
             
             const iframe = document.createElement('iframe');
             iframe.src = app.url.startsWith('http') ? app.url : 
@@ -1790,6 +1821,8 @@
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
+            iframe.style.display = 'block';  // Ensure no gaps
+            iframe.style.background = 'white';  // White background for iframe
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.postMessage({
@@ -1860,7 +1893,7 @@
             const header = document.createElement('div');
             header.className = 'mobile-app-header';
             header.innerHTML = `
-                <button class="mobile-back-btn" onclick="closeFullscreenApp('${appId}')">←</button>
+                <button class="mobile-back-btn" onclick="closeFullscreenApp('${appId}')">×</button>
                 <div class="mobile-app-title">${app.icon || '📱'} ${app.name}</div>
             `;
             

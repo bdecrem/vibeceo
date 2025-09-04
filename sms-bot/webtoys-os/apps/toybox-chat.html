@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToyBox Chat</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Inter", "DM Sans", system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            max-height: 600px;
+            width: 100%;
+            max-width: 500px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        
+        .chat-header {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 16px 20px;
+            font-weight: 600;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .messages-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        
+        .message {
+            margin-bottom: 16px;
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .message-bubble {
+            padding: 12px 16px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            max-width: 80%;
+            position: relative;
+        }
+        
+        .message-header {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .message-author {
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .message-time {
+            font-size: 11px;
+            color: #9ca3af;
+        }
+        
+        .message-text {
+            font-size: 14px;
+            line-height: 1.5;
+            color: #1f2937;
+            word-wrap: break-word;
+        }
+        
+        .own-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+        
+        .own-message .message-bubble {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+        
+        .own-message .message-author,
+        .own-message .message-time,
+        .own-message .message-text {
+            color: white;
+            opacity: 0.9;
+        }
+        
+        .input-area {
+            display: flex;
+            padding: 16px;
+            gap: 12px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+        
+        #messageInput {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+        
+        #messageInput:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        button:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .status-bar {
+            padding: 8px 16px;
+            background: #f3f4f6;
+            font-size: 12px;
+            color: #6b7280;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6b7280;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #e5e7eb;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 10px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .system-message {
+            text-align: center;
+            color: #9ca3af;
+            font-size: 12px;
+            margin: 16px 0;
+            position: relative;
+        }
+        
+        .system-message::before,
+        .system-message::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: calc(50% - 60px);
+            height: 1px;
+            background: #e5e7eb;
+        }
+        
+        .system-message::before {
+            left: 0;
+        }
+        
+        .system-message::after {
+            right: 0;
+        }
+        
+        /* Scrollbar styling */
+        .messages-area::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .messages-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb {
+            background: #d1d5db;
+            border-radius: 3px;
+        }
+        
+        .messages-area::-webkit-scrollbar-thumb:hover {
+            background: #9ca3af;
+        }
+        
+        /* Login prompt styling */
+        .login-prompt {
+            background: #fef3c7;
+            color: #92400e;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 16px;
+            text-align: center;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <span>💬</span>
+            <span>ToyBox Chat - Community Room</span>
+        </div>
+        
+        <div class="messages-area" id="messagesArea">
+            <div class="loading">
+                <span class="loading-spinner"></span>
+                Loading messages...
+            </div>
+        </div>
+        
+        <div class="input-area">
+            <input type="text" id="messageInput" placeholder="Type your message..." maxlength="500">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+        
+        <div class="status-bar" id="statusBar">
+            Connecting...
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        window.APP_ID = 'toybox-chat';
+        
+        // State
+        let currentUser = null;
+        let messages = [];
+        let lastMessageTime = null;
+        
+        // Get auth from localStorage and listen for updates
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    // Ensure uppercase handle and correct participantId format
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    console.log('Chat loaded user:', currentUser);
+                    updateStatus(`Logged in as ${currentUser.handle}`);
+                } catch (e) {
+                    console.error('Failed to parse user:', e);
+                    updateStatus('Not logged in');
+                }
+            } else {
+                updateStatus('Not logged in');
+                showLoginPrompt();
+            }
+        }
+        
+        // Show login prompt if not logged in
+        function showLoginPrompt() {
+            const messagesArea = document.getElementById('messagesArea');
+            if (!currentUser && messages.length === 0) {
+                messagesArea.innerHTML = `
+                    <div class="login-prompt">
+                        👋 Please log in through ToyBox OS to start chatting
+                    </div>
+                `;
+            }
+        }
+        
+        // ZAD helper functions
+        async function save(dataType, data) {
+            if (!currentUser || !currentUser.participantId) {
+                throw new Error('Not logged in');
+            }
+            
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: currentUser.participantId,
+                    action_type: dataType,
+                    content_data: data
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save');
+            }
+            
+            return await response.json();
+        }
+        
+        async function load(dataType) {
+            const url = `/api/zad/load?app_id=${encodeURIComponent(window.APP_ID)}&action_type=${encodeURIComponent(dataType)}`;
+            const response = await fetch(url);
+            
+            if (!response.ok) {
+                throw new Error('Failed to load');
+            }
+            
+            const data = await response.json();
+            return data || [];
+        }
+        
+        // Load all messages
+        async function loadMessages() {
+            try {
+                const data = await load('chat_message');
+                
+                // ZAD returns flattened data
+                messages = data.map(item => ({
+                    text: item.text || item.content_data?.text,
+                    author: item.author || item.content_data?.author,
+                    timestamp: item.timestamp || item.content_data?.timestamp || item.created_at,
+                    id: item.id || item.content_data?.id
+                })).filter(msg => msg.text && msg.author);
+                
+                // Sort by timestamp
+                messages.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+                
+                displayMessages();
+                updateStatus(`${messages.length} messages`);
+            } catch (error) {
+                console.error('Failed to load messages:', error);
+                updateStatus('Failed to load messages');
+                showLoginPrompt();
+            }
+        }
+        
+        // Display messages in the chat
+        function displayMessages() {
+            const messagesArea = document.getElementById('messagesArea');
+            
+            if (messages.length === 0) {
+                messagesArea.innerHTML = '<div class="system-message">No messages yet. Start the conversation!</div>';
+                return;
+            }
+            
+            let html = '';
+            let lastDate = null;
+            
+            messages.forEach(msg => {
+                // Add date separator if needed
+                const msgDate = new Date(msg.timestamp).toDateString();
+                if (msgDate !== lastDate) {
+                    html += `<div class="system-message">${msgDate}</div>`;
+                    lastDate = msgDate;
+                }
+                
+                // Format time
+                const time = new Date(msg.timestamp).toLocaleTimeString('en-US', {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+                
+                // Check if own message
+                const isOwn = currentUser && msg.author === currentUser.handle;
+                
+                html += `
+                    <div class="message ${isOwn ? 'own-message' : ''}">
+                        <div class="message-bubble">
+                            <div class="message-header">
+                                <span class="message-author">${msg.author}</span>
+                                <span class="message-time">${time}</span>
+                            </div>
+                            <div class="message-text">${escapeHtml(msg.text)}</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            messagesArea.innerHTML = html;
+            
+            // Smooth scroll to bottom
+            messagesArea.scrollTo({
+                top: messagesArea.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+        
+        // Send a message
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            if (!currentUser || !currentUser.participantId) {
+                alert('Please log in through ToyBox OS to send messages');
+                return;
+            }
+            
+            // Disable while sending
+            input.disabled = true;
+            const sendBtn = document.querySelector('button');
+            sendBtn.disabled = true;
+            updateStatus('Sending...');
+            
+            try {
+                const message = {
+                    text: text,
+                    author: currentUser.handle,
+                    timestamp: new Date().toISOString(),
+                    id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+                };
+                
+                await save('chat_message', message);
+                
+                // Add to local messages and display
+                messages.push(message);
+                displayMessages();
+                
+                // Clear input
+                input.value = '';
+                updateStatus('Message sent');
+                
+                // Schedule refresh to get other users' messages
+                setTimeout(loadMessages, 1000);
+                
+            } catch (error) {
+                console.error('Failed to send message:', error);
+                updateStatus('Failed to send message');
+                alert('Failed to send message. Please make sure you are logged in.');
+            } finally {
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+        
+        // Utility function to escape HTML
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Update status bar
+        function updateStatus(text) {
+            document.getElementById('statusBar').textContent = text;
+        }
+        
+        // Handle enter key in input
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+        
+        // Auto-refresh messages
+        function startAutoRefresh() {
+            setInterval(async () => {
+                const previousCount = messages.length;
+                await loadMessages();
+                
+                // Only show notification if new messages from others
+                if (messages.length > previousCount) {
+                    const newMessages = messages.length - previousCount;
+                    const lastMessage = messages[messages.length - 1];
+                    if (lastMessage.author !== currentUser?.handle) {
+                        updateStatus(`${newMessages} new message${newMessages > 1 ? 's' : ''}`);
+                        
+                        // Reset status after 3 seconds
+                        setTimeout(() => {
+                            updateStatus(`${messages.length} messages`);
+                        }, 3000);
+                    }
+                }
+            }, 5000); // Refresh every 5 seconds
+        }
+        
+        // Listen for auth changes from ToyBox OS
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                console.log('Chat received auth update:', event.data);
+                if (event.data.user) {
+                    currentUser = event.data.user;
+                    // Ensure uppercase and participantId
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    updateStatus(`Logged in as ${currentUser.handle}`);
+                    loadMessages(); // Reload messages when user logs in
+                } else {
+                    currentUser = null;
+                    updateStatus('Not logged in');
+                    showLoginPrompt();
+                }
+            }
+        });
+        
+        // Request auth from parent frame
+        function requestAuth() {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+        
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            loadMessages();
+            startAutoRefresh();
+            requestAuth(); // Request auth from desktop
+            
+            // Focus input
+            document.getElementById('messageInput').focus();
+        });
+    </script>
+</body>
+</html>
