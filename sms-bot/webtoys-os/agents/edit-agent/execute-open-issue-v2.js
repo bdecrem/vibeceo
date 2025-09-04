@@ -259,31 +259,47 @@ async function loadLeaderboard() {
     
     // CRITICAL: Modern design principles
     contexts.push(`
-🎨 DESIGN REQUIREMENTS - Think like a 2025 designer, NOT a 1980s engineer:
 
-DO:
-- Clean, minimal interfaces with focus on content
-- Subtle animations and transitions (0.2s ease)
-- Modern fonts (Inter, DM Sans, system fonts)
-- Soft shadows and rounded corners (8-12px)
-- Floating action buttons that appear when needed
-- Glassmorphism and backdrop-filter effects
-- Gradient accents (not overwhelming backgrounds)
+🎨 DESIGN REQUIREMENTS - Match the Webtoys OS aesthetic:
 
-DON'T:
-- Show user info (it's on the desktop already!)
-- Add Export/Import/Print buttons (this isn't 1995)
-- Create complex toolbars with 20 buttons
-- Leave empty space or split screens with no content
-- Use harsh borders or sharp corners
-- Add unnecessary status bars or panels
+VISUAL LANGUAGE:
+- Glass morphism: backdrop-filter: blur(20px), semi-transparent backgrounds
+- Soft gradients: Use subtle color transitions, not flat colors
+- Rounded corners: 16-24px for containers, 12px for buttons
+- Modern shadows: box-shadow: 0 8px 32px rgba(0,0,0,0.1)
+- Color palette: Work with translucent whites, soft pastels, gradient accents
 
-LAYOUT:
-- Sidebar for navigation (if needed)
-- Main content area takes priority
-- Floating save indicator (appears on changes)
-- Simple word count at bottom
-- Login prompts only when user tries to save
+TYPOGRAPHY:
+- Headers: Comfortaa or similar rounded, friendly fonts
+- Body: Inter or system-ui for readability
+- Sizes: Generous spacing, 14-16px base size
+- Colors: High contrast but soft (not pure black on white)
+
+COMPONENTS:
+- Buttons: Gradient backgrounds with hover effects, pill-shaped when appropriate
+- Cards: Glass effect with subtle borders (1px rgba(255,255,255,0.2))
+- Inputs: Transparent backgrounds, focus states with glow effects
+- Icons: Use emojis or rounded icon sets, not sharp system icons
+
+LAYOUT PRINCIPLES:
+- Floating elements over blurred backgrounds
+- Content cards that feel like they're hovering
+- Smooth transitions (0.3s cubic-bezier)
+- Generous padding (20-32px)
+- Single focus area, minimal chrome
+
+AVOID:
+- Solid gray backgrounds (#f5f5f5 is banned!)
+- Sharp 1px black borders
+- Traditional menu bars and toolbars
+- Dense information layouts
+- System default styles
+
+INTERACTION:
+- Hover states that transform/scale slightly
+- Click feedback with subtle animations
+- Auto-save with toast notifications
+- Contextual actions that appear on hover/focus
 
 WINDOW SIZING (CRITICAL):
 - Apps MUST specify exact width and height in app registry
