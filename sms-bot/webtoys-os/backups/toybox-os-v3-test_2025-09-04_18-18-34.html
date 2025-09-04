@@ -290,6 +290,8 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             box-shadow: 0 20px 60px var(--shadow-medium);
+            min-width: 300px;
+            min-height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -352,7 +354,6 @@
             overflow: hidden;
             position: relative;
             background: rgba(255, 255, 255, 0.02);
-            display: flex;
         }
         
         .window-content iframe {
@@ -1781,13 +1782,8 @@
             const windowDiv = document.createElement('div');
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
-            
-            // Use exact app dimensions - windows should wrap tightly around content
-            const appWidth = app.width || 800;
-            const appHeight = app.height || 600;
-            
-            windowDiv.style.width = appWidth + 'px';
-            windowDiv.style.height = appHeight + 'px';
+            windowDiv.style.width = (app.width || 600) + 'px';
+            windowDiv.style.height = (app.height || 400) + 'px';
             windowDiv.style.left = '50%';
             windowDiv.style.top = '50%';
             windowDiv.style.transform = 'translate(-50%, -50%)';
@@ -1819,7 +1815,6 @@
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            iframe.style.display = 'block';  // Ensure no gaps
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.postMessage({

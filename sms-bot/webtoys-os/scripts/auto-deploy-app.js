@@ -20,6 +20,12 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Ensure backups directory exists
+const backupDir = path.join(__dirname, '../backups/apps');
+if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir, { recursive: true });
+}
+
 // Load environment variables
 let result = dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 if (result.error) {
@@ -182,6 +188,26 @@ async function deployApp(filename, iconOverride = null) {
     const timestamp = new Date().toISOString();
     
     if (existing) {
+        // Backup existing app before updating
+        console.log('💾 Creating backup of existing app...');
+        const { data: currentApp, error: fetchError } = await supabase
+            .from('wtaf_content')
+            .select('html_content')
+            .eq('user_slug', 'public')
+            .eq('app_slug', appSlug)
+            .single();
+        
+        if (currentApp && currentApp.html_content) {
+            const backupTimestamp = new Date().toISOString()
+                .replace(/:/g, '-')
+                .replace(/\./g, '-')
+                .replace('T', '_')
+                .slice(0, -5);
+            const backupFile = path.join(backupDir, `${appSlug}_${backupTimestamp}_before_update.html`);
+            fs.writeFileSync(backupFile, currentApp.html_content);
+            console.log(`   Backup saved: ${backupFile}`);
+        }
+        
         // Update existing
         const { error: updateError } = await supabase
             .from('wtaf_content')

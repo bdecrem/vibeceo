@@ -281,7 +281,14 @@ LAYOUT:
 - Main content area takes priority
 - Floating save indicator (appears on changes)
 - Simple word count at bottom
-- Login prompts only when user tries to save`);
+- Login prompts only when user tries to save
+
+WINDOW SIZING (CRITICAL):
+- Apps MUST specify exact width and height in app registry
+- Windows wrap TIGHTLY around app content (no extra padding)
+- Standard sizes: Chat (700x500), Text Editor (800x600), Games (varies)
+- Desktop windows use exact dimensions - NO min-width/min-height
+- Mobile ALWAYS fullscreen (ignore width/height on mobile)`);
     
     // Add contexts if any
     if (contexts.length > 0) {
