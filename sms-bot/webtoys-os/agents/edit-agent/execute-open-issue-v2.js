@@ -47,10 +47,12 @@ Note: This app needs authentication. Apps receive auth via postMessage from the 
 See AUTH-DOCUMENTATION.md for details. Do NOT create login forms.`,
     
     new_app: `
-Create the app in the apps/ directory, then deploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
+Create the app in the apps/ directory, then deploy with: node scripts/safe-deploy-app.js apps/[filename].html
+This will: 1) Save to git, 2) Create commit, 3) Deploy to Supabase`,
     
     modify_app: `
-After modifying, redeploy with: node scripts/auto-deploy-app.js apps/[filename].html`,
+After modifying, redeploy with: node scripts/safe-deploy-app.js apps/[filename].html
+This will: 1) Save changes to git, 2) Create commit, 3) Deploy to Supabase`,
     
     data_storage: `
 MANDATORY: Use ZAD API for ALL data storage:
@@ -464,6 +466,25 @@ async function executeOpenIssue() {
         // Execute with monitoring
         const result = await executeClaudeWithMonitoring(prompt, issueId);
         
+        // Extract commit hash from output if present
+        let commitHash = null;
+        let filesChanged = [];
+        
+        if (result.output) {
+            // Look for commit hash pattern in output
+            const commitMatch = result.output.match(/COMMIT_HASH=([a-f0-9]+)/);
+            if (commitMatch) {
+                commitHash = commitMatch[1];
+                console.log(`📝 Captured commit: ${commitHash}`);
+            }
+            
+            // Look for file deployment patterns
+            const deployMatches = result.output.matchAll(/safe-deploy-app\.js\s+(?:apps\/)?([^\s]+\.html)/g);
+            for (const match of deployMatches) {
+                filesChanged.push(`apps/${match[1]}`);
+            }
+        }
+        
         // Prepare execution log
         const executionLog = {
             timestamp: new Date().toISOString(),
@@ -471,7 +492,9 @@ async function executeOpenIssue() {
             success: result.success,
             output_size: result.output?.length || 0,
             prompt_size: prompt.length,
-            version: 'v2'
+            version: 'v2',
+            git_commit: commitHash,
+            files_changed: filesChanged
         };
         
         // Update issue with result
@@ -491,6 +514,8 @@ ${result.output || 'No output captured'}
 - Status: ${newStatus}
 - Prompt size: ${prompt.length} chars (78% smaller than V1)
 - Output size: ${result.output?.length || 0} bytes
+${commitHash ? `- Git Commit: ${commitHash}` : '- Git Commit: No changes committed'}
+${filesChanged.length > 0 ? `- Files Changed: ${filesChanged.join(', ')}` : ''}
 - Completed at: ${new Date().toISOString()}`;
         
         await supabase
