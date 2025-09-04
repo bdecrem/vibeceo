@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Mood Ring</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .ring {
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, 
+                rgba(255, 255, 255, 0.9) 0%, 
+                rgba(255, 255, 255, 0.1) 50%, 
+                transparent 70%);
+            box-shadow: 
+                0 0 60px 20px rgba(255, 255, 255, 0.3),
+                inset 0 0 60px 20px rgba(0, 0, 0, 0.2);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: float 6s ease-in-out infinite;
+            position: relative;
+            backdrop-filter: blur(10px);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-20px) scale(1.05); }
+        }
+
+        .inner-ring {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--color1, #667eea), var(--color2, #764ba2));
+            transition: all 0.6s ease;
+            box-shadow: 
+                0 10px 40px rgba(0, 0, 0, 0.3),
+                inset 0 0 30px rgba(255, 255, 255, 0.2);
+        }
+
+        .message {
+            position: absolute;
+            top: 60%;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            color: white;
+            padding: 20px 40px;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            max-width: 80%;
+            opacity: 0;
+            transition: all 0.5s ease;
+            font-size: 1.1em;
+            line-height: 1.6;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .message.show {
+            opacity: 1;
+            top: 65%;
+        }
+
+        .mood-label {
+            position: absolute;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            font-size: 2em;
+            font-weight: 600;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .mood-label.show {
+            opacity: 1;
+        }
+
+        .sparkle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: white;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: sparkle 1s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                transform: translate(0, 0) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--tx), var(--ty)) scale(1);
+                opacity: 0;
+            }
+        }
+
+        .instruction {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+            text-align: center;
+            padding: 10px 20px;
+            background: rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+        }
+
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
+            pointer-events: none;
+            animation: ripple 1s ease-out forwards;
+        }
+
+        @keyframes ripple {
+            from {
+                width: 0;
+                height: 0;
+                opacity: 1;
+            }
+            to {
+                width: 300px;
+                height: 300px;
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="mood-label" id="moodLabel"></div>
+        <div class="ring" id="ring">
+            <div class="inner-ring" id="innerRing"></div>
+        </div>
+        <div class="message" id="message"></div>
+        <div class="instruction">Click anywhere to reveal your mood & fortune ✨</div>
+    </div>
+
+    <script>
+        const moods = [
+            {
+                name: 'Energetic',
+                colors: ['#FF6B6B', '#FF8E53'],
+                messages: [
+                    'Your energy today could power a small city! Use it wisely.',
+                    'The universe is vibrating at your frequency. Dance with it!',
+                    'Lightning doesn\'t strike twice, but your energy strikes infinitely.',
+                    'Today\'s adventure begins with your next breath.'
+                ]
+            },
+            {
+                name: 'Peaceful',
+                colors: ['#4ECDC4', '#44A08D'],
+                messages: [
+                    'Like a calm lake, you reflect the beauty around you.',
+                    'Peace isn\'t found, it\'s cultivated. Your garden is blooming.',
+                    'In stillness, you\'ll hear what the universe whispers.',
+                    'Your tranquility ripples outward, touching everything.'
+                ]
+            },
+            {
+                name: 'Creative',
+                colors: ['#F093FB', '#F5576C'],
+                messages: [
+                    'Your imagination is painting outside the lines today!',
+                    'Ideas are falling from the sky like colorful rain.',
+                    'The muse has your phone number and she\'s calling.',
+                    'Create something that didn\'t exist 5 minutes ago.'
+                ]
+            },
+            {
+                name: 'Mysterious',
+                colors: ['#5E60CE', '#4361EE'],
+                messages: [
+                    'You\'re an enigma wrapped in a riddle, seasoned with intrigue.',
+                    'The shadows know your secrets, but they\'ll never tell.',
+                    'Mystery is your middle name (even if it isn\'t).',
+                    'Some puzzles are meant to remain unsolved. You\'re one of them.'
+                ]
+            },
+            {
+                name: 'Playful',
+                colors: ['#FFD93D', '#FCB69F'],
+                messages: [
+                    'Life\'s a game and you just found a secret level!',
+                    'Your inner child is driving today. Enjoy the ride!',
+                    'Seriousness is overrated. Playfulness is underutilized.',
+                    'The world is your playground. What will you build?'
+                ]
+            },
+            {
+                name: 'Wise',
+                colors: ['#667EEA', '#764BA2'],
+                messages: [
+                    'Ancient wisdom flows through your modern soul.',
+                    'You know things you don\'t know you know.',
+                    'Your intuition has a PhD in being right.',
+                    'The owl of wisdom has chosen your shoulder to perch on.'
+                ]
+            },
+            {
+                name: 'Adventurous',
+                colors: ['#FA8231', '#F42B03'],
+                messages: [
+                    'Your compass points to "anywhere but here" and that\'s perfect!',
+                    'Adventure doesn\'t knock, it kicks down the door. Answer it!',
+                    'Maps are suggestions. Your path is uncharted.',
+                    'The horizon is calling your name in multiple languages.'
+                ]
+            },
+            {
+                name: 'Dreamy',
+                colors: ['#E8B4F3', '#B4A7D6'],
+                messages: [
+                    'Reality is optional today. Choose your own adventure.',
+                    'Your dreams and reality are having a beautiful conversation.',
+                    'Clouds are jealous of how well you float through life.',
+                    'The line between sleeping and waking is beautifully blurred.'
+                ]
+            }
+        ];
+
+        let lastMoodIndex = -1;
+
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.style.left = x + 'px';
+            sparkle.style.top = y + 'px';
+            sparkle.style.setProperty('--tx', (Math.random() - 0.5) * 100 + 'px');
+            sparkle.style.setProperty('--ty', (Math.random() - 0.5) * 100 + 'px');
+            document.body.appendChild(sparkle);
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = (x - 150) + 'px';
+            ripple.style.top = (y - 150) + 'px';
+            document.body.appendChild(ripple);
+            setTimeout(() => ripple.remove(), 1000);
+        }
+
+        function revealMood(e) {
+            // Create visual effects at click position
+            createRipple(e.clientX, e.clientY);
+            for (let i = 0; i < 8; i++) {
+                setTimeout(() => createSparkle(e.clientX, e.clientY), i * 50);
+            }
+
+            // Get a different mood than the last one
+            let moodIndex;
+            do {
+                moodIndex = Math.floor(Math.random() * moods.length);
+            } while (moodIndex === lastMoodIndex && moods.length > 1);
+            lastMoodIndex = moodIndex;
+
+            const mood = moods[moodIndex];
+            const messageIndex = Math.floor(Math.random() * mood.messages.length);
+
+            // Update the ring colors
+            const innerRing = document.getElementById('innerRing');
+            innerRing.style.setProperty('--color1', mood.colors[0]);
+            innerRing.style.setProperty('--color2', mood.colors[1]);
+            innerRing.style.background = `linear-gradient(135deg, ${mood.colors[0]}, ${mood.colors[1]})`;
+
+            // Update background based on click position
+            const xPercent = (e.clientX / window.innerWidth) * 100;
+            const yPercent = (e.clientY / window.innerHeight) * 100;
+            document.body.style.background = `linear-gradient(${xPercent + yPercent}deg, ${mood.colors[0]} 0%, ${mood.colors[1]} 100%)`;
+
+            // Show mood label
+            const moodLabel = document.getElementById('moodLabel');
+            moodLabel.textContent = mood.name;
+            moodLabel.classList.add('show');
+
+            // Show message
+            const message = document.getElementById('message');
+            message.textContent = mood.messages[messageIndex];
+            message.classList.add('show');
+
+            // Add some rotation to the ring
+            const ring = document.getElementById('ring');
+            ring.style.transform = `rotate(${Math.random() * 360}deg)`;
+
+            // Hide after a delay
+            setTimeout(() => {
+                moodLabel.classList.remove('show');
+                message.classList.remove('show');
+                ring.style.transform = 'rotate(0deg)';
+            }, 4000);
+        }
+
+        document.addEventListener('click', revealMood);
+
+        // Initial subtle animation
+        setInterval(() => {
+            const innerRing = document.getElementById('innerRing');
+            if (!document.querySelector('.message.show')) {
+                innerRing.style.filter = `hue-rotate(${Math.random() * 30}deg)`;
+            }
+        }, 3000);
+    </script>
+</body>
+</html>

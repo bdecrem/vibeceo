@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pa1nt</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .app-container {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.12);
+            width: 90vw;
+            height: 85vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            align-items: center;
+            z-index: 10;
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 8px;
+            padding: 4px;
+            background: rgba(0, 0, 0, 0.02);
+            border-radius: 12px;
+        }
+
+        .tool-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            border: none;
+            background: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            font-size: 18px;
+        }
+
+        .tool-btn:hover {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .color-picker:hover {
+            transform: scale(1.1);
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(0, 0, 0, 0.02);
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        .slider-label {
+            font-size: 13px;
+            color: #666;
+            font-weight: 500;
+            min-width: 30px;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 120px;
+            height: 4px;
+            background: #ddd;
+            outline: none;
+            border-radius: 2px;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            cursor: pointer;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.4);
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            background: #f5f5f7;
+            position: relative;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .floating-actions {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            z-index: 20;
+        }
+
+        .fab {
+            width: 56px;
+            height: 56px;
+            border-radius: 16px;
+            border: none;
+            background: white;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .fab:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+        }
+
+        .fab.primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .save-indicator {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            background: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+            display: none;
+            animation: slideIn 0.3s ease;
+            z-index: 30;
+        }
+
+        .save-indicator.show {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .auth-modal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 24px 48px rgba(0, 0, 0, 0.2);
+            z-index: 100;
+            display: none;
+            min-width: 320px;
+        }
+
+        .auth-modal.show {
+            display: block;
+            animation: modalFadeIn 0.3s ease;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -48%);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%);
+            }
+        }
+
+        .modal-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(4px);
+            z-index: 90;
+            display: none;
+        }
+
+        .modal-overlay.show {
+            display: block;
+        }
+
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .auth-input {
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .auth-btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+
+        .canvas-info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            color: #666;
+            pointer-events: none;
+        }
+
+        .spacer {
+            flex: 1;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="toolbar">
+            <div class="logo">Pa1nt</div>
+            
+            <div class="tool-group">
+                <button class="tool-btn active" data-tool="brush" title="Brush">🖌️</button>
+                <button class="tool-btn" data-tool="eraser" title="Eraser">🧽</button>
+                <button class="tool-btn" data-tool="fill" title="Fill">🪣</button>
+            </div>
+
+            <div class="tool-group">
+                <button class="tool-btn" data-shape="circle" title="Circle">⭕</button>
+                <button class="tool-btn" data-shape="square" title="Square">⬜</button>
+                <button class="tool-btn" data-shape="line" title="Line">📏</button>
+            </div>
+
+            <input type="color" class="color-picker" id="colorPicker" value="#667eea">
+
+            <div class="slider-container">
+                <span class="slider-label">Size</span>
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+                <span id="sizeValue" class="slider-label">5</span>
+            </div>
+
+            <div class="spacer"></div>
+
+            <button class="tool-btn" id="undoBtn" title="Undo">↩️</button>
+            <button class="tool-btn" id="clearBtn" title="Clear">🗑️</button>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="canvas-info">
+                <span id="canvasSize">800 × 600</span>
+            </div>
+        </div>
+
+        <div class="floating-actions">
+            <button class="fab" id="downloadBtn" title="Download">⬇️</button>
+            <button class="fab primary" id="saveBtn" title="Save to Gallery">💾</button>
+        </div>
+
+        <div class="save-indicator" id="saveIndicator">
+            ✅ Saved!
+        </div>
+
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="auth-modal" id="authModal">
+            <h2 class="auth-title">Sign in to Save</h2>
+            <form class="auth-form" id="authForm">
+                <input type="text" class="auth-input" id="handleInput" 
+                       placeholder="Handle (3-15 characters)" 
+                       maxlength="15" required>
+                <input type="text" class="auth-input" id="pinInput" 
+                       placeholder="PIN (4 digits)" 
+                       maxlength="4" pattern="\d{4}" required>
+                <button type="submit" class="auth-btn">Sign In & Save</button>
+                <button type="button" class="auth-btn" style="background: #999" onclick="closeAuth()">Cancel</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'brush';
+        let currentShape = null;
+        let currentColor = '#667eea';
+        let brushSize = 5;
+        let history = [];
+        let historyStep = -1;
+        let startX, startY;
+        let currentUser = null;
+
+        // Initialize canvas
+        function initCanvas() {
+            canvas.width = 800;
+            canvas.height = 600;
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveState();
+        }
+
+        // Load auth from localStorage
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser?.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                }
+                if (!currentUser?.participantId && currentUser?.handle && currentUser?.pin) {
+                    currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                }
+            }
+        }
+
+        // Listen for auth from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser?.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                }
+                if (!currentUser?.participantId && currentUser?.handle && currentUser?.pin) {
+                    currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                }
+                localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+            }
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            if (currentShape) {
+                startX = e.offsetX;
+                startY = e.offsetY;
+                isDrawing = true;
+                return;
+            }
+
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            if (currentShape) {
+                // Redraw canvas from last saved state for shapes
+                if (historyStep >= 0) {
+                    ctx.putImageData(history[historyStep], 0, 0);
+                }
+                
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = brushSize;
+                ctx.lineCap = 'round';
+
+                if (currentShape === 'line') {
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(x, y);
+                    ctx.stroke();
+                } else if (currentShape === 'circle') {
+                    const radius = Math.sqrt(Math.pow(x - startX, 2) + Math.pow(y - startY, 2));
+                    ctx.beginPath();
+                    ctx.arc(startX, startY, radius, 0, 2 * Math.PI);
+                    ctx.stroke();
+                } else if (currentShape === 'square') {
+                    ctx.beginPath();
+                    ctx.rect(startX, startY, x - startX, y - startY);
+                    ctx.stroke();
+                }
+            } else {
+                if (currentTool === 'brush') {
+                    ctx.globalCompositeOperation = 'source-over';
+                    ctx.strokeStyle = currentColor;
+                } else if (currentTool === 'eraser') {
+                    ctx.globalCompositeOperation = 'destination-out';
+                }
+
+                ctx.lineWidth = brushSize;
+                ctx.lineCap = 'round';
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+            }
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath();
+            saveState();
+        }
+
+        // State management
+        function saveState() {
+            historyStep++;
+            if (historyStep < history.length) {
+                history.length = historyStep;
+            }
+            history.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+        }
+
+        function undo() {
+            if (historyStep > 0) {
+                historyStep--;
+                ctx.putImageData(history[historyStep], 0, 0);
+            }
+        }
+
+        // Tool handlers
+        document.querySelectorAll('[data-tool]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentTool = btn.dataset.tool;
+                currentShape = null;
+                document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                canvas.style.cursor = currentTool === 'fill' ? 'pointer' : 'crosshair';
+            });
+        });
+
+        document.querySelectorAll('[data-shape]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentShape = btn.dataset.shape;
+                currentTool = 'brush';
+                document.querySelectorAll('[data-tool]').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('[data-shape]').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                canvas.style.cursor = 'crosshair';
+            });
+        });
+
+        // Color and size controls
+        document.getElementById('colorPicker').addEventListener('change', (e) => {
+            currentColor = e.target.value;
+        });
+
+        document.getElementById('brushSize').addEventListener('input', (e) => {
+            brushSize = e.target.value;
+            document.getElementById('sizeValue').textContent = brushSize;
+        });
+
+        // Clear and undo
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            saveState();
+        });
+
+        document.getElementById('undoBtn').addEventListener('click', undo);
+
+        // Fill tool
+        canvas.addEventListener('click', (e) => {
+            if (currentTool === 'fill') {
+                const rect = canvas.getBoundingClientRect();
+                const x = Math.floor(e.clientX - rect.left);
+                const y = Math.floor(e.clientY - rect.top);
+                
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const targetColor = getPixelColor(imageData, x, y);
+                const fillColor = hexToRgb(currentColor);
+                
+                if (!colorsMatch(targetColor, fillColor)) {
+                    floodFill(imageData, x, y, targetColor, fillColor);
+                    ctx.putImageData(imageData, 0, 0);
+                    saveState();
+                }
+            }
+        });
+
+        function getPixelColor(imageData, x, y) {
+            const index = (y * imageData.width + x) * 4;
+            return {
+                r: imageData.data[index],
+                g: imageData.data[index + 1],
+                b: imageData.data[index + 2],
+                a: imageData.data[index + 3]
+            };
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16),
+                a: 255
+            } : null;
+        }
+
+        function colorsMatch(c1, c2) {
+            return c1.r === c2.r && c1.g === c2.g && c1.b === c2.b && c1.a === c2.a;
+        }
+
+        function floodFill(imageData, x, y, targetColor, fillColor) {
+            const stack = [[x, y]];
+            const width = imageData.width;
+            const height = imageData.height;
+            const visited = new Set();
+
+            while (stack.length > 0) {
+                const [currentX, currentY] = stack.pop();
+                const key = `${currentX},${currentY}`;
+                
+                if (visited.has(key)) continue;
+                visited.add(key);
+                
+                if (currentX < 0 || currentX >= width || currentY < 0 || currentY >= height) continue;
+                
+                const currentColor = getPixelColor(imageData, currentX, currentY);
+                if (!colorsMatch(currentColor, targetColor)) continue;
+                
+                const index = (currentY * width + currentX) * 4;
+                imageData.data[index] = fillColor.r;
+                imageData.data[index + 1] = fillColor.g;
+                imageData.data[index + 2] = fillColor.b;
+                imageData.data[index + 3] = fillColor.a;
+                
+                stack.push([currentX + 1, currentY]);
+                stack.push([currentX - 1, currentY]);
+                stack.push([currentX, currentY + 1]);
+                stack.push([currentX, currentY - 1]);
+            }
+        }
+
+        // Download functionality
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `pa1nt_${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+
+        // Save functionality
+        document.getElementById('saveBtn').addEventListener('click', () => {
+            if (!currentUser) {
+                showAuth();
+            } else {
+                saveToGallery();
+            }
+        });
+
+        function showAuth() {
+            document.getElementById('authModal').classList.add('show');
+            document.getElementById('modalOverlay').classList.add('show');
+        }
+
+        function closeAuth() {
+            document.getElementById('authModal').classList.remove('show');
+            document.getElementById('modalOverlay').classList.remove('show');
+        }
+
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const handle = document.getElementById('handleInput').value.toUpperCase();
+            const pin = document.getElementById('pinInput').value;
+            
+            if (handle.length >= 3 && pin.length === 4 && /^\d{4}$/.test(pin)) {
+                currentUser = {
+                    handle: handle,
+                    pin: pin,
+                    participantId: `${handle}_${pin}`
+                };
+                localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                closeAuth();
+                saveToGallery();
+            }
+        });
+
+        async function saveToGallery() {
+            if (!currentUser?.participantId) {
+                showAuth();
+                return;
+            }
+
+            const imageData = canvas.toDataURL('image/png');
+            const timestamp = new Date().toISOString();
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-pa1nt',
+                        participant_id: currentUser.participantId,
+                        action_type: 'artwork',
+                        content_data: {
+                            id: `artwork_${Date.now()}`,
+                            image: imageData,
+                            author: currentUser.handle,
+                            created_at: timestamp
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showSaveIndicator();
+                }
+            } catch (error) {
+                console.error('Save failed:', error);
+            }
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // Canvas event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        // Initialize
+        initCanvas();
+        loadAuthFromStorage();
+        
+        // Request auth from desktop
+        if (window.parent !== window) {
+            parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+    </script>
+</body>
+</html>
