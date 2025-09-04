@@ -290,6 +290,8 @@
             border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 20px;
             box-shadow: 0 20px 60px var(--shadow-medium);
+            min-width: 300px;
+            min-height: 200px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
@@ -352,7 +354,6 @@
             overflow: hidden;
             position: relative;
             background: rgba(255, 255, 255, 0.02);
-            display: flex;
         }
         
         .window-content iframe {
@@ -607,17 +608,15 @@
             background: var(--glass);
             display: flex;
             flex-direction: column;
-            animation: popIn 0.2s ease-out;
+            animation: slideIn 0.3s ease-out;
         }
         
-        @keyframes popIn {
+        @keyframes slideIn {
             from {
-                opacity: 0;
-                transform: scale(0.95);
+                transform: translateX(100%);
             }
             to {
-                opacity: 1;
-                transform: scale(1);
+                transform: translateX(0);
             }
         }
         
@@ -640,14 +639,12 @@
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             color: white;
-            font-size: 28px;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
             transition: all 0.2s;
-            line-height: 1;
-            padding-bottom: 2px;
         }
         
         .mobile-back-btn:hover {
@@ -1318,7 +1315,8 @@
                         { id: 'textz', name: 'TextZ', icon: '📄', url: '/public/toybox-textz', type: 'productivity', width: 800, height: 600 },
                         { id: 'paint', name: 'Paint', icon: '🎨', url: 'apps/paint.html', type: 'creative', width: 800, height: 600 },
                         { id: 'fortune', name: 'Magic 8', icon: '🔮', url: 'apps/fortune-cookie.html', type: 'game', width: 600, height: 700 },
-                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true }
+                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true },
+                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', type: 'system', width: 700, height: 500 }
                     ],
                     icon_positions: {},
                     widget_positions: {},
@@ -1781,13 +1779,8 @@
             const windowDiv = document.createElement('div');
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
-            
-            // Use exact app dimensions - windows should wrap tightly around content
-            const appWidth = app.width || 800;
-            const appHeight = app.height || 600;
-            
-            windowDiv.style.width = appWidth + 'px';
-            windowDiv.style.height = appHeight + 'px';
+            windowDiv.style.width = (app.width || 600) + 'px';
+            windowDiv.style.height = (app.height || 400) + 'px';
             windowDiv.style.left = '50%';
             windowDiv.style.top = '50%';
             windowDiv.style.transform = 'translate(-50%, -50%)';
@@ -1819,7 +1812,6 @@
             iframe.style.width = '100%';
             iframe.style.height = '100%';
             iframe.style.border = 'none';
-            iframe.style.display = 'block';  // Ensure no gaps
             iframe.onload = () => {
                 try {
                     iframe.contentWindow.postMessage({
@@ -1890,7 +1882,7 @@
             const header = document.createElement('div');
             header.className = 'mobile-app-header';
             header.innerHTML = `
-                <button class="mobile-back-btn" onclick="closeFullscreenApp('${appId}')">×</button>
+                <button class="mobile-back-btn" onclick="closeFullscreenApp('${appId}')">←</button>
                 <div class="mobile-app-title">${app.icon || '📱'} ${app.name}</div>
             `;
             
