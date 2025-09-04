@@ -87,6 +87,16 @@ app.post('/webhook', async (req, res) => {
         const issueData = issue.content_data || {};
         console.log(`  📝 New issue: ${issueData.title}`);
         console.log(`  👤 Author: ${issueData.author || 'anonymous'}`);
+        console.log(`  📊 Status: ${issueData.status || 'open'}`);
+        
+        // Skip issues that shouldn't be auto-processed
+        if (['waiting_for_user', 'needs_admin', 'closed', 'processing'].includes(issueData.status)) {
+            console.log(`  ⏭️ Skipping issue with status: ${issueData.status}`);
+            return res.json({ 
+                success: false, 
+                message: `Issue has status '${issueData.status}' - not processing` 
+            });
+        }
         
         // Queue the issue for processing
         const editRequest = {
@@ -208,7 +218,9 @@ function startWorkerIfNeeded() {
     
     console.log('  🚀 Starting worker process...');
     
-    workerProcess = spawn('node', [path.join(__dirname, 'worker.js')], {
+    // Use worker-v3.js for simplified Claude-driven logic
+    const workerFile = 'worker-v3.js';  // v3: Claude does everything
+    workerProcess = spawn('node', [path.join(__dirname, workerFile)], {
         cwd: __dirname,
         env: { ...process.env },
         stdio: ['ignore', 'pipe', 'pipe']
@@ -236,13 +248,14 @@ app.post('/trigger', async (req, res) => {
     
     try {
         // Check for open issues in the tracker
-        // Note: status is inside content_data JSONB field
+        // EXCLUDE issues that are waiting_for_user or needs_admin to prevent loops
         const { data: issues, error } = await supabase
             .from('webtoys_issue_tracker_data')
             .select('*')
             .eq('app_id', 'toybox-issue-tracker-v3')
             .eq('action_type', 'issue')
             .eq('content_data->>status', 'open')
+            .not('content_data->>status', 'in', '["waiting_for_user", "needs_admin"]')
             .or('content_data->deleted.is.null,content_data->>deleted.neq.true')
             .order('created_at', { ascending: false })
             .limit(1);
