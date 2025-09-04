@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BartDraw</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            position: relative;
+        }
+        
+        .sidebar {
+            width: 80px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+            gap: 20px;
+        }
+        
+        .tool-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        
+        .tool-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.05);
+        }
+        
+        .tool-btn.active {
+            background: rgba(255, 255, 255, 0.4);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .color-picker-wrapper {
+            position: relative;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            overflow: hidden;
+            background: transparent;
+        }
+        
+        .color-preview {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            background: #000000;
+            transition: all 0.2s ease;
+        }
+        
+        .color-preview:hover {
+            transform: scale(1.05);
+        }
+        
+        .brush-size-control {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .brush-size-slider {
+            writing-mode: bt-lr; /* IE */
+            -webkit-appearance: slider-vertical;
+            width: 30px;
+            height: 100px;
+            background: transparent;
+            outline: none;
+        }
+        
+        .brush-size-preview {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .brush-dot {
+            background: white;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .main-area {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .canvas-container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            position: relative;
+        }
+        
+        #drawingCanvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .floating-actions {
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            display: flex;
+            gap: 12px;
+        }
+        
+        .floating-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .floating-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .save-indicator {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 60px;
+            }
+            
+            .tool-btn {
+                width: 40px;
+                height: 40px;
+                font-size: 18px;
+            }
+            
+            .color-picker,
+            .color-preview {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .main-area {
+                padding: 10px;
+            }
+            
+            .floating-actions {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="sidebar">
+            <button class="tool-btn active" data-tool="pen" title="Pen">
+                ✏️
+            </button>
+            <button class="tool-btn" data-tool="eraser" title="Eraser">
+                🧹
+            </button>
+            <div class="color-picker-wrapper">
+                <div class="color-preview" id="colorPreview"></div>
+                <input type="color" class="color-picker" id="colorPicker" value="#000000">
+            </div>
+            <div class="brush-size-control">
+                <input type="range" class="brush-size-slider" id="brushSize" min="1" max="50" value="5" orient="vertical">
+                <div class="brush-size-preview">
+                    <div class="brush-dot" id="brushPreview"></div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-area">
+            <div class="canvas-container">
+                <canvas id="drawingCanvas" width="800" height="600"></canvas>
+            </div>
+            
+            <div class="floating-actions">
+                <button class="floating-btn" id="clearBtn" title="Clear Canvas">
+                    🗑️
+                </button>
+                <button class="floating-btn" id="downloadBtn" title="Download">
+                    💾
+                </button>
+            </div>
+            
+            <div class="save-indicator" id="saveIndicator">
+                Drawing saved!
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('drawingCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const colorPreview = document.getElementById('colorPreview');
+        const brushSizeSlider = document.getElementById('brushSize');
+        const brushPreview = document.getElementById('brushPreview');
+        const clearBtn = document.getElementById('clearBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const saveIndicator = document.getElementById('saveIndicator');
+        
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        let currentSize = 5;
+        
+        // Initialize
+        function init() {
+            resizeCanvas();
+            updateBrushPreview();
+            
+            // Set up white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Resize canvas to fit container
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const maxWidth = window.innerWidth - 140; // Account for sidebar and padding
+            const maxHeight = window.innerHeight - 40; // Account for padding
+            
+            let width = 800;
+            let height = 600;
+            
+            if (width > maxWidth) {
+                width = maxWidth;
+                height = (maxWidth / 800) * 600;
+            }
+            
+            if (height > maxHeight) {
+                height = maxHeight;
+                width = (maxHeight / 600) * 800;
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Redraw white background after resize
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Update brush preview
+        function updateBrushPreview() {
+            const size = Math.min(currentSize, 20);
+            brushPreview.style.width = size + 'px';
+            brushPreview.style.height = size + 'px';
+        }
+        
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentTool = btn.dataset.tool;
+            });
+        });
+        
+        // Color picker
+        colorPicker.addEventListener('change', (e) => {
+            currentColor = e.target.value;
+            colorPreview.style.background = currentColor;
+        });
+        
+        // Brush size
+        brushSizeSlider.addEventListener('input', (e) => {
+            currentSize = parseInt(e.target.value);
+            updateBrushPreview();
+        });
+        
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.lineWidth = currentSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            if (currentTool === 'pen') {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            } else if (currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            }
+            
+            ctx.lineTo(x, y);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+        }
+        
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath();
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Clear canvas
+        clearBtn.addEventListener('click', () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        });
+        
+        // Download drawing
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'bartdraw_' + Date.now() + '.png';
+            link.href = canvas.toDataURL();
+            link.click();
+            
+            // Show save indicator
+            saveIndicator.classList.add('show');
+            setTimeout(() => {
+                saveIndicator.classList.remove('show');
+            }, 2000);
+        });
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            resizeCanvas();
+            ctx.putImageData(imageData, 0, 0);
+        });
+        
+        // Initialize app
+        init();
+    </script>
+</body>
+</html>
