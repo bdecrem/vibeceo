@@ -12,324 +12,288 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
             height: 100vh;
             display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
-        .app-container {
-            width: 100%;
-            height: 100%;
-            display: flex;
+        .header {
             background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
-            position: relative;
-        }
-
-        .sidebar {
-            width: 220px;
-            background: rgba(248, 249, 250, 0.8);
-            backdrop-filter: blur(5px);
-            border-right: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 10px 20px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             display: flex;
-            flex-direction: column;
-            transition: transform 0.3s ease;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .sidebar-header {
-            padding: 24px 20px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        .header h1 {
+            font-size: 20px;
+            color: #667eea;
+            font-weight: 600;
         }
 
-        .app-title {
-            font-size: 24px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 8px;
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
         }
 
-        .new-doc-btn {
-            width: 100%;
-            padding: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn {
+            padding: 8px 16px;
+            background: #667eea;
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
+            cursor: pointer;
             font-size: 14px;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
-        .new-doc-btn:hover {
+        .btn:hover {
+            background: #5a67d8;
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .documents-list {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
+        .btn-secondary {
+            background: #48bb78;
         }
 
-        .doc-item {
-            padding: 12px;
-            margin-bottom: 6px;
+        .btn-secondary:hover {
+            background: #38a169;
+        }
+
+        .btn-danger {
+            background: #f56565;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
             background: white;
-            border-radius: 8px;
+        }
+
+        .file-list {
+            width: 200px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .file-list h3 {
+            font-size: 14px;
+            margin-bottom: 10px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .file-item {
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 2px solid transparent;
-        }
-
-        .doc-item:hover {
-            background: rgba(102, 126, 234, 0.05);
-            transform: translateX(2px);
-        }
-
-        .doc-item.active {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
-            border-color: rgba(102, 126, 234, 0.3);
-        }
-
-        .doc-title {
-            font-weight: 500;
             font-size: 14px;
-            color: #2d3748;
-            margin-bottom: 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .doc-date {
-            font-size: 11px;
-            color: #718096;
-        }
-
-        .main-editor {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            position: relative;
-        }
-
-        .editor-header {
-            padding: 20px 24px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .doc-title-input {
-            flex: 1;
-            font-size: 20px;
-            font-weight: 600;
-            border: none;
-            background: transparent;
-            color: #2d3748;
-            outline: none;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: background 0.2s ease;
-        }
-
-        .doc-title-input:focus {
-            background: rgba(0, 0, 0, 0.02);
-        }
-
-        .save-indicator {
-            position: absolute;
-            top: 20px;
-            right: 24px;
-            padding: 8px 16px;
-            background: rgba(16, 185, 129, 0.1);
-            color: #10b981;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            opacity: 0;
-            transform: translateY(-10px);
-            transition: all 0.3s ease;
-            pointer-events: none;
-        }
-
-        .save-indicator.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .save-indicator.error {
-            background: rgba(239, 68, 68, 0.1);
-            color: #ef4444;
-        }
-
-        .editor-content {
-            flex: 1;
-            padding: 24px;
-            overflow-y: auto;
-        }
-
-        .text-editor {
-            width: 100%;
-            min-height: 100%;
-            font-size: 16px;
-            line-height: 1.7;
-            color: #2d3748;
-            border: none;
-            outline: none;
-            resize: none;
-            font-family: 'Inter', -apple-system, sans-serif;
-            background: transparent;
-        }
-
-        .editor-footer {
-            padding: 12px 24px;
-            border-top: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 12px;
-            color: #718096;
+        }
+
+        .file-item:hover {
+            background: #667eea;
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .file-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .file-item .delete-btn {
+            opacity: 0;
+            font-size: 18px;
+            color: #f56565;
+            transition: opacity 0.2s;
+        }
+
+        .file-item:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .file-item.active .delete-btn {
+            color: white;
+        }
+
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .document-title {
+            width: 100%;
+            padding: 10px;
+            font-size: 18px;
+            font-weight: 600;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            transition: border-color 0.3s ease;
+        }
+
+        .document-title:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .text-editor {
+            flex: 1;
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            resize: none;
+            font-family: 'Courier New', monospace;
+            transition: border-color 0.3s ease;
+        }
+
+        .text-editor:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .status-bar {
+            background: #f8f9fa;
+            padding: 10px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .auth-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #f56565;
+        }
+
+        .auth-indicator.authenticated {
+            background: #48bb78;
         }
 
         .word-count {
-            display: flex;
-            gap: 16px;
+            font-weight: 500;
         }
 
-        .auth-prompt {
-            position: absolute;
+        .loading {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             background: white;
-            padding: 32px;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            max-width: 400px;
-            display: none;
+            padding: 20px 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
         }
 
-        .auth-prompt.show {
-            display: block;
-        }
-
-        .auth-prompt h2 {
-            margin-bottom: 12px;
-            color: #2d3748;
-        }
-
-        .auth-prompt p {
-            color: #718096;
-            margin-bottom: 24px;
-        }
-
-        .auth-btn {
-            padding: 12px 24px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .auth-btn:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-        }
-
-        .empty-state {
-            position: absolute;
+        .no-auth-message {
+            position: fixed;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             text-align: center;
-            color: #718096;
+            max-width: 400px;
         }
 
-        .empty-state svg {
-            width: 120px;
-            height: 120px;
-            margin-bottom: 16px;
-            opacity: 0.3;
+        .no-auth-message h2 {
+            color: #667eea;
+            margin-bottom: 15px;
         }
 
-        @media (max-width: 768px) {
-            .sidebar {
-                position: absolute;
-                z-index: 10;
-                transform: translateX(-100%);
-            }
-
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .menu-toggle {
-                position: absolute;
-                top: 20px;
-                left: 20px;
-                z-index: 11;
-                background: white;
-                border: none;
-                padding: 8px;
-                border-radius: 8px;
-                cursor: pointer;
-                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            }
+        .no-auth-message p {
+            color: #666;
+            line-height: 1.5;
         }
     </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="app-title">Moi</div>
-                <button class="new-doc-btn" onclick="createNewDocument()">+ New Document</button>
-            </div>
-            <div class="documents-list" id="documentsList"></div>
-        </div>
+    <div class="loading" id="loadingIndicator">Loading Moi...</div>
+    
+    <div class="no-auth-message" id="noAuthMessage" style="display: none;">
+        <h2>Authentication Required</h2>
+        <p>Please log in through the WebtoysOS desktop to use Moi text editor.</p>
+    </div>
 
-        <div class="main-editor">
-            <div class="editor-header">
-                <input type="text" class="doc-title-input" id="docTitle" placeholder="Untitled Document" />
-                <div class="save-indicator" id="saveIndicator">Saved</div>
-            </div>
-            <div class="editor-content">
-                <textarea class="text-editor" id="textEditor" placeholder="Start typing..."></textarea>
-            </div>
-            <div class="editor-footer">
-                <div class="word-count">
-                    <span id="wordCount">0 words</span>
-                    <span id="charCount">0 characters</span>
-                </div>
-                <span id="lastSaved"></span>
+    <div id="appContent" style="display: none;">
+        <div class="header">
+            <h1>📝 Moi</h1>
+            <div class="toolbar">
+                <button class="btn btn-secondary" onclick="createNewDocument()">New Document</button>
+                <button class="btn" onclick="saveCurrentDocument()">Save</button>
             </div>
         </div>
 
-        <div class="auth-prompt" id="authPrompt">
-            <h2>Sign in to save</h2>
-            <p>You need to be signed in to save and manage your documents</p>
-            <button class="auth-btn" onclick="dismissAuthPrompt()">OK</button>
+        <div class="editor-container">
+            <div class="file-list">
+                <h3>My Documents</h3>
+                <div id="fileList"></div>
+            </div>
+            
+            <div class="editor-area">
+                <input type="text" class="document-title" id="documentTitle" placeholder="Document Title..." />
+                <textarea class="text-editor" id="textEditor" placeholder="Start typing your text here..."></textarea>
+            </div>
+        </div>
+
+        <div class="status-bar">
+            <div class="auth-status">
+                <div class="auth-indicator" id="authIndicator"></div>
+                <span id="authText">Not authenticated</span>
+            </div>
+            <div class="word-count">
+                Words: <span id="wordCount">0</span> | Characters: <span id="charCount">0</span>
+            </div>
         </div>
     </div>
 
     <script>
         // Global auth state
         let currentUser = null;
-        let currentDocId = null;
+        let currentDocumentId = null;
         let documents = [];
-        let saveTimeout = null;
-        let hasUnsavedChanges = false;
 
         // Load auth from localStorage (immediate)
         function loadAuthFromStorage() {
@@ -346,69 +310,75 @@
                     }
                 }
             }
-            return !!currentUser;
         }
 
-        // Listen for auth updates from desktop
+        // Listen for auth messages from desktop
         window.addEventListener('message', (e) => {
-            if (e.data && (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE')) {
-                if (e.data.user || e.data.handle) {
-                    currentUser = e.data.user || {
-                        handle: e.data.handle.toUpperCase(),
-                        pin: e.data.pin,
-                        participantId: e.data.participantId || `${e.data.handle.toUpperCase()}_${e.data.pin}`
-                    };
-                    
-                    // Fix format
+            if (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE') {
+                currentUser = e.data.user || e.data;
+                // CRITICAL: Ensure uppercase and participantId
+                if (currentUser) {
                     if (currentUser.handle) {
                         currentUser.handle = currentUser.handle.toUpperCase();
                     }
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
-                    
                     localStorage.setItem('toybox_user', JSON.stringify(currentUser));
-                    
-                    if (currentUser) {
-                        loadDocuments();
-                        dismissAuthPrompt();
-                    }
+                    updateAuthStatus();
+                    loadDocuments();
                 }
             }
         });
 
-        // Document functions
+        // Get participantId in correct format
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        // Update auth status display
+        function updateAuthStatus() {
+            const indicator = document.getElementById('authIndicator');
+            const authText = document.getElementById('authText');
+            
+            if (currentUser && currentUser.handle) {
+                indicator.classList.add('authenticated');
+                authText.textContent = `Logged in as ${currentUser.handle.toUpperCase()}`;
+            } else {
+                indicator.classList.remove('authenticated');
+                authText.textContent = 'Not authenticated';
+            }
+        }
+
+        // Generate unique document ID
         function generateDocId() {
             return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
+        // Create new document
         function createNewDocument() {
-            if (!currentUser) {
-                showAuthPrompt();
-                return;
-            }
-
-            currentDocId = generateDocId();
-            document.getElementById('docTitle').value = 'Untitled Document';
+            currentDocumentId = generateDocId();
+            document.getElementById('documentTitle').value = 'Untitled Document';
             document.getElementById('textEditor').value = '';
             updateWordCount();
-            saveDocument();
+            updateFileList();
         }
 
-        async function saveDocument() {
-            if (!currentUser) {
-                showAuthPrompt();
+        // Save current document
+        async function saveCurrentDocument() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                alert('Please log in to save documents');
                 return;
             }
 
-            const title = document.getElementById('docTitle').value || 'Untitled Document';
+            const title = document.getElementById('documentTitle').value || 'Untitled';
             const content = document.getElementById('textEditor').value;
             
-            if (!currentDocId) {
-                currentDocId = generateDocId();
+            if (!currentDocumentId) {
+                currentDocumentId = generateDocId();
             }
-
-            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
 
             try {
                 const response = await fetch('/api/zad/save', {
@@ -419,7 +389,7 @@
                         participant_id: participantId,
                         action_type: 'document',
                         content_data: {
-                            id: currentDocId,
+                            id: currentDocumentId,
                             title: title,
                             content: content,
                             author: currentUser.handle.toUpperCase(),
@@ -429,34 +399,42 @@
                 });
 
                 if (response.ok) {
-                    showSaveIndicator(false);
-                    document.getElementById('lastSaved').textContent = 'Last saved: just now';
-                    hasUnsavedChanges = false;
-                    loadDocuments();
+                    await loadDocuments();
+                    showNotification('Document saved successfully!');
                 } else {
-                    showSaveIndicator(true);
+                    console.error('Save failed:', await response.text());
+                    alert('Failed to save document');
                 }
             } catch (error) {
-                console.error('Save failed:', error);
-                showSaveIndicator(true);
+                console.error('Save error:', error);
+                alert('Error saving document');
             }
         }
 
+        // Load all documents
         async function loadDocuments() {
-            if (!currentUser) return;
-
-            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const participantId = getParticipantId();
+            if (!participantId) {
+                documents = [];
+                updateFileList();
+                return;
+            }
 
             try {
                 const response = await fetch(`/api/zad/load?app_id=toybox-moi&action_type=document`);
-                const allDocs = await response.json();
+                if (!response.ok) {
+                    console.error('Load failed:', response.status);
+                    return;
+                }
 
+                const allDocs = await response.json();
+                
                 // Filter for current user's documents
                 const userDocs = allDocs.filter(doc => 
                     doc.participant_id === participantId
                 );
 
-                // Deduplicate by taking latest version of each document
+                // Deduplicate by latest timestamp
                 const uniqueDocs = {};
                 userDocs.forEach(doc => {
                     const docId = doc.id || doc.content_data?.id;
@@ -476,111 +454,174 @@
 
                 documents = Object.values(uniqueDocs)
                     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-
-                renderDocumentsList();
-
-                // Load first document if none selected
-                if (!currentDocId && documents.length > 0) {
-                    loadDocument(documents[0].id);
-                }
+                
+                updateFileList();
             } catch (error) {
-                console.error('Load failed:', error);
+                console.error('Load error:', error);
             }
         }
 
-        function loadDocument(docId) {
-            const doc = documents.find(d => d.id === docId);
-            if (doc) {
-                currentDocId = doc.id;
-                document.getElementById('docTitle').value = doc.title;
-                document.getElementById('textEditor').value = doc.content;
-                updateWordCount();
-                renderDocumentsList();
-            }
-        }
-
-        function renderDocumentsList() {
-            const listEl = document.getElementById('documentsList');
-            listEl.innerHTML = '';
+        // Update file list display
+        function updateFileList() {
+            const fileList = document.getElementById('fileList');
+            fileList.innerHTML = '';
 
             documents.forEach(doc => {
-                const docEl = document.createElement('div');
-                docEl.className = 'doc-item' + (doc.id === currentDocId ? ' active' : '');
-                docEl.onclick = () => loadDocument(doc.id);
+                const fileItem = document.createElement('div');
+                fileItem.className = 'file-item';
+                if (doc.id === currentDocumentId) {
+                    fileItem.classList.add('active');
+                }
                 
-                const date = new Date(doc.updatedAt);
-                const dateStr = date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                
-                docEl.innerHTML = `
-                    <div class="doc-title">${doc.title}</div>
-                    <div class="doc-date">${dateStr}</div>
+                fileItem.innerHTML = `
+                    <span>${doc.title}</span>
+                    <span class="delete-btn" onclick="deleteDocument('${doc.id}', event)">×</span>
                 `;
                 
-                listEl.appendChild(docEl);
+                fileItem.onclick = (e) => {
+                    if (!e.target.classList.contains('delete-btn')) {
+                        openDocument(doc);
+                    }
+                };
+                
+                fileList.appendChild(fileItem);
             });
         }
 
+        // Open a document
+        function openDocument(doc) {
+            currentDocumentId = doc.id;
+            document.getElementById('documentTitle').value = doc.title;
+            document.getElementById('textEditor').value = doc.content;
+            updateWordCount();
+            updateFileList();
+        }
+
+        // Delete a document
+        async function deleteDocument(docId, event) {
+            event.stopPropagation();
+            
+            if (!confirm('Are you sure you want to delete this document?')) {
+                return;
+            }
+
+            const participantId = getParticipantId();
+            if (!participantId) return;
+
+            try {
+                // Mark as deleted (ZAD is append-only)
+                await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-moi',
+                        participant_id: participantId,
+                        action_type: 'document_delete',
+                        content_data: {
+                            id: docId,
+                            deleted: true,
+                            deletedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                // Remove from local list
+                documents = documents.filter(d => d.id !== docId);
+                
+                if (currentDocumentId === docId) {
+                    createNewDocument();
+                }
+                
+                updateFileList();
+                showNotification('Document deleted');
+            } catch (error) {
+                console.error('Delete error:', error);
+            }
+        }
+
+        // Update word count
         function updateWordCount() {
             const text = document.getElementById('textEditor').value;
             const words = text.trim() ? text.trim().split(/\s+/).length : 0;
             const chars = text.length;
             
-            document.getElementById('wordCount').textContent = `${words} words`;
-            document.getElementById('charCount').textContent = `${chars} characters`;
+            document.getElementById('wordCount').textContent = words;
+            document.getElementById('charCount').textContent = chars;
         }
 
-        function showSaveIndicator(error = false) {
-            const indicator = document.getElementById('saveIndicator');
-            indicator.textContent = error ? 'Error saving' : 'Saved';
-            indicator.className = 'save-indicator show' + (error ? ' error' : '');
+        // Show temporary notification
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #48bb78;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 6px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
             
             setTimeout(() => {
-                indicator.classList.remove('show');
-            }, 2000);
+                notification.remove();
+            }, 3000);
         }
 
-        function showAuthPrompt() {
-            document.getElementById('authPrompt').classList.add('show');
-        }
-
-        function dismissAuthPrompt() {
-            document.getElementById('authPrompt').classList.remove('show');
-        }
-
-        function autoSave() {
-            if (saveTimeout) clearTimeout(saveTimeout);
+        // Initialize app
+        async function initApp() {
+            // Load auth from localStorage
+            loadAuthFromStorage();
             
-            if (hasUnsavedChanges && currentUser) {
-                saveTimeout = setTimeout(() => {
-                    saveDocument();
-                }, 2000);
+            // Request auth from parent if in iframe
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
             }
+
+            // Wait a bit for auth to load
+            setTimeout(() => {
+                document.getElementById('loadingIndicator').style.display = 'none';
+                
+                if (currentUser && currentUser.handle) {
+                    document.getElementById('appContent').style.display = 'flex';
+                    document.getElementById('appContent').style.flexDirection = 'column';
+                    document.getElementById('appContent').style.height = '100vh';
+                    updateAuthStatus();
+                    loadDocuments();
+                } else {
+                    document.getElementById('noAuthMessage').style.display = 'block';
+                }
+            }, 500);
+
+            // Set up event listeners
+            document.getElementById('textEditor').addEventListener('input', updateWordCount);
+            
+            // Create new document on start
+            createNewDocument();
         }
 
-        // Event listeners
-        document.getElementById('textEditor').addEventListener('input', () => {
-            updateWordCount();
-            hasUnsavedChanges = true;
-            autoSave();
-        });
-
-        document.getElementById('docTitle').addEventListener('input', () => {
-            hasUnsavedChanges = true;
-            autoSave();
-        });
-
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            if (loadAuthFromStorage()) {
-                loadDocuments();
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
             }
-            updateWordCount();
-        });
+        `;
+        document.head.appendChild(style);
 
-        // Request auth from parent
-        if (window.parent !== window) {
-            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
-        }
+        // Start the app
+        initApp();
     </script>
 </body>
 </html>
