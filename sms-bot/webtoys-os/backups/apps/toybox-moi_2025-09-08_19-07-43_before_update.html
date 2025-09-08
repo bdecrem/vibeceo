@@ -324,23 +324,20 @@
     </div>
 
     <script>
-        // Global auth state
+        // Global state
         let currentUser = null;
         let currentDocId = null;
         let documents = [];
         let saveTimeout = null;
         let hasUnsavedChanges = false;
 
-        // Load auth from localStorage (immediate)
+        // Auth functions
         function loadAuthFromStorage() {
             const savedUser = localStorage.getItem('toybox_user');
             if (savedUser) {
                 currentUser = JSON.parse(savedUser);
-                // CRITICAL: Ensure uppercase and participantId
                 if (currentUser) {
-                    if (currentUser.handle) {
-                        currentUser.handle = currentUser.handle.toUpperCase();
-                    }
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
@@ -349,30 +346,18 @@
             return !!currentUser;
         }
 
-        // Listen for auth updates from desktop
         window.addEventListener('message', (e) => {
-            if (e.data && (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE')) {
-                if (e.data.user || e.data.handle) {
-                    currentUser = e.data.user || {
-                        handle: e.data.handle.toUpperCase(),
-                        pin: e.data.pin,
-                        participantId: e.data.participantId || `${e.data.handle.toUpperCase()}_${e.data.pin}`
-                    };
-                    
-                    // Fix format
-                    if (currentUser.handle) {
-                        currentUser.handle = currentUser.handle.toUpperCase();
-                    }
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
                     if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
                         currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
                     }
-                    
                     localStorage.setItem('toybox_user', JSON.stringify(currentUser));
-                    
-                    if (currentUser) {
-                        loadDocuments();
-                        dismissAuthPrompt();
-                    }
+                }
+                if (currentUser) {
+                    loadDocuments();
                 }
             }
         });
