@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉 VICTORY</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .victory-container {
+            text-align: center;
+            z-index: 10;
+            position: relative;
+        }
+
+        .victory-title {
+            font-size: clamp(4rem, 12vw, 8rem);
+            font-weight: 900;
+            background: linear-gradient(45deg, #ffd700, #ffed4e, #fff59d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            letter-spacing: 0.1em;
+            margin-bottom: 2rem;
+            animation: glow 2s ease-in-out infinite alternate, bounce 3s ease-in-out infinite;
+        }
+
+        .victory-subtitle {
+            font-size: clamp(1.2rem, 4vw, 2rem);
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            margin-bottom: 3rem;
+            animation: fadeInUp 1s ease-out 0.5s both;
+        }
+
+        .celebration-emoji {
+            font-size: clamp(3rem, 8vw, 6rem);
+            margin: 0 0.5rem;
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+
+        .celebration-emoji:nth-child(2n) {
+            animation: bounce 1.5s ease-in-out infinite;
+            animation-delay: 0.2s;
+        }
+
+        .celebration-emoji:nth-child(3n) {
+            animation: pulse 1.8s ease-in-out infinite;
+            animation-delay: 0.4s;
+        }
+
+        .fireworks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .firework {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #ffd700;
+            border-radius: 50%;
+            animation: explode 2s ease-out infinite;
+        }
+
+        .firework:nth-child(1) { top: 20%; left: 20%; animation-delay: 0s; }
+        .firework:nth-child(2) { top: 30%; right: 20%; animation-delay: 0.3s; }
+        .firework:nth-child(3) { top: 40%; left: 50%; animation-delay: 0.6s; }
+        .firework:nth-child(4) { top: 60%; right: 30%; animation-delay: 0.9s; }
+        .firework:nth-child(5) { top: 70%; left: 30%; animation-delay: 1.2s; }
+
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #ff6b6b;
+        }
+
+        .confetti:nth-child(even) { background: #4ecdc4; }
+        .confetti:nth-child(3n) { background: #45b7d1; }
+        .confetti:nth-child(4n) { background: #f9ca24; }
+        .confetti:nth-child(5n) { background: #6c5ce7; }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+            }
+            to {
+                text-shadow: 0 0 50px rgba(255, 215, 0, 0.8), 0 0 70px rgba(255, 215, 0, 0.4);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-30px);
+            }
+            60% {
+                transform: translateY(-15px);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes explode {
+            0% {
+                opacity: 1;
+                transform: scale(0);
+                box-shadow: 0 0 0 0 currentColor,
+                           0 0 0 0 currentColor,
+                           0 0 0 0 currentColor,
+                           0 0 0 0 currentColor,
+                           0 0 0 0 currentColor,
+                           0 0 0 0 currentColor;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+                transform: scale(1);
+                box-shadow: 0 -50px 0 10px transparent,
+                           35px -35px 0 10px transparent,
+                           50px 0 0 10px transparent,
+                           35px 35px 0 10px transparent,
+                           0 50px 0 10px transparent,
+                           -35px 35px 0 10px transparent;
+            }
+        }
+
+        @keyframes fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+            
+            .victory-subtitle {
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="fireworks">
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+        <div class="firework"></div>
+    </div>
+
+    <div class="victory-container">
+        <h1 class="victory-title">VICTORY</h1>
+        <p class="victory-subtitle">🎊 Celebration Time! 🎊</p>
+        <div class="celebration-emojis">
+            <span class="celebration-emoji">🎉</span>
+            <span class="celebration-emoji">🏆</span>
+            <span class="celebration-emoji">🎊</span>
+            <span class="celebration-emoji">🥇</span>
+            <span class="celebration-emoji">✨</span>
+        </div>
+    </div>
+
+    <script>
+        // Create falling confetti
+        function createConfetti() {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.animationDuration = (Math.random() * 2 + 1) + 's';
+            confetti.style.animation = 'fall linear forwards';
+            confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+            document.body.appendChild(confetti);
+
+            setTimeout(() => {
+                confetti.remove();
+            }, 5000);
+        }
+
+        // Generate confetti continuously
+        setInterval(createConfetti, 200);
+
+        // Add click interaction for extra celebration
+        document.addEventListener('click', () => {
+            for (let i = 0; i < 10; i++) {
+                setTimeout(createConfetti, i * 50);
+            }
+        });
+
+        // Victory sound effect simulation (visual feedback)
+        let clickCount = 0;
+        document.addEventListener('click', () => {
+            clickCount++;
+            const title = document.querySelector('.victory-title');
+            title.style.transform = `scale(${1 + clickCount * 0.05})`;
+            
+            setTimeout(() => {
+                title.style.transform = 'scale(1)';
+            }, 200);
+        });
+    </script>
+</body>
+</html>
