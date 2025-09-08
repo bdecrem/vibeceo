@@ -315,8 +315,8 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
     
     console.log('📝 Prompt size:', prompt.length, 'characters (78% smaller than V1)');
     
-    // Build command - removed --print and --verbose which are causing issues
-    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --dangerously-skip-permissions`;
+    // Build command like V1 (which works)
+    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`;
     
     const startTime = Date.now();
     console.log('⏳ Executing Claude (may take several minutes)...');
@@ -326,7 +326,12 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
         const result = await execAsync(command, {
             timeout: 600000, // 10 minutes like V1
             maxBuffer: 1024 * 1024 * 50, // 50MB buffer
-            env: { ...process.env },
+            env: { 
+                ...process.env,
+                HOME: process.env.HOME || '/Users/bartdecrem',
+                USER: process.env.USER || 'bartdecrem',
+                PATH: process.env.PATH || '/Users/bartdecrem/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'
+            },
             shell: '/bin/bash'
         });
         
