@@ -18,8 +18,8 @@ function SuccessPageContent() {
     }
 
     // Check for success parameter from LemonSqueezy
-    const success = searchParams.get('success');
-    const orderId = searchParams.get('order_id');
+    const success = searchParams?.get('success');
+    const orderId = searchParams?.get('order_id');
 
     if (success === 'true' && orderId) {
       // Verify the payment was processed
