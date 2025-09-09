@@ -646,9 +646,8 @@
             }
             
             async newGame() {
-                // Save score to leaderboard if there's a score (New Game = ending previous game)
+                // Save score to leaderboard if there's a score
                 if (this.score > 0) {
-                    this.showFeedback('Submitting score...', 'success');
                     await this.submitScore();
                 }
                 
@@ -691,18 +690,7 @@
                 window.addEventListener('message', (e) => {
                     if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
                         this.currentUser = e.data.user;
-                        // Ensure we have uppercase handle and participantId
-                        if (this.currentUser) {
-                            if (this.currentUser.handle) {
-                                this.currentUser.handle = this.currentUser.handle.toUpperCase();
-                            }
-                            if (!this.currentUser.participantId && this.currentUser.handle && this.currentUser.pin) {
-                                this.currentUser.participantId = `${this.currentUser.handle.toUpperCase()}_${this.currentUser.pin}`;
-                            }
-                        }
                         console.log('Received auth:', this.currentUser);
-                        // Refresh leaderboard to show current user
-                        this.loadLeaderboard();
                     }
                 });
                 
@@ -718,20 +706,14 @@
                     const anonHandle = 'ANON_' + Date.now().toString(36);
                     await this.saveScore({
                         handle: anonHandle,
-                        participant_id: anonHandle,
                         score: this.score,
                         words: this.wordsFound.size,
                         timestamp: new Date().toISOString()
                     });
                 } else {
-                    // Authenticated score - use participantId for proper data association
-                    const participantId = this.currentUser.participantId || 
-                                        `${this.currentUser.handle.toUpperCase()}_${this.currentUser.pin || '0000'}`;
-                    
+                    // Authenticated score
                     await this.saveScore({
                         handle: this.currentUser.handle.toUpperCase(),
-                        participant_id: participantId,
-                        display_name: this.currentUser.display_name || this.currentUser.handle,
                         score: this.score,
                         words: this.wordsFound.size,
                         timestamp: new Date().toISOString()
@@ -740,7 +722,6 @@
                 
                 // Reload leaderboard to show new score
                 await this.loadLeaderboard();
-                this.showFeedback('Score submitted to leaderboard!', 'success');
             }
             
             async saveScore(scoreData) {
@@ -750,7 +731,7 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             app_id: window.APP_ID,
-                            participant_id: scoreData.participant_id || scoreData.handle,
+                            participant_id: scoreData.handle,
                             action_type: 'leaderboard_score',
                             content_data: scoreData
                         })
@@ -788,9 +769,7 @@
                     return;
                 }
                 
-                // Check current user by both handle and participantId
                 const currentHandle = this.currentUser?.handle?.toUpperCase();
-                const currentParticipantId = this.currentUser?.participantId;
                 
                 listEl.innerHTML = scores.map((scoreData, index) => {
                     const rank = index + 1;
@@ -808,18 +787,12 @@
                         medal = '🥉';
                     }
                     
-                    // Check if this is the current user's score
-                    const isCurrentUser = (currentHandle && scoreData.handle === currentHandle) || 
-                                        (currentParticipantId && scoreData.participant_id === currentParticipantId);
-                    const userClass = isCurrentUser ? 'current-user' : '';
-                    
-                    // Use display_name if available, otherwise handle
-                    const displayName = scoreData.display_name || scoreData.handle || 'ANON';
+                    const userClass = (currentHandle && scoreData.handle === currentHandle) ? 'current-user' : '';
                     
                     return `
                         <div class="leaderboard-entry ${rankClass} ${userClass}">
                             <div class="leaderboard-rank">${medal}</div>
-                            <div class="leaderboard-name">${displayName}</div>
+                            <div class="leaderboard-name">${scoreData.handle || 'ANON'}</div>
                             <div class="leaderboard-score">${scoreData.score || 0}</div>
                         </div>
                     `;
