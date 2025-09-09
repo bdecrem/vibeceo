@@ -1,115 +1,67 @@
 #!/usr/bin/env node
 
-/**
- * Direct test of edit agent - bypasses issue tracker completely
- * Usage: node test-direct-request.js "Your request here"
- */
-
+// Test EXACTLY what the agent sees
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 const execAsync = promisify(exec);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const CLAUDE_PATH = '/Users/bartdecrem/.local/bin/claude';
-const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os';
-
-async function testDirectRequest(request) {
-    if (!request) {
-        console.log('❌ Please provide a request as an argument');
-        console.log('Usage: node test-direct-request.js "Create a calculator app"');
-        return;
-    }
+async function testDirect() {
+    console.log('Testing direct Claude execution to see actual output...\n');
     
-    console.log('📋 Testing with request:', request);
-    console.log('---\n');
+    // Create a simple prompt file
+    const prompt = 'Create a simple hello world app';
+    const tempFile = '/tmp/test-direct.txt';
+    fs.writeFileSync(tempFile, prompt);
     
-    // Test 1: Simple direct execution
-    console.log('🧪 Test 1: Direct execution without any flags');
-    const tempFile1 = `/tmp/test-direct-1-${Date.now()}.txt`;
-    fs.writeFileSync(tempFile1, request);
+    // Test 1: Without any flags
+    console.log('Test 1: Basic Claude call');
+    const cmd1 = `cat ${tempFile} | /Users/bartdecrem/.local/bin/claude`;
     
     try {
-        const result = await execAsync(
-            `cat "${tempFile1}" | ${CLAUDE_PATH}`,
-            {
-                timeout: 30000,
-                maxBuffer: 1024 * 1024 * 50,
-                cwd: PROJECT_ROOT
-            }
-        );
-        console.log('✅ SUCCESS! Output preview:');
-        console.log(result.stdout.substring(0, 500));
-    } catch (error) {
-        console.log('❌ FAILED:', error.message);
-        if (error.stdout) console.log('Output:', error.stdout.substring(0, 200));
+        const result = await execAsync(cmd1, { timeout: 5000 });
+        console.log('✅ Success:', result.stdout.substring(0, 100));
+    } catch (e) {
+        console.log('❌ Failed');
+        console.log('Exit code:', e.code);
+        console.log('Signal:', e.signal);
+        console.log('Stdout:', e.stdout || '(empty)');
+        console.log('Stderr:', e.stderr || '(empty)');
     }
-    fs.unlinkSync(tempFile1);
     
-    console.log('\n---\n');
-    
-    // Test 2: With --dangerously-skip-permissions only
-    console.log('🧪 Test 2: With --dangerously-skip-permissions flag');
-    const tempFile2 = `/tmp/test-direct-2-${Date.now()}.txt`;
-    fs.writeFileSync(tempFile2, request);
+    // Test 2: With --dangerously-skip-permissions
+    console.log('\n\nTest 2: With --dangerously-skip-permissions');
+    const cmd2 = `cat ${tempFile} | /Users/bartdecrem/.local/bin/claude --dangerously-skip-permissions`;
     
     try {
-        const result = await execAsync(
-            `cd ${PROJECT_ROOT} && cat "${tempFile2}" | ${CLAUDE_PATH} --dangerously-skip-permissions`,
-            {
-                timeout: 30000,
-                maxBuffer: 1024 * 1024 * 50,
-                shell: '/bin/bash'
-            }
-        );
-        console.log('✅ SUCCESS! Output preview:');
-        console.log(result.stdout.substring(0, 500));
-    } catch (error) {
-        console.log('❌ FAILED:', error.message);
-        if (error.stdout) console.log('Output:', error.stdout.substring(0, 200));
+        const result = await execAsync(cmd2, { timeout: 5000 });
+        console.log('✅ Success:', result.stdout.substring(0, 100));
+    } catch (e) {
+        console.log('❌ Failed');
+        console.log('Exit code:', e.code);
+        console.log('Signal:', e.signal);
+        console.log('Stdout:', e.stdout || '(empty)');
+        console.log('Stderr:', e.stderr || '(empty)');
     }
-    fs.unlinkSync(tempFile2);
     
-    console.log('\n---\n');
-    
-    // Test 3: With full agent-style prompt
-    console.log('🧪 Test 3: With agent-style prompt (includes context)');
-    
-    const agentPrompt = `${request}
-
----
-Create the app in the apps/ directory, then deploy with: node scripts/auto-deploy-app.js apps/[filename].html
-
-You're in: ${PROJECT_ROOT}`;
-    
-    const tempFile3 = `/tmp/test-direct-3-${Date.now()}.txt`;
-    fs.writeFileSync(tempFile3, agentPrompt);
-    
-    console.log('Prompt size:', agentPrompt.length, 'characters');
+    // Test 3: With all flags like agent
+    console.log('\n\nTest 3: With --print --verbose --dangerously-skip-permissions');
+    const cmd3 = `cat ${tempFile} | /Users/bartdecrem/.local/bin/claude --print --verbose --dangerously-skip-permissions`;
     
     try {
-        const result = await execAsync(
-            `cd ${PROJECT_ROOT} && cat "${tempFile3}" | ${CLAUDE_PATH} --dangerously-skip-permissions`,
-            {
-                timeout: 30000,
-                maxBuffer: 1024 * 1024 * 50,
-                shell: '/bin/bash',
-                env: { ...process.env }
-            }
-        );
-        console.log('✅ SUCCESS! Output preview:');
-        console.log(result.stdout.substring(0, 500));
-    } catch (error) {
-        console.log('❌ FAILED:', error.message);
-        if (error.stdout) console.log('Output:', error.stdout.substring(0, 200));
+        const result = await execAsync(cmd3, { timeout: 5000 });
+        console.log('✅ Success:', result.stdout.substring(0, 100));
+    } catch (e) {
+        console.log('❌ Failed');
+        console.log('Exit code:', e.code);
+        console.log('Signal:', e.signal);
+        console.log('Stdout:', e.stdout || '(empty)');
+        console.log('Stderr:', e.stderr || '(empty)');
     }
-    fs.unlinkSync(tempFile3);
+    
+    // Clean up
+    fs.unlinkSync(tempFile);
 }
 
-// Get request from command line
-const request = process.argv.slice(2).join(' ') || 'Create a simple calculator app called calc';
-
-testDirectRequest(request);
+testDirect();
