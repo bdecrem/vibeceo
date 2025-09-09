@@ -593,10 +593,23 @@
         });
         
         // Issue Management
-        async function loadIssues() {
+        let isInitialLoad = true;
+        let updateTimer = null;
+        
+        async function loadIssues(preserveScroll = false) {
             try {
                 const container = document.getElementById('issues-container');
-                container.innerHTML = '<div class="loading">Loading issues...</div>';
+                
+                // Save scroll position before update
+                const scrollPos = preserveScroll ? {
+                    top: window.pageYOffset || document.documentElement.scrollTop,
+                    left: window.pageXOffset || document.documentElement.scrollLeft
+                } : null;
+                
+                // Only show loading on initial load
+                if (isInitialLoad) {
+                    container.innerHTML = '<div class="loading">Loading issues...</div>';
+                }
                 
                 // Load issues from new table
                 const { data, error } = await supabase
@@ -617,8 +630,18 @@
                     !item.content_data.deleted
                 );
                 
-                renderIssues();
+                renderIssues(preserveScroll);
                 updateStats();
+                
+                // Restore scroll position after DOM update
+                if (scrollPos && preserveScroll) {
+                    // Use requestAnimationFrame to ensure DOM is updated
+                    requestAnimationFrame(() => {
+                        window.scrollTo(scrollPos.left, scrollPos.top);
+                    });
+                }
+                
+                isInitialLoad = false;
             } catch (error) {
                 console.error('Failed to load issues:', error);
                 document.getElementById('issues-container').innerHTML = 
@@ -626,8 +649,12 @@
             }
         }
         
-        function renderIssues() {
+        function renderIssues(preserveScroll = false) {
             const container = document.getElementById('issues-container');
+            
+            // Store active element to restore focus if needed
+            const activeElement = preserveScroll ? document.activeElement : null;
+            const activeElementId = activeElement?.id || null;
             
             // Filter issues
             const filteredIssues = issues.filter(issue => {
@@ -650,7 +677,8 @@
                 return;
             }
             
-            container.innerHTML = filteredIssues.map((issue, index) => {
+            // Build HTML content
+            const htmlContent = filteredIssues.map((issue, index) => {
                 const data = issue.content_data;
                 // Database returns numeric IDs
                 const issueId = issue.id;
@@ -699,6 +727,17 @@
                     </div>
                 `;
             }).join('');
+            
+            // Update container
+            container.innerHTML = htmlContent;
+            
+            // Restore focus if we had an active element
+            if (activeElementId && preserveScroll) {
+                const elementToFocus = document.getElementById(activeElementId);
+                if (elementToFocus) {
+                    elementToFocus.focus();
+                }
+            }
         }
         
         function renderComments(comments) {
@@ -1096,8 +1135,37 @@
                 if (closedText) closedText.textContent = filters.closed ? 'Hide Closed' : 'Show Closed';
             }
             
-            // Refresh every 30 seconds
-            setInterval(loadIssues, 30000);
+            // Auto-update every 30 seconds without losing scroll position
+            updateTimer = setInterval(() => {
+                // Only update if user is not actively typing or interacting
+                const activeElement = document.activeElement;
+                const isTyping = activeElement && 
+                    (activeElement.tagName === 'INPUT' || 
+                     activeElement.tagName === 'TEXTAREA' || 
+                     activeElement.contentEditable === 'true');
+                
+                if (!isTyping) {
+                    console.log('[Issue Tracker] Auto-updating (preserving scroll)...');
+                    loadIssues(true);
+                } else {
+                    console.log('[Issue Tracker] Skipping update - user is typing');
+                }
+            }, 30000);
+            
+            // Update when tab becomes visible
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden) {
+                    console.log('[Issue Tracker] Tab visible, updating...');
+                    loadIssues(true);
+                }
+            });
+            
+            // Stop updates when page is hidden to save resources
+            window.addEventListener('beforeunload', () => {
+                if (updateTimer) {
+                    clearInterval(updateTimer);
+                }
+            });
         });
     </script>
 </body>
