@@ -332,23 +332,36 @@ WINDOW SIZING (CRITICAL):
  * Execute Claude with monitoring - simplified like V1 but with better prompt
  */
 async function executeClaudeWithMonitoring(prompt, issueId) {
-    console.log('🚀 Starting Claude execution for issue #' + issueId);
+    console.log('\n' + '='.repeat(80));
+    console.log('🚀 STARTING CLAUDE EXECUTION FOR ISSUE #' + issueId);
+    console.log('='.repeat(80));
+    console.log('🕐 Start time:', new Date().toLocaleTimeString());
     
     // Write prompt to temp file
     const tempFile = path.join('/tmp', `issue-${issueId}-${Date.now()}.txt`);
     await fs.promises.writeFile(tempFile, prompt);
     
-    console.log('📝 Prompt size:', prompt.length, 'characters (78% smaller than V1)');
+    console.log('\n📊 PROMPT STATISTICS:');
+    console.log('   Size:', prompt.length, 'characters');
+    console.log('   Lines:', prompt.split('\n').length);
+    console.log('   Efficiency: 78% smaller than V1');
     
     const startTime = Date.now();
-    console.log('⏳ Executing Claude (may take several minutes)...');
+    console.log('\n⏳ EXECUTING CLAUDE CODE...');
+    console.log('   This may take several minutes...');
+    console.log('   Watch for real-time progress updates below:');
+    console.log('-'.repeat(60));
     
     // Use shell wrapper (only thing that actually works with Claude CLI auth)
     return new Promise((resolve) => {
         const wrapperPath = path.join(__dirname, 'claude-wrapper.sh');
         
-        console.log('🔍 Using wrapper script:', wrapperPath);
-        console.log('🔍 Temp file:', tempFile);
+        console.log('\n🔧 EXECUTION CONFIGURATION:');
+        console.log('   Wrapper:', wrapperPath);
+        console.log('   Prompt file:', tempFile);
+        console.log('   Working dir:', PROJECT_ROOT);
+        console.log('\n🎬 Starting Claude process now...');
+        console.log('-'.repeat(60));
         
         // Clean environment - Remove all potentially conflicting API keys
         // but keep essential system variables AND add OAuth token
@@ -382,11 +395,30 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
         let stderr = '';
         let chunks = 0;
         
+        let lastProgressTime = Date.now();
         child.stdout.on('data', (data) => {
             output += data.toString();
             chunks++;
-            if (chunks % 10 === 0) {
-                console.log(`  ⏳ Received ${chunks} chunks, ${Math.round(output.length / 1024)} KB so far...`);
+            
+            // Show real-time output snippets
+            const lines = data.toString().split('\n').filter(l => l.trim());
+            lines.forEach(line => {
+                if (line.includes('Tool:') || line.includes('Running') || line.includes('Creating') || 
+                    line.includes('Writing') || line.includes('Reading') || line.includes('Deploying') ||
+                    line.includes('Successfully') || line.includes('Error') || line.includes('Warning')) {
+                    console.log(`   🔄 ${line.substring(0, 120)}`);
+                }
+            });
+            
+            // Progress update every 5 seconds or 10 chunks
+            const now = Date.now();
+            if (chunks % 10 === 0 || (now - lastProgressTime) > 5000) {
+                const elapsed = Math.round((now - startTime) / 1000);
+                console.log(`\n  ⏱️  Progress Update [${elapsed}s elapsed]`);
+                console.log(`      Chunks received: ${chunks}`);
+                console.log(`      Data size: ${Math.round(output.length / 1024)} KB`);
+                console.log(`      Status: Claude is actively working...\n`);
+                lastProgressTime = now;
             }
         });
         
@@ -401,7 +433,11 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
             await fs.promises.unlink(tempFile).catch(() => {});
             
             if (code === 0) {
-                console.log(`✅ Claude completed in ${duration} seconds`);
+                console.log('\n' + '='.repeat(60));
+                console.log(`✅ CLAUDE EXECUTION SUCCESSFUL`);
+                console.log('='.repeat(60));
+                console.log(`⏱️  Duration: ${duration} seconds`);
+                console.log(`📊 Output: ${Math.round(output.length / 1024)} KB`);
                 resolve({
                     success: true,
                     output: output,
@@ -409,7 +445,11 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
                     duration: Date.now() - startTime
                 });
             } else {
-                console.error(`❌ Execution failed after ${duration}s with code ${code}`);
+                console.error('\n' + '='.repeat(60));
+                console.error(`❌ CLAUDE EXECUTION FAILED`);
+                console.error('='.repeat(60));
+                console.error(`⏱️  Failed after: ${duration} seconds`);
+                console.error(`🔴 Exit code: ${code}`);
                 resolve({
                     success: false,
                     output: output,
@@ -484,7 +524,13 @@ async function executeOpenIssue() {
     process.on('SIGTERM', cleanup);
     
     try {
-        console.log('🔍 Checking for open issues...');
+        console.log('\n' + '▓'.repeat(80));
+        console.log('🤖 WEBTOYS EDIT AGENT V2 - STARTING NEW RUN');
+        console.log('▓'.repeat(80));
+        console.log('🕐 Time:', new Date().toLocaleString());
+        console.log('📁 Working in:', PROJECT_ROOT);
+        console.log('🔍 Tracker ID:', ISSUE_TRACKER_APP_ID);
+        console.log('\n🔍 Checking database for open issues...');
         
         // Get open issues (including admin_discussion for reopened issues)
         const { data: issues, error } = await supabase
@@ -510,7 +556,16 @@ async function executeOpenIssue() {
         const description = content.description || '';
         const issueId = issue.id;  // Use database record ID
         
-        console.log(`\n📋 Processing issue #${issueId}: "${description.substring(0, 100)}..."`);
+        console.log('\n' + '═'.repeat(80));
+        console.log(`📋 PROCESSING ISSUE #${issueId}`);
+        console.log('═'.repeat(80));
+        console.log(`📝 Description: "${description.substring(0, 100)}..."`);
+        console.log(`👤 Submitted by: ${issue.handle || 'Anonymous'}`);
+        console.log(`📅 Created: ${new Date(issue.created_at).toLocaleString()}`);
+        if (issue.comments?.length > 0) {
+            console.log(`💬 Has ${issue.comments.length} comment(s)`);
+        }
+        console.log('\n📤 Marking as processing...');
         
         // Mark as processing
         await supabase
@@ -539,7 +594,9 @@ async function executeOpenIssue() {
             const commitMatch = result.output.match(/COMMIT_HASH=([a-f0-9]+)/);
             if (commitMatch) {
                 commitHash = commitMatch[1];
-                console.log(`📝 Captured commit: ${commitHash}`);
+                console.log(`\n🎯 GIT COMMIT DETECTED!`);
+                console.log(`   Hash: ${commitHash}`);
+                console.log(`   This confirms Claude made code changes successfully`);
             }
             
             // Look for file deployment patterns
@@ -603,7 +660,12 @@ ${filesChanged.length > 0 ? `- Files Changed: ${filesChanged.join(', ')}` : ''}
             })
             .eq('id', issue.id);
         
-        console.log(`\n${statusEmoji} Issue #${issueId} ${newStatus} in ${Math.round(result.duration / 1000)}s`);
+        console.log('\n' + '═'.repeat(80));
+        console.log(`${statusEmoji} ISSUE #${issueId} COMPLETE`);
+        console.log('═'.repeat(80));
+        console.log(`📊 Status: ${newStatus}`);
+        console.log(`⏱️  Time: ${Math.round(result.duration / 1000)} seconds`);
+        console.log(`🕐 Finished: ${new Date().toLocaleString()}`);
         
         // Log Claude output for debugging (first 500 chars)
         if (result.output) {
@@ -626,7 +688,12 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             if (fs.existsSync(lockFile)) {
                 fs.unlinkSync(lockFile);
             }
-            console.log('\n✅ Edit Agent V2 execution complete');
+            console.log('\n' + '▓'.repeat(80));
+            console.log('✅ EDIT AGENT V2 - RUN COMPLETE');
+            console.log('▓'.repeat(80));
+            console.log('🕐 Finished at:', new Date().toLocaleString());
+            console.log('📊 Next cron run: In ~2 minutes');
+            console.log('');
             process.exit(0);
         })
         .catch(error => {
