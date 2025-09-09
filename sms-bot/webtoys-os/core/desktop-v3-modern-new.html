@@ -376,6 +376,24 @@
             cursor: se-resize;
         }
         
+        /* WordO Game - Tight Window Sizing */
+        .desktop-window[data-app-id="wordo"] {
+            width: 300px !important;
+            height: 550px !important;
+        }
+        
+        .desktop-window[data-app-id="wordo"] .window-header {
+            padding: 8px 12px;
+        }
+        
+        .desktop-window[data-app-id="wordo"] .window-content {
+            padding: 0;
+        }
+        
+        .desktop-window[data-app-id="wordo"] .window-control.maximize {
+            display: none;
+        }
+        
         /* Taskbar */
         .taskbar {
             position: fixed;
@@ -1782,10 +1800,17 @@
             const windowDiv = document.createElement('div');
             windowDiv.className = 'desktop-window';
             windowDiv.id = windowId;
+            windowDiv.setAttribute('data-app-id', app.id);
             
             // Use exact app dimensions - windows should wrap tightly around content
-            const appWidth = app.width || 800;
-            const appHeight = app.height || 600;
+            let appWidth = app.width || 800;
+            let appHeight = app.height || 600;
+            
+            // Special sizing for WordO game
+            if (app.id === 'wordo') {
+                appWidth = 300;
+                appHeight = 550;
+            }
             
             windowDiv.style.width = appWidth + 'px';
             windowDiv.style.height = appHeight + 'px';
@@ -1839,8 +1864,8 @@
             windowDiv.appendChild(header);
             windowDiv.appendChild(content);
             
-            // Add resize handle if resizable
-            if (app.resizable) {
+            // Add resize handle if resizable (WordO should not be resizable)
+            if (app.resizable && app.id !== 'wordo') {
                 const resizeHandle = document.createElement('div');
                 resizeHandle.className = 'resize-handle resize-handle-se';
                 windowDiv.appendChild(resizeHandle);
