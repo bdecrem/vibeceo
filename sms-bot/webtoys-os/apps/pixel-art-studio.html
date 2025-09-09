@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Art Studio</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'DM Sans', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-container {
+            display: flex;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 0;
+        }
+
+        @media (min-width: 768px) {
+            .app-container {
+                border-radius: 12px;
+                margin: 20px;
+                height: calc(100vh - 40px);
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.9);
+            border-right: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        @media (max-width: 767px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                border-right: none;
+                border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+                padding: 16px;
+                gap: 16px;
+            }
+            
+            .app-container {
+                flex-direction: column;
+                margin: 0;
+                border-radius: 0;
+                height: 100vh;
+            }
+        }
+
+        .app-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            gap: 20px;
+        }
+
+        .canvas-container {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        #pixelCanvas {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            cursor: crosshair;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+        }
+
+        .controls-group {
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.04);
+        }
+
+        .controls-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 16px;
+        }
+
+        .canvas-size-controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .size-input-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .size-input-group label {
+            font-size: 14px;
+            color: #6b7280;
+            min-width: 40px;
+        }
+
+        .size-input-group input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .size-input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .btn {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #e5e7eb;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .color-swatch {
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .color-swatch.active {
+            border-color: #667eea;
+            transform: scale(1.15);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .current-color {
+            width: 48px;
+            height: 48px;
+            border-radius: 8px;
+            border: 2px solid #e5e7eb;
+            margin-bottom: 16px;
+        }
+
+        .tools-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .tool-button {
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.9);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .tool-button:hover {
+            background: #f9fafb;
+            border-color: #667eea;
+        }
+
+        .tool-button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(34, 197, 94, 0.9);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .canvas-controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .artwork-list {
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.5);
+        }
+
+        .artwork-item {
+            padding: 12px;
+            border-bottom: 1px solid #f3f4f6;
+            cursor: pointer;
+            transition: background 0.2s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .artwork-item:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .artwork-item:last-child {
+            border-bottom: none;
+        }
+
+        .artwork-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .artwork-date {
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .auth-prompt {
+            background: rgba(255, 248, 220, 0.9);
+            border: 1px solid #fbbf24;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            text-align: center;
+            font-size: 14px;
+            color: #92400e;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="sidebar">
+            <div>
+                <h1 class="app-title">🎨 Pixel Studio</h1>
+            </div>
+
+            <div class="controls-group">
+                <h3 class="controls-title">Canvas Size</h3>
+                <div class="canvas-size-controls">
+                    <div class="size-input-group">
+                        <label>Width:</label>
+                        <input type="number" id="canvasWidth" value="32" min="8" max="128">
+                    </div>
+                    <div class="size-input-group">
+                        <label>Height:</label>
+                        <input type="number" id="canvasHeight" value="32" min="8" max="128">
+                    </div>
+                    <button class="btn" onclick="resizeCanvas()">Resize Canvas</button>
+                </div>
+            </div>
+
+            <div class="controls-group">
+                <h3 class="controls-title">Tools</h3>
+                <div class="tools-section">
+                    <div class="tool-button active" data-tool="brush" onclick="selectTool('brush')">🖌️ Brush</div>
+                    <div class="tool-button" data-tool="eraser" onclick="selectTool('eraser')">🧽 Eraser</div>
+                    <div class="tool-button" data-tool="eyedropper" onclick="selectTool('eyedropper')">💧 Eyedropper</div>
+                </div>
+            </div>
+
+            <div class="controls-group">
+                <h3 class="controls-title">Colors</h3>
+                <div class="current-color" id="currentColor" style="background-color: #000000;"></div>
+                <div class="color-palette" id="colorPalette"></div>
+                <input type="color" id="colorPicker" value="#000000" style="width: 100%; height: 36px; border: none; border-radius: 6px; cursor: pointer;">
+            </div>
+
+            <div class="controls-group">
+                <h3 class="controls-title">Actions</h3>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <button class="btn" onclick="saveArtwork()">💾 Save Artwork</button>
+                    <button class="btn btn-secondary" onclick="clearCanvas()">🗑️ Clear Canvas</button>
+                    <button class="btn btn-secondary" onclick="showGallery()">🖼️ My Gallery</button>
+                </div>
+                <div id="authPrompt" class="auth-prompt" style="display: none;">
+                    Please log in to save your artwork
+                </div>
+            </div>
+
+            <div class="controls-group" id="gallerySection" style="display: none;">
+                <h3 class="controls-title">My Artworks</h3>
+                <div class="artwork-list" id="artworkList"></div>
+                <button class="btn btn-secondary" onclick="hideGallery()">Close Gallery</button>
+            </div>
+        </div>
+
+        <div class="canvas-section">
+            <div class="canvas-container">
+                <canvas id="pixelCanvas" width="512" height="512"></canvas>
+            </div>
+            <div class="canvas-controls">
+                <button class="btn btn-secondary" onclick="zoomIn()">🔍 Zoom In</button>
+                <button class="btn btn-secondary" onclick="zoomOut()">🔍 Zoom Out</button>
+                <button class="btn btn-secondary" onclick="resetZoom()">↩️ Reset Zoom</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="save-indicator" id="saveIndicator">Artwork saved!</div>
+
+    <script>
+        // Configuration
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        const APP_ID = 'pixel-art-studio';
+
+        // Initialize Supabase
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Canvas and drawing state
+        let canvas = document.getElementById('pixelCanvas');
+        let ctx = canvas.getContext('2d');
+        let gridWidth = 32;
+        let gridHeight = 32;
+        let pixelSize = 16;
+        let currentColor = '#000000';
+        let currentTool = 'brush';
+        let isDrawing = false;
+        let zoomLevel = 1;
+        let currentUser = null;
+
+        // Authentication
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthUI();
+            }
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthUI();
+            }
+        });
+
+        function updateAuthUI() {
+            const authPrompt = document.getElementById('authPrompt');
+            if (currentUser && currentUser.handle) {
+                authPrompt.style.display = 'none';
+            } else {
+                authPrompt.style.display = 'block';
+            }
+        }
+
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        // Initialize canvas
+        function initCanvas() {
+            canvas.width = gridWidth * pixelSize;
+            canvas.height = gridHeight * pixelSize;
+            ctx.imageSmoothingEnabled = false;
+            clearCanvas();
+        }
+
+        // Color palette setup
+        function initColorPalette() {
+            const palette = document.getElementById('colorPalette');
+            const colors = [
+                '#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+                '#800000', '#808080', '#008000', '#800080', '#808000', '#000080', '#FF8000', '#8000FF',
+                '#C0C0C0', '#404040', '#FF8080', '#80FF80', '#8080FF', '#FFFF80', '#FF80FF', '#80FFFF'
+            ];
+
+            colors.forEach((color, index) => {
+                const swatch = document.createElement('div');
+                swatch.className = 'color-swatch';
+                swatch.style.backgroundColor = color;
+                swatch.onclick = () => selectColor(color);
+                if (index === 0) swatch.classList.add('active');
+                palette.appendChild(swatch);
+            });
+        }
+
+        function selectColor(color) {
+            currentColor = color;
+            document.getElementById('currentColor').style.backgroundColor = color;
+            document.getElementById('colorPicker').value = color;
+            
+            // Update active swatch
+            document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                if (s.style.backgroundColor === color || rgbToHex(s.style.backgroundColor) === color) {
+                    s.classList.add('active');
+                }
+            });
+        }
+
+        function rgbToHex(rgb) {
+            if (rgb.startsWith('#')) return rgb;
+            const result = rgb.match(/\d+/g);
+            if (!result) return rgb;
+            return '#' + result.map(x => parseInt(x).toString(16).padStart(2, '0')).join('').toUpperCase();
+        }
+
+        // Color picker
+        document.getElementById('colorPicker').addEventListener('change', (e) => {
+            selectColor(e.target.value);
+        });
+
+        // Tool selection
+        function selectTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tool="${tool}"]`).classList.add('active');
+            
+            // Update cursor
+            if (tool === 'eyedropper') {
+                canvas.style.cursor = 'crosshair';
+            } else if (tool === 'eraser') {
+                canvas.style.cursor = 'crosshair';
+            } else {
+                canvas.style.cursor = 'crosshair';
+            }
+        }
+
+        // Canvas drawing
+        function getPixelCoordinates(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            const x = Math.floor((e.clientX - rect.left) * scaleX / pixelSize);
+            const y = Math.floor((e.clientY - rect.top) * scaleY / pixelSize);
+            
+            return { x: Math.max(0, Math.min(x, gridWidth - 1)), y: Math.max(0, Math.min(y, gridHeight - 1)) };
+        }
+
+        function drawPixel(x, y, color) {
+            ctx.fillStyle = color;
+            ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+        }
+
+        function getPixelColor(x, y) {
+            const imageData = ctx.getImageData(x * pixelSize, y * pixelSize, 1, 1);
+            const [r, g, b] = imageData.data;
+            return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+        }
+
+        // Canvas events
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            const { x, y } = getPixelCoordinates(e);
+            
+            if (currentTool === 'eyedropper') {
+                const color = getPixelColor(x, y);
+                selectColor(color);
+            } else if (currentTool === 'eraser') {
+                drawPixel(x, y, '#FFFFFF');
+            } else {
+                drawPixel(x, y, currentColor);
+            }
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            
+            const { x, y } = getPixelCoordinates(e);
+            
+            if (currentTool === 'eraser') {
+                drawPixel(x, y, '#FFFFFF');
+            } else if (currentTool === 'brush') {
+                drawPixel(x, y, currentColor);
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        // Canvas controls
+        function resizeCanvas() {
+            const newWidth = parseInt(document.getElementById('canvasWidth').value);
+            const newHeight = parseInt(document.getElementById('canvasHeight').value);
+            
+            if (newWidth >= 8 && newWidth <= 128 && newHeight >= 8 && newHeight <= 128) {
+                // Save current canvas
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                
+                gridWidth = newWidth;
+                gridHeight = newHeight;
+                
+                // Calculate new pixel size to fit canvas area
+                const maxCanvasSize = Math.min(window.innerWidth * 0.6, window.innerHeight * 0.6, 512);
+                pixelSize = Math.floor(maxCanvasSize / Math.max(gridWidth, gridHeight));
+                pixelSize = Math.max(4, Math.min(32, pixelSize));
+                
+                initCanvas();
+                
+                // Try to restore what we can
+                canvas.width = gridWidth * pixelSize;
+                canvas.height = gridHeight * pixelSize;
+                
+                // Redraw grid
+                clearCanvas();
+            }
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x <= gridWidth; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * pixelSize, 0);
+                ctx.lineTo(x * pixelSize, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y <= gridHeight; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * pixelSize);
+                ctx.lineTo(canvas.width, y * pixelSize);
+                ctx.stroke();
+            }
+        }
+
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel * 1.2, 3);
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.5);
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+
+        function resetZoom() {
+            zoomLevel = 1;
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+
+        // Save and load functionality
+        async function saveArtwork() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                document.getElementById('authPrompt').style.display = 'block';
+                return;
+            }
+
+            const title = prompt('Enter a title for your artwork:') || `Artwork ${new Date().toLocaleDateString()}`;
+            const imageData = canvas.toDataURL();
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: participantId,
+                        action_type: 'artwork',
+                        content_data: {
+                            title: title,
+                            imageData: imageData,
+                            gridWidth: gridWidth,
+                            gridHeight: gridHeight,
+                            pixelSize: pixelSize,
+                            author: currentUser.handle.toUpperCase(),
+                            createdAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showSaveIndicator();
+                } else {
+                    alert('Failed to save artwork. Please try again.');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Failed to save artwork. Please try again.');
+            }
+        }
+
+        async function loadArtworks() {
+            const participantId = getParticipantId();
+            if (!participantId) return [];
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=artwork`);
+                const allArtworks = await response.json();
+
+                const userArtworks = allArtworks.filter(artwork => 
+                    artwork.participant_id === participantId
+                );
+
+                // Deduplicate by title and get latest version
+                const uniqueArtworks = {};
+                userArtworks.forEach(artwork => {
+                    const title = artwork.title || artwork.content_data?.title || 'Untitled';
+                    const createdAt = artwork.createdAt || artwork.content_data?.createdAt || artwork.created_at;
+                    
+                    if (!uniqueArtworks[title] || 
+                        new Date(createdAt) > new Date(uniqueArtworks[title].createdAt)) {
+                        uniqueArtworks[title] = {
+                            title: title,
+                            imageData: artwork.imageData || artwork.content_data?.imageData,
+                            gridWidth: artwork.gridWidth || artwork.content_data?.gridWidth,
+                            gridHeight: artwork.gridHeight || artwork.content_data?.gridHeight,
+                            pixelSize: artwork.pixelSize || artwork.content_data?.pixelSize,
+                            createdAt: createdAt,
+                            participant_id: artwork.participant_id
+                        };
+                    }
+                });
+
+                return Object.values(uniqueArtworks)
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        async function showGallery() {
+            const artworks = await loadArtworks();
+            const gallerySection = document.getElementById('gallerySection');
+            const artworkList = document.getElementById('artworkList');
+            
+            artworkList.innerHTML = '';
+            
+            if (artworks.length === 0) {
+                artworkList.innerHTML = '<div style="padding: 20px; text-align: center; color: #6b7280;">No saved artworks yet</div>';
+            } else {
+                artworks.forEach(artwork => {
+                    const item = document.createElement('div');
+                    item.className = 'artwork-item';
+                    item.innerHTML = `
+                        <div>
+                            <div class="artwork-title">${artwork.title}</div>
+                            <div class="artwork-date">${new Date(artwork.createdAt).toLocaleDateString()}</div>
+                        </div>
+                    `;
+                    item.onclick = () => loadArtwork(artwork);
+                    artworkList.appendChild(item);
+                });
+            }
+            
+            gallerySection.style.display = 'block';
+        }
+
+        function hideGallery() {
+            document.getElementById('gallerySection').style.display = 'none';
+        }
+
+        function loadArtwork(artwork) {
+            if (artwork.imageData) {
+                const img = new Image();
+                img.onload = () => {
+                    // Update canvas size
+                    if (artwork.gridWidth && artwork.gridHeight) {
+                        gridWidth = artwork.gridWidth;
+                        gridHeight = artwork.gridHeight;
+                        document.getElementById('canvasWidth').value = gridWidth;
+                        document.getElementById('canvasHeight').value = gridHeight;
+                    }
+                    
+                    if (artwork.pixelSize) {
+                        pixelSize = artwork.pixelSize;
+                    }
+                    
+                    initCanvas();
+                    ctx.drawImage(img, 0, 0);
+                };
+                img.src = artwork.imageData;
+            }
+            hideGallery();
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => {
+                indicator.classList.remove('show');
+            }, 2000);
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            initCanvas();
+            initColorPalette();
+            loadAuthFromStorage();
+            
+            // Request auth from parent if in iframe
+            if (window.parent !== window) {
+                parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
