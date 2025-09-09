@@ -520,21 +520,23 @@
                 return;
             }
             
+            const submittedWord = currentWord; // Store for message
+            
             // Add word to chain
             wordChain.push(currentWord);
             score += currentWord.length * 10;
+            
+            // Clear current word BEFORE generating new grid
+            clearWord();
+            
+            // Generate new grid automatically
+            generateLetters();
             
             // Update display
             renderWordChain();
             updateStats();
             
-            // Clear current word
-            clearWord();
-            
-            // Generate new grid
-            generateLetters();
-            
-            showMessage(`Great! "${currentWord}" added to chain!`, 'success');
+            showMessage(`Great! "${submittedWord}" added to chain!`, 'success');
             
             // Check for new best chain
             if (wordChain.length > longestChain) {
