@@ -19,7 +19,7 @@ export default function UploadAuth({ userSlug, onAuthenticated }: UploadAuthProp
 
 	// Check for pre-auth code in URL params
 	useEffect(() => {
-		const preAuthCode = searchParams.get('code') || searchParams.get('lemmein');
+		const preAuthCode = searchParams?.get('code') || searchParams?.get('lemmein');
 		if (preAuthCode) {
 			setCode(preAuthCode);
 			setStep('code-sent');

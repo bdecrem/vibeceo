@@ -18,7 +18,8 @@ type RemixNode = {
 export default function RemixTreePage() {
   const [data, setData] = useState<RemixNode | null>(null);
   const [loading, setLoading] = useState(true);
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id;
 
   useEffect(() => {
     async function fetchTree() {

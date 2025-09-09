@@ -40,8 +40,8 @@ interface GenealogyData {
 
 export default function RemixTreePage() {
   const params = useParams()
-  const user = params.user_slug as string
-  const app = params.app_slug as string
+  const user = params?.user_slug as string
+  const app = params?.app_slug as string
   const [copiedNotification, setCopiedNotification] = useState({ show: false, text: "" })
   const [genealogyData, setGenealogyData] = useState<GenealogyData | null>(null)
   const [loading, setLoading] = useState(true)
