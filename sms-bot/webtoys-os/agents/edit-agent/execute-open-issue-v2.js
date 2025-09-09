@@ -70,43 +70,68 @@ function buildSmartPrompt(issue, description) {
     let prompt = description;
     const lower = description.toLowerCase();
     
-    // Check if this is a reopened issue needing conversation
-    if (issue.trigger_conversation === true || issue.status === 'admin_discussion') {
-        // This is a reopened issue - handle differently
-        const comments = [...(issue.comments || []), ...(issue.admin_comments || [])];
-        const lastComment = comments[comments.length - 1];
+    // Check if issue was reopened by looking for reopenedAt timestamp
+    const wasReopened = issue.reopenedAt && issue.status !== 'closed';
+    
+    // Get all comments, filtering out agent responses
+    const allComments = [...(issue.comments || []), ...(issue.admin_comments || [])];
+    const userComments = allComments.filter(c => 
+        c.author !== 'Edit Agent V2' && 
+        c.authorRole !== 'AGENT' &&
+        c.text && 
+        c.text.length > 10
+    );
+    
+    // Get agent's previous responses
+    const agentResponses = allComments.filter(c => 
+        c.author === 'Edit Agent V2' || c.authorRole === 'AGENT'
+    );
+    
+    // If reopened, focus on the conversation flow
+    if (wasReopened && userComments.length > 0) {
+        // Find comments after reopening
+        const reopenedTime = new Date(issue.reopenedAt).getTime();
+        const commentsAfterReopening = userComments.filter(c => 
+            new Date(c.timestamp).getTime() >= reopenedTime
+        );
         
-        if (lastComment && lastComment.text === 'Issue reopened for further discussion') {
-            // Reopened WITHOUT additional comment - ask for clarification
-            prompt = `This issue was reopened but no specific feedback was provided.\n\n`;
-            prompt += `Original issue: ${description}\n\n`;
-            prompt += `Please create a simple HTML comment block explaining:\n`;
-            prompt += `1. Why this might have been reopened\n`;
-            prompt += `2. What clarification is needed to proceed\n`;
-            prompt += `3. Suggest next steps\n\n`;
-            prompt += `Output format: Just an HTML comment block that can be added to the issue.`;
-            return prompt; // Return early - no need for other context
-        } else if (lastComment) {
-            // Reopened WITH comment - focus on addressing it
-            prompt = `Issue reopened with feedback: "${lastComment.text}"\n\n`;
-            prompt += `Original request: ${description}\n\n`;
-            prompt += `Address the feedback and implement necessary changes.`;
+        if (commentsAfterReopening.length > 0) {
+            // CRITICAL: This is a conversation - user is responding to our previous work
+            const lastUserComment = commentsAfterReopening[commentsAfterReopening.length - 1];
+            
+            prompt = `## IMPORTANT: This is a REOPENED issue with user feedback!\n\n`;
+            prompt += `### Original Request:\n${description}\n\n`;
+            
+            // Include our previous response for context
+            if (agentResponses.length > 0) {
+                const lastAgentResponse = agentResponses[agentResponses.length - 1];
+                // Extract just the core content, not the execution log
+                const responseText = lastAgentResponse.text.split('### Claude Code Output:')[1]?.split('### Execution Details:')[0] || '';
+                if (responseText) {
+                    prompt += `### Your Previous Response:\n${responseText.substring(0, 1000)}...\n\n`;
+                }
+            }
+            
+            prompt += `### User's NEW Feedback (RESPOND TO THIS):\n"${lastUserComment.text}"\n\n`;
+            prompt += `### Instructions:\n`;
+            prompt += `1. The user has provided feedback on your previous response\n`;
+            prompt += `2. Address their SPECIFIC feedback - don't repeat your original response\n`;
+            prompt += `3. If they suggest changes, implement those changes\n`;
+            prompt += `4. If they ask questions, answer them\n`;
+            prompt += `5. Build upon your previous work, don't start over\n\n`;
+            
+            // Don't add generic context for reopened issues - focus on the conversation
+            return prompt;
         }
     }
     
-    // Add comments if they provide useful feedback
-    const comments = [...(issue.comments || []), ...(issue.admin_comments || [])];
-    if (comments.length > 0) {
-        const relevantComments = comments.filter(c => 
-            c.text && c.text.length > 10 && !c.text.includes('Processing')
-        );
-        
-        if (relevantComments.length > 0) {
-            prompt += '\n\nUser feedback:\n';
-            relevantComments.slice(-3).forEach(c => { // Only last 3 comments
-                prompt += `- ${c.text}\n`;
-            });
-        }
+    // Not a reopened issue - handle normally but include any comments
+    if (userComments.length > 0) {
+        prompt += '\n\n### User Comments:\n';
+        userComments.slice(-3).forEach(c => { // Last 3 user comments
+            prompt += `- ${c.text}\n`;
+        });
+        prompt += '\n';
     }
     
     // Add minimal context only when needed
