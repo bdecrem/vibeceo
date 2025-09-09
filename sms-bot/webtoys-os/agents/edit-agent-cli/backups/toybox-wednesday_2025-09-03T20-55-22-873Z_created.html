@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wednesday - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-shrink: 0;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title-icon {
+            font-size: 24px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            margin-left: auto;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #475569;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e1;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .editor {
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        #textArea {
+            width: 100%;
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 15px;
+            line-height: 1.6;
+            color: #2d3748;
+            resize: none;
+            background: transparent;
+        }
+
+        #textArea::placeholder {
+            color: #a0aec0;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 8px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+        }
+
+        .status-left {
+            display: flex;
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* File list sidebar */
+        .file-list {
+            position: fixed;
+            left: -300px;
+            top: 0;
+            bottom: 0;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.98);
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-list.active {
+            left: 0;
+        }
+
+        .file-list-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .file-items {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .file-item {
+            padding: 12px;
+            margin: 5px 0;
+            background: #f8fafc;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-item:hover {
+            background: #e2e8f0;
+            transform: translateX(5px);
+        }
+
+        .file-item-title {
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .file-item-preview {
+            font-size: 12px;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 99;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">
+            <span class="title-icon">📝</span>
+            Wednesday
+        </div>
+        <div class="toolbar">
+            <button class="btn btn-secondary" id="newBtn">New</button>
+            <button class="btn btn-secondary" id="openBtn">Open</button>
+            <button class="btn" id="saveBtn">Save</button>
+        </div>
+    </div>
+
+    <div class="editor-container">
+        <div class="editor">
+            <textarea id="textArea" placeholder="Start typing your text here..."></textarea>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="status-left">
+            <div class="status-item">
+                <span>Words:</span>
+                <span id="wordCount">0</span>
+            </div>
+            <div class="status-item">
+                <span>Characters:</span>
+                <span id="charCount">0</span>
+            </div>
+            <div class="status-item">
+                <span>Lines:</span>
+                <span id="lineCount">1</span>
+            </div>
+        </div>
+        <div class="status-right">
+            <span id="savedStatus">Ready</span>
+        </div>
+    </div>
+
+    <div class="file-list" id="fileList">
+        <div class="file-list-header">
+            Saved Documents
+        </div>
+        <div class="file-items" id="fileItems"></div>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+
+    <script>
+        // Text editor functionality
+        const textArea = document.getElementById('textArea');
+        const wordCount = document.getElementById('wordCount');
+        const charCount = document.getElementById('charCount');
+        const lineCount = document.getElementById('lineCount');
+        const savedStatus = document.getElementById('savedStatus');
+        const newBtn = document.getElementById('newBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const openBtn = document.getElementById('openBtn');
+        const fileList = document.getElementById('fileList');
+        const fileItems = document.getElementById('fileItems');
+        const overlay = document.getElementById('overlay');
+
+        let currentFileName = 'Untitled';
+        let savedDocuments = [];
+
+        // Load saved documents from localStorage
+        function loadSavedDocuments() {
+            const saved = localStorage.getItem('wednesday_documents');
+            if (saved) {
+                savedDocuments = JSON.parse(saved);
+            }
+        }
+
+        // Save documents to localStorage
+        function saveDocumentsToStorage() {
+            localStorage.setItem('wednesday_documents', JSON.stringify(savedDocuments));
+        }
+
+        // Update statistics
+        function updateStats() {
+            const text = textArea.value;
+            
+            // Count words
+            const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+            wordCount.textContent = words;
+            
+            // Count characters
+            charCount.textContent = text.length;
+            
+            // Count lines
+            const lines = text === '' ? 1 : text.split('\n').length;
+            lineCount.textContent = lines;
+        }
+
+        // New document
+        function newDocument() {
+            if (textArea.value && !confirm('Create new document? Unsaved changes will be lost.')) {
+                return;
+            }
+            textArea.value = '';
+            currentFileName = 'Untitled';
+            updateStats();
+            savedStatus.textContent = 'New document';
+            setTimeout(() => savedStatus.textContent = 'Ready', 2000);
+        }
+
+        // Save document
+        function saveDocument() {
+            const content = textArea.value;
+            if (!content.trim()) {
+                alert('Cannot save empty document');
+                return;
+            }
+
+            const title = prompt('Enter document name:', currentFileName);
+            if (!title) return;
+
+            currentFileName = title;
+            
+            // Check if document exists
+            const existingIndex = savedDocuments.findIndex(doc => doc.title === title);
+            const timestamp = new Date().toISOString();
+            
+            if (existingIndex >= 0) {
+                // Update existing
+                savedDocuments[existingIndex] = {
+                    title,
+                    content,
+                    timestamp
+                };
+            } else {
+                // Add new
+                savedDocuments.push({
+                    title,
+                    content,
+                    timestamp
+                });
+            }
+
+            saveDocumentsToStorage();
+            savedStatus.textContent = `Saved: ${title}`;
+            setTimeout(() => savedStatus.textContent = 'Ready', 3000);
+        }
+
+        // Open document list
+        function toggleFileList() {
+            fileList.classList.toggle('active');
+            overlay.classList.toggle('active');
+            
+            if (fileList.classList.contains('active')) {
+                renderFileList();
+            }
+        }
+
+        // Render file list
+        function renderFileList() {
+            if (savedDocuments.length === 0) {
+                fileItems.innerHTML = '<div style="padding: 20px; text-align: center; color: #94a3b8;">No saved documents</div>';
+                return;
+            }
+
+            fileItems.innerHTML = savedDocuments
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                .map((doc, index) => `
+                    <div class="file-item" data-index="${index}">
+                        <div class="file-item-title">${doc.title}</div>
+                        <div class="file-item-preview">${doc.content.substring(0, 100)}...</div>
+                    </div>
+                `).join('');
+        }
+
+        // Open selected document
+        function openDocument(index) {
+            const doc = savedDocuments[index];
+            if (doc) {
+                textArea.value = doc.content;
+                currentFileName = doc.title;
+                updateStats();
+                savedStatus.textContent = `Opened: ${doc.title}`;
+                setTimeout(() => savedStatus.textContent = 'Ready', 2000);
+                toggleFileList();
+            }
+        }
+
+        // Event listeners
+        textArea.addEventListener('input', updateStats);
+        newBtn.addEventListener('click', newDocument);
+        saveBtn.addEventListener('click', saveDocument);
+        openBtn.addEventListener('click', toggleFileList);
+        overlay.addEventListener('click', toggleFileList);
+
+        fileItems.addEventListener('click', (e) => {
+            const fileItem = e.target.closest('.file-item');
+            if (fileItem) {
+                const index = parseInt(fileItem.dataset.index);
+                openDocument(index);
+            }
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                if (e.key === 's') {
+                    e.preventDefault();
+                    saveDocument();
+                } else if (e.key === 'o') {
+                    e.preventDefault();
+                    toggleFileList();
+                } else if (e.key === 'n') {
+                    e.preventDefault();
+                    newDocument();
+                }
+            }
+        });
+
+        // Initialize
+        loadSavedDocuments();
+        updateStats();
+        textArea.focus();
+    </script>
+</body>
+</html>

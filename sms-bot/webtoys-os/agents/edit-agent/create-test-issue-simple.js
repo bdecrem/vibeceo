@@ -17,16 +17,17 @@ const supabase = createClient(
 );
 
 async function createTestIssue() {
+    const description = process.argv[2] || "Create a simple Hello World app that displays Hello World in big text";
+    
     const testIssue = {
         app_id: 'toybox-issue-tracker-v3',
-        participant_id: 'TEST_USER_1234',
         action_type: 'issue',
+        participant_id: 'TEST_1234',
         content_data: {
-            title: "Test: Create simple Moi text editor",
-            description: "Create a simple text editor app called Moi with basic text editing capabilities. It should allow users to type, save, and load text documents.",
-            author: "test",
-            status: "new",
-            created_at: new Date().toISOString()
+            description: description,
+            status: 'open',
+            created: new Date().toISOString(),
+            id: Math.floor(Math.random() * 100000)
         }
     };
 
@@ -40,10 +41,8 @@ async function createTestIssue() {
         return;
     }
 
-    console.log('✅ Test issue created successfully!');
-    console.log('Issue ID:', data[0].id);
-    console.log('Title:', testIssue.content_data.title);
-    console.log('Status:', testIssue.content_data.status);
+    console.log(`✅ Test issue created: "${description}"`);
+    console.log(`📋 Issue ID: ${data[0].id}`);
 }
 
 createTestIssue();

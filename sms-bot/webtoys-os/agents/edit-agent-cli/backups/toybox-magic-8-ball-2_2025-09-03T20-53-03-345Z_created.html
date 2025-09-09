@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic 8-Ball</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 10px rgba(255,255,255,0.2); }
+            to { text-shadow: 2px 2px 4px rgba(0,0,0,0.3), 0 0 20px rgba(255,255,255,0.4); }
+        }
+
+        .ball-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 0 auto 30px;
+        }
+
+        .ball {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle at 30% 30%, #333, #000);
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 
+                inset -20px -20px 40px rgba(0,0,0,0.5),
+                inset 20px 20px 40px rgba(255,255,255,0.1),
+                0 20px 40px rgba(0,0,0,0.5);
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .ball:hover {
+            transform: scale(1.05);
+        }
+
+        .ball.shaking {
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-10px) rotate(-5deg); }
+            20% { transform: translateX(10px) rotate(5deg); }
+            30% { transform: translateX(-10px) rotate(-5deg); }
+            40% { transform: translateX(10px) rotate(5deg); }
+            50% { transform: translateX(-5px) rotate(-2deg); }
+            60% { transform: translateX(5px) rotate(2deg); }
+            70% { transform: translateX(-2px) rotate(-1deg); }
+            80% { transform: translateX(2px) rotate(1deg); }
+            90% { transform: translateX(-1px) rotate(0deg); }
+        }
+
+        .window {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background: #1a1a2e;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #0f0f1e;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+        }
+
+        .answer {
+            color: #00ff00;
+            font-size: 0.9em;
+            padding: 10px;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            text-shadow: 0 0 5px #00ff00;
+            max-width: 100px;
+            word-wrap: break-word;
+        }
+
+        .answer.show {
+            opacity: 1;
+        }
+
+        .eight {
+            font-size: 3em;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            margin-bottom: 20px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        input:focus {
+            background: white;
+            box-shadow: 0 0 20px rgba(255,255,255,0.5);
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        button {
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%);
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .hint {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+            font-style: italic;
+        }
+
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle 1s ease-out forwards;
+        }
+
+        @keyframes sparkle {
+            0% {
+                transform: translate(-50%, -50%) scale(0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>✨ Magic 8-Ball ✨</h1>
+        
+        <div class="ball-container">
+            <div class="ball" id="ball">
+                <div class="window">
+                    <div class="eight" id="eight">8</div>
+                    <div class="answer" id="answer"></div>
+                </div>
+            </div>
+        </div>
+
+        <input type="text" id="question" placeholder="Ask a yes/no question..." />
+        <button onclick="askQuestion()">Ask the Magic 8-Ball</button>
+        
+        <div class="hint">Click the ball or press Enter to reveal your fate!</div>
+    </div>
+
+    <script>
+        const answers = [
+            // Positive
+            "It is certain",
+            "Without a doubt",
+            "Yes definitely",
+            "You may rely on it",
+            "As I see it, yes",
+            "Most likely",
+            "Outlook good",
+            "Yes",
+            "Signs point to yes",
+            "Absolutely!",
+            
+            // Non-committal
+            "Reply hazy, try again",
+            "Ask again later",
+            "Better not tell you now",
+            "Cannot predict now",
+            "Concentrate and ask again",
+            "The stars are unclear",
+            
+            // Negative
+            "Don't count on it",
+            "My reply is no",
+            "My sources say no",
+            "Outlook not so good",
+            "Very doubtful",
+            "The spirits say no"
+        ];
+
+        let isShaking = false;
+
+        function askQuestion() {
+            const questionInput = document.getElementById('question');
+            const question = questionInput.value.trim();
+            
+            if (!question) {
+                questionInput.placeholder = "Please ask a question first!";
+                questionInput.style.background = "rgba(255,100,100,0.9)";
+                setTimeout(() => {
+                    questionInput.style.background = "rgba(255,255,255,0.9)";
+                    questionInput.placeholder = "Ask a yes/no question...";
+                }, 1500);
+                return;
+            }
+
+            if (isShaking) return;
+            
+            shakeAndReveal();
+        }
+
+        function shakeAndReveal() {
+            if (isShaking) return;
+            
+            isShaking = true;
+            const ball = document.getElementById('ball');
+            const eight = document.getElementById('eight');
+            const answer = document.getElementById('answer');
+            
+            // Hide previous answer
+            answer.classList.remove('show');
+            eight.style.display = 'block';
+            
+            // Add shaking animation
+            ball.classList.add('shaking');
+            
+            // Create sparkles
+            for (let i = 0; i < 5; i++) {
+                setTimeout(() => createSparkle(), i * 100);
+            }
+            
+            setTimeout(() => {
+                // Remove shaking
+                ball.classList.remove('shaking');
+                
+                // Hide 8, show answer
+                eight.style.display = 'none';
+                
+                // Get random answer
+                const randomAnswer = answers[Math.floor(Math.random() * answers.length)];
+                answer.textContent = randomAnswer;
+                answer.classList.add('show');
+                
+                // Clear question
+                document.getElementById('question').value = '';
+                
+                isShaking = false;
+            }, 500);
+        }
+
+        function createSparkle() {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = '✨';
+            sparkle.style.left = Math.random() * 100 + '%';
+            sparkle.style.top = Math.random() * 100 + '%';
+            sparkle.style.fontSize = Math.random() * 20 + 10 + 'px';
+            
+            const ballContainer = document.querySelector('.ball-container');
+            ballContainer.appendChild(sparkle);
+            
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+
+        // Click ball to shake
+        document.getElementById('ball').addEventListener('click', () => {
+            const question = document.getElementById('question').value.trim();
+            if (question) {
+                shakeAndReveal();
+            }
+        });
+
+        // Enter key support
+        document.getElementById('question').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                askQuestion();
+            }
+        });
+
+        // Initial focus
+        document.getElementById('question').focus();
+    </script>
+</body>
+</html>
