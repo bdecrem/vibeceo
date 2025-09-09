@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Chain</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .header {
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            font-weight: 700;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 1.1em;
+            margin-bottom: 20px;
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            background: rgba(102, 126, 234, 0.1);
+            padding: 15px;
+            border-radius: 12px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .letter-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(118, 75, 162, 0.1);
+            border-radius: 12px;
+        }
+
+        .letter-tile {
+            aspect-ratio: 1;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3748;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            min-height: 60px;
+        }
+
+        .letter-tile:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .letter-tile.selected {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-color: #667eea;
+        }
+
+        .current-word {
+            margin-bottom: 20px;
+        }
+
+        .word-display {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2d3748;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px dashed #e2e8f0;
+        }
+
+        .word-chain {
+            margin-bottom: 30px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .chain-words {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 12px;
+            min-height: 50px;
+            align-items: center;
+        }
+
+        .chain-word {
+            background: linear-gradient(135deg, #48bb78, #38a169);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.9em;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .actions {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565, #e53e3e);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 101, 101, 0.4);
+        }
+
+        #leaderboard {
+            margin-top: 30px;
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        #leaderboard h3 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        #scoreList {
+            list-style: none;
+            text-align: left;
+        }
+
+        #scoreList li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+            color: #4a5568;
+            font-weight: 500;
+        }
+
+        #scoreList li:last-child {
+            border-bottom: none;
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: 500;
+        }
+
+        .success {
+            background: rgba(72, 187, 120, 0.2);
+            color: #2f855a;
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+
+        .error {
+            background: rgba(245, 101, 101, 0.2);
+            color: #c53030;
+            border: 1px solid rgba(245, 101, 101, 0.3);
+        }
+
+        .auth-prompt {
+            background: rgba(102, 126, 234, 0.1);
+            padding: 20px;
+            border-radius: 12px;
+            margin: 20px 0;
+            border: 2px dashed #667eea;
+        }
+
+        .auth-prompt h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 20px;
+                margin: 0;
+                border-radius: 0;
+                min-height: 100vh;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+            }
+            
+            .letter-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            
+            h1 {
+                font-size: 2em;
+            }
+            
+            .game-stats {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🔗 Word Chain</h1>
+            <p class="subtitle">Link words by starting with the last letter!</p>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-value" id="score">0</div>
+                <div class="stat-label">Score</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="chainLength">0</div>
+                <div class="stat-label">Chain</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value" id="longestChain">0</div>
+                <div class="stat-label">Best Chain</div>
+            </div>
+        </div>
+
+        <div class="letter-grid" id="letterGrid">
+            <!-- Letters will be generated here -->
+        </div>
+
+        <div class="current-word">
+            <div class="word-display" id="currentWord">Click letters to build words!</div>
+        </div>
+
+        <div class="word-chain">
+            <div class="chain-words" id="wordChain">
+                <!-- Word chain will appear here -->
+            </div>
+        </div>
+
+        <div class="actions">
+            <button class="btn btn-primary" id="submitWord">Submit Word</button>
+            <button class="btn btn-secondary" id="clearWord">Clear</button>
+            <button class="btn btn-danger" id="newGame">New Game</button>
+        </div>
+
+        <div id="message"></div>
+
+        <div id="leaderboard">
+            <h3>🏆 Top Scores</h3>
+            <ol id="scoreList"></ol>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    <script>
+        let currentUser = null;
+        let currentWord = '';
+        let selectedLetters = [];
+        let wordChain = [];
+        let score = 0;
+        let letters = [];
+        let gameActive = true;
+        let longestChain = parseInt(localStorage.getItem('wordChainLongestChain') || '0');
+
+        // Authentication
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser && currentUser.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser && currentUser.handle) {
+                    currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+                    }
+                }
+            }
+        });
+
+        // Request auth on load
+        setTimeout(() => {
+            if (parent && parent !== window) {
+                parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }, 100);
+
+        // Generate random letters
+        function generateLetters() {
+            const vowels = 'AEIOU';
+            const consonants = 'BCDFGHJKLMNPQRSTVWXYZ';
+            letters = [];
+            
+            // Ensure we have at least 2-3 vowels
+            for (let i = 0; i < 3; i++) {
+                letters.push(vowels[Math.floor(Math.random() * vowels.length)]);
+            }
+            
+            // Fill the rest with consonants
+            while (letters.length < 16) {
+                letters.push(consonants[Math.floor(Math.random() * consonants.length)]);
+            }
+            
+            // Shuffle the array
+            for (let i = letters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [letters[i], letters[j]] = [letters[j], letters[i]];
+            }
+            
+            renderGrid();
+        }
+
+        function renderGrid() {
+            const grid = document.getElementById('letterGrid');
+            grid.innerHTML = '';
+            
+            letters.forEach((letter, index) => {
+                const tile = document.createElement('div');
+                tile.className = 'letter-tile';
+                tile.textContent = letter;
+                tile.dataset.index = index;
+                tile.addEventListener('click', () => selectLetter(index));
+                grid.appendChild(tile);
+            });
+        }
+
+        function selectLetter(index) {
+            if (!gameActive) return;
+            
+            const tile = document.querySelector(`[data-index="${index}"]`);
+            
+            if (tile.classList.contains('selected')) {
+                // Deselect
+                const letterIndex = selectedLetters.indexOf(index);
+                if (letterIndex > -1) {
+                    selectedLetters.splice(letterIndex, 1);
+                    tile.classList.remove('selected');
+                    rebuildCurrentWord();
+                }
+            } else {
+                // Select
+                selectedLetters.push(index);
+                tile.classList.add('selected');
+                currentWord += letters[index];
+                document.getElementById('currentWord').textContent = currentWord;
+            }
+        }
+
+        function rebuildCurrentWord() {
+            currentWord = selectedLetters.map(index => letters[index]).join('');
+            document.getElementById('currentWord').textContent = currentWord || 'Click letters to build words!';
+        }
+
+        function clearWord() {
+            selectedLetters.forEach(index => {
+                const tile = document.querySelector(`[data-index="${index}"]`);
+                tile.classList.remove('selected');
+            });
+            selectedLetters = [];
+            currentWord = '';
+            document.getElementById('currentWord').textContent = 'Click letters to build words!';
+            clearMessage();
+        }
+
+        function validateWord(word) {
+            if (word.length < 3) {
+                return { valid: false, message: 'Word must be at least 3 letters long!' };
+            }
+            
+            if (wordChain.length > 0) {
+                const lastWord = wordChain[wordChain.length - 1];
+                const lastLetter = lastWord.slice(-1).toLowerCase();
+                const firstLetter = word[0].toLowerCase();
+                
+                if (lastLetter !== firstLetter) {
+                    return { 
+                        valid: false, 
+                        message: `Word must start with "${lastLetter.toUpperCase()}" (last letter of "${lastWord}")!`
+                    };
+                }
+            }
+            
+            if (wordChain.includes(word)) {
+                return { valid: false, message: 'Word already used in this chain!' };
+            }
+            
+            return { valid: true, message: '' };
+        }
+
+        async function submitWord() {
+            if (!currentWord) {
+                showMessage('Please build a word first!', 'error');
+                return;
+            }
+            
+            const validation = validateWord(currentWord);
+            if (!validation.valid) {
+                showMessage(validation.message, 'error');
+                return;
+            }
+            
+            // Add word to chain
+            wordChain.push(currentWord);
+            score += currentWord.length * 10;
+            
+            // Update display
+            renderWordChain();
+            updateStats();
+            
+            // Clear current word
+            clearWord();
+            
+            // Generate new grid
+            generateLetters();
+            
+            showMessage(`Great! "${currentWord}" added to chain!`, 'success');
+            
+            // Check for new best chain
+            if (wordChain.length > longestChain) {
+                longestChain = wordChain.length;
+                localStorage.setItem('wordChainLongestChain', longestChain.toString());
+                showMessage(`New best chain: ${longestChain} words! 🎉`, 'success');
+            }
+        }
+
+        function renderWordChain() {
+            const chainContainer = document.getElementById('wordChain');
+            chainContainer.innerHTML = '';
+            
+            if (wordChain.length === 0) {
+                chainContainer.innerHTML = '<div style="color: #718096; font-style: italic;">Your word chain will appear here</div>';
+                return;
+            }
+            
+            wordChain.forEach(word => {
+                const wordElement = document.createElement('div');
+                wordElement.className = 'chain-word';
+                wordElement.textContent = word;
+                chainContainer.appendChild(wordElement);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('chainLength').textContent = wordChain.length;
+            document.getElementById('longestChain').textContent = longestChain;
+        }
+
+        function showMessage(text, type = 'success') {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            
+            setTimeout(() => {
+                clearMessage();
+            }, 3000);
+        }
+
+        function clearMessage() {
+            const messageDiv = document.getElementById('message');
+            messageDiv.textContent = '';
+            messageDiv.className = 'message';
+        }
+
+        function newGame() {
+            if (wordChain.length > 0 && currentUser) {
+                saveScore(score);
+            }
+            
+            wordChain = [];
+            score = 0;
+            currentWord = '';
+            selectedLetters = [];
+            gameActive = true;
+            
+            updateStats();
+            renderWordChain();
+            clearWord();
+            generateLetters();
+            clearMessage();
+            
+            showMessage('New game started!', 'success');
+        }
+
+        // Leaderboard system
+        async function saveScore(finalScore) {
+            if (!currentUser) {
+                showAuthPrompt();
+                return;
+            }
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-word-chain',
+                        participant_id: participantId,
+                        action_type: 'leaderboard',
+                        content_data: {
+                            score: finalScore,
+                            player: currentUser.handle.toUpperCase(),
+                            chainLength: wordChain.length,
+                            timestamp: Date.now()
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    loadLeaderboard();
+                    showMessage(`Score saved: ${finalScore} points!`, 'success');
+                }
+            } catch (error) {
+                console.error('Failed to save score:', error);
+                showMessage('Could not save score. Try again later.', 'error');
+            }
+        }
+
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-word-chain&action_type=leaderboard');
+                const scores = await response.json();
+                
+                // Get best score per player
+                const bestScores = {};
+                scores.forEach(s => {
+                    const player = s.content_data?.player || s.player;
+                    const score = s.content_data?.score || s.score;
+                    if (!bestScores[player] || score > bestScores[player]) {
+                        bestScores[player] = score;
+                    }
+                });
+                
+                // Sort and display top 10
+                const sorted = Object.entries(bestScores)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 10);
+                
+                const scoreList = document.getElementById('scoreList');
+                scoreList.innerHTML = sorted.length ? 
+                    sorted.map(([player, score]) => `<li>${player}: ${score} points</li>`).join('') :
+                    '<li style="color: #718096; font-style: italic;">No scores yet - be the first!</li>';
+            } catch (error) {
+                console.error('Failed to load leaderboard:', error);
+            }
+        }
+
+        function showAuthPrompt() {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `
+                <div class="auth-prompt">
+                    <h3>🎮 Save Your Score!</h3>
+                    <p>Log in on the desktop to save your score to the leaderboard.</p>
+                </div>
+            `;
+        }
+
+        // Event listeners
+        document.getElementById('submitWord').addEventListener('click', submitWord);
+        document.getElementById('clearWord').addEventListener('click', clearWord);
+        document.getElementById('newGame').addEventListener('click', newGame);
+
+        // Keyboard support
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                submitWord();
+            } else if (e.key === 'Escape') {
+                clearWord();
+            } else if (e.key === 'Backspace' && selectedLetters.length > 0) {
+                const lastIndex = selectedLetters[selectedLetters.length - 1];
+                const tile = document.querySelector(`[data-index="${lastIndex}"]`);
+                tile.classList.remove('selected');
+                selectedLetters.pop();
+                rebuildCurrentWord();
+            }
+        });
+
+        // Initialize game
+        loadAuthFromStorage();
+        updateStats();
+        generateLetters();
+        renderWordChain();
+        loadLeaderboard();
+    </script>
+</body>
+</html>
