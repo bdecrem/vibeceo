@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY
 );
 
 // Cache the dictionary in memory for performance
@@ -63,6 +63,14 @@ export default async function handler(req, res) {
   
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
+  }
+  
+  // Check if Supabase is configured
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.SUPABASE_SERVICE_KEY)) {
+    return res.status(503).json({ 
+      error: 'Dictionary service not configured',
+      valid: false 
+    });
   }
   
   // Get word from query or body
