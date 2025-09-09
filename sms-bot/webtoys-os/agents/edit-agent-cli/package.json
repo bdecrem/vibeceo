@@ -1,0 +1,23 @@
+{
+  "name": "webtoys-os-edit-agent-cli",
+  "version": "1.0.0",
+  "description": "WebtoysOS Edit Agent using Claude CLI",
+  "type": "module",
+  "main": "webhook-server.js",
+  "scripts": {
+    "start": "./start-all.sh",
+    "stop": "./stop-all.sh",
+    "webhook": "node webhook-server.js",
+    "worker": "node worker.js",
+    "test": "node test-edit.js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "node-fetch": "^3.3.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

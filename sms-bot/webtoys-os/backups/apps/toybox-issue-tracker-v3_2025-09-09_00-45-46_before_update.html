@@ -766,8 +766,8 @@
                 
                 if (error) throw error;
                 
-                // Webhook notification disabled - we now use cron-based processing
-                // await triggerWebhook(data);
+                // Trigger webhook notification to Edit Agent CLI
+                await triggerWebhook(data);
                 
                 closeNewIssueModal();
                 await loadIssues();

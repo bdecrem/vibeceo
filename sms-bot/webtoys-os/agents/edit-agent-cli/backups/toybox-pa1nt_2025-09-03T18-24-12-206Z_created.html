@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pa1nt</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-right: 20px;
+        }
+        
+        .tools {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .tool-group {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+            padding: 0 10px;
+            border-right: 1px solid #ddd;
+        }
+        
+        .tool-group:last-child {
+            border-right: none;
+        }
+        
+        button {
+            padding: 8px 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+        
+        button.active {
+            background: #764ba2;
+        }
+        
+        input[type="color"] {
+            width: 40px;
+            height: 35px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        canvas {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: 100%;
+        }
+        
+        .size-display {
+            font-size: 14px;
+            color: #333;
+            margin: 0 5px;
+            min-width: 30px;
+        }
+        
+        .auth-display {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        @media (max-width: 768px) {
+            .header {
+                padding: 5px;
+            }
+            
+            .title {
+                font-size: 18px;
+                margin-right: 10px;
+            }
+            
+            button {
+                padding: 6px 10px;
+                font-size: 12px;
+            }
+            
+            input[type="range"] {
+                width: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">🎨 Pa1nt</div>
+        <div class="tools">
+            <div class="tool-group">
+                <button id="penTool" class="active">✏️ Pen</button>
+                <button id="eraserTool">🧹 Eraser</button>
+                <button id="fillTool">🪣 Fill</button>
+            </div>
+            <div class="tool-group">
+                <input type="color" id="colorPicker" value="#000000">
+                <input type="range" id="brushSize" min="1" max="50" value="5">
+                <span class="size-display" id="sizeDisplay">5</span>
+            </div>
+            <div class="tool-group">
+                <button id="clearBtn">🗑️ Clear</button>
+                <button id="saveBtn">💾 Save</button>
+                <button id="loadBtn">📂 Load</button>
+            </div>
+            <div class="tool-group">
+                <button id="downloadBtn">⬇️ Download</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="auth-display" id="authDisplay">Not logged in</div>
+    
+    <div class="canvas-container">
+        <canvas id="paintCanvas" width="800" height="600"></canvas>
+    </div>
+    
+    <script>
+        // APP ID
+        window.APP_ID = 'pa1nt';
+        let currentUser = null;
+        
+        // Canvas setup
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#000000';
+        let currentSize = 5;
+        
+        // UI elements
+        const penTool = document.getElementById('penTool');
+        const eraserTool = document.getElementById('eraserTool');
+        const fillTool = document.getElementById('fillTool');
+        const colorPicker = document.getElementById('colorPicker');
+        const brushSize = document.getElementById('brushSize');
+        const sizeDisplay = document.getElementById('sizeDisplay');
+        const clearBtn = document.getElementById('clearBtn');
+        const saveBtn = document.getElementById('saveBtn');
+        const loadBtn = document.getElementById('loadBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const authDisplay = document.getElementById('authDisplay');
+        
+        // Listen for authentication from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUI();
+            }
+        });
+        
+        // Update UI based on auth status
+        function updateUI() {
+            if (currentUser && currentUser.handle) {
+                authDisplay.textContent = `Logged in as: ${currentUser.handle}`;
+                saveBtn.disabled = false;
+                loadBtn.disabled = false;
+            } else {
+                authDisplay.textContent = 'Not logged in';
+                saveBtn.disabled = true;
+                loadBtn.disabled = true;
+            }
+        }
+        
+        // ZAD API helpers
+        async function save(dataType, data) {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: currentUser?.handle ? `${currentUser.handle.toUpperCase()}_${currentUser.pin}` : 'anonymous',
+                    action_type: dataType,
+                    content_data: data
+                })
+            });
+            return response.ok;
+        }
+        
+        async function load(dataType) {
+            const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`);
+            const data = await response.json();
+            return data || [];
+        }
+        
+        // Tool selection
+        penTool.addEventListener('click', () => {
+            currentTool = 'pen';
+            canvas.style.cursor = 'crosshair';
+            updateToolButtons();
+        });
+        
+        eraserTool.addEventListener('click', () => {
+            currentTool = 'eraser';
+            canvas.style.cursor = 'crosshair';
+            updateToolButtons();
+        });
+        
+        fillTool.addEventListener('click', () => {
+            currentTool = 'fill';
+            canvas.style.cursor = 'crosshair';
+            updateToolButtons();
+        });
+        
+        function updateToolButtons() {
+            [penTool, eraserTool, fillTool].forEach(btn => btn.classList.remove('active'));
+            if (currentTool === 'pen') penTool.classList.add('active');
+            if (currentTool === 'eraser') eraserTool.classList.add('active');
+            if (currentTool === 'fill') fillTool.classList.add('active');
+        }
+        
+        // Color and size controls
+        colorPicker.addEventListener('change', (e) => {
+            currentColor = e.target.value;
+        });
+        
+        brushSize.addEventListener('input', (e) => {
+            currentSize = e.target.value;
+            sizeDisplay.textContent = currentSize;
+        });
+        
+        // Drawing functions
+        function startDrawing(e) {
+            if (currentTool === 'fill') {
+                floodFill(e.offsetX, e.offsetY, currentColor);
+                return;
+            }
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            ctx.lineWidth = currentSize;
+            ctx.lineCap = 'round';
+            
+            if (currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            }
+            
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+        
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath();
+            ctx.globalCompositeOperation = 'source-over';
+        }
+        
+        // Touch support
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const offsetX = touch.clientX - rect.left;
+            const offsetY = touch.clientY - rect.top;
+            startDrawing({ offsetX, offsetY });
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const offsetX = touch.clientX - rect.left;
+            const offsetY = touch.clientY - rect.top;
+            draw({ offsetX, offsetY });
+        });
+        
+        canvas.addEventListener('touchend', stopDrawing);
+        
+        // Flood fill implementation
+        function floodFill(startX, startY, fillColor) {
+            startX = Math.floor(startX);
+            startY = Math.floor(startY);
+            
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            const targetColor = getPixelColor(pixels, startX, startY, canvas.width);
+            const fillRGB = hexToRgb(fillColor);
+            
+            if (colorsMatch(targetColor, fillRGB)) return;
+            
+            const stack = [[startX, startY]];
+            const visited = new Set();
+            
+            while (stack.length > 0) {
+                const [x, y] = stack.pop();
+                const key = `${x},${y}`;
+                
+                if (visited.has(key)) continue;
+                visited.add(key);
+                
+                if (x < 0 || x >= canvas.width || y < 0 || y >= canvas.height) continue;
+                
+                const currentColor = getPixelColor(pixels, x, y, canvas.width);
+                if (!colorsMatch(currentColor, targetColor)) continue;
+                
+                setPixelColor(pixels, x, y, canvas.width, fillRGB);
+                
+                stack.push([x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]);
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+        }
+        
+        function getPixelColor(pixels, x, y, width) {
+            const index = (y * width + x) * 4;
+            return {
+                r: pixels[index],
+                g: pixels[index + 1],
+                b: pixels[index + 2],
+                a: pixels[index + 3]
+            };
+        }
+        
+        function setPixelColor(pixels, x, y, width, color) {
+            const index = (y * width + x) * 4;
+            pixels[index] = color.r;
+            pixels[index + 1] = color.g;
+            pixels[index + 2] = color.b;
+            pixels[index + 3] = 255;
+        }
+        
+        function colorsMatch(c1, c2, tolerance = 10) {
+            return Math.abs(c1.r - c2.r) < tolerance &&
+                   Math.abs(c1.g - c2.g) < tolerance &&
+                   Math.abs(c1.b - c2.b) < tolerance;
+        }
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : { r: 0, g: 0, b: 0 };
+        }
+        
+        // Button actions
+        clearBtn.addEventListener('click', () => {
+            if (confirm('Clear the entire canvas?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        });
+        
+        saveBtn.addEventListener('click', async () => {
+            const imageData = canvas.toDataURL('image/png');
+            const saved = await save('painting', {
+                image: imageData,
+                timestamp: new Date().toISOString(),
+                author: currentUser?.handle || 'anonymous'
+            });
+            if (saved) {
+                alert('Painting saved!');
+            } else {
+                alert('Failed to save painting');
+            }
+        });
+        
+        loadBtn.addEventListener('click', async () => {
+            const paintings = await load('painting');
+            if (paintings.length === 0) {
+                alert('No saved paintings found');
+                return;
+            }
+            
+            // Get the most recent painting
+            const mostRecent = paintings[paintings.length - 1];
+            const img = new Image();
+            img.onload = () => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+            };
+            img.src = mostRecent.content_data?.image || mostRecent.image;
+        });
+        
+        downloadBtn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'pa1nt-creation.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+        
+        // Initialize
+        updateUI();
+        
+        // Request auth from parent if in iframe
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+    </script>
+</body>
+</html>
