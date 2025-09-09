@@ -246,7 +246,7 @@
         <div class="controls">
             <button class="btn submit-btn" id="submit-btn">Submit Word</button>
             <button class="btn clear-btn" id="clear-btn">Clear</button>
-            <button class="btn new-grid-btn" id="new-grid-btn">New Game</button>
+            <button class="btn new-grid-btn" id="new-grid-btn">New Grid</button>
         </div>
     </div>
 
@@ -267,8 +267,6 @@
                 this.isSelecting = false;
                 this.touchStartCell = null;
                 this.dictionaryAvailable = false;
-                this.lastWord = null; // Track the last submitted word
-                this.requiredStartLetter = null; // Track required starting letter
                 
                 this.initGame();
                 this.checkDictionaryStatus();
@@ -402,7 +400,7 @@
                 // Button events
                 document.getElementById('submit-btn').addEventListener('click', () => this.submitWord());
                 document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
-                document.getElementById('new-grid-btn').addEventListener('click', () => this.newGame());
+                document.getElementById('new-grid-btn').addEventListener('click', () => this.generateGrid());
             }
 
             startSelection(index) {
@@ -452,12 +450,8 @@
                     }
                 });
 
-                // Update current word display with hint if needed
-                let displayText = this.currentWord || 
-                    (this.requiredStartLetter ? 
-                        `Start with "${this.requiredStartLetter}"` : 
-                        'Start swiping!');
-                document.getElementById('current-word').textContent = displayText;
+                // Update current word display
+                document.getElementById('current-word').textContent = this.currentWord || 'Start swiping!';
                 
                 // Update score and count
                 document.getElementById('score').textContent = this.score;
@@ -467,12 +461,6 @@
             async submitWord() {
                 if (this.currentWord.length < 3) {
                     this.showFeedback('Word must be at least 3 letters!', 'error');
-                    return;
-                }
-
-                // Check word chaining rule (after first word)
-                if (this.requiredStartLetter && this.currentWord[0] !== this.requiredStartLetter) {
-                    this.showFeedback(`Word must start with "${this.requiredStartLetter}"!`, 'error');
                     return;
                 }
 
@@ -491,18 +479,7 @@
                 
                 this.showFeedback(`+${points} points!`, 'success');
                 this.addWordToFound(this.currentWord);
-                
-                // Set up for next word - must start with last letter of this word
-                this.lastWord = this.currentWord;
-                this.requiredStartLetter = this.currentWord[this.currentWord.length - 1];
-                
                 this.clearSelection();
-                
-                // Generate new grid after each word
-                this.generateGrid();
-                
-                // Update hint
-                this.updateHint();
             }
 
             calculatePoints(word) {
@@ -530,34 +507,6 @@
                 setTimeout(() => {
                     feedback.classList.remove('show');
                 }, 1500);
-            }
-            
-            newGame() {
-                // Reset game state
-                this.score = 0;
-                this.wordsFound.clear();
-                this.lastWord = null;
-                this.requiredStartLetter = null;
-                this.selectedCells = [];
-                this.currentWord = '';
-                
-                // Clear words found display
-                const wordsFoundDiv = document.getElementById('words-found');
-                wordsFoundDiv.innerHTML = '<div style="margin-bottom: 5px; font-weight: bold;">Words Found:</div>';
-                
-                // Generate new grid and update display
-                this.generateGrid();
-                this.updateDisplay();
-                
-                this.showFeedback('New game started!', 'success');
-            }
-            
-            updateHint() {
-                // Update the display to show the required starting letter
-                if (this.requiredStartLetter) {
-                    document.getElementById('current-word').textContent = 
-                        `Next word must start with "${this.requiredStartLetter}"`;
-                }
             }
         }
 
