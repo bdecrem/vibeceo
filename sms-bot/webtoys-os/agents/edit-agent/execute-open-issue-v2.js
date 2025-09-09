@@ -326,14 +326,15 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
         console.log('🔍 Temp file:', tempFile);
         
         // Clean environment - Remove all potentially conflicting API keys
-        // but keep essential system variables
+        // but keep essential system variables AND add OAuth token
         const cleanEnv = {
             PATH: process.env.PATH,
             HOME: process.env.HOME,
             USER: process.env.USER,
             SHELL: process.env.SHELL,
-            // CRITICAL: HOME must be set for Claude to find auth.json
-            // Add any other essential system variables but NOT API keys
+            // CRITICAL: Add OAuth token for authentication
+            CLAUDE_CODE_OAUTH_TOKEN: process.env.CLAUDE_CODE_OAUTH_TOKEN || 
+                "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"
         };
         
         // Ensure HOME is definitely set (critical for Claude auth)
