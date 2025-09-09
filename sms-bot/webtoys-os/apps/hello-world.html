@@ -10,60 +10,160 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            overflow: hidden;
         }
-        
+
         .container {
             text-align: center;
-            padding: 2rem;
+            padding: 60px 40px;
             background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(20px);
             border-radius: 20px;
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            border: 1px solid rgba(255, 255, 255, 0.18);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeInUp 0.8s ease-out;
         }
-        
-        h1 {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+
+        .hello-text {
+            font-size: 5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #f0f0f0);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: pulse 2s infinite;
         }
-        
-        p {
+
+        .world-text {
+            font-size: 5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            animation: bounce 2s infinite;
+        }
+
+        .subtitle {
             font-size: 1.2rem;
-            opacity: 0.9;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 30px;
+            font-weight: 300;
+            letter-spacing: 1px;
         }
-        
-        .wave {
-            animation: wave 1.5s ease-in-out infinite;
-            display: inline-block;
-            transform-origin: 70% 70%;
+
+        .sparkle {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.5rem;
+            animation: sparkle 3s infinite;
+            pointer-events: none;
         }
-        
-        @keyframes wave {
-            0% { transform: rotate(0deg); }
-            10% { transform: rotate(14deg); }
-            20% { transform: rotate(-8deg); }
-            30% { transform: rotate(14deg); }
-            40% { transform: rotate(-4deg); }
-            50% { transform: rotate(10deg); }
-            60% { transform: rotate(0deg); }
-            100% { transform: rotate(0deg); }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hello-text, .world-text {
+                font-size: 3rem;
+            }
+            
+            .container {
+                padding: 40px 20px;
+                margin: 20px;
+            }
+            
+            .subtitle {
+                font-size: 1rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>Hello World! <span class="wave">👋</span></h1>
-        <p>Welcome to WebtoysOS</p>
+        <div class="hello-text">Hello</div>
+        <div class="world-text">World</div>
+        <div class="subtitle">Welcome to WebtoysOS</div>
     </div>
+
+    <!-- Decorative sparkles -->
+    <div class="sparkle" style="top: 20%; left: 15%;">✨</div>
+    <div class="sparkle" style="top: 70%; left: 85%; animation-delay: 1s;">⭐</div>
+    <div class="sparkle" style="top: 30%; left: 80%; animation-delay: 2s;">✨</div>
+    <div class="sparkle" style="top: 80%; left: 20%; animation-delay: 1.5s;">⭐</div>
+
+    <script>
+        // Add interactive sparkles on click
+        document.addEventListener('click', (e) => {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = Math.random() > 0.5 ? '✨' : '⭐';
+            sparkle.style.left = e.clientX + 'px';
+            sparkle.style.top = e.clientY + 'px';
+            sparkle.style.position = 'fixed';
+            sparkle.style.pointerEvents = 'none';
+            document.body.appendChild(sparkle);
+
+            setTimeout(() => {
+                sparkle.remove();
+            }, 3000);
+        });
+
+        // Animate greeting message
+        setTimeout(() => {
+            document.querySelector('.subtitle').textContent = 'Click anywhere for sparkles!';
+        }, 2000);
+    </script>
 </body>
 </html>
