@@ -687,51 +687,33 @@
             }
             
             checkAuth() {
-                console.log('WordO: Checking auth...');
-                
                 // Check for auth from parent window (WebtoysOS desktop)
                 window.addEventListener('message', (e) => {
-                    console.log('WordO: Received message:', e.data);
-                    
-                    if (e.data.type === 'TOYBOX_AUTH') {
-                        console.log('WordO: Auth message received, user:', e.data.user);
-                        
-                        if (e.data.user) {
-                            this.currentUser = e.data.user;
-                            // Ensure we have uppercase handle and participantId
-                            if (this.currentUser) {
-                                if (this.currentUser.handle) {
-                                    this.currentUser.handle = this.currentUser.handle.toUpperCase();
-                                }
-                                if (!this.currentUser.participantId && this.currentUser.handle && this.currentUser.pin) {
-                                    this.currentUser.participantId = `${this.currentUser.handle.toUpperCase()}_${this.currentUser.pin}`;
-                                }
+                    if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                        this.currentUser = e.data.user;
+                        // Ensure we have uppercase handle and participantId
+                        if (this.currentUser) {
+                            if (this.currentUser.handle) {
+                                this.currentUser.handle = this.currentUser.handle.toUpperCase();
                             }
-                            console.log('WordO: Current user set to:', this.currentUser);
-                            // Refresh leaderboard to show current user
-                            this.loadLeaderboard();
-                        } else {
-                            console.log('WordO: Auth message had no user');
+                            if (!this.currentUser.participantId && this.currentUser.handle && this.currentUser.pin) {
+                                this.currentUser.participantId = `${this.currentUser.handle.toUpperCase()}_${this.currentUser.pin}`;
+                            }
                         }
+                        console.log('Received auth:', this.currentUser);
+                        // Refresh leaderboard to show current user
+                        this.loadLeaderboard();
                     }
                 });
                 
-                // Request auth from parent after a short delay to ensure listener is set up
-                setTimeout(() => {
-                    if (window.parent !== window) {
-                        console.log('WordO: Requesting auth from parent...');
-                        window.parent.postMessage({ type: 'GET_AUTH' }, '*');
-                    } else {
-                        console.log('WordO: Not in iframe, cannot get auth');
-                    }
-                }, 100);
+                // Request auth from parent
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+                }
             }
             
             async submitScore() {
-                console.log('WordO: Submitting score, currentUser:', this.currentUser);
-                
                 if (!this.currentUser || !this.currentUser.handle) {
-                    console.log('WordO: No user authenticated, submitting as anonymous');
                     // Anonymous score
                     const anonHandle = 'ANON_' + Date.now().toString(36);
                     await this.saveScore({
@@ -742,22 +724,18 @@
                         timestamp: new Date().toISOString()
                     });
                 } else {
-                    console.log('WordO: Submitting authenticated score for:', this.currentUser.handle);
                     // Authenticated score - use participantId for proper data association
                     const participantId = this.currentUser.participantId || 
                                         `${this.currentUser.handle.toUpperCase()}_${this.currentUser.pin || '0000'}`;
                     
-                    const scoreData = {
+                    await this.saveScore({
                         handle: this.currentUser.handle.toUpperCase(),
                         participant_id: participantId,
                         display_name: this.currentUser.display_name || this.currentUser.handle,
                         score: this.score,
                         words: this.wordsFound.size,
                         timestamp: new Date().toISOString()
-                    };
-                    
-                    console.log('WordO: Score data:', scoreData);
-                    await this.saveScore(scoreData);
+                    });
                 }
                 
                 // Reload leaderboard to show new score
@@ -786,14 +764,10 @@
             
             async loadLeaderboard() {
                 try {
-                    console.log('WordO: Loading leaderboard...');
                     const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=leaderboard_score`);
                     if (response.ok) {
                         const data = await response.json();
-                        console.log('WordO: Raw leaderboard data:', data);
-                        
                         const scores = data.map(item => item.content_data || item).filter(score => score && score.score);
-                        console.log('WordO: Processed scores:', scores);
                         
                         // Sort by score (highest first) and take top 10
                         scores.sort((a, b) => (b.score || 0) - (a.score || 0));
@@ -802,7 +776,7 @@
                         this.displayLeaderboard(topScores);
                     }
                 } catch (error) {
-                    console.error('WordO: Failed to load leaderboard:', error);
+                    console.error('Failed to load leaderboard:', error);
                 }
             }
             
@@ -817,8 +791,6 @@
                 // Check current user by both handle and participantId
                 const currentHandle = this.currentUser?.handle?.toUpperCase();
                 const currentParticipantId = this.currentUser?.participantId;
-                
-                console.log('WordO: Displaying leaderboard, currentHandle:', currentHandle, 'participantId:', currentParticipantId);
                 
                 listEl.innerHTML = scores.map((scoreData, index) => {
                     const rank = index + 1;
