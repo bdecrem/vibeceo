@@ -216,94 +216,6 @@
         .feedback.error {
             background: rgba(244,67,54,0.9);
         }
-        
-        /* Leaderboard Styles */
-        .leaderboard-container {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 280px;
-            background: rgba(0,0,0,0.9);
-            border-radius: 15px;
-            padding: 15px;
-            display: none;
-            z-index: 100;
-            max-height: 400px;
-            overflow-y: auto;
-        }
-        
-        .leaderboard-title {
-            font-size: 20px;
-            font-weight: bold;
-            text-align: center;
-            margin-bottom: 15px;
-            color: #FFD700;
-        }
-        
-        .leaderboard-entry {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px;
-            margin: 5px 0;
-            background: rgba(255,255,255,0.1);
-            border-radius: 8px;
-            transition: all 0.2s;
-        }
-        
-        .leaderboard-entry:hover {
-            background: rgba(255,255,255,0.2);
-        }
-        
-        .leaderboard-entry.gold {
-            background: linear-gradient(135deg, rgba(255,215,0,0.3), rgba(255,223,0,0.1));
-        }
-        
-        .leaderboard-entry.silver {
-            background: linear-gradient(135deg, rgba(192,192,192,0.3), rgba(192,192,192,0.1));
-        }
-        
-        .leaderboard-entry.bronze {
-            background: linear-gradient(135deg, rgba(205,127,50,0.3), rgba(205,127,50,0.1));
-        }
-        
-        .leaderboard-entry.current-user {
-            border: 2px solid #4CAF50;
-        }
-        
-        .leaderboard-rank {
-            font-weight: bold;
-            width: 30px;
-        }
-        
-        .leaderboard-name {
-            flex: 1;
-            text-align: left;
-            padding: 0 10px;
-        }
-        
-        .leaderboard-score {
-            font-weight: bold;
-            color: #4CAF50;
-        }
-        
-        .no-scores {
-            text-align: center;
-            padding: 20px;
-            color: rgba(255,255,255,0.5);
-        }
-        
-        .leaderboard-btn {
-            background: #9C27B0;
-            color: white;
-        }
-        
-        .leaderboard-btn:active {
-            background: #7B1FA2;
-            transform: scale(0.95);
-        }
 
         @media (max-height: 700px) {
             .header {
@@ -344,22 +256,10 @@
             <button class="btn new-grid-btn" id="new-grid-btn">New Game</button>
         </div>
         
-        <div class="controls" style="margin-top: 5px;">
-            <button class="btn leaderboard-btn" id="leaderboard-btn">🏆 Leaderboard</button>
-        </div>
-        
         <div class="words-found" id="words-found"></div>
     </div>
 
     <div class="feedback" id="feedback"></div>
-    
-    <!-- Leaderboard Container -->
-    <div class="leaderboard-container" id="leaderboardContainer">
-        <div class="leaderboard-title">🏆 Top Scores</div>
-        <div id="leaderboardList">
-            <div class="no-scores">Loading leaderboard...</div>
-        </div>
-    </div>
 
     <script>
         class WordOGame {
@@ -374,16 +274,9 @@
                 this.dictionaryAvailable = false;
                 this.lastWord = null; // Track the last submitted word
                 this.requiredStartLetter = null; // Track required starting letter
-                this.currentUser = null;
-                this.leaderboardVisible = false;
-                
-                // Set up unique app ID
-                window.APP_ID = 'toybox-wordo';
                 
                 this.initGame();
                 this.checkDictionaryStatus();
-                this.initLeaderboard();
-                this.checkAuth();
             }
 
             async checkDictionaryStatus() {
@@ -515,7 +408,6 @@
                 document.getElementById('submit-btn').addEventListener('click', () => this.submitWord());
                 document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
                 document.getElementById('new-grid-btn').addEventListener('click', () => this.newGame());
-                document.getElementById('leaderboard-btn').addEventListener('click', () => this.toggleLeaderboard());
             }
 
             startSelection(index) {
@@ -645,12 +537,7 @@
                 }, 1500);
             }
             
-            async newGame() {
-                // Save score to leaderboard if there's a score
-                if (this.score > 0) {
-                    await this.submitScore();
-                }
-                
+            newGame() {
                 // Reset game state
                 this.score = 0;
                 this.wordsFound.clear();
@@ -675,143 +562,6 @@
                 if (this.requiredStartLetter) {
                     document.getElementById('current-word').textContent = 
                         `Next word must start with "${this.requiredStartLetter}"`;
-                }
-            }
-            
-            // Leaderboard Functions
-            async initLeaderboard() {
-                await this.loadLeaderboard();
-                // Refresh leaderboard every 30 seconds
-                setInterval(() => this.loadLeaderboard(), 30000);
-            }
-            
-            checkAuth() {
-                // Check for auth from parent window (WebtoysOS desktop)
-                window.addEventListener('message', (e) => {
-                    if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
-                        this.currentUser = e.data.user;
-                        console.log('Received auth:', this.currentUser);
-                    }
-                });
-                
-                // Request auth from parent
-                if (window.parent !== window) {
-                    window.parent.postMessage({ type: 'GET_AUTH' }, '*');
-                }
-            }
-            
-            async submitScore() {
-                if (!this.currentUser || !this.currentUser.handle) {
-                    // Anonymous score
-                    const anonHandle = 'ANON_' + Date.now().toString(36);
-                    await this.saveScore({
-                        handle: anonHandle,
-                        score: this.score,
-                        words: this.wordsFound.size,
-                        timestamp: new Date().toISOString()
-                    });
-                } else {
-                    // Authenticated score
-                    await this.saveScore({
-                        handle: this.currentUser.handle.toUpperCase(),
-                        score: this.score,
-                        words: this.wordsFound.size,
-                        timestamp: new Date().toISOString()
-                    });
-                }
-                
-                // Reload leaderboard to show new score
-                await this.loadLeaderboard();
-            }
-            
-            async saveScore(scoreData) {
-                try {
-                    const response = await fetch('/api/zad/save', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            app_id: window.APP_ID,
-                            participant_id: scoreData.handle,
-                            action_type: 'leaderboard_score',
-                            content_data: scoreData
-                        })
-                    });
-                    return response.ok;
-                } catch (error) {
-                    console.error('Failed to save score:', error);
-                    return false;
-                }
-            }
-            
-            async loadLeaderboard() {
-                try {
-                    const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=leaderboard_score`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        const scores = data.map(item => item.content_data || item).filter(score => score && score.score);
-                        
-                        // Sort by score (highest first) and take top 10
-                        scores.sort((a, b) => (b.score || 0) - (a.score || 0));
-                        const topScores = scores.slice(0, 10);
-                        
-                        this.displayLeaderboard(topScores);
-                    }
-                } catch (error) {
-                    console.error('Failed to load leaderboard:', error);
-                }
-            }
-            
-            displayLeaderboard(scores) {
-                const listEl = document.getElementById('leaderboardList');
-                
-                if (!scores || scores.length === 0) {
-                    listEl.innerHTML = '<div class="no-scores">No scores yet. Be the first!</div>';
-                    return;
-                }
-                
-                const currentHandle = this.currentUser?.handle?.toUpperCase();
-                
-                listEl.innerHTML = scores.map((scoreData, index) => {
-                    const rank = index + 1;
-                    let rankClass = '';
-                    let medal = rank;
-                    
-                    if (rank === 1) {
-                        rankClass = 'gold';
-                        medal = '🥇';
-                    } else if (rank === 2) {
-                        rankClass = 'silver';
-                        medal = '🥈';
-                    } else if (rank === 3) {
-                        rankClass = 'bronze';
-                        medal = '🥉';
-                    }
-                    
-                    const userClass = (currentHandle && scoreData.handle === currentHandle) ? 'current-user' : '';
-                    
-                    return `
-                        <div class="leaderboard-entry ${rankClass} ${userClass}">
-                            <div class="leaderboard-rank">${medal}</div>
-                            <div class="leaderboard-name">${scoreData.handle || 'ANON'}</div>
-                            <div class="leaderboard-score">${scoreData.score || 0}</div>
-                        </div>
-                    `;
-                }).join('');
-            }
-            
-            toggleLeaderboard() {
-                const container = document.getElementById('leaderboardContainer');
-                const btn = document.getElementById('leaderboard-btn');
-                
-                if (this.leaderboardVisible) {
-                    container.style.display = 'none';
-                    btn.innerHTML = '🏆 Leaderboard';
-                    this.leaderboardVisible = false;
-                } else {
-                    container.style.display = 'block';
-                    btn.innerHTML = '✖ Close';
-                    this.leaderboardVisible = true;
-                    this.loadLeaderboard(); // Refresh when showing
                 }
             }
         }
