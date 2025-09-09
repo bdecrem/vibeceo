@@ -54,9 +54,9 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            justify-content: flex-start;
+            justify-content: center;
             align-items: center;
-            padding: 5px 0;
+            padding: 10px 0;
             position: relative;
         }
 
@@ -66,7 +66,7 @@
             grid-gap: 8px;
             width: 280px;
             height: 280px;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
 
         .letter-cell {
@@ -99,14 +99,14 @@
 
         .current-word {
             background: rgba(0,0,0,0.3);
-            padding: 12px 15px;
-            border-radius: 20px;
-            min-height: 45px;
+            padding: 15px 20px;
+            border-radius: 25px;
+            min-height: 50px;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 10px;
-            width: 280px;
+            margin-bottom: 15px;
+            min-width: 280px;
         }
 
         .word-display {
@@ -117,17 +117,17 @@
 
         .controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 15px;
+            margin-bottom: 15px;
             z-index: 10;
             position: relative;
         }
 
         .btn {
-            padding: 10px 15px;
+            padding: 12px 20px;
             border: none;
-            border-radius: 20px;
-            font-size: 14px;
+            border-radius: 25px;
+            font-size: 16px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s;
@@ -164,25 +164,26 @@
         }
 
         .words-found {
-            width: 100%;
-            max-width: 360px;
-            min-height: 40px;
-            max-height: 120px;
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-height: 80px;
             overflow-y: auto;
-            padding: 5px;
-            font-size: 12px;
-            text-align: center;
-            margin-top: 5px;
+            background: rgba(0,0,0,0.7);
+            padding: 8px;
+            border-radius: 10px 10px 0 0;
+            font-size: 14px;
+            margin: 0;
         }
 
         .found-word {
             display: inline-block;
-            background: rgba(76,175,80,0.3);
+            background: rgba(76,175,80,0.8);
             margin: 2px;
-            padding: 3px 6px;
-            border-radius: 10px;
-            font-size: 11px;
-            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
         }
 
         .feedback {
@@ -253,7 +254,9 @@
             <button class="btn new-grid-btn" id="new-grid-btn">New Game</button>
         </div>
         
-        <div class="words-found" id="words-found"></div>
+        <div class="words-found" id="words-found">
+            <div style="margin-bottom: 5px; font-weight: bold;">Words Found:</div>
+        </div>
     </div>
 
     <div class="feedback" id="feedback"></div>
@@ -545,7 +548,7 @@
                 
                 // Clear words found display
                 const wordsFoundDiv = document.getElementById('words-found');
-                wordsFoundDiv.innerHTML = '';
+                wordsFoundDiv.innerHTML = '<div style="margin-bottom: 5px; font-weight: bold;">Words Found:</div>';
                 
                 // Generate new grid and update display
                 this.generateGrid();
