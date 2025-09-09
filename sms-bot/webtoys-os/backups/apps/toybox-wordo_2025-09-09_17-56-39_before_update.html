@@ -264,58 +264,68 @@
                 this.wordsFound = new Set();
                 this.isSelecting = false;
                 this.touchStartCell = null;
-                this.dictionaryAvailable = false;
+                this.wordList = new Set();
                 
                 this.initGame();
-                this.checkDictionaryStatus();
+                this.loadDictionary();
             }
 
-            async checkDictionaryStatus() {
+            async loadDictionary() {
                 try {
-                    // Check if dictionary API is available by testing a common word
-                    const response = await fetch('https://webtoys.ai/api/dictionary/check?word=THE');
+                    // Load the WebtoysOS Dictionary from toybox-dictionary
+                    // Try both possible URLs for the dictionary
+                    let response = await fetch('https://webtoys.ai/public/toybox-dictionary');
+                    if (!response.ok) {
+                        // Fallback to relative URL if absolute fails
+                        response = await fetch('/public/toybox-dictionary');
+                    }
                     if (response.ok) {
-                        const data = await response.json();
-                        this.dictionaryAvailable = data.source === 'webtoys-dictionary';
-                        if (this.dictionaryAvailable) {
-                            this.showFeedback(`Connected to WebtoysOS Dictionary!`, 'success');
+                        const content = await response.text();
+                        
+                        // Extract the WEBTOYS_DICTIONARY array from the script
+                        const match = content.match(/window\.WEBTOYS_DICTIONARY\s*=\s*(\[[\s\S]*?\])/);
+                        if (match) {
+                            try {
+                                const words = JSON.parse(match[1]);
+                                // Add all words to our word list (convert to uppercase for matching)
+                                words.forEach(word => {
+                                    if (word && word.length >= 3) {
+                                        this.wordList.add(word.toUpperCase());
+                                    }
+                                });
+                                console.log(`✅ Loaded ${this.wordList.size} words from WebtoysOS Dictionary`);
+                                // Check if common words are loaded
+                                console.log('Dictionary check - COW:', this.wordList.has('COW'));
+                                console.log('Dictionary check - LOW:', this.wordList.has('LOW'));
+                                console.log('Dictionary check - THE:', this.wordList.has('THE'));
+                                this.showFeedback(`Dictionary loaded: ${this.wordList.size.toLocaleString()} words!`, 'success');
+                                return; // Success - don't use fallback
+                            } catch (parseError) {
+                                console.error('Failed to parse dictionary:', parseError);
+                            }
+                        } else {
+                            console.error('Could not find WEBTOYS_DICTIONARY in content');
                         }
                     }
                 } catch (error) {
-                    console.log('Dictionary API not available, words will be accepted without validation');
-                    this.dictionaryAvailable = false;
-                }
-            }
-
-            async isValidWord(word) {
-                // Always accept words that have already been found
-                if (this.wordsFound.has(word)) {
-                    return { valid: false, reason: 'Already found!' };
+                    console.log('Could not load WebtoysOS Dictionary, using fallback');
                 }
                 
-                // Check minimum length
-                if (word.length < 3) {
-                    return { valid: false, reason: 'Too short!' };
+                // Fallback word list if dictionary doesn't load
+                console.log('Using fallback word list');
+                if (this.wordList.size === 0) {
+                    const fallbackWords = [
+                        'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR',
+                        'HAD', 'DID', 'GET', 'MAY', 'HIM', 'OLD', 'SEE', 'TWO', 'WAY', 'WHO', 'BOY', 'MAN', 'NEW',
+                        'NOW', 'DAY', 'USE', 'HOW', 'ITS', 'OUT', 'TOP', 'TRY', 'ASK', 'SUN', 'SET', 'RUN', 'HOT',
+                        'LET', 'SAY', 'SHE', 'TOO', 'END', 'WHY', 'FAR', 'OFF', 'BAD', 'GOT', 'EAT', 'AGO', 'YES',
+                        'COW', 'LOW', 'ROW', 'BOW', 'HOW', 'NOW', 'WOW', 'SOW', 'TOW', 'VOW', 'MOW', 'POW', 'DOW',
+                        'WORD', 'WORK', 'PART', 'TAKE', 'TELL', 'PLAY', 'CAME', 'SHOW', 'EACH', 'JUST', 'FORM',
+                        'GOOD', 'HELP', 'MOVE', 'RIGHT', 'THINK', 'PLACE', 'LITTLE', 'WORLD', 'YEAR', 'COME',
+                        'GREAT', 'WHERE', 'THROUGH', 'MUCH', 'BEFORE', 'LINE', 'WRITE', 'SHOULD', 'BECAUSE'
+                    ];
+                    fallbackWords.forEach(word => this.wordList.add(word));
                 }
-                
-                // If dictionary is available, check against it
-                if (this.dictionaryAvailable) {
-                    try {
-                        const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            return { 
-                                valid: data.valid, 
-                                reason: data.valid ? 'Valid word!' : 'Not in dictionary!' 
-                            };
-                        }
-                    } catch (error) {
-                        console.error('Dictionary check failed:', error);
-                    }
-                }
-                
-                // Fallback: accept any word 3+ letters if dictionary not available
-                return { valid: true, reason: 'Accepted (dictionary offline)' };
             }
 
             initGame() {
@@ -456,17 +466,24 @@
                 document.getElementById('word-count').textContent = this.wordsFound.size;
             }
 
-            async submitWord() {
+            submitWord() {
                 if (this.currentWord.length < 3) {
                     this.showFeedback('Word must be at least 3 letters!', 'error');
                     return;
                 }
 
-                // Check if word is valid using the API
-                const validation = await this.isValidWord(this.currentWord);
-                
-                if (!validation.valid) {
-                    this.showFeedback(validation.reason, 'error');
+                if (this.wordsFound.has(this.currentWord)) {
+                    this.showFeedback('Already found that word!', 'error');
+                    return;
+                }
+
+                if (!this.wordList.has(this.currentWord)) {
+                    // Show different message based on whether dictionary loaded
+                    if (this.wordList.size > 100) {
+                        this.showFeedback(`Not in dictionary!`, 'error');
+                    } else {
+                        this.showFeedback(`Dictionary not loaded - using fallback words only`, 'error');
+                    }
                     return;
                 }
 

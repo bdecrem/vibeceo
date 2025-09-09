@@ -264,58 +264,51 @@
                 this.wordsFound = new Set();
                 this.isSelecting = false;
                 this.touchStartCell = null;
-                this.dictionaryAvailable = false;
+                this.wordList = new Set();
                 
                 this.initGame();
-                this.checkDictionaryStatus();
+                this.loadDictionary();
             }
 
-            async checkDictionaryStatus() {
+            async loadDictionary() {
                 try {
-                    // Check if dictionary API is available by testing a common word
-                    const response = await fetch('https://webtoys.ai/api/dictionary/check?word=THE');
+                    // Load dictionary from WTAF content table
+                    const response = await fetch('/api/wtaf/content/public/dictionary');
                     if (response.ok) {
-                        const data = await response.json();
-                        this.dictionaryAvailable = data.source === 'webtoys-dictionary';
-                        if (this.dictionaryAvailable) {
-                            this.showFeedback(`Connected to WebtoysOS Dictionary!`, 'success');
-                        }
+                        const content = await response.text();
+                        // Extract words from HTML content - dictionary likely has words in lists or divs
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(content, 'text/html');
+                        
+                        // Try multiple selectors to find words
+                        const wordElements = doc.querySelectorAll('li, .word, div, p, span');
+                        wordElements.forEach(el => {
+                            const text = el.textContent.trim().toUpperCase();
+                            // Add words that are 3+ letters and contain only letters
+                            if (text.length >= 3 && /^[A-Z]+$/.test(text)) {
+                                this.wordList.add(text);
+                            }
+                        });
+                        
+                        console.log(`Loaded ${this.wordList.size} words from dictionary`);
                     }
                 } catch (error) {
-                    console.log('Dictionary API not available, words will be accepted without validation');
-                    this.dictionaryAvailable = false;
-                }
-            }
-
-            async isValidWord(word) {
-                // Always accept words that have already been found
-                if (this.wordsFound.has(word)) {
-                    return { valid: false, reason: 'Already found!' };
+                    console.log('Could not load dictionary, using fallback words');
                 }
                 
-                // Check minimum length
-                if (word.length < 3) {
-                    return { valid: false, reason: 'Too short!' };
+                // Fallback word list if dictionary doesn't load
+                if (this.wordList.size === 0) {
+                    const fallbackWords = [
+                        'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR',
+                        'HAD', 'DID', 'GET', 'MAY', 'HIM', 'OLD', 'SEE', 'TWO', 'WAY', 'WHO', 'BOY', 'MAN', 'NEW',
+                        'NOW', 'DAY', 'USE', 'HOW', 'ITS', 'OUT', 'TOP', 'TRY', 'ASK', 'SUN', 'SET', 'RUN', 'HOT',
+                        'LET', 'SAY', 'SHE', 'TOO', 'END', 'WHY', 'FAR', 'OFF', 'BAD', 'GOT', 'EAT', 'AGO', 'YES',
+                        'WORD', 'WORK', 'PART', 'TAKE', 'TELL', 'PLAY', 'CAME', 'SHOW', 'EACH', 'JUST', 'FORM',
+                        'GOOD', 'HELP', 'MOVE', 'RIGHT', 'THINK', 'PLACE', 'LITTLE', 'WORLD', 'YEAR', 'COME',
+                        'GREAT', 'WHERE', 'THROUGH', 'MUCH', 'BEFORE', 'LINE', 'WRITE', 'SHOULD', 'BECAUSE'
+                    ];
+                    fallbackWords.forEach(word => this.wordList.add(word));
                 }
-                
-                // If dictionary is available, check against it
-                if (this.dictionaryAvailable) {
-                    try {
-                        const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            return { 
-                                valid: data.valid, 
-                                reason: data.valid ? 'Valid word!' : 'Not in dictionary!' 
-                            };
-                        }
-                    } catch (error) {
-                        console.error('Dictionary check failed:', error);
-                    }
-                }
-                
-                // Fallback: accept any word 3+ letters if dictionary not available
-                return { valid: true, reason: 'Accepted (dictionary offline)' };
             }
 
             initGame() {
@@ -456,17 +449,19 @@
                 document.getElementById('word-count').textContent = this.wordsFound.size;
             }
 
-            async submitWord() {
+            submitWord() {
                 if (this.currentWord.length < 3) {
                     this.showFeedback('Word must be at least 3 letters!', 'error');
                     return;
                 }
 
-                // Check if word is valid using the API
-                const validation = await this.isValidWord(this.currentWord);
-                
-                if (!validation.valid) {
-                    this.showFeedback(validation.reason, 'error');
+                if (this.wordsFound.has(this.currentWord)) {
+                    this.showFeedback('Already found that word!', 'error');
+                    return;
+                }
+
+                if (!this.wordList.has(this.currentWord)) {
+                    this.showFeedback('Not a valid word!', 'error');
                     return;
                 }
 
