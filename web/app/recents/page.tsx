@@ -55,7 +55,7 @@ interface TrendingData {
 
 function RecentsPageContent() {
   const searchParams = useSearchParams()
-  const showAll = searchParams.get('all') === 'true'
+  const showAll = searchParams?.get('all') === 'true'
   
   const [data, setData] = useState<TrendingData | null>(null)
   const [loading, setLoading] = useState(true)
