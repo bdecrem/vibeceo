@@ -12,7 +12,7 @@
 
 import dotenv from 'dotenv';
 import { createClient } from '@supabase/supabase-js';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
@@ -315,68 +315,101 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
     
     console.log('📝 Prompt size:', prompt.length, 'characters (78% smaller than V1)');
     
-    // Build command like V1 (which works)
-    const command = `cd ${PROJECT_ROOT} && cat "${tempFile}" | ${CLAUDE_PATH} --print --verbose --dangerously-skip-permissions`;
-    
     const startTime = Date.now();
     console.log('⏳ Executing Claude (may take several minutes)...');
     
-    try {
-        // Use the same approach as V1 - simple execAsync
-        const result = await execAsync(command, {
-            timeout: 600000, // 10 minutes like V1
-            maxBuffer: 1024 * 1024 * 50, // 50MB buffer
-            env: { 
-                ...process.env,
-                HOME: process.env.HOME || '/Users/bartdecrem',
-                USER: process.env.USER || 'bartdecrem',
-                PATH: process.env.PATH || '/Users/bartdecrem/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin'
-            },
-            shell: '/bin/bash'
-        });
+    // Use shell wrapper (only thing that actually works with Claude CLI auth)
+    return new Promise((resolve) => {
+        const wrapperPath = path.join(__dirname, 'claude-wrapper.sh');
         
-        const duration = Math.round((Date.now() - startTime) / 1000);
-        console.log(`✅ Claude completed in ${duration} seconds`);
+        console.log('🔍 Using wrapper script:', wrapperPath);
+        console.log('🔍 Temp file:', tempFile);
         
-        // Clean up temp file
-        await fs.promises.unlink(tempFile).catch(() => {});
-        
-        return {
-            success: true,
-            output: result.stdout || '',
-            stderr: result.stderr || '',
-            duration: Date.now() - startTime
+        // Clean environment - Remove all potentially conflicting API keys
+        // but keep essential system variables
+        const cleanEnv = {
+            PATH: process.env.PATH,
+            HOME: process.env.HOME,
+            USER: process.env.USER,
+            SHELL: process.env.SHELL,
+            // CRITICAL: HOME must be set for Claude to find auth.json
+            // Add any other essential system variables but NOT API keys
         };
         
-    } catch (execError) {
-        const duration = Math.round((Date.now() - startTime) / 1000);
-        
-        // Handle timeout/termination like V1
-        if (execError.killed && execError.signal === 'SIGTERM') {
-            console.log(`⚠️  Claude terminated after ${duration}s, but may have completed`);
-            // Still return the output we got
-            return {
-                success: false,
-                output: execError.stdout || '',
-                stderr: execError.stderr || '',
-                error: `Timed out after ${duration} seconds`,
-                duration: Date.now() - startTime
-            };
+        // Ensure HOME is definitely set (critical for Claude auth)
+        if (!cleanEnv.HOME) {
+            cleanEnv.HOME = '/Users/bartdecrem';
         }
         
-        console.error(`❌ Execution failed after ${duration}s:`, execError.message);
+        // CRITICAL: Do NOT include these as they conflict with Claude CLI:
+        // - ANTHROPIC_API_KEY
+        // - CLAUDE_API_KEY
+        // - Any other API keys that might interfere
         
-        // Clean up temp file
-        await fs.promises.unlink(tempFile).catch(() => {});
+        const child = spawn(wrapperPath, [tempFile], {
+            stdio: ['pipe', 'pipe', 'pipe'],
+            timeout: 600000, // 10 minutes
+            env: cleanEnv // Use minimal clean environment
+        });
         
-        return {
-            success: false,
-            output: execError.stdout || '',
-            stderr: execError.stderr || '',
-            error: execError.message,
-            duration: Date.now() - startTime
-        };
-    }
+        let output = '';
+        let stderr = '';
+        let chunks = 0;
+        
+        child.stdout.on('data', (data) => {
+            output += data.toString();
+            chunks++;
+            if (chunks % 10 === 0) {
+                console.log(`  ⏳ Received ${chunks} chunks, ${Math.round(output.length / 1024)} KB so far...`);
+            }
+        });
+        
+        child.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+        
+        child.on('close', async (code) => {
+            const duration = Math.round((Date.now() - startTime) / 1000);
+            
+            // Clean up temp file
+            await fs.promises.unlink(tempFile).catch(() => {});
+            
+            if (code === 0) {
+                console.log(`✅ Claude completed in ${duration} seconds`);
+                resolve({
+                    success: true,
+                    output: output,
+                    stderr: stderr,
+                    duration: Date.now() - startTime
+                });
+            } else {
+                console.error(`❌ Execution failed after ${duration}s with code ${code}`);
+                resolve({
+                    success: false,
+                    output: output,
+                    stderr: stderr,
+                    error: `Claude CLI exited with code ${code}: ${stderr}`,
+                    duration: Date.now() - startTime
+                });
+            }
+        });
+        
+        child.on('error', async (error) => {
+            const duration = Math.round((Date.now() - startTime) / 1000);
+            console.error(`❌ Execution error after ${duration}s:`, error.message);
+            
+            // Clean up temp file
+            await fs.promises.unlink(tempFile).catch(() => {});
+            
+            resolve({
+                success: false,
+                output: output,
+                stderr: stderr,
+                error: error.message,
+                duration: Date.now() - startTime
+            });
+        });
+    });
 }
 
 /**

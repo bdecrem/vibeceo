@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Timer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .timer-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        
+        .timer-display {
+            font-size: 72px;
+            font-weight: bold;
+            margin-bottom: 30px;
+            font-family: 'Courier New', monospace;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        .start-btn {
+            background: rgba(46, 204, 113, 0.7);
+        }
+        
+        .pause-btn {
+            background: rgba(241, 196, 15, 0.7);
+        }
+        
+        .reset-btn {
+            background: rgba(231, 76, 60, 0.7);
+        }
+        
+        h1 {
+            margin-top: 0;
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <h1>⏱️ Timer</h1>
+        <div class="timer-display" id="timerDisplay">00:00</div>
+        <div class="controls">
+            <button id="startBtn" class="start-btn">Start</button>
+            <button id="pauseBtn" class="pause-btn">Pause</button>
+            <button id="resetBtn" class="reset-btn">Reset</button>
+        </div>
+    </div>
+
+    <script>
+        class Timer {
+            constructor() {
+                this.seconds = 0;
+                this.interval = null;
+                this.isRunning = false;
+                
+                this.display = document.getElementById('timerDisplay');
+                this.startBtn = document.getElementById('startBtn');
+                this.pauseBtn = document.getElementById('pauseBtn');
+                this.resetBtn = document.getElementById('resetBtn');
+                
+                this.bindEvents();
+                this.updateDisplay();
+            }
+            
+            bindEvents() {
+                this.startBtn.addEventListener('click', () => this.start());
+                this.pauseBtn.addEventListener('click', () => this.pause());
+                this.resetBtn.addEventListener('click', () => this.reset());
+            }
+            
+            start() {
+                if (!this.isRunning) {
+                    this.isRunning = true;
+                    this.interval = setInterval(() => {
+                        this.seconds++;
+                        this.updateDisplay();
+                    }, 1000);
+                    this.startBtn.textContent = 'Running...';
+                    this.startBtn.disabled = true;
+                }
+            }
+            
+            pause() {
+                if (this.isRunning) {
+                    this.isRunning = false;
+                    clearInterval(this.interval);
+                    this.startBtn.textContent = 'Resume';
+                    this.startBtn.disabled = false;
+                }
+            }
+            
+            reset() {
+                this.isRunning = false;
+                clearInterval(this.interval);
+                this.seconds = 0;
+                this.updateDisplay();
+                this.startBtn.textContent = 'Start';
+                this.startBtn.disabled = false;
+            }
+            
+            updateDisplay() {
+                const minutes = Math.floor(this.seconds / 60);
+                const secs = this.seconds % 60;
+                const formattedTime = `${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                this.display.textContent = formattedTime;
+            }
+        }
+        
+        // Initialize timer when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new Timer();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>brushez</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .toolbar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .tool-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            padding: 0 10px;
+            border-right: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .tool-group:last-child {
+            border-right: none;
+        }
+
+        .tool-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .tool-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .color-picker {
+            width: 40px;
+            height: 40px;
+            border: 2px solid white;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .size-slider {
+            width: 100px;
+        }
+
+        .size-display {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        canvas {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            cursor: crosshair;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .user-info {
+            background: rgba(255,255,255,0.9);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        label {
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #667eea;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .action-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .action-btn.danger {
+            background: #f56565;
+        }
+
+        .action-btn.danger:hover {
+            background: #ed5555;
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                justify-content: center;
+            }
+            .tool-group {
+                padding: 5px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">🎨 brushez</div>
+        <div class="user-info" id="userInfo">Guest Mode</div>
+    </div>
+
+    <div class="toolbar">
+        <div class="tool-group">
+            <label>Tool:</label>
+            <button class="tool-btn active" data-tool="pen">✏️ Pen</button>
+            <button class="tool-btn" data-tool="eraser">🧹 Eraser</button>
+            <button class="tool-btn" data-tool="fill">🪣 Fill</button>
+        </div>
+
+        <div class="tool-group">
+            <label>Color:</label>
+            <input type="color" class="color-picker" id="colorPicker" value="#667eea">
+        </div>
+
+        <div class="tool-group">
+            <label>Size:</label>
+            <input type="range" class="size-slider" id="sizeSlider" min="1" max="50" value="5">
+            <span class="size-display" id="sizeDisplay">5</span>
+        </div>
+
+        <div class="tool-group">
+            <button class="action-btn" onclick="saveDrawing()">💾 Save</button>
+            <button class="action-btn" onclick="loadDrawing()">📂 Load</button>
+            <button class="action-btn danger" onclick="clearCanvas()">🗑️ Clear</button>
+        </div>
+    </div>
+
+    <div class="canvas-container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+    </div>
+
+    <script>
+        // APP ID
+        window.APP_ID = 'toybox-brushez';
+        let currentUser = null;
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let isDrawing = false;
+        let currentTool = 'pen';
+        let currentColor = '#667eea';
+        let currentSize = 5;
+
+        // CRITICAL: Load auth from localStorage immediately
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    // CRITICAL: Ensure uppercase and participantId format
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    updateUI();
+                } catch (e) {
+                    console.error('Failed to load auth from storage:', e);
+                }
+            }
+        }
+
+        // Listen for authentication from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                // CRITICAL: Ensure uppercase and participantId format
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateUI();
+            }
+        });
+
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            // CRITICAL: MUST be UPPERCASE_HANDLE_PIN format
+            return currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        function updateUI() {
+            const userInfo = document.getElementById('userInfo');
+            if (currentUser && currentUser.handle) {
+                userInfo.textContent = `👤 ${currentUser.handle.toUpperCase()}`;
+            } else {
+                userInfo.textContent = 'Guest Mode';
+            }
+        }
+
+        // Save drawing with proper participant_id and action_type
+        async function save(dataType, data) {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                alert('Please log in to save drawings');
+                return false;
+            }
+
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: window.APP_ID,
+                    participant_id: participantId,
+                    action_type: dataType,  // REQUIRED for filtering
+                    content_data: data
+                })
+            });
+            
+            if (!response.ok) {
+                console.error('Save failed:', await response.text());
+                return false;
+            }
+            return true;
+        }
+
+        // Load drawings with proper filtering and deduplication
+        async function load(dataType) {
+            const participantId = getParticipantId();
+            if (!participantId) return [];
+
+            try {
+                // Load with action_type filter
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=${dataType}`);
+                if (!response.ok) {
+                    console.error('Load failed:', response.statusText);
+                    return [];
+                }
+                
+                const allData = await response.json();
+                
+                // Filter for current user's drawings only
+                const userDrawings = allData.filter(item => 
+                    item.participant_id === participantId
+                );
+                
+                // CRITICAL: ZAD is append-only, need to deduplicate by latest timestamp
+                // Group by drawing ID (if exists) or treat each as unique
+                const uniqueDrawings = {};
+                userDrawings.forEach(drawing => {
+                    // ZAD returns FLATTENED data, not nested in content_data!
+                    const drawingId = drawing.id || drawing.content_data?.id || drawing.created_at;
+                    const drawingTime = drawing.timestamp || drawing.content_data?.timestamp || drawing.created_at;
+                    
+                    if (!uniqueDrawings[drawingId] || 
+                        new Date(drawingTime) > new Date(uniqueDrawings[drawingId].timestamp || uniqueDrawings[drawingId].created_at)) {
+                        uniqueDrawings[drawingId] = {
+                            id: drawingId,
+                            image: drawing.image || drawing.content_data?.image,
+                            author: drawing.author || drawing.content_data?.author,
+                            timestamp: drawingTime,
+                            participant_id: drawing.participant_id
+                        };
+                    }
+                });
+                
+                // Return as array sorted by most recent
+                return Object.values(uniqueDrawings)
+                    .filter(d => d.image) // Only return drawings with actual image data
+                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+                    
+            } catch (error) {
+                console.error('Failed to load drawings:', error);
+                return [];
+            }
+        }
+
+        // Tool selection
+        document.querySelectorAll('.tool-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                currentTool = this.dataset.tool;
+                canvas.style.cursor = currentTool === 'fill' ? 'cell' : 'crosshair';
+            });
+        });
+
+        // Color picker
+        document.getElementById('colorPicker').addEventListener('change', function(e) {
+            currentColor = e.target.value;
+        });
+
+        // Size slider
+        document.getElementById('sizeSlider').addEventListener('input', function(e) {
+            currentSize = parseInt(e.target.value);
+            document.getElementById('sizeDisplay').textContent = currentSize;
+        });
+
+        // Drawing functions
+        function startDrawing(e) {
+            if (currentTool === 'fill') {
+                floodFill(e.offsetX, e.offsetY);
+                return;
+            }
+            isDrawing = true;
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+
+            ctx.lineWidth = currentSize;
+            ctx.lineCap = 'round';
+
+            if (currentTool === 'eraser') {
+                ctx.globalCompositeOperation = 'destination-out';
+            } else {
+                ctx.globalCompositeOperation = 'source-over';
+                ctx.strokeStyle = currentColor;
+            }
+
+            ctx.lineTo(e.offsetX, e.offsetY);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(e.offsetX, e.offsetY);
+        }
+
+        function stopDrawing() {
+            if (!isDrawing) return;
+            isDrawing = false;
+            ctx.beginPath();
+        }
+
+        // Flood fill implementation
+        function floodFill(startX, startY) {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            const targetColor = getPixel(pixels, startX, startY);
+            const fillColor = hexToRgb(currentColor);
+            
+            if (colorsMatch(targetColor, fillColor)) return;
+
+            const pixelsToCheck = [[startX, startY]];
+            const width = canvas.width;
+            const height = canvas.height;
+
+            while (pixelsToCheck.length) {
+                const [x, y] = pixelsToCheck.pop();
+                const currentPixel = getPixel(pixels, x, y);
+
+                if (colorsMatch(currentPixel, targetColor)) {
+                    setPixel(pixels, x, y, fillColor);
+
+                    if (x > 0) pixelsToCheck.push([x - 1, y]);
+                    if (x < width - 1) pixelsToCheck.push([x + 1, y]);
+                    if (y > 0) pixelsToCheck.push([x, y - 1]);
+                    if (y < height - 1) pixelsToCheck.push([x, y + 1]);
+                }
+            }
+
+            ctx.putImageData(imageData, 0, 0);
+        }
+
+        function getPixel(pixels, x, y) {
+            const index = (y * canvas.width + x) * 4;
+            return [pixels[index], pixels[index + 1], pixels[index + 2], pixels[index + 3]];
+        }
+
+        function setPixel(pixels, x, y, color) {
+            const index = (y * canvas.width + x) * 4;
+            pixels[index] = color.r;
+            pixels[index + 1] = color.g;
+            pixels[index + 2] = color.b;
+            pixels[index + 3] = 255;
+        }
+
+        function colorsMatch(a, b) {
+            if (Array.isArray(a) && !b.r) {
+                return a[0] === b[0] && a[1] === b[1] && a[2] === b[2] && a[3] === b[3];
+            }
+            if (Array.isArray(a) && b.r !== undefined) {
+                return a[0] === b.r && a[1] === b.g && a[2] === b.b;
+            }
+            return false;
+        }
+
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        // Canvas event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        canvas.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            mouseEvent.offsetX = touch.clientX - rect.left;
+            mouseEvent.offsetY = touch.clientY - rect.top;
+            startDrawing(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', function(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            mouseEvent.offsetX = touch.clientX - rect.left;
+            mouseEvent.offsetY = touch.clientY - rect.top;
+            draw(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            stopDrawing();
+        });
+
+        // Save/Load functions
+        async function saveDrawing() {
+            if (!currentUser?.handle) {
+                alert('Please log in to save drawings');
+                return;
+            }
+
+            const drawingData = canvas.toDataURL();
+            const drawingId = `drawing_${Date.now()}`;
+            
+            const success = await save('drawing', {
+                id: drawingId,
+                image: drawingData,
+                timestamp: new Date().toISOString(),
+                author: currentUser.handle.toUpperCase()
+            });
+            
+            if (success) {
+                alert('Drawing saved successfully!');
+            } else {
+                alert('Failed to save drawing. Please try again.');
+            }
+        }
+
+        async function loadDrawing() {
+            if (!currentUser?.handle) {
+                alert('Please log in to load drawings');
+                return;
+            }
+
+            const drawings = await load('drawing');
+            if (drawings.length === 0) {
+                alert('No saved drawings found.');
+                return;
+            }
+
+            // Show selection if multiple drawings
+            if (drawings.length > 1) {
+                const selection = prompt(
+                    `You have ${drawings.length} saved drawings. Enter a number (1-${drawings.length}) to load:\n` +
+                    drawings.map((d, i) => `${i + 1}. Drawing from ${new Date(d.timestamp).toLocaleString()}`).join('\n')
+                );
+                
+                const index = parseInt(selection) - 1;
+                if (isNaN(index) || index < 0 || index >= drawings.length) {
+                    alert('Invalid selection');
+                    return;
+                }
+                
+                loadDrawingData(drawings[index]);
+            } else {
+                // Load the only drawing
+                loadDrawingData(drawings[0]);
+            }
+        }
+
+        function loadDrawingData(drawing) {
+            if (drawing && drawing.image) {
+                const img = new Image();
+                img.onload = function() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                    alert('Drawing loaded successfully!');
+                };
+                img.onerror = function() {
+                    alert('Failed to load drawing image.');
+                };
+                img.src = drawing.image;
+            } else {
+                alert('Drawing data is corrupted.');
+            }
+        }
+
+        function clearCanvas() {
+            if (confirm('Are you sure you want to clear the canvas?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        // Initialize: Load auth from storage first
+        loadAuthFromStorage();
+
+        // Request auth from desktop if in iframe
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+
+        // Initialize UI
+        updateUI();
+    </script>
+</body>
+</html>
