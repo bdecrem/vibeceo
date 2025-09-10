@@ -267,10 +267,43 @@
             box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
         }
 
-        @media (max-width: 768px) {
+        /* Force desktop styles when in iframe (WebtoysOS context) */
+        .desktop-mode {
+            background: #f8f9fa !important;
+        }
+        
+        .desktop-mode .header h1 {
+            color: #333 !important;
+            font-size: 1.8rem !important;
+            text-shadow: none !important;
+        }
+        
+        .desktop-mode .header p {
+            color: #666 !important;
+        }
+        
+        .desktop-mode .art-studio {
+            background: white !important;
+            backdrop-filter: none !important;
+            border: 1px solid #e0e0e0 !important;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+        }
+        
+        .desktop-mode .gallery {
+            background: white !important;
+            backdrop-filter: none !important;
+            border: 1px solid #e0e0e0 !important;
+        }
+        
+        .desktop-mode .gallery h2 {
+            color: #333 !important;
+        }
+        
+        /* Mobile styles only for actual mobile devices */
+        @media (max-width: 768px) and (max-height: 1024px) {
             body {
                 padding: 10px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             }
 
             .container {
@@ -278,20 +311,20 @@
             }
 
             .header h1 {
-                color: white;
-                font-size: 2rem;
-                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+                color: white !important;
+                font-size: 2rem !important;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
             }
 
             .header p {
-                color: rgba(255,255,255,0.8);
+                color: rgba(255,255,255,0.8) !important;
             }
 
             .art-studio {
-                background: rgba(255,255,255,0.15);
-                backdrop-filter: blur(20px);
-                border: 1px solid rgba(255,255,255,0.2);
-                box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+                background: rgba(255,255,255,0.15) !important;
+                backdrop-filter: blur(20px) !important;
+                border: 1px solid rgba(255,255,255,0.2) !important;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.1) !important;
             }
 
             .studio-layout {
@@ -495,6 +528,11 @@
 
         // Initialize app
         document.addEventListener('DOMContentLoaded', () => {
+            // Detect if we're in iframe (desktop context) and force desktop mode
+            if (window !== window.top || window.innerWidth > 800) {
+                document.body.classList.add('desktop-mode');
+            }
+            
             if (loadAuthFromStorage()) {
                 loadGallery();
             }
