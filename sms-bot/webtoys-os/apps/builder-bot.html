@@ -488,7 +488,10 @@
           currentUser = JSON.parse(saved);
           if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
           if (!currentUser.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+          console.log('🔑 Loaded auth from storage:', currentUser);
         } catch {}
+      } else {
+        console.log('❌ No auth found in localStorage');
       }
     }
     window.addEventListener('message', e => {
@@ -496,6 +499,7 @@
         currentUser = e.data.user || null;
         if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
         if (!currentUser?.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+        console.log('🔑 Received auth from desktop:', currentUser);
         render();
       }
     });
