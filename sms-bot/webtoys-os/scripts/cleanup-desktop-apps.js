@@ -27,19 +27,9 @@ const supabase = createClient(
 
 // Apps to remove (as requested)
 const APPS_TO_REMOVE = [
-    'bartword',
-    'bartdraw', 
-    'calculator',
-    'test-safe-deploy',
-    'bartthu',
-    'moi',
-    'hello-world',
-    'simple-test',
-    'counter-modern',
-    'testing-app',
-    'test',
-    'finally-works',
-    'iphone17'  // Will match 'iphone17' in the registry
+    'pixel-art-studio',  // Pixel Art Studio
+    'word-chain',        // Word Chain
+    'pxl-art'           // Pxl Art
 ];
 
 async function cleanupDesktop() {
