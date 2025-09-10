@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hello World</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,230 +13,261 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            height: 100vh;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
             overflow: hidden;
+            position: relative;
         }
 
-        .container {
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hello-container {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 40px 32px;
             text-align: center;
-            animation: fadeIn 0.6s ease;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            width: 420px;
+            max-width: 90vw;
+            animation: fadeInUp 0.6s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .hello-container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transform: rotate(45deg);
+            animation: shine 4s infinite;
         }
 
         h1 {
-            font-size: 4rem;
+            font-family: 'Comfortaa', cursive;
+            font-size: 2.5rem;
             font-weight: 700;
-            color: white;
-            margin-bottom: 1rem;
-            text-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            animation: slideDown 0.8s ease;
+            background: linear-gradient(135deg, #ffffff, #f8fafc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 2px 10px rgba(255, 255, 255, 0.3);
         }
 
         .subtitle {
-            font-size: 1.25rem;
+            font-size: 1.1rem;
             color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 2rem;
-            animation: slideUp 0.8s ease;
+            margin-bottom: 32px;
+            font-weight: 400;
+            position: relative;
+            z-index: 1;
         }
 
         .emoji {
-            font-size: 5rem;
+            font-size: 4rem;
+            margin-bottom: 24px;
             animation: bounce 2s infinite;
-            display: inline-block;
-            margin-bottom: 1rem;
+            display: block;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
         }
 
-        .glass-card {
-            background: rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
+        .welcome-btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 16px;
-            padding: 2rem 3rem;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-            max-width: 500px;
-            margin: 0 auto;
+            color: white;
+            font-family: 'Inter', system-ui;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 12px 24px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+            min-width: 120px;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
         }
 
-        .pulse-dot {
-            display: inline-block;
-            width: 12px;
-            height: 12px;
-            background: #4ade80;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-            margin-right: 8px;
-            vertical-align: middle;
+        .welcome-btn:hover {
+            transform: translateY(-2px);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .welcome-btn:active {
+            transform: translateY(0);
+            transition: transform 0.1s;
+        }
+
+        .message {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+            position: relative;
+            z-index: 1;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .message.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .status {
-            color: white;
+            color: rgba(255, 255, 255, 0.8);
             font-size: 0.875rem;
-            opacity: 0.9;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-top: 1.5rem;
+            margin-top: 16px;
+            position: relative;
+            z-index: 1;
         }
 
-        @keyframes fadeIn {
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
+                transform: translateY(40px);
             }
             to {
                 opacity: 1;
-            }
-        }
-
-        @keyframes slideDown {
-            from {
-                transform: translateY(-30px);
-                opacity: 0;
-            }
-            to {
                 transform: translateY(0);
-                opacity: 1;
             }
         }
 
-        @keyframes slideUp {
-            from {
-                transform: translateY(30px);
-                opacity: 0;
+        @keyframes shine {
+            0% {
+                transform: translateX(-100%) translateY(-100%) rotate(45deg);
             }
-            to {
-                transform: translateY(0);
-                opacity: 1;
+            100% {
+                transform: translateX(100%) translateY(100%) rotate(45deg);
             }
         }
 
         @keyframes bounce {
-            0%, 100% {
+            0%, 20%, 50%, 80%, 100% {
                 transform: translateY(0);
             }
-            50% {
-                transform: translateY(-20px);
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
             }
         }
 
-        @keyframes pulse {
-            0% {
-                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.7);
-            }
-            70% {
-                box-shadow: 0 0 0 10px rgba(74, 222, 128, 0);
-            }
-            100% {
-                box-shadow: 0 0 0 0 rgba(74, 222, 128, 0);
-            }
-        }
 
-        .floating-button {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            background: white;
-            color: #764ba2;
-            border: none;
-            border-radius: 50%;
-            width: 56px;
-            height: 56px;
-            font-size: 1.5rem;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .floating-button:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        @media (max-width: 768px) {
+        @media (max-width: 480px) {
+            .hello-container {
+                padding: 32px 24px;
+                margin: 16px;
+            }
+            
             h1 {
-                font-size: 3rem;
+                font-size: 2rem;
             }
             
             .emoji {
-                font-size: 4rem;
-            }
-            
-            .glass-card {
-                margin: 1rem;
-                padding: 1.5rem 2rem;
+                font-size: 3rem;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="glass-card">
-            <div class="emoji">👋</div>
-            <h1>Hello World!</h1>
-            <p class="subtitle">Welcome to WebtoysOS</p>
-            <div class="status">
-                <span class="pulse-dot"></span>
-                <span>Running on BUILD PLAY SHARE</span>
-            </div>
+    <div class="hello-container">
+        <span class="emoji">👋</span>
+        <h1>Hello World!</h1>
+        <p class="subtitle">Welcome to WebtoysOS</p>
+        <button class="welcome-btn" onclick="showMessage()">Say Hello</button>
+        <div class="message" id="message">
+            🎉 Hello there! Welcome to the wonderful world of WebtoysOS. This is your first step into building amazing web experiences!
         </div>
+        <div class="status">Running on BUILD PLAY SHARE</div>
     </div>
-
-    <button class="floating-button" onclick="celebrate()">🎉</button>
 
     <script>
         // App configuration for WebtoysOS - CRITICAL for proper window sizing
         window.APP_CONFIG = {
             name: 'Hello World',
             icon: '👋',
-            width: 600,  // Exact width for desktop window
-            height: 400, // Exact height for desktop window
+            width: 500,  // Exact width for desktop window
+            height: 420, // Exact height for desktop window
             resizable: false
         };
 
-        // Simple celebration animation
-        function celebrate() {
-            const emojis = ['🎉', '✨', '🌟', '💫', '🎊'];
-            const emoji = emojis[Math.floor(Math.random() * emojis.length)];
+        function showMessage() {
+            const message = document.getElementById('message');
+            message.classList.toggle('show');
             
-            const particle = document.createElement('div');
-            particle.textContent = emoji;
-            particle.style.cssText = `
+            const btn = document.querySelector('.welcome-btn');
+            btn.textContent = message.classList.contains('show') ? 'Hide Message' : 'Say Hello';
+        }
+
+        // Add some interactive sparkle effects
+        document.addEventListener('mousemove', (e) => {
+            if (Math.random() > 0.95) {
+                createSparkle(e.clientX, e.clientY);
+            }
+        });
+
+        function createSparkle(x, y) {
+            const sparkle = document.createElement('div');
+            sparkle.style.cssText = `
                 position: fixed;
-                bottom: 2rem;
-                right: 2rem;
-                font-size: 2rem;
+                left: ${x}px;
+                top: ${y}px;
+                width: 4px;
+                height: 4px;
+                background: rgba(255, 255, 255, 0.8);
+                border-radius: 50%;
                 pointer-events: none;
-                animation: float-away 2s ease-out forwards;
+                animation: sparkleAnim 0.8s ease-out forwards;
                 z-index: 1000;
             `;
             
-            document.body.appendChild(particle);
+            document.body.appendChild(sparkle);
             
-            setTimeout(() => particle.remove(), 2000);
+            setTimeout(() => sparkle.remove(), 800);
         }
 
-        // Add floating animation
         const style = document.createElement('style');
         style.textContent = `
-            @keyframes float-away {
+            @keyframes sparkleAnim {
                 0% {
-                    transform: translateY(0) rotate(0deg);
+                    transform: scale(0) rotate(0deg);
                     opacity: 1;
                 }
                 100% {
-                    transform: translateY(-200px) rotate(360deg);
+                    transform: scale(1) rotate(180deg);
                     opacity: 0;
                 }
             }
@@ -243,7 +275,7 @@
         document.head.appendChild(style);
 
         // Log hello to console with style
-        console.log('%cHello from WebtoysOS! 🚀', 'color: #764ba2; font-size: 20px; font-weight: bold;');
+        console.log('%cHello from WebtoysOS! 👋', 'color: #667eea; font-size: 20px; font-weight: bold;');
     </script>
 </body>
 </html>
