@@ -1135,37 +1135,8 @@
                 if (closedText) closedText.textContent = filters.closed ? 'Hide Closed' : 'Show Closed';
             }
             
-            // Auto-update every 30 seconds without losing scroll position
-            updateTimer = setInterval(() => {
-                // Only update if user is not actively typing or interacting
-                const activeElement = document.activeElement;
-                const isTyping = activeElement && 
-                    (activeElement.tagName === 'INPUT' || 
-                     activeElement.tagName === 'TEXTAREA' || 
-                     activeElement.contentEditable === 'true');
-                
-                if (!isTyping) {
-                    console.log('[Issue Tracker] Auto-updating (preserving scroll)...');
-                    loadIssues(true);
-                } else {
-                    console.log('[Issue Tracker] Skipping update - user is typing');
-                }
-            }, 30000);
-            
-            // Update when tab becomes visible
-            document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
-                    console.log('[Issue Tracker] Tab visible, updating...');
-                    loadIssues(true);
-                }
-            });
-            
-            // Stop updates when page is hidden to save resources
-            window.addEventListener('beforeunload', () => {
-                if (updateTimer) {
-                    clearInterval(updateTimer);
-                }
-            });
+            // Note: Auto-refresh removed to avoid disruptive re-renders.
+            // Use the Refresh button to manually reload issues.
         });
     </script>
 </body>

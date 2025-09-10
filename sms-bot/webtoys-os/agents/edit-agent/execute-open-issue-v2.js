@@ -55,12 +55,93 @@ After modifying, redeploy with: node scripts/safe-deploy-app.js apps/[filename].
 This will: 1) Save changes to git, 2) Create commit, 3) Deploy to Supabase`,
     
     data_storage: `
-MANDATORY: Use ZAD API for ALL data storage:
-- Save: POST to /api/zad/save with {app_id, participant_id, action_type, content_data}
-- Load: GET from /api/zad/load?app_id=X&action_type=Y
-- NEVER use direct Supabase access
-- ALWAYS include action_type for filtering
-- ALWAYS filter load results by participant_id`
+CRITICAL: ZAD SAVE/LOAD HELPERS - COPY THIS EXACTLY (no direct Supabase)
+
+// 1) App identity
+window.APP_ID = 'your-app-id'; // e.g., 'toybox-text-editor'
+function getAppId() { return window.APP_ID || 'your-app-id'; }
+
+// 2) User helpers (handle uppercased, participant_id = HANDLE_PIN)
+function getUsername() {
+  return (window.currentUser && window.currentUser.handle)
+    ? window.currentUser.handle.toUpperCase()
+    : 'anonymous';
+}
+function getParticipantId() {
+  if (!window.currentUser) return 'anonymous_0000';
+  return window.currentUser.participantId || (getUsername() + '_' + (window.currentUser.pin || '0000'));
+}
+
+// 3) ZAD save helper (adds participant_data and timestamp)
+async function zadSave(dataType, data) {
+  const app_id = getAppId();
+  const participant_id = getParticipantId();
+  const username = getUsername();
+  const res = await fetch('/api/zad/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      app_id: app_id,
+      participant_id: participant_id,
+      participant_data: { userLabel: username, username: username },
+      action_type: dataType,
+      content_data: Object.assign({
+        timestamp: (data && data.timestamp) ? data.timestamp : Date.now(),
+        author: (data && data.author) ? data.author : username
+      }, data)
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(function(){ return {}; });
+    throw new Error('Save failed: ' + (err.error || res.statusText));
+  }
+  return true;
+}
+
+// 4) ZAD load helper (flattens content_data and preserves participant_id)
+async function zadLoad(dataType) {
+  const app_id = getAppId();
+  const url = '/api/zad/load?app_id=' + encodeURIComponent(app_id) + '&action_type=' + encodeURIComponent(dataType);
+  const res = await fetch(url);
+  if (!res.ok) {
+    const err = await res.json().catch(function(){ return {}; });
+    throw new Error('Load failed: ' + (err.error || res.statusText));
+  }
+  const data = await res.json();
+  return (data || []).map(function(item){
+    var cd = item.content_data || {};
+    return {
+      id: cd.id || item.id,
+      title: cd.title,
+      content: cd.content,
+      author: cd.author || (item.participant_data && (item.participant_data.username || item.participant_data.userLabel)) || 'Unknown',
+      updatedAt: cd.updatedAt || item.created_at,
+      created_at: item.created_at,
+      participant_id: item.participant_id
+    };
+  });
+}
+
+// 5) Per-user filter + dedupe pattern (append-only store)
+async function loadUserItems(dataType) {
+  var all = await zadLoad(dataType);
+  var me = getParticipantId();
+  var mine = all.filter(function(d){ return d.participant_id === me; });
+  var latest = {};
+  mine.forEach(function(d){
+    var ts = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+    if (!latest[d.id] || ts > latest[d.id].ts) {
+      latest[d.id] = Object.assign({ ts: ts }, d);
+    }
+  });
+  return Object.values(latest).sort(function(a,b){ return b.ts - a.ts; });
+}
+
+// Usage examples:
+// Save: await zadSave('document', { id, title, content, updatedAt: new Date().toISOString() });
+// Load current user's: const docs = await loadUserItems('document');
+// NEVER call Supabase directly from apps; always use /api/zad/*.
+`
 };
 
 /**
@@ -284,31 +365,47 @@ async function loadLeaderboard() {
     
     // CRITICAL: Modern design principles
     contexts.push(`
-🎨 DESIGN REQUIREMENTS - Think like a 2025 designer, NOT a 1980s engineer:
 
-DO:
-- Clean, minimal interfaces with focus on content
-- Subtle animations and transitions (0.2s ease)
-- Modern fonts (Inter, DM Sans, system fonts)
-- Soft shadows and rounded corners (8-12px)
-- Floating action buttons that appear when needed
-- Glassmorphism and backdrop-filter effects
-- Gradient accents (not overwhelming backgrounds)
+🎨 DESIGN REQUIREMENTS - Match the Webtoys OS aesthetic:
 
-DON'T:
-- Show user info (it's on the desktop already!)
-- Add Export/Import/Print buttons (this isn't 1995)
-- Create complex toolbars with 20 buttons
-- Leave empty space or split screens with no content
-- Use harsh borders or sharp corners
-- Add unnecessary status bars or panels
+VISUAL LANGUAGE:
+- Glass morphism: backdrop-filter: blur(20px), semi-transparent backgrounds
+- Soft gradients: Use subtle color transitions, not flat colors
+- Rounded corners: 16-24px for containers, 12px for buttons
+- Modern shadows: box-shadow: 0 8px 32px rgba(0,0,0,0.1)
+- Color palette: Work with translucent whites, soft pastels, gradient accents
 
-LAYOUT:
-- Sidebar for navigation (if needed)
-- Main content area takes priority
-- Floating save indicator (appears on changes)
-- Simple word count at bottom
-- Login prompts only when user tries to save
+TYPOGRAPHY:
+- Headers: Comfortaa or similar rounded, friendly fonts
+- Body: Inter or system-ui for readability
+- Sizes: Generous spacing, 14-16px base size
+- Colors: High contrast but soft (not pure black on white)
+
+COMPONENTS:
+- Buttons: Gradient backgrounds with hover effects, pill-shaped when appropriate
+- Cards: Glass effect with subtle borders (1px rgba(255,255,255,0.2))
+- Inputs: Transparent backgrounds, focus states with glow effects
+- Icons: Use emojis or rounded icon sets, not sharp system icons
+
+LAYOUT PRINCIPLES:
+- Floating elements over blurred backgrounds
+- Content cards that feel like they're hovering
+- Smooth transitions (0.3s cubic-bezier)
+- Generous padding (20-32px)
+- Single focus area, minimal chrome
+
+AVOID:
+- Solid gray backgrounds (#f5f5f5 is banned!)
+- Sharp 1px black borders
+- Traditional menu bars and toolbars
+- Dense information layouts
+- System default styles
+
+INTERACTION:
+- Hover states that transform/scale slightly
+- Click feedback with subtle animations
+- Auto-save with toast notifications
+- Contextual actions that appear on hover/focus
 
 WINDOW SIZING (CRITICAL):
 - Apps MUST specify exact width and height in app registry
