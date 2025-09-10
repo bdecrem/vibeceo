@@ -198,23 +198,22 @@
 
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            gap: 12px;
-            max-height: 150px;
-            overflow-y: auto;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
         }
 
         .gallery-item {
             background: #f8f8f8;
             border-radius: 8px;
-            padding: 8px;
+            padding: 12px;
             text-align: center;
             border: 1px solid #e0e0e0;
             transition: transform 0.2s ease;
         }
 
         .gallery-item:hover {
-            transform: translateY(-5px);
+            transform: translateY(-2px);
+            background: white;
         }
 
         .gallery-canvas {
@@ -222,11 +221,15 @@
             border-radius: 6px;
             margin-bottom: 10px;
             image-rendering: pixelated;
+            width: 100%;
+            max-width: 120px;
+            height: auto;
         }
 
         .gallery-meta {
             color: #666;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            line-height: 1.3;
         }
 
         .auth-prompt {
@@ -344,11 +347,12 @@
 
             .gallery-grid {
                 grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-                max-height: none;
+                gap: 20px;
             }
 
             .gallery-item {
                 background: rgba(255,255,255,0.9);
+                padding: 15px;
             }
 
             #pixelCanvas {
@@ -428,7 +432,7 @@
         <div class="gallery">
             <h2>🖼️ Community Gallery</h2>
             <div class="gallery-grid" id="galleryGrid">
-                <div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">
+                <div style="text-align: center; color: #666; grid-column: 1 / -1; padding: 40px;">
                     Loading artwork...
                 </div>
             </div>
@@ -720,7 +724,7 @@
             } catch (error) {
                 console.error('Gallery load error:', error);
                 document.getElementById('galleryGrid').innerHTML = 
-                    '<div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">Failed to load gallery</div>';
+                    '<div style="text-align: center; color: #666; grid-column: 1 / -1; padding: 40px;">Failed to load gallery</div>';
             }
         }
 
@@ -729,7 +733,7 @@
             
             if (artwork.length === 0) {
                 galleryGrid.innerHTML = 
-                    '<div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">No artwork yet. Be the first to create!</div>';
+                    '<div style="text-align: center; color: #666; grid-column: 1 / -1; padding: 40px;">No artwork yet. Be the first to create!</div>';
                 return;
             }
             
@@ -737,7 +741,7 @@
                 const date = new Date(art.createdAt).toLocaleDateString();
                 return `
                     <div class="gallery-item">
-                        <img src="${art.image}" alt="Pixel art by ${art.author}" class="gallery-canvas" style="width: 100%; max-width: 150px; height: auto;">
+                        <img src="${art.image}" alt="Pixel art by ${art.author}" class="gallery-canvas">
                         <div class="gallery-meta">
                             <strong>${art.author}</strong><br>
                             ${art.size} • ${date}
