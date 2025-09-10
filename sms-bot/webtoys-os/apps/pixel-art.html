@@ -105,6 +105,36 @@
             border: 1px solid rgba(0, 0, 0, 0.1);
         }
 
+        .tool-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .tool-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid transparent;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .tool-btn.active {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed);
+            color: white;
+            border-color: #4f46e5;
+            transform: translateY(-2px);
+        }
+
         .tool-group h3 {
             font-size: 12px;
             font-weight: 600;
@@ -337,6 +367,15 @@
         <div id="mainApp" style="display: flex; width: 100%; height: 100%;">
             <div class="sidebar">
                 <div class="tool-group">
+                    <h3>Tools</h3>
+                    <div class="tool-buttons">
+                        <button class="tool-btn active" id="brushTool" onclick="selectTool('brush')" title="Brush">🖌️</button>
+                        <button class="tool-btn" id="eraserTool" onclick="selectTool('eraser')" title="Eraser">🧽</button>
+                        <button class="tool-btn" id="bucketTool" onclick="selectTool('bucket')" title="Bucket Fill">🪣</button>
+                    </div>
+                </div>
+                
+                <div class="tool-group">
                     <h3>Colors</h3>
                     <div class="color-palette" id="colorPalette"></div>
                 </div>
@@ -345,7 +384,15 @@
             <div class="canvas-container">
                 <div class="canvas-wrapper">
                     <canvas id="pixelCanvas" width="512" height="512"></canvas>
-                    <!-- Mobile-only color palette ABOVE the Save button -->
+                    <!-- Mobile-only tools and colors ABOVE the Save button -->
+                    <div class="tool-group mobile-only" style="margin-top: 10px;">
+                        <h3>Tools</h3>
+                        <div class="tool-buttons">
+                            <button class="tool-btn active" id="mobileBrushTool" onclick="selectTool('brush')" title="Brush">🖌️</button>
+                            <button class="tool-btn" id="mobileEraserTool" onclick="selectTool('eraser')" title="Eraser">🧽</button>
+                            <button class="tool-btn" id="mobileBucketTool" onclick="selectTool('bucket')" title="Bucket Fill">🪣</button>
+                        </div>
+                    </div>
                     <div class="tool-group mobile-only" style="margin-top: 10px;">
                         <h3>Colors</h3>
                         <div class="color-palette" id="mobileColorPalette"></div>
@@ -372,6 +419,7 @@
         let canvas, ctx;
         let isDrawing = false;
         let currentColor = '#000000';
+        let currentTool = 'brush';
         let gridWidth = 32;
         let gridHeight = 32;
         let pixelSize = 16;
@@ -391,6 +439,7 @@
             setupCanvas();
             setupColorPalette();
             setupEventListeners();
+            selectTool('brush'); // Initialize with brush tool
             loadCommunityGallery();
             // Auto-refresh gallery every 30 seconds
             setInterval(loadCommunityGallery, 30000);
@@ -486,7 +535,7 @@
 
         function selectColor(color) {
             currentColor = color;
-            document.getElementById('currentColor').textContent = `Color: ${color}`;
+            updateColorDisplay();
             
             document.querySelectorAll('.color-swatch').forEach(swatch => {
                 swatch.classList.remove('selected');
@@ -494,6 +543,48 @@
                     swatch.classList.add('selected');
                 }
             });
+        }
+
+        function selectTool(tool) {
+            currentTool = tool;
+            updateToolDisplay();
+            updateColorDisplay();
+            updateCanvasCursor();
+        }
+
+        function updateToolDisplay() {
+            // Update desktop tool buttons
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            
+            // Update both desktop and mobile tool buttons
+            const toolIds = {
+                'brush': ['brushTool', 'mobileBrushTool'],
+                'eraser': ['eraserTool', 'mobileEraserTool'],
+                'bucket': ['bucketTool', 'mobileBucketTool']
+            };
+            
+            if (toolIds[currentTool]) {
+                toolIds[currentTool].forEach(id => {
+                    const btn = document.getElementById(id);
+                    if (btn) btn.classList.add('active');
+                });
+            }
+        }
+
+        function updateColorDisplay() {
+            const colorText = currentTool === 'eraser' ? 'Eraser' : 
+                             currentTool === 'bucket' ? `Fill: ${currentColor}` : 
+                             `Color: ${currentColor}`;
+            document.getElementById('currentColor').textContent = colorText;
+        }
+
+        function updateCanvasCursor() {
+            const cursors = {
+                'brush': 'crosshair',
+                'eraser': 'grab',
+                'bucket': 'pointer'
+            };
+            canvas.style.cursor = cursors[currentTool] || 'crosshair';
         }
 
         function rgbToHex(rgb) {
@@ -510,7 +601,11 @@
             
             canvas.addEventListener('touchstart', (e) => {
                 e.preventDefault();
-                isDrawing = true;
+                if (currentTool === 'bucket') {
+                    isDrawing = false;
+                } else {
+                    isDrawing = true;
+                }
                 const touch = e.touches[0];
                 const rect = canvas.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
@@ -520,7 +615,7 @@
             
             canvas.addEventListener('touchmove', (e) => {
                 e.preventDefault();
-                if (!isDrawing) return;
+                if (!isDrawing || currentTool === 'bucket') return;
                 const touch = e.touches[0];
                 const rect = canvas.getBoundingClientRect();
                 const x = touch.clientX - rect.left;
@@ -540,7 +635,11 @@
         }
 
         function startDrawing(e) {
-            isDrawing = true;
+            if (currentTool === 'bucket') {
+                isDrawing = false; // Bucket tool doesn't use isDrawing state
+            } else {
+                isDrawing = true;
+            }
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -548,7 +647,7 @@
         }
 
         function draw(e) {
-            if (!isDrawing) return;
+            if (!isDrawing || currentTool === 'bucket') return; // Bucket tool doesn't drag
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -570,8 +669,71 @@
             const pixelY = Math.floor(canvasY / pixelSize);
             
             if (pixelX >= 0 && pixelX < gridWidth && pixelY >= 0 && pixelY < gridHeight) {
-                ctx.fillStyle = currentColor;
-                ctx.fillRect(pixelX * pixelSize, pixelY * pixelSize, pixelSize, pixelSize);
+                switch (currentTool) {
+                    case 'brush':
+                        ctx.fillStyle = currentColor;
+                        ctx.fillRect(pixelX * pixelSize, pixelY * pixelSize, pixelSize, pixelSize);
+                        break;
+                    case 'eraser':
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(pixelX * pixelSize, pixelY * pixelSize, pixelSize, pixelSize);
+                        break;
+                    case 'bucket':
+                        bucketFill(pixelX, pixelY, currentColor);
+                        break;
+                }
+            }
+        }
+
+        function getPixelColor(x, y) {
+            if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) {
+                return null;
+            }
+            
+            const imageData = ctx.getImageData(x * pixelSize, y * pixelSize, 1, 1);
+            const data = imageData.data;
+            return `#${((data[0] << 16) | (data[1] << 8) | data[2]).toString(16).padStart(6, '0').toUpperCase()}`;
+        }
+
+        function setPixelColor(x, y, color) {
+            if (x >= 0 && x < gridWidth && y >= 0 && y < gridHeight) {
+                ctx.fillStyle = color;
+                ctx.fillRect(x * pixelSize, y * pixelSize, pixelSize, pixelSize);
+            }
+        }
+
+        function bucketFill(startX, startY, fillColor) {
+            const targetColor = getPixelColor(startX, startY);
+            
+            // Don't fill if target color is same as fill color
+            if (targetColor === fillColor) {
+                return;
+            }
+            
+            // Flood fill algorithm using a queue
+            const queue = [{x: startX, y: startY}];
+            const visited = new Set();
+            
+            while (queue.length > 0) {
+                const {x, y} = queue.shift();
+                const key = `${x},${y}`;
+                
+                if (visited.has(key)) continue;
+                visited.add(key);
+                
+                if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight) continue;
+                
+                const currentColor = getPixelColor(x, y);
+                if (currentColor !== targetColor) continue;
+                
+                // Fill this pixel
+                setPixelColor(x, y, fillColor);
+                
+                // Add neighboring pixels to queue
+                queue.push({x: x + 1, y: y});
+                queue.push({x: x - 1, y: y});
+                queue.push({x: x, y: y + 1});
+                queue.push({x: x, y: y - 1});
             }
         }
 
