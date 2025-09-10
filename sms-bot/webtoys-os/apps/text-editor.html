@@ -573,7 +573,13 @@
                 
                 if (!uniqueDocs[docId] || 
                     (uniqueDocs[docId].timestamp < docTimestamp)) {
-                    uniqueDocs[docId] = { ...doc, timestamp: docTimestamp };
+                    // Keep original doc structure but add timestamp for sorting
+                    uniqueDocs[docId] = { 
+                        ...doc, 
+                        timestamp: docTimestamp,
+                        // Ensure display properties exist
+                        updatedAt: doc.updatedAt || doc.created_at
+                    };
                 }
             });
             
@@ -587,9 +593,13 @@
 
         // Display documents in panel
         async function showDocumentsPanel() {
+            console.log('🔍 OPEN button clicked - showDocumentsPanel called');
+            
             const docs = await loadUserDocuments();
+            console.log('📄 Documents loaded for display:', docs);
             
             if (docs.length === 0) {
+                console.log('❌ No documents found - showing empty state');
                 documentsList.innerHTML = `
                     <div class="empty-state">
                         <h3>No documents yet</h3>
@@ -597,12 +607,13 @@
                     </div>
                 `;
             } else {
+                console.log(`✅ Displaying ${docs.length} documents`);
                 documentsList.innerHTML = docs.map(doc => `
                     <div class="document-item" onclick="openDocument('${doc.id}')">
                         <div class="document-info">
                             <div class="document-title">${escapeHtml(doc.title)}</div>
                             <div class="document-meta">
-                                Last updated: ${new Date(doc.updatedAt).toLocaleDateString()}
+                                Last updated: ${new Date(doc.updatedAt || Date.now()).toLocaleDateString()}
                             </div>
                         </div>
                         <button class="delete-btn" onclick="deleteDocument(event, '${doc.id}')" title="Delete document">🗑️</button>
@@ -610,6 +621,7 @@
                 `).join('');
             }
             
+            console.log('👁️ Showing documents panel');
             documentsPanel.style.display = 'flex';
         }
 
