@@ -62,40 +62,36 @@
             display: flex;
             gap: 20px;
             align-items: flex-start;
-            height: 100%;
         }
 
         .canvas-section {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
+            flex: 2;
         }
 
         .canvas-container {
             background: #f8f8f8;
             border-radius: 8px;
-            padding: 15px;
+            padding: 20px;
             margin-bottom: 15px;
-            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
         #pixelCanvas {
-            border: 2px solid #e1e5e9;
+            border: 2px solid #333;
             border-radius: 6px;
             cursor: crosshair;
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
-            max-width: 100%;
-            max-height: 100%;
+            width: 400px;
+            height: 400px;
+            background: white;
         }
 
         .controls-section {
-            width: 180px;
+            width: 200px;
             flex-shrink: 0;
             display: flex;
             flex-direction: column;
@@ -558,19 +554,10 @@
         }
 
         function updateCanvasSize() {
-            const size = gridSize * pixelSize;
-            canvas.width = size;
-            canvas.height = size;
-            
-            // For desktop, constrain canvas to available space
-            const maxSize = Math.min(350, window.innerWidth - 250);
-            if (size > maxSize) {
-                canvas.style.width = maxSize + 'px';
-                canvas.style.height = maxSize + 'px';
-            } else {
-                canvas.style.width = size + 'px';
-                canvas.style.height = size + 'px';
-            }
+            // Set pixel size based on grid size for 400px canvas
+            pixelSize = 400 / gridSize;
+            canvas.width = 400;
+            canvas.height = 400;
         }
 
         function setupColorPalette() {
@@ -659,22 +646,27 @@
         }
 
         function clearCanvas() {
+            // Clear canvas
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            // Draw grid
-            ctx.strokeStyle = '#f0f0f0';
+            // Draw visible grid
+            ctx.strokeStyle = '#ddd';
             ctx.lineWidth = 1;
+            
+            // Draw vertical lines
             for (let x = 0; x <= canvas.width; x += pixelSize) {
                 ctx.beginPath();
-                ctx.moveTo(x, 0);
-                ctx.lineTo(x, canvas.height);
+                ctx.moveTo(x + 0.5, 0);
+                ctx.lineTo(x + 0.5, canvas.height);
                 ctx.stroke();
             }
+            
+            // Draw horizontal lines
             for (let y = 0; y <= canvas.height; y += pixelSize) {
                 ctx.beginPath();
-                ctx.moveTo(0, y);
-                ctx.lineTo(canvas.width, y);
+                ctx.moveTo(0, y + 0.5);
+                ctx.lineTo(canvas.width, y + 0.5);
                 ctx.stroke();
             }
             
