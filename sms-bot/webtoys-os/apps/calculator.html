@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calculator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,7 +13,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -22,145 +23,144 @@
         }
 
         .calculator-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            width: 100%;
-            max-width: 400px;
-            min-height: 600px;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 32px;
+            width: 400px;
+            max-width: 100%;
         }
 
         .calculator-header {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 24px;
         }
 
         .calculator-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 10px;
+            font-family: 'Comfortaa', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 8px;
         }
 
-        .auth-status {
+        .calculator-subtitle {
             font-size: 14px;
-            color: #718096;
-            padding: 8px 16px;
-            background: rgba(102, 126, 234, 0.1);
-            border-radius: 20px;
-            display: inline-block;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .display-section {
+            margin-bottom: 24px;
         }
 
         .display {
-            background: #2d3748;
-            color: white;
-            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
             padding: 20px;
-            margin-bottom: 20px;
-            text-align: right;
-            box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-bottom: 12px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
         }
 
-        .current-operation {
-            font-size: 14px;
-            color: #a0aec0;
-            min-height: 20px;
-            margin-bottom: 5px;
-        }
-
-        .result {
+        .display-value {
             font-size: 32px;
-            font-weight: 300;
-            min-height: 40px;
-            overflow: hidden;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            text-align: right;
+            word-break: break-all;
         }
 
-        .keypad {
+        .expression {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 12px 16px;
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+            text-align: right;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .button-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 12px;
             margin-bottom: 20px;
         }
 
-        .btn {
-            border: none;
-            border-radius: 12px;
+        .calc-button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            color: rgba(255, 255, 255, 0.9);
             font-size: 18px;
-            font-weight: 500;
+            font-weight: 600;
             height: 60px;
             cursor: pointer;
-            transition: all 0.2s ease;
-            font-family: inherit;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            user-select: none;
             display: flex;
             align-items: center;
             justify-content: center;
         }
 
-        .btn:hover {
+        .calc-button:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
             transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
         }
 
-        .btn:active {
+        .calc-button:active {
             transform: translateY(0);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
 
-        .btn-number {
-            background: white;
-            color: #2d3748;
-            border: 2px solid #e2e8f0;
+        .calc-button.operator {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.7), rgba(255, 107, 107, 0.5));
         }
 
-        .btn-number:hover {
-            background: #f7fafc;
-            border-color: #cbd5e0;
+        .calc-button.operator:hover {
+            background: linear-gradient(135deg, rgba(255, 107, 107, 0.8), rgba(255, 107, 107, 0.6));
         }
 
-        .btn-operator {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
-        }
-
-        .btn-operator:hover {
-            background: linear-gradient(135deg, #5a67d8, #6b46c1);
-        }
-
-        .btn-equals {
-            background: linear-gradient(135deg, #48bb78, #38a169);
-            color: white;
+        .calc-button.equals {
+            background: linear-gradient(135deg, rgba(72, 187, 120, 0.7), rgba(72, 187, 120, 0.5));
             grid-column: span 2;
         }
 
-        .btn-equals:hover {
-            background: linear-gradient(135deg, #38a169, #2f855a);
+        .calc-button.equals:hover {
+            background: linear-gradient(135deg, rgba(72, 187, 120, 0.8), rgba(72, 187, 120, 0.6));
         }
 
-        .btn-clear {
-            background: linear-gradient(135deg, #f56565, #e53e3e);
-            color: white;
+        .calc-button.clear {
+            background: linear-gradient(135deg, rgba(255, 159, 67, 0.7), rgba(255, 159, 67, 0.5));
         }
 
-        .btn-clear:hover {
-            background: linear-gradient(135deg, #e53e3e, #c53030);
-        }
-
-        .btn-zero {
-            grid-column: span 2;
+        .calc-button.clear:hover {
+            background: linear-gradient(135deg, rgba(255, 159, 67, 0.8), rgba(255, 159, 67, 0.6));
         }
 
         .history-section {
-            border-top: 1px solid #e2e8f0;
-            padding-top: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 16px;
+            max-height: 150px;
+            overflow-y: auto;
         }
 
         .history-header {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
-            color: #2d3748;
-            margin-bottom: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 12px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -169,114 +169,83 @@
         .clear-history {
             background: none;
             border: none;
-            color: #667eea;
+            color: rgba(255, 255, 255, 0.6);
             cursor: pointer;
-            font-size: 14px;
+            font-size: 12px;
             padding: 4px 8px;
-            border-radius: 6px;
-            transition: all 0.2s ease;
+            border-radius: 8px;
+            transition: all 0.3s ease;
         }
 
         .clear-history:hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .history-list {
-            max-height: 150px;
-            overflow-y: auto;
-            background: #f7fafc;
-            border-radius: 8px;
-            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.8);
         }
 
         .history-item {
-            font-size: 14px;
-            color: #4a5568;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 8px;
-            padding: 8px;
-            background: white;
-            border-radius: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s ease;
         }
 
         .history-item:hover {
-            background: #edf2f7;
-            transform: translateX(2px);
+            background: rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.9);
         }
 
         .history-item:last-child {
             margin-bottom: 0;
         }
 
-        .history-expression {
-            color: #718096;
-        }
-
-        .history-result {
-            font-weight: 600;
-            color: #2d3748;
-        }
-
-        .save-indicator {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: #48bb78;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            transform: translateY(-100px);
-            opacity: 0;
-            transition: all 0.3s ease;
-            z-index: 1000;
-        }
-
-        .save-indicator.show {
-            transform: translateY(0);
-            opacity: 1;
-        }
-
-        .login-prompt {
-            background: rgba(255, 193, 7, 0.1);
-            border: 1px solid #ffc107;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 15px;
+        .history-empty {
             text-align: center;
-            font-size: 14px;
-            color: #856404;
-            display: none;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        /* Custom scrollbar */
+        .history-section::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .history-section::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+        }
+
+        .history-section::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .history-section::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
 
         /* Mobile responsive */
-        @media (max-width: 768px) {
+        @media (max-width: 480px) {
             body {
-                background: white;
-                padding: 0;
-                min-height: 100vh;
+                padding: 10px;
             }
             
             .calculator-container {
-                border-radius: 0;
-                min-height: 100vh;
-                max-width: none;
+                width: 100%;
                 padding: 20px;
-                display: flex;
-                flex-direction: column;
             }
             
-            .keypad {
-                flex: 1;
+            .calc-button {
+                height: 50px;
+                font-size: 16px;
             }
             
-            .btn {
-                height: 70px;
-                font-size: 20px;
+            .display-value {
+                font-size: 28px;
             }
         }
     </style>
@@ -284,272 +253,217 @@
 <body>
     <div class="calculator-container">
         <div class="calculator-header">
-            <h1 class="calculator-title">Calculator</h1>
-            <div class="auth-status" id="authStatus">Not logged in</div>
+            <h1 class="calculator-title">🧮 Calculator</h1>
+            <p class="calculator-subtitle">Modern glass calculator with history</p>
         </div>
 
-        <div class="display">
-            <div class="current-operation" id="currentOperation"></div>
-            <div class="result" id="result">0</div>
+        <div class="display-section">
+            <div class="display">
+                <div class="display-value" id="display">0</div>
+            </div>
+            <div class="expression" id="expression"></div>
         </div>
 
-        <div class="keypad">
-            <button class="btn btn-clear" onclick="clearAll()">C</button>
-            <button class="btn btn-clear" onclick="clearEntry()">CE</button>
-            <button class="btn btn-operator" onclick="inputOperator('/')">&div;</button>
-            <button class="btn btn-operator" onclick="inputOperator('*')">&times;</button>
+        <div class="button-grid">
+            <button class="calc-button clear" onclick="clearAll()">AC</button>
+            <button class="calc-button clear" onclick="clearEntry()">CE</button>
+            <button class="calc-button operator" onclick="deleteDigit()">⌫</button>
+            <button class="calc-button operator" onclick="inputOperator('/')">÷</button>
             
-            <button class="btn btn-number" onclick="inputNumber('7')">7</button>
-            <button class="btn btn-number" onclick="inputNumber('8')">8</button>
-            <button class="btn btn-number" onclick="inputNumber('9')">9</button>
-            <button class="btn btn-operator" onclick="inputOperator('-')">-</button>
+            <button class="calc-button" onclick="inputDigit('7')">7</button>
+            <button class="calc-button" onclick="inputDigit('8')">8</button>
+            <button class="calc-button" onclick="inputDigit('9')">9</button>
+            <button class="calc-button operator" onclick="inputOperator('*')">×</button>
             
-            <button class="btn btn-number" onclick="inputNumber('4')">4</button>
-            <button class="btn btn-number" onclick="inputNumber('5')">5</button>
-            <button class="btn btn-number" onclick="inputNumber('6')">6</button>
-            <button class="btn btn-operator" onclick="inputOperator('+')">+</button>
+            <button class="calc-button" onclick="inputDigit('4')">4</button>
+            <button class="calc-button" onclick="inputDigit('5')">5</button>
+            <button class="calc-button" onclick="inputDigit('6')">6</button>
+            <button class="calc-button operator" onclick="inputOperator('-')">−</button>
             
-            <button class="btn btn-number" onclick="inputNumber('1')">1</button>
-            <button class="btn btn-number" onclick="inputNumber('2')">2</button>
-            <button class="btn btn-number" onclick="inputNumber('3')">3</button>
-            <button class="btn btn-equals" onclick="calculate()" rowspan="2">=</button>
+            <button class="calc-button" onclick="inputDigit('1')">1</button>
+            <button class="calc-button" onclick="inputDigit('2')">2</button>
+            <button class="calc-button" onclick="inputDigit('3')">3</button>
+            <button class="calc-button operator" onclick="inputOperator('+')">+</button>
             
-            <button class="btn btn-number btn-zero" onclick="inputNumber('0')">0</button>
-            <button class="btn btn-number" onclick="inputDecimal()">.</button>
+            <button class="calc-button" onclick="inputDigit('0')">0</button>
+            <button class="calc-button" onclick="inputDot()">.</button>
+            <button class="calc-button equals" onclick="calculate()">=</button>
         </div>
 
         <div class="history-section">
             <div class="history-header">
-                History
+                <span>📜 History</span>
                 <button class="clear-history" onclick="clearHistory()">Clear</button>
             </div>
-            <div class="history-list" id="historyList">
-                <div style="text-align: center; color: #a0aec0; padding: 20px;">
-                    No calculations yet
-                </div>
+            <div id="history-list">
+                <div class="history-empty">No calculations yet</div>
             </div>
         </div>
-
-        <div class="login-prompt" id="loginPrompt">
-            Please log in to save your calculation history
-        </div>
-    </div>
-
-    <div class="save-indicator" id="saveIndicator">
-        History saved!
     </div>
 
     <script>
-        let currentUser = null;
         let currentInput = '0';
-        let operator = null;
-        let previousInput = null;
-        let justCalculated = false;
-        let history = [];
+        let previousInput = '';
+        let operator = '';
+        let waitingForOperand = false;
+        let history = JSON.parse(localStorage.getItem('calculator-history') || '[]');
 
-        // Auth system - load from localStorage and listen for postMessage
-        function loadAuthFromStorage() {
-            const savedUser = localStorage.getItem('toybox_user');
-            if (savedUser) {
-                currentUser = JSON.parse(savedUser);
-                if (currentUser) {
-                    if (currentUser.handle) {
-                        currentUser.handle = currentUser.handle.toUpperCase();
-                    }
-                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
-                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
-                    }
-                    updateAuthStatus();
-                    loadHistory();
+        const display = document.getElementById('display');
+        const expression = document.getElementById('expression');
+        const historyList = document.getElementById('history-list');
+
+        function updateDisplay() {
+            display.textContent = currentInput;
+            
+            let expressionText = '';
+            if (previousInput && operator) {
+                const operatorSymbol = {
+                    '+': '+',
+                    '-': '−',
+                    '*': '×',
+                    '/': '÷'
+                }[operator] || operator;
+                
+                expressionText = `${previousInput} ${operatorSymbol}`;
+                if (!waitingForOperand) {
+                    expressionText += ` ${currentInput}`;
                 }
             }
+            expression.textContent = expressionText;
         }
 
-        window.addEventListener('message', (e) => {
-            if (e.data.type === 'TOYBOX_AUTH') {
-                currentUser = e.data.user;
-                if (currentUser) {
-                    if (currentUser.handle) {
-                        currentUser.handle = currentUser.handle.toUpperCase();
-                    }
-                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
-                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
-                    }
-                    updateAuthStatus();
-                    loadHistory();
-                }
-            }
-        });
-
-        function updateAuthStatus() {
-            const authStatus = document.getElementById('authStatus');
-            if (currentUser && currentUser.handle) {
-                authStatus.textContent = `Logged in as ${currentUser.handle}`;
-                authStatus.style.background = 'rgba(72, 187, 120, 0.1)';
-                authStatus.style.color = '#2f855a';
-            } else {
-                authStatus.textContent = 'Not logged in';
-                authStatus.style.background = 'rgba(102, 126, 234, 0.1)';
-                authStatus.style.color = '#718096';
-            }
-        }
-
-        function getParticipantId() {
-            if (!currentUser?.handle || !currentUser?.pin) return null;
-            return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
-        }
-
-        async function saveHistory() {
-            const participantId = getParticipantId();
-            if (!participantId) {
-                document.getElementById('loginPrompt').style.display = 'block';
-                setTimeout(() => {
-                    document.getElementById('loginPrompt').style.display = 'none';
-                }, 3000);
+        function updateHistory() {
+            if (history.length === 0) {
+                historyList.innerHTML = '<div class="history-empty">No calculations yet</div>';
                 return;
             }
 
-            try {
-                const response = await fetch('/api/zad/save', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        app_id: 'toybox-calculator',
-                        participant_id: participantId,
-                        action_type: 'calculation_history',
-                        content_data: {
-                            history: history,
-                            updatedAt: new Date().toISOString()
-                        }
-                    })
-                });
-
-                if (response.ok) {
-                    showSaveIndicator();
-                }
-            } catch (error) {
-                console.error('Error saving history:', error);
-            }
+            historyList.innerHTML = history.slice(-10).reverse().map(item => 
+                `<div class="history-item" onclick="useHistoryResult('${item.result}')">${item.expression} = ${item.result}</div>`
+            ).join('');
         }
 
-        async function loadHistory() {
-            const participantId = getParticipantId();
-            if (!participantId) return;
-
-            try {
-                const response = await fetch(`/api/zad/load?app_id=toybox-calculator&action_type=calculation_history`);
-                const allData = await response.json();
-                
-                const userData = allData.filter(d => d.participant_id === participantId);
-                
-                if (userData.length > 0) {
-                    // Get the most recent history
-                    const latestData = userData.sort((a, b) => 
-                        new Date(b.updatedAt || b.created_at) - new Date(a.updatedAt || a.created_at)
-                    )[0];
-                    
-                    history = latestData.history || latestData.content_data?.history || [];
-                    updateHistoryDisplay();
-                }
-            } catch (error) {
-                console.error('Error loading history:', error);
-            }
+        function addToHistory(expression, result) {
+            const historyItem = { expression, result };
+            history.push(historyItem);
+            localStorage.setItem('calculator-history', JSON.stringify(history));
+            updateHistory();
         }
 
-        function showSaveIndicator() {
-            const indicator = document.getElementById('saveIndicator');
-            indicator.classList.add('show');
-            setTimeout(() => {
-                indicator.classList.remove('show');
-            }, 2000);
+        function clearHistory() {
+            history = [];
+            localStorage.removeItem('calculator-history');
+            updateHistory();
         }
 
-        function inputNumber(num) {
-            if (justCalculated) {
-                currentInput = num;
-                justCalculated = false;
+        function useHistoryResult(result) {
+            currentInput = result;
+            previousInput = '';
+            operator = '';
+            waitingForOperand = false;
+            updateDisplay();
+        }
+
+        function inputDigit(digit) {
+            if (waitingForOperand) {
+                currentInput = digit;
+                waitingForOperand = false;
             } else {
-                currentInput = currentInput === '0' ? num : currentInput + num;
+                currentInput = currentInput === '0' ? digit : currentInput + digit;
             }
             updateDisplay();
         }
 
-        function inputDecimal() {
-            if (justCalculated) {
+        function inputDot() {
+            if (waitingForOperand) {
                 currentInput = '0.';
-                justCalculated = false;
-            } else if (!currentInput.includes('.')) {
+                waitingForOperand = false;
+            } else if (currentInput.indexOf('.') === -1) {
                 currentInput += '.';
             }
             updateDisplay();
         }
 
-        function inputOperator(op) {
-            if (operator && !justCalculated) {
-                calculate();
+        function inputOperator(nextOperator) {
+            const inputValue = parseFloat(currentInput);
+
+            if (previousInput === '') {
+                previousInput = inputValue;
+            } else if (operator) {
+                const currentValue = previousInput || 0;
+                const newValue = performCalculation(currentValue, inputValue, operator);
+
+                if (newValue === null) return;
+
+                currentInput = String(newValue);
+                previousInput = newValue;
             }
-            operator = op;
-            previousInput = currentInput;
-            currentInput = '0';
-            justCalculated = false;
+
+            waitingForOperand = true;
+            operator = nextOperator;
             updateDisplay();
         }
 
-        function calculate() {
-            if (operator && previousInput !== null) {
-                const prev = parseFloat(previousInput);
-                const current = parseFloat(currentInput);
-                let result;
-
-                switch (operator) {
-                    case '+':
-                        result = prev + current;
-                        break;
-                    case '-':
-                        result = prev - current;
-                        break;
-                    case '*':
-                        result = prev * current;
-                        break;
-                    case '/':
-                        result = current !== 0 ? prev / current : 'Error';
-                        break;
-                    default:
-                        return;
-                }
-
-                const expression = `${previousInput} ${operator} ${currentInput}`;
-                
-                if (result !== 'Error') {
-                    // Add to history
-                    history.unshift({
-                        expression: expression,
-                        result: result.toString(),
-                        timestamp: new Date().toISOString()
-                    });
-                    
-                    // Keep only last 20 calculations
-                    if (history.length > 20) {
-                        history = history.slice(0, 20);
+        function performCalculation(firstOperand, secondOperand, operator) {
+            let result;
+            
+            switch (operator) {
+                case '+':
+                    result = firstOperand + secondOperand;
+                    break;
+                case '-':
+                    result = firstOperand - secondOperand;
+                    break;
+                case '*':
+                    result = firstOperand * secondOperand;
+                    break;
+                case '/':
+                    if (secondOperand === 0) {
+                        alert('Cannot divide by zero!');
+                        return null;
                     }
-                    
-                    updateHistoryDisplay();
-                    saveHistory();
-                }
+                    result = firstOperand / secondOperand;
+                    break;
+                default:
+                    return;
+            }
 
-                currentInput = result.toString();
-                operator = null;
-                previousInput = null;
-                justCalculated = true;
+            // Round to avoid floating point precision issues
+            return Math.round(result * 100000000) / 100000000;
+        }
+
+        function calculate() {
+            const inputValue = parseFloat(currentInput);
+
+            if (previousInput !== '' && operator) {
+                const newValue = performCalculation(previousInput, inputValue, operator);
+                
+                if (newValue === null) return;
+
+                // Create expression for history
+                const operatorSymbol = {
+                    '+': '+',
+                    '-': '−',
+                    '*': '×',
+                    '/': '÷'
+                }[operator] || operator;
+                
+                const expressionText = `${previousInput} ${operatorSymbol} ${inputValue}`;
+                addToHistory(expressionText, String(newValue));
+
+                currentInput = String(newValue);
+                previousInput = '';
+                operator = '';
+                waitingForOperand = true;
                 updateDisplay();
             }
         }
 
         function clearAll() {
             currentInput = '0';
-            operator = null;
-            previousInput = null;
-            justCalculated = false;
+            previousInput = '';
+            operator = '';
+            waitingForOperand = false;
             updateDisplay();
         }
 
@@ -558,77 +472,39 @@
             updateDisplay();
         }
 
-        function clearHistory() {
-            history = [];
-            updateHistoryDisplay();
-            saveHistory();
-        }
-
-        function updateDisplay() {
-            document.getElementById('result').textContent = currentInput;
-            
-            let operation = '';
-            if (previousInput && operator) {
-                operation = `${previousInput} ${operator}`;
+        function deleteDigit() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
             }
-            document.getElementById('currentOperation').textContent = operation;
-        }
-
-        function updateHistoryDisplay() {
-            const historyList = document.getElementById('historyList');
-            
-            if (history.length === 0) {
-                historyList.innerHTML = '<div style="text-align: center; color: #a0aec0; padding: 20px;">No calculations yet</div>';
-                return;
-            }
-
-            historyList.innerHTML = history.map(item => `
-                <div class="history-item" onclick="recallCalculation('${item.result}')">
-                    <span class="history-expression">${item.expression}</span>
-                    <span class="history-result">${item.result}</span>
-                </div>
-            `).join('');
-        }
-
-        function recallCalculation(result) {
-            currentInput = result;
-            justCalculated = true;
             updateDisplay();
         }
 
-        // Initialize
-        loadAuthFromStorage();
-        updateAuthStatus();
-        updateDisplay();
-
-        // Request auth from parent
-        if (window.parent && window.parent !== window) {
-            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
-        }
-
         // Keyboard support
-        document.addEventListener('keydown', (e) => {
-            const key = e.key;
+        document.addEventListener('keydown', function(event) {
+            const key = event.key;
             
             if (key >= '0' && key <= '9') {
-                inputNumber(key);
+                inputDigit(key);
             } else if (key === '.') {
-                inputDecimal();
-            } else if (['+', '-', '*', '/'].includes(key)) {
+                inputDot();
+            } else if (key === '+' || key === '-' || key === '*' || key === '/') {
                 inputOperator(key);
             } else if (key === 'Enter' || key === '=') {
+                event.preventDefault();
                 calculate();
-            } else if (key === 'Escape' || key === 'c' || key === 'C') {
+            } else if (key === 'Escape') {
                 clearAll();
             } else if (key === 'Backspace') {
-                if (currentInput.length > 1) {
-                    currentInput = currentInput.slice(0, -1);
-                } else {
-                    currentInput = '0';
-                }
-                updateDisplay();
+                event.preventDefault();
+                deleteDigit();
             }
         });
+
+        // Initialize
+        updateDisplay();
+        updateHistory();
     </script>
 </body>
 </html>
