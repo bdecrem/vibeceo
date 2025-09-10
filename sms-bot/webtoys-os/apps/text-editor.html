@@ -373,6 +373,9 @@
     <div class="toast" id="toast"></div>
 
     <script>
+        // App configuration (align with Rhymes app pattern)
+        window.APP_ID = 'toybox-text-editor';
+
         // Global auth state
         let currentUser = null;
         let currentDocumentId = null;
@@ -389,6 +392,20 @@
         const documentsList = document.getElementById('documentsList');
         const closePanelBtn = document.getElementById('closePanelBtn');
         const toast = document.getElementById('toast');
+
+        // Helper functions (mirror Rhymes app)
+        function getAppId() {
+            return window.APP_ID || 'toybox-text-editor';
+        }
+
+        function getUsername() {
+            return currentUser?.handle?.toUpperCase() || 'anonymous';
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return null;
+            return currentUser.participantId || `${getUsername()}_${currentUser.pin || '0000'}`;
+        }
 
         // Load auth from localStorage (immediate)
         function loadAuthFromStorage() {
@@ -462,7 +479,7 @@
             return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
         }
 
-        // Save document
+        // Save document (send participant_data and timestamp like Rhymes)
         async function saveDocument() {
             if (!currentUser) {
                 showToast('Please log in first', 'error');
@@ -477,7 +494,8 @@
                 return;
             }
 
-            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const participantId = getParticipantId();
+            const username = getUsername();
             const docId = currentDocumentId || generateDocId();
 
             try {
@@ -485,15 +503,17 @@
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        app_id: 'toybox-text-editor',
+                        app_id: getAppId(),
                         participant_id: participantId,
+                        participant_data: { userLabel: username, username: username },
                         action_type: 'document',
                         content_data: {
                             id: docId,
                             title: title,
                             content: content,
-                            author: currentUser.handle.toUpperCase(),
-                            updatedAt: new Date().toISOString()
+                            author: username,
+                            updatedAt: new Date().toISOString(),
+                            timestamp: Date.now()
                         }
                     })
                 });
@@ -512,11 +532,10 @@
             }
         }
 
-        // Load user documents
-        // COPIED FROM WORKING RHYMES APP - EXACT SAME PATTERN
+        // Load via ZAD (flatten like Rhymes app)
         async function load(dataType) {
             try {
-                const app_id = 'toybox-text-editor';
+                const app_id = getAppId();
                 console.log('🔄 Loading from ZAD API:', { app_id, dataType });
                 
                 const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(dataType)}`;
@@ -530,17 +549,21 @@
                 
                 const data = await response.json();
                 console.log('✅ ZAD API Response:', data);
-                return data || [];
+                // Flatten to match Rhymes consumer expectations
+                return (data || []).map(item => ({
+                    id: item.content_data?.id || item.id,
+                    title: item.content_data?.title,
+                    content: item.content_data?.content,
+                    author: item.content_data?.author || item.participant_data?.username || item.participant_data?.userLabel || 'Unknown',
+                    updatedAt: item.content_data?.updatedAt || item.created_at,
+                    created_at: item.created_at,
+                    participant_id: item.participant_id
+                }));
             } catch (error) {
                 console.error('❌ Load failed:', error);
                 showToast('Failed to load data', 'error');
                 return [];
             }
-        }
-
-        function getParticipantId() {
-            if (!currentUser) return null;
-            return currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
         }
 
         async function loadUserDocuments() {
