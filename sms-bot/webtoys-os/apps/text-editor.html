@@ -513,48 +513,76 @@
         }
 
         // Load user documents
+        // COPIED FROM WORKING RHYMES APP - EXACT SAME PATTERN
+        async function load(dataType) {
+            try {
+                const app_id = 'toybox-text-editor';
+                console.log('🔄 Loading from ZAD API:', { app_id, dataType });
+                
+                const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(dataType)}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('❌ ZAD API Error:', errorData);
+                    throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ ZAD API Response:', data);
+                return data || [];
+            } catch (error) {
+                console.error('❌ Load failed:', error);
+                showToast('Failed to load data', 'error');
+                return [];
+            }
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return null;
+            return currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
         async function loadUserDocuments() {
             if (!currentUser) return [];
 
-            try {
-                const response = await fetch(`/api/zad/load?app_id=toybox-text-editor&action_type=document`);
-                const allDocs = await response.json();
-
-                const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
-                
-                // Filter for current user's documents
-                const userDocs = allDocs.filter(doc => 
-                    doc.participant_id === participantId
-                );
-
-                // CRITICAL: ZAD API flattens data - access properties directly
-                const uniqueDocs = {};
-                userDocs.forEach(doc => {
-                    // ZAD flattens content_data properties to root level
-                    const docId = doc.id;
-                    const docTime = doc.updatedAt || doc.created_at;
-                    
-                    if (!uniqueDocs[docId] || 
-                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
-                        uniqueDocs[docId] = {
-                            id: docId,
-                            title: doc.title || 'Untitled',
-                            content: doc.content || '',
-                            author: doc.author,
-                            updatedAt: docTime,
-                            participant_id: doc.participant_id
-                        };
-                    }
-                });
-
-                return Object.values(uniqueDocs)
-                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
-                
-            } catch (error) {
-                console.error('Failed to load documents:', error);
-                showToast('Failed to load documents', 'error');
+            const allDocs = await load('document');
+            console.log('Loaded docs:', allDocs);
+            
+            const participantId = getParticipantId();
+            console.log('Looking for docs by participant:', participantId);
+            
+            // Filter documents by current user's participant_id
+            const userDocs = allDocs.filter(doc => {
+                console.log('Doc participant_id:', doc.participant_id, 'Current:', participantId);
+                return doc.participant_id === participantId;
+            });
+            
+            console.log('Found user docs:', userDocs.length);
+            
+            if (userDocs.length === 0) {
                 return [];
             }
+
+            // Deduplicate by document ID - ZAD is append-only so we need latest version by timestamp
+            const uniqueDocs = {};
+            userDocs.forEach(doc => {
+                const docId = doc.id;
+                // Use timestamp for deduplication (ZAD might have multiple versions)
+                const docTimestamp = doc.updatedAt ? new Date(doc.updatedAt).getTime() : 0;
+                
+                if (!uniqueDocs[docId] || 
+                    (uniqueDocs[docId].timestamp < docTimestamp)) {
+                    uniqueDocs[docId] = { ...doc, timestamp: docTimestamp };
+                }
+            });
+            
+            // Sort by date and return
+            const sortedDocs = Object.values(uniqueDocs)
+                .filter(doc => doc.title && doc.id) // Ensure we have required fields
+                .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+            
+            return sortedDocs;
         }
 
         // Display documents in panel
@@ -585,18 +613,39 @@
             documentsPanel.style.display = 'flex';
         }
 
-        // Open document
+        // COPIED FROM WORKING RHYMES APP - Load document by ID
         async function openDocument(docId) {
-            const docs = await loadUserDocuments();
-            const doc = docs.find(d => d.id === docId);
+            const allDocs = await load('document');
+            const participantId = getParticipantId();
+            
+            console.log('Loading document:', docId, 'for participant:', participantId);
+            
+            // Filter for user's docs
+            const userDocs = allDocs.filter(d => d.participant_id === participantId);
+            
+            // Get all versions of this document and pick the latest by timestamp
+            const docVersions = userDocs.filter(d => d.id === docId);
+            
+            if (docVersions.length === 0) {
+                showToast('Document not found', 'error');
+                return;
+            }
+            
+            // Sort by updatedAt timestamp to get latest version (ZAD is append-only)
+            const doc = docVersions.sort((a, b) => {
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return dateB - dateA;
+            })[0];
             
             if (doc) {
-                filenameInput.value = doc.title;
-                editor.value = doc.content;
-                currentDocumentId = docId;
+                currentDocumentId = doc.id;
+                filenameInput.value = doc.title || 'Untitled Document';
+                editor.value = doc.content || '';
                 hasUnsavedChanges = false;
                 documentsPanel.style.display = 'none';
                 showToast(`📖 Opened "${doc.title}"`);
+                console.log('Document loaded successfully:', doc.title);
             }
         }
 
