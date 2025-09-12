@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Countdown Timer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .timer-container {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 40px;
+            text-align: center;
+            width: 450px;
+            max-width: 90vw;
+        }
+
+        h1 {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 2.2em;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.95);
+            margin-bottom: 30px;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .time-input {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+        }
+
+        .time-input input {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 12px 16px;
+            width: 80px;
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            font-weight: 500;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .time-input input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .time-input input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .time-label {
+            font-size: 0.9em;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 8px;
+        }
+
+        .display-time {
+            font-family: 'Comfortaa', monospace;
+            font-size: 4em;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+            margin: 40px 0;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            letter-spacing: 0.05em;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .display-time.warning {
+            color: #ff6b6b;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 14px 28px;
+            color: white;
+            font-size: 1em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            min-width: 100px;
+        }
+
+        button:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.2));
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .start-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+        }
+
+        .start-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5CBF60, #4CAF50);
+        }
+
+        .stop-btn {
+            background: linear-gradient(135deg, #f44336, #d32f2f);
+        }
+
+        .stop-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #f66356, #f44336);
+        }
+
+        .reset-btn {
+            background: linear-gradient(135deg, #ff9800, #f57c00);
+        }
+
+        .reset-btn:hover:not(:disabled) {
+            background: linear-gradient(135deg, #ffa726, #ff9800);
+        }
+
+        .sound-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        .sound-toggle input[type="checkbox"] {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .sound-toggle input[type="checkbox"]:checked {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border-color: #4CAF50;
+        }
+
+        .sound-toggle input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .progress-ring {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 20px auto;
+        }
+
+        .progress-ring svg {
+            transform: rotate(-90deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .progress-ring-circle {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.2);
+            stroke-width: 8;
+        }
+
+        .progress-ring-progress {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.8);
+            stroke-width: 8;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 0.5s ease-in-out;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.3));
+        }
+
+        .progress-ring-progress.warning {
+            stroke: #ff6b6b;
+            filter: drop-shadow(0 0 8px rgba(255, 107, 107, 0.5));
+        }
+
+        .time-display-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: 'Comfortaa', monospace;
+            font-size: 2.5em;
+            font-weight: 700;
+            color: rgba(255, 255, 255, 0.95);
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        @media (max-width: 480px) {
+            .timer-container {
+                padding: 30px 20px;
+                width: 100%;
+                margin: 0 10px;
+            }
+
+            h1 {
+                font-size: 1.8em;
+                margin-bottom: 25px;
+            }
+
+            .display-time {
+                font-size: 3em;
+                margin: 30px 0;
+            }
+
+            .controls {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            button {
+                padding: 12px 20px;
+                min-width: 80px;
+                font-size: 0.9em;
+            }
+
+            .progress-ring {
+                width: 250px;
+                height: 250px;
+            }
+
+            .time-display-overlay {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="timer-container">
+        <h1>⏱️ Countdown Timer</h1>
+        
+        <div class="time-input">
+            <div>
+                <input type="number" id="minutes" placeholder="5" min="0" max="99">
+                <div class="time-label">min</div>
+            </div>
+            <div>
+                <input type="number" id="seconds" placeholder="00" min="0" max="59">
+                <div class="time-label">sec</div>
+            </div>
+        </div>
+
+        <div class="progress-ring">
+            <svg>
+                <circle 
+                    class="progress-ring-circle" 
+                    cx="150" 
+                    cy="150" 
+                    r="140">
+                </circle>
+                <circle 
+                    class="progress-ring-progress" 
+                    cx="150" 
+                    cy="150" 
+                    r="140"
+                    id="progressCircle">
+                </circle>
+            </svg>
+            <div class="time-display-overlay" id="timeDisplay">05:00</div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" class="start-btn">▶️ Start</button>
+            <button id="stopBtn" class="stop-btn" disabled>⏸️ Stop</button>
+            <button id="resetBtn" class="reset-btn">🔄 Reset</button>
+        </div>
+
+        <div class="sound-toggle">
+            <input type="checkbox" id="soundToggle" checked>
+            <label for="soundToggle">🔊 Sound alerts</label>
+        </div>
+    </div>
+
+    <script>
+        let timerInterval;
+        let totalSeconds = 0;
+        let remainingSeconds = 0;
+        let isRunning = false;
+
+        const minutesInput = document.getElementById('minutes');
+        const secondsInput = document.getElementById('seconds');
+        const timeDisplay = document.getElementById('timeDisplay');
+        const startBtn = document.getElementById('startBtn');
+        const stopBtn = document.getElementById('stopBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const progressCircle = document.getElementById('progressCircle');
+
+        // Set up progress circle
+        const radius = 140;
+        const circumference = 2 * Math.PI * radius;
+        progressCircle.style.strokeDasharray = circumference;
+        progressCircle.style.strokeDashoffset = circumference;
+
+        // Initialize with default values
+        minutesInput.value = 5;
+        secondsInput.value = 0;
+        updateDisplay();
+
+        function updateDisplay() {
+            const mins = Math.floor(remainingSeconds / 60);
+            const secs = remainingSeconds % 60;
+            const displayText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            timeDisplay.textContent = displayText;
+
+            // Update progress ring
+            if (totalSeconds > 0) {
+                const progress = (totalSeconds - remainingSeconds) / totalSeconds;
+                const offset = circumference - (progress * circumference);
+                progressCircle.style.strokeDashoffset = offset;
+            }
+
+            // Add warning class for last 10 seconds
+            if (remainingSeconds <= 10 && remainingSeconds > 0) {
+                timeDisplay.classList.add('warning');
+                progressCircle.classList.add('warning');
+            } else {
+                timeDisplay.classList.remove('warning');
+                progressCircle.classList.remove('warning');
+            }
+        }
+
+        function playBeep() {
+            if (!soundToggle.checked) return;
+            
+            // Create audio context for beep sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio not supported');
+            }
+        }
+
+        function startTimer() {
+            if (remainingSeconds <= 0) {
+                const minutes = parseInt(minutesInput.value) || 0;
+                const seconds = parseInt(secondsInput.value) || 0;
+                totalSeconds = minutes * 60 + seconds;
+                remainingSeconds = totalSeconds;
+            }
+
+            if (remainingSeconds <= 0) return;
+
+            isRunning = true;
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+            minutesInput.disabled = true;
+            secondsInput.disabled = true;
+
+            timerInterval = setInterval(() => {
+                remainingSeconds--;
+                updateDisplay();
+
+                if (remainingSeconds <= 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    startBtn.disabled = false;
+                    stopBtn.disabled = true;
+                    minutesInput.disabled = false;
+                    secondsInput.disabled = false;
+                    
+                    // Play completion sound
+                    playBeep();
+                    setTimeout(() => playBeep(), 200);
+                    setTimeout(() => playBeep(), 400);
+                    
+                    // Flash the display
+                    timeDisplay.style.animation = 'pulse 0.5s ease-in-out 3';
+                    setTimeout(() => {
+                        timeDisplay.style.animation = '';
+                    }, 1500);
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            minutesInput.disabled = false;
+            secondsInput.disabled = false;
+        }
+
+        function resetTimer() {
+            clearInterval(timerInterval);
+            isRunning = false;
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+            minutesInput.disabled = false;
+            secondsInput.disabled = false;
+            
+            totalSeconds = 0;
+            remainingSeconds = 0;
+            progressCircle.style.strokeDashoffset = circumference;
+            
+            const minutes = parseInt(minutesInput.value) || 0;
+            const seconds = parseInt(secondsInput.value) || 0;
+            remainingSeconds = minutes * 60 + seconds;
+            totalSeconds = remainingSeconds;
+            
+            updateDisplay();
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        stopBtn.addEventListener('click', stopTimer);
+        resetBtn.addEventListener('click', resetTimer);
+
+        minutesInput.addEventListener('input', () => {
+            if (!isRunning) {
+                resetTimer();
+            }
+        });
+
+        secondsInput.addEventListener('input', () => {
+            if (!isRunning) {
+                resetTimer();
+            }
+        });
+
+        // Auto-set seconds to 0-59 range
+        secondsInput.addEventListener('blur', () => {
+            let value = parseInt(secondsInput.value);
+            if (isNaN(value)) {
+                secondsInput.value = 0;
+            } else if (value >= 60) {
+                const extraMinutes = Math.floor(value / 60);
+                secondsInput.value = value % 60;
+                minutesInput.value = (parseInt(minutesInput.value) || 0) + extraMinutes;
+            }
+            if (!isRunning) resetTimer();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (isRunning) {
+                    stopTimer();
+                } else {
+                    startTimer();
+                }
+            } else if (e.code === 'Escape') {
+                resetTimer();
+            }
+        });
+
+        // Initialize display
+        resetTimer();
+    </script>
+</body>
+</html>
