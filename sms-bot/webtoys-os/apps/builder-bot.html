@@ -30,12 +30,6 @@
       width: 380px;
       height: 480px;
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border-radius: 16px 16px 0 0;
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-bottom: none;
-      box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
       display: flex;
       flex-direction: column;
       z-index: 1000;
@@ -47,8 +41,6 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
     }
     
     .bot-info {
@@ -337,7 +329,6 @@
       padding: 16px 20px;
       border-top: 1px solid rgba(0, 0, 0, 0.1);
       background: rgba(255, 255, 255, 0.5);
-      backdrop-filter: blur(10px);
     }
     
     .chat-input {
@@ -413,6 +404,66 @@
       opacity: 1;
     }
   </style>
+
+  <!-- WebtoysOS Widget Theme: visual parity with desktop -->
+  <style>
+    :root{
+      --wos-bg:#ffffff; 
+      --wos-border:#e7e7ea; 
+      --wos-highlight:rgba(255,255,255,0.5);
+      --wos-shadow:0 10px 24px rgba(0,0,0,.10);
+      --wos-title:#f6f7fb; 
+      --wos-title-border:#dcdde2; 
+      --wos-pill:#e9f7ee; 
+      --wos-pill-text:#0b7a55;
+      --wos-radius:12px; 
+      --wos-font: Inter, -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+      --wos-primary:#6a6ee7; 
+      --wos-primary-2:#7e5ab6; 
+      --wos-btn-border:#5c5fca;
+    }
+
+    /* container */
+    .chat-widget{
+      background:var(--wos-bg)!important;
+      border:1px solid var(--wos-border)!important;
+      border-radius:var(--wos-radius)!important;
+      box-shadow:var(--wos-shadow)!important;
+      backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+      font-family:var(--wos-font)!important;
+    }
+    /* header (toy flair) */
+    .widget-header{
+      background:linear-gradient(180deg,#fff7fb 0%, #f6f7fb 100%)!important;
+      border-bottom:1px solid var(--wos-title-border)!important;
+      padding:12px 14px!important;
+    }
+    .bot-details h3{ font-weight:600; letter-spacing:0; }
+    .status-badge{ background:var(--wos-pill)!important; color:var(--wos-pill-text)!important; }
+
+    /* body surfaces */
+    .auth-info{ background:#fafbff!important; border-bottom:1px solid #ececf2!important; }
+    .control-buttons{ background:#fff; }
+    .messages-container{ background:#fff; }
+    .chat-input-container{ background:#fafbff!important; border-top:1px solid #ececf2!important; }
+
+    /* primary action (toy look) */
+    .primary-btn{
+      background:linear-gradient(180deg,#8fd8ff 0%, #6aa8ff 100%)!important;
+      border:1px solid #4b8fe8!important;
+      color:#0b2b66!important;
+      text-shadow:0 1px 0 rgba(255,255,255,0.6);
+      box-shadow:0 4px 0 rgba(0,0,0,.06), 0 10px 16px rgba(0,0,0,.08)!important;
+      border-radius:14px!important;
+    }
+
+    /* bubbles: tone down */
+    .message.user .message-bubble{ box-shadow:0 1px 3px rgba(102,126,234,0.18)!important; }
+    .message.bot .message-bubble{ background:#f7f8fc!important; border:1px solid #ececf2!important; }
+
+    /* stronger toy rounding + subtle outer glow */
+    .chat-widget{ border-radius:16px!important; box-shadow:0 12px 28px rgba(0,0,0,.14)!important; }
+  </style>
 </head>
 <body>
   <!-- Chat Widget -->
@@ -430,13 +481,16 @@
         </div>
       </div>
       <div class="widget-actions">
-        <button class="action-btn" id="settingsToggle" title="Settings">⚙️</button>
+        <button class="action-btn" id="settingsToggle" title="Settings" style="margin-right:6px;">⚙️</button>
+        <button class="action-btn" id="closeWidget" title="Minimize">✕</button>
       </div>
     </div>
 
     <!-- Settings Panel -->
     <div class="settings-panel" id="settingsPanel">
       <input class="settings-input" id="webhookUrl" placeholder="Enter webhook URL (e.g., https://abc123.ngrok.app)" />
+      <button class="primary-btn" id="testWebhook" style="margin-top: 8px; width: 100%; font-size: 12px; padding: 8px;">🔧 Test Connection</button>
+      <div id="connectionStatus" style="margin-top: 6px; font-size: 11px; color: #666;"></div>
     </div>
 
     <!-- User Auth Info -->
@@ -520,17 +574,39 @@
       if (!res.ok) throw new Error('save failed');
       return true;
     }
+    // Prefer webhook state endpoint for builder-bot to avoid site API differences
+    async function loadStateFromWebhook() {
+      try {
+        const base = getWebhookUrl();
+        if (!base) throw new Error('no webhook');
+        const res = await fetch(base.replace(/\/$/, '') + '/builderbot/state', { credentials: 'omit' });
+        if (!res.ok) throw new Error('load failed');
+        return await res.json();
+      } catch (e) {
+        console.warn('⚠️ webhook state unavailable, falling back to site API:', e?.message || e);
+        return null;
+      }
+    }
+
     async function zadLoad(dataType) {
-      const url = `/api/zad/load?app_id=${encodeURIComponent(getAppId())}&action_type=${encodeURIComponent(dataType)}`;
-      const res = await fetch(url);
+      // Special case: for builder-bot we prefer webhook state; fallback to site API
+      if (dataType === 'lock' || dataType === 'chat_message') {
+        const state = await loadStateFromWebhook();
+        if (state) {
+          if (dataType === 'lock') return state.lock ? [state.lock] : [];
+          return Array.isArray(state.messages) ? state.messages : [];
+        }
+      }
+      // Fallback (not expected to be used here)
+      const res = await fetch('/api/zad/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ app_id: getAppId(), action_type: 'query', content_data: { type: dataType, orderBy: 'created_at', limit: 100 } })
+      });
       if (!res.ok) throw new Error('load failed');
-      const data = await res.json();
-      return (data || []).map(item => ({
-        id: item.content_data?.id || item.id,
-        ...item.content_data,
-        created_at: item.created_at,
-        participant_id: item.participant_id
-      }));
+      const json = await res.json();
+      const rows = Array.isArray(json) ? json : (json?.data || []);
+      return rows.map(item => ({ id: item.content_data?.id || item.id, ...item.content_data, created_at: item.created_at, participant_id: item.participant_id }));
     }
 
     // UI refs
@@ -548,8 +624,11 @@
     const chatInput = document.getElementById('chatInput');
     const sendBtn = document.getElementById('sendBtn');
     const settingsToggle = document.getElementById('settingsToggle');
+    const closeWidget = document.getElementById('closeWidget');
     const settingsPanel = document.getElementById('settingsPanel');
     const webhookInput = document.getElementById('webhookUrl');
+    const testWebhookBtn = document.getElementById('testWebhook');
+    const connectionStatus = document.getElementById('connectionStatus');
     const toast = document.getElementById('toast');
 
     // Widget state - always expanded as dock-attached widget
@@ -570,6 +649,43 @@
       if (settingsPanel.classList.contains('visible')) {
         webhookInput.value = getWebhookUrl(); // Load current webhook URL
         webhookInput.focus();
+      }
+    }
+    
+    async function testWebhook() {
+      const url = webhookInput.value.trim();
+      if (!url) {
+        connectionStatus.textContent = '❌ Please enter a webhook URL first';
+        connectionStatus.style.color = '#dc2626';
+        return;
+      }
+      
+      connectionStatus.textContent = '🔄 Testing connection...';
+      connectionStatus.style.color = '#666';
+      testWebhookBtn.disabled = true;
+      
+      try {
+        // Test health endpoint
+        const response = await fetch(url + '/health', { 
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          connectionStatus.textContent = `✅ Connected! Server status: ${data.status}`;
+          connectionStatus.style.color = '#059669';
+          setWebhookUrl(url); // Auto-save working URL
+          showToast('✅ Webhook connection successful!', 3000);
+        } else {
+          connectionStatus.textContent = `❌ Server error: ${response.status}`;
+          connectionStatus.style.color = '#dc2626';
+        }
+      } catch (error) {
+        connectionStatus.textContent = `❌ Connection failed: ${error.message}`;
+        connectionStatus.style.color = '#dc2626';
+      } finally {
+        testWebhookBtn.disabled = false;
       }
     }
     
@@ -610,6 +726,12 @@
     
     // Event Listeners
     settingsToggle.onclick = toggleSettings;
+    testWebhookBtn.onclick = testWebhook;
+    if (closeWidget) {
+      closeWidget.onclick = () => {
+        try { window.parent.postMessage({ type: 'BUILDER_BOT_VISIBILITY', open: false }, '*'); } catch (e) {}
+      };
+    }
     
     // Auto-save webhook URL on input
     let webhookTimeout;
@@ -636,19 +758,21 @@
       }
     });
 
-    // Lock state
-    let lockState = { locked_by: null, locked_at: null, expires_at: null };
+    // Lock state + session
+    let lockState = { locked_by: null, locked_at: null, expires_at: null, session_id: null };
+    let currentSessionId = null;
 
     async function refreshLock() {
       try {
         const locks = await zadLoad('lock');
         if (locks.length > 0) {
           // latest by created_at
-          locks.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
           const last = locks[0];
-          lockState = { locked_by: last.locked_by || null, locked_at: last.locked_at || null, expires_at: last.expires_at || null };
+          lockState = { locked_by: last.locked_by || null, locked_at: last.locked_at || null, expires_at: last.expires_at || null, session_id: last.session_id || null };
+          // adopt currentSessionId from lock
+          currentSessionId = lockState.session_id || currentSessionId;
         } else {
-          lockState = { locked_by: null, locked_at: null, expires_at: null };
+          lockState = { locked_by: null, locked_at: null, expires_at: null, session_id: null };
         }
       } catch (e) { /* ignore */ }
     }
@@ -657,12 +781,8 @@
       try {
         const msgs = await zadLoad('chat_message');
         
-        // Filter out old test messages before Sept 10, 2025 6:30 PM UTC
-        const CLEANUP_TIMESTAMP = new Date('2025-09-10T18:30:00Z').getTime();
-        const filteredMsgs = msgs.filter(m => {
-          const msgTime = m.timestamp || new Date(m.created_at).getTime();
-          return msgTime >= CLEANUP_TIMESTAMP;
-        });
+        // Only show messages for the current session
+        const filteredMsgs = (currentSessionId ? msgs.filter(m => m.session_id === currentSessionId) : []);
         
         filteredMsgs.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
         messagesEl.innerHTML = '';
@@ -687,7 +807,7 @@
       
       const url = getWebhookUrl(); 
       if (!url) { 
-        alert('Set the webhook URL (⚙️). Use: https://ad463d4a606f.ngrok.app'); 
+        alert('Set the webhook URL (⚙️). Use: https://629f2ed5b4f2.ngrok.app'); 
         console.log('❌ No webhook URL configured');
         return; 
       }
@@ -720,7 +840,7 @@
         
         const result = await res.json();
         console.log('✅ Lock acquired:', result);
-        
+        currentSessionId = result?.lock?.session_id || null;
         await refreshLock();
         render();
       } catch (error) {
@@ -732,6 +852,11 @@
     async function releaseLock() {
       const url = getWebhookUrl(); if (!url) return;
       await fetch(url + '/builderbot/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'lock_release', user: { handle: getUsername(), participantId: getParticipantId() } }) });
+      // Hard reset UI state
+      lockState = { locked_by: null, locked_at: null, expires_at: null, session_id: null };
+      currentSessionId = null;
+      messagesEl.innerHTML = '';
+      // Re-add welcome message container remains above
       await refreshLock();
       render();
     }
@@ -753,7 +878,7 @@
       autoResizeTextarea();
       
       // Show typing indicator
-      addMessage('BUILDER_BOT', '⏳ Working on it...', true);
+      addMessage('BUILDER_BOT', '⏳ Building your app... This takes 2-3 minutes, please wait!', true);
       
       try {
         const payload = { 
