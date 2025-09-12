@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pink Paint 💖</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Inter:wght@400;500&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background: linear-gradient(135deg, #ff6ec7 0%, #ffb3d9 50%, #ffc0cb 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            width: 900px;
+            height: 650px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(255, 105, 180, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 8px;
+        }
+        
+        h1 {
+            font-family: 'Comfortaa', cursive;
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .control-label {
+            font-size: 12px;
+            color: #d1006c;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .brush-sizes {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .brush-size {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .brush-size:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 16px rgba(255, 20, 147, 0.4);
+        }
+        
+        .brush-size.active {
+            background: linear-gradient(135deg, #ff1493, #c71585);
+            box-shadow: 0 0 20px rgba(255, 20, 147, 0.6);
+        }
+        
+        .brush-dot {
+            background: white;
+            border-radius: 50%;
+        }
+        
+        .color-picker {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .color-picker:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 16px rgba(255, 20, 147, 0.4);
+        }
+        
+        input[type="color"] {
+            width: 100%;
+            height: 100%;
+            border: none;
+            cursor: pointer;
+            transform: scale(1.5);
+        }
+        
+        .canvas-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            box-shadow: inset 0 2px 8px rgba(255, 105, 180, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        canvas {
+            border-radius: 12px;
+            cursor: crosshair;
+            display: block;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            font-family: 'Comfortaa', cursive;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 16px rgba(255, 20, 147, 0.3);
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 20, 147, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffb3d9, #ff69b4);
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-family: 'Comfortaa', cursive;
+            font-weight: 600;
+            box-shadow: 0 8px 32px rgba(255, 20, 147, 0.4);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .sparkle {
+            position: absolute;
+            pointer-events: none;
+            animation: sparkle 1s ease-out forwards;
+        }
+        
+        @keyframes sparkle {
+            0% {
+                transform: scale(0) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 0;
+                align-items: stretch;
+            }
+            
+            .app-container {
+                width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+                padding: 16px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+            
+            .controls {
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1>💖 Pink Paint</h1>
+            <div class="controls">
+                <div class="control-group">
+                    <span class="control-label">Color</span>
+                    <div class="color-picker">
+                        <input type="color" id="colorPicker" value="#ff69b4">
+                    </div>
+                </div>
+                <div class="control-group">
+                    <span class="control-label">Brush Size</span>
+                    <div class="brush-sizes">
+                        <div class="brush-size" data-size="3">
+                            <div class="brush-dot" style="width: 6px; height: 6px;"></div>
+                        </div>
+                        <div class="brush-size active" data-size="8">
+                            <div class="brush-dot" style="width: 12px; height: 12px;"></div>
+                        </div>
+                        <div class="brush-size" data-size="15">
+                            <div class="brush-dot" style="width: 18px; height: 18px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="action-buttons">
+                    <button class="btn btn-secondary" onclick="clearCanvas()">✨ Clear</button>
+                    <button class="btn" onclick="saveDrawing()">💾 Save</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="paintCanvas"></canvas>
+        </div>
+    </div>
+    
+    <div id="toast" class="toast"></div>
+    
+    <script>
+        const canvas = document.getElementById('paintCanvas');
+        const ctx = canvas.getContext('2d');
+        const colorPicker = document.getElementById('colorPicker');
+        const brushSizes = document.querySelectorAll('.brush-size');
+        const toast = document.getElementById('toast');
+        
+        let isDrawing = false;
+        let currentColor = '#ff69b4';
+        let currentSize = 8;
+        let lastX = 0;
+        let lastY = 0;
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.querySelector('.canvas-container');
+            const rect = container.getBoundingClientRect();
+            canvas.width = rect.width - 40;
+            canvas.height = rect.height - 40;
+            
+            // Fill with white background
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Color picker
+        colorPicker.addEventListener('change', (e) => {
+            currentColor = e.target.value;
+            createSparkle(e.target);
+        });
+        
+        // Brush sizes
+        brushSizes.forEach(brush => {
+            brush.addEventListener('click', () => {
+                brushSizes.forEach(b => b.classList.remove('active'));
+                brush.classList.add('active');
+                currentSize = parseInt(brush.dataset.size);
+                createSparkle(brush);
+            });
+        });
+        
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            lastX = e.clientX - rect.left;
+            lastY = e.clientY - rect.top;
+            
+            // Draw a single point
+            ctx.beginPath();
+            ctx.arc(lastX, lastY, currentSize / 2, 0, Math.PI * 2);
+            ctx.fillStyle = currentColor;
+            ctx.fill();
+        }
+        
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const currentX = e.clientX - rect.left;
+            const currentY = e.clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(currentX, currentY);
+            ctx.strokeStyle = currentColor;
+            ctx.lineWidth = currentSize;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            ctx.stroke();
+            
+            lastX = currentX;
+            lastY = currentY;
+        }
+        
+        function stopDrawing() {
+            isDrawing = false;
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+        
+        // Touch events for mobile
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+        
+        // Clear canvas
+        function clearCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            showToast('✨ Canvas cleared!');
+        }
+        
+        // Save drawing
+        function saveDrawing() {
+            const link = document.createElement('a');
+            link.download = `pink-paint-${Date.now()}.png`;
+            link.href = canvas.toDataURL();
+            link.click();
+            showToast('💖 Drawing saved!');
+        }
+        
+        // Toast notification
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Sparkle effect
+        function createSparkle(element) {
+            const sparkle = document.createElement('div');
+            sparkle.className = 'sparkle';
+            sparkle.textContent = '✨';
+            sparkle.style.left = element.offsetLeft + element.offsetWidth / 2 + 'px';
+            sparkle.style.top = element.offsetTop + element.offsetHeight / 2 + 'px';
+            sparkle.style.fontSize = '24px';
+            document.body.appendChild(sparkle);
+            
+            setTimeout(() => sparkle.remove(), 1000);
+        }
+        
+        // Initial sparkle
+        setTimeout(() => {
+            showToast('💖 Ready to paint in pink!');
+        }, 500);
+    </script>
+</body>
+</html>
