@@ -54,6 +54,7 @@
     "restart": "npm run clean:build && npm run build:all && npm run dev"
   },
   "devDependencies": {
+    "@railway/cli": "^4.8.0",
     "@types/node": "^20.11.0",
     "concurrently": "^8.2.2",
     "dotenv": "^16.5.0",

@@ -12,17 +12,31 @@ const POLL_INTERVAL = 3000; // Check every 3 seconds
 const INITIAL_DELAY = 5000; // Wait 5 seconds before first check
 
 /**
- * Generate a unique phone number for this request
+ * Generate a consistent phone number for a Poke user
  * Use a special format that identifies this as a Poke request
- * Format: +1POKE followed by timestamp - won't work for SMS but tracks requests
+ * Same user_id always gets the same phone number
  */
 function generatePhoneNumber(userId) {
-  // Use a special format that identifies this as a Poke/MCP request
-  // This won't be a valid phone for SMS, but we don't need SMS responses
-  const timestamp = Date.now().toString().slice(-7);
-  // Format: +1999POKE### where ### is based on timestamp
+  // Use a single Poke service account if no userId provided
+  if (!userId) {
+    return '+19990000001'; // Poke service account
+  }
+
+  // Create a consistent phone number based on userId hash
+  // This ensures the same Poke user always gets the same phone/account
+  let hash = 0;
+  for (let i = 0; i < userId.length; i++) {
+    const char = userId.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+
+  // Make it positive and 7 digits
+  const phoneDigits = Math.abs(hash).toString().padEnd(7, '0').slice(0, 7);
+
+  // Format: +1999####### where # is based on userId hash
   // 999 is not a valid US area code, so it won't conflict with real numbers
-  return `+1999${timestamp}`;
+  return `+1999${phoneDigits}`;
 }
 
 /**
@@ -44,6 +58,8 @@ async function sendToWebtoys(description, phoneNumber) {
     'X-User-Role': 'OPERATOR'  // Bypass credit checks for Poke users
   });
 
+  console.error(`[Webtoys Client] Sending SMS from phone: ${phoneNumber}`);
+
   const response = await fetch(`${WEBTOYS_API_URL}/dev/webhook`, {
     method: 'POST',
     headers: {
@@ -57,7 +73,13 @@ async function sendToWebtoys(description, phoneNumber) {
     throw new Error(`SMS bot error: ${response.status}`);
   }
 
-  return await response.json();
+  const result = await response.json();
+
+  // Extract the actual phone number used from the response if available
+  const actualPhone = result.senderPhone || phoneNumber;
+  console.error(`[Webtoys Client] SMS bot used phone: ${actualPhone}`);
+
+  return { ...result, actualPhone };
 }
 
 /**
@@ -116,6 +138,9 @@ export async function buildWebtoysApp(description, userId) {
     // Send request to SMS bot
     const initialResponse = await sendToWebtoys(description, phoneNumber);
 
+    // Use the actual phone number from the response for polling
+    const actualPhoneNumber = initialResponse.actualPhone || phoneNumber;
+
     // Check if it's a simple command that doesn't create an app
     const isAppCreation = description.toLowerCase().includes('wtaf') ||
                          description.toLowerCase().includes('meme') ||
@@ -145,9 +170,9 @@ export async function buildWebtoysApp(description, userId) {
     // Wait initial delay
     await new Promise(resolve => setTimeout(resolve, INITIAL_DELAY));
 
-    // Poll for the created app
-    console.error('[Webtoys Client] Polling for app creation...');
-    const appResult = await pollForApp(phoneNumber, startTime);
+    // Poll for the created app using the actual phone number
+    console.error(`[Webtoys Client] Polling for app creation with phone: ${actualPhoneNumber}`);
+    const appResult = await pollForApp(actualPhoneNumber, startTime);
 
     if (appResult.found) {
       console.error(`[Webtoys Client] App created successfully: ${appResult.appUrl}`);
