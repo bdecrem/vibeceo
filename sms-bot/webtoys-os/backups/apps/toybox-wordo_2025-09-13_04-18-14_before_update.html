@@ -400,31 +400,22 @@
                     console.log('Loading dictionary in background...');
                     // Fetch the dictionary from the toybox-dictionary app
                     const response = await fetch('/public/toybox-dictionary');
-                    
-                    if (!response.ok) {
-                        throw new Error(`Dictionary fetch failed: ${response.status}`);
-                    }
-                    
                     const html = await response.text();
-                    console.log('Dictionary HTML fetched, length:', html.length);
                     
                     // Extract the word array from the HTML
                     const match = html.match(/window\.WEBTOYS_DICTIONARY\s*=\s*(\[[\s\S]*?\])/);
                     if (match) {
-                        console.log('Dictionary pattern matched, parsing...');
                         const words = JSON.parse(match[1]);
                         this.dictionary = new Set(words.map(w => w.toUpperCase()));
                         this.dictionaryLoaded = true;
-                        console.log(`Dictionary loaded successfully: ${this.dictionary.size} words`);
+                        console.log(`Dictionary loaded: ${this.dictionary.size} words`);
                         // Update UI to show dictionary is ready
                         document.getElementById('dictionary-status').textContent = `Dictionary ready (${this.dictionary.size} words)`;
-                    } else {
-                        throw new Error('Dictionary pattern not found in HTML');
                     }
                 } catch (error) {
                     console.error('Dictionary load failed:', error);
-                    // Game continues with restricted validation - only common words accepted
-                    document.getElementById('dictionary-status').textContent = 'Dictionary failed - only common words accepted';
+                    // Game continues without dictionary validation
+                    document.getElementById('dictionary-status').textContent = 'Dictionary unavailable - accepting common words';
                 }
             }
 
@@ -442,24 +433,20 @@
                 const upperWord = word.toUpperCase();
                 
                 if (!this.dictionaryLoaded) {
-                    // Dictionary still loading - only accept known common words, REJECT everything else
+                    // Dictionary still loading - be permissive with common words
                     const commonWords = new Set(['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 
                                                 'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'DAY', 'GET',
                                                 'COW', 'LOW', 'ROW', 'BOW', 'HOW', 'NOW', 'WOW', 'SOW',
-                                                'CAT', 'DOG', 'HAT', 'BAT', 'RAT', 'MAT', 'SAT', 'FAT',
-                                                'RUN', 'SUN', 'FUN', 'GUN', 'CUT', 'BUT', 'PUT', 'HUT',
-                                                'SET', 'NET', 'BET', 'GET', 'LET', 'MET', 'PET', 'VET',
-                                                'NEW', 'SEW', 'FEW', 'DEW', 'OLD', 'COLD', 'GOLD', 'TOLD',
-                                                'HOT', 'POT', 'LOT', 'GOT', 'COT', 'DOT', 'ROT', 'NOT']);
+                                                'CAT', 'DOG', 'HAT', 'BAT', 'RAT', 'MAT', 'SAT', 'FAT']);
                     
                     if (commonWords.has(upperWord)) {
                         return { valid: true, reason: 'Valid word!' };
                     }
                     
-                    // REJECT unknown words while dictionary is loading - NO MORE BLIND ACCEPTANCE!
+                    // Accept with warning for uncommon words while loading
                     return { 
-                        valid: false,
-                        reason: 'Dictionary still loading - try common words like CAT, DOG, RUN'
+                        valid: true,
+                        reason: 'Accepted (dictionary loading...)'
                     };
                 }
                 
