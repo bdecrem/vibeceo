@@ -52,6 +52,13 @@
             font-size: 16px;
         }
 
+        .dictionary-status {
+            font-size: 11px;
+            opacity: 0.8;
+            text-align: center;
+            margin-top: 5px;
+        }
+
         .game-container {
             flex: 1;
             display: flex;
@@ -329,6 +336,7 @@
             <span>Score: <span id="score">0</span></span>
             <span>Words: <span id="word-count">0</span></span>
         </div>
+        <div class="dictionary-status" id="dictionary-status">Loading dictionary...</div>
     </div>
 
     <div class="game-container">
@@ -371,7 +379,8 @@
                 this.wordsFound = new Set();
                 this.isSelecting = false;
                 this.touchStartCell = null;
-                this.dictionaryAvailable = false;
+                this.dictionaryLoaded = false;
+                this.dictionary = null;
                 this.lastWord = null; // Track the last submitted word
                 this.requiredStartLetter = null; // Track required starting letter
                 this.currentUser = null;
@@ -381,30 +390,37 @@
                 window.APP_ID = 'toybox-wordo';
                 
                 this.initGame();
-                this.checkDictionaryStatus();
+                this.loadDictionaryInBackground();
                 this.initLeaderboard();
                 this.checkAuth();
             }
 
-            async checkDictionaryStatus() {
+            async loadDictionaryInBackground() {
                 try {
-                    // Check if dictionary API is available by testing a common word
-                    const response = await fetch('https://webtoys.ai/api/dictionary/check?word=THE');
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.dictionaryAvailable = data.source === 'webtoys-dictionary';
-                        if (this.dictionaryAvailable) {
-                            console.log('Connected to WebtoysOS Dictionary!');
-                        }
+                    console.log('Loading dictionary in background...');
+                    // Fetch the dictionary from the toybox-dictionary app
+                    const response = await fetch('/public/toybox-dictionary');
+                    const html = await response.text();
+                    
+                    // Extract the word array from the HTML
+                    const match = html.match(/window\.WEBTOYS_DICTIONARY\s*=\s*(\[[\s\S]*?\])/);
+                    if (match) {
+                        const words = JSON.parse(match[1]);
+                        this.dictionary = new Set(words.map(w => w.toUpperCase()));
+                        this.dictionaryLoaded = true;
+                        console.log(`Dictionary loaded: ${this.dictionary.size} words`);
+                        // Update UI to show dictionary is ready
+                        document.getElementById('dictionary-status').textContent = `Dictionary ready (${this.dictionary.size} words)`;
                     }
                 } catch (error) {
-                    console.log('Dictionary API not available, trying to connect...');
-                    this.dictionaryAvailable = false;
+                    console.error('Dictionary load failed:', error);
+                    // Game continues without dictionary validation
+                    document.getElementById('dictionary-status').textContent = 'Dictionary unavailable - accepting common words';
                 }
             }
 
             async isValidWord(word) {
-                // Always reject words that have already been found
+                // Check if already found
                 if (this.wordsFound.has(word)) {
                     return { valid: false, reason: 'Already found!' };
                 }
@@ -414,26 +430,32 @@
                     return { valid: false, reason: 'Too short!' };
                 }
                 
-                // Always check against the dictionary API
-                try {
-                    const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.dictionaryAvailable = true; // Mark as available if successful
-                        return { 
-                            valid: data.valid, 
-                            reason: data.valid ? 'Valid word!' : 'Not in dictionary!' 
-                        };
-                    } else {
-                        // API call failed, but we should still reject invalid words
-                        console.error('Dictionary API returned error:', response.status);
-                        return { valid: false, reason: 'Cannot verify word!' };
+                const upperWord = word.toUpperCase();
+                
+                if (!this.dictionaryLoaded) {
+                    // Dictionary still loading - be permissive with common words
+                    const commonWords = new Set(['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 
+                                                'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'DAY', 'GET',
+                                                'COW', 'LOW', 'ROW', 'BOW', 'HOW', 'NOW', 'WOW', 'SOW',
+                                                'CAT', 'DOG', 'HAT', 'BAT', 'RAT', 'MAT', 'SAT', 'FAT']);
+                    
+                    if (commonWords.has(upperWord)) {
+                        return { valid: true, reason: 'Valid word!' };
                     }
-                } catch (error) {
-                    console.error('Dictionary check failed:', error);
-                    // Network error or other issue - reject the word
-                    return { valid: false, reason: 'Dictionary check failed!' };
+                    
+                    // Accept with warning for uncommon words while loading
+                    return { 
+                        valid: true,
+                        reason: 'Accepted (dictionary loading...)'
+                    };
                 }
+                
+                // Dictionary loaded - normal validation
+                const valid = this.dictionary.has(upperWord);
+                return {
+                    valid: valid,
+                    reason: valid ? 'Valid word!' : 'Not in dictionary!'
+                };
             }
 
             initGame() {

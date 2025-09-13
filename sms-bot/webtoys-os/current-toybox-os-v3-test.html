@@ -1132,7 +1132,25 @@
             <div class="bg-changer-icon">🎨</div>
         </div>
         <div class="taskbar-apps" id="taskbar-apps"></div>
-        <div class="clock-widget" id="menu-time">--:--</div>
+        
+
+
+
+
+
+
+
+<!-- BUILDER BOT DOCK BUTTON START -->
+<div class="taskbar-app" id="builderBotDockBtn" title="Builder Bot" role="button" aria-pressed="true">🤖</div>
+<!-- BUILDER BOT DOCK BUTTON END -->
+
+
+
+
+
+
+
+<div class="clock-widget" id="menu-time">--:--</div>
     </div>
     
     <!-- Authentication Modal -->
@@ -2612,853 +2630,103 @@
     </script>
 
 
-<!-- BUILDER BOT DOCK-ATTACHED WIDGET START -->
-<div class="chat-widget" id="chatWidget">
-  <!-- Header -->
-  <div class="widget-header">
-    <div class="bot-info">
-      <div class="bot-avatar">🤖</div>
-      <div class="bot-details">
-        <div class="bot-name">Builder Bot</div>
-        <div class="bot-status">
-          <span class="status-badge" id="statusBadge">●</span>
-          <span class="status-text" id="statusText">Available</span>
-        </div>
-      </div>
-    </div>
-    <div class="widget-controls">
-      <button class="settings-toggle" id="settingsToggle">⚙️</button>
-    </div>
-  </div>
 
-  <!-- Settings Panel -->
-  <div class="settings-panel" id="settingsPanel">
-    <div class="settings-content">
-      <label>Webhook URL:</label>
-      <input type="url" id="webhookUrl" placeholder="https://ad463d4a606f.ngrok.app">
-      <div class="settings-info">Enter your ngrok URL (the /builderbot/webhook path will be added automatically)</div>
-    </div>
-  </div>
 
-  <!-- Messages Container -->
-  <div class="messages-container" id="messagesContainer">
-    <div class="welcome-message">
-      <div class="bot-message-wrapper">
-        <div class="message-avatar">🤖</div>
-        <div class="message-bubble bot-message">
-          <div class="message-content">Hi! I'm Builder Bot. I can help you create web apps. Just describe what you want to build!</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <!-- Input Area -->
-  <div class="input-area">
-    <div class="input-wrapper">
-      <textarea id="chatInput" placeholder="Describe the app you want to build..."></textarea>
-      <button id="sendBtn" class="send-btn">➤</button>
-    </div>
-  </div>
-</div>
 
-<!-- Toast Notification -->
-<div class="toast" id="toast">Webhook URL saved!</div>
 
+
+
+
+
+
+
+
+
+
+
+<!-- BUILDER BOT DOCK START -->
 <style>
-/* Builder Bot Dock Widget Styles */
-.chat-widget {
-  position: fixed;
-  bottom: 0;
-  right: 20px;
-  width: 380px;
-  height: 480px;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-radius: 16px 16px 0 0;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-bottom: none;
-  box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.1);
-  display: flex;
-  flex-direction: column;
-  z-index: 1000;
-}
-
-.widget-header {
-  padding: 16px 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 16px 16px 0 0;
-}
-
-.bot-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bot-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.bot-details {
-  display: flex;
-  flex-direction: column;
-}
-
-.bot-name {
-  font-weight: 600;
-  color: #1a1a1a;
-  font-size: 14px;
-}
-
-.bot-status {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: #666;
-}
-
-.status-badge {
-  color: #10b981;
-  font-size: 8px;
-}
-
-.settings-toggle {
-  background: none;
-  border: none;
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
-  transition: background 0.2s;
-}
-
-.settings-toggle:hover {
-  background: rgba(0, 0, 0, 0.05);
-}
-
-.settings-panel {
-  padding: 0 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s, padding 0.3s;
-}
-
-.settings-panel.visible {
-  max-height: 120px;
-  padding: 16px 20px;
-}
-
-.settings-content label {
-  font-size: 12px;
-  font-weight: 500;
-  color: #555;
-  display: block;
-  margin-bottom: 6px;
-}
-
-.settings-content input {
-  width: 100%;
-  padding: 8px 12px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 8px;
-  font-size: 12px;
-  background: rgba(255, 255, 255, 0.7);
-  transition: border-color 0.2s;
-}
-
-.settings-content input:focus {
-  outline: none;
-  border-color: #667eea;
-}
-
-.settings-info {
-  font-size: 11px;
-  color: #888;
-  margin-top: 4px;
-}
-
-.messages-container {
-  flex: 1;
-  padding: 16px 20px;
-  overflow-y: auto;
-  background: rgba(255, 255, 255, 0.02);
-}
-
-.messages-container::-webkit-scrollbar {
-  width: 4px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.15);
-  border-radius: 2px;
-}
-
-.bot-message-wrapper, .user-message-wrapper {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 12px;
-}
-
-.user-message-wrapper {
-  flex-direction: row-reverse;
-}
-
-.message-avatar {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-}
-
-.user-message-wrapper .message-avatar {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-}
-
-.message-bubble {
-  max-width: 75%;
-  padding: 10px 14px;
-  border-radius: 16px;
-  font-size: 13px;
-  line-height: 1.4;
-  animation: slideIn 0.3s ease;
-}
-
-.bot-message {
-  background: rgba(0, 0, 0, 0.05);
-  color: #333;
-  border-bottom-left-radius: 4px;
-}
-
-.user-message {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-bottom-right-radius: 4px;
-}
-
-.input-area {
-  padding: 16px 20px;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-}
-
-.input-wrapper {
-  display: flex;
-  align-items: flex-end;
-  gap: 8px;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(0, 0, 0, 0.15);
-  border-radius: 12px;
-  padding: 8px;
-  backdrop-filter: blur(10px);
-}
-
-.input-wrapper:focus-within {
-  border-color: #667eea;
-}
-
-#chatInput {
-  flex: 1;
-  border: none;
-  background: none;
-  resize: none;
-  font-size: 13px;
-  line-height: 1.4;
-  max-height: 80px;
-  min-height: 18px;
-  font-family: inherit;
-}
-
-#chatInput:focus {
-  outline: none;
-}
-
-#chatInput::placeholder {
-  color: #888;
-}
-
-#chatInput:disabled {
-  background: rgba(0, 0, 0, 0.05);
-  color: #666;
-  cursor: not-allowed;
-}
-
-#chatInput:disabled::placeholder {
-  color: #999;
-}
-
-.send-btn {
-  width: 28px;
-  height: 28px;
-  border: none;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border-radius: 50%;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-  flex-shrink: 0;
-  transition: transform 0.2s;
-}
-
-.send-btn:hover:not(:disabled) {
-  transform: scale(1.05);
-}
-
-.send-btn:active {
-  transform: scale(0.95);
-}
-
-.send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.toast {
-  position: fixed;
-  bottom: 500px;
-  right: 30px;
-  background: #10b981;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 12px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: all 0.3s;
-  z-index: 1001;
-}
-
-.toast.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
+  .builder-bot-dock { 
+    position: fixed; 
+    right: 20px; 
+    /* Lift above the dock clock bubble */
+    bottom: 64px; 
+    /* Match app meta (width=420,height=520) and allow internal 20px right offset */
+    width: 420px; 
+    height: 520px; 
+    z-index: 2147483000; 
+    pointer-events: none; /* allow clicks only inside iframe */
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .builder-bot-frame { 
+    width: 100%; 
+    height: 100%; 
+    border: 0; 
+    background: transparent; 
+    /* No extra chrome here; the app renders its own rounded widget */
+    pointer-events: all; /* restore interactions inside */
   }
-}
-
-/* Mobile responsiveness */
-@media (max-width: 480px) {
-  .chat-widget {
-    right: 10px;
-    width: calc(100vw - 20px);
-    max-width: 380px;
-  }
-}
 </style>
-
-<script>
-// Builder Bot Dock Widget JavaScript
-document.addEventListener('DOMContentLoaded', function() {
-  // DOM Elements
-  const chatWidget = document.getElementById('chatWidget');
-  const settingsPanel = document.getElementById('settingsPanel');
-  const settingsToggle = document.getElementById('settingsToggle');
-  const messagesContainer = document.getElementById('messagesContainer');
-  const chatInput = document.getElementById('chatInput');
-  const sendBtn = document.getElementById('sendBtn');
-  const statusBadge = document.getElementById('statusBadge');
-  const statusText = document.getElementById('statusText');
-  const webhookInput = document.getElementById('webhookUrl');
-  const toast = document.getElementById('toast');
-
-  // Settings
-  function getWebhookUrl() { return localStorage.getItem('builderbot_webhook_url') || ''; }
-  function setWebhookUrl(v) { localStorage.setItem('builderbot_webhook_url', v); }
-  
-  // Helper to get current user from localStorage
-  function getCurrentUser() {
-    const savedUser = localStorage.getItem('toybox_user');
-    if (savedUser) {
-      try {
-        return JSON.parse(savedUser);
-      } catch (e) {
-        console.error('Error parsing user from localStorage:', e);
-        return null;
-      }
-    }
-    return null;
-  }
-  
-  // Session management
-  let currentSession = null;
-  let isSpectator = false;
-  let sessionCheckInterval = null;
-
-  // Progress tracking
-  let progressInterval = null;
-  let progressStep = 0;
-  
-  const progressMessages = [
-    "🔍 Analyzing your request...",
-    "🧠 Planning the app structure...",
-    "⚙️ Setting up the framework...",
-    "🎨 Designing the interface...",
-    "💻 Writing the code...",
-    "🔧 Adding functionality...",
-    "✨ Polishing the design...",
-    "🚀 Almost ready...",
-    "🎯 Fine-tuning details...",
-    "📦 Preparing deployment...",
-    "🔍 Running final checks...",
-    "✅ Just a few more seconds..."
-  ];
-
-  function startProgressUpdates() {
-    progressStep = 0;
-    clearInterval(progressInterval);
-    
-    progressInterval = setInterval(() => {
-      // Don't add progress messages if in spectator mode (they'll come from session updates)
-      if (isSpectator) return;
-      
-      if (progressStep < progressMessages.length) {
-        addMessage(progressMessages[progressStep], false);
-        progressStep++;
-      } else {
-        // After all messages, start cycling through encouraging messages
-        const encouragingMessages = [
-          "Still working hard on your app...",
-          "Building something amazing...",
-          "Adding those special touches...",
-          "Quality takes time - almost done!",
-          "Crafting the perfect solution..."
-        ];
-        const randomMsg = encouragingMessages[Math.floor(Math.random() * encouragingMessages.length)];
-        addMessage(randomMsg, false);
-      }
-    }, 15000); // Every 15 seconds
-  }
-  
-  function stopProgressUpdates() {
-    clearInterval(progressInterval);
-    progressInterval = null;
-    clearInterval(completionCheckInterval);
-    completionCheckInterval = null;
-  }
-  
-  // Function to handle completion (can be called externally)
-  window.builderBotComplete = function(appUrl, success = true) {
-    stopProgressUpdates();
-    if (success && appUrl) {
-      addMessage(`✅ Your app is ready! Check it out: ${appUrl}`, false);
-      showToast('App created successfully!');
-    } else if (success) {
-      addMessage('✅ Your request has been completed! Check the Issue Tracker for details.', false);
-    } else {
-      addMessage('❌ There was an issue completing your request. Please try again.', false);
-    }
-    
-    // Reset status
-    statusBadge.style.color = '#10b981';
-    statusText.textContent = 'Available';
-    sendBtn.disabled = false;
-  };
-  
-  // Auto-detect completion by monitoring messages
-  let completionCheckInterval = null;
-  function startCompletionMonitoring() {
-    completionCheckInterval = setInterval(async () => {
-      try {
-        const response = await fetch('/api/zad/load?app_id=toybox-builder-bot&action_type=chat_message');
-        const messages = await response.json();
-        
-        // Look for recent bot messages that indicate completion
-        const recentMessages = messages
-          .filter(m => {
-            const msgTime = m.timestamp || new Date(m.created_at).getTime();
-            return msgTime > Date.now() - (2 * 60 * 1000); // Last 2 minutes
-          })
-          .filter(m => m.author === 'BUILDER_BOT' || m.participant_id === 'system');
-          
-        const completionMessage = recentMessages.find(m => {
-          const text = m.text || m.content_data?.text || '';
-          const appUrl = m.app_url || m.content_data?.app_url;
-          return appUrl || text.includes('✅') || text.includes('built your app') || text.includes('Check it out:');
-        });
-        
-        if (completionMessage) {
-          const appUrl = completionMessage.app_url || completionMessage.content_data?.app_url;
-          const text = completionMessage.text || completionMessage.content_data?.text || '';
-          
-          stopProgressUpdates();
-          clearInterval(completionCheckInterval);
-          
-          if (appUrl) {
-            addMessage(`✅ Your app is ready! Check it out: ${appUrl}`, false);
-            showToast('App created successfully!');
-          } else {
-            addMessage(text, false);
-            showToast('Build completed!');
+<div class="builder-bot-dock" id="builderBotDock">
+  <iframe 
+    class="builder-bot-frame" 
+    src="/api/wtaf/raw?user=public&slug=toybox-builder-bot&v=1757630210576" 
+    loading="lazy" 
+    referrerpolicy="no-referrer"
+    title="Builder Bot"
+  ></iframe>
+  <script>
+    // Toggle visibility via dock button; default open on first load
+    (function(){
+      function init() {
+        var dock = document.getElementById('builderBotDock');
+        var button = document.getElementById('builderBotDockBtn');
+        if (!dock) return;
+        var isOpen = true;
+        try { localStorage.setItem('builderbot_open', 'true'); } catch(e) {}
+        function render(){
+          dock.style.display = isOpen ? 'block' : 'none';
+          if (button){
+            button.classList.toggle('active', isOpen);
+            button.setAttribute('aria-pressed', isOpen ? 'true' : 'false');
           }
-          
-          // Reset status
-          statusBadge.style.color = '#10b981';
-          statusText.textContent = 'Available';
-          sendBtn.disabled = false;
         }
-      } catch (error) {
-        console.error('Error checking for completion:', error);
-      }
-    }, 10000); // Check every 10 seconds
-  }
-
-  // Session management functions
-  async function checkBuilderBotSession() {
-    try {
-      const response = await fetch('/api/zad/load?app_id=toybox-builder-bot&action_type=chat_message');
-      const messages = await response.json();
-      
-      // Get current user info
-      const currentUser = getCurrentUser();
-      const currentParticipantId = currentUser ? `${currentUser.handle.toUpperCase()}_${currentUser.pin}` : null;
-      
-      // Find the most recent session (last 10 minutes)
-      const recentCutoff = Date.now() - (10 * 60 * 1000);
-      const recentMessages = messages.filter(m => {
-        const msgTime = m.timestamp || new Date(m.created_at).getTime();
-        return msgTime > recentCutoff;
-      }).sort((a, b) => (a.timestamp || new Date(a.created_at).getTime()) - (b.timestamp || new Date(b.created_at).getTime()));
-      
-      if (recentMessages.length > 0) {
-        // There's an active session
-        const sessionOwner = recentMessages[0].participant_id;
-        const isOwner = sessionOwner === currentParticipantId;
-        
-        if (!isOwner && !isSpectator) {
-          // Switch to spectator mode
-          enterSpectatorMode(sessionOwner, recentMessages);
-        } else if (isOwner && isSpectator) {
-          // User regained control
-          exitSpectatorMode();
-        } else if (!isOwner && isSpectator) {
-          // Update spectator view with new messages
-          updateSpectatorView(recentMessages);
+        if (button){
+          button.addEventListener('click', function(){
+            isOpen = !isOpen;
+            localStorage.setItem('builderbot_open', isOpen ? 'true' : 'false');
+            render();
+          });
         }
-        
-        currentSession = sessionOwner;
-      } else if (isSpectator) {
-        // Session ended, exit spectator mode
-        exitSpectatorMode();
-      }
-    } catch (error) {
-      console.error('Error checking Builder Bot session:', error);
-    }
-  }
-  
-  function enterSpectatorMode(sessionOwner, messages) {
-    isSpectator = true;
-    
-    // Update header to show spectator mode
-    const botName = document.querySelector('.bot-name');
-    const ownerHandle = sessionOwner.split('_')[0];
-    botName.textContent = `Builder Bot (${ownerHandle} is building...)`;
-    
-    // Disable input
-    chatInput.disabled = true;
-    sendBtn.disabled = true;
-    chatInput.placeholder = `${ownerHandle} is currently using Builder Bot - watch the magic happen!`;
-    
-    // Update status
-    statusBadge.style.color = '#f59e0b';
-    statusText.textContent = 'In Use';
-    
-    // Show spectator indicator
-    showToast(`👀 Watching ${ownerHandle} build an app...`, 3000);
-    
-    // Load session messages
-    loadSessionMessages(messages);
-  }
-  
-  function exitSpectatorMode() {
-    isSpectator = false;
-    currentSession = null;
-    
-    // Reset header
-    const botName = document.querySelector('.bot-name');
-    botName.textContent = 'Builder Bot';
-    
-    // Re-enable input
-    chatInput.disabled = false;
-    sendBtn.disabled = false;
-    chatInput.placeholder = 'Describe the app you want to build...';
-    
-    // Reset status
-    statusBadge.style.color = '#10b981';
-    statusText.textContent = 'Available';
-    
-    showToast('Builder Bot is now available!', 2000);
-  }
-  
-  function updateSpectatorView(messages) {
-    // Clear current messages and reload
-    const welcomeMsg = messagesContainer.querySelector('.welcome-message');
-    messagesContainer.innerHTML = '';
-    if (welcomeMsg) messagesContainer.appendChild(welcomeMsg);
-    
-    loadSessionMessages(messages);
-  }
-  
-  function loadSessionMessages(messages) {
-    // Clear current chat (except welcome)
-    const currentMessages = messagesContainer.querySelectorAll('.bot-message-wrapper, .user-message-wrapper');
-    currentMessages.forEach(msg => msg.remove());
-    
-    // Add session messages
-    messages.forEach(msg => {
-      const isUser = msg.author !== 'BUILDER_BOT' && msg.author !== 'system';
-      const content = msg.text || msg.content_data?.text || '';
-      if (content) {
-        addMessage(content, isUser);
-      }
-    });
-  }
-  
-  // Initialize
-  webhookInput.value = getWebhookUrl();
-  
-  // Start session monitoring
-  checkBuilderBotSession();
-  sessionCheckInterval = setInterval(checkBuilderBotSession, 5000); // Check every 5 seconds
-
-  // Toast notification
-  function showToast(message, duration = 3000) {
-    toast.textContent = message;
-    toast.classList.add('visible');
-    setTimeout(() => toast.classList.remove('visible'), duration);
-  }
-
-  // Toggle settings
-  function toggleSettings() {
-    settingsPanel.classList.toggle('visible');
-    if (settingsPanel.classList.contains('visible')) {
-      webhookInput.focus();
-    }
-  }
-
-  // Auto-resize textarea
-  function autoResizeTextarea() {
-    chatInput.style.height = 'auto';
-    const newHeight = Math.min(chatInput.scrollHeight, 80);
-    chatInput.style.height = newHeight + 'px';
-  }
-
-  // Add message to chat
-  function addMessage(content, isUser = false) {
-    const messageWrapper = document.createElement('div');
-    messageWrapper.className = isUser ? 'user-message-wrapper' : 'bot-message-wrapper';
-    
-    const avatar = document.createElement('div');
-    avatar.className = 'message-avatar';
-    avatar.textContent = isUser ? '👤' : '🤖';
-    
-    const bubble = document.createElement('div');
-    bubble.className = `message-bubble ${isUser ? 'user-message' : 'bot-message'}`;
-    
-    const messageContent = document.createElement('div');
-    messageContent.className = 'message-content';
-    messageContent.textContent = content;
-    
-    bubble.appendChild(messageContent);
-    messageWrapper.appendChild(avatar);
-    messageWrapper.appendChild(bubble);
-    messagesContainer.appendChild(messageWrapper);
-    
-    // Scroll to bottom
-    messagesContainer.scrollTop = messagesContainer.scrollHeight;
-  }
-
-  // Send message with proper locking
-  async function sendMessage() {
-    const message = chatInput.value.trim();
-    if (!message) return;
-    
-    // Don't allow sending if in spectator mode
-    if (isSpectator) {
-      showToast('Cannot send - Builder Bot is currently in use!', 3000);
-      return;
-    }
-    
-    // Stop any existing progress updates
-    stopProgressUpdates();
-    
-    let webhookUrl = getWebhookUrl();
-    if (!webhookUrl) {
-      showToast('Please configure webhook URL in settings', 4000);
-      toggleSettings();
-      return;
-    }
-
-    // Auto-fix webhook URL if needed
-    if (webhookUrl && !webhookUrl.includes('/builderbot/webhook')) {
-      if (webhookUrl.endsWith('/')) {
-        webhookUrl = webhookUrl + 'builderbot/webhook';
-      } else {
-        webhookUrl = webhookUrl + '/builderbot/webhook';
-      }
-    }
-
-    // Get current user info for lock
-    const currentUser = getCurrentUser();
-    const userHandle = currentUser ? currentUser.handle.toUpperCase() : 'USER';
-    const userPin = currentUser ? currentUser.pin : '0000';
-    const participantId = `${userHandle}_${userPin}`;
-
-    // Add user message
-    addMessage(message, true);
-    chatInput.value = '';
-    autoResizeTextarea();
-    
-    // Set status to working
-    statusBadge.style.color = '#f59e0b';
-    statusText.textContent = 'Acquiring lock...';
-    sendBtn.disabled = true;
-
-    try {
-      // Step 1: Request lock
-      console.log('Requesting Builder Bot lock for:', participantId);
-      const lockResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'lock_request',
-          user: { handle: userHandle, participantId: participantId }
-        })
-      });
-
-      const lockResult = await lockResponse.json();
-      console.log('Lock response:', lockResult);
-
-      if (!lockResult.success) {
-        throw new Error(`Could not acquire lock: ${lockResult.message}`);
-      }
-
-      // Step 2: Send chat message
-      statusText.textContent = 'Sending request...';
-      console.log('Sending chat message to webhook:', webhookUrl);
-      const chatResponse = await fetch(webhookUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'chat_message',
-          user: { handle: userHandle, participantId: participantId },
-          text: message
-        })
-      });
-
-      const chatResult = await chatResponse.json();
-      console.log('Chat response:', chatResult);
-
-      if (chatResponse.ok && chatResult.success) {
-        addMessage('I\'m working on your request! This may take a few minutes...', false);
-        showToast('Request sent to Builder Bot!');
-        statusText.textContent = 'Building...';
-        
-        // Start progress updates to keep user engaged
-        startProgressUpdates();
-        // Start monitoring for completion
-        startCompletionMonitoring();
-        
-        // Don't release lock here - let it expire naturally or get released by completion
-      } else {
-        throw new Error(`Message failed: ${chatResult.message || 'Unknown error'}`);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      addMessage(`Sorry, there was an error: ${error.message}`, false);
-      showToast(`Error: ${error.message}`, 5000);
-      stopProgressUpdates();
-      
-      // Try to release lock on error
-      try {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            type: 'lock_release',
-            user: { handle: userHandle, participantId: participantId }
-          })
+        // Listen for visibility changes from the iframe (e.g., close button)
+        window.addEventListener('message', function(evt){
+          try {
+            var data = evt.data || {};
+            if (data && data.type === 'BUILDER_BOT_VISIBILITY') {
+              isOpen = !!data.open;
+              try { localStorage.setItem('builderbot_open', isOpen ? 'true' : 'false'); } catch(e) {}
+              render();
+            }
+          } catch (e) { /* ignore */ }
         });
-      } catch (releaseError) {
-        console.error('Error releasing lock:', releaseError);
+        render();
       }
-      
-      // Reset status
-      statusBadge.style.color = '#10b981';
-      statusText.textContent = 'Available';
-      sendBtn.disabled = false;
-    }
-  }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+      } else { init(); }
+    })();
+  </script>
+</div>
+<!-- BUILDER BOT DOCK END -->
 
-  // Event listeners
-  settingsToggle.onclick = toggleSettings;
-  sendBtn.onclick = sendMessage;
-  
-  chatInput.addEventListener('input', autoResizeTextarea);
-  chatInput.addEventListener('keydown', (e) => {
-    e.stopPropagation(); // Prevent desktop keyboard effects
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
 
-  // Prevent all keyboard and click events from bubbling up from chat widget
-  chatWidget.addEventListener('keydown', (e) => {
-    e.stopPropagation();
-  });
-  chatWidget.addEventListener('click', (e) => {
-    e.stopPropagation();
-  });
 
-  // Auto-save webhook URL
-  let webhookTimeout;
-  webhookInput.addEventListener('input', () => {
-    clearTimeout(webhookTimeout);
-    webhookTimeout = setTimeout(() => {
-      setWebhookUrl(webhookInput.value.trim());
-      if (webhookInput.value.trim()) {
-        showToast('Webhook URL saved!', 2000);
-      }
-    }, 1000);
-  });
-});
-</script>
-<!-- BUILDER BOT DOCK-ATTACHED WIDGET END -->
+
+
+
+
+
+
 
 
 </body>

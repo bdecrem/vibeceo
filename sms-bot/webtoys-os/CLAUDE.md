@@ -531,6 +531,9 @@ WHERE app_id = 'toybox-issue-tracker-v3';
 # Deploy app
 node scripts/auto-deploy-app.js apps/[app].html [icon]
 
+# Remove apps from desktop
+node scripts/remove-apps.js <app-id1> [app-id2] ...
+
 # Check issues  
 ISSUE_TRACKER_APP_ID=toybox-issue-tracker-v3 node agents/edit-agent/debug-issues.js
 

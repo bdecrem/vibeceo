@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bart - Text Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, 
+                rgba(147, 197, 253, 0.3) 0%, 
+                rgba(196, 181, 253, 0.3) 50%, 
+                rgba(251, 191, 36, 0.3) 100%);
+            min-height: 100vh;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 16px 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-family: 'Comfortaa', cursive;
+            font-weight: 700;
+            font-size: 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .auth-display {
+            font-size: 14px;
+            color: rgba(0, 0, 0, 0.7);
+            background: rgba(255, 255, 255, 0.4);
+            padding: 8px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.1) 100%);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 12px 20px;
+            color: rgba(0, 0, 0, 0.8);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0.2) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
+        }
+
+        .editor-container {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 24px;
+            padding: 24px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .document-title {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            font-size: 18px;
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.8);
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .document-title:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .document-title::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .editor {
+            flex: 1;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 20px;
+            font-size: 16px;
+            line-height: 1.6;
+            color: rgba(0, 0, 0, 0.8);
+            resize: none;
+            outline: none;
+            font-family: 'Inter', system-ui, sans-serif;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .editor:focus {
+            background: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.3);
+        }
+
+        .editor::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .status {
+            margin-top: 16px;
+            padding: 12px 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: rgba(0, 0, 0, 0.7);
+            font-size: 14px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 32px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 16px 64px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h2 {
+            font-family: 'Comfortaa', cursive;
+            font-weight: 600;
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .document-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            background: rgba(255, 255, 255, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            border-radius: 16px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .document-item:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        .document-item h3 {
+            font-weight: 600;
+            color: rgba(0, 0, 0, 0.8);
+            margin-bottom: 4px;
+        }
+
+        .document-item .meta {
+            font-size: 12px;
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        .empty-state {
+            text-align: center;
+            color: rgba(0, 0, 0, 0.6);
+            padding: 40px 20px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+            }
+            
+            .header {
+                flex-direction: column;
+                gap: 12px;
+                text-align: center;
+            }
+            
+            .toolbar {
+                justify-content: center;
+            }
+            
+            .modal-content {
+                margin: 20px;
+                padding: 24px;
+            }
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 16px;
+            padding: 16px 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #10b981;
+        }
+
+        .toast.error {
+            border-left: 4px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>✍️ Bart</h1>
+        <div class="auth-display" id="authDisplay">Not logged in</div>
+    </div>
+
+    <div class="toolbar">
+        <button class="btn" onclick="newDocument()">
+            📄 New
+        </button>
+        <button class="btn" onclick="openDocument()">
+            📂 Open
+        </button>
+        <button class="btn btn-primary" onclick="saveDocument()">
+            💾 Save
+        </button>
+        <button class="btn" onclick="exportDocument()">
+            📤 Export
+        </button>
+    </div>
+
+    <div class="editor-container">
+        <input type="text" class="document-title" id="documentTitle" placeholder="Untitled Document">
+        <textarea class="editor" id="editor" placeholder="Start typing your masterpiece..."></textarea>
+        <div class="status" id="status">Ready to write</div>
+    </div>
+
+    <div class="modal" id="openModal">
+        <div class="modal-content">
+            <h2>📂 Open Document</h2>
+            <div class="document-list" id="documentList">
+                <div class="empty-state">Loading documents...</div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn" onclick="closeModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App configuration
+        window.APP_ID = 'toybox-bart';
+        
+        // Global auth state
+        let currentUser = null;
+        let currentDocumentId = null;
+        let isAutoSaving = false;
+
+        // Load auth from localStorage (immediate)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        // Listen for auth from desktop (real-time)
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthDisplay();
+                if (currentUser) loadUserDocuments();
+            }
+        });
+
+        // ZAD Helper Functions
+        function getAppId() { 
+            return window.APP_ID || 'toybox-bart'; 
+        }
+
+        function getUsername() {
+            return (currentUser && currentUser.handle)
+                ? currentUser.handle.toUpperCase()
+                : 'anonymous';
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return 'anonymous_0000';
+            return currentUser.participantId || (getUsername() + '_' + (currentUser.pin || '0000'));
+        }
+
+        async function zadSave(dataType, data) {
+            const app_id = getAppId();
+            const participant_id = getParticipantId();
+            const username = getUsername();
+            
+            const res = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: app_id,
+                    participant_id: participant_id,
+                    participant_data: { userLabel: username, username: username },
+                    action_type: dataType,
+                    content_data: Object.assign({
+                        timestamp: (data && data.timestamp) ? data.timestamp : Date.now(),
+                        author: (data && data.author) ? data.author : username
+                    }, data)
+                })
+            });
+            
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error('Save failed: ' + (err.error || res.statusText));
+            }
+            return true;
+        }
+
+        async function zadLoad(dataType) {
+            const app_id = getAppId();
+            const url = '/api/zad/load?app_id=' + encodeURIComponent(app_id) + '&action_type=' + encodeURIComponent(dataType);
+            const res = await fetch(url);
+            
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error('Load failed: ' + (err.error || res.statusText));
+            }
+            
+            const data = await res.json();
+            return (data || []).map(item => {
+                const cd = item.content_data || {};
+                return {
+                    id: cd.id || item.id,
+                    title: cd.title,
+                    content: cd.content,
+                    author: cd.author || (item.participant_data && (item.participant_data.username || item.participant_data.userLabel)) || 'Unknown',
+                    updatedAt: cd.updatedAt || item.created_at,
+                    created_at: item.created_at,
+                    participant_id: item.participant_id
+                };
+            });
+        }
+
+        async function loadUserItems(dataType) {
+            const all = await zadLoad(dataType);
+            const me = getParticipantId();
+            const mine = all.filter(d => d.participant_id === me);
+            const latest = {};
+            
+            mine.forEach(d => {
+                const ts = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+                if (!latest[d.id] || ts > latest[d.id].ts) {
+                    latest[d.id] = Object.assign({ ts: ts }, d);
+                }
+            });
+            
+            return Object.values(latest).sort((a, b) => b.ts - a.ts);
+        }
+
+        // UI Functions
+        function updateAuthDisplay() {
+            const authDisplay = document.getElementById('authDisplay');
+            if (currentUser && currentUser.handle) {
+                authDisplay.textContent = `👤 ${currentUser.handle}`;
+            } else {
+                authDisplay.textContent = 'Not logged in';
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+
+        function showToast(message, type = 'success') {
+            // Remove existing toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            // Show toast
+            setTimeout(() => toast.classList.add('show'), 100);
+
+            // Hide toast after 3 seconds
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Document Functions
+        function newDocument() {
+            currentDocumentId = null;
+            document.getElementById('documentTitle').value = '';
+            document.getElementById('editor').value = '';
+            updateStatus('New document created');
+            document.getElementById('documentTitle').focus();
+        }
+
+        async function saveDocument() {
+            if (!currentUser) {
+                showToast('Please log in to save documents', 'error');
+                return;
+            }
+
+            const title = document.getElementById('documentTitle').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+
+            if (!content.trim()) {
+                showToast('Cannot save empty document', 'error');
+                return;
+            }
+
+            try {
+                if (!currentDocumentId) {
+                    currentDocumentId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                }
+
+                await zadSave('document', {
+                    id: currentDocumentId,
+                    title: title,
+                    content: content,
+                    updatedAt: new Date().toISOString()
+                });
+
+                updateStatus(`Document "${title}" saved successfully`);
+                showToast('Document saved!');
+            } catch (error) {
+                console.error('Save error:', error);
+                updateStatus('Failed to save document');
+                showToast('Failed to save document', 'error');
+            }
+        }
+
+        async function openDocument() {
+            if (!currentUser) {
+                showToast('Please log in to open documents', 'error');
+                return;
+            }
+
+            document.getElementById('openModal').style.display = 'flex';
+            await loadUserDocuments();
+        }
+
+        async function loadUserDocuments() {
+            const documentList = document.getElementById('documentList');
+            documentList.innerHTML = '<div class="empty-state">Loading documents...</div>';
+
+            try {
+                const documents = await loadUserItems('document');
+                
+                if (documents.length === 0) {
+                    documentList.innerHTML = '<div class="empty-state">No documents found.<br>Create your first document!</div>';
+                    return;
+                }
+
+                documentList.innerHTML = '';
+                documents.forEach(doc => {
+                    const item = document.createElement('div');
+                    item.className = 'document-item';
+                    item.onclick = () => loadDocument(doc);
+                    
+                    const date = new Date(doc.updatedAt).toLocaleDateString();
+                    const time = new Date(doc.updatedAt).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                    
+                    item.innerHTML = `
+                        <h3>${doc.title}</h3>
+                        <div class="meta">Modified ${date} at ${time} • ${doc.content.length} characters</div>
+                    `;
+                    
+                    documentList.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Load error:', error);
+                documentList.innerHTML = '<div class="empty-state">Failed to load documents</div>';
+            }
+        }
+
+        function loadDocument(doc) {
+            currentDocumentId = doc.id;
+            document.getElementById('documentTitle').value = doc.title;
+            document.getElementById('editor').value = doc.content;
+            closeModal();
+            updateStatus(`Loaded "${doc.title}"`);
+            showToast('Document loaded!');
+        }
+
+        function closeModal() {
+            document.getElementById('openModal').style.display = 'none';
+        }
+
+        function exportDocument() {
+            const title = document.getElementById('documentTitle').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+
+            if (!content.trim()) {
+                showToast('Nothing to export', 'error');
+                return;
+            }
+
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = title.replace(/[^a-z0-9]/gi, '_').toLowerCase() + '.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('Document exported!');
+        }
+
+        // Auto-save functionality
+        let autoSaveTimeout;
+        function scheduleAutoSave() {
+            if (autoSaveTimeout) {
+                clearTimeout(autoSaveTimeout);
+            }
+            
+            autoSaveTimeout = setTimeout(() => {
+                if (currentUser && currentDocumentId && !isAutoSaving) {
+                    isAutoSaving = true;
+                    saveDocument().finally(() => {
+                        isAutoSaving = false;
+                    });
+                }
+            }, 2000); // Auto-save after 2 seconds of inactivity
+        }
+
+        // Event listeners
+        document.getElementById('editor').addEventListener('input', scheduleAutoSave);
+        document.getElementById('documentTitle').addEventListener('input', scheduleAutoSave);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveDocument();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newDocument();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        openDocument();
+                        break;
+                }
+            }
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('openModal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                closeModal();
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadUserDocuments();
+            }
+            
+            // Request auth from parent (desktop)
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
