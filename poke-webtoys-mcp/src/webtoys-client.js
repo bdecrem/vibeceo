@@ -69,8 +69,8 @@ async function pollForApp(phoneNumber, startTime) {
   while (Date.now() < endTime) {
     // Query Supabase for apps created by this phone number after start time
     const queryUrl = new URL(`${SUPABASE_URL}/rest/v1/wtaf_content`);
-    queryUrl.searchParams.append('select', 'app_slug,user_slug,html_content,created_at,app_type');
-    queryUrl.searchParams.append('phone_number', `eq.${phoneNumber}`);
+    queryUrl.searchParams.append('select', 'app_slug,user_slug,html_content,created_at,type');
+    queryUrl.searchParams.append('sender_phone', `eq.${phoneNumber}`);
     queryUrl.searchParams.append('created_at', `gte.${new Date(startTime).toISOString()}`);
     queryUrl.searchParams.append('order', 'created_at.desc');
     queryUrl.searchParams.append('limit', '1');
@@ -89,7 +89,7 @@ async function pollForApp(phoneNumber, startTime) {
         return {
           found: true,
           appUrl: `https://webtoys.ai/${app.user_slug}/${app.app_slug}`,
-          appType: app.app_type,
+          appType: app.type,
           userSlug: app.user_slug,
           appSlug: app.app_slug
         };
