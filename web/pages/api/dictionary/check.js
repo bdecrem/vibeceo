@@ -3,10 +3,13 @@
 
 import { createClient } from '@supabase/supabase-js';
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY
-);
+// Use hardcoded values since env vars aren't working in production
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://tqniseocczttrfwtpbdr.supabase.co';
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_KEY || 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+console.log('Dictionary API using URL:', SUPABASE_URL);
 
 // Cache the dictionary in memory for performance
 let dictionaryCache = null;
