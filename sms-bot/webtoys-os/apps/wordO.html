@@ -394,17 +394,17 @@
                         const data = await response.json();
                         this.dictionaryAvailable = data.source === 'webtoys-dictionary';
                         if (this.dictionaryAvailable) {
-                            this.showFeedback(`Connected to WebtoysOS Dictionary!`, 'success');
+                            console.log('Connected to WebtoysOS Dictionary!');
                         }
                     }
                 } catch (error) {
-                    console.log('Dictionary API not available, words will be accepted without validation');
+                    console.log('Dictionary API not available, trying to connect...');
                     this.dictionaryAvailable = false;
                 }
             }
 
             async isValidWord(word) {
-                // Always accept words that have already been found
+                // Always reject words that have already been found
                 if (this.wordsFound.has(word)) {
                     return { valid: false, reason: 'Already found!' };
                 }
@@ -414,24 +414,26 @@
                     return { valid: false, reason: 'Too short!' };
                 }
                 
-                // If dictionary is available, check against it
-                if (this.dictionaryAvailable) {
-                    try {
-                        const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
-                        if (response.ok) {
-                            const data = await response.json();
-                            return { 
-                                valid: data.valid, 
-                                reason: data.valid ? 'Valid word!' : 'Not in dictionary!' 
-                            };
-                        }
-                    } catch (error) {
-                        console.error('Dictionary check failed:', error);
+                // Always check against the dictionary API
+                try {
+                    const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        this.dictionaryAvailable = true; // Mark as available if successful
+                        return { 
+                            valid: data.valid, 
+                            reason: data.valid ? 'Valid word!' : 'Not in dictionary!' 
+                        };
+                    } else {
+                        // API call failed, but we should still reject invalid words
+                        console.error('Dictionary API returned error:', response.status);
+                        return { valid: false, reason: 'Cannot verify word!' };
                     }
+                } catch (error) {
+                    console.error('Dictionary check failed:', error);
+                    // Network error or other issue - reject the word
+                    return { valid: false, reason: 'Dictionary check failed!' };
                 }
-                
-                // Fallback: accept any word 3+ letters if dictionary not available
-                return { valid: true, reason: 'Accepted (dictionary offline)' };
             }
 
             initGame() {
