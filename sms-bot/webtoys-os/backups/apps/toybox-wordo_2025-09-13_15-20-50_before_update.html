@@ -328,6 +328,8 @@
             }
         }
     </style>
+    <!-- Load Supabase client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 </head>
 <body>
     <div class="header">
@@ -381,7 +383,8 @@
                 this.wordsFound = new Set();
                 this.isSelecting = false;
                 this.touchStartCell = null;
-                this.dictionaryAvailable = false;
+                this.dictionaryLoaded = false;
+                this.dictionary = null;
                 this.lastWord = null; // Track the last submitted word
                 this.requiredStartLetter = null; // Track required starting letter
                 this.currentUser = null;
@@ -391,27 +394,57 @@
                 window.APP_ID = 'toybox-wordo';
                 
                 this.initGame();
-                this.checkDictionaryAPI();
+                this.loadDictionaryInBackground();
                 this.initLeaderboard();
                 this.checkAuth();
             }
 
-            async checkDictionaryAPI() {
+            async loadDictionaryInBackground() {
                 try {
-                    // Test if the dictionary API is working
-                    const response = await fetch('https://webtoys.ai/api/dictionary/check?word=TEST');
-                    if (response.ok) {
-                        const data = await response.json();
-                        this.dictionaryAvailable = true;
-                        console.log('Dictionary API is available');
+                    console.log('Loading dictionary from Supabase...');
+                    document.getElementById('dictionary-status').textContent = 'Loading dictionary...';
+                    
+                    // Initialize Supabase client
+                    const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+                    const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+                    
+                    // Create Supabase client
+                    const { createClient } = window.supabase;
+                    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    
+                    // Fetch dictionary from database
+                    const { data, error } = await supabaseClient
+                        .from('wtaf_content')
+                        .select('html_content')
+                        .eq('app_slug', 'toybox-dictionary')
+                        .eq('user_slug', 'public')
+                        .single();
+                    
+                    if (error) {
+                        throw new Error(`Failed to fetch dictionary: ${error.message}`);
+                    }
+                    
+                    if (!data || !data.html_content) {
+                        throw new Error('Dictionary not found in database');
+                    }
+                    
+                    // Extract the word array from the HTML
+                    const match = data.html_content.match(/window\.WEBTOYS_DICTIONARY\s*=\s*(\[[\s\S]*?\])/);
+                    if (match) {
+                        console.log('Dictionary pattern matched, parsing...');
+                        const words = JSON.parse(match[1]);
+                        this.dictionary = new Set(words.map(w => w.toUpperCase()));
+                        this.dictionaryLoaded = true;
+                        console.log(`Dictionary loaded: ${this.dictionary.size} words`);
                         document.getElementById('dictionary-status').textContent = '';
                     } else {
-                        throw new Error('Dictionary API not responding');
+                        throw new Error('Dictionary pattern not found in HTML');
                     }
                 } catch (error) {
-                    console.error('Dictionary API check failed:', error);
-                    this.dictionaryAvailable = false;
-                    document.getElementById('dictionary-status').textContent = 'Dictionary unavailable';
+                    console.error('Dictionary load failed:', error);
+                    // Retry loading after a delay
+                    document.getElementById('dictionary-status').textContent = 'Retrying dictionary load...';
+                    setTimeout(() => this.loadDictionaryInBackground(), 3000);
                 }
             }
 
@@ -426,25 +459,22 @@
                     return { valid: false, reason: 'Too short!' };
                 }
                 
-                // Check word via API
-                try {
-                    const response = await fetch(`https://webtoys.ai/api/dictionary/check?word=${word}`);
-                    if (response.ok) {
-                        const data = await response.json();
-                        return {
-                            valid: data.valid,
-                            reason: data.valid ? 'Valid word!' : 'Not in dictionary!'
-                        };
-                    } else {
-                        // API error - be permissive
-                        console.error('Dictionary API error:', response.status);
-                        return { valid: true, reason: 'Accepted (dictionary check failed)' };
-                    }
-                } catch (error) {
-                    console.error('Dictionary check failed:', error);
-                    // Network error - be permissive
-                    return { valid: true, reason: 'Accepted (dictionary offline)' };
+                const upperWord = word.toUpperCase();
+                
+                if (!this.dictionaryLoaded) {
+                    // Dictionary not loaded - don't accept any words
+                    return { 
+                        valid: false,
+                        reason: 'Please wait - loading dictionary...'
+                    };
                 }
+                
+                // Dictionary loaded - normal validation
+                const valid = this.dictionary.has(upperWord);
+                return {
+                    valid: valid,
+                    reason: valid ? 'Valid word!' : 'Not in dictionary!'
+                };
             }
 
             initGame() {
@@ -638,6 +668,12 @@
             }
 
             async submitWord() {
+                // Don't allow submission if dictionary isn't loaded
+                if (!this.dictionaryLoaded) {
+                    this.showFeedback('Please wait - loading dictionary...', 'error');
+                    return;
+                }
+                
                 if (this.currentWord.length < 3) {
                     this.showFeedback('Word must be at least 3 letters!', 'error');
                     return;
