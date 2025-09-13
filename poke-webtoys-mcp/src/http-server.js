@@ -108,8 +108,9 @@ app.post('/tool/call', async (req, res) => {
 // Start server - bind to 0.0.0.0 for Railway/Docker compatibility
 const HOST = '0.0.0.0';
 app.listen(PORT, HOST, () => {
-  console.log(`🚀 Webtoys MCP HTTP Server running on ${HOST}:${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/`);
-  console.log(`🔧 Tools list: http://localhost:${PORT}/tools`);
-  console.log(`⚡ Tool call: POST http://localhost:${PORT}/tool/call`);
+  console.log(`🚀 [FIXED] Webtoys MCP HTTP Server running on ${HOST}:${PORT}`);
+  console.log(`📍 Binding to all interfaces (0.0.0.0) for Railway`);
+  console.log(`📍 Health check: GET /`);
+  console.log(`🔧 Tools list: GET /tools`);
+  console.log(`⚡ Tool call: POST /tool/call`);
 });
