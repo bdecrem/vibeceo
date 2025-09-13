@@ -579,11 +579,12 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
  * Main execution function
  */
 async function executeOpenIssue() {
-    // Lock file to prevent multiple instances
+    // Lock file to prevent multiple instances (can be bypassed in Builder Bot mode)
     const lockFile = path.join(__dirname, '.agent.lock');
+    const FORCE = (process.env.BUILDER_BOT_MODE === 'true') || (process.env.BUILDER_BOT_FORCE === 'true');
     
     // Check if another instance is running
-    if (fs.existsSync(lockFile)) {
+    if (!FORCE && fs.existsSync(lockFile)) {
         try {
             const lockData = JSON.parse(fs.readFileSync(lockFile, 'utf8'));
             const lockAge = Date.now() - lockData.timestamp;
@@ -602,17 +603,21 @@ async function executeOpenIssue() {
     }
     
     // Create lock file
-    fs.writeFileSync(lockFile, JSON.stringify({
-        pid: process.pid,
-        timestamp: Date.now(),
-        startTime: new Date().toISOString()
-    }));
+    if (!FORCE) {
+        fs.writeFileSync(lockFile, JSON.stringify({
+            pid: process.pid,
+            timestamp: Date.now(),
+            startTime: new Date().toISOString()
+        }));
+    }
     
     // Ensure lock is removed on exit
     const cleanup = () => {
-        if (fs.existsSync(lockFile)) {
-            fs.unlinkSync(lockFile);
-            console.log('🔓 Lock file removed');
+        if (!FORCE) {
+            if (fs.existsSync(lockFile)) {
+                fs.unlinkSync(lockFile);
+                console.log('🔓 Lock file removed');
+            }
         }
     };
     
@@ -628,15 +633,36 @@ async function executeOpenIssue() {
         console.log('📁 Working in:', PROJECT_ROOT);
         console.log('🔍 Tracker ID:', ISSUE_TRACKER_APP_ID);
         console.log('\n🔍 Checking database for open issues...');
-        
-        // Get open issues (including admin_discussion for reopened issues)
-        const { data: issues, error } = await supabase
-            .from('webtoys_issue_tracker_data')
-            .select('*')
-            .eq('app_id', ISSUE_TRACKER_APP_ID)
-            .in('content_data->>status', ['open', 'new', 'admin_discussion'])
-            .order('created_at', { ascending: true })
-            .limit(1);
+
+        // PRIORITY: If a specific Builder Bot issue ID is provided, process that exact issue
+        let issues = null;
+        let error = null;
+        const builderBotIssueId = process.env.BUILDER_BOT_ISSUE_ID ? parseInt(process.env.BUILDER_BOT_ISSUE_ID, 10) : null;
+
+        if (builderBotIssueId && !Number.isNaN(builderBotIssueId)) {
+            console.log(`🔎 BUILDER_BOT_ISSUE_ID detected: ${builderBotIssueId} (will process this issue)`);
+            const byId = await supabase
+                .from('webtoys_issue_tracker_data')
+                .select('*')
+                .eq('id', builderBotIssueId)
+                .eq('app_id', ISSUE_TRACKER_APP_ID)
+                .limit(1);
+            issues = byId.data || [];
+            error = byId.error || null;
+        }
+
+        // Fallback: get the most recent open issue (prefer newest for responsiveness)
+        if (!issues || issues.length === 0) {
+            const q = await supabase
+                .from('webtoys_issue_tracker_data')
+                .select('*')
+                .eq('app_id', ISSUE_TRACKER_APP_ID)
+                .in('content_data->>status', ['open', 'new', 'admin_discussion'])
+                .order('created_at', { ascending: false })
+                .limit(1);
+            issues = q.data || [];
+            error = error || q.error || null;
+        }
         
         if (error) {
             console.error('❌ Database error:', error);
@@ -782,8 +808,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         .then(() => {
             // Clean up lock file before exiting
             const lockFile = path.join(__dirname, '.agent.lock');
-            if (fs.existsSync(lockFile)) {
-                fs.unlinkSync(lockFile);
+            const FORCE_ENV = (process.env.BUILDER_BOT_MODE === 'true') || (process.env.BUILDER_BOT_FORCE === 'true');
+            if (!FORCE_ENV) {
+                if (fs.existsSync(lockFile)) {
+                    fs.unlinkSync(lockFile);
+                }
             }
             console.log('\n' + '▓'.repeat(80));
             console.log('✅ EDIT AGENT V2 - RUN COMPLETE');
@@ -797,8 +826,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
             console.error('❌ Edit Agent V2 failed:', error);
             // Clean up lock file on error
             const lockFile = path.join(__dirname, '.agent.lock');
-            if (fs.existsSync(lockFile)) {
-                fs.unlinkSync(lockFile);
+            const FORCE_ENV = (process.env.BUILDER_BOT_MODE === 'true') || (process.env.BUILDER_BOT_FORCE === 'true');
+            if (!FORCE_ENV) {
+                if (fs.existsSync(lockFile)) {
+                    fs.unlinkSync(lockFile);
+                }
             }
             process.exit(1);
         });
