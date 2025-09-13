@@ -345,8 +345,6 @@
         <div class="current-word">
             <div class="word-display" id="current-word">Start swiping!</div>
         </div>
-        
-        <div id="dictionary-status" style="text-align: center; font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 5px;"></div>
 
         <div class="controls">
             <button class="btn submit-btn" id="submit-btn">Submit Word</button>
@@ -399,11 +397,9 @@
 
             async loadDictionaryInBackground() {
                 try {
-                    console.log('Loading dictionary...');
-                    document.getElementById('dictionary-status').textContent = 'Loading dictionary...';
-                    
-                    // Use absolute URL to ensure it works in all contexts
-                    const response = await fetch('https://webtoys.ai/public/toybox-dictionary');
+                    console.log('Loading dictionary in background...');
+                    // Fetch the dictionary from the toybox-dictionary app
+                    const response = await fetch('/public/toybox-dictionary');
                     
                     if (!response.ok) {
                         throw new Error(`Dictionary fetch failed: ${response.status}`);
@@ -419,16 +415,16 @@
                         const words = JSON.parse(match[1]);
                         this.dictionary = new Set(words.map(w => w.toUpperCase()));
                         this.dictionaryLoaded = true;
-                        console.log(`Dictionary loaded: ${this.dictionary.size} words`);
-                        document.getElementById('dictionary-status').textContent = '';
+                        console.log(`Dictionary loaded successfully: ${this.dictionary.size} words`);
+                        // Update UI to show dictionary is ready
+                        document.getElementById('dictionary-status').textContent = `Dictionary ready (${this.dictionary.size} words)`;
                     } else {
                         throw new Error('Dictionary pattern not found in HTML');
                     }
                 } catch (error) {
                     console.error('Dictionary load failed:', error);
-                    // Retry loading after a delay
-                    document.getElementById('dictionary-status').textContent = 'Retrying dictionary load...';
-                    setTimeout(() => this.loadDictionaryInBackground(), 2000);
+                    // Game continues with restricted validation - only common words accepted
+                    document.getElementById('dictionary-status').textContent = 'Dictionary failed - only common words accepted';
                 }
             }
 
@@ -446,10 +442,24 @@
                 const upperWord = word.toUpperCase();
                 
                 if (!this.dictionaryLoaded) {
-                    // Dictionary not loaded - don't accept any words
+                    // Dictionary still loading - only accept known common words, REJECT everything else
+                    const commonWords = new Set(['THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 
+                                                'CAN', 'HER', 'WAS', 'ONE', 'OUR', 'OUT', 'DAY', 'GET',
+                                                'COW', 'LOW', 'ROW', 'BOW', 'HOW', 'NOW', 'WOW', 'SOW',
+                                                'CAT', 'DOG', 'HAT', 'BAT', 'RAT', 'MAT', 'SAT', 'FAT',
+                                                'RUN', 'SUN', 'FUN', 'GUN', 'CUT', 'BUT', 'PUT', 'HUT',
+                                                'SET', 'NET', 'BET', 'GET', 'LET', 'MET', 'PET', 'VET',
+                                                'NEW', 'SEW', 'FEW', 'DEW', 'OLD', 'COLD', 'GOLD', 'TOLD',
+                                                'HOT', 'POT', 'LOT', 'GOT', 'COT', 'DOT', 'ROT', 'NOT']);
+                    
+                    if (commonWords.has(upperWord)) {
+                        return { valid: true, reason: 'Valid word!' };
+                    }
+                    
+                    // REJECT unknown words while dictionary is loading - NO MORE BLIND ACCEPTANCE!
                     return { 
                         valid: false,
-                        reason: 'Please wait - loading dictionary...'
+                        reason: 'Dictionary still loading - try common words like CAT, DOG, RUN'
                     };
                 }
                 
@@ -652,12 +662,6 @@
             }
 
             async submitWord() {
-                // Don't allow submission if dictionary isn't loaded
-                if (!this.dictionaryLoaded) {
-                    this.showFeedback('Please wait - loading dictionary...', 'error');
-                    return;
-                }
-                
                 if (this.currentWord.length < 3) {
                     this.showFeedback('Word must be at least 3 letters!', 'error');
                     return;
