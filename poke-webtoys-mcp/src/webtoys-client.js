@@ -13,15 +13,16 @@ const INITIAL_DELAY = 5000; // Wait 5 seconds before first check
 
 /**
  * Generate a unique phone number for this request
- * Uses a valid US phone number format that passes Twilio validation
- * Format: +1415XXXXXXX (San Francisco area code)
+ * Use a special format that identifies this as a Poke request
+ * Format: +1POKE followed by timestamp - won't work for SMS but tracks requests
  */
 function generatePhoneNumber(userId) {
-  // Use a valid US area code (415 = San Francisco)
-  // Generate random but valid-looking digits for the rest
-  const randomDigits = Math.floor(Math.random() * 10000000).toString().padStart(7, '0');
-  // Create a valid US phone number format
-  return `+1415${randomDigits}`;
+  // Use a special format that identifies this as a Poke/MCP request
+  // This won't be a valid phone for SMS, but we don't need SMS responses
+  const timestamp = Date.now().toString().slice(-7);
+  // Format: +1999POKE### where ### is based on timestamp
+  // 999 is not a valid US area code, so it won't conflict with real numbers
+  return `+1999${timestamp}`;
 }
 
 /**
