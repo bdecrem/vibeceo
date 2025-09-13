@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>pxl art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8f9fa;
+            margin: 0;
+            padding: 12px;
+            height: 100vh;
+            box-sizing: border-box;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            color: #333;
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .art-studio {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex: 1;
+            min-height: 0;
+        }
+
+        .studio-layout {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            height: 100%;
+        }
+
+        .canvas-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        .canvas-container {
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #pixelCanvas {
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            cursor: crosshair;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            max-width: 100%;
+            max-height: 100%;
+        }
+
+        .controls-section {
+            width: 180px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .color-palette {
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .color-palette h3 {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .color-btn {
+            width: 28px;
+            height: 28px;
+            border: 2px solid transparent;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .color-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+
+        .color-btn.active {
+            border-color: #333;
+            transform: scale(1.1);
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .btn-secondary:hover {
+            background: white;
+            transform: translateY(-1px);
+        }
+
+        .gallery {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid #e0e0e0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+
+        .gallery h2 {
+            color: #333;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .gallery-item {
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+            border: 1px solid #e0e0e0;
+            transition: transform 0.2s ease;
+        }
+
+        .gallery-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .gallery-canvas {
+            border: 1px solid #e1e5e9;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            image-rendering: pixelated;
+        }
+
+        .gallery-meta {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .auth-prompt {
+            background: rgba(255,255,255,0.95);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .floating-save {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 15px 25px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+            transition: all 0.2s ease;
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        .floating-save.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .floating-save:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            }
+
+            .container {
+                height: 100vh;
+            }
+
+            .header h1 {
+                color: white;
+                font-size: 2rem;
+                text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            }
+
+            .header p {
+                color: rgba(255,255,255,0.8);
+            }
+
+            .art-studio {
+                background: rgba(255,255,255,0.15);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.2);
+                box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            }
+
+            .studio-layout {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .controls-section {
+                width: 100%;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: space-between;
+            }
+
+            .color-palette {
+                background: rgba(255,255,255,0.9);
+                flex: 1;
+                min-width: 200px;
+            }
+
+            .size-controls {
+                background: rgba(255,255,255,0.9);
+                flex: 1;
+                min-width: 150px;
+            }
+
+            .action-buttons {
+                width: 100%;
+                flex-direction: row;
+                gap: 10px;
+            }
+
+            .btn {
+                flex: 1;
+                padding: 12px;
+                font-size: 1rem;
+            }
+
+            .color-grid {
+                grid-template-columns: repeat(8, 1fr);
+            }
+
+            .gallery {
+                background: rgba(255,255,255,0.1);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255,255,255,0.2);
+            }
+
+            .gallery h2 {
+                color: white;
+                font-size: 1.5rem;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+                max-height: none;
+            }
+
+            .gallery-item {
+                background: rgba(255,255,255,0.9);
+            }
+
+            #pixelCanvas {
+                max-width: calc(100vw - 60px);
+                max-height: calc(100vw - 60px);
+            }
+        }
+
+        .size-controls {
+            background: #f8f8f8;
+            border-radius: 8px;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .size-controls h3 {
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .size-btn {
+            padding: 6px 10px;
+            margin: 2px;
+            border: 1px solid #e1e5e9;
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s ease;
+        }
+
+        .size-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎨 pxl art</h1>
+            <p>Create beautiful pixel art and share with the community</p>
+        </div>
+
+        <div class="art-studio">
+            <div class="studio-layout">
+                <div class="canvas-section">
+                    <div class="canvas-container">
+                        <canvas id="pixelCanvas" width="400" height="400"></canvas>
+                    </div>
+                </div>
+
+                <div class="controls-section">
+                    <div class="size-controls">
+                        <h3>Canvas Size</h3>
+                        <button class="size-btn active" data-size="16">16×16</button>
+                        <button class="size-btn" data-size="24">24×24</button>
+                        <button class="size-btn" data-size="32">32×32</button>
+                    </div>
+
+                    <div class="color-palette">
+                        <h3>Colors</h3>
+                        <div class="color-grid" id="colorGrid"></div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button class="btn btn-secondary" onclick="clearCanvas()">Clear Canvas</button>
+                        <button class="btn btn-primary" onclick="saveArtwork()">Save to Gallery</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="gallery">
+            <h2>🖼️ Community Gallery</h2>
+            <div class="gallery-grid" id="galleryGrid">
+                <div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">
+                    Loading artwork...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <button class="floating-save" id="floatingSave" onclick="saveArtwork()">
+        💾 Save Art
+    </button>
+
+    <script>
+        // Global auth state
+        let currentUser = null;
+
+        // Load auth from localStorage (immediate)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        // Listen for auth from desktop (real-time)
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                loadGallery();
+            }
+        });
+
+        // Pixel art variables
+        const canvas = document.getElementById('pixelCanvas');
+        const ctx = canvas.getContext('2d');
+        let gridSize = 16;
+        let pixelSize = 25;
+        let currentColor = '#000000';
+        let isDrawing = false;
+        let hasChanges = false;
+
+        // Color palette
+        const colors = [
+            '#000000', '#FFFFFF', '#FF0000', '#00FF00',
+            '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF',
+            '#800000', '#008000', '#000080', '#808000',
+            '#800080', '#008080', '#C0C0C0', '#808080'
+        ];
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                loadGallery();
+            }
+            setupCanvas();
+            setupColorPalette();
+            setupSizeControls();
+            loadGallery();
+        });
+
+        function setupCanvas() {
+            updateCanvasSize();
+            clearCanvas();
+
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDrawing);
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            // Touch events for mobile
+            canvas.addEventListener('touchstart', handleTouch);
+            canvas.addEventListener('touchmove', handleTouch);
+            canvas.addEventListener('touchend', stopDrawing);
+        }
+
+        function updateCanvasSize() {
+            const size = gridSize * pixelSize;
+            canvas.width = size;
+            canvas.height = size;
+            
+            // For desktop, constrain canvas to available space
+            const maxSize = Math.min(350, window.innerWidth - 250);
+            if (size > maxSize) {
+                canvas.style.width = maxSize + 'px';
+                canvas.style.height = maxSize + 'px';
+            } else {
+                canvas.style.width = size + 'px';
+                canvas.style.height = size + 'px';
+            }
+        }
+
+        function setupColorPalette() {
+            const colorGrid = document.getElementById('colorGrid');
+            colors.forEach((color, index) => {
+                const colorBtn = document.createElement('div');
+                colorBtn.className = 'color-btn';
+                colorBtn.style.backgroundColor = color;
+                colorBtn.onclick = () => selectColor(color, colorBtn);
+                if (index === 0) colorBtn.classList.add('active');
+                colorGrid.appendChild(colorBtn);
+            });
+        }
+
+        function setupSizeControls() {
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.onclick = () => {
+                    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    gridSize = parseInt(btn.dataset.size);
+                    updateCanvasSize();
+                    clearCanvas();
+                };
+            });
+        }
+
+        function selectColor(color, element) {
+            currentColor = color;
+            document.querySelectorAll('.color-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+        }
+
+        function getPixelPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            
+            let x, y;
+            if (e.touches) {
+                x = (e.touches[0].clientX - rect.left) * scaleX;
+                y = (e.touches[0].clientY - rect.top) * scaleY;
+            } else {
+                x = (e.clientX - rect.left) * scaleX;
+                y = (e.clientY - rect.top) * scaleY;
+            }
+            
+            return {
+                x: Math.floor(x / pixelSize) * pixelSize,
+                y: Math.floor(y / pixelSize) * pixelSize
+            };
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            draw(e);
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            e.preventDefault();
+            
+            const pos = getPixelPos(e);
+            ctx.fillStyle = currentColor;
+            ctx.fillRect(pos.x, pos.y, pixelSize, pixelSize);
+            
+            if (!hasChanges) {
+                hasChanges = true;
+                document.getElementById('floatingSave').classList.add('show');
+            }
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function handleTouch(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent(e.type === 'touchstart' ? 'mousedown' : 'mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            
+            if (e.type === 'touchstart') startDrawing(mouseEvent);
+            else if (e.type === 'touchmove') draw(mouseEvent);
+        }
+
+        function clearCanvas() {
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw grid
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            for (let x = 0; x <= canvas.width; x += pixelSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y <= canvas.height; y += pixelSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            hasChanges = false;
+            document.getElementById('floatingSave').classList.remove('show');
+        }
+
+        async function saveArtwork() {
+            if (!currentUser) {
+                alert('Please log in to save your artwork!');
+                return;
+            }
+
+            if (!hasChanges) {
+                alert('Create some art first!');
+                return;
+            }
+
+            const participantId = currentUser?.participantId || `${currentUser?.handle?.toUpperCase()}_${currentUser?.pin}`;
+            
+            // Convert canvas to data URL
+            const imageData = canvas.toDataURL();
+            const timestamp = new Date().toISOString();
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-pxl-art',
+                        participant_id: participantId,
+                        action_type: 'artwork',
+                        content_data: {
+                            id: `art_${Date.now()}`,
+                            image: imageData,
+                            author: currentUser.handle.toUpperCase(),
+                            size: `${gridSize}×${gridSize}`,
+                            createdAt: timestamp
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('🎉 Artwork saved to gallery!');
+                    hasChanges = false;
+                    document.getElementById('floatingSave').classList.remove('show');
+                    loadGallery();
+                } else {
+                    alert('Failed to save artwork. Please try again.');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Failed to save artwork. Please try again.');
+            }
+        }
+
+        async function loadGallery() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-pxl-art&action_type=artwork');
+                const allArtwork = await response.json();
+                
+                // Deduplicate by id and get latest versions
+                const uniqueArtwork = {};
+                allArtwork.forEach(art => {
+                    const artId = art.id || art.content_data?.id;
+                    const artTime = art.createdAt || art.content_data?.createdAt || art.created_at;
+                    
+                    if (!uniqueArtwork[artId] || 
+                        new Date(artTime) > new Date(uniqueArtwork[artId].createdAt || uniqueArtwork[artId].created_at)) {
+                        uniqueArtwork[artId] = {
+                            id: artId,
+                            image: art.image || art.content_data?.image,
+                            author: art.author || art.content_data?.author || 'Anonymous',
+                            size: art.size || art.content_data?.size || '16×16',
+                            createdAt: artTime
+                        };
+                    }
+                });
+                
+                const sortedArtwork = Object.values(uniqueArtwork)
+                    .filter(art => art.image)
+                    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                
+                displayGallery(sortedArtwork);
+            } catch (error) {
+                console.error('Gallery load error:', error);
+                document.getElementById('galleryGrid').innerHTML = 
+                    '<div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">Failed to load gallery</div>';
+            }
+        }
+
+        function displayGallery(artwork) {
+            const galleryGrid = document.getElementById('galleryGrid');
+            
+            if (artwork.length === 0) {
+                galleryGrid.innerHTML = 
+                    '<div style="text-align: center; color: rgba(255,255,255,0.7); grid-column: 1 / -1; padding: 40px;">No artwork yet. Be the first to create!</div>';
+                return;
+            }
+            
+            galleryGrid.innerHTML = artwork.map(art => {
+                const date = new Date(art.createdAt).toLocaleDateString();
+                return `
+                    <div class="gallery-item">
+                        <img src="${art.image}" alt="Pixel art by ${art.author}" class="gallery-canvas" style="width: 100%; max-width: 150px; height: auto;">
+                        <div class="gallery-meta">
+                            <strong>${art.author}</strong><br>
+                            ${art.size} • ${date}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+    </script>
+</body>
+</html>

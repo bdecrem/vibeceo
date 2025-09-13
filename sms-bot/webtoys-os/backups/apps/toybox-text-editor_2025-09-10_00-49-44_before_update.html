@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', Monaco, monospace;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        /* Menu bar */
+        .menu-bar {
+            background: linear-gradient(to bottom, #f0f0f0, #e0e0e0);
+            border-bottom: 1px solid #808080;
+            display: flex;
+            padding: 4px;
+            font-family: Geneva, Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        .menu-item {
+            padding: 4px 12px;
+            cursor: pointer;
+            user-select: none;
+            border: 1px solid transparent;
+        }
+        
+        .menu-item:hover {
+            background: #e0e0e0;
+            border: 1px solid #808080;
+        }
+        
+        /* Toolbar */
+        .toolbar {
+            background: #f0f0f0;
+            border-bottom: 1px solid #808080;
+            padding: 4px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+        
+        .toolbar button {
+            padding: 4px 12px;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            border: 1px solid #808080;
+            cursor: pointer;
+            font-family: Geneva, Arial, sans-serif;
+            font-size: 11px;
+        }
+        
+        .toolbar button:active {
+            background: linear-gradient(to bottom, #e0e0e0, #d0d0d0);
+        }
+        
+        /* Status bar */
+        .status-bar {
+            background: #f0f0f0;
+            border-top: 1px solid #808080;
+            padding: 2px 8px;
+            font-family: Geneva, Arial, sans-serif;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        /* Text area */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            background: #ffffff;
+        }
+        
+        textarea {
+            flex: 1;
+            border: none;
+            outline: none;
+            padding: 8px;
+            font-family: 'Courier New', Monaco, monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            resize: none;
+            background: #ffffff;
+            color: #000000;
+        }
+        
+        /* Save dialog */
+        .dialog {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #c0c0c0;
+            border: 2px solid #000000;
+            padding: 8px;
+            z-index: 1000;
+            min-width: 300px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+        }
+        
+        .dialog-title {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: white;
+            padding: 2px 4px;
+            margin: -8px -8px 8px -8px;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .dialog input {
+            width: 100%;
+            padding: 4px;
+            margin: 8px 0;
+            border: 1px solid #000000;
+        }
+        
+        .dialog-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .dialog button {
+            padding: 4px 16px;
+            background: linear-gradient(to bottom, #ffffff, #e0e0e0);
+            border: 1px solid #000000;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu Bar -->
+    <div class="menu-bar">
+        <div class="menu-item" onclick="newFile()">New</div>
+        <div class="menu-item" onclick="saveFile()">Save</div>
+        <div class="menu-item" onclick="clearText()">Clear</div>
+    </div>
+    
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <button onclick="newFile()">📄 New</button>
+        <button onclick="saveFile()">💾 Save</button>
+        <button onclick="clearText()">🗑️ Clear</button>
+    </div>
+    
+    <!-- Editor -->
+    <div class="editor-container">
+        <textarea id="editor" placeholder="Start typing your TEST document..."></textarea>
+    </div>
+    
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div id="status">Ready</div>
+        <div id="stats">Lines: 1 | Chars: 0</div>
+        <div id="user-status">Not logged in</div>
+    </div>
+    
+    <!-- Save Dialog -->
+    <div id="saveDialog" class="dialog">
+        <div class="dialog-title">Save Document</div>
+        <label>Document name:</label>
+        <input type="text" id="saveFilename" placeholder="my-document">
+        <div class="dialog-buttons">
+            <button onclick="closeSaveDialog()">Cancel</button>
+            <button onclick="performSave()">Save</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuration
+        window.APP_ID = 'test-text-editor';
+        
+        // State
+        let currentUser = null;
+        let isDirty = false;
+        
+        // Get DOM elements
+        const editor = document.getElementById('editor');
+        const statusEl = document.getElementById('status');
+        const statsEl = document.getElementById('stats');
+        const userStatusEl = document.getElementById('user-status');
+        
+        // Listen for ToyBox OS authentication
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                updateUserStatus();
+            }
+        });
+        
+        // Load auth from localStorage fallback
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    updateUserStatus();
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Update user status display
+        function updateUserStatus() {
+            if (currentUser) {
+                userStatusEl.textContent = `User: ${currentUser.handle}`;
+            } else {
+                userStatusEl.textContent = 'Not logged in';
+            }
+        }
+        
+        // ZAD Helper Functions
+        async function save(dataType, data) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: currentUser?.handle || 'anonymous',
+                        action_type: dataType,
+                        content_data: data
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Save error:', error);
+                return false;
+            }
+        }
+        
+        // Editor functions
+        function newFile() {
+            if (confirm('Create new document? (Current content will be lost)')) {
+                editor.value = '';
+                isDirty = false;
+                updateStatus('New document created');
+                updateStats();
+            }
+        }
+        
+        function clearText() {
+            if (confirm('Clear all text? This cannot be undone.')) {
+                editor.value = '';
+                isDirty = false;
+                updateStatus('Text cleared');
+                updateStats();
+            }
+        }
+        
+        function saveFile() {
+            if (!currentUser) {
+                alert('Please login to save documents');
+                return;
+            }
+            
+            if (editor.value.trim() === '') {
+                alert('Cannot save empty document');
+                return;
+            }
+            
+            document.getElementById('saveDialog').style.display = 'block';
+        }
+        
+        async function performSave() {
+            const filename = document.getElementById('saveFilename').value.trim();
+            if (!filename) {
+                alert('Please enter a document name');
+                return;
+            }
+            
+            const content = editor.value;
+            const docData = {
+                filename: filename,
+                content: content,
+                author: currentUser.handle,
+                timestamp: new Date().toISOString()
+            };
+            
+            const success = await save('document', docData);
+            if (success) {
+                isDirty = false;
+                updateStatus(`Saved: ${filename}`);
+                closeSaveDialog();
+            } else {
+                updateStatus('Save failed');
+            }
+        }
+        
+        function closeSaveDialog() {
+            document.getElementById('saveDialog').style.display = 'none';
+        }
+        
+        // Status updates
+        function updateStatus(message) {
+            statusEl.textContent = message;
+        }
+        
+        function updateStats() {
+            const text = editor.value;
+            const lines = text.split('\n').length;
+            const chars = text.length;
+            statsEl.textContent = `Lines: ${lines} | Chars: ${chars}`;
+        }
+        
+        // Event listeners
+        editor.addEventListener('input', () => {
+            isDirty = true;
+            updateStats();
+            updateStatus('Modified');
+        });
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveFile();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newFile();
+                        break;
+                }
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuth();
+            updateStats();
+            updateStatus('Ready - TEST Text Editor');
+            
+            // Request auth from parent if in iframe
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

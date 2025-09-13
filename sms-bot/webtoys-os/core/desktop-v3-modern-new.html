@@ -2204,9 +2204,10 @@
             }
         });
         
-        // Space key bonus
+        // Space key bonus (do NOT interfere with typing in inputs/textareas/chat widget)
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space' && !e.target.closest('input')) {
+            const inEditable = e.target.closest('input, textarea, [contenteditable="true"], .chat-widget');
+            if (e.code === 'Space' && !inEditable) {
                 e.preventDefault();
                 document.body.style.animation = 'shake 0.5s';
                 setTimeout(() => {

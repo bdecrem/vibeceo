@@ -20,11 +20,22 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
         }
         
         .app-container {
-            width: 900px;
+            width: 100%;
             height: 650px;
             background: rgba(255, 255, 255, 0.15);
             backdrop-filter: blur(20px);
@@ -224,6 +235,102 @@
             }
         }
         
+        .gallery-container {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(255, 105, 180, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 24px;
+        }
+        
+        .gallery-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .gallery-title {
+            font-family: 'Comfortaa', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff1493, #ff69b4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .gallery-item {
+            position: relative;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 16px rgba(255, 105, 180, 0.2);
+            aspect-ratio: 1;
+        }
+        
+        .gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 24px rgba(255, 20, 147, 0.3);
+        }
+        
+        .gallery-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .gallery-item-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(255, 20, 147, 0.9), transparent);
+            color: white;
+            padding: 8px;
+            font-size: 11px;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .gallery-item:hover .gallery-item-info {
+            opacity: 1;
+        }
+        
+        .gallery-empty {
+            text-align: center;
+            padding: 40px;
+            color: #ff69b4;
+            font-family: 'Comfortaa', cursive;
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 105, 180, 0.3);
+            border-top-color: #ff69b4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
         @media (max-width: 768px) {
             body {
                 padding: 0;
@@ -248,7 +355,8 @@
     </style>
 </head>
 <body>
-    <div class="app-container">
+    <div class="main-container">
+        <div class="app-container">
         <div class="header">
             <h1>💖 Pink Paint</h1>
             <div class="controls">
@@ -281,6 +389,22 @@
         
         <div class="canvas-container">
             <canvas id="paintCanvas"></canvas>
+        </div>
+        </div>
+        
+        <div class="gallery-container">
+            <div class="gallery-header">
+                <h2 class="gallery-title">🎨 Community Gallery</h2>
+                <button class="btn btn-secondary" onclick="loadGallery()">
+                    <span id="refreshIcon">🔄</span> Refresh
+                </button>
+            </div>
+            <div id="galleryGrid" class="gallery-grid">
+                <div class="gallery-empty">
+                    <div class="loading-spinner"></div>
+                    <p style="margin-top: 16px;">Loading gallery...</p>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -409,14 +533,200 @@
             showToast('✨ Canvas cleared!');
         }
         
-        // Save drawing
-        function saveDrawing() {
-            const link = document.createElement('a');
-            link.download = `pink-paint-${Date.now()}.png`;
-            link.href = canvas.toDataURL();
-            link.click();
-            showToast('💖 Drawing saved!');
+        // Save drawing locally and to gallery
+        async function saveDrawing() {
+            try {
+                const dataUrl = canvas.toDataURL('image/png');
+                
+                // Save locally
+                const link = document.createElement('a');
+                const timestamp = Date.now();
+                link.download = `pink-paint-${timestamp}.png`;
+                link.href = dataUrl;
+                link.click();
+                
+                // Save to gallery
+                await saveToGallery(dataUrl, timestamp);
+                
+                showToast('💖 Drawing saved to gallery!');
+                
+                // Reload gallery after save
+                setTimeout(() => loadGallery(), 500);
+            } catch (error) {
+                console.error('Error saving drawing:', error);
+                showToast('⚠️ Could not save to gallery');
+            }
         }
+        
+        // Save to ZAD database
+        async function saveToGallery(dataUrl, timestamp) {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: 'toybox-pink-paint',
+                    participant_id: getParticipantId() || 'ANONYMOUS_' + Math.random().toString(36).substr(2, 9),
+                    action_type: 'drawing',
+                    content_data: {
+                        image: dataUrl,
+                        timestamp: timestamp,
+                        author: getCurrentUser()?.handle || 'Anonymous',
+                        created_at: new Date().toISOString()
+                    }
+                })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Failed to save to gallery');
+            }
+        }
+        
+        // Load gallery from ZAD database
+        async function loadGallery() {
+            const refreshIcon = document.getElementById('refreshIcon');
+            refreshIcon.style.animation = 'spin 1s linear';
+            
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-pink-paint&action_type=drawing');
+                const drawings = await response.json();
+                
+                const galleryGrid = document.getElementById('galleryGrid');
+                
+                if (drawings.length === 0) {
+                    galleryGrid.innerHTML = `
+                        <div class="gallery-empty">
+                            <p>🎨 No drawings yet!</p>
+                            <p style="font-size: 14px; margin-top: 8px;">Be the first to create one!</p>
+                        </div>
+                    `;
+                } else {
+                    // Sort by most recent and deduplicate
+                    const uniqueDrawings = {};
+                    drawings.forEach(drawing => {
+                        const timestamp = drawing.timestamp || drawing.content_data?.timestamp;
+                        if (timestamp && (!uniqueDrawings[timestamp] || 
+                            new Date(drawing.created_at) > new Date(uniqueDrawings[timestamp].created_at))) {
+                            uniqueDrawings[timestamp] = drawing;
+                        }
+                    });
+                    
+                    const sortedDrawings = Object.values(uniqueDrawings)
+                        .sort((a, b) => {
+                            const timeA = a.timestamp || a.content_data?.timestamp || 0;
+                            const timeB = b.timestamp || b.content_data?.timestamp || 0;
+                            return timeB - timeA;
+                        })
+                        .slice(0, 50); // Show max 50 most recent
+                    
+                    galleryGrid.innerHTML = sortedDrawings.map(drawing => {
+                        const image = drawing.image || drawing.content_data?.image;
+                        const author = drawing.author || drawing.content_data?.author || 'Anonymous';
+                        const createdAt = drawing.created_at || drawing.content_data?.created_at;
+                        const timeAgo = getTimeAgo(createdAt);
+                        
+                        return `
+                            <div class="gallery-item" onclick="viewDrawing('${image}')">
+                                <img src="${image}" alt="Drawing by ${author}">
+                                <div class="gallery-item-info">
+                                    <div>${author}</div>
+                                    <div>${timeAgo}</div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+                document.getElementById('galleryGrid').innerHTML = `
+                    <div class="gallery-empty">
+                        <p>⚠️ Could not load gallery</p>
+                    </div>
+                `;
+            } finally {
+                refreshIcon.style.animation = '';
+            }
+        }
+        
+        // View drawing in modal or new tab
+        function viewDrawing(imageUrl) {
+            const win = window.open();
+            win.document.write(`
+                <html>
+                <head>
+                    <title>Pink Paint Gallery</title>
+                    <style>
+                        body {
+                            margin: 0;
+                            background: linear-gradient(135deg, #ff6ec7, #ffb3d9);
+                            display: flex;
+                            justify-content: center;
+                            align-items: center;
+                            min-height: 100vh;
+                        }
+                        img {
+                            max-width: 90vw;
+                            max-height: 90vh;
+                            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+                            border-radius: 12px;
+                        }
+                    </style>
+                </head>
+                <body>
+                    <img src="${imageUrl}" alt="Pink Paint Drawing">
+                </body>
+                </html>
+            `);
+        }
+        
+        // Get time ago string
+        function getTimeAgo(dateString) {
+            if (!dateString) return 'Recently';
+            
+            const date = new Date(dateString);
+            const now = new Date();
+            const seconds = Math.floor((now - date) / 1000);
+            
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+            return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        
+        // Get participant ID for ZAD
+        function getParticipantId() {
+            const user = getCurrentUser();
+            if (!user?.handle || !user?.pin) return null;
+            return `${user.handle.toUpperCase()}_${user.pin}`;
+        }
+        
+        // Get current user from auth
+        function getCurrentUser() {
+            // Try localStorage first
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    return JSON.parse(savedUser);
+                } catch (e) {
+                    console.error('Error parsing saved user:', e);
+                }
+            }
+            return null;
+        }
+        
+        // Listen for auth from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                const user = e.data.user;
+                if (user.handle) {
+                    user.handle = user.handle.toUpperCase();
+                }
+                if (!user.participantId && user.handle && user.pin) {
+                    user.participantId = `${user.handle.toUpperCase()}_${user.pin}`;
+                }
+                localStorage.setItem('toybox_user', JSON.stringify(user));
+            }
+        });
         
         // Toast notification
         function showToast(message) {
@@ -440,9 +750,10 @@
             setTimeout(() => sparkle.remove(), 1000);
         }
         
-        // Initial sparkle
+        // Initial load
         setTimeout(() => {
             showToast('💖 Ready to paint in pink!');
+            loadGallery();
         }, 500);
     </script>
 </body>

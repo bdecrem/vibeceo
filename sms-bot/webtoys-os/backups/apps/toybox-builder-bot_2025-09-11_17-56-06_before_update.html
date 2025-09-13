@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="window:builder-bot" content="width=420,height=520,resizable=true,docked=bottom-right" />
+  <title>Builder Bot</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap');
+    
+    * { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+    }
+    
+    body { 
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: transparent;
+      margin: 0;
+      padding: 0;
+      height: 100vh;
+      overflow: hidden;
+    }
+    
+    .chat-widget {
+      position: fixed;
+      bottom: 0;
+      right: 20px;
+      width: 380px;
+      height: 480px;
+      background: rgba(255, 255, 255, 0.95);
+      display: flex;
+      flex-direction: column;
+      z-index: 1000;
+    }
+    
+    .widget-header {
+      padding: 16px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .bot-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    
+    .bot-avatar {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+    
+    .bot-details h3 {
+      font-family: 'Comfortaa', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: rgba(0, 0, 0, 0.8);
+      margin-bottom: 2px;
+    }
+    
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    
+    .status-available {
+      background: rgba(16, 185, 129, 0.15);
+      color: #059669;
+    }
+    
+    .status-busy {
+      background: rgba(239, 68, 68, 0.15);
+      color: #dc2626;
+    }
+    
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    
+    .widget-actions {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .action-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(0, 0, 0, 0.08);
+      color: rgba(0, 0, 0, 0.6);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 14px;
+    }
+    
+    .action-btn:hover {
+      background: rgba(0, 0, 0, 0.12);
+      color: rgba(0, 0, 0, 0.8);
+    }
+    
+    .settings-panel {
+      padding: 12px 20px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.02);
+      display: none;
+    }
+    
+    .settings-panel.visible {
+      display: block;
+    }
+    
+    .settings-input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.8);
+      color: rgba(0, 0, 0, 0.8);
+      font-size: 13px;
+    }
+    
+    .settings-input::placeholder {
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    .settings-input:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    
+    .auth-info {
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.02);
+    }
+    
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    
+    .user-info {
+      flex: 1;
+    }
+    
+    .user-name {
+      font-weight: 500;
+      color: rgba(0, 0, 0, 0.8);
+      font-size: 13px;
+    }
+    
+    .user-status {
+      font-size: 11px;
+      color: rgba(0, 0, 0, 0.5);
+      margin-top: 1px;
+    }
+    
+    .control-buttons {
+      padding: 12px 20px;
+      display: flex;
+      gap: 8px;
+    }
+    
+    .primary-btn {
+      flex: 1;
+      padding: 12px 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.25);
+    }
+    
+    .primary-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    .primary-btn:active {
+      transform: translateY(0);
+    }
+    
+    .primary-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .secondary-btn {
+      padding: 12px 16px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.8);
+      color: rgba(0, 0, 0, 0.7);
+      font-weight: 500;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .secondary-btn:hover {
+      background: rgba(255, 255, 255, 0.9);
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    .chat-area {
+      flex: 1;
+      display: none;
+      flex-direction: column;
+      min-height: 0;
+    }
+    
+    .chat-area.active {
+      display: flex;
+    }
+    
+    .messages-container {
+      flex: 1;
+      overflow-y: auto;
+      scroll-behavior: smooth;
+      padding: 16px 20px;
+    }
+    
+    .messages-container::-webkit-scrollbar {
+      width: 3px;
+    }
+    
+    .messages-container::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    
+    .messages-container::-webkit-scrollbar-thumb {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 3px;
+    }
+    
+    .message {
+      margin-bottom: 12px;
+      animation: messageSlide 0.3s ease-out;
+    }
+    
+    @keyframes messageSlide {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .message.user {
+      display: flex;
+      justify-content: flex-end;
+    }
+    
+    .message.bot {
+      display: flex;
+      justify-content: flex-start;
+    }
+    
+    .message-bubble {
+      max-width: 85%;
+      padding: 10px 14px;
+      border-radius: 16px;
+      font-size: 14px;
+      line-height: 1.4;
+      word-wrap: break-word;
+    }
+    
+    .message.user .message-bubble {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-bottom-right-radius: 4px;
+      box-shadow: 0 1px 3px rgba(102, 126, 234, 0.3);
+    }
+    
+    .message.bot .message-bubble {
+      background: rgba(0, 0, 0, 0.06);
+      color: rgba(0, 0, 0, 0.8);
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    
+    .chat-input-container {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+      padding: 16px 20px;
+      border-top: 1px solid rgba(0, 0, 0, 0.1);
+      background: rgba(255, 255, 255, 0.5);
+    }
+    
+    .chat-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1px solid rgba(0, 0, 0, 0.15);
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.9);
+      color: rgba(0, 0, 0, 0.8);
+      font-size: 14px;
+      resize: none;
+      outline: none;
+      min-height: 20px;
+      max-height: 80px;
+      font-family: inherit;
+    }
+    
+    .chat-input::placeholder {
+      color: rgba(0, 0, 0, 0.4);
+    }
+    
+    .chat-input:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+    }
+    
+    .send-btn {
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 18px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+      flex-shrink: 0;
+    }
+    
+    .send-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 3px 12px rgba(102, 126, 234, 0.4);
+    }
+    
+    .send-btn:active {
+      transform: scale(0.95);
+    }
+    
+    
+    .toast {
+      position: fixed;
+      bottom: 520px;
+      right: 40px;
+      padding: 10px 16px;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      border-radius: 8px;
+      font-size: 13px;
+      backdrop-filter: blur(12px);
+      transform: translateY(20px);
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1001;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .toast.visible {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  </style>
+
+  <!-- WebtoysOS Widget Theme: visual parity with desktop -->
+  <style>
+    :root{
+      --wos-bg:#ffffff; 
+      --wos-border:#e7e7ea; 
+      --wos-highlight:rgba(255,255,255,0.5);
+      --wos-shadow:0 10px 24px rgba(0,0,0,.10);
+      --wos-title:#f6f7fb; 
+      --wos-title-border:#dcdde2; 
+      --wos-pill:#e9f7ee; 
+      --wos-pill-text:#0b7a55;
+      --wos-radius:12px; 
+      --wos-font: Inter, -apple-system, system-ui, Segoe UI, Roboto, sans-serif;
+      --wos-primary:#6a6ee7; 
+      --wos-primary-2:#7e5ab6; 
+      --wos-btn-border:#5c5fca;
+    }
+
+    /* container */
+    .chat-widget{
+      background:var(--wos-bg)!important;
+      border:1px solid var(--wos-border)!important;
+      border-radius:var(--wos-radius)!important;
+      box-shadow:var(--wos-shadow)!important;
+      backdrop-filter:none!important; -webkit-backdrop-filter:none!important;
+      font-family:var(--wos-font)!important;
+    }
+    /* header */
+    .widget-header{
+      background:var(--wos-title)!important;
+      border-bottom:1px solid var(--wos-title-border)!important;
+      padding:12px 14px!important;
+    }
+    .bot-details h3{ font-weight:600; letter-spacing:0; }
+    .status-badge{ background:var(--wos-pill)!important; color:var(--wos-pill-text)!important; }
+
+    /* body surfaces */
+    .auth-info{ background:#fafbff!important; border-bottom:1px solid #ececf2!important; }
+    .control-buttons{ background:#fff; }
+    .messages-container{ background:#fff; }
+    .chat-input-container{ background:#fafbff!important; border-top:1px solid #ececf2!important; }
+
+    /* primary action */
+    .primary-btn{
+      background:linear-gradient(0deg,var(--wos-primary),var(--wos-primary-2))!important;
+      border:1px solid var(--wos-btn-border)!important;
+      box-shadow:0 2px 0 rgba(0,0,0,.05)!important;
+      border-radius:10px!important;
+    }
+
+    /* bubbles: tone down */
+    .message.user .message-bubble{ box-shadow:0 1px 3px rgba(102,126,234,0.18)!important; }
+    .message.bot .message-bubble{ background:#f7f8fc!important; border:1px solid #ececf2!important; }
+  </style>
+</head>
+<body>
+  <!-- Chat Widget -->
+  <div class="chat-widget" id="chatWidget">
+    <!-- Header -->
+    <div class="widget-header">
+      <div class="bot-info">
+        <div class="bot-avatar">🤖</div>
+        <div class="bot-details">
+          <h3>Builder Bot</h3>
+          <div id="statusBadge" class="status-badge status-available">
+            <div class="status-dot"></div>
+            <span id="statusText">Available</span>
+          </div>
+        </div>
+      </div>
+      <div class="widget-actions">
+        <button class="action-btn" id="settingsToggle" title="Settings" style="margin-right:6px;">⚙️</button>
+        <button class="action-btn" id="closeWidget" title="Minimize">✕</button>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="settings-panel" id="settingsPanel">
+      <input class="settings-input" id="webhookUrl" placeholder="Enter webhook URL (e.g., https://abc123.ngrok.app)" />
+    </div>
+
+    <!-- User Auth Info -->
+    <div class="auth-info" id="authInfo">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <div class="user-name" id="userName">Not logged in</div>
+        <div class="user-status" id="userStatus">Please log in to the desktop</div>
+      </div>
+    </div>
+
+    <!-- Control Buttons -->
+    <div class="control-buttons" id="controlButtons">
+      <button class="primary-btn" id="startBtn">Start Session</button>
+      <button class="secondary-btn" id="endBtn" style="display:none;">End Session</button>
+    </div>
+
+    <!-- Chat Area -->
+    <div class="chat-area" id="chatArea">
+      <div class="messages-container" id="messagesContainer">
+        <div id="messages"></div>
+      </div>
+      <div class="chat-input-container">
+        <textarea class="chat-input" id="chatInput" placeholder="Describe the app you want to build..." rows="1"></textarea>
+        <button class="send-btn" id="sendBtn" title="Send message">➤</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // Identity
+    window.APP_ID = 'toybox-builder-bot';
+    function getAppId() { return window.APP_ID || 'toybox-builder-bot'; }
+
+    // Auth
+    let currentUser = null;
+    function getUsername() { return (currentUser?.handle || 'anonymous').toUpperCase(); }
+    function getParticipantId() {
+      if (!currentUser) return 'anonymous_0000';
+      return currentUser.participantId || `${getUsername()}_${currentUser.pin || '0000'}`;
+    }
+    function loadAuthFromStorage() {
+      const saved = localStorage.getItem('toybox_user');
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
+          if (!currentUser.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+          console.log('🔑 Loaded auth from storage:', currentUser);
+        } catch {}
+      } else {
+        console.log('❌ No auth found in localStorage');
+      }
+    }
+    window.addEventListener('message', e => {
+      if (e.data && e.data.type === 'TOYBOX_AUTH') {
+        currentUser = e.data.user || null;
+        if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
+        if (!currentUser?.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+        console.log('🔑 Received auth from desktop:', currentUser);
+        render();
+      }
+    });
+
+    // ZAD helpers
+    async function zadSave(dataType, data) {
+      const username = getUsername();
+      const participant_id = getParticipantId();
+      const res = await fetch('/api/zad/save', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app_id: getAppId(), participant_id,
+          participant_data: { userLabel: username, username },
+          action_type: dataType,
+          content_data: { timestamp: Date.now(), author: username, ...data }
+        })
+      });
+      if (!res.ok) throw new Error('save failed');
+      return true;
+    }
+    async function zadLoad(dataType) {
+      const url = `/api/zad/load?app_id=${encodeURIComponent(getAppId())}&action_type=${encodeURIComponent(dataType)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('load failed');
+      const data = await res.json();
+      return (data || []).map(item => ({
+        id: item.content_data?.id || item.id,
+        ...item.content_data,
+        created_at: item.created_at,
+        participant_id: item.participant_id
+      }));
+    }
+
+    // UI refs
+    const chatWidget = document.getElementById('chatWidget');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const userAvatar = document.getElementById('userAvatar');
+    const userName = document.getElementById('userName');
+    const userStatus = document.getElementById('userStatus');
+    const startBtn = document.getElementById('startBtn');
+    const endBtn = document.getElementById('endBtn');
+    const chatArea = document.getElementById('chatArea');
+    const messagesEl = document.getElementById('messages');
+    const messagesContainer = document.getElementById('messagesContainer');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const settingsToggle = document.getElementById('settingsToggle');
+    const closeWidget = document.getElementById('closeWidget');
+    const settingsPanel = document.getElementById('settingsPanel');
+    const webhookInput = document.getElementById('webhookUrl');
+    const toast = document.getElementById('toast');
+
+    // Widget state - always expanded as dock-attached widget
+    
+    // Settings
+    function getWebhookUrl() { return localStorage.getItem('builderbot_webhook_url') || ''; }
+    function setWebhookUrl(v) { localStorage.setItem('builderbot_webhook_url', v); }
+    
+    // UI Functions
+    function showToast(message, duration = 3000) {
+      toast.textContent = message;
+      toast.classList.add('visible');
+      setTimeout(() => toast.classList.remove('visible'), duration);
+    }
+    
+    function toggleSettings() {
+      settingsPanel.classList.toggle('visible');
+      if (settingsPanel.classList.contains('visible')) {
+        webhookInput.value = getWebhookUrl(); // Load current webhook URL
+        webhookInput.focus();
+      }
+    }
+    
+    
+    function addMessage(author, text, isTemporary = false, appUrl = null) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${author === getUsername() ? 'user' : 'bot'}`;
+      if (isTemporary) messageDiv.classList.add('temporary');
+      
+      const bubbleDiv = document.createElement('div');
+      bubbleDiv.className = 'message-bubble';
+      
+      // Handle app URLs in bot messages
+      if (appUrl && author !== getUsername()) {
+        bubbleDiv.innerHTML = escapeHtml(text) + `<br><br><a href="${appUrl}" target="_blank" style="color: #667eea; text-decoration: underline;">🚀 Open App</a>`;
+      } else {
+        bubbleDiv.innerHTML = escapeHtml(text);
+      }
+      
+      messageDiv.appendChild(bubbleDiv);
+      messagesEl.appendChild(messageDiv);
+      
+      // Auto-scroll to bottom
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+    
+    function removeTemporaryMessages() {
+      const tempMessages = messagesEl.querySelectorAll('.message.temporary');
+      tempMessages.forEach(msg => msg.remove());
+    }
+    
+    // Auto-resize textarea
+    function autoResizeTextarea() {
+      chatInput.style.height = 'auto';
+      const newHeight = Math.min(chatInput.scrollHeight, 100);
+      chatInput.style.height = newHeight + 'px';
+    }
+    
+    // Event Listeners
+    settingsToggle.onclick = toggleSettings;
+    if (closeWidget) {
+      closeWidget.onclick = () => {
+        try { window.parent.postMessage({ type: 'BUILDER_BOT_VISIBILITY', open: false }, '*'); } catch (e) {}
+      };
+    }
+    
+    // Auto-save webhook URL on input
+    let webhookTimeout;
+    webhookInput.addEventListener('input', () => {
+      clearTimeout(webhookTimeout);
+      webhookTimeout = setTimeout(() => {
+        setWebhookUrl(webhookInput.value.trim());
+        if (webhookInput.value.trim()) {
+          showToast('Webhook URL saved!', 2000);
+        }
+      }, 1000);
+    });
+
+    // Initialize widget
+    document.addEventListener('DOMContentLoaded', () => {
+      webhookInput.value = getWebhookUrl();
+    });
+    
+    chatInput.addEventListener('input', autoResizeTextarea);
+    chatInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Lock state
+    let lockState = { locked_by: null, locked_at: null, expires_at: null };
+
+    async function refreshLock() {
+      try {
+        const locks = await zadLoad('lock');
+        if (locks.length > 0) {
+          // latest by created_at
+          locks.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+          const last = locks[0];
+          lockState = { locked_by: last.locked_by || null, locked_at: last.locked_at || null, expires_at: last.expires_at || null };
+        } else {
+          lockState = { locked_by: null, locked_at: null, expires_at: null };
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    async function refreshMessages() {
+      try {
+        const msgs = await zadLoad('chat_message');
+        
+        // Filter out old test messages before Sept 10, 2025 6:30 PM UTC
+        const CLEANUP_TIMESTAMP = new Date('2025-09-10T18:30:00Z').getTime();
+        const filteredMsgs = msgs.filter(m => {
+          const msgTime = m.timestamp || new Date(m.created_at).getTime();
+          return msgTime >= CLEANUP_TIMESTAMP;
+        });
+        
+        filteredMsgs.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
+        messagesEl.innerHTML = '';
+        filteredMsgs.forEach(m => {
+          addMessage(m.author || 'UNKNOWN', m.text || '', false, m.app_url);
+        });
+      } catch (e) {
+        console.error('Failed to refresh messages:', e);
+      }
+    }
+
+    function escapeHtml(t){ const d=document.createElement('div'); d.textContent=t||''; return d.innerHTML; }
+
+    async function requestLock() {
+      console.log('🔐 Lock request starting...', { currentUser, webhookUrl: getWebhookUrl() });
+      
+      if (!currentUser) { 
+        alert('Please log into the desktop first.'); 
+        console.log('❌ No current user'); 
+        return; 
+      }
+      
+      const url = getWebhookUrl(); 
+      if (!url) { 
+        alert('Set the webhook URL (⚙️). Use: https://ad463d4a606f.ngrok.app'); 
+        console.log('❌ No webhook URL configured');
+        return; 
+      }
+      
+      const payload = { 
+        type: 'lock_request', 
+        user: { 
+          handle: getUsername(), 
+          participantId: getParticipantId() 
+        } 
+      };
+      
+      console.log('📤 Sending lock request:', payload, 'to:', url + '/builderbot/webhook');
+      
+      try {
+        const res = await fetch(url + '/builderbot/webhook', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(payload) 
+        });
+        
+        console.log('📥 Response status:', res.status, res.statusText);
+        
+        if (!res.ok) {
+          const error = await res.text();
+          console.error('❌ Lock request failed:', error);
+          alert(`Lock request failed: ${res.status} ${error}`);
+          return;
+        }
+        
+        const result = await res.json();
+        console.log('✅ Lock acquired:', result);
+        
+        await refreshLock();
+        render();
+      } catch (error) {
+        console.error('❌ Network error:', error);
+        alert(`Network error: ${error.message}`);
+      }
+    }
+
+    async function releaseLock() {
+      const url = getWebhookUrl(); if (!url) return;
+      await fetch(url + '/builderbot/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'lock_release', user: { handle: getUsername(), participantId: getParticipantId() } }) });
+      await refreshLock();
+      render();
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim(); 
+      if (!text) return;
+      
+      const url = getWebhookUrl(); 
+      if (!url) { 
+        showToast('Please set webhook URL in settings ⚙️', 4000);
+        toggleSettings();
+        return; 
+      }
+      
+      // Add user message immediately (optimistic UI)
+      addMessage(getUsername(), text);
+      chatInput.value = '';
+      autoResizeTextarea();
+      
+      // Show typing indicator
+      addMessage('BUILDER_BOT', '⏳ Working on it...', true);
+      
+      try {
+        const payload = { 
+          type: 'chat_message', 
+          user: { 
+            handle: getUsername(), 
+            participantId: getParticipantId() 
+          }, 
+          text 
+        };
+        
+        console.log('📤 Sending message:', payload, 'to:', url + '/builderbot/webhook');
+        
+        const res = await fetch(url + '/builderbot/webhook', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(payload) 
+        });
+        
+        if (!res.ok) {
+          const error = await res.text();
+          console.error('❌ Message failed:', error);
+          removeTemporaryMessages();
+          addMessage('BUILDER_BOT', `❌ Message failed: ${res.status} ${error}`);
+          return;
+        }
+        
+        const result = await res.json();
+        console.log('✅ Message sent:', result);
+        
+        // Remove typing indicator and refresh messages
+        removeTemporaryMessages();
+        await refreshMessages();
+        
+      } catch (error) {
+        console.error('❌ Network error:', error);
+        removeTemporaryMessages();
+        addMessage('BUILDER_BOT', `❌ Network error: ${error.message}`);
+      }
+    }
+
+    startBtn.onclick = requestLock;
+    endBtn.onclick = releaseLock;
+    sendBtn.onclick = sendMessage;
+
+    function render() {
+      // Update auth display
+      if (currentUser) {
+        userName.textContent = `@${getUsername()}`;
+        userStatus.textContent = 'Ready to build apps';
+        userAvatar.textContent = getUsername().charAt(0);
+        userAvatar.style.background = 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)';
+      } else {
+        userName.textContent = 'Not logged in';
+        userStatus.textContent = 'Please log in to the desktop';
+        userAvatar.textContent = '?';
+        userAvatar.style.background = 'rgba(255, 255, 255, 0.3)';
+      }
+      
+      // Update lock state
+      const me = getParticipantId();
+      const heldBy = lockState.locked_by || null;
+      const handleMatch = heldBy && heldBy.split('_')[0] === getUsername();
+      const iHold = !!heldBy && (heldBy === me || handleMatch);
+      const available = !heldBy;
+
+      // Update status badge
+      if (available) {
+        statusBadge.className = 'status-badge status-available';
+        statusText.textContent = 'Available';
+      } else {
+        statusBadge.className = 'status-badge status-busy';
+        statusText.textContent = iHold ? 'In session' : 'Busy';
+      }
+      
+      // Update user status
+      if (iHold) {
+        userStatus.textContent = 'You have the session - start chatting!';
+      } else if (heldBy) {
+        userStatus.textContent = `${heldBy.split('_')[0]} is using the bot`;
+      } else if (currentUser) {
+        userStatus.textContent = 'Ready to start a session';
+      }
+      
+      // Update buttons
+      if (available && currentUser) {
+        startBtn.style.display = 'block';
+        startBtn.textContent = 'Start Session';
+        startBtn.disabled = false;
+        startBtn.style.opacity = '1';
+        endBtn.style.display = 'none';
+      } else if (iHold) {
+        startBtn.style.display = 'none';
+        endBtn.style.display = 'block';
+      } else {
+        startBtn.style.display = 'block';
+        startBtn.textContent = available ? 'Login Required' : 'Session Busy';
+        startBtn.disabled = true;
+        startBtn.style.opacity = '0.5';
+        endBtn.style.display = 'none';
+      }
+      
+      // Update chat area
+      if (iHold) {
+        chatArea.classList.add('active');
+      } else {
+        chatArea.classList.remove('active');
+      }
+    }
+
+    async function tick() { 
+      await refreshLock(); 
+      if (chatArea.classList.contains('active')) { 
+        await refreshMessages(); 
+      } 
+      render(); 
+    }
+
+    // Init
+    console.log('🚀 Builder Bot initializing...');
+    loadAuthFromStorage();
+    console.log('👤 Initial auth state:', { currentUser, username: getUsername(), participantId: getParticipantId() });
+    render();
+    
+    // Request auth from parent (desktop)
+    if (window.parent !== window) { 
+      console.log('📡 Requesting auth from desktop...');
+      window.parent.postMessage({ type: 'GET_AUTH' }, '*'); 
+    }
+    
+    // Start polling
+    setInterval(tick, 4000);
+    
+    // Initial auth check after a short delay
+    setTimeout(() => {
+      console.log('🔍 Auth check after 1 second:', { currentUser, username: getUsername() });
+      render();
+    }, 1000);
+  </script>
+</body>
+</html>

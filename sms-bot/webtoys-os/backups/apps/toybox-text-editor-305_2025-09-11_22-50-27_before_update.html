@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>305 Text Editor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            overflow: hidden;
+        }
+        
+        .app-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px 16px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .title {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .auth-display {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0.1) 100%);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px 16px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.2) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn.primary {
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .btn.primary:hover {
+            background: linear-gradient(135deg, #00d4ff 0%, #0080ff 100%);
+            box-shadow: 0 6px 20px rgba(0, 114, 255, 0.3);
+        }
+        
+        .editor-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 16px;
+            overflow: hidden;
+        }
+        
+        .document-list {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 20px;
+            max-height: 120px;
+            overflow-y: auto;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .document-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 4px;
+        }
+        
+        .document-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .document-item.active {
+            background: linear-gradient(135deg, rgba(0, 198, 255, 0.3) 0%, rgba(0, 114, 255, 0.3) 100%);
+        }
+        
+        .document-name {
+            color: white;
+            font-weight: 500;
+        }
+        
+        .document-meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .document-title {
+            width: 100%;
+            padding: 16px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: 'Comfortaa', sans-serif;
+        }
+        
+        .document-title::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .document-title:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0 0 0 2px rgba(0, 198, 255, 0.5);
+        }
+        
+        .editor {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            font-family: 'Inter', monospace;
+        }
+        
+        .editor::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+        
+        .editor:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.03);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .toast {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            background: linear-gradient(135deg, #00c6ff 0%, #0072ff 100%);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+            backdrop-filter: blur(20px);
+            transform: translateX(300px);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.6);
+            padding: 40px 20px;
+        }
+        
+        .empty-state h3 {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 20px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        @media (max-width: 768px) {
+            .app-container {
+                width: 100vw;
+                height: 100vh;
+            }
+            
+            .header {
+                padding: 16px 20px 12px;
+            }
+            
+            .title {
+                font-size: 20px;
+            }
+            
+            .toolbar {
+                padding: 12px 20px;
+                flex-wrap: wrap;
+            }
+            
+            .editor-area {
+                padding: 16px 20px;
+            }
+            
+            .document-list {
+                max-height: 100px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <h1 class="title">✍️ 305</h1>
+            <div class="auth-display" id="authDisplay">Not logged in</div>
+        </header>
+        
+        <div class="toolbar">
+            <button class="btn primary" onclick="createNewDocument()">📝 New</button>
+            <button class="btn" onclick="saveCurrentDocument()">💾 Save</button>
+            <button class="btn" onclick="deleteCurrentDocument()">🗑️ Delete</button>
+            <button class="btn" onclick="loadDocuments()">🔄 Refresh</button>
+        </div>
+        
+        <div class="editor-area">
+            <div class="document-list" id="documentList">
+                <div class="empty-state">
+                    <h3>No documents yet</h3>
+                    <p>Create your first document to get started</p>
+                </div>
+            </div>
+            
+            <div class="editor-container">
+                <input type="text" class="document-title" id="documentTitle" placeholder="Document title...">
+                <textarea class="editor" id="editor" placeholder="Start writing your thoughts..."></textarea>
+            </div>
+        </div>
+        
+        <div class="status-bar">
+            <span id="statusText">Ready</span>
+            <span id="wordCount">0 words</span>
+        </div>
+    </div>
+    
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // App identity
+        window.APP_ID = 'toybox-text-editor-305';
+        function getAppId() { return window.APP_ID || 'toybox-text-editor-305'; }
+
+        // Global auth state
+        let currentUser = null;
+        let currentDocument = null;
+        let documents = [];
+
+        // Authentication system
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        function updateAuthDisplay() {
+            const authDisplay = document.getElementById('authDisplay');
+            if (currentUser && currentUser.handle) {
+                authDisplay.textContent = `👋 ${currentUser.handle.toUpperCase()}`;
+            } else {
+                authDisplay.textContent = 'Not logged in';
+            }
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthDisplay();
+                if (currentUser) loadDocuments();
+            }
+        });
+
+        // User helpers
+        function getUsername() {
+            return (currentUser && currentUser.handle)
+                ? currentUser.handle.toUpperCase()
+                : 'anonymous';
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return 'anonymous_0000';
+            return currentUser.participantId || (getUsername() + '_' + (currentUser.pin || '0000'));
+        }
+
+        // ZAD helpers
+        async function zadSave(dataType, data) {
+            const app_id = getAppId();
+            const participant_id = getParticipantId();
+            const username = getUsername();
+            const res = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: app_id,
+                    participant_id: participant_id,
+                    participant_data: { userLabel: username, username: username },
+                    action_type: dataType,
+                    content_data: Object.assign({
+                        timestamp: (data && data.timestamp) ? data.timestamp : Date.now(),
+                        author: (data && data.author) ? data.author : username
+                    }, data)
+                })
+            });
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error('Save failed: ' + (err.error || res.statusText));
+            }
+            return true;
+        }
+
+        async function zadLoad(dataType) {
+            const app_id = getAppId();
+            const url = '/api/zad/load?app_id=' + encodeURIComponent(app_id) + '&action_type=' + encodeURIComponent(dataType);
+            const res = await fetch(url);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({}));
+                throw new Error('Load failed: ' + (err.error || res.statusText));
+            }
+            const data = await res.json();
+            return (data || []).map(item => {
+                const cd = item.content_data || {};
+                return {
+                    id: cd.id || item.id || generateId(),
+                    title: cd.title || 'Untitled',
+                    content: cd.content || '',
+                    author: cd.author || (item.participant_data && (item.participant_data.username || item.participant_data.userLabel)) || 'Unknown',
+                    updatedAt: cd.updatedAt || item.created_at,
+                    created_at: item.created_at,
+                    participant_id: item.participant_id
+                };
+            });
+        }
+
+        async function loadUserDocuments() {
+            try {
+                const all = await zadLoad('document');
+                const me = getParticipantId();
+                const mine = all.filter(d => d.participant_id === me);
+                const latest = {};
+                mine.forEach(d => {
+                    const ts = d.updatedAt ? new Date(d.updatedAt).getTime() : 0;
+                    if (!latest[d.id] || ts > latest[d.id].ts) {
+                        latest[d.id] = Object.assign({ ts: ts }, d);
+                    }
+                });
+                return Object.values(latest).sort((a, b) => b.ts - a.ts);
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+                return [];
+            }
+        }
+
+        // Document management
+        function generateId() {
+            return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        async function loadDocuments() {
+            if (!currentUser) {
+                showToast('Please log in to load documents');
+                return;
+            }
+
+            try {
+                updateStatus('Loading documents...');
+                documents = await loadUserDocuments();
+                renderDocumentList();
+                updateStatus('Ready');
+            } catch (error) {
+                console.error('Load error:', error);
+                showToast('Failed to load documents');
+                updateStatus('Ready');
+            }
+        }
+
+        function renderDocumentList() {
+            const listContainer = document.getElementById('documentList');
+            
+            if (documents.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No documents yet</h3>
+                        <p>Create your first document to get started</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = documents.map(doc => `
+                <div class="document-item ${currentDocument?.id === doc.id ? 'active' : ''}" onclick="openDocument('${doc.id}')">
+                    <div>
+                        <div class="document-name">${escapeHtml(doc.title || 'Untitled')}</div>
+                        <div class="document-meta">by ${escapeHtml(doc.author)} • ${formatDate(doc.updatedAt)}</div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function openDocument(docId) {
+            const doc = documents.find(d => d.id === docId);
+            if (!doc) return;
+
+            currentDocument = doc;
+            document.getElementById('documentTitle').value = doc.title || '';
+            document.getElementById('editor').value = doc.content || '';
+            renderDocumentList();
+            updateWordCount();
+        }
+
+        function createNewDocument() {
+            if (!currentUser) {
+                showToast('Please log in to create documents');
+                return;
+            }
+
+            currentDocument = {
+                id: generateId(),
+                title: '',
+                content: '',
+                author: getUsername(),
+                updatedAt: new Date().toISOString()
+            };
+
+            document.getElementById('documentTitle').value = '';
+            document.getElementById('editor').value = '';
+            document.getElementById('documentTitle').focus();
+            renderDocumentList();
+            updateWordCount();
+        }
+
+        async function saveCurrentDocument() {
+            if (!currentUser) {
+                showToast('Please log in to save documents');
+                return;
+            }
+
+            if (!currentDocument) {
+                showToast('No document to save');
+                return;
+            }
+
+            const title = document.getElementById('documentTitle').value.trim() || 'Untitled';
+            const content = document.getElementById('editor').value;
+
+            try {
+                updateStatus('Saving...');
+                
+                currentDocument.title = title;
+                currentDocument.content = content;
+                currentDocument.updatedAt = new Date().toISOString();
+
+                await zadSave('document', {
+                    id: currentDocument.id,
+                    title: title,
+                    content: content,
+                    updatedAt: currentDocument.updatedAt
+                });
+
+                // Update local documents array
+                const existingIndex = documents.findIndex(d => d.id === currentDocument.id);
+                if (existingIndex >= 0) {
+                    documents[existingIndex] = { ...currentDocument };
+                } else {
+                    documents.unshift({ ...currentDocument });
+                }
+
+                renderDocumentList();
+                showToast('Document saved successfully!');
+                updateStatus('Ready');
+            } catch (error) {
+                console.error('Save error:', error);
+                showToast('Failed to save document');
+                updateStatus('Ready');
+            }
+        }
+
+        async function deleteCurrentDocument() {
+            if (!currentDocument) {
+                showToast('No document selected');
+                return;
+            }
+
+            if (!confirm(`Delete "${currentDocument.title || 'Untitled'}"?`)) {
+                return;
+            }
+
+            try {
+                // Mark as deleted by saving with deleted flag
+                await zadSave('document', {
+                    id: currentDocument.id,
+                    title: currentDocument.title,
+                    content: '',
+                    deleted: true,
+                    updatedAt: new Date().toISOString()
+                });
+
+                // Remove from local array
+                documents = documents.filter(d => d.id !== currentDocument.id);
+                
+                // Clear editor
+                currentDocument = null;
+                document.getElementById('documentTitle').value = '';
+                document.getElementById('editor').value = '';
+                
+                renderDocumentList();
+                showToast('Document deleted');
+                updateWordCount();
+            } catch (error) {
+                console.error('Delete error:', error);
+                showToast('Failed to delete document');
+            }
+        }
+
+        // UI helpers
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        function updateStatus(text) {
+            document.getElementById('statusText').textContent = text;
+        }
+
+        function updateWordCount() {
+            const content = document.getElementById('editor').value;
+            const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${words} words`;
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Unknown';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Auto-save functionality
+        let saveTimeout;
+        function scheduleAutoSave() {
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(() => {
+                if (currentDocument && currentUser) {
+                    const title = document.getElementById('documentTitle').value.trim();
+                    const content = document.getElementById('editor').value;
+                    if (title || content) {
+                        saveCurrentDocument();
+                    }
+                }
+            }, 2000);
+        }
+
+        // Event listeners
+        document.getElementById('documentTitle').addEventListener('input', () => {
+            updateWordCount();
+            scheduleAutoSave();
+        });
+
+        document.getElementById('editor').addEventListener('input', () => {
+            updateWordCount();
+            scheduleAutoSave();
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveCurrentDocument();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        createNewDocument();
+                        break;
+                }
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadDocuments();
+            } else {
+                updateAuthDisplay();
+            }
+            updateWordCount();
+        });
+    </script>
+</body>
+</html>
