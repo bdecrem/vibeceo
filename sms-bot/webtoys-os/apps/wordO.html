@@ -442,22 +442,69 @@
 
             generateGrid() {
                 // Letter frequency based on English language (simplified)
+                const consonants = 'BCDFGHJKLMNPQRSTVWXYZ';
+                const vowels = 'AEIOU';
                 const letters = 'AAAAABCCDDEEEEEEFGHIIJKLMNNNOOOOPQRSTTUUUVWXYZ';
                 this.grid = [];
                 
                 const gridElement = document.getElementById('grid');
                 gridElement.innerHTML = '';
                 
-                for (let i = 0; i < 16; i++) {
-                    const letter = letters[Math.floor(Math.random() * letters.length)];
-                    this.grid.push(letter);
+                // If there's a required starting letter, ensure it's on the board with an adjacent vowel
+                if (this.requiredStartLetter) {
+                    // Choose a random position for the required letter
+                    const requiredPos = Math.floor(Math.random() * 16);
                     
+                    // Get adjacent positions for this cell
+                    const adjacentPositions = this.getAdjacentPositions(requiredPos);
+                    
+                    // Choose a random adjacent position for a vowel
+                    const vowelPos = adjacentPositions[Math.floor(Math.random() * adjacentPositions.length)];
+                    
+                    // Fill the grid
+                    for (let i = 0; i < 16; i++) {
+                        if (i === requiredPos) {
+                            // Place the required letter
+                            this.grid.push(this.requiredStartLetter);
+                        } else if (i === vowelPos) {
+                            // Place a vowel adjacent to the required letter
+                            this.grid.push(vowels[Math.floor(Math.random() * vowels.length)]);
+                        } else {
+                            // Place a random letter from the normal distribution
+                            this.grid.push(letters[Math.floor(Math.random() * letters.length)]);
+                        }
+                    }
+                } else {
+                    // Normal grid generation for first word
+                    for (let i = 0; i < 16; i++) {
+                        this.grid.push(letters[Math.floor(Math.random() * letters.length)]);
+                    }
+                }
+                
+                // Create the visual cells
+                for (let i = 0; i < 16; i++) {
                     const cell = document.createElement('div');
                     cell.className = 'letter-cell';
-                    cell.textContent = letter;
+                    cell.textContent = this.grid[i];
                     cell.dataset.index = i;
                     gridElement.appendChild(cell);
                 }
+            }
+            
+            getAdjacentPositions(index) {
+                const row = Math.floor(index / 4);
+                const col = index % 4;
+                const adjacent = [];
+                
+                // Check all 8 adjacent positions
+                for (let r = Math.max(0, row - 1); r <= Math.min(3, row + 1); r++) {
+                    for (let c = Math.max(0, col - 1); c <= Math.min(3, col + 1); c++) {
+                        if (r === row && c === col) continue; // Skip the center cell
+                        adjacent.push(r * 4 + c);
+                    }
+                }
+                
+                return adjacent;
             }
 
             setupEventListeners() {
