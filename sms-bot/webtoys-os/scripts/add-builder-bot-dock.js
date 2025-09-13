@@ -9,18 +9,39 @@
 import { fetchCurrentDesktop, safeUpdateDesktop } from './safe-wrapper.js';
 
 function injectDock(html) {
-  if (html.includes('<!-- BUILDER BOT DOCK START -->')) {
-    return html; // already present
-  }
-
   const snippet = `\n<!-- BUILDER BOT DOCK START -->\n<style>
-  .builder-bot-dock { position: fixed; left: 0; right: 0; bottom: 0; height: 52px; z-index: 2147483000; }
-  .builder-bot-frame { width: 100%; height: 100%; border: 0; background: transparent; }
+  .builder-bot-dock { 
+    position: fixed; 
+    top: 0;
+    left: 0; 
+    right: 0; 
+    bottom: 0; 
+    z-index: 2147483000; 
+    pointer-events: none;
+  }
+  .builder-bot-frame { 
+    width: 100%; 
+    height: 100%; 
+    border: 0; 
+    background: transparent; 
+    pointer-events: all;
+  }
 </style>
 <div class="builder-bot-dock">
-  <iframe class="builder-bot-frame" src="/public/toybox-builder-bot" loading="lazy" referrerpolicy="no-referrer"></iframe>
+  <iframe class="builder-bot-frame" src="/api/wtaf/raw?user=public&slug=toybox-builder-bot" loading="lazy" referrerpolicy="no-referrer"></iframe>
 </div>
 <!-- BUILDER BOT DOCK END -->\n`;
+
+  if (html.includes('<!-- BUILDER BOT DOCK START -->')) {
+    // Replace existing block between markers to update style/height
+    const start = html.indexOf('<!-- BUILDER BOT DOCK START -->');
+    const end = html.indexOf('<!-- BUILDER BOT DOCK END -->', start);
+    if (start !== -1 && end !== -1) {
+      const before = html.slice(0, start);
+      const after = html.slice(end + '<!-- BUILDER BOT DOCK END -->'.length);
+      return before + snippet + after;
+    }
+  }
 
   // Insert before </body>
   const idx = html.lastIndexOf('</body>');
@@ -43,4 +64,3 @@ async function main() {
 if (import.meta.url === `file://${process.argv[1]}`) {
   main().catch(err => { console.error('Failed:', err.message); process.exit(1); });
 }
-

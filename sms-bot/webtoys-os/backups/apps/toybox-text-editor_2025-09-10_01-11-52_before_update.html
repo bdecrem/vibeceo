@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Editor - WebtoysOS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 800px;
+            max-height: calc(100vh - 40px);
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            padding: 24px 32px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .title {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 8px;
+        }
+
+        .auth-status {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.8);
+            margin-bottom: 16px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(10px);
+            color: white;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            box-shadow: 0 4px 16px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .filename-input {
+            padding: 8px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            font-size: 14px;
+            min-width: 200px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .filename-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .filename-input:focus {
+            border-color: rgba(79, 172, 254, 0.6);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 24px 32px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .editor {
+            flex: 1;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 24px;
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            outline: none;
+            font-family: 'Inter', monospace;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .editor::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .editor:focus {
+            border-color: rgba(79, 172, 254, 0.6);
+            box-shadow: 0 0 0 3px rgba(79, 172, 254, 0.1);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .documents-panel {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 500px;
+            max-height: 600px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .panel-title {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .close-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .close-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .documents-list {
+            flex: 1;
+            padding: 16px 24px 24px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .document-item:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .document-info {
+            flex: 1;
+        }
+
+        .document-title {
+            font-weight: 600;
+            color: white;
+            margin-bottom: 4px;
+        }
+
+        .document-meta {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .delete-btn {
+            width: 28px;
+            height: 28px;
+            border: none;
+            border-radius: 50%;
+            background: rgba(255, 0, 0, 0.2);
+            color: white;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            margin-left: 12px;
+        }
+
+        .delete-btn:hover {
+            background: rgba(255, 0, 0, 0.4);
+            transform: scale(1.1);
+        }
+
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 2000;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .empty-state h3 {
+            font-family: 'Comfortaa', sans-serif;
+            font-size: 18px;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                max-height: calc(100vh - 20px);
+            }
+
+            .header {
+                padding: 16px 20px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .editor-container {
+                padding: 16px 20px;
+            }
+
+            .documents-panel {
+                width: 90vw;
+                max-height: 80vh;
+            }
+
+            .toolbar {
+                gap: 8px;
+            }
+
+            .filename-input {
+                min-width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">📝 Text Editor</h1>
+            <div class="auth-status" id="authStatus">Authenticating...</div>
+            
+            <div class="toolbar">
+                <input type="text" class="filename-input" id="filename" placeholder="Document name..." value="Untitled Document">
+                <button class="btn btn-primary" id="saveBtn" disabled>💾 Save</button>
+                <button class="btn btn-secondary" id="openBtn" disabled>📂 Open</button>
+                <button class="btn btn-secondary" id="newBtn" disabled>📄 New</button>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <textarea class="editor" id="editor" placeholder="Start writing your document..."></textarea>
+        </div>
+    </div>
+
+    <div class="documents-panel" id="documentsPanel">
+        <div class="panel-header">
+            <h2 class="panel-title">📂 My Documents</h2>
+            <button class="close-btn" id="closePanelBtn">✕</button>
+        </div>
+        <div class="documents-list" id="documentsList">
+            <div class="empty-state">
+                <h3>No documents yet</h3>
+                <p>Create and save your first document to get started!</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // Global auth state
+        let currentUser = null;
+        let currentDocumentId = null;
+        let hasUnsavedChanges = false;
+
+        // DOM elements
+        const authStatus = document.getElementById('authStatus');
+        const filenameInput = document.getElementById('filename');
+        const editor = document.getElementById('editor');
+        const saveBtn = document.getElementById('saveBtn');
+        const openBtn = document.getElementById('openBtn');
+        const newBtn = document.getElementById('newBtn');
+        const documentsPanel = document.getElementById('documentsPanel');
+        const documentsList = document.getElementById('documentsList');
+        const closePanelBtn = document.getElementById('closePanelBtn');
+        const toast = document.getElementById('toast');
+
+        // Load auth from localStorage (immediate)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        // Listen for auth from desktop (real-time)
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthDisplay();
+                if (currentUser) loadUserDocuments();
+            }
+        });
+
+        // Update auth display
+        function updateAuthDisplay() {
+            if (currentUser) {
+                authStatus.textContent = `✅ Welcome, ${currentUser.handle}!`;
+                authStatus.style.color = 'rgba(255, 255, 255, 0.9)';
+                enableControls();
+            } else {
+                authStatus.textContent = '⚠️ Please log in from the desktop';
+                authStatus.style.color = 'rgba(255, 200, 100, 0.9)';
+                disableControls();
+            }
+        }
+
+        // Enable/disable controls based on auth
+        function enableControls() {
+            saveBtn.disabled = false;
+            openBtn.disabled = false;
+            newBtn.disabled = false;
+        }
+
+        function disableControls() {
+            saveBtn.disabled = true;
+            openBtn.disabled = true;
+            newBtn.disabled = true;
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            toast.textContent = message;
+            toast.className = 'toast show';
+            toast.style.background = type === 'error' ? 'rgba(220, 38, 38, 0.9)' : 'rgba(0, 0, 0, 0.8)';
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        // Generate unique ID for new documents
+        function generateDocId() {
+            return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        // Save document
+        async function saveDocument() {
+            if (!currentUser) {
+                showToast('Please log in first', 'error');
+                return;
+            }
+
+            const title = filenameInput.value.trim() || 'Untitled Document';
+            const content = editor.value;
+            
+            if (!content.trim()) {
+                showToast('Cannot save empty document', 'error');
+                return;
+            }
+
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            const docId = currentDocumentId || generateDocId();
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-text-editor',
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: docId,
+                            title: title,
+                            content: content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Save failed: ${await response.text()}`);
+                }
+
+                currentDocumentId = docId;
+                hasUnsavedChanges = false;
+                showToast(`💾 "${title}" saved successfully!`);
+                
+            } catch (error) {
+                console.error('Save failed:', error);
+                showToast('Failed to save document', 'error');
+            }
+        }
+
+        // Load user documents
+        // COPIED FROM WORKING RHYMES APP - EXACT SAME PATTERN
+        async function load(dataType) {
+            try {
+                const app_id = 'toybox-text-editor';
+                console.log('🔄 Loading from ZAD API:', { app_id, dataType });
+                
+                const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(dataType)}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('❌ ZAD API Error:', errorData);
+                    throw new Error(`HTTP ${response.status}: ${errorData.message || 'Unknown error'}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ ZAD API Response:', data);
+                return data || [];
+            } catch (error) {
+                console.error('❌ Load failed:', error);
+                showToast('Failed to load data', 'error');
+                return [];
+            }
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return null;
+            return currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        async function loadUserDocuments() {
+            if (!currentUser) return [];
+
+            const allDocs = await load('document');
+            console.log('Loaded docs:', allDocs);
+            
+            const participantId = getParticipantId();
+            console.log('Looking for docs by participant:', participantId);
+            
+            // Filter documents by current user's participant_id
+            const userDocs = allDocs.filter(doc => {
+                console.log('Doc participant_id:', doc.participant_id, 'Current:', participantId);
+                return doc.participant_id === participantId;
+            });
+            
+            console.log('Found user docs:', userDocs.length);
+            
+            if (userDocs.length === 0) {
+                return [];
+            }
+
+            // Deduplicate by document ID - ZAD is append-only so we need latest version by timestamp
+            const uniqueDocs = {};
+            userDocs.forEach(doc => {
+                const docId = doc.id;
+                // Use timestamp for deduplication (ZAD might have multiple versions)
+                const docTimestamp = doc.updatedAt ? new Date(doc.updatedAt).getTime() : 0;
+                
+                if (!uniqueDocs[docId] || 
+                    (uniqueDocs[docId].timestamp < docTimestamp)) {
+                    // Keep original doc structure but add timestamp for sorting
+                    uniqueDocs[docId] = { 
+                        ...doc, 
+                        timestamp: docTimestamp,
+                        // Ensure display properties exist
+                        updatedAt: doc.updatedAt || doc.created_at
+                    };
+                }
+            });
+            
+            // Sort by date and return
+            const sortedDocs = Object.values(uniqueDocs)
+                .filter(doc => doc.title && doc.id) // Ensure we have required fields
+                .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+            
+            return sortedDocs;
+        }
+
+        // Display documents in panel
+        async function showDocumentsPanel() {
+            console.log('🔍 OPEN button clicked - showDocumentsPanel called');
+            
+            const docs = await loadUserDocuments();
+            console.log('📄 Documents loaded for display:', docs);
+            
+            if (docs.length === 0) {
+                console.log('❌ No documents found - showing empty state');
+                documentsList.innerHTML = `
+                    <div class="empty-state">
+                        <h3>No documents yet</h3>
+                        <p>Create and save your first document to get started!</p>
+                    </div>
+                `;
+            } else {
+                console.log(`✅ Displaying ${docs.length} documents`);
+                documentsList.innerHTML = docs.map(doc => `
+                    <div class="document-item" onclick="openDocument('${doc.id}')">
+                        <div class="document-info">
+                            <div class="document-title">${escapeHtml(doc.title)}</div>
+                            <div class="document-meta">
+                                Last updated: ${new Date(doc.updatedAt || Date.now()).toLocaleDateString()}
+                            </div>
+                        </div>
+                        <button class="delete-btn" onclick="deleteDocument(event, '${doc.id}')" title="Delete document">🗑️</button>
+                    </div>
+                `).join('');
+            }
+            
+            console.log('👁️ Showing documents panel');
+            documentsPanel.style.display = 'flex';
+        }
+
+        // COPIED FROM WORKING RHYMES APP - Load document by ID
+        async function openDocument(docId) {
+            const allDocs = await load('document');
+            const participantId = getParticipantId();
+            
+            console.log('Loading document:', docId, 'for participant:', participantId);
+            
+            // Filter for user's docs
+            const userDocs = allDocs.filter(d => d.participant_id === participantId);
+            
+            // Get all versions of this document and pick the latest by timestamp
+            const docVersions = userDocs.filter(d => d.id === docId);
+            
+            if (docVersions.length === 0) {
+                showToast('Document not found', 'error');
+                return;
+            }
+            
+            // Sort by updatedAt timestamp to get latest version (ZAD is append-only)
+            const doc = docVersions.sort((a, b) => {
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return dateB - dateA;
+            })[0];
+            
+            if (doc) {
+                currentDocumentId = doc.id;
+                filenameInput.value = doc.title || 'Untitled Document';
+                editor.value = doc.content || '';
+                hasUnsavedChanges = false;
+                documentsPanel.style.display = 'none';
+                showToast(`📖 Opened "${doc.title}"`);
+                console.log('Document loaded successfully:', doc.title);
+            }
+        }
+
+        // Delete document
+        async function deleteDocument(event, docId) {
+            event.stopPropagation();
+            
+            if (!confirm('Are you sure you want to delete this document? This cannot be undone.')) {
+                return;
+            }
+
+            // For ZAD, we can't actually delete (it's append-only)
+            // So we save a "deleted" marker
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            try {
+                await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-text-editor',
+                        participant_id: participantId,
+                        action_type: 'document_deleted',
+                        content_data: {
+                            id: docId,
+                            deleted: true,
+                            deletedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                showToast('🗑️ Document deleted');
+                showDocumentsPanel(); // Refresh the list
+                
+            } catch (error) {
+                console.error('Delete failed:', error);
+                showToast('Failed to delete document', 'error');
+            }
+        }
+
+        // New document
+        function newDocument() {
+            if (hasUnsavedChanges && !confirm('You have unsaved changes. Create new document anyway?')) {
+                return;
+            }
+            
+            filenameInput.value = 'Untitled Document';
+            editor.value = '';
+            currentDocumentId = null;
+            hasUnsavedChanges = false;
+            showToast('📄 New document created');
+        }
+
+        // Utility functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        saveBtn.addEventListener('click', saveDocument);
+        openBtn.addEventListener('click', showDocumentsPanel);
+        newBtn.addEventListener('click', newDocument);
+        closePanelBtn.addEventListener('click', () => {
+            documentsPanel.style.display = 'none';
+        });
+
+        // Track changes for unsaved indicator
+        editor.addEventListener('input', () => {
+            hasUnsavedChanges = true;
+        });
+
+        filenameInput.addEventListener('input', () => {
+            hasUnsavedChanges = true;
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey || e.metaKey) {
+                switch (e.key) {
+                    case 's':
+                        e.preventDefault();
+                        saveDocument();
+                        break;
+                    case 'o':
+                        e.preventDefault();
+                        showDocumentsPanel();
+                        break;
+                    case 'n':
+                        e.preventDefault();
+                        newDocument();
+                        break;
+                }
+            }
+        });
+
+        // Click outside to close panel
+        documentsPanel.addEventListener('click', (e) => {
+            if (e.target === documentsPanel) {
+                documentsPanel.style.display = 'none';
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                updateAuthDisplay();
+                loadUserDocuments();
+            }
+            
+            // Request auth from parent window
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>
