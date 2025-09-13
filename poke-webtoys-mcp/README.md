@@ -1,4 +1,6 @@
-# Webtoys Builder MCP Server
+# Poke-Webtoys MCP Server
+
+**🏆 Poke MCP Challenge Submission - 24-hour hackathon entry!**
 
 An MCP (Model Context Protocol) server that enables building Webtoys apps through Poke SMS integration.
 
@@ -66,17 +68,26 @@ npm test
 
 ## Deployment
 
-### Railway (Recommended - 1-Click Deploy)
+### Railway (Production - Monorepo Setup)
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/deploy)
+This service is part of the VibeCEO8 monorepo and deploys automatically via Railway:
 
-Or manually:
-1. Push to GitHub
-2. Connect Railway to your repository
-3. Add environment variables in Railway dashboard:
-   - `WEBTOYS_API_URL`: Your SMS bot URL (e.g., https://sms-bot.railway.app)
+1. **Automatic Deployment**:
+   - Every push to `main` triggers deployment
+   - MCP server runs as a separate Railway service
+   - Located in `poke-webtoys-mcp/` directory
+
+2. **Environment Variables** (set in Railway dashboard):
+   - `WEBTOYS_API_URL`: Your SMS bot URL
+   - `SUPABASE_URL`: Supabase project URL
+   - `SUPABASE_ANON_KEY`: Supabase anonymous key
    - `PORT`: Leave blank (Railway sets automatically)
-4. Deploy
+
+3. **Service Configuration**:
+   - Service name: `poke-webtoys-mcp`
+   - Start command: `npm start`
+   - Health check: `GET /`
+   - Port: 3456 (locally), Railway assigns in production
 
 ### Vercel
 
