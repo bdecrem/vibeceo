@@ -7,9 +7,9 @@ const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tqniseocczttrfwtpbdr.s
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
 
 // Polling configuration
-const MAX_WAIT_TIME = 20000; // 20 seconds max wait (Railway will timeout around 30s)
+const MAX_WAIT_TIME = 45000; // 45 seconds max wait (pushing the limit)
 const POLL_INTERVAL = 2000; // Check every 2 seconds
-const INITIAL_DELAY = 5000; // Wait 5 seconds before first check
+const INITIAL_DELAY = 8000; // Wait 8 seconds before first check (apps need time)
 
 /**
  * Generate a consistent phone number for a Poke user
