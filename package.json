@@ -6,7 +6,8 @@
   "workspaces": [
     "web",
     "sms-bot",
-    "discord-bot"
+    "discord-bot",
+    "poke-webtoys-mcp"
   ],
   "type": "module",
   "engines": {
@@ -23,14 +24,17 @@
     "dev:web": "npm run dev --workspace=web",
     "dev:sms": "npm run dev --workspace=sms-bot",
     "dev:discord": "npm run dev --workspace=discord-bot",
+    "dev:mcp": "npm run start --workspace=poke-webtoys-mcp",
     "start": "concurrently -n \"web,sms,discord\" -c \"blue,green,yellow\" \"npm run start:web\" \"npm run start:sms\" \"npm run start:discord\"",
     "start:web": "npm run start --workspace=web",
     "start:sms": "npm run start --workspace=sms-bot",
     "start:discord": "npm run start --workspace=discord-bot",
+    "start:mcp": "npm run start --workspace=poke-webtoys-mcp",
     "build": "npm run build --workspaces",
     "build:web": "npm run build --workspace=web",
     "build:sms": "npm run build --workspace=sms-bot",
     "build:discord": "npm run build --workspace=discord-bot",
+    "build:mcp": "echo 'No build needed for MCP server'",
     "test": "npm run test --workspaces --if-present",
     "test:web": "npm run test --workspace=web",
     "test:sms": "npm run test:sms --workspace=sms-bot",
@@ -40,6 +44,7 @@
     "health:web": "curl -f http://localhost:3000/api/health || echo 'Web service not responding'",
     "health:sms": "curl -f http://localhost:3030/health || echo 'SMS service not responding'",
     "health:discord": "echo 'Discord bot health check not implemented'",
+    "health:mcp": "curl -f http://localhost:3456/ || echo 'MCP service not responding'",
     "logs:web": "npm run logs --workspace=web --if-present",
     "logs:sms": "tail -f sms-bot/logs/*.log",
     "logs:discord": "tail -f discord-bot/logs/*.log",

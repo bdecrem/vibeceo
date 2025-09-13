@@ -1,5 +1,5 @@
 {
-  "name": "webtoys-builder-mcp",
+  "name": "poke-webtoys-mcp",
   "version": "1.0.0",
   "description": "MCP server for building Webtoys apps through Poke SMS",
   "main": "src/index.js",
