@@ -187,8 +187,8 @@ async function getUserSlugForPhone(phoneNumber) {
           console.error(`[Webtoys Client] Error fetching from wtaf_content: ${err.message}`);
         }
 
-        // Last resort fallback - just use a known working slug
-        const fallbackSlug = 'roastedcod';  // Known working user
+        // Last resort fallback
+        const fallbackSlug = 'poke-' + phoneNumber.slice(5, 12);
         console.error(`[Webtoys Client] Using final fallback slug: ${fallbackSlug}`);
         return fallbackSlug;
       }
