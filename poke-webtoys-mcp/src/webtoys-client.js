@@ -2,14 +2,18 @@ import fetch from 'node-fetch';
 import { parseWebtoysResponse, formatWebtoysCommand } from './response-parser.js';
 
 // Configuration
-const WEBTOYS_API_URL = process.env.WEBTOYS_API_URL || 'http://localhost:3030';
+const WEBTOYS_API_URL = process.env.WEBTOYS_API_URL || 'https://sms-bot-production-fc64.up.railway.app';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tqniseocczttrfwtpbdr.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_HYDVNP5H4cdad-7bzliryA_62Khx0ug';
+
+console.error(`[Webtoys Client] Using webhook URL: ${WEBTOYS_API_URL}`);
+console.error(`[Webtoys Client] Service key loaded: ${SUPABASE_SERVICE_KEY ? 'YES (starts with ' + SUPABASE_SERVICE_KEY.substring(0, 10) + '...)' : 'NO'}`);
 
 // Polling configuration
 const MAX_WAIT_TIME = 45000; // 45 seconds max wait (pushing the limit)
 const POLL_INTERVAL = 2000; // Check every 2 seconds
-const INITIAL_DELAY = 8000; // Wait 8 seconds before first check (apps need time)
+const INITIAL_DELAY = 3000; // Wait 3 seconds before first check (start polling sooner)
 
 /**
  * Generate a consistent phone number for a Poke user
@@ -59,6 +63,7 @@ async function sendToWebtoys(description, phoneNumber) {
   });
 
   console.error(`[Webtoys Client] Sending SMS from phone: ${phoneNumber}`);
+  console.error(`[Webtoys Client] Using webhook URL: ${WEBTOYS_API_URL}/dev/webhook`);
 
   const response = await fetch(`${WEBTOYS_API_URL}/dev/webhook`, {
     method: 'POST',
@@ -84,31 +89,83 @@ async function sendToWebtoys(description, phoneNumber) {
 
 /**
  * Get user slug for a phone number
+ * FIXED: Use service key instead of anon key due to RLS policy
  */
 async function getUserSlugForPhone(phoneNumber) {
+  console.error(`[Webtoys Client] Getting user slug for phone: ${phoneNumber}`);
+
+  // Handle Poke phone numbers (+1999XXXXXXX) with deterministic slug generation
+  if (phoneNumber && phoneNumber.startsWith('+1999')) {
+    console.error(`[Webtoys Client] Poke phone detected, generating deterministic slug`);
+
+    // Extract the 7-digit number part after +1999
+    const phoneDigits = phoneNumber.substring(5); // Remove "+1999"
+    const slug = `poke-user-${phoneDigits}`;
+
+    console.error(`[Webtoys Client] Generated Poke slug: ${slug} for phone: ${phoneNumber}`);
+    return slug;
+  }
+
+  if (!SUPABASE_SERVICE_KEY) {
+    console.error('[Webtoys Client] SUPABASE_SERVICE_KEY not configured!');
+    return null;
+  }
+
   try {
     const queryUrl = new URL(`${SUPABASE_URL}/rest/v1/sms_subscribers`);
-    queryUrl.searchParams.append('select', 'slug');
+    queryUrl.searchParams.append('select', 'slug,phone_number,created_at');
     queryUrl.searchParams.append('phone_number', `eq.${phoneNumber}`);
     queryUrl.searchParams.append('limit', '1');
 
-    const response = await fetch(queryUrl, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      }
-    });
+    console.error(`[Webtoys Client] Query URL: ${queryUrl.toString()}`);
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.length > 0) {
-        return data[0].slug;
+    // Use service key if available
+    const apiKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+
+    // For sb_secret_ format, only use apikey header
+    const headers = {
+      'apikey': apiKey,
+      'Content-Type': 'application/json'
+    };
+
+    // Only add Authorization header for old JWT format
+    if (apiKey && apiKey.startsWith('eyJ')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(queryUrl, { headers });
+
+    console.error(`[Webtoys Client] Response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Webtoys Client] Response error: ${errorText}`);
+      return null;
+    }
+
+    const data = await response.json();
+    console.error(`[Webtoys Client] Response data: ${JSON.stringify(data)}`);
+
+    if (data && data.length > 0) {
+      const slug = data[0].slug;
+      console.error(`[Webtoys Client] Found slug: ${slug} for phone: ${phoneNumber}`);
+      return slug;
+    } else {
+      console.error(`[Webtoys Client] No subscriber found for phone: ${phoneNumber}`);
+
+      // Fallback for Poke users with +1999 numbers
+      if (phoneNumber.startsWith('+1999')) {
+        const fallbackSlug = 'poke-' + phoneNumber.slice(5, 12);
+        console.error(`[Webtoys Client] Using fallback slug for Poke user: ${fallbackSlug}`);
+        return fallbackSlug;
       }
+
+      return null;
     }
   } catch (error) {
     console.error('[Webtoys Client] Error getting user slug:', error);
+    return null;
   }
-  return null;
 }
 
 /**
@@ -116,27 +173,50 @@ async function getUserSlugForPhone(phoneNumber) {
  */
 async function pollForApp(phoneNumber, startTime) {
   const endTime = startTime + MAX_WAIT_TIME;
+  let pollCount = 0;
+
+  // Subtract 5 seconds from start time to account for any clock drift or processing delays
+  const adjustedStartTime = startTime - 5000;
+
+  console.error(`[Webtoys Client] Starting poll for phone: ${phoneNumber}, startTime: ${new Date(adjustedStartTime).toISOString()}`);
 
   while (Date.now() < endTime) {
+    pollCount++;
+
     // Query Supabase for apps created by this phone number after start time
     const queryUrl = new URL(`${SUPABASE_URL}/rest/v1/wtaf_content`);
-    queryUrl.searchParams.append('select', 'app_slug,user_slug,html_content,created_at,type');
+    queryUrl.searchParams.append('select', 'app_slug,user_slug,created_at,type,sender_phone,status');
     queryUrl.searchParams.append('sender_phone', `eq.${phoneNumber}`);
-    queryUrl.searchParams.append('created_at', `gte.${new Date(startTime).toISOString()}`);
+    queryUrl.searchParams.append('created_at', `gte.${new Date(adjustedStartTime).toISOString()}`);
+    queryUrl.searchParams.append('status', `eq.published`);
     queryUrl.searchParams.append('order', 'created_at.desc');
     queryUrl.searchParams.append('limit', '1');
 
-    const response = await fetch(queryUrl, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
-      }
-    });
+    // Use service key if available, otherwise use anon key
+    const apiKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+
+    console.error(`[Webtoys Client] Poll attempt ${pollCount}, querying: ${queryUrl.toString()}`);
+
+    // For sb_secret_ format, only use apikey header (no Authorization header needed)
+    const headers = {
+      'apikey': apiKey,
+      'Content-Type': 'application/json'
+    };
+
+    // Only add Authorization header for old JWT format (eyJ...)
+    if (apiKey && apiKey.startsWith('eyJ')) {
+      headers['Authorization'] = `Bearer ${apiKey}`;
+    }
+
+    const response = await fetch(queryUrl, { headers });
 
     if (response.ok) {
       const data = await response.json();
+      console.error(`[Webtoys Client] Poll response: ${JSON.stringify(data)}`);
+
       if (data && data.length > 0) {
         const app = data[0];
+        console.error(`[Webtoys Client] App found! user_slug: ${app.user_slug}, app_slug: ${app.app_slug}`);
         return {
           found: true,
           appUrl: `https://webtoys.ai/${app.user_slug}/${app.app_slug}`,
@@ -145,12 +225,17 @@ async function pollForApp(phoneNumber, startTime) {
           appSlug: app.app_slug
         };
       }
+    } else {
+      const errorText = await response.text();
+      console.error(`[Webtoys Client] Poll failed with status: ${response.status}`);
+      console.error(`[Webtoys Client] Error response: ${errorText}`);
     }
 
     // Wait before next poll
     await new Promise(resolve => setTimeout(resolve, POLL_INTERVAL));
   }
 
+  console.error(`[Webtoys Client] Polling timed out after ${pollCount} attempts`);
   return { found: false };
 }
 
