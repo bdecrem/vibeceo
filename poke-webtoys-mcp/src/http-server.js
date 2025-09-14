@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3456;
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -119,10 +119,12 @@ app.post('/tool/call', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Webtoys MCP HTTP Server running on port ${PORT}`);
-  console.log(`📍 Health check: http://localhost:${PORT}/`);
-  console.log(`🔧 Tools list: http://localhost:${PORT}/tools`);
-  console.log(`⚡ Tool call: POST http://localhost:${PORT}/tool/call`);
+// Start server - bind to 0.0.0.0 for Railway/Docker compatibility
+const HOST = '0.0.0.0';
+app.listen(PORT, HOST, () => {
+  console.log(`🚀 [FIXED] Webtoys MCP HTTP Server running on ${HOST}:${PORT}`);
+  console.log(`📍 Binding to all interfaces (0.0.0.0) for Railway`);
+  console.log(`📍 Health check: GET /`);
+  console.log(`🔧 Tools list: GET /tools`);
+  console.log(`⚡ Tool call: POST /tool/call`);
 });
