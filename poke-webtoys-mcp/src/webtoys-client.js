@@ -5,7 +5,7 @@ import { parseWebtoysResponse, formatWebtoysCommand } from './response-parser.js
 const WEBTOYS_API_URL = process.env.WEBTOYS_API_URL || 'https://sms-bot-production-fc64.up.railway.app';
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://tqniseocczttrfwtpbdr.supabase.co';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY || 'sb_secret_HYDVNP5H4cdad-7bzliryA_62Khx0ug';
 
 console.error(`[Webtoys Client] Using webhook URL: ${WEBTOYS_API_URL}`);
 console.error(`[Webtoys Client] Service key loaded: ${SUPABASE_SERVICE_KEY ? 'YES (starts with ' + SUPABASE_SERVICE_KEY.substring(0, 10) + '...)' : 'NO'}`);
