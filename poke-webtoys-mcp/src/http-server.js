@@ -19,14 +19,8 @@ app.get('/', (req, res) => {
     name: 'webtoys-builder-mcp',
     version: '1.0.0',
     status: 'running',
-    description: 'MCP server for building Webtoys apps through Poke SMS',
-    timestamp: new Date().toISOString()
+    description: 'MCP server for building Webtoys apps through Poke SMS'
   });
-});
-
-// Railway health check
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'healthy' });
 });
 
 // MCP tools endpoint

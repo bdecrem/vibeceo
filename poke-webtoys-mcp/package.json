@@ -5,7 +5,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/http-server.js",
+    "start": "node src/index.js",
     "start:mcp": "node src/index.js",
     "start:http": "node src/http-server.js",
     "dev": "node --watch src/http-server.js",
