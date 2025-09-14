@@ -153,10 +153,43 @@ async function getUserSlugForPhone(phoneNumber) {
     } else {
       console.error(`[Webtoys Client] No subscriber found for phone: ${phoneNumber}`);
 
-      // Fallback for Poke users with +1999 numbers
+      // Fallback for Poke users with +1999 numbers - check wtaf_content for their actual slug
       if (phoneNumber.startsWith('+1999')) {
+        console.error(`[Webtoys Client] Checking wtaf_content for Poke user slug...`);
+
+        // Query wtaf_content to find the user_slug for this phone
+        const contentUrl = new URL(`${SUPABASE_URL}/rest/v1/wtaf_content`);
+        contentUrl.searchParams.append('select', 'user_slug');
+        contentUrl.searchParams.append('sender_phone', `eq.${phoneNumber}`);
+        contentUrl.searchParams.append('limit', '1');
+
+        const apiKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+        const headers = {
+          'apikey': apiKey,
+          'Content-Type': 'application/json'
+        };
+
+        if (apiKey && apiKey.startsWith('eyJ')) {
+          headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+
+        try {
+          const contentResponse = await fetch(contentUrl, { headers });
+          if (contentResponse.ok) {
+            const contentData = await contentResponse.json();
+            if (contentData && contentData.length > 0) {
+              const actualSlug = contentData[0].user_slug;
+              console.error(`[Webtoys Client] Found actual slug from wtaf_content: ${actualSlug}`);
+              return actualSlug;
+            }
+          }
+        } catch (err) {
+          console.error(`[Webtoys Client] Error fetching from wtaf_content: ${err.message}`);
+        }
+
+        // Last resort fallback
         const fallbackSlug = 'poke-' + phoneNumber.slice(5, 12);
-        console.error(`[Webtoys Client] Using fallback slug for Poke user: ${fallbackSlug}`);
+        console.error(`[Webtoys Client] Using final fallback slug: ${fallbackSlug}`);
         return fallbackSlug;
       }
 
