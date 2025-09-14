@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 
-import dotenv from 'dotenv';
-
-// Load environment variables BEFORE other imports
-dotenv.config();
-
 import express from 'express';
+import dotenv from 'dotenv';
 import { buildWebtoysApp } from './webtoys-client.js';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
 app.use(express.json());
