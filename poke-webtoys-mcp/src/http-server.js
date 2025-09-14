@@ -72,15 +72,29 @@ app.post('/tool/call', async (req, res) => {
     const result = await buildWebtoysApp(description, user_id);
 
     if (result.success) {
-      let responseText = `✨ Your Webtoys app is ready!\n\n`;
-      responseText += `🔗 ${result.appUrl}\n\n`;
+      let responseText;
 
-      if (result.appType) {
-        responseText += `Type: ${result.appType}\n`;
-      }
+      if (result.appUrl) {
+        // App was created and URL is ready
+        responseText = `✨ Your Webtoys app is ready!\n\n`;
+        responseText += `🔗 ${result.appUrl}\n\n`;
 
-      if (result.adminUrl) {
-        responseText += `📊 Admin panel: ${result.adminUrl}\n\n`;
+        if (result.appType) {
+          responseText += `Type: ${result.appType}\n`;
+        }
+
+        if (result.adminUrl) {
+          responseText += `📊 Admin panel: ${result.adminUrl}\n\n`;
+        }
+      } else if (result.userUrl) {
+        // App is still being created
+        responseText = `⏳ ${result.message || 'Your app is being created...'}\n\n`;
+        responseText += `📍 Check your apps here: ${result.userUrl}\n\n`;
+        if (result.note) {
+          responseText += `💡 ${result.note}\n\n`;
+        }
+      } else {
+        responseText = `🚀 Your Webtoys app request has been submitted!\n\n`;
       }
 
       responseText += `Description: ${description}\n\n`;
