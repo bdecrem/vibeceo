@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 
-const PORT = process.env.PORT || 3456;
+const PORT = process.env.PORT || 3000;
 
 // Health check endpoint
 app.get('/', (req, res) => {
@@ -72,29 +72,15 @@ app.post('/tool/call', async (req, res) => {
     const result = await buildWebtoysApp(description, user_id);
 
     if (result.success) {
-      let responseText;
+      let responseText = `✨ Your Webtoys app is ready!\n\n`;
+      responseText += `🔗 ${result.appUrl}\n\n`;
 
-      if (result.appUrl) {
-        // App was created and URL is ready
-        responseText = `✨ Your Webtoys app is ready!\n\n`;
-        responseText += `🔗 ${result.appUrl}\n\n`;
+      if (result.appType) {
+        responseText += `Type: ${result.appType}\n`;
+      }
 
-        if (result.appType) {
-          responseText += `Type: ${result.appType}\n`;
-        }
-
-        if (result.adminUrl) {
-          responseText += `📊 Admin panel: ${result.adminUrl}\n\n`;
-        }
-      } else if (result.userUrl) {
-        // App is still being created
-        responseText = `⏳ ${result.message || 'Your app is being created...'}\n\n`;
-        responseText += `📍 Check your apps here: ${result.userUrl}\n\n`;
-        if (result.note) {
-          responseText += `💡 ${result.note}\n\n`;
-        }
-      } else {
-        responseText = `🚀 Your Webtoys app request has been submitted!\n\n`;
+      if (result.adminUrl) {
+        responseText += `📊 Admin panel: ${result.adminUrl}\n\n`;
       }
 
       responseText += `Description: ${description}\n\n`;
@@ -119,12 +105,10 @@ app.post('/tool/call', async (req, res) => {
   }
 });
 
-// Start server - bind to 0.0.0.0 for Railway/Docker compatibility
-const HOST = '0.0.0.0';
-app.listen(PORT, HOST, () => {
-  console.log(`🚀 [FIXED] Webtoys MCP HTTP Server running on ${HOST}:${PORT}`);
-  console.log(`📍 Binding to all interfaces (0.0.0.0) for Railway`);
-  console.log(`📍 Health check: GET /`);
-  console.log(`🔧 Tools list: GET /tools`);
-  console.log(`⚡ Tool call: POST /tool/call`);
+// Start server
+app.listen(PORT, () => {
+  console.log(`🚀 Webtoys MCP HTTP Server running on port ${PORT}`);
+  console.log(`📍 Health check: http://localhost:${PORT}/`);
+  console.log(`🔧 Tools list: http://localhost:${PORT}/tools`);
+  console.log(`⚡ Tool call: POST http://localhost:${PORT}/tool/call`);
 });
