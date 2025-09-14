@@ -8,9 +8,9 @@ const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY || 'sb_publishable_wZCf4
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 // Polling configuration
-const MAX_WAIT_TIME = 60000; // 60 seconds max wait
-const POLL_INTERVAL = 3000; // Check every 3 seconds
-const INITIAL_DELAY = 5000; // Wait 5 seconds before first check
+const MAX_WAIT_TIME = 45000; // 45 seconds max wait (pushing the limit)
+const POLL_INTERVAL = 2000; // Check every 2 seconds
+const INITIAL_DELAY = 8000; // Wait 8 seconds before first check (apps need time)
 
 /**
  * Generate a consistent phone number for a Poke user
@@ -84,6 +84,37 @@ async function sendToWebtoys(description, phoneNumber) {
 }
 
 /**
+ * Get user slug for a phone number
+ */
+async function getUserSlugForPhone(phoneNumber) {
+  try {
+    const queryUrl = new URL(`${SUPABASE_URL}/rest/v1/sms_subscribers`);
+    queryUrl.searchParams.append('select', 'slug');
+    queryUrl.searchParams.append('phone_number', `eq.${phoneNumber}`);
+    queryUrl.searchParams.append('limit', '1');
+
+    // MUST use service key - anon key can't access sender_phone field!
+    const apiKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
+    const response = await fetch(queryUrl, {
+      headers: {
+        'apikey': apiKey,
+        'Authorization': `Bearer ${apiKey}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.length > 0) {
+        return data[0].slug;
+      }
+    }
+  } catch (error) {
+    console.error('[Webtoys Client] Error getting user slug:', error);
+  }
+  return null;
+}
+
+/**
  * Poll Supabase for the created app
  */
 async function pollForApp(phoneNumber, startTime) {
@@ -98,7 +129,7 @@ async function pollForApp(phoneNumber, startTime) {
     queryUrl.searchParams.append('order', 'created_at.desc');
     queryUrl.searchParams.append('limit', '1');
 
-    // Use service key for polling - it has access to sender_phone field
+    // MUST use service key - anon key can't access sender_phone field!
     const apiKey = SUPABASE_SERVICE_KEY || SUPABASE_ANON_KEY;
     const response = await fetch(queryUrl, {
       headers: {
@@ -192,10 +223,16 @@ export async function buildWebtoysApp(description, userId) {
         adminUrl: hasAdmin ? `${appResult.appUrl}/admin` : null
       };
     } else {
-      // Timeout - app creation took too long
+      // Timeout - but app is likely still being created
+      // Since the same user always gets the same phone, they can check their apps
+      const userSlug = await getUserSlugForPhone(actualPhoneNumber);
+
       return {
-        success: false,
-        error: 'App creation timed out. This might be a complex request - please try again.'
+        success: true,
+        message: 'App is being created (this can take 2-3 minutes). Check your apps at the URL below.',
+        userUrl: userSlug ? `https://webtoys.ai/${userSlug}` : 'https://webtoys.ai',
+        appUrl: null,
+        note: 'Large or complex apps may take longer to generate. The app will appear at your user page when ready.'
       };
     }
 
