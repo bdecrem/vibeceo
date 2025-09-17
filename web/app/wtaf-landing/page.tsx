@@ -242,9 +242,9 @@ function DevConsole() {
       // Override default based on detected environment
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         redirectUrl = 'http://localhost:3000'
-      } else if (hostname === 'webtoys.io' || hostname === 'www.webtoys.io') {
+      } else if (hostname.includes('webtoys.io')) {
         redirectUrl = 'https://webtoys.io'
-      } else if (hostname === 'webtoys.ai' || hostname === 'www.webtoys.ai') {
+      } else if (hostname.includes('webtoys.ai')) {
         redirectUrl = 'https://webtoys.ai'
       } else if (hostname.includes('.railway.app')) {
         // Railway deployment
