@@ -228,8 +228,26 @@ function DevConsole() {
   async function handleSignUp(email: string, password: string) {
     setAuthError('')
     setAuthLoading(true)
-    
-    const { data, error } = await supabase.auth.signUp({ email, password })
+
+    // Determine redirect URL based on current environment
+    let redirectUrl = ''
+    if (typeof window !== 'undefined') {
+      if (window.location.hostname === 'localhost') {
+        redirectUrl = 'http://localhost:3000'
+      } else if (window.location.hostname === 'webtoys.io') {
+        redirectUrl = 'https://webtoys.io'
+      } else {
+        redirectUrl = `${window.location.origin}`
+      }
+    }
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl
+      }
+    })
     
     if (error) {
       setAuthError(error.message)
