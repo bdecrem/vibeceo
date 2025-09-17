@@ -242,16 +242,21 @@ function DevConsole() {
       // Override default based on detected environment
       if (hostname === 'localhost' || hostname === '127.0.0.1') {
         redirectUrl = 'http://localhost:3000'
-      } else if (hostname.includes('webtoys.io')) {
+      } else if (hostname === 'webtoys.io' || hostname === 'www.webtoys.io') {
         redirectUrl = 'https://webtoys.io'
-      } else if (hostname.includes('webtoys.ai')) {
+      } else if (hostname === 'webtoys.ai' || hostname === 'www.webtoys.ai') {
         redirectUrl = 'https://webtoys.ai'
-      } else if (hostname.includes('railway.app')) {
-        redirectUrl = origin
+      } else if (hostname.includes('.railway.app')) {
+        // Railway deployment
+        redirectUrl = `https://${hostname}`
       } else if (origin && origin !== 'null' && origin !== '') {
+        // Fallback to current origin
         redirectUrl = origin
       }
       // If none match, keep the default https://webtoys.ai
+
+      console.log('Using redirect URL:', redirectUrl) // Debug log
+      addConsoleEntry(`📍 Signup redirect URL: ${redirectUrl}`, 'info')
     }
 
     // Extra safety check - NEVER send empty redirect URL
