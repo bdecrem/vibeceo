@@ -232,13 +232,26 @@ function DevConsole() {
     // Determine redirect URL based on current environment
     let redirectUrl = ''
     if (typeof window !== 'undefined') {
-      if (window.location.hostname === 'localhost') {
+      // Check various production domains
+      const hostname = window.location.hostname
+      console.log('Current hostname:', hostname) // Debug log
+
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
         redirectUrl = 'http://localhost:3000'
-      } else if (window.location.hostname === 'webtoys.io') {
+      } else if (hostname === 'webtoys.io' || hostname === 'www.webtoys.io') {
         redirectUrl = 'https://webtoys.io'
+      } else if (hostname === 'webtoys.ai' || hostname === 'www.webtoys.ai') {
+        redirectUrl = 'https://webtoys.ai'
+      } else if (hostname.includes('.railway.app')) {
+        // Railway deployment
+        redirectUrl = `https://${hostname}`
       } else {
+        // Fallback to current origin
         redirectUrl = `${window.location.origin}`
       }
+
+      console.log('Using redirect URL:', redirectUrl) // Debug log
+      addConsoleEntry(`📍 Signup redirect URL: ${redirectUrl}`, 'info')
     }
 
     const { data, error } = await supabase.auth.signUp({
