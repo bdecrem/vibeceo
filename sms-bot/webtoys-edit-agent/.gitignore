@@ -1,0 +1,12 @@
+# Temp files
+.pending-edits.json
+.processed-edits.json
+.worker-*.json
+.monitor-lock
+
+# Claude CLI auth/config (NEVER COMMIT)
+.claude-config/
+.claude-home/
+.claude/
+auth.json
+oauth_token
