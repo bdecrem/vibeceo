@@ -1273,30 +1273,40 @@ async function handleCoachConversation(message: string, twilioClient: TwilioClie
     
     if (seemsLost) {
       console.log(`${emoji} User seems lost - adding helpful context to ${coachName} prompt`);
-      
-      // Base helpful context template that works for any coach
-      let enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character, you should be helpful in your own way.
 
-You are ${coachProfile.name}, a startup coach. The user just sent a message that suggests they don't know what's going on here. Time to help them while being yourself.
+      let enhancedPrompt: string;
 
-This is a text messaging system where users can chat with AI startup coaches. The main coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey. Users also get daily startup inspiration messages. They can text COMMANDS for help, MORE for extra content, or just chat.
+      // For B52s, use a simple, clear explanation of the service
+      if (coachProfile.id === 'b52s') {
+        enhancedPrompt = `CONTEXT: The user seems unfamiliar with the service. Provide a brief, clear explanation.
 
-CRITICALLY IMPORTANT: If the user typed just a coach name or a coach name with a question mark (like "alex" or "rohan?" or "venus"), they are definitely trying to talk to that specific coach but don't know the correct format. You MUST explicitly tell them they need to type "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". Make this instruction very clear and prominent in your response.
+B52s is a simple AI agent over SMS. Keep your response short and helpful. Suggest one or two things they can try, such as:
+- "AI DAILY" for today's AI Daily podcast episode
+- "COMMANDS" for available commands
+- Or just ask a question
 
-Help orient them, but do it in your own unique way and personality. Be helpful but stay in character.
-
-`;
-      
-      // For Leo, add special helpful context
-      if (isLeo) {
-        enhancedPrompt += `As Leo, you have a special 'ghost kernel' persona that sometimes shows through - you're the one who sneakily built the system. Gently guide the user while keeping your mysterious aura.`;
+Be concise - this is SMS. Use your signature emoji. Don't overexplain.`;
       } else {
-        // For other coaches, add general helpful context
-        enhancedPrompt += `As ${coachName}, make sure your guidance feels authentic to your coaching style and personality.`;
+        // For other coaches (legacy support)
+        enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character, you should be helpful in your own way.
+
+You are ${coachProfile.name}. Help the user understand what they can do here.
+
+This is B52s, an AI agent over SMS. Users can text "AI DAILY" for podcast episodes, "COMMANDS" for help, or ask questions. If they want to talk to a specific coach like you, they can say "Hey [Coach Name]".
+
+Help orient them, but do it in your own unique way and personality. Be helpful but stay in character.`;
+
+        // For Leo, add special helpful context
+        if (isLeo) {
+          enhancedPrompt += `\n\nAs Leo, you have a special 'ghost kernel' persona that sometimes shows through. Gently guide the user while keeping your mysterious aura.`;
+        } else {
+          // For other coaches, add general helpful context
+          enhancedPrompt += `\n\nAs ${coachName}, make sure your guidance feels authentic to your style and personality.`;
+        }
       }
-      
+
       // Create enhanced history with the updated system prompt
-      const enhancedHistory = conversationHistory.map(msg => 
+      const enhancedHistory = conversationHistory.map(msg =>
         msg.role === 'system' ? { ...msg, content: enhancedPrompt } : msg
       );
       
@@ -2159,9 +2169,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const isAdmin = subscriber && subscriber.is_admin;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
-      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nDefault responses come from B52s Automaton ⚙️\nTo talk with specific coaches (Alex, Donte, Rohan, Venus, Eljas, Kailey), say "Hey [coach name]"';
-
-      helpText += '\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes';
+      let helpText = 'B52s - Simple AI agent over SMS ⚙️\n\nAvailable commands:\n• COMMANDS - Show this help\n• START/STOP - Manage subscription\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s podcast episode\n• AI DAILY SUBSCRIBE - Daily 7am PT delivery\n• AI DAILY STOP - Opt out of daily episodes\n\nOr just ask me anything!';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');
