@@ -25,6 +25,8 @@ export type SMSSubscriber = {
 	slug?: string; // Auto-generated slug for personal WTAF folder
 	index_file?: string; // Filename of the user's index page (for wtaf.me/slug/)
 	hide_default?: boolean; // Hide pages by default when creating new content
+	ai_daily_subscribed?: boolean;
+	ai_daily_last_sent_at?: string | null;
 };
 
 // Initialize Supabase client

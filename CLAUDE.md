@@ -469,6 +469,16 @@ This is the only approved location for direct Supabase access outside of storage
 - `--stackpublic [app-slug] [request]` - Create app using PUBLIC ZAD data
 - `--stackobjectify [app-slug] [request]` - Create object pages from ZAD data (OPERATOR only)
 
+### AI Daily SMS Command
+- `AI DAILY` – Fetch today’s AI Daily episode on demand (3-line SMS with title, summary, short link)
+- `AI DAILY SUBSCRIBE` – Opt in to the 7am PT daily broadcast (managed by `startAiDailyScheduler` in `sms-bot/lib/sms/ai-daily-scheduler.ts`)
+- `AI DAILY STOP` – Opt out of the daily broadcast
+
+Implementation notes:
+- Source endpoint defaults to `https://theaf-web.ngrok.io/api/ai-daily/latest`; override with `AI_DAILY_BASE_URL`
+- URL shortening uses `URL_SHORTENER_ENDPOINT` (or `WEBTOYS_SHORTENER_ENDPOINT`); falls back to the original URL if the service fails
+- Subscriber state lives on `sms_subscribers` (`ai_daily_subscribed`, `ai_daily_last_sent_at`)
+
 ### App Type Classification
 The system automatically classifies apps into 5 types:
 1. **games** - Contains "GAME" in prompt

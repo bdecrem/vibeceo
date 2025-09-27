@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf.us/og-types/og-type-app-1.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://www.wtaf.me/bart/azure-gannet-honoring" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Message Board</title>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #FCFCF7;
+            color: #333;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            border: 4px solid #FFD63D;
+            box-shadow: 8px 8px #C9C2F9;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .button {
+            background: #FFD63D;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        .button:hover:not(:disabled) {
+            background: #FFC107;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        input[type="text"], textarea {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 3px solid #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: #FFD63D;
+        }
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .post-actions button {
+            flex: 1;
+        }
+        .comment {
+            background: #f9f9f9;
+            padding: 10px;
+            margin: 10px 0;
+            border-left: 4px solid #FFD63D;
+        }
+        .comment-author {
+            font-weight: bold;
+            color: #666;
+        }
+        .post-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+    
+        .comment-form-inline {
+            display: none;
+            margin-top: 15px;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            border: 2px solid #FFD63D;
+        }
+        .comment-form-inline.active {
+            display: block;
+            animation: slideDown 0.3s ease;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .comment-input {
+            width: 100%;
+            padding: 10px;
+            border: 3px solid #333;
+            font-family: 'JetBrains Mono', monospace;
+            border-radius: 4px;
+            resize: vertical;
+            min-height: 60px;
+        }
+        .comment-input:focus {
+            border-color: #FFD63D;
+            outline: none;
+        }
+        .comment-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .comment-submit, .comment-cancel {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .comment-submit {
+            background: #FFD63D;
+        }
+        .comment-submit:hover {
+            background: #FFC107;
+        }
+        .comment-cancel {
+            background: #e0e0e0;
+        }
+        .comment-cancel:hover {
+            background: #ccc;
+        }
+        .add-comment-btn {
+            transition: all 0.2s;
+        }
+        .add-comment-btn.commenting {
+            background: #4CAF50;
+            color: white;
+        }
+    </style>
+<script>
+// ZAD Helper Functions - Inline version for test apps
+
+// SIMPLIFIED UUID INJECTION: Set window.APP_ID for backup
+window.APP_ID = '9b3c0388-a785-4aec-a1c1-c10cd76574b7';
+console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '9b3c0388-a785-4aec-a1c1-c10cd76574b7');
+
+console.log('🚀 Loading ZAD Helper Functions (inline)...');
+
+// Auth state - Use existing global currentUser or create zadCurrentUser
+let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
+let authInitialized = false;
+
+// Get app ID from window.APP_ID (set by system) - ENHANCED DEBUG VERSION
+function getAppId() {
+    console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '9b3c0388-a785-4aec-a1c1-c10cd76574b7');
+    return '9b3c0388-a785-4aec-a1c1-c10cd76574b7';
+}
+
+                // Get participant ID - return stored ID or generate temporary one
+                function getParticipantId() {
+                    let participantId = localStorage.getItem('zad_participant_id');
+                    if (!participantId) {
+                        // Check if demo mode is enabled (multiple detection methods for iframe compatibility)
+                        const isDemoMode =
+                            window.location.search.includes('demo=true') ||
+                            window.parent?.location?.search?.includes('demo=true') ||
+                            window.top?.location?.search?.includes('demo=true') ||
+                            document.referrer.includes('demo=true');
+
+                        // Clear demo mode if not detected in current session
+                        if (!isDemoMode) {
+                            localStorage.removeItem('demo_mode');
+                            // Also clear participant_id if it was a demo ID, so user gets fresh normal ID
+                            const existingId = localStorage.getItem('zad_participant_id');
+                            if (existingId && existingId.startsWith('demo_')) {
+                                localStorage.removeItem('zad_participant_id');
+                                localStorage.removeItem('zad_username');
+                            }
+                        }
+
+                        if (isDemoMode) {
+                            // Generate demo ID that will trigger backend demo table routing
+                            participantId = 'demo_user_' + Math.random().toString(36).substr(2, 8);
+                            localStorage.setItem('demo_mode', 'true');
+                            localStorage.setItem('zad_username', 'Demo User');
+                            console.log('🎭 Demo mode detected - generated demo participant ID:', participantId);
+                        } else {
+                            // Generate temporary ID - app's authentication system will set the real one
+                            participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                            localStorage.setItem('zad_username', 'Anonymous');
+                        }
+
+                        localStorage.setItem('zad_participant_id', participantId);
+                    }
+                    return participantId;
+                }
+
+                // Get username from current session
+                function getUsername() {
+                    // Ensure participant ID is initialized first (which sets up localStorage)
+                    getParticipantId();
+                    return localStorage.getItem('zad_username') || 'Anonymous';
+                }
+
+                // Update ZAD helper functions with app's authentication state
+                function updateZadAuth(userLabel, participantId) {
+                    localStorage.setItem('zad_participant_id', participantId);
+                    localStorage.setItem('zad_username', userLabel);
+                    zadCurrentUser = {
+                        username: userLabel,
+                        participantId: participantId
+                    };
+                    console.log('🔄 Updated ZAD auth state:', zadCurrentUser);
+                }
+
+                // Initialize authentication (simplified)
+                function initAuth() {
+                    console.log('🔐 Initializing authentication...');
+                    if (authInitialized) return;
+                    authInitialized = true;
+
+                    // Don't clear localStorage or prompt during initialization
+                    // Let the app's authentication system handle user setup
+                    zadCurrentUser = {
+                        username: getUsername(),
+                        participantId: localStorage.getItem('zad_participant_id') || null
+                    };
+
+                    console.log('✅ Authentication ready:', zadCurrentUser);
+                }
+
+                // Get current user (compatible with zad-helpers.ts)
+                function getCurrentUser() {
+                    if (!zadCurrentUser) return null;
+
+                    return {
+                        username: zadCurrentUser.username || getUsername(),
+                        id: zadCurrentUser.participantId || getParticipantId(),
+                        userLabel: zadCurrentUser.username || getUsername(),
+                        participantId: zadCurrentUser.participantId || getParticipantId(),
+                        passcode: zadCurrentUser.passcode || null
+                    };
+                }
+
+// Save data to ZAD API
+async function save(type, data) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+
+        const zadData = {
+            app_id: app_id,
+            participant_id: participant_id,
+            participant_data: {
+                userLabel: username,
+                username: username
+            },
+            action_type: type,
+            content_data: {
+                ...data,
+                timestamp: data.timestamp || Date.now(),
+                author: data.author || username
+            }
+        };
+
+        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(zadData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Save failed: ${errorData.error || response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Saved successfully:', result);
+        return result;
+
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        alert(`Failed to save: ${error.message}`);
+        throw error;
+    }
+}
+
+// Phase 1 Authentication Backend Helper Functions
+// These call the backend API with specific action types
+
+// Backend Helper 1: Check Available Slots
+async function checkAvailableSlots() {
+    try {
+        const app_id = getAppId();
+
+        console.log('🔍 Calling backend checkAvailableSlots for app:', app_id);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'check_slots',
+                content_data: {}
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Check slots failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend checkAvailableSlots result:', result.slots);
+
+        return result.slots;
+
+    } catch (error) {
+        console.error('❌ Check slots error:', error);
+        alert(`Failed to check available slots: ${error.message}`);
+        return { totalSlots: 5, usedSlots: 0, availableSlots: 5, availableLabels: [], usedLabels: [], isFull: false };
+    }
+}
+
+// Backend Helper 2: Generate User Credentials
+async function generateUser() {
+    try {
+        const app_id = getAppId();
+
+        console.log('🎲 Calling backend generateUser for app:', app_id);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'generate_user',
+                content_data: {}
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Generate user failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend generateUser result:', result);
+
+        if (!result.success) {
+            alert(result.error || 'Failed to generate user');
+            return null;
+        }
+
+        return result.user;
+
+    } catch (error) {
+        console.error('❌ Generate user error:', error);
+        alert(`Failed to generate user: ${error.message}`);
+        return null;
+    }
+}
+
+// Backend Helper 3: Register User
+async function registerUser(userLabel, passcode, participantId) {
+    try {
+        const app_id = getAppId();
+
+        console.log('📝 Calling backend registerUser for app:', app_id, 'user:', userLabel);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'register_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode,
+                    participantId: participantId
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Register user failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend registerUser result:', result);
+
+        if (!result.success) {
+            alert(result.result?.error || 'Registration failed');
+            return { success: false, error: result.result?.error };
+        }
+
+        return result.result;
+
+    } catch (error) {
+        console.error('❌ Register user error:', error);
+        alert(`Registration failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper 4: Authenticate User
+async function authenticateUser(userLabel, passcode) {
+    try {
+        const app_id = getAppId();
+
+        console.log('🔐 Calling backend authenticateUser for app:', app_id, 'user:', userLabel);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'authenticate_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Authentication failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend authenticateUser result:', result);
+
+        if (!result.success) {
+            alert(result.result?.error || 'Authentication failed');
+            return { success: false, error: result.result?.error };
+        }
+
+        return result.result;
+
+    } catch (error) {
+        console.error('❌ Authentication error:', error);
+        alert(`Authentication failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Load data from ZAD API
+async function load(type) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+
+        console.log('🔄 Loading from ZAD API:', { app_id, type, participant_id });
+
+        const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(type)}&participant_id=${encodeURIComponent(participant_id)}`;
+        console.log('🔍 ZAD load URL:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Load failed: ${errorData.error || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Loaded successfully:', data);
+
+        // Transform ZAD data back to simple format
+        return data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        alert(`Failed to load: ${error.message}`);
+        return [];
+    }
+}
+
+                // Make functions globally available
+                window.initAuth = initAuth;
+                window.save = save;
+                window.load = load;
+                window.getAppId = getAppId;
+                window.getParticipantId = getParticipantId;
+                window.getUsername = getUsername;
+                window.getCurrentUser = getCurrentUser;
+                window.updateZadAuth = updateZadAuth;
+                window.checkAvailableSlots = checkAvailableSlots;
+                window.generateUser = generateUser;
+                window.registerUser = registerUser;
+                window.authenticateUser = authenticateUser;
+
+console.log('🚀 ZAD Helper Functions loaded successfully');
+                console.log('Available functions: initAuth(), save(type, data), load(type), updateZadAuth(userLabel, participantId)');
+console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
+</script>
+</head>
+<body>
+    <div id="auth-screen" class="screen active">
+        <div class="card">
+            <h1>Message Board</h1>
+            <div id="auth-choice">
+                <button class="button" onclick="showNewUserForm()">New User</button>
+                <button class="button" onclick="showReturningUserForm()">Returning User</button>
+            </div>
+            <div id="new-user-form" style="display: none;">
+                <input type="text" id="new-username" placeholder="Choose Username (3-15 chars)" maxlength="15" />
+                <input type="text" id="new-passcode" placeholder="Choose 4-digit Passcode" maxlength="4" />
+                <div id="registration-feedback" style="color: #666; margin: 10px 0;"></div>
+                <button class="button" onclick="registerNewUser()">Create Account</button>
+                <button class="button" onclick="showAuthChoice()">Back</button>
+            </div>
+            <div id="returning-user-form" style="display: none;">
+                <input type="text" id="userLabel" placeholder="Username" />
+                <input type="text" id="passcode" placeholder="4-digit Passcode" maxlength="4" />
+                <button class="button" onclick="authenticateReturningUser()">Login</button>
+                <button class="button" onclick="showAuthChoice()">Back</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-screen" class="screen">
+        <div class="card">
+            <h1>Message Board</h1>
+            <div id="user-info"></div>
+            <button class="button" onclick="showCreatePostScreen()">Create Post</button>
+            <button class="button" onclick="logout()">Logout</button>
+        </div>
+        <div id="posts"></div>
+    </div>
+
+    <div id="create-post-screen" class="screen">
+        <div class="card">
+            <h1>Create Post</h1>
+            <input type="text" id="post-title" placeholder="Post Title" />
+            <textarea id="post-content" placeholder="What's on your mind?" rows="5"></textarea>
+            <button class="button" onclick="createPost()">Post</button>
+            <button class="button" onclick="showMainScreen()">Cancel</button>
+        </div>
+    </div>
+
+    <div id="edit-post-screen" class="screen">
+        <div class="card">
+            <h1>Edit Post</h1>
+            <input type="text" id="edit-title" placeholder="Post Title" />
+            <textarea id="edit-content" rows="5"></textarea>
+            <button class="button" onclick="updatePost()">Update</button>
+            <button class="button" onclick="deletePost()" style="background: #ff4444; color: white;">🗑️ Delete Post</button>
+            <button class="button" onclick="showMainScreen()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        
+        let currentUser = null;
+        let currentEditId = null;
+        let pollingInterval = null;
+        let allPosts = [];
+        let allComments = [];
+        let allLikes = [];
+        let isCommentFormOpen = false; // Track if any comment form is open
+        let openCommentPostId = null;  // Track which post's comment form is open
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function showAuthChoice() {
+            document.getElementById('auth-choice').style.display = 'block';
+            document.getElementById('new-user-form').style.display = 'none';
+            document.getElementById('returning-user-form').style.display = 'none';
+        }
+
+        function showNewUserForm() {
+            document.getElementById('auth-choice').style.display = 'none';
+            document.getElementById('new-user-form').style.display = 'block';
+        }
+
+        function showReturningUserForm() {
+            document.getElementById('auth-choice').style.display = 'none';
+            document.getElementById('returning-user-form').style.display = 'block';
+        }
+
+        async function registerNewUser() {
+            const username = document.getElementById('new-username').value.trim().toUpperCase();
+            const passcode = document.getElementById('new-passcode').value.trim();
+            const feedback = document.getElementById('registration-feedback');
+
+            // Validation
+            if (!username || username.length < 3) {
+                feedback.innerHTML = '⚠️ Username must be 3-15 characters';
+                return;
+            }
+
+            if (!passcode || passcode.length !== 4 || !/^\d{4}$/.test(passcode)) {
+                feedback.innerHTML = '⚠️ Passcode must be exactly 4 digits';
+                return;
+            }
+
+            feedback.innerHTML = '🔄 Checking availability...';
+
+            try {
+                // Check if username is available
+                const checkResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'check_custom_handle',
+                        content_data: { handle: username }
+                    })
+                });
+
+                const checkResult = await checkResponse.json();
+                if (!checkResult.available) {
+                    feedback.innerHTML = `❌ Username "${username}" is already taken`;
+                    return;
+                }
+
+                feedback.innerHTML = '✅ Username available! Creating account...';
+
+                // Register the user
+                const registerResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'register_custom_user',
+                        content_data: { handle: username, pin: passcode }
+                    })
+                });
+
+                const registerResult = await registerResponse.json();
+                if (registerResult.success) {
+                    currentUser = {
+                        userLabel: registerResult.userLabel,
+                        participantId: registerResult.participantId,
+                        passcode: passcode
+                    };
+                    updateZadAuth(registerResult.userLabel, registerResult.participantId);
+                    alert(`Account created!\nUsername: ${username}\nPasscode: ${passcode}\nPlease save this information!`);
+                    enterMainScreen();
+                } else {
+                    feedback.innerHTML = `❌ ${registerResult.error || 'Registration failed'}`;
+                }
+            } catch (error) {
+                feedback.innerHTML = '❌ Registration failed - please try again';
+                console.error('Registration error:', error);
+            }
+        }
+
+        async function authenticateReturningUser() {
+            const userLabel = document.getElementById('userLabel').value.trim().toUpperCase();
+            const passcode = document.getElementById('passcode').value.trim();
+
+            if (!userLabel || !passcode) {
+                alert('Please enter both username and passcode');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'authenticate_custom_user',
+                        content_data: { handle: userLabel, pin: passcode }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentUser = {
+                        userLabel: result.user.userLabel,
+                        participantId: result.user.participantId,
+                        passcode: passcode
+                    };
+                    updateZadAuth(result.user.userLabel, result.user.participantId);
+                    enterMainScreen();
+                } else {
+                    alert(result.error || 'Invalid username or passcode');
+                }
+            } catch (error) {
+                alert('Login failed - please try again');
+                console.error('Login error:', error);
+            }
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('user-info').innerHTML = `Logged in as: <strong>${currentUser.userLabel}</strong>`;
+            startPolling();
+            loadLatestData();
+        }
+
+        function showMainScreen() {
+            showScreen('main-screen');
+        }
+
+        function showCreatePostScreen() {
+            showScreen('create-post-screen');
+            document.getElementById('post-title').value = '';
+            document.getElementById('post-content').value = '';
+        }
+
+        async function createPost() {
+            const title = document.getElementById('post-title').value.trim();
+            const content = document.getElementById('post-content').value.trim();
+
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+
+            if (!content) {
+                alert('Please enter some content');
+                return;
+            }
+
+            await save('post', {
+                title: title,
+                content: content,
+                author: currentUser.userLabel,
+                likes: 0
+            });
+
+            showMainScreen();
+            loadLatestData();
+        }
+
+        function showEditPost(postId) {
+            const post = allPosts.find(p => p.id == postId);
+            if (!post) {
+                alert('Post not found!');
+                return;
+            }
+
+            // Check if current user is the author
+            if (!currentUser || currentUser.userLabel !== post.author) {
+                alert('You can only edit your own posts!');
+                return;
+            }
+
+            currentEditId = postId;
+            document.getElementById('edit-title').value = post.title || '';
+            document.getElementById('edit-content').value = post.content;
+            showScreen('edit-post-screen');
+        }
+
+        async function updatePost() {
+            const title = document.getElementById('edit-title').value.trim();
+            const content = document.getElementById('edit-content').value.trim();
+
+            if (!title) {
+                alert('Please enter a title');
+                return;
+            }
+
+            if (!content) {
+                alert('Please enter some content');
+                return;
+            }
+
+            await save('edit', {
+                postId: currentEditId,
+                title: title,
+                content: content,
+                author: currentUser.userLabel
+            });
+
+            currentEditId = null;
+            showMainScreen();
+            loadLatestData();
+        }
+
+        async function likePost(postId) {
+            await save('like', {
+                postId: postId,
+                author: currentUser.userLabel
+            });
+            loadLatestData();
+        }
+
+        async function deletePost() {
+            if (!currentEditId) {
+                alert('No post selected for deletion');
+                return;
+            }
+
+            const confirmDelete = confirm('Are you sure you want to delete this post?\n\nThis action cannot be undone.');
+
+            if (confirmDelete) {
+                await save('delete_post', {
+                    postId: currentEditId,
+                    author: currentUser.userLabel,
+                    deleted: true,
+                    deletedAt: Date.now()
+                });
+
+                currentEditId = null;
+                alert('Post deleted successfully!');
+                showMainScreen();
+                loadLatestData();
+            }
+        }
+
+        function toggleCommentForm(postId) {
+            // Hide all other comment forms first
+            document.querySelectorAll('.comment-form-inline').forEach(form => {
+                if (form.dataset.postId !== String(postId)) {
+                    form.classList.remove('active');
+                    const btn = document.querySelector(`.add-comment-btn[data-post-id="${form.dataset.postId}"]`);
+                    if (btn) {
+                        btn.classList.remove('commenting');
+                        btn.innerHTML = '💬 Comment';
+                    }
+                }
+            });
+            
+            const form = document.querySelector(`.comment-form-inline[data-post-id="${postId}"]`);
+            const btn = document.querySelector(`.add-comment-btn[data-post-id="${postId}"]`);
+            
+            if (form) {
+                const isActive = form.classList.contains('active');
+                if (isActive) {
+                    form.classList.remove('active');
+                    btn.classList.remove('commenting');
+                    btn.innerHTML = '💬 Comment';
+                    isCommentFormOpen = false;
+                    openCommentPostId = null;
+                    // Resume polling when form closes
+                    startPolling();
+                } else {
+                    form.classList.add('active');
+                    btn.classList.add('commenting');
+                    btn.innerHTML = '✍️ Writing...';
+                    isCommentFormOpen = true;
+                    openCommentPostId = postId;
+                    // Stop polling while commenting
+                    stopPolling();
+                    // Focus on the textarea
+                    const textarea = form.querySelector('.comment-input');
+                    if (textarea) {
+                        textarea.focus();
+                    }
+                }
+            }
+        }
+        
+        async function submitComment(postId) {
+            const form = document.querySelector(`.comment-form-inline[data-post-id="${postId}"]`);
+            const textarea = form.querySelector('.comment-input');
+            const comment = textarea.value.trim();
+            
+            if (!comment) {
+                alert('Please enter a comment');
+                return;
+            }
+            
+            // Disable form while saving
+            textarea.disabled = true;
+            form.querySelector('.comment-submit').disabled = true;
+            form.querySelector('.comment-submit').innerHTML = 'Posting...';
+            
+            try {
+                await save('comment', {
+                    postId: postId,
+                    content: comment,
+                    author: currentUser.userLabel
+                });
+                
+                // Clear and hide form
+                textarea.value = '';
+                form.classList.remove('active');
+                
+                // Reset button
+                const btn = document.querySelector(`.add-comment-btn[data-post-id="${postId}"]`);
+                if (btn) {
+                    btn.classList.remove('commenting');
+                    btn.innerHTML = '💬 Comment';
+                }
+                
+                // Reset form state
+                isCommentFormOpen = false;
+                openCommentPostId = null;
+                
+                // Reload data and resume polling
+                await loadLatestData();
+                startPolling();
+                
+            } catch (error) {
+                alert('Failed to post comment. Please try again.');
+            } finally {
+                // Re-enable form
+                textarea.disabled = false;
+                form.querySelector('.comment-submit').disabled = false;
+                form.querySelector('.comment-submit').innerHTML = 'Post Comment';
+            }
+        }
+        
+        function cancelComment(postId) {
+            const form = document.querySelector(`.comment-form-inline[data-post-id="${postId}"]`);
+            const textarea = form.querySelector('.comment-input');
+            const btn = document.querySelector(`.add-comment-btn[data-post-id="${postId}"]`);
+            
+            // Clear and hide form
+            textarea.value = '';
+            form.classList.remove('active');
+            
+            // Reset button
+            if (btn) {
+                btn.classList.remove('commenting');
+                btn.innerHTML = '💬 Comment';
+            }
+            
+            // Reset form state and resume polling
+            isCommentFormOpen = false;
+            openCommentPostId = null;
+            startPolling();
+        }
+
+        async function loadLatestData() {
+            try {
+                allPosts = await load('post');
+                allComments = await load('comment');
+                allLikes = await load('like');
+
+                const edits = await load('edit');
+                const deletions = await load('delete_post');
+
+                // Group edits by postId and apply only the latest edit for each post
+                const latestEdits = {};
+                edits.forEach(edit => {
+                    const postId = edit.postId;
+                    if (!latestEdits[postId] || edit.timestamp > latestEdits[postId].timestamp) {
+                        latestEdits[postId] = edit;
+                    }
+                });
+                
+                // Apply only the latest edit for each post
+                Object.values(latestEdits).forEach(edit => {
+                    const postIndex = allPosts.findIndex(p => p.id == edit.postId);
+                    if (postIndex !== -1) {
+                        allPosts[postIndex].title = edit.title || allPosts[postIndex].title;
+                        allPosts[postIndex].content = edit.content;
+                        allPosts[postIndex].lastEdited = edit.timestamp;
+                    }
+                });
+
+                // Filter out deleted posts
+                const deletedPostIds = deletions.map(d => d.postId);
+                const activePosts = allPosts.filter(post => !deletedPostIds.includes(post.id));
+
+                // Preserve comment form state during updates
+                const preserveCommentForm = isCommentFormOpen;
+                const preservePostId = openCommentPostId;
+                const preserveCommentText = preserveCommentForm ? 
+                    document.querySelector(`.comment-form-inline[data-post-id="${preservePostId}"] .comment-input`)?.value : '';
+                
+                updateUI(activePosts, allComments, allLikes);
+                
+                // Restore comment form state if it was open
+                if (preserveCommentForm && preservePostId) {
+                    const form = document.querySelector(`.comment-form-inline[data-post-id="${preservePostId}"]`);
+                    const btn = document.querySelector(`.add-comment-btn[data-post-id="${preservePostId}"]`);
+                    const textarea = form?.querySelector('.comment-input');
+                    
+                    if (form && btn && textarea) {
+                        form.classList.add('active');
+                        btn.classList.add('commenting');
+                        btn.innerHTML = '✍️ Writing...';
+                        textarea.value = preserveCommentText;
+                        // Don't focus to avoid interrupting typing
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function updateUI(posts, comments, likes) {
+            const postsDiv = document.getElementById('posts');
+
+            if (!posts || posts.length === 0) {
+                postsDiv.innerHTML = '<div class="card">No posts yet. Be the first to post!</div>';
+                return;
+            }
+
+            // Sort posts by newest first
+            posts.sort((a, b) => b.id - a.id);
+
+            postsDiv.innerHTML = posts.map(post => {
+                const postLikes = likes.filter(l => l.postId == post.id);
+                const postComments = comments.filter(c => c.postId == post.id);
+                const isAuthor = currentUser && currentUser.userLabel === post.author;
+
+                return `
+                    <div class="card">
+                        <h2>${post.title || 'Untitled Post'}</h2>
+                        <h3 style="font-size: 16px; color: #666;">by ${post.author}</h3>
+                        <div class="post-content">${post.content}</div>
+                        <small>Likes: ${postLikes.length}</small>
+                        <div class="post-actions">
+                            <button class="button" onclick="likePost(${post.id})">👍 Like</button>
+                            <button class="button" ${isAuthor ? '' : 'disabled'} onclick="showEditPost(${post.id})" ${isAuthor ? '' : 'title="Only the author can edit"'}>✏️ Edit</button>
+                            <button class="button add-comment-btn" data-post-id="${post.id}" onclick="toggleCommentForm(${post.id})">💬 Comment</button>
+                        </div>
+                        <div class="comment-form-inline" data-post-id="${post.id}">
+                            <textarea class="comment-input" placeholder="Write a thoughtful comment..."></textarea>
+                            <div class="comment-buttons">
+                                <button class="comment-submit" onclick="submitComment(${post.id})">Post Comment</button>
+                                <button class="comment-cancel" onclick="cancelComment(${post.id})">Cancel</button>
+                            </div>
+                        </div>
+                        ${postComments.length > 0 ? '<h4>Comments:</h4>' : ''}
+                        ${postComments.map(comment => `
+                            <div class="comment">
+                                <div class="comment-author">${comment.author}:</div>
+                                <div>${comment.content}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(loadLatestData, 3000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
+        }
+
+        function logout() {
+            stopPolling();
+            currentUser = null;
+            localStorage.removeItem('zad_participant_id');
+            localStorage.removeItem('zad_username');
+            showScreen('auth-screen');
+            showAuthChoice();
+        }
+
+        // Initialize
+        initAuth();
+    </script>
+</body>
+</html>
