@@ -139,7 +139,9 @@ export default function B52LandingPage() {
           ⚡ Engage Automaton
         </a>
 
-        <div className="phone-display">Telegraph: +1-866-330-0015</div>
+        <div className="phone-display">
+          <span className="telegraph-word">Telegraph</span>: +1-866-330-0015
+        </div>
       </div>
 
       <style jsx>{`
@@ -305,6 +307,42 @@ export default function B52LandingPage() {
           font-weight: 600;
           text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
           font-family: 'Georgia', serif;
+        }
+
+        .telegraph-word {
+          position: relative;
+          cursor: help;
+          transition: color 0.3s ease;
+        }
+
+        .telegraph-word:hover {
+          color: #f4e4a6;
+        }
+
+        .telegraph-word::after {
+          content: 'SMS or WhatsApp';
+          position: absolute;
+          bottom: 100%;
+          left: 50%;
+          transform: translateX(-50%) translateY(-5px);
+          background: rgba(139, 69, 19, 0.95);
+          color: #f4e4a6;
+          padding: 8px 12px;
+          border-radius: 6px;
+          font-size: 0.9rem;
+          white-space: nowrap;
+          opacity: 0;
+          visibility: hidden;
+          transition: all 0.3s ease;
+          border: 1px solid #cd853f;
+          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+          pointer-events: none;
+        }
+
+        .telegraph-word:hover::after {
+          opacity: 1;
+          visibility: visible;
+          transform: translateX(-50%) translateY(-10px);
         }
 
         .ornament {
