@@ -14,11 +14,20 @@ export const metadata: Metadata = {
     description,
     type: "website",
     siteName: "B52s.me",
+    images: [
+      {
+        url: "/b52s-og.png",
+        width: 1200,
+        height: 630,
+        alt: "B52s steampunk intelligence",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
     title: "B52s.me - Steam-Powered AI Intelligence",
     description,
+    images: ["/b52s-og.png"],
   },
 };
 
