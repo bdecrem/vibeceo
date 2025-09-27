@@ -8,7 +8,7 @@ import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate,
 import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
-import { getLatestAiDailyEpisode, formatAiDailySms } from './ai-daily.js';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -139,7 +139,8 @@ async function deliverAiDailyEpisode(
 
   try {
     const episode = await getLatestAiDailyEpisode(forceRefresh);
-    const baseMessage = formatAiDailySms(episode);
+    const shortLink = await getAiDailyShortLink(episode, normalizedPhoneNumber);
+    const baseMessage = formatAiDailySms(episode, { shortLink });
     const responseMessage = prefix ? `${prefix}\n\n${baseMessage}` : baseMessage;
 
     await sendSmsResponse(to, responseMessage, twilioClient);

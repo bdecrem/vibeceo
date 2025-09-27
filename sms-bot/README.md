@@ -37,6 +37,9 @@ The following environment variables need to be set in `.env.local` for local dev
 - `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`: At least one of these must be provided
 - `REDIS_URL` (optional): Redis connection URL for conversation state management
 - `PORT` (optional): The port on which the service will run (defaults to 3030)
+- `SHORTLINK_SERVICE_URL`: Endpoint for the in-house short link API (e.g., https://b52s.me/api/short-links)
+- `SHORTLINK_SERVICE_TOKEN`: Bearer token that authenticates requests to the short link API
+- `SHORTLINK_SERVICE_TIMEOUT_MS` (optional): Override the short link request timeout (default 2000)
 
 ## Twilio Configuration
 
