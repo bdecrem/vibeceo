@@ -1356,37 +1356,22 @@ async function handleLeoConversation(message: string, twilioClient: TwilioClient
 
 async function handleDefaultConversation(message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   try {
-    // 40% chance for Leo, 60% chance for other coaches
-    const useLeo = Math.random() < 0.4;
-    
-    // 50% chance to identify in first message
-    const shouldIdentify = Math.random() < 0.5;
-    
-    if (useLeo && leoData) {
-      console.log('🎲 Randomly selected Leo (40% chance) for default response');
-      // Set Leo as the active conversation before handling the message
-      updateActiveConversation(from, 'Leo Varin');
-      return await handleCoachConversation(message, twilioClient, from, leoData, shouldIdentify);
-    } else {
-      // Get available coaches excluding Leo
-      const regularCoaches = coachData.ceos.filter((c: CEO) => 
-        !c.name.toLowerCase().includes('leo')
-      );
-      
-      if (regularCoaches.length === 0) {
-        console.error('No regular coaches found for default response');
-        return false;
-      }
-      
-      // Select random coach from regular coaches
-      const randomIndex = Math.floor(Math.random() * regularCoaches.length);
-      const selectedCoach = regularCoaches[randomIndex];
-      
-      console.log(`🎲 Randomly selected ${selectedCoach.name} for default response`);
-      // Set the selected coach as the active conversation before handling the message
-      updateActiveConversation(from, selectedCoach.name);
-      return await handleCoachConversation(message, twilioClient, from, selectedCoach, shouldIdentify);
+    // ALWAYS use B52s Automaton as the default house voice
+    const b52sCoach = coachData.ceos.find((c: CEO) => c.id === 'b52s');
+
+    if (!b52sCoach) {
+      console.error('B52s Automaton not found in coaches data');
+      return false;
     }
+
+    console.log('⚙️ Using B52s Automaton as default house voice');
+
+    // B52s should always identify itself in the first message
+    const shouldIdentify = true;
+
+    // Set B52s as the active conversation before handling the message
+    updateActiveConversation(from, b52sCoach.name);
+    return await handleCoachConversation(message, twilioClient, from, b52sCoach, shouldIdentify);
   } catch (error) {
     console.error('Error in default conversation handler:', error);
     return false;
@@ -2174,7 +2159,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const isAdmin = subscriber && subscriber.is_admin;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
-      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
+      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nDefault responses come from B52s Automaton ⚙️\nTo talk with specific coaches (Alex, Donte, Rohan, Venus, Eljas, Kailey), say "Hey [coach name]"';
 
       helpText += '\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes';
       
