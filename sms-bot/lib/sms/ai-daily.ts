@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { createShortLink } from '../utils/shortlink-service.js';
 
 export interface AiDailyEpisode {
   topicId: string;
@@ -102,7 +103,10 @@ export async function getLatestAiDailyEpisode(forceRefresh = false): Promise<AiD
   return fetchEpisodeWithRetry();
 }
 
-export function formatAiDailySms(episode: AiDailyEpisode): string {
+export function formatAiDailySms(
+  episode: AiDailyEpisode,
+  options: { shortLink?: string } = {}
+): string {
   const fallbackDate = new Date();
   const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : fallbackDate;
   const dateToFormat = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
@@ -111,8 +115,24 @@ export function formatAiDailySms(episode: AiDailyEpisode): string {
   const messageParts = [
     `AI Papers Daily for ${formattedDate}.`,
     snippet,
-    'Text LINKS for the links or LISTEN.'
+    options.shortLink ? `Listen: ${options.shortLink}` : '',
+    'Reply LINKS for sources or LISTEN for the audio.'
   ];
 
   return messageParts.filter(part => part.length > 0).join(' ');
+}
+
+export async function getAiDailyShortLink(
+  episode: AiDailyEpisode,
+  createdFor?: string
+): Promise<string | null> {
+  if (!episode.audioUrl) {
+    return null;
+  }
+
+  return createShortLink(episode.audioUrl, {
+    context: 'ai_daily',
+    createdFor,
+    createdBy: 'sms-bot'
+  });
 }

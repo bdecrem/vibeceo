@@ -1,6 +1,6 @@
 import type { TwilioClient } from './webhooks.js';
 import { getAiDailySubscribers, updateAiDailyLastSent } from '../subscribers.js';
-import { getLatestAiDailyEpisode, formatAiDailySms } from './ai-daily.js';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
 
 const SCHEDULER_INTERVAL_MS = 60 * 1000; // Check every minute
 const DEFAULT_SEND_HOUR = Number(process.env.AI_DAILY_SEND_HOUR || 7);
@@ -98,7 +98,8 @@ export function startAiDailyScheduler(twilioClient: TwilioClient): void {
       let message: string;
       try {
         const episode = await getLatestAiDailyEpisode();
-        message = formatAiDailySms(episode);
+        const shortLink = await getAiDailyShortLink(episode, 'ai_daily_broadcast');
+        message = formatAiDailySms(episode, { shortLink });
       } catch (error) {
         console.error('AI Daily scheduler: failed to retrieve latest episode. Sending fallback message.', error);
         message = FALLBACK_MESSAGE;
