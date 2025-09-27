@@ -177,9 +177,6 @@ export default function B52LandingPage() {
           onClick={handleClick}
           onKeyDown={handleKeyDown}
         >
-          <span className="logo-instruction" id="b52s-logo-instruction">
-            {isCoarsePointer ? "Tap the porthole" : "Hover the porthole"}
-          </span>
           <div className={`logo${noteVisible ? " note-ready" : ""}`} aria-hidden="true">
             <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img">
               <title>B52s Steampunk Emblem</title>
@@ -331,7 +328,7 @@ export default function B52LandingPage() {
         }
 
         .logo-container {
-          margin-bottom: 50px;
+          margin-bottom: 30px;
           position: relative;
           cursor: pointer;
           outline: none;
@@ -340,22 +337,6 @@ export default function B52LandingPage() {
         .logo-container:focus-visible {
           box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.65);
           border-radius: 50%;
-        }
-
-        .logo-instruction {
-          display: block;
-          margin-bottom: 12px;
-          font-size: 0.85rem;
-          letter-spacing: 0.4em;
-          text-transform: uppercase;
-          color: rgba(212, 175, 55, 0.55);
-          transition: opacity 0.4s ease, transform 0.4s ease;
-          opacity: 0.85;
-        }
-
-        .logo-container.note-open .logo-instruction {
-          opacity: 0;
-          transform: translateY(-6px);
         }
 
         .logo {
@@ -704,11 +685,6 @@ export default function B52LandingPage() {
           .logo {
             width: 150px;
             height: 150px;
-          }
-
-          .logo-instruction {
-            font-size: 0.75rem;
-            letter-spacing: 0.28em;
           }
 
           .subtitle {
