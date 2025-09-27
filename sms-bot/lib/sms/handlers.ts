@@ -1354,8 +1354,6 @@ async function handleLeoConversation(message: string, twilioClient: TwilioClient
   return handleCoachConversation(message, twilioClient, from, leoData);
 }
 
-// COMMENTED OUT: Handle default conversation by selecting a random coach based on distribution
-/*
 async function handleDefaultConversation(message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   try {
     // 40% chance for Leo, 60% chance for other coaches
@@ -1394,7 +1392,6 @@ async function handleDefaultConversation(message: string, twilioClient: TwilioCl
     return false;
   }
 }
-*/
 
 // Legacy coach conversation handler for explicit coach requests
 async function handleExplicitCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
@@ -4169,13 +4166,17 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       return;
     }
 
-    // Handle unrecognized commands/text - fallback response
+    // Handle unrecognized commands/text - default to coach conversation
     console.log(`Unrecognized command/message from ${from}: ${message}`);
-    await sendSmsResponse(
-      from,
-      'WEBTOYS didn\'t catch that. Start your message with "WTAF" — e.g.\n"WTAF build a chat app for me and my friends". Type COMMANDS for more help.',
-      twilioClient
-    );
+    const handledByCoach = await handleDefaultConversation(message, twilioClient, from);
+
+    if (!handledByCoach) {
+      await sendSmsResponse(
+        from,
+        'WEBTOYS didn\'t catch that. Start your message with "WTAF" — e.g.\n"WTAF build a chat app for me and my friends". Type COMMANDS for more help.',
+        twilioClient
+      );
+    }
     return;
 
   } catch (error) {
