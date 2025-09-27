@@ -33,7 +33,7 @@
 
 ## Short Link Service
 
-- A new Supabase table `short_links` stores `slug`, `target_url`, and metadata. Apply `sms-bot/migrations/create-short-links-table.sql` in Supabase.
+- A new Supabase table `short_links` stores `slug`, `target_url`, and metadata. Slugs are 4-character case-sensitive codes (e.g., `b52s.me/l/6kVj`). Apply `sms-bot/migrations/create-short-links-table.sql` in Supabase.
 - The web app exposes `POST /api/short-links` (protected by `SHORTLINK_API_TOKEN`) to mint links and `GET /l/[slug]` to redirect.
 - Configure DNS so `b52s.me` points at the deployed Next.js site; HTTPS is required for Twilio-compatible links.
 - Set in web deployment:
