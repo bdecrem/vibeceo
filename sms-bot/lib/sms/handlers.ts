@@ -1689,6 +1689,29 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       return;
     }
 
+    if (aiDailyNormalizedCommand === 'LINKS') {
+      try {
+        const episode = await getLatestAiDailyEpisode();
+        const formattedLinks = formatAiDailyLinks(episode);
+
+        await sendSmsResponse(
+          from,
+          formattedLinks ?? 'No LINKS available for this episode. Try again after the next release! 🎙️',
+          twilioClient
+        );
+      } catch (error) {
+        console.error('Failed to deliver AI Daily links:', error);
+        await sendSmsResponse(
+          from,
+          'Links are unavailable right now. Please try again later.',
+          twilioClient
+        );
+      }
+
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
     if (aiDailyNormalizedCommand === 'AI DAILY SUBSCRIBE') {
       const subscriber = await getSubscriber(normalizedPhoneNumber);
 
