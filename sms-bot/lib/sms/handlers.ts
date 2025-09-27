@@ -1684,6 +1684,16 @@ export async function processIncomingSms(from: string, body: string, twilioClien
 
     const aiDailyNormalizedCommand = messageUpper.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
+    if (/^greetings/i.test(message)) {
+      await sendSmsResponse(
+        from,
+        'Hey! I’m your AI over SMS. To sign up for the AI Daily reply AI DAILY SUBSCRIBE ⚙️',
+        twilioClient
+      );
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
     if (aiDailyNormalizedCommand === 'AI DAILY SUBSCRIBE') {
       const subscriber = await getSubscriber(normalizedPhoneNumber);
 
