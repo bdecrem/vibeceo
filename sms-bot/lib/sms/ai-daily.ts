@@ -138,3 +138,30 @@ export async function getAiDailyShortLink(
     createdBy: 'sms-bot'
   });
 }
+
+interface EpisodeLink {
+  url: string;
+  target: string;
+  type: string;
+}
+
+export function formatAiDailyLinks(episode: AiDailyEpisode): string | null {
+  const links = (episode.showNotesJson as { links?: EpisodeLink[] } | undefined)?.links;
+  if (!links?.length) {
+    return null;
+  }
+
+  const huggingfaceLinks = links.filter((link) => link.type === 'huggingface').slice(0, 3);
+
+  if (!huggingfaceLinks.length) {
+    return null;
+  }
+
+  const formattedLinks = huggingfaceLinks.map((link) => {
+    const label = link.target.split(':')[0].trim();
+    const shortenedUrl = link.url.replace(/^https?:\/\//i, '');
+    return `${label}: ${shortenedUrl}`;
+  });
+
+  return ['🎙️ LINKS', ...formattedLinks].join('\n');
+}
