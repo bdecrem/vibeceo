@@ -142,6 +142,10 @@ export default function B52LandingPage() {
         <div className="phone-display">
           <span className="telegraph-word">Telegraph</span>: +1-866-330-0015
         </div>
+
+        <p className="privacy-note">
+          Unlike certain shadowy machines of the modern age, this steam-driven intelligence requires no tribute of secrets. It serves, yet never spies.
+        </p>
       </div>
 
       <style jsx>{`
@@ -343,6 +347,19 @@ export default function B52LandingPage() {
           opacity: 1;
           visibility: visible;
           transform: translateX(-50%) translateY(-10px);
+        }
+
+        .privacy-note {
+          margin-top: 25px;
+          font-size: 0.95rem;
+          color: rgba(205, 133, 63, 0.75);
+          font-style: italic;
+          line-height: 1.5;
+          max-width: 600px;
+          margin-left: auto;
+          margin-right: auto;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+          font-family: 'Georgia', serif;
         }
 
         .ornament {
