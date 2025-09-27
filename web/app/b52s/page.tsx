@@ -767,77 +767,237 @@ export default function B52LandingPage() {
           font-family: 'Georgia', serif;
         }
 
-        .inventor-note {
-          margin-top: 0;
-          max-height: 0;
-          max-width: 720px;
-          margin-left: auto;
-          margin-right: auto;
-          position: relative;
-          opacity: 0;
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
           overflow: hidden;
-          pointer-events: none;
-          transition:
-            max-height 0.6s ease,
-            opacity 0.6s ease,
-            margin-top 0.6s ease;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
 
-        .inventor-note.is-visible {
-          margin-top: 60px;
-          max-height: 1000px;
-          opacity: 1;
-          pointer-events: auto;
+        .modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(10, 6, 4, 0.7);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 24px;
+          z-index: 1000;
+          animation: modalFadeIn 0.4s ease-out;
+        }
+
+        .modal-content {
+          position: relative;
+          width: min(92vw, 720px);
+          max-height: 90vh;
+          overflow-y: auto;
+          animation: modalSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .modal-close {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          background: rgba(26, 16, 10, 0.8);
+          border: 1px solid rgba(212, 175, 55, 0.5);
+          border-radius: 50%;
+          color: #f4e4a6;
+          width: 36px;
+          height: 36px;
+          font-size: 1.5rem;
+          line-height: 1;
+          cursor: pointer;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus-visible {
+          background: rgba(139, 69, 19, 0.9);
+          transform: scale(1.05);
+          outline: none;
+        }
+
+        .scroll-container {
+          position: relative;
+          perspective: 1200px;
+          transform-style: preserve-3d;
+          transform: rotateX(90deg);
+          transform-origin: top center;
+          transition: transform 2.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .scroll-container.unfolded {
+          transform: rotateX(0deg);
+        }
+
+        .scroll-top,
+        .scroll-bottom {
+          height: 26px;
+          background:
+            linear-gradient(135deg, #8b4513 0%, #a0522d 30%, #cd853f 50%, #a0522d 70%, #8b4513 100%),
+            radial-gradient(ellipse at center, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+          border: 3px solid #cd853f;
+          border-radius: 14px;
+          position: relative;
+          box-shadow:
+            inset 0 3px 6px rgba(255, 255, 255, 0.28),
+            inset 0 -3px 6px rgba(0, 0, 0, 0.45),
+            0 6px 12px rgba(0, 0, 0, 0.55),
+            0 0 18px rgba(212, 175, 55, 0.25);
+        }
+
+        .scroll-top::before,
+        .scroll-bottom::before {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 68%;
+          height: 6px;
+          background: linear-gradient(90deg, #f4e4a6 0%, #d4af37 50%, #f4e4a6 100%);
+          border-radius: 3px;
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 1px 2px rgba(255, 255, 255, 0.25);
+        }
+
+        .scroll-body {
+          background:
+            linear-gradient(135deg, rgba(244, 228, 166, 0.97) 0%, rgba(232, 207, 141, 0.96) 100%),
+            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><pattern id="paper" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="%23f2e1b5"/><circle cx="12" cy="12" r="0.8" fill="%23d4af37" opacity="0.25"/><circle cx="6" cy="18" r="0.4" fill="%23cd853f" opacity="0.15"/><circle cx="18" cy="6" r="0.6" fill="%23b8860b" opacity="0.18"/></pattern></defs><rect width="120" height="120" fill="url(%23paper)"/></svg>');
+          border-left: 3px solid #cd853f;
+          border-right: 3px solid #cd853f;
+          padding: clamp(32px, 6vw, 80px) clamp(24px, 7vw, 120px);
+          box-shadow:
+            inset 6px 0 12px rgba(139, 69, 19, 0.2),
+            inset -6px 0 12px rgba(139, 69, 19, 0.2),
+            inset 0 4px 8px rgba(0, 0, 0, 0.12);
+          position: relative;
+        }
+
+        .scroll-body::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            repeating-linear-gradient(
+              0deg,
+              transparent 0px,
+              transparent 28px,
+              rgba(139, 69, 19, 0.08) 29px,
+              rgba(139, 69, 19, 0.08) 30px
+            );
+          pointer-events: none;
         }
 
         .inventor-note__label {
           display: inline-block;
-          padding: 6px 16px;
-          background: rgba(23, 14, 8, 0.85);
-          border: 1px solid rgba(212, 175, 55, 0.4);
-          border-bottom: none;
+          padding: 18px 28px;
+          margin: 0 auto 24px;
+          background:
+            linear-gradient(135deg, rgba(139, 69, 19, 0.95) 0%, rgba(160, 82, 45, 0.95) 50%, rgba(139, 69, 19, 0.95) 100%);
+          border: 3px solid #cd853f;
+          border-radius: 14px 14px 0 0;
+          font-family: 'Georgia', serif;
           letter-spacing: 0.45em;
-          font-size: 0.75rem;
+          font-size: 0.85rem;
           text-transform: uppercase;
-          color: rgba(212, 175, 55, 0.75);
-          opacity: 0;
-          transform: translateY(-8px);
-          transition: opacity 0.45s ease 0.2s, transform 0.45s ease 0.2s;
+          color: #f4e4a6;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+          box-shadow:
+            0 -4px 8px rgba(0, 0, 0, 0.35),
+            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+            0 0 18px rgba(212, 175, 55, 0.25);
         }
 
-        .inventor-note.is-visible .inventor-note__label {
+        .inventor-note__panel {
+          position: relative;
+          text-align: left;
+          font-size: 1.05rem;
+          line-height: 1.8;
+          color: #4a2c17;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.45);
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .typewriter-active {
           opacity: 1;
           transform: translateY(0);
         }
 
-        .inventor-note__panel {
-          border: 1px solid rgba(212, 175, 55, 0.4);
-          background: rgba(26, 16, 10, 0.92);
-          padding: 28px;
-          transform: translateY(16px) scaleY(0.85);
-          transform-origin: top;
+        .typewriter-text {
           opacity: 0;
-          transition: transform 0.6s ease, opacity 0.6s ease;
-          box-shadow:
-            inset 0 0 20px rgba(0, 0, 0, 0.35),
-            0 14px 30px rgba(0, 0, 0, 0.35);
-          text-align: left;
-          font-size: 1rem;
-          line-height: 1.7;
-          color: #e8cf8d;
+          margin-bottom: 22px;
         }
 
-        .inventor-note__panel p:first-of-type {
+        .typewriter-active .typewriter-text {
+          animation: typewriter 1.6s ease-out forwards;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(2) {
+          animation-delay: 0.6s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(3) {
+          animation-delay: 2s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(4) {
+          animation-delay: 3.4s;
+        }
+
+        .typewriter-text:first-of-type {
           font-family: 'Georgia', serif;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #f4e4a6;
-          margin-bottom: 18px;
+          color: #6e3f1f;
         }
 
-        .inventor-note.is-visible .inventor-note__panel {
-          transform: translateY(0) scaleY(1);
-          opacity: 1;
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            transform: translateY(-40px) scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes typewriter {
+          0% {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          25% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .ornament {
@@ -891,13 +1051,55 @@ export default function B52LandingPage() {
             font-size: 1.1rem;
           }
 
-          .inventor-note.is-visible {
-            margin-top: 40px;
+          .modal-content {
+            width: min(96vw, 640px);
+          }
+
+          .modal-close {
+            top: 10px;
+            right: 14px;
+          }
+
+          .scroll-body {
+            padding: clamp(28px, 8vw, 60px) clamp(18px, 8vw, 50px);
           }
 
           .inventor-note__panel {
-            padding: 22px;
-            font-size: 0.95rem;
+            font-size: 0.98rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .logo {
+            width: 120px;
+            height: 120px;
+          }
+
+          h1 {
+            font-size: clamp(2.5rem, 10vw, 3.2rem);
+          }
+
+          .subtitle {
+            font-size: 1.05rem;
+          }
+
+          .modal-content {
+            width: 100%;
+            max-height: 92vh;
+          }
+
+          .scroll-body {
+            padding: 28px 20px;
+          }
+
+          .inventor-note__label {
+            letter-spacing: 0.32em;
+            font-size: 0.72rem;
+          }
+
+          .modal-close {
+            top: 4px;
+            right: 10px;
           }
         }
       `}</style>
