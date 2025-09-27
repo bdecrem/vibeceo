@@ -1,0 +1,1229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf.us/og-types/og-type-app-10.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://www.wtaf.me/bart/tide-worm-speaking" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>PILE-O-NOTES</title>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #FCFCF7;
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .screen {
+            display: none;
+        }
+        .active {
+            display: block;
+        }
+        h1, h2 {
+            font-size: 28px;
+            text-transform: uppercase;
+            font-weight: bold;
+            margin: 0;
+            padding: 10px 0;
+        }
+        input, textarea {
+            font-family: 'JetBrains Mono', monospace;
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0;
+            border: 3px solid #FFD63D;
+            font-size: 16px;
+            box-sizing: border-box;
+        }
+        textarea {
+            height: 450px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .rendered-content {
+            height: 450px;
+            padding: 10px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-family: 'Space Grotesk', sans-serif;
+            line-height: 1.6;
+            border: 3px solid #FFD63D;
+            background-color: white;
+        }
+        .document-container {
+            border: 4px solid #FFD63D;
+            margin: 20px 0;
+            padding: 10px;
+            box-shadow: 8px 8px 0 #C9C2F9;
+        }
+        .button {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 10px 5px;
+            background-color: #FFD63D;
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: transform 0.1s;
+        }
+        .button:hover {
+            transform: scale(1.05);
+        }
+        .button:active {
+            transform: scale(0.95);
+        }
+        .button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .comment {
+            background-color: #FFEF00;
+            padding: 5px;
+            margin: 5px 0;
+            box-shadow: 4px 4px 0 #C9C2F9;
+        }
+        .comment-input {
+            display: flex;
+            align-items: center;
+        }
+        .comment-input input {
+            flex: 1;
+            margin-right: 10px;
+        }
+        .emoji-egg {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-size: 32px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+        .welcome-container {
+            text-align: center;
+            padding: 40px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+        .welcome-title {
+            font-size: 48px;
+            background: linear-gradient(45deg, #FFD63D, #C9C2F9);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 20px;
+            animation: wiggle 3s ease-in-out infinite;
+        }
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        .subtitle {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .button-group {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .floating-emoji {
+            position: absolute;
+            font-size: 30px;
+            animation: float 10s ease-in-out infinite;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            25% { transform: translateY(-20px) rotate(10deg); }
+            75% { transform: translateY(20px) rotate(-10deg); }
+        }
+        .emoji-1 { top: 10%; left: 10%; animation-delay: 0s; }
+        .emoji-2 { top: 20%; right: 15%; animation-delay: 1s; }
+        .emoji-3 { bottom: 30%; left: 20%; animation-delay: 2s; }
+        .emoji-4 { bottom: 20%; right: 10%; animation-delay: 3s; }
+        .emoji-5 { top: 50%; left: 5%; animation-delay: 4s; }
+        .emoji-6 { top: 40%; right: 25%; animation-delay: 5s; }
+        .feature-list {
+            margin: 30px auto;
+            max-width: 400px;
+            text-align: left;
+            font-size: 16px;
+            color: #555;
+        }
+        .feature-item {
+            margin: 10px 0;
+            padding-left: 30px;
+            position: relative;
+        }
+        .feature-item::before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+        .view-only-notice {
+            background-color: #f0f0f0;
+            padding: 10px;
+            margin: 10px 0;
+            border: 2px solid #999;
+        }
+        .editor-toolbar {
+            display: none;
+            background-color: #f5f5f5;
+            padding: 8px;
+            border: 3px solid #FFD63D;
+            border-bottom: none;
+            margin-top: 10px;
+        }
+        .toolbar-button {
+            background-color: white;
+            border: 2px solid #FFD63D;
+            padding: 5px 10px;
+            margin-right: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .toolbar-button:hover {
+            background-color: #FFD63D;
+        }
+        .toolbar-separator {
+            display: inline-block;
+            width: 1px;
+            height: 20px;
+            background-color: #ccc;
+            margin: 0 10px;
+            vertical-align: middle;
+        }
+    </style>
+<script>
+// ZAD Helper Functions - Inline version for test apps
+
+// SIMPLIFIED UUID INJECTION: Set window.APP_ID for backup
+window.APP_ID = '016d77c4-fd74-462f-bc4b-12b709e6abd2';
+console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '016d77c4-fd74-462f-bc4b-12b709e6abd2');
+
+console.log('🚀 Loading ZAD Helper Functions (inline)...');
+
+// Auth state - Use existing global currentUser or create zadCurrentUser
+let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
+let authInitialized = false;
+
+// Get app ID from window.APP_ID (set by system) - ENHANCED DEBUG VERSION
+function getAppId() {
+    console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '016d77c4-fd74-462f-bc4b-12b709e6abd2');
+    return '016d77c4-fd74-462f-bc4b-12b709e6abd2';
+}
+
+                // Get participant ID - return stored ID or generate temporary one
+                function getParticipantId() {
+                    let participantId = localStorage.getItem('zad_participant_id');
+                    if (!participantId) {
+                        // Check if demo mode is enabled (multiple detection methods for iframe compatibility)
+                        const isDemoMode =
+                            window.location.search.includes('demo=true') ||
+                            window.parent?.location?.search?.includes('demo=true') ||
+                            window.top?.location?.search?.includes('demo=true') ||
+                            document.referrer.includes('demo=true');
+
+                        // Clear demo mode if not detected in current session
+                        if (!isDemoMode) {
+                            localStorage.removeItem('demo_mode');
+                            // Also clear participant_id if it was a demo ID, so user gets fresh normal ID
+                            const existingId = localStorage.getItem('zad_participant_id');
+                            if (existingId && existingId.startsWith('demo_')) {
+                                localStorage.removeItem('zad_participant_id');
+                                localStorage.removeItem('zad_username');
+                            }
+                        }
+
+                        if (isDemoMode) {
+                            // Generate demo ID that will trigger backend demo table routing
+                            participantId = 'demo_user_' + Math.random().toString(36).substr(2, 8);
+                            localStorage.setItem('demo_mode', 'true');
+                            localStorage.setItem('zad_username', 'Demo User');
+                            console.log('🎭 Demo mode detected - generated demo participant ID:', participantId);
+                        } else {
+                            // Generate temporary ID - app's authentication system will set the real one
+                            participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                            localStorage.setItem('zad_username', 'Anonymous');
+                        }
+
+                        localStorage.setItem('zad_participant_id', participantId);
+                    }
+                    return participantId;
+                }
+
+                // Get username from current session
+                function getUsername() {
+                    // Ensure participant ID is initialized first (which sets up localStorage)
+                    getParticipantId();
+                    return localStorage.getItem('zad_username') || 'Anonymous';
+                }
+
+                // Update ZAD helper functions with app's authentication state
+                function updateZadAuth(userLabel, participantId) {
+                    localStorage.setItem('zad_participant_id', participantId);
+                    localStorage.setItem('zad_username', userLabel);
+                    zadCurrentUser = {
+                        username: userLabel,
+                        participantId: participantId
+                    };
+                    console.log('🔄 Updated ZAD auth state:', zadCurrentUser);
+                }
+
+                // Initialize authentication (simplified)
+                function initAuth() {
+                    console.log('🔐 Initializing authentication...');
+                    if (authInitialized) return;
+                    authInitialized = true;
+
+                    // Don't clear localStorage or prompt during initialization
+                    // Let the app's authentication system handle user setup
+                    zadCurrentUser = {
+                        username: getUsername(),
+                        participantId: localStorage.getItem('zad_participant_id') || null
+                    };
+
+                    console.log('✅ Authentication ready:', zadCurrentUser);
+                }
+
+                // Get current user (compatible with zad-helpers.ts)
+                function getCurrentUser() {
+                    if (!zadCurrentUser) return null;
+
+                    return {
+                        username: zadCurrentUser.username || getUsername(),
+                        id: zadCurrentUser.participantId || getParticipantId(),
+                        userLabel: zadCurrentUser.username || getUsername(),
+                        participantId: zadCurrentUser.participantId || getParticipantId(),
+                        passcode: zadCurrentUser.passcode || null
+                    };
+                }
+
+// Save data to ZAD API
+async function save(type, data) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+
+        const zadData = {
+            app_id: app_id,
+            participant_id: participant_id,
+            participant_data: {
+                userLabel: username,
+                username: username
+            },
+            action_type: type,
+            content_data: {
+                ...data,
+                timestamp: data.timestamp || Date.now(),
+                author: data.author || username
+            }
+        };
+
+        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(zadData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Save failed: ${errorData.error || response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Saved successfully:', result);
+        return result;
+
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        alert(`Failed to save: ${error.message}`);
+        throw error;
+    }
+}
+
+// Phase 1 Authentication Backend Helper Functions
+// These call the backend API with specific action types
+
+// Backend Helper 1: Check Available Slots
+async function checkAvailableSlots() {
+    try {
+        const app_id = getAppId();
+
+        console.log('🔍 Calling backend checkAvailableSlots for app:', app_id);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'check_slots',
+                content_data: {}
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Check slots failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend checkAvailableSlots result:', result.slots);
+
+        return result.slots;
+
+    } catch (error) {
+        console.error('❌ Check slots error:', error);
+        alert(`Failed to check available slots: ${error.message}`);
+        return { totalSlots: 5, usedSlots: 0, availableSlots: 5, availableLabels: [], usedLabels: [], isFull: false };
+    }
+}
+
+// Backend Helper 2: Generate User Credentials
+async function generateUser() {
+    try {
+        const app_id = getAppId();
+
+        console.log('🎲 Calling backend generateUser for app:', app_id);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'generate_user',
+                content_data: {}
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Generate user failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend generateUser result:', result);
+
+        if (!result.success) {
+            alert(result.error || 'Failed to generate user');
+            return null;
+        }
+
+        return result.user;
+
+    } catch (error) {
+        console.error('❌ Generate user error:', error);
+        alert(`Failed to generate user: ${error.message}`);
+        return null;
+    }
+}
+
+// Backend Helper 3: Register User
+async function registerUser(userLabel, passcode, participantId) {
+    try {
+        const app_id = getAppId();
+
+        console.log('📝 Calling backend registerUser for app:', app_id, 'user:', userLabel);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'register_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode,
+                    participantId: participantId
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Register user failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend registerUser result:', result);
+
+        if (!result.success) {
+            alert(result.result?.error || 'Registration failed');
+            return { success: false, error: result.result?.error };
+        }
+
+        return result.result;
+
+    } catch (error) {
+        console.error('❌ Register user error:', error);
+        alert(`Registration failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Backend Helper 4: Authenticate User
+async function authenticateUser(userLabel, passcode) {
+    try {
+        const app_id = getAppId();
+
+        console.log('🔐 Calling backend authenticateUser for app:', app_id, 'user:', userLabel);
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                app_id: app_id,
+                action_type: 'authenticate_user',
+                content_data: {
+                    userLabel: userLabel,
+                    passcode: passcode
+                }
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Authentication failed: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Backend authenticateUser result:', result);
+
+        if (!result.success) {
+            alert(result.result?.error || 'Authentication failed');
+            return { success: false, error: result.result?.error };
+        }
+
+        return result.result;
+
+    } catch (error) {
+        console.error('❌ Authentication error:', error);
+        alert(`Authentication failed: ${error.message}`);
+        return { success: false, error: error.message };
+    }
+}
+
+// Load data from ZAD API
+async function load(type) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+
+        console.log('🔄 Loading from ZAD API:', { app_id, type, participant_id });
+
+        const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(type)}&participant_id=${encodeURIComponent(participant_id)}`;
+        console.log('🔍 ZAD load URL:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Load failed: ${errorData.error || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Loaded successfully:', data);
+
+        // Transform ZAD data back to simple format
+        return data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        alert(`Failed to load: ${error.message}`);
+        return [];
+    }
+}
+
+// Make functions globally available
+window.initAuth = initAuth;
+window.save = save;
+window.load = load;
+window.getAppId = getAppId;
+window.getParticipantId = getParticipantId;
+window.getUsername = getUsername;
+window.getCurrentUser = getCurrentUser;
+window.updateZadAuth = updateZadAuth;
+window.checkAvailableSlots = checkAvailableSlots;
+window.generateUser = generateUser;
+window.registerUser = registerUser;
+window.authenticateUser = authenticateUser;
+
+console.log('🚀 ZAD Helper Functions loaded successfully');
+console.log('Available functions: initAuth(), save(type, data), load(type), updateZadAuth(userLabel, participantId)');
+console.log('🔑 Phase 1 Auth functions: checkAvailableSlots(), generateUser(), registerUser(label, code, id), authenticateUser(label, code)');
+</script>
+</head>
+<body>
+
+<div class="app-container">
+    <div id="welcome-screen" class="screen active">
+        <div class="welcome-container">
+            <div class="floating-emoji emoji-1">📝</div>
+            <div class="floating-emoji emoji-2">📚</div>
+            <div class="floating-emoji emoji-3">🖊️</div>
+            <div class="floating-emoji emoji-4">✏️</div>
+            <div class="floating-emoji emoji-5">📋</div>
+            <div class="floating-emoji emoji-6">🖋️</div>
+
+            <h1 class="welcome-title">📝 PILE-O-NOTES 📝</h1>
+            <p class="subtitle">Because Google Docs was too stable. 🤪</p>
+
+            <div class="feature-list">
+                <div class="feature-item">Collaborative chaos with friends</div>
+                <div class="feature-item">Bold, italic, and unhinged formatting</div>
+                <div class="feature-item">Delete button that actually works</div>
+                <div class="feature-item">Comments that nobody asked for</div>
+            </div>
+
+            <div class="button-group">
+                <button class="button" onclick="showCustomUserScreen()">New User</button>
+                <button class="button" onclick="showCustomLoginScreen()">Returning User</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="custom-user-screen" class="screen">
+        <h1>🎭 Create Your Identity</h1>
+        <input type="text" id="custom-handle" placeholder="Your Handle (3-15 chars)" maxlength="15">
+        <input type="text" id="custom-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <div id="custom-user-feedback"></div>
+        <button class="button" onclick="checkAndRegisterCustomUser()">Claim Identity</button>
+        <button class="button" onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+
+    <div id="custom-login-screen" class="screen">
+        <h1>🔐 Login</h1>
+        <input type="text" id="custom-login-handle" placeholder="Your Handle">
+        <input type="text" id="custom-login-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <button class="button" onclick="loginCustomUser()">Login</button>
+        <button class="button" onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+
+    <div id="main-screen" class="screen">
+        <h1>📚 PILE-O-NOTES</h1>
+        <div id="user-status">👋 Welcome, <span id="current-user-label"></span>!</div>
+        <button class="button" onclick="createDocument()">➕ Create Document</button>
+        <div id="documents-list"></div>
+        <button class="button" onclick="showScreen('welcome-screen')">👋 Leave</button>
+    </div>
+
+    <div id="document-screen" class="screen">
+        <h1 id="document-mode-title">Document Editor</h1>
+        <div class="view-only-notice" id="view-only-notice" style="display:none;">
+            <strong>View Only Mode</strong> - You can view and comment on this document, but only the owner can edit it.
+        </div>
+        <div class="document-container">
+            <input type="text" id="document-title" placeholder="Document Title" disabled>
+            <div class="editor-toolbar" id="editor-toolbar">
+                <button class="toolbar-button" onclick="formatText('bold')" title="Bold (Ctrl+B)">B</button>
+                <button class="toolbar-button" onclick="formatText('italic')" title="Italic (Ctrl+I)">I</button>
+                <button class="toolbar-button" onclick="formatText('underline')" title="Underline (Ctrl+U)">U</button>
+                <span class="toolbar-separator"></span>
+                <button class="toolbar-button" onclick="formatText('bullet')" title="Bullet List">•</button>
+            </div>
+            <textarea id="document-content" placeholder="Type your document here..." disabled style="display:none;"></textarea>
+            <div id="document-content-rendered" class="rendered-content" style="display:block;"></div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <button class="button" id="save-button" onclick="saveDocument()" style="display:none;">Save Document</button>
+                <span id="delete-button" onclick="deleteDocument()" style="display:none; font-size: 24px; cursor: pointer; padding: 5px;" title="Delete Document">🗑️</span>
+            </div>
+        </div>
+        <div id="comments-section">
+            <h2>Comments</h2>
+            <div id="comments-list"></div>
+            <div class="comment-input">
+                <input type="text" id="comment-input" placeholder="Add a comment...">
+                <button class="button" onclick="addComment()">Add Comment</button>
+            </div>
+        </div>
+        <button class="button" onclick="backToMain()">Back to Documents</button>
+    </div>
+</div>
+
+<div class="emoji-egg" onclick="emojiRain()">🎉</div>
+
+<script>
+    let currentUser = null;
+    let currentDocumentId = null;
+    let currentDocumentAuthor = null;
+    let isEditMode = false;
+
+    function showCustomUserScreen() {
+        showScreen('custom-user-screen');
+        document.getElementById('custom-handle').value = '';
+        document.getElementById('custom-pin').value = '';
+        document.getElementById('custom-user-feedback').innerHTML = '';
+    }
+
+    async function checkAndRegisterCustomUser() {
+        const handle = document.getElementById('custom-handle').value.trim();
+        const pin = document.getElementById('custom-pin').value.trim();
+        const feedback = document.getElementById('custom-user-feedback');
+
+        if (!handle || handle.length < 3) {
+            feedback.innerHTML = '⚠️ Handle must be 3-15 characters';
+            return;
+        }
+
+        if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+            feedback.innerHTML = '⚠️ PIN must be exactly 4 digits';
+            return;
+        }
+
+        feedback.innerHTML = '🔄 Checking availability...';
+
+        try {
+            const checkResponse = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: getAppId(),
+                    action_type: 'check_custom_handle',
+                    content_data: { handle: handle }
+                })
+            });
+
+            const checkResult = await checkResponse.json();
+            if (!checkResult.available) {
+                feedback.innerHTML = `❌ ${checkResult.error}`;
+                return;
+            }
+
+            feedback.innerHTML = '✅ Handle available! Registering...';
+
+            const registerResponse = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: getAppId(),
+                    action_type: 'register_custom_user',
+                    content_data: { handle: handle, pin: pin }
+                })
+            });
+
+            const registerResult = await registerResponse.json();
+            if (registerResult.success) {
+                currentUser = {
+                    username: registerResult.userLabel,
+                    userLabel: registerResult.userLabel,
+                    participantId: registerResult.participantId
+                };
+
+                updateZadAuth(registerResult.userLabel, registerResult.participantId);
+                enterMainScreen();
+            } else {
+                feedback.innerHTML = `❌ ${registerResult.error}`;
+            }
+        } catch (error) {
+            feedback.innerHTML = '❌ Registration failed - please try again';
+        }
+    }
+
+    function showCustomLoginScreen() {
+        showScreen('custom-login-screen');
+        document.getElementById('custom-login-handle').value = '';
+        document.getElementById('custom-login-pin').value = '';
+    }
+
+    async function loginCustomUser() {
+        const handle = document.getElementById('custom-login-handle').value.trim();
+        const pin = document.getElementById('custom-login-pin').value.trim();
+
+        if (!handle || !pin) {
+            alert('Enter both handle and PIN!');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/zad/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    app_id: getAppId(),
+                    action_type: 'authenticate_custom_user',
+                    content_data: { handle: handle, pin: pin }
+                })
+            });
+
+            const result = await response.json();
+            if (result.success) {
+                currentUser = {
+                    username: result.user.userLabel,
+                    userLabel: result.user.userLabel,
+                    participantId: result.user.participantId
+                };
+
+                updateZadAuth(result.user.userLabel, result.user.participantId);
+                enterMainScreen();
+            } else {
+                alert(result.error || 'Login failed');
+            }
+        } catch (error) {
+            alert('Login failed - please try again');
+        }
+    }
+
+    function showScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+        if (screenId !== 'main-screen') stopPolling();
+    }
+
+    function enterMainScreen() {
+        showScreen('main-screen');
+        document.getElementById('current-user-label').textContent = currentUser.userLabel;
+        startPolling();
+        loadLatestData();
+    }
+
+    async function createDocument() {
+        const title = prompt("Enter the title of your new document:");
+        if (title) {
+            // Create a new document with a unique ID
+            const docId = 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            await save('document', {
+                title,
+                content: '',
+                author: getUsername(),
+                documentId: docId
+            });
+
+            // Open the new document in edit mode immediately
+            currentDocumentId = docId;
+            currentDocumentAuthor = getUsername();
+            isEditMode = true;
+
+            // Set up edit mode for the new document
+            document.getElementById('document-mode-title').textContent = 'Document Editor';
+            document.getElementById('view-only-notice').style.display = 'none';
+            document.getElementById('document-title').value = title;
+            document.getElementById('document-title').disabled = false;
+            document.getElementById('document-content').value = '';
+            document.getElementById('document-content').disabled = false;
+            document.getElementById('document-content').style.display = 'block';
+            document.getElementById('document-content-rendered').style.display = 'none';
+            document.getElementById('save-button').style.display = 'inline-block';
+            document.getElementById('delete-button').style.display = 'inline-block';
+            document.getElementById('editor-toolbar').style.display = 'block';
+
+            showScreen('document-screen');
+            loadComments();
+
+            // Focus on the content area so user can start typing
+            document.getElementById('document-content').focus();
+        }
+    }
+
+    async function saveDocument() {
+        if (!isEditMode) return;
+
+        const title = document.getElementById('document-title').value;
+        const content = document.getElementById('document-content').value;
+
+        // Update the existing document
+        await save('document_update', {
+            title,
+            content,
+            author: getUsername(),
+            documentId: currentDocumentId,
+            originalAuthor: currentDocumentAuthor
+        });
+
+        alert("Document saved!");
+        loadLatestData();
+    }
+
+    async function loadLatestData() {
+        const documents = await load('document');
+        const documentUpdates = await load('document_update');
+        const documentDeletes = await load('document_delete');
+
+        // Merge updates into documents
+        const mergedDocs = documents.map(doc => {
+            // Find the latest update for this document
+            const updates = documentUpdates.filter(u => u.documentId === (doc.documentId || doc.id));
+            if (updates.length > 0) {
+                // Get the most recent update
+                const latestUpdate = updates.reduce((latest, current) => {
+                    return new Date(current.created_at) > new Date(latest.created_at) ? current : latest;
+                });
+                return {
+                    ...doc,
+                    title: latestUpdate.title || doc.title,
+                    content: latestUpdate.content !== undefined ? latestUpdate.content : doc.content
+                };
+            }
+            return doc;
+        });
+
+        updateDocumentsList(mergedDocs, documentDeletes);
+    }
+
+    function updateDocumentsList(documents, deletions = []) {
+        // Filter out deleted documents
+        const activeDocs = documents.filter(doc => {
+            // Check if document has been deleted
+            const docId = doc.documentId || doc.id;
+            const isDeleted = deletions.some(d => d.documentId === docId && d.deleted === true);
+            return !isDeleted;
+        });
+
+        // Remove duplicates by documentId or fallback to title
+        const uniqueDocuments = activeDocs.reduce((acc, doc) => {
+            const key = doc.documentId || doc.title;
+            const existing = acc.find(d => (d.documentId || d.title) === key);
+            if (!existing || new Date(doc.created_at) > new Date(existing.created_at)) {
+                if (existing) {
+                    const index = acc.indexOf(existing);
+                    acc[index] = doc;
+                } else {
+                    acc.push(doc);
+                }
+            }
+            return acc;
+        }, []);
+
+        const docList = document.getElementById('documents-list');
+        const currentUsername = getUsername();
+
+        docList.innerHTML = uniqueDocuments.map(doc => {
+            const isOwner = doc.author === currentUsername;
+            const docId = doc.documentId || doc.id;
+
+            return `
+            <div class="document-container">
+                <h2>${doc.title}</h2>
+                <p style="font-size: 12px; color: #666;">By: ${doc.author}</p>
+                ${isOwner ?
+                    `<button class="button" onclick="editDocument('${docId}', '${doc.author}')">EDIT</button>` :
+                    `<button class="button" onclick="viewDocument('${docId}', '${doc.author}')">VIEW</button>`
+                }
+            </div>
+        `;
+        }).join('');
+    }
+
+    // Make editDocument globally accessible
+    window.editDocument = async function(docId, docAuthor) {
+        console.log('Edit button clicked for document:', docId, 'by:', docAuthor);
+
+        const documents = await load('document');
+        const documentUpdates = await load('document_update');
+
+        // Find the document
+        let doc = documents.find(d => (d.documentId || d.id) === docId);
+
+        if (doc) {
+            // Apply any updates
+            const updates = documentUpdates.filter(u => u.documentId === docId);
+            if (updates.length > 0) {
+                const latestUpdate = updates.reduce((latest, current) => {
+                    return new Date(current.created_at) > new Date(latest.created_at) ? current : latest;
+                });
+                doc.title = latestUpdate.title || doc.title;
+                doc.content = latestUpdate.content !== undefined ? latestUpdate.content : doc.content;
+            }
+
+            currentDocumentId = docId;
+            currentDocumentAuthor = docAuthor;
+            isEditMode = true;
+
+            // Set up edit mode
+            document.getElementById('document-mode-title').textContent = 'Document Editor';
+            document.getElementById('view-only-notice').style.display = 'none';
+            document.getElementById('document-title').value = doc.title || '';
+            document.getElementById('document-title').disabled = false;
+            document.getElementById('document-content').value = doc.content || '';
+            document.getElementById('document-content').disabled = false;
+            document.getElementById('document-content').style.display = 'block';
+            document.getElementById('document-content-rendered').style.display = 'none';
+            document.getElementById('save-button').style.display = 'inline-block';
+            document.getElementById('delete-button').style.display = 'inline-block';
+            document.getElementById('editor-toolbar').style.display = 'block';
+
+            showScreen('document-screen');
+            loadComments();
+        } else {
+            alert('Document not found!');
+        }
+    }
+
+    // Make viewDocument globally accessible
+    window.viewDocument = async function(docId, docAuthor) {
+        console.log('View button clicked for document:', docId, 'by:', docAuthor);
+
+        const documents = await load('document');
+        const documentUpdates = await load('document_update');
+
+        // Find the document
+        let doc = documents.find(d => (d.documentId || d.id) === docId);
+
+        if (doc) {
+            // Apply any updates
+            const updates = documentUpdates.filter(u => u.documentId === docId);
+            if (updates.length > 0) {
+                const latestUpdate = updates.reduce((latest, current) => {
+                    return new Date(current.created_at) > new Date(latest.created_at) ? current : latest;
+                });
+                doc.title = latestUpdate.title || doc.title;
+                doc.content = latestUpdate.content !== undefined ? latestUpdate.content : doc.content;
+            }
+
+            currentDocumentId = docId;
+            currentDocumentAuthor = docAuthor;
+            isEditMode = false;
+
+            // Set up view-only mode
+            document.getElementById('document-mode-title').textContent = 'Document Viewer';
+            document.getElementById('view-only-notice').style.display = 'block';
+            document.getElementById('document-title').value = doc.title || '';
+            document.getElementById('document-title').disabled = true;
+            document.getElementById('document-content').value = doc.content || '';
+            document.getElementById('document-content').style.display = 'none';
+            document.getElementById('document-content-rendered').style.display = 'block';
+            renderFormattedContent(doc.content || '');
+            document.getElementById('save-button').style.display = 'none';
+            document.getElementById('delete-button').style.display = 'none';
+            document.getElementById('editor-toolbar').style.display = 'none';
+
+            showScreen('document-screen');
+            loadComments();
+        } else {
+            alert('Document not found!');
+        }
+    }
+
+    function backToMain() {
+        currentDocumentId = null;
+        currentDocumentAuthor = null;
+        isEditMode = false;
+        showScreen('main-screen');
+        startPolling();
+    }
+
+    function formatText(format) {
+        const textarea = document.getElementById('document-content');
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        const selectedText = textarea.value.substring(start, end);
+        const beforeText = textarea.value.substring(0, start);
+        const afterText = textarea.value.substring(end);
+
+        let formattedText = selectedText;
+
+        switch(format) {
+            case 'bold':
+                formattedText = `**${selectedText}**`;
+                break;
+            case 'italic':
+                formattedText = `*${selectedText}*`;
+                break;
+            case 'underline':
+                formattedText = `__${selectedText}__`;
+                break;
+            case 'bullet':
+                // If we have selected text, make it a bullet point
+                if (selectedText) {
+                    // Split by lines and add bullets
+                    const lines = selectedText.split('\n');
+                    formattedText = lines.map(line => `• ${line}`).join('\n');
+                } else {
+                    // Just add a bullet point at cursor
+                    formattedText = '• ';
+                }
+                break;
+        }
+
+        textarea.value = beforeText + formattedText + afterText;
+
+        // Set cursor position after the formatted text
+        const newCursorPos = start + formattedText.length;
+        textarea.setSelectionRange(newCursorPos, newCursorPos);
+        textarea.focus();
+    }
+
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(e) {
+        if (isEditMode && (e.ctrlKey || e.metaKey)) {
+            const textarea = document.getElementById('document-content');
+            if (document.activeElement === textarea) {
+                switch(e.key) {
+                    case 'b':
+                    case 'B':
+                        e.preventDefault();
+                        formatText('bold');
+                        break;
+                    case 'i':
+                    case 'I':
+                        e.preventDefault();
+                        formatText('italic');
+                        break;
+                    case 'u':
+                    case 'U':
+                        e.preventDefault();
+                        formatText('underline');
+                        break;
+                }
+            }
+        }
+    });
+
+    async function deleteDocument() {
+        if (!isEditMode || !currentDocumentId) return;
+
+        const confirmDelete = confirm(`Are you sure you want to delete this document?\n\nThis action cannot be undone.`);
+
+        if (confirmDelete) {
+            await save('document_delete', {
+                documentId: currentDocumentId,
+                author: getUsername(),
+                deleted: true,
+                deletedAt: Date.now()
+            });
+
+            alert('Document deleted!');
+            backToMain();
+            loadLatestData();
+        }
+    }
+
+    async function addComment() {
+        const comment = document.getElementById('comment-input').value;
+        if (comment && currentDocumentId) {
+            await save('comment', {
+                documentId: currentDocumentId,
+                text: comment,
+                author: getUsername()
+            });
+            document.getElementById('comment-input').value = '';
+            loadComments();
+        }
+    }
+
+    async function loadComments() {
+        if (!currentDocumentId) return;
+
+        const comments = await load('comment');
+        const docComments = comments.filter(c => c.documentId === currentDocumentId);
+        const commentList = document.getElementById('comments-list');
+        commentList.innerHTML = docComments.map(comment => `
+            <div class="comment">
+                <strong>${comment.author}</strong>: ${comment.text}
+            </div>
+        `).join('');
+    }
+
+    function emojiRain() {
+        const emojis = ['🎉', '🎊', '✨', '🌟', '💫', '🎈'];
+        const container = document.querySelector('.app-container');
+
+        for (let i = 0; i < 20; i++) {
+            setTimeout(() => {
+                const emoji = document.createElement('div');
+                emoji.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+                emoji.style.position = 'fixed';
+                emoji.style.left = Math.random() * 100 + '%';
+                emoji.style.top = '-50px';
+                emoji.style.fontSize = '30px';
+                emoji.style.zIndex = '9999';
+                emoji.style.transition = 'all 2s ease-in';
+                container.appendChild(emoji);
+
+                setTimeout(() => {
+                    emoji.style.top = '100%';
+                    emoji.style.transform = `rotate(${Math.random() * 360}deg)`;
+                }, 100);
+
+                setTimeout(() => {
+                    emoji.remove();
+                }, 2100);
+            }, i * 100);
+        }
+    }
+
+    function deduplicate(items, uniqueField = 'title') {
+        return items.reduce((acc, item) => {
+            const existing = acc.find(i => i[uniqueField] === item[uniqueField]);
+            if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                if (existing) {
+                    const index = acc.indexOf(existing);
+                    acc[index] = item;
+                } else {
+                    acc.push(item);
+                }
+            }
+            return acc;
+        }, []);
+    }
+
+    let pollingInterval;
+
+    function startPolling() {
+        if (!pollingInterval) {
+            pollingInterval = setInterval(() => loadLatestData(), 3000);
+        }
+    }
+
+    function stopPolling() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+    }
+
+    function renderFormattedContent(content) {
+        // Simple markdown-style rendering
+        let rendered = content;
+
+        // Escape HTML
+        rendered = rendered.replace(/&/g, '&amp;')
+                          .replace(/</g, '&lt;')
+                          .replace(/>/g, '&gt;');
+
+        // Bold
+        rendered = rendered.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+        // Italic
+        rendered = rendered.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+        // Underline
+        rendered = rendered.replace(/__([^_]+)__/g, '<u>$1</u>');
+
+        // Bullet points (lines starting with •)
+        rendered = rendered.replace(/^• (.+)$/gm, '• $1');
+
+        document.getElementById('document-content-rendered').innerHTML = rendered;
+    }
+
+    // Initialize on load
+    initAuth();
+</script>
+
+</body>
+</html>

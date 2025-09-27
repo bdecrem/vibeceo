@@ -7,6 +7,7 @@ import { setupEmailWebhooks } from './email-webhooks.js';
 import { initializeMessageHandlers } from './handlers.js';
 import { SMS_CONFIG } from './config.js';
 import { startDailyScheduler } from './scheduler.js';
+import { startAiDailyScheduler } from './ai-daily-scheduler.js';
 import { initializeTwilioClient } from './webhooks.js';
 import { initializeAI } from './ai.js';
 
@@ -35,6 +36,7 @@ export async function startSmsBot(): Promise<void> {
   
   // COMMENTED OUT: Start the daily scheduler
   // await startDailyScheduler(twilioClient);
+  startAiDailyScheduler(twilioClient);
   
   // Setup Twilio webhooks
   setupTwilioWebhooks(server);
