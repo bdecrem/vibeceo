@@ -113,10 +113,11 @@ export function formatAiDailySms(
   const formattedDate = PACIFIC_DATE_FORMATTER.format(dateToFormat);
   const snippet = episode.snippet?.trim() || '';
   const messageParts = [
-    `AI Papers Daily for ${formattedDate}.`,
+    `AI Daily ${formattedDate}.`,
     snippet,
-    options.shortLink ? `Listen: ${options.shortLink}` : '',
-    'Reply LINKS for sources or LISTEN for the audio.'
+    options.shortLink
+      ? `Hear it: ${options.shortLink} or text LINKS.`
+      : 'Hear it: text LISTEN or LINKS.'
   ];
 
   return messageParts.filter(part => part.length > 0).join(' ');
