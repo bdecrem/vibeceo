@@ -3,9 +3,31 @@ import { NextRequest, NextResponse } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = request.headers.get('host')
-  
+
   // DEBUG: Log all requests
   console.log(`[Middleware] Processing: ${pathname}`)
+
+  const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
+
+  if (isB52Domain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/b52s', request.url)
+      console.log(`[Middleware] B52 domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
   
   // SPECIFIC FIX: Bypass webtoys-logo immediately
   if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
@@ -34,7 +56,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/console') ||
       pathname.startsWith('/webtoys-logo') ||
       pathname.startsWith('/reset-password') ||
-      pathname.startsWith('/payments')) {
+      pathname.startsWith('/payments') ||
+      pathname.startsWith('/b52s')) {
     if (host?.includes('localhost') || host?.includes('ngrok')) {
       console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     }
