@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moi - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 900px;
+            height: 600px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title-icon {
+            font-size: 28px;
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .document-info {
+            background: #f7f9fc;
+            padding: 15px 20px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .doc-title-input {
+            flex: 1;
+            padding: 8px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            transition: border-color 0.3s ease;
+        }
+
+        .doc-title-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .status {
+            color: #64748b;
+            font-size: 14px;
+            padding: 6px 12px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: white;
+        }
+
+        #editor {
+            width: 100%;
+            min-height: 100%;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            resize: none;
+            color: #1e293b;
+        }
+
+        .footer {
+            background: #f7f9fc;
+            padding: 15px 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .word-count {
+            display: flex;
+            gap: 20px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 16px;
+            color: #1e293b;
+        }
+
+        .documents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .doc-item {
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .doc-item:hover {
+            background: #f7f9fc;
+            border-color: #667eea;
+            transform: translateX(4px);
+        }
+
+        .doc-item-title {
+            font-weight: 500;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+
+        .doc-item-meta {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .close-modal {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 16px;
+            width: 100%;
+            font-size: 14px;
+        }
+
+        .close-modal:hover {
+            background: #dc2626;
+        }
+
+        .auth-status {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .no-docs {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">
+                <span class="title-icon">✍️</span>
+                <span>Moi</span>
+            </div>
+            <div class="toolbar">
+                <span class="auth-status" id="authStatus">Not logged in</span>
+                <button class="btn" onclick="createNew()">📄 New</button>
+                <button class="btn" onclick="saveDocument()">💾 Save</button>
+                <button class="btn" onclick="showOpenDialog()">📂 Open</button>
+            </div>
+        </div>
+
+        <div class="document-info">
+            <input type="text" id="docTitle" class="doc-title-input" placeholder="Untitled Document" value="Untitled Document">
+            <span class="status" id="saveStatus">Ready</span>
+        </div>
+
+        <div class="editor-container">
+            <textarea id="editor" placeholder="Start typing your document here..."></textarea>
+        </div>
+
+        <div class="footer">
+            <div class="word-count">
+                <span>Words: <strong id="wordCount">0</strong></span>
+                <span>Characters: <strong id="charCount">0</strong></span>
+            </div>
+            <div id="lastSaved">Never saved</div>
+        </div>
+    </div>
+
+    <div id="openModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Open Document</div>
+            <div id="documentsList" class="documents-list">
+                <div class="no-docs">No saved documents found. Please log in first.</div>
+            </div>
+            <button class="close-modal" onclick="closeOpenDialog()">Close</button>
+        </div>
+    </div>
+
+    <script>
+        // App configuration
+        const APP_ID = 'toybox-moi';
+        let currentUser = null;
+        let currentDocId = null;
+        let autoSaveTimer = null;
+
+        // Authentication handling
+        function getCurrentUser() {
+            return currentUser;
+        }
+
+        function getParticipantId() {
+            const user = getCurrentUser();
+            if (!user?.handle || !user?.pin) return null;
+            return `${user.handle.toUpperCase()}_${user.pin}`;
+        }
+
+        // Load auth from localStorage immediately
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        updateAuthStatus();
+                    }
+                } catch (e) {
+                    console.error('Error loading auth:', e);
+                }
+            }
+        }
+
+        // Listen for auth messages from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE') {
+                currentUser = e.data.user || {
+                    handle: e.data.handle,
+                    pin: e.data.pin,
+                    participantId: e.data.participantId
+                };
+                
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    updateAuthStatus();
+                }
+            }
+        });
+
+        // Request auth from desktop
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+
+        function updateAuthStatus() {
+            const status = document.getElementById('authStatus');
+            if (currentUser?.handle) {
+                status.textContent = `${currentUser.handle}`;
+            } else {
+                status.textContent = 'Not logged in';
+            }
+        }
+
+        // Document management functions
+        function generateDocId() {
+            return 'doc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+        }
+
+        function createNew() {
+            if (confirm('Create a new document? Any unsaved changes will be lost.')) {
+                document.getElementById('docTitle').value = 'Untitled Document';
+                document.getElementById('editor').value = '';
+                currentDocId = generateDocId();
+                updateStatus('New document created');
+                updateCounts();
+            }
+        }
+
+        async function saveDocument() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                alert('Please log in to save documents');
+                return;
+            }
+
+            const title = document.getElementById('docTitle').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+            
+            if (!currentDocId) {
+                currentDocId = generateDocId();
+            }
+
+            updateStatus('Saving...');
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocId,
+                            title: title,
+                            content: content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    updateStatus('Saved');
+                    document.getElementById('lastSaved').textContent = 'Last saved: ' + new Date().toLocaleTimeString();
+                } else {
+                    updateStatus('Save failed');
+                    console.error('Save failed:', await response.text());
+                }
+            } catch (error) {
+                updateStatus('Save error');
+                console.error('Save error:', error);
+            }
+        }
+
+        async function loadDocuments() {
+            const participantId = getParticipantId();
+            if (!participantId) return [];
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=document`);
+                if (!response.ok) return [];
+                
+                const allDocs = await response.json();
+                
+                // Filter for current user's documents
+                const userDocs = allDocs.filter(doc => 
+                    doc.participant_id === participantId
+                );
+                
+                // Deduplicate by taking latest version of each document
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime,
+                            participant_id: doc.participant_id
+                        };
+                    }
+                });
+                
+                return Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        async function showOpenDialog() {
+            const modal = document.getElementById('openModal');
+            modal.classList.add('active');
+            
+            const listContainer = document.getElementById('documentsList');
+            listContainer.innerHTML = '<div class="no-docs">Loading...</div>';
+            
+            const docs = await loadDocuments();
+            
+            if (docs.length === 0) {
+                listContainer.innerHTML = '<div class="no-docs">No saved documents found. Create and save a document first.</div>';
+            } else {
+                listContainer.innerHTML = docs.map(doc => `
+                    <div class="doc-item" onclick="openDocument('${doc.id}')">
+                        <div class="doc-item-title">${escapeHtml(doc.title)}</div>
+                        <div class="doc-item-meta">
+                            Last modified: ${new Date(doc.updatedAt).toLocaleDateString()} ${new Date(doc.updatedAt).toLocaleTimeString()}
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        async function openDocument(docId) {
+            const docs = await loadDocuments();
+            const doc = docs.find(d => d.id === docId);
+            
+            if (doc) {
+                currentDocId = doc.id;
+                document.getElementById('docTitle').value = doc.title;
+                document.getElementById('editor').value = doc.content;
+                updateStatus('Document loaded');
+                updateCounts();
+                closeOpenDialog();
+            }
+        }
+
+        function closeOpenDialog() {
+            document.getElementById('openModal').classList.remove('active');
+        }
+
+        function updateStatus(message) {
+            const status = document.getElementById('saveStatus');
+            status.textContent = message;
+            
+            if (message === 'Saved') {
+                status.style.background = '#10b981';
+                status.style.color = 'white';
+                setTimeout(() => {
+                    status.style.background = 'white';
+                    status.style.color = '#64748b';
+                    status.textContent = 'Ready';
+                }, 2000);
+            }
+        }
+
+        function updateCounts() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            const chars = text.length;
+            
+            document.getElementById('wordCount').textContent = words;
+            document.getElementById('charCount').textContent = chars;
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // Auto-save functionality
+        function setupAutoSave() {
+            document.getElementById('editor').addEventListener('input', () => {
+                updateCounts();
+                
+                // Clear existing timer
+                if (autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                }
+                
+                // Set new timer for auto-save (3 seconds after stopping)
+                if (currentUser) {
+                    autoSaveTimer = setTimeout(() => {
+                        saveDocument();
+                    }, 3000);
+                }
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuthFromStorage();
+            currentDocId = generateDocId();
+            updateCounts();
+            setupAutoSave();
+            
+            // Update counts when title changes too
+            document.getElementById('docTitle').addEventListener('input', () => {
+                if (currentUser && autoSaveTimer) {
+                    clearTimeout(autoSaveTimer);
+                    autoSaveTimer = setTimeout(() => {
+                        saveDocument();
+                    }, 3000);
+                }
+            });
+        });
+
+        // Handle keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + S to save
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                saveDocument();
+            }
+            // Cmd/Ctrl + O to open
+            if ((e.metaKey || e.ctrlKey) && e.key === 'o') {
+                e.preventDefault();
+                showOpenDialog();
+            }
+            // Cmd/Ctrl + N for new
+            if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+                e.preventDefault();
+                createNew();
+            }
+        });
+    </script>
+</body>
+</html>

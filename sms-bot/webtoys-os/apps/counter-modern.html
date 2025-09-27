@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Counter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .container {
+            text-align: center;
+            padding: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .counter-display {
+            font-size: 96px;
+            font-weight: 700;
+            margin: 30px 0;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease;
+            display: inline-block;
+            min-width: 150px;
+        }
+
+        .counter-display.pulse {
+            animation: pulse 0.3s ease;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .label {
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            opacity: 0.8;
+            margin-bottom: 10px;
+        }
+
+        .buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        button {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: #fff;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .increment {
+            font-size: 28px;
+        }
+
+        .decrement {
+            font-size: 32px;
+        }
+
+        .reset {
+            background: rgba(255, 255, 255, 0.1);
+            width: 45px;
+            height: 45px;
+            font-size: 18px;
+        }
+
+        .reset:hover {
+            background: rgba(255, 100, 100, 0.3);
+        }
+
+        .stats {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            justify-content: space-around;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .stat-value {
+            font-size: 18px;
+            font-weight: 600;
+            opacity: 1;
+        }
+
+        /* Floating effect */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .container {
+            animation: float 6s ease-in-out infinite;
+        }
+
+        /* Click ripple effect */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0);
+            animation: ripple-animation 0.6s ease-out;
+            pointer-events: none;
+        }
+
+        @keyframes ripple-animation {
+            to {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+
+        /* Mobile responsiveness */
+        @media (max-width: 480px) {
+            body {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                height: 100vh;
+                padding: 0;
+            }
+
+            .container {
+                height: 100vh;
+                border-radius: 0;
+                max-width: 100%;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                animation: none;
+            }
+
+            .counter-display {
+                font-size: 72px;
+            }
+
+            button {
+                width: 50px;
+                height: 50px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="label">Counter</div>
+        <div class="counter-display" id="counter">0</div>
+        
+        <div class="buttons">
+            <button class="decrement" onclick="decrement(event)" aria-label="Decrease">−</button>
+            <button class="increment" onclick="increment(event)" aria-label="Increase">+</button>
+            <button class="reset" onclick="resetCounter()" aria-label="Reset">↺</button>
+        </div>
+
+        <div class="stats">
+            <div class="stat">
+                <span>Total Clicks</span>
+                <span class="stat-value" id="clicks">0</span>
+            </div>
+            <div class="stat">
+                <span>Highest</span>
+                <span class="stat-value" id="highest">0</span>
+            </div>
+            <div class="stat">
+                <span>Lowest</span>
+                <span class="stat-value" id="lowest">0</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let count = 0;
+        let totalClicks = 0;
+        let highest = 0;
+        let lowest = 0;
+
+        // Load saved state from localStorage
+        function loadState() {
+            const saved = localStorage.getItem('counterState');
+            if (saved) {
+                const state = JSON.parse(saved);
+                count = state.count || 0;
+                totalClicks = state.totalClicks || 0;
+                highest = state.highest || 0;
+                lowest = state.lowest || 0;
+                updateDisplay();
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('counterState', JSON.stringify({
+                count,
+                totalClicks,
+                highest,
+                lowest
+            }));
+        }
+
+        function updateDisplay() {
+            const counterEl = document.getElementById('counter');
+            counterEl.textContent = count;
+            document.getElementById('clicks').textContent = totalClicks;
+            document.getElementById('highest').textContent = highest;
+            document.getElementById('lowest').textContent = lowest;
+            
+            // Add pulse animation
+            counterEl.classList.remove('pulse');
+            void counterEl.offsetWidth; // Force reflow
+            counterEl.classList.add('pulse');
+        }
+
+        function increment(event) {
+            count++;
+            totalClicks++;
+            if (count > highest) highest = count;
+            updateDisplay();
+            saveState();
+            if (event) createRipple(event);
+        }
+
+        function decrement(event) {
+            count--;
+            totalClicks++;
+            if (count < lowest) lowest = count;
+            updateDisplay();
+            saveState();
+            if (event) createRipple(event);
+        }
+
+        function resetCounter() {
+            if (confirm('Reset counter and statistics?')) {
+                count = 0;
+                totalClicks = 0;
+                highest = 0;
+                lowest = 0;
+                updateDisplay();
+                saveState();
+            }
+        }
+
+        // Create ripple effect on button click
+        function createRipple(event) {
+            const button = event.currentTarget;
+            const ripple = document.createElement('span');
+            ripple.classList.add('ripple');
+            
+            const rect = button.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height);
+            const x = event.clientX - rect.left - size / 2;
+            const y = event.clientY - rect.top - size / 2;
+            
+            ripple.style.width = ripple.style.height = size + 'px';
+            ripple.style.left = x + 'px';
+            ripple.style.top = y + 'px';
+            
+            button.appendChild(ripple);
+            
+            setTimeout(() => ripple.remove(), 600);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowUp' || e.key === '+' || e.key === '=') {
+                increment();
+            } else if (e.key === 'ArrowDown' || e.key === '-') {
+                decrement();
+            } else if (e.key === 'r' || e.key === 'R' || e.key === '0') {
+                resetCounter();
+            }
+        });
+
+        // Initialize on load
+        loadState();
+
+        // App registry configuration for WebtoysOS
+        window.appConfig = {
+            name: 'Counter',
+            icon: '🔢',
+            width: 450,
+            height: 500,
+            description: 'Simple counter with statistics'
+        };
+    </script>
+</body>
+</html>

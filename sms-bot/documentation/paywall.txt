@@ -1,0 +1,85 @@
+first do this: tell me where in the code we have a paywall system. this uses
+▌LemonSqueezy and uses words such as "credits"
+
+
+• Explored
+  └ Search lemon|lemonsqueezy|credit\b|credits\b|paywall|stripe|checkout|
+           subscription|billing|purchase|license
+    Search sms_subscribers\.(credits_remaining|credits|subscription_|payment_|
+lemon|
+           lemonsqueezy|credit)
+    Search credits_remaining|subscription_status|subscription_plan|subscription|
+           credits|paywall|purchase|billing|license|lemonsqueezy|lemon in sms-
+bot
+    Read sms_subscribers_explained.md
+    Search credits_remaining|usage_count|decrement|deduct|charge|consume credit|
+           consume|credit pack|verify payment|payment_verification_active|
+           lemonsqueezy in sms-bot
+    Read controller.ts, credit-manager.ts, route.ts, page.tsx
+    Search create-checkout|lemonsqueezy|checkout_url|payments in api
+    Read route.ts
+    Search export default function Payments|payments.*page\.tsx|/payments in app
+    Read page.tsx
+    Search checkCredits\(|deductCredit\( in sms-bot
+    Read reset-user-credits.js, simulate-successful-payment.js
+
+> Here’s exactly where the “credits” paywall lives and how LemonSqueezy is wired
+  in.
+
+  Credit Enforcement
+
+  - sms-bot/engine/controller.ts — Checks and deducts credits around app/meme
+  creation:
+      - Calls checkCredits(senderPhone) before building.
+      - Calls deductCredit(senderPhone) after a successful deploy (single-page,
+  dual-page, or meme).
+  - sms-bot/lib/credit-manager.ts — Core credit logic against sms_subscribers:
+      - checkCredits reads credits_remaining, allows ADMIN/OPERATOR unlimited.
+      - Returns user-facing “buy credits” message with link to https://
+  webtoys.ai/payments.
+      - deductCredit decrements credits_remaining and increments usage_count.
+
+  Payments (LemonSqueezy)
+
+  - Web API routes (Next.js) under web/app/api/payments/:
+      - send-code/route.ts — Sends SMS verification code (Twilio), marks
+  payment_verification_active = true.
+      - verify-code/route.ts — Verifies code, issues session token for checkout.
+      - create-checkout/route.ts — Creates LemonSqueezy checkout via API, passes
+  custom data: phone_number and subscriber_id.
+      - webhook/route.ts — Verifies x-signature with
+  LEMONSQUEEZY_WEBHOOK_SECRET, handles order_created:
+      - Computes credits to add (e.g., $10 → 25 credits), updates
+  `sms_subscribers.credits_remaining`, sends confirmation SMS.
+  - UI flow (pages) under web/app/payments/:
+      - page.tsx → start (enter phone) → /api/payments/send-code
+      - verify/page.tsx → code entry → /api/payments/verify-code
+      - checkout/page.tsx → calls /api/payments/create-checkout → redirects
+  to LemonSqueezy
+      - success/page.tsx → post-purchase confirmation and credits summary
+
+  Schema/Migrations
+
+  - sms-bot/migrations/add-simple-credits.sql and add-credits-step-by-step.sql —
+  Adds credits_remaining and index.
+  - sms-bot/migrations/add-payment-fields.sql — Adds payment/subscription fields
+  (provider-neutral notes mention LemonSqueezy).
+
+  Utilities & Docs
+
+  - web/scripts/simulate-successful-payment.js — Local script to add credits for
+  a subscriber.
+  - web/scripts/reset-user-credits.js — Resets credits to 0 for testing.
+  - sms-bot/documentation/sms_subscribers_explained.md — Explains credits,
+  usage, and payment verification flags.
+
+  Env used (no secrets in code)
+
+  - LemonSqueezy: LEMONSQUEEZY_API_KEY, LEMONSQUEEZY_STORE_ID,
+  LEMONSQUEEZY_VARIANT_ID, LEMONSQUEEZY_WEBHOOK_SECRET
+  - Supabase: SUPABASE_URL, SUPABASE_SERVICE_KEY
+  - Twilio (for verification/confirmation SMS): TWILIO_ACCOUNT_SID,
+  TWILIO_AUTH_TOKEN, TWILIO_PHONE_NUMBER
+
+  Want me to add a quick “credit balance” check endpoint or surface remaining
+  credits in your Web Console responses?

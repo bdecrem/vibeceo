@@ -19,16 +19,223 @@
             align-items: center;
             min-height: 100vh;
             overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
 
         .game-container {
             position: relative;
             width: 400px;
             height: 600px;
+            max-width: 100vw;
+            max-height: 100vh;
             border: 3px solid #333;
             border-radius: 10px;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Mobile responsive adjustments */
+        @media (max-width: 767px) {
+            .game-container {
+                width: 100vw;
+                height: 100vh;
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+            
+            #gameCanvas {
+                width: 100vw !important;
+                height: 100vh !important;
+            }
+            
+            .score-display {
+                top: 10px;
+                font-size: 24px;
+            }
+            
+            .overlay-content {
+                padding: 20px 15px;
+                margin: 10px;
+                max-width: 85vw;
+            }
+            
+            /* Start screen specific mobile styles */
+            #startScreen .game-title {
+                font-size: 36px !important;
+                margin-bottom: 25px !important;
+                text-shadow: 2px 2px 0 #FFD700, 4px 4px 0 rgba(255, 215, 0, 0.5), 6px 6px 15px rgba(0, 0, 0, 0.3) !important;
+            }
+            
+            #startScreen .start-button {
+                padding: 15px 40px !important;
+                font-size: 22px !important;
+                box-shadow: 0 6px 0 #CC8400, 0 10px 20px rgba(255, 165, 0, 0.5) !important;
+            }
+            
+            
+            /* Game over screen specific mobile styles */
+            #gameOverScreen .game-title {
+                font-size: 28px !important;
+                margin-bottom: 15px !important;
+            }
+            
+            #gameOverScreen .overlay-content {
+                min-width: auto;
+                padding: 20px;
+            }
+            
+            .game-over-score {
+                font-size: 20px !important;
+                margin: 15px 0 !important;
+            }
+            
+            .game-over-score span {
+                font-size: 32px !important;
+            }
+            
+            .best-score {
+                font-size: 18px !important;
+                margin-bottom: 15px !important;
+            }
+            
+            .best-score span {
+                font-size: 24px !important;
+            }
+            
+            .start-button {
+                padding: 10px 25px;
+                font-size: 18px;
+            }
+            
+            .leaderboard-button {
+                padding: 10px 25px !important;
+                font-size: 18px !important;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .button-group button {
+                width: 100%;
+            }
+            
+            .leaderboard-container {
+                max-width: 85vw;
+                max-height: 40vh;
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .leaderboard-title {
+                font-size: 20px !important;
+                margin-bottom: 10px !important;
+            }
+            
+            .leaderboard-entry {
+                padding: 6px 10px;
+                font-size: 14px;
+            }
+            
+            .leaderboard-rank {
+                font-size: 16px;
+            }
+            
+            .leaderboard-name {
+                font-size: 14px;
+            }
+            
+            .leaderboard-score {
+                font-size: 16px;
+            }
+            
+            .auth-status {
+                font-size: 14px !important;
+                margin: 10px 0 !important;
+            }
+            
+            .logged-in-user {
+                font-size: 16px !important;
+            }
+            
+            .auth-container {
+                width: 95%;
+                padding: 20px;
+            }
+        }
+        
+        /* Extra small mobile devices */
+        @media (max-width: 400px) {
+            #startScreen .game-title {
+                font-size: 30px !important;
+                margin-bottom: 20px !important;
+            }
+            
+            #startScreen .start-button {
+                padding: 12px 35px !important;
+                font-size: 20px !important;
+            }
+            
+            #gameOverScreen .game-title {
+                font-size: 24px !important;
+            }
+            
+            .game-over-score {
+                font-size: 18px !important;
+            }
+            
+            .game-over-score span {
+                font-size: 28px !important;
+            }
+            
+            .best-score {
+                font-size: 16px !important;
+            }
+            
+            .best-score span {
+                font-size: 20px !important;
+            }
+            
+            .overlay-content {
+                padding: 15px 10px !important;
+            }
+        }
+        
+        /* Landscape mobile */
+        @media (max-width: 767px) and (orientation: landscape) {
+            .game-container {
+                height: 100vh;
+                width: auto;
+                aspect-ratio: 400/600;
+                margin: 0 auto;
+            }
+            
+            #gameCanvas {
+                height: 100vh !important;
+                width: auto !important;
+            }
+            
+            /* Reduce text even more in landscape */
+            #startScreen .game-title {
+                font-size: 32px !important;
+            }
+            
+            #startScreen .start-button {
+                padding: 12px 35px !important;
+                font-size: 20px !important;
+            }
+            
+            #gameOverScreen .game-title {
+                font-size: 24px !important;
+            }
+            
+            .overlay-content {
+                max-height: 90vh;
+                overflow-y: auto;
+            }
         }
 
         #gameCanvas {
@@ -46,54 +253,207 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            background: rgba(0, 0, 0, 0.7);
+            background: transparent;
             color: white;
             transition: opacity 0.3s;
+            z-index: 100;
+        }
+        
+        #startScreen {
+            background: transparent;
+        }
+        
+        #gameOverScreen {
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(5px);
         }
 
         .game-overlay.hidden {
             opacity: 0;
             pointer-events: none;
         }
+        
+        .overlay-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 250, 240, 0.98));
+            border-radius: 30px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(255, 100, 150, 0.3), 0 0 120px rgba(255, 200, 100, 0.3);
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+            animation: floatIn 0.5s ease-out;
+        }
+        
+        .overlay-content::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #FFD700, #FF69B4, #87CEEB, #98FB98, #FFD700);
+            border-radius: 30px;
+            z-index: -1;
+            background-size: 300% 300%;
+            animation: gradientShift 3s ease infinite;
+        }
+        
+        @keyframes floatIn {
+            from {
+                transform: scale(0.8) translateY(20px);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        #startScreen .overlay-content {
+            text-align: center;
+            background: transparent;
+            box-shadow: none;
+            animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        #startScreen .overlay-content::before {
+            display: none;
+        }
+        
+        @keyframes bounceIn {
+            0% {
+                transform: scale(0.3) translateY(-100px);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.05);
+            }
+            70% {
+                transform: scale(0.9);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        #gameOverScreen .overlay-content {
+            text-align: center;
+            min-width: 320px;
+        }
 
         .game-title {
-            font-size: 48px;
-            font-weight: bold;
+            font-size: 54px;
+            font-weight: 900;
             margin-bottom: 20px;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
-            background: linear-gradient(45deg, #FFD700, #FFA500, #FF6347);
+            text-shadow: 4px 4px 8px rgba(0, 0, 0, 0.2);
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D, #6BCB77, #4D96FF);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            animation: titlePulse 2s ease-in-out infinite;
+            letter-spacing: 2px;
+        }
+        
+        #startScreen .game-title {
+            font-size: 72px;
+            text-shadow: 3px 3px 0 #FFD700, 6px 6px 0 rgba(255, 215, 0, 0.5), 9px 9px 20px rgba(0, 0, 0, 0.3);
+            margin-bottom: 50px;
+            animation: floatTitle 3s ease-in-out infinite;
+        }
+        
+        @keyframes floatTitle {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-10px) rotate(2deg); }
+        }
+        
+        @keyframes titlePulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .game-instructions {
-            font-size: 18px;
+            font-size: 20px;
             margin-bottom: 30px;
             text-align: center;
-            line-height: 1.5;
+            line-height: 1.6;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        #startScreen .game-instructions {
+            display: none;
         }
 
         .start-button {
-            padding: 15px 40px;
-            font-size: 24px;
+            padding: 18px 50px;
+            font-size: 26px;
             font-weight: bold;
-            background: linear-gradient(45deg, #4CAF50, #45a049);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 50px;
+            border-radius: 60px;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #startScreen .start-button {
+            padding: 25px 80px;
+            font-size: 36px;
+            background: linear-gradient(135deg, #FFD700, #FFA500, #FF6347);
+            box-shadow: 0 10px 0 #CC8400, 0 15px 30px rgba(255, 165, 0, 0.5);
+            transform: translateY(0);
+            animation: pulseButton 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulseButton {
+            0%, 100% { transform: scale(1) translateY(0); }
+            50% { transform: scale(1.05) translateY(-5px); }
+        }
+        
+        #startScreen .start-button:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 15px 0 #CC8400, 0 20px 40px rgba(255, 165, 0, 0.7);
+        }
+        
+        #startScreen .start-button:active {
+            transform: translateY(2px) scale(1.05);
+            box-shadow: 0 5px 0 #CC8400, 0 10px 20px rgba(255, 165, 0, 0.5);
+        }
+        
+        .start-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
         }
 
         .start-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(102, 126, 234, 0.6);
+        }
+        
+        .start-button:hover::before {
+            left: 100%;
         }
 
         .start-button:active {
-            transform: translateY(0);
+            transform: translateY(-1px) scale(1.02);
         }
 
         .score-display {
@@ -109,24 +469,381 @@
         }
 
         .game-over-score {
-            font-size: 24px;
-            margin: 20px 0;
+            font-size: 32px;
+            margin: 25px 0;
+            color: #2c3e50;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            animation: slideInScore 0.5s ease-out 0.3s both;
+        }
+        
+        @keyframes slideInScore {
+            from {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        .game-over-score span {
+            background: linear-gradient(135deg, #FF6B6B, #FFD93D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 48px;
+            animation: scoreGlow 1s ease-in-out infinite alternate, scoreBounce 0.5s ease-out;
+        }
+        
+        @keyframes scoreBounce {
+            0% { transform: scale(0); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes scoreGlow {
+            from { filter: brightness(1); }
+            to { filter: brightness(1.3); }
         }
 
         .best-score {
-            font-size: 20px;
-            color: #FFD700;
-            margin-bottom: 20px;
+            font-size: 24px;
+            color: #FF6B6B;
+            margin-bottom: 25px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            animation: slideInScore 0.5s ease-out 0.5s both;
+        }
+        
+        .best-score span {
+            background: linear-gradient(135deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 32px;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(255, 215, 0, 0.3);
+        }
+        
+        .new-best {
+            animation: newBestCelebration 1s ease-out;
+        }
+        
+        @keyframes newBestCelebration {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.2) rotate(5deg); }
+            50% { transform: scale(1.3) rotate(-5deg); }
+            75% { transform: scale(1.2) rotate(3deg); }
         }
 
         .controls-hint {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 14px;
-            color: rgba(255, 255, 255, 0.8);
+            font-size: 16px;
+            color: #764ba2;
             text-align: center;
+            font-weight: 500;
+            opacity: 0.8;
+            animation: hintBounce 2s ease-in-out infinite;
+        }
+        
+        .start-btn {
+            margin-top: 30px;
+            padding: 15px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        .start-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+        
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        @keyframes hintBounce {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50% { transform: translateX(-50%) translateY(-5px); }
+        }
+
+        /* Leaderboard Styles */
+        .leaderboard-container {
+            width: 100%;
+            max-width: 350px;
+            margin: 20px 0;
+            background: linear-gradient(135deg, rgba(240, 248, 255, 0.95), rgba(255, 240, 245, 0.95));
+            border-radius: 20px;
+            padding: 20px;
+            max-height: 280px;
+            overflow-y: auto;
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.05);
+            border: 2px solid rgba(102, 126, 234, 0.1);
+        }
+
+        .leaderboard-title {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFD700;
+            margin-bottom: 15px;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            margin-bottom: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 8px;
+            color: #333;
+            font-weight: 600;
+        }
+
+        .leaderboard-entry.gold {
+            background: linear-gradient(135deg, #FFD700, #FFED4E);
+        }
+
+        .leaderboard-entry.silver {
+            background: linear-gradient(135deg, #C0C0C0, #E8E8E8);
+        }
+
+        .leaderboard-entry.bronze {
+            background: linear-gradient(135deg, #CD7F32, #E4A853);
+        }
+
+        .leaderboard-entry.current-user {
+            border: 2px solid #4CAF50;
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+        }
+
+        .leaderboard-rank {
+            font-size: 18px;
+            font-weight: bold;
+            width: 30px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            font-size: 16px;
+            text-transform: uppercase;
+            padding: 0 10px;
+        }
+
+        .leaderboard-score {
+            font-size: 18px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .no-scores {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 20px;
+            font-style: italic;
+        }
+
+        .auth-status {
+            font-size: 16px;
+            color: #2c3e50;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .logged-in-user {
+            color: #6BCB77;
+            font-weight: 700;
+            font-size: 18px;
+            text-transform: uppercase;
+        }
+
+        /* Auth Modal Styles */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .auth-modal.active {
+            display: flex;
+        }
+
+        .auth-container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            width: 90%;
+            max-width: 350px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .auth-header h2 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .auth-header p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .auth-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .auth-tab.active {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .auth-input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .auth-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .auth-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .auth-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .auth-close {
+            width: 100%;
+            padding: 10px;
+            background: #f0f0f0;
+            color: #666;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        .auth-message {
+            color: #f44336;
+            text-align: center;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .button-group button {
+            flex: 1;
+        }
+
+        .leaderboard-button {
+            padding: 15px 35px;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #6BCB77, #4D96FF);
+            color: white;
+            border: none;
+            border-radius: 60px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(77, 150, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .leaderboard-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .leaderboard-button:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 12px 35px rgba(77, 150, 255, 0.6);
+        }
+        
+        .leaderboard-button:hover::before {
+            left: 100%;
         }
     </style>
 </head>
@@ -136,58 +853,439 @@
         <div class="score-display" id="scoreDisplay">0</div>
         
         <div class="game-overlay" id="startScreen">
-            <div class="game-title">Flappy Bird</div>
-            <div class="game-instructions">
-                Click or press Space to fly<br>
-                Avoid the pipes!
+            <div class="overlay-content">
+                <div class="game-title">🐦 Flappy Bird 🐦</div>
+                <button class="start-btn" onclick="startGame()">START</button>
             </div>
-            <button class="start-button" onclick="startGame()">Start Game</button>
-            <div class="controls-hint">Click anywhere or press Space to flap</div>
         </div>
 
         <div class="game-overlay hidden" id="gameOverScreen">
-            <div class="game-title">Game Over!</div>
-            <div class="game-over-score">Score: <span id="finalScore">0</span></div>
-            <div class="best-score">Best: <span id="bestScore">0</span></div>
-            <button class="start-button" onclick="resetGame()">Play Again</button>
+            <div class="overlay-content">
+                <div class="game-title">🎯 Game Over 🎯</div>
+                <div class="game-over-score">Your Score: <span id="finalScore">0</span></div>
+                <div class="best-score">🏆 Best: <span id="bestScore">0</span></div>
+                
+                <div class="auth-status" id="authStatus"></div>
+                
+                <div class="leaderboard-container" id="leaderboardContainer" style="display: none;">
+                    <div class="leaderboard-title">🏆 Top Scores</div>
+                    <div id="leaderboardList">
+                        <div class="no-scores">Loading leaderboard...</div>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button class="start-button" onclick="resetGame()">Play Again</button>
+                    <button class="leaderboard-button" id="leaderboardBtn" onclick="toggleLeaderboard()">Leaderboard</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Auth Modal -->
+        <div class="auth-modal" id="authModal">
+            <div class="auth-container">
+                <div class="auth-header">
+                    <h2>Save Your Score!</h2>
+                    <p>Login or create an account to join the leaderboard</p>
+                </div>
+                
+                <div class="auth-tabs">
+                    <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                    <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+                </div>
+                
+                <div class="auth-form">
+                    <input type="text" id="authHandle" class="auth-input" placeholder="Username (3-15 characters)" maxlength="15">
+                    <input type="password" id="authPin" class="auth-input" placeholder="PIN (4 digits)" maxlength="4" pattern="[0-9]{4}">
+                    <button class="auth-button" onclick="handleAuth()">Login</button>
+                    <button class="auth-close" onclick="closeAuthModal()">Play Without Saving</button>
+                </div>
+                
+                <div class="auth-message" id="authMessage" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
+        
+        // Handle responsive canvas sizing
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            const containerWidth = container.clientWidth;
+            const containerHeight = container.clientHeight;
+            
+            // On mobile, use full container size
+            if (window.innerWidth < 768) {
+                canvas.width = containerWidth;
+                canvas.height = containerHeight;
+                
+                // Scale game elements proportionally
+                const scaleX = containerWidth / 400;
+                const scaleY = containerHeight / 600;
+                
+                // Update game scale (we'll use this in game logic)
+                window.gameScale = Math.min(scaleX, scaleY);
+            } else {
+                // Desktop: use original size
+                canvas.width = 400;
+                canvas.height = 600;
+                window.gameScale = 1;
+            }
+        }
+        
+        // Resize on load and window resize
+        window.addEventListener('load', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener('orientationchange', () => {
+            setTimeout(resizeCanvas, 100);
+        });
+        
+        // Listen for mobile mode message from desktop
+        window.addEventListener('message', function(e) {
+            if (e.data && e.data.type === 'MOBILE_MODE') {
+                setTimeout(resizeCanvas, 100);
+            }
+        });
         const startScreen = document.getElementById('startScreen');
         const gameOverScreen = document.getElementById('gameOverScreen');
         const scoreDisplay = document.getElementById('scoreDisplay');
         const finalScoreEl = document.getElementById('finalScore');
         const bestScoreEl = document.getElementById('bestScore');
 
+        // ZAD Configuration
+        window.APP_ID = 'flappy-bird-leaderboard';
+        
+        // Authentication
+        let currentUser = null;
+        let authMode = 'login';
+        let pendingScore = null;
+        let leaderboardVisible = false;
+
         // Game variables
         let gameRunning = false;
         let score = 0;
         let bestScore = localStorage.getItem('flappyBirdBestScore') || 0;
         bestScoreEl.textContent = bestScore;
+        
+        // ZAD Helper Functions
+        async function saveScore(scoreData) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: scoreData.handle,
+                        action_type: 'leaderboard_score',
+                        content_data: scoreData
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Failed to save score:', error);
+                return false;
+            }
+        }
+        
+        async function loadScores() {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=leaderboard_score`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.map(item => item.content_data).filter(score => score);
+                }
+            } catch (error) {
+                console.error('Failed to load scores:', error);
+            }
+            return [];
+        }
+        
+        // Authentication Functions
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    updateAuthDisplay();
+                } catch (e) {
+                    console.error('Failed to load saved auth:', e);
+                    localStorage.removeItem('toybox_user');
+                }
+            }
+        }
+        
+        // Listen for auth updates from WebtoysOS desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                updateAuthDisplay();
+            }
+        });
+        
+        function updateAuthDisplay() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser) {
+                authStatus.innerHTML = `Logged in as <span class="logged-in-user">${currentUser.handle}</span>`;
+            } else {
+                authStatus.innerHTML = 'Not logged in - Score won\'t be saved!';
+            }
+        }
+        
+        function showAuthModal() {
+            document.getElementById('authModal').classList.add('active');
+            document.getElementById('authHandle').focus();
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('authModal').classList.remove('active');
+            document.getElementById('authMessage').style.display = 'none';
+            pendingScore = null;
+        }
+        
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const button = document.querySelector('.auth-button');
+            button.textContent = mode === 'login' ? 'Login' : 'Register';
+        }
+        
+        async function handleAuth() {
+            const handle = document.getElementById('authHandle').value.trim();
+            const pin = document.getElementById('authPin').value;
+            const messageEl = document.getElementById('authMessage');
+            
+            if (!handle || handle.length < 3) {
+                messageEl.textContent = 'Username must be at least 3 characters';
+                messageEl.style.display = 'block';
+                return;
+            }
+            
+            if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                messageEl.textContent = 'PIN must be exactly 4 digits';
+                messageEl.style.display = 'block';
+                return;
+            }
+            
+            if (authMode === 'login') {
+                // Login logic
+                const response = await fetch(`/api/zad/load?app_id=desktop-auth&participant_id=${handle.toUpperCase()}_${pin}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const user = data.find(d => d.participant_id === `${handle.toUpperCase()}_${pin}`);
+                    
+                    if (user) {
+                        currentUser = user.content_data;
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        updateAuthDisplay();
+                        closeAuthModal();
+                        
+                        // Save pending score if exists
+                        if (pendingScore) {
+                            await saveScoreForUser(pendingScore);
+                        }
+                    } else {
+                        messageEl.textContent = 'Invalid username or PIN';
+                        messageEl.style.display = 'block';
+                    }
+                }
+            } else {
+                // Register logic
+                const upperHandle = handle.toUpperCase();
+                const userData = {
+                    handle: upperHandle,
+                    pin: pin,
+                    participantId: `${upperHandle}_${pin}`,
+                    id: upperHandle,
+                    created: new Date().toISOString()
+                };
+                
+                const saveResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'desktop-auth',
+                        participant_id: userData.participantId,
+                        action_type: 'register',
+                        content_data: userData
+                    })
+                });
+                
+                if (saveResponse.ok) {
+                    currentUser = userData;
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthDisplay();
+                    closeAuthModal();
+                    
+                    // Save pending score if exists
+                    if (pendingScore) {
+                        await saveScoreForUser(pendingScore);
+                    }
+                } else {
+                    messageEl.textContent = 'Registration failed. Try again.';
+                    messageEl.style.display = 'block';
+                }
+            }
+        }
+        
+        async function saveScoreForUser(scoreValue) {
+            if (!currentUser) return;
+            
+            const scoreData = {
+                handle: currentUser.handle,
+                score: scoreValue,
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString()
+            };
+            
+            const saved = await saveScore(scoreData);
+            if (saved) {
+                console.log('Score saved to leaderboard!');
+                await displayLeaderboard();
+                document.getElementById('leaderboardContainer').style.display = 'block';
+                leaderboardVisible = true;
+                document.getElementById('leaderboardBtn').textContent = 'Hide Leaderboard';
+            }
+        }
+        
+        async function displayLeaderboard() {
+            const scores = await loadScores();
+            
+            // Sort by score descending
+            scores.sort((a, b) => (b.score || 0) - (a.score || 0));
+            
+            // Take top 10
+            const topScores = scores.slice(0, 10);
+            
+            const listEl = document.getElementById('leaderboardList');
+            
+            if (topScores.length === 0) {
+                listEl.innerHTML = '<div class="no-scores">No scores yet. Be the first!</div>';
+                return;
+            }
+            
+            listEl.innerHTML = topScores.map((scoreData, index) => {
+                const rank = index + 1;
+                let rankClass = '';
+                if (rank === 1) rankClass = 'gold';
+                else if (rank === 2) rankClass = 'silver';
+                else if (rank === 3) rankClass = 'bronze';
+                
+                const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : rank + '.';
+                
+                const isCurrentUser = currentUser && scoreData.handle === currentUser.handle && scoreData.score === score;
+                const userClass = isCurrentUser ? 'current-user' : '';
+                
+                return `
+                    <div class="leaderboard-entry ${rankClass} ${userClass}">
+                        <div class="leaderboard-rank">${medal}</div>
+                        <div class="leaderboard-name">${scoreData.handle || 'ANON'}</div>
+                        <div class="leaderboard-score">${scoreData.score || 0}</div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function toggleLeaderboard() {
+            const container = document.getElementById('leaderboardContainer');
+            const btn = document.getElementById('leaderboardBtn');
+            
+            if (leaderboardVisible) {
+                container.style.display = 'none';
+                btn.textContent = 'Show Leaderboard';
+                leaderboardVisible = false;
+            } else {
+                container.style.display = 'block';
+                btn.textContent = 'Hide Leaderboard';
+                leaderboardVisible = true;
+                displayLeaderboard();
+            }
+        }
+        
+        // Initialize auth on load
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuthFromStorage();
+            // Request auth state from parent (if in iframe)
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+            // Start rendering the background and animated scene
+            gameLoop();
+            // Add some initial decorative pipes for the start screen
+            if (!gameRunning) {
+                pipes.push({
+                    x: canvas.width * 0.7,
+                    topHeight: canvas.height * 0.3,
+                    bottomY: canvas.height * 0.3 + pipeProps.gap,
+                    scored: true
+                });
+                pipes.push({
+                    x: canvas.width * 1.2,
+                    topHeight: canvas.height * 0.4,
+                    bottomY: canvas.height * 0.4 + pipeProps.gap,
+                    scored: true
+                });
+            }
+        });
 
-        // Bird properties
-        const bird = {
-            x: 100,
-            y: 300,
-            width: 34,
-            height: 24,
-            velocity: 0,
-            gravity: 0.5,
-            jumpPower: -8,
-            color: '#FFD700',
-            rotation: 0
+        // Bird properties (will be scaled on mobile)
+        const getBirdProperties = () => {
+            const scale = window.gameScale || 1;
+            return {
+                x: 100 * scale,
+                y: canvas.height / 2,
+                width: 34 * scale,
+                height: 24 * scale,
+                velocity: 0,
+                gravity: 0.5 * scale,
+                jumpPower: -8 * scale,
+                color: '#FFD700',
+                rotation: 0
+            };
         };
+        
+        let bird = getBirdProperties();
 
-        // Pipe properties
+        // Pipe properties (will be scaled on mobile)
+        const getPipeProperties = () => {
+            const scale = window.gameScale || 1;
+            return {
+                width: 60 * scale,
+                gap: 150 * scale,
+                speed: 3 * scale,
+                interval: 90
+            };
+        };
+        
         const pipes = [];
-        const pipeWidth = 60;
-        const pipeGap = 150;
-        const pipeSpeed = 3;
         let pipeTimer = 0;
-        const pipeInterval = 90;
+        let pipeProps = getPipeProperties();
 
         // Cloud particles for background
         const clouds = [];
@@ -244,8 +1342,12 @@
 
         // Draw pipes
         function drawPipe(pipe) {
+            const scale = window.gameScale || 1;
+            const capHeight = 30 * scale;
+            const capOverhang = 5 * scale;
+            
             // Pipe gradient
-            const gradient = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeWidth, 0);
+            const gradient = ctx.createLinearGradient(pipe.x, 0, pipe.x + pipeProps.width, 0);
             gradient.addColorStop(0, '#2ECC40');
             gradient.addColorStop(0.5, '#3CB371');
             gradient.addColorStop(1, '#228B22');
@@ -253,19 +1355,19 @@
             ctx.fillStyle = gradient;
             
             // Top pipe
-            ctx.fillRect(pipe.x, 0, pipeWidth, pipe.topHeight);
+            ctx.fillRect(pipe.x, 0, pipeProps.width, pipe.topHeight);
             
             // Top pipe cap
             ctx.fillStyle = '#228B22';
-            ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, pipeWidth + 10, 30);
+            ctx.fillRect(pipe.x - capOverhang, pipe.topHeight - capHeight, pipeProps.width + (capOverhang * 2), capHeight);
             
             // Bottom pipe
             ctx.fillStyle = gradient;
-            ctx.fillRect(pipe.x, pipe.bottomY, pipeWidth, canvas.height - pipe.bottomY);
+            ctx.fillRect(pipe.x, pipe.bottomY, pipeProps.width, canvas.height - pipe.bottomY);
             
             // Bottom pipe cap
             ctx.fillStyle = '#228B22';
-            ctx.fillRect(pipe.x - 5, pipe.bottomY, pipeWidth + 10, 30);
+            ctx.fillRect(pipe.x - capOverhang, pipe.bottomY, pipeProps.width + (capOverhang * 2), capHeight);
         }
 
         // Draw clouds
@@ -280,7 +1382,37 @@
 
         // Update game state
         function update() {
-            if (!gameRunning) return;
+            // Update decorative elements even when not playing
+            if (!gameRunning) {
+                // Keep clouds moving for ambiance
+                clouds.forEach(cloud => {
+                    cloud.x -= cloud.speed * 0.5;
+                    if (cloud.x + cloud.width < 0) {
+                        cloud.x = canvas.width + cloud.width;
+                        cloud.y = Math.random() * 200;
+                    }
+                });
+                
+                // Move decorative pipes slowly
+                pipes.forEach(pipe => {
+                    pipe.x -= pipeProps.speed * 0.3;
+                    if (pipe.x + pipeProps.width < -100) {
+                        pipe.x = canvas.width + Math.random() * 200;
+                        const minHeight = 100 * (window.gameScale || 1);
+                        const maxHeight = canvas.height - pipeProps.gap - minHeight;
+                        pipe.topHeight = minHeight + Math.random() * (maxHeight - minHeight);
+                        pipe.bottomY = pipe.topHeight + pipeProps.gap;
+                    }
+                });
+                
+                // Gentle bird animation on start screen
+                if (startScreen && !startScreen.classList.contains('hidden')) {
+                    bird.y = (canvas.height / 2) + Math.sin(Date.now() * 0.002) * 20;
+                    bird.rotation = Math.sin(Date.now() * 0.003) * 0.1;
+                }
+                
+                return;
+            }
 
             // Update bird
             bird.velocity += bird.gravity;
@@ -303,15 +1435,15 @@
 
             // Create new pipes
             pipeTimer++;
-            if (pipeTimer >= pipeInterval) {
-                const minHeight = 100;
-                const maxHeight = canvas.height - pipeGap - minHeight;
+            if (pipeTimer >= pipeProps.interval) {
+                const minHeight = 100 * (window.gameScale || 1);
+                const maxHeight = canvas.height - pipeProps.gap - minHeight;
                 const topHeight = minHeight + Math.random() * (maxHeight - minHeight);
                 
                 pipes.push({
                     x: canvas.width,
                     topHeight: topHeight,
-                    bottomY: topHeight + pipeGap,
+                    bottomY: topHeight + pipeProps.gap,
                     scored: false
                 });
                 
@@ -321,11 +1453,11 @@
             // Update pipes
             for (let i = pipes.length - 1; i >= 0; i--) {
                 const pipe = pipes[i];
-                pipe.x -= pipeSpeed;
+                pipe.x -= pipeProps.speed;
 
                 // Check collision
                 if (bird.x + bird.width > pipe.x && 
-                    bird.x < pipe.x + pipeWidth) {
+                    bird.x < pipe.x + pipeProps.width) {
                     if (bird.y < pipe.topHeight || 
                         bird.y + bird.height > pipe.bottomY) {
                         gameOver();
@@ -333,14 +1465,14 @@
                 }
 
                 // Score point
-                if (!pipe.scored && pipe.x + pipeWidth < bird.x) {
+                if (!pipe.scored && pipe.x + pipeProps.width < bird.x) {
                     score++;
                     scoreDisplay.textContent = score;
                     pipe.scored = true;
                 }
 
                 // Remove off-screen pipes
-                if (pipe.x + pipeWidth < 0) {
+                if (pipe.x + pipeProps.width < 0) {
                     pipes.splice(i, 1);
                 }
             }
@@ -385,29 +1517,72 @@
 
         // Start game
         function startGame() {
+            // Recalculate properties in case of resize
+            resizeCanvas();
+            bird = getBirdProperties();
+            pipeProps = getPipeProperties();
+            
             gameRunning = true;
             score = 0;
             scoreDisplay.textContent = score;
             startScreen.classList.add('hidden');
             gameOverScreen.classList.add('hidden');
-            bird.y = 300;
+            bird.y = canvas.height / 2;
             bird.velocity = 0;
             pipes.length = 0;
             pipeTimer = 0;
+            // Reset leaderboard visibility
+            document.getElementById('leaderboardContainer').style.display = 'none';
+            leaderboardVisible = false;
+            document.getElementById('leaderboardBtn').textContent = 'Leaderboard';
         }
 
         // Game over
-        function gameOver() {
+        async function gameOver() {
             gameRunning = false;
             finalScoreEl.textContent = score;
             
+            let isNewBest = false;
             if (score > bestScore) {
                 bestScore = score;
                 bestScoreEl.textContent = bestScore;
                 localStorage.setItem('flappyBirdBestScore', bestScore);
+                isNewBest = true;
             }
             
             gameOverScreen.classList.remove('hidden');
+            
+            // Add celebration for new best score
+            if (isNewBest) {
+                bestScoreEl.parentElement.classList.add('new-best');
+                setTimeout(() => {
+                    bestScoreEl.parentElement.classList.remove('new-best');
+                }, 1000);
+            }
+            
+            // Handle leaderboard
+            if (score > 0) {
+                if (currentUser) {
+                    // User is logged in, save score automatically
+                    await saveScoreForUser(score);
+                } else {
+                    // User not logged in, show auth modal
+                    pendingScore = score;
+                    setTimeout(() => {
+                        if (!currentUser) {
+                            showAuthModal();
+                        }
+                    }, 1000);
+                }
+            }
+            
+            // Always load and display leaderboard
+            await displayLeaderboard();
+            if (score > 0) {
+                document.getElementById('leaderboardContainer').style.display = 'block';
+                leaderboardVisible = true;
+                document.getElementById('leaderboardBtn').textContent = 'Hide Leaderboard';
+            }
         }
 
         // Reset game
@@ -417,15 +1592,16 @@
 
         // Event listeners
         canvas.addEventListener('click', jump);
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            jump();
+        });
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
                 jump();
             }
         });
-
-        // Start game loop
-        gameLoop();
     </script>
 </body>
 </html>

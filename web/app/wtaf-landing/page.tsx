@@ -228,9 +228,57 @@ function DevConsole() {
   async function handleSignUp(email: string, password: string) {
     setAuthError('')
     setAuthLoading(true)
-    
-    const { data, error } = await supabase.auth.signUp({ email, password })
-    
+
+    // ALWAYS start with a valid default URL - never empty
+    let redirectUrl = 'https://webtoys.ai'
+
+    if (typeof window !== 'undefined') {
+      const hostname = window.location.hostname
+      const origin = window.location.origin
+
+      console.log('Signup hostname detection:', hostname)
+      console.log('Signup origin:', origin)
+
+      // Override default based on detected environment
+      if (hostname === 'localhost' || hostname === '127.0.0.1') {
+        redirectUrl = 'http://localhost:3000'
+      } else if (hostname.includes('webtoys.io')) {
+        redirectUrl = 'https://webtoys.io'
+      } else if (hostname.includes('webtoys.ai')) {
+        redirectUrl = 'https://webtoys.ai'
+      } else if (hostname.includes('.railway.app')) {
+        // Railway deployment
+        redirectUrl = `https://${hostname}`
+      } else if (origin && origin !== 'null' && origin !== '') {
+        // Fallback to current origin
+        redirectUrl = origin
+      }
+      // If none match, keep the default https://webtoys.ai
+
+      console.log('Using redirect URL:', redirectUrl) // Debug log
+      addConsoleEntry(`📍 Signup redirect URL: ${redirectUrl}`, 'info')
+    }
+
+    // Extra safety check - NEVER send empty redirect URL
+    if (!redirectUrl || redirectUrl === '' || redirectUrl === 'null') {
+      console.error('WARNING: Redirect URL was invalid, forcing to webtoys.ai')
+      redirectUrl = 'https://webtoys.ai'
+    }
+
+    console.log('FINAL signup redirect URL being sent to Supabase:', redirectUrl)
+    addConsoleEntry(`📍 Email verification will redirect to: ${redirectUrl}`, 'info')
+
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+      }
+    })
+
+    // Log what we actually sent
+    console.log('Supabase signUp called with emailRedirectTo:', redirectUrl)
+
     if (error) {
       setAuthError(error.message)
       addConsoleEntry(`❌ Signup failed: ${error.message}`, 'error')
@@ -238,7 +286,7 @@ function DevConsole() {
       return
     }
 
-    if (data.user) {
+    if (data?.user) {
       // Create sms_subscriber entry
       const response = await fetch('/api/auth/create-subscriber', {
         method: 'POST',

@@ -1,0 +1,1823 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ANAGRAM RUSH - WebtoysOS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 10px;
+            padding-top: 20px;
+        }
+
+        .game-container {
+            background: white;
+            border-radius: 20px;
+            padding: 15px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #f5576c;
+        }
+
+        .level-indicator {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .scrambled-word {
+            text-align: center;
+            margin: 15px 0;
+            padding: 15px;
+            background: #f9f9f9;
+            border-radius: 15px;
+            border: 3px solid #f5576c;
+        }
+
+        .scrambled-letters {
+            font-size: 2.2em;
+            font-weight: bold;
+            letter-spacing: 8px;
+            color: #f5576c;
+            text-transform: uppercase;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .hint {
+            margin-top: 15px;
+            color: #999;
+            font-size: 0.9em;
+            font-style: italic;
+        }
+
+        .input-area {
+            margin-bottom: 20px;
+        }
+
+        .word-input {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.3em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            transition: all 0.3s;
+        }
+
+        .word-input:focus {
+            outline: none;
+            border-color: #f5576c;
+            transform: scale(1.02);
+        }
+
+        .word-input.correct {
+            border-color: #48bb78;
+            background: #c6f6d5;
+            animation: success 0.5s;
+        }
+
+        .word-input.error {
+            border-color: #ff6b6b;
+            animation: shake 0.5s;
+        }
+
+        @keyframes success {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-secondary {
+            background: #ffd89b;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #ffc66d;
+            transform: translateY(-2px);
+        }
+
+        .btn-hint {
+            background: #a8edea;
+            color: #333;
+        }
+
+        .btn-hint:hover {
+            background: #7dd3ce;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            text-align: center;
+            font-weight: bold;
+            animation: slideIn 0.3s;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.success {
+            background: #c6f6d5;
+            color: #276749;
+        }
+
+        .message.error {
+            background: #fed7d7;
+            color: #9b2c2c;
+        }
+
+        .leaderboard {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f7f7f7;
+            border-radius: 10px;
+        }
+
+        .leaderboard h3 {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+
+        .leaderboard-entry:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .leaderboard-rank {
+            font-weight: bold;
+            color: #f5576c;
+            margin-right: 10px;
+        }
+
+        .leaderboard-name {
+            flex: 1;
+            color: #333;
+        }
+
+        .leaderboard-score {
+            font-weight: bold;
+            color: #f093fb;
+        }
+
+        .streak-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: linear-gradient(135deg, #ffd89b 0%, #ffab6d 100%);
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 1.2em;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: none;
+            animation: bounceIn 0.5s;
+        }
+
+        .streak-indicator.active {
+            display: block;
+        }
+
+        @keyframes bounceIn {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .loading {
+            text-align: center;
+            color: #f5576c;
+            padding: 20px;
+        }
+
+        .auth-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.9);
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #f5576c;
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                padding: 20px;
+            }
+            
+            .game-title {
+                font-size: 2em;
+            }
+            
+            .scrambled-letters {
+                font-size: 2em;
+                letter-spacing: 5px;
+            }
+            
+            .buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Auth status removed for space -->
+    <div class="streak-indicator" id="streakIndicator">🔥 Streak: 0</div>
+    
+    <div class="game-container">
+        <div class="game-header">
+            <h1 class="game-title">🎯 ANAGRAM RUSH</h1>
+            <p>Unscramble the words as fast as you can!</p>
+        </div>
+
+        <div class="game-stats">
+            <div class="stat">
+                <div class="stat-label">Score</div>
+                <div class="stat-value" id="score">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Words</div>
+                <div class="stat-value" id="wordsComplete">0</div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Time</div>
+                <div class="stat-value" id="timeElapsed">0:00</div>
+            </div>
+        </div>
+
+        <div class="level-indicator" id="levelIndicator">
+            Level 1 - Easy (3 letters)
+        </div>
+
+        <div id="message"></div>
+
+        <div class="scrambled-word" id="scrambledWord">
+            <div class="scrambled-letters" id="scrambledLetters">READY?</div>
+            <div class="hint" id="hint"></div>
+        </div>
+
+        <div class="input-area">
+            <input 
+                type="text" 
+                class="word-input" 
+                id="wordInput" 
+                placeholder="TYPE YOUR ANSWER" 
+                disabled
+                autocomplete="off"
+                spellcheck="false"
+            />
+        </div>
+
+        <div class="buttons">
+            <button class="btn btn-primary" id="startBtn">START GAME</button>
+            <button class="btn btn-hint" id="hintBtn" disabled>GET HINT (100 pts if correct)</button>
+            <button class="btn btn-secondary" id="skipBtn" disabled>SKIP WORD</button>
+        </div>
+
+        <div class="leaderboard">
+            <h3>🏆 Top Anagram Masters</h3>
+            <div id="leaderboardList" class="loading">Loading leaderboard...</div>
+        </div>
+    </div>
+
+    <script>
+        // Dictionary will be loaded from shared WebtoysOS dictionary
+        let fullDictionary = [];
+        let wordsByLength = {};
+        let dictionaryLoaded = false;
+        
+        // Expanded fallback word lists with 1000+ unique words
+        const fallbackWordLists = {
+            easy: [
+                // Level 1: Only the MOST COMMON 3-letter words - fun and easy!
+                { word: 'CAT', hint: 'Pet that meows' },
+                { word: 'DOG', hint: 'Pet that barks' },
+                { word: 'SUN', hint: 'Bright in sky' },
+                { word: 'RUN', hint: 'Move fast' },
+                { word: 'FUN', hint: 'Good time' },
+                { word: 'HOT', hint: 'Very warm' },
+                { word: 'BIG', hint: 'Large size' },
+                { word: 'NEW', hint: 'Not old' },
+                { word: 'OLD', hint: 'Not new' },
+                { word: 'SAD', hint: 'Not happy' },
+                { word: 'MAD', hint: 'Angry' },
+                { word: 'BAD', hint: 'Not good' },
+                { word: 'RED', hint: 'Color of blood' },
+                { word: 'BED', hint: 'Sleep here' },
+                { word: 'EAT', hint: 'Have food' },
+                { word: 'CUP', hint: 'Drink from' },
+                { word: 'CAR', hint: 'Road vehicle' },
+                { word: 'BOX', hint: 'Container' },
+                { word: 'TOP', hint: 'Highest part' },
+                { word: 'BOY', hint: 'Young male' },
+                { word: 'TOY', hint: 'Play thing' },
+                { word: 'DAY', hint: 'Not night' },
+                { word: 'WAY', hint: 'Path to go' },
+                { word: 'SAY', hint: 'Speak words' },
+                { word: 'PAY', hint: 'Give money' },
+                { word: 'KEY', hint: 'Opens locks' },
+                { word: 'SKY', hint: 'Above us' },
+                { word: 'FLY', hint: 'Move in air' },
+                { word: 'CRY', hint: 'Shed tears' },
+                { word: 'TRY', hint: 'Make attempt' },
+                { word: 'WHY', hint: 'Question word' },
+                { word: 'DRY', hint: 'Not wet' },
+                { word: 'EYE', hint: 'See with this' },
+                { word: 'PIE', hint: 'Sweet dessert' },
+                { word: 'TIE', hint: 'Necktie' },
+                { word: 'YES', hint: 'I agree' },
+                { word: 'MOM', hint: 'Mother' },
+                { word: 'DAD', hint: 'Father' },
+                { word: 'CAN', hint: 'Able to' },
+                { word: 'MAN', hint: 'Adult male' },
+                { word: 'FAN', hint: 'Cools you' },
+                { word: 'VAN', hint: 'Large vehicle' },
+                { word: 'PAN', hint: 'Cooking pot' },
+                { word: 'TAN', hint: 'Brown color' },
+                { word: 'RAN', hint: 'Past of run' },
+                { word: 'WIN', hint: 'Victory' },
+                { word: 'PIN', hint: 'Sharp fastener' },
+                { word: 'BIN', hint: 'Trash can' },
+                { word: 'TIN', hint: 'Metal type' },
+                { word: 'PEN', hint: 'Writing tool' },
+                { word: 'TEN', hint: 'Number 10' },
+                { word: 'HEN', hint: 'Female chicken' },
+                { word: 'MEN', hint: 'More than one man' },
+                { word: 'END', hint: 'Finish' },
+                { word: 'AND', hint: 'Also' },
+                { word: 'ARM', hint: 'Body part' },
+                { word: 'LEG', hint: 'Walk with' },
+                { word: 'EAR', hint: 'Hear with' },
+                { word: 'BAG', hint: 'Carry things' },
+                { word: 'HAT', hint: 'Head wear' },
+                { word: 'BAT', hint: 'Flying animal' },
+                { word: 'RAT', hint: 'Small rodent' },
+                { word: 'MAT', hint: 'Floor cover' },
+                { word: 'FAT', hint: 'Not thin' },
+                { word: 'SAT', hint: 'Past of sit' },
+                { word: 'BUS', hint: 'Big vehicle' },
+                { word: 'CUT', hint: 'Use scissors' },
+                { word: 'NUT', hint: 'Tree seed' },
+                { word: 'BUT', hint: 'However' },
+                { word: 'PUT', hint: 'Place down' },
+                { word: 'HIT', hint: 'Strike' },
+                { word: 'SIT', hint: 'Chair action' },
+                { word: 'BIT', hint: 'Small piece' },
+                { word: 'FIT', hint: 'Right size' },
+                { word: 'GET', hint: 'Obtain' },
+                { word: 'LET', hint: 'Allow' },
+                { word: 'NET', hint: 'Catch fish' },
+                { word: 'PET', hint: 'Animal friend' },
+                { word: 'SET', hint: 'Group of things' },
+                { word: 'WET', hint: 'Not dry' },
+                { word: 'JET', hint: 'Fast plane' },
+                { word: 'MET', hint: 'Past of meet' },
+                { word: 'YET', hint: 'Still' },
+                { word: 'FOX', hint: 'Red animal' },
+                { word: 'MIX', hint: 'Combine' },
+                { word: 'FIX', hint: 'Repair' },
+                { word: 'SIX', hint: 'Number 6' },
+                { word: 'TAX', hint: 'Money to government' },
+                { word: 'WAX', hint: 'Candle material' },
+                { word: 'ZOO', hint: 'Animal place' },
+                { word: 'TOO', hint: 'Also' },
+                { word: 'TWO', hint: 'Number 2' },
+                { word: 'WHO', hint: 'Question word' },
+                { word: 'YOU', hint: 'Person I talk to' },
+                { word: 'SEE', hint: 'Use eyes' },
+                { word: 'BEE', hint: 'Makes honey' },
+                { word: 'TEA', hint: 'Hot drink' },
+                { word: 'SEA', hint: 'Big water' },
+                { word: 'PEA', hint: 'Green vegetable' },
+                { word: 'AIR', hint: 'We breathe' },
+                { word: 'JAR', hint: 'Glass container' },
+                { word: 'BAR', hint: 'Long piece' },
+                { word: 'TAR', hint: 'Black sticky' },
+                { word: 'LIP', hint: 'Mouth part' },
+                { word: 'LIT', hint: 'Made bright' },
+                { word: 'LOG', hint: 'Wood piece' },
+                { word: 'LOT', hint: 'Many' },
+                { word: 'LOW', hint: 'Not high' },
+                { word: 'MAD', hint: 'Angry' },
+                { word: 'MAN', hint: 'Adult male' },
+                { word: 'MAP', hint: 'Shows roads' },
+                { word: 'MAT', hint: 'Floor cover' },
+                { word: 'MAY', hint: 'Might' },
+                { word: 'MET', hint: 'Past of meet' },
+                { word: 'MIX', hint: 'Combine' },
+                { word: 'MOB', hint: 'Crowd' },
+                { word: 'MOM', hint: 'Mother' },
+                { word: 'MOP', hint: 'Clean floors' },
+                { word: 'MUD', hint: 'Wet dirt' },
+                { word: 'MUG', hint: 'Coffee cup' },
+                { word: 'NAP', hint: 'Short sleep' },
+                { word: 'NET', hint: 'Catches fish' },
+                { word: 'NEW', hint: 'Not old' },
+                { word: 'NOD', hint: 'Head yes' },
+                { word: 'NOT', hint: 'Negative' },
+                { word: 'NOW', hint: 'This moment' },
+                { word: 'NUN', hint: 'Religious woman' },
+                { word: 'NUT', hint: 'Tree seed' },
+                { word: 'OAK', hint: 'Tree type' },
+                { word: 'OAR', hint: 'Row with' },
+                { word: 'ODD', hint: 'Strange' },
+                { word: 'OFF', hint: 'Not on' },
+                { word: 'OIL', hint: 'Slippery liquid' },
+                { word: 'OLD', hint: 'Not young' },
+                { word: 'ONE', hint: 'Number 1' },
+                { word: 'OUR', hint: 'Belonging to us' },
+                { word: 'OUT', hint: 'Not in' },
+                { word: 'OWE', hint: 'Need to pay' },
+                { word: 'OWL', hint: 'Night bird' },
+                { word: 'OWN', hint: 'Possess' },
+                { word: 'PAD', hint: 'Cushion' },
+                { word: 'PAN', hint: 'Cook in' },
+                { word: 'PAT', hint: 'Gentle touch' },
+                { word: 'PAW', hint: 'Animal foot' },
+                { word: 'PAY', hint: 'Give money' },
+                { word: 'PEA', hint: 'Green veggie' },
+                { word: 'PEN', hint: 'Write with' },
+                { word: 'PET', hint: 'Animal friend' },
+                { word: 'PIE', hint: 'Dessert' },
+                { word: 'PIG', hint: 'Farm animal' },
+                { word: 'PIN', hint: 'Sharp fastener' },
+                { word: 'PIT', hint: 'Deep hole' },
+                { word: 'POP', hint: 'Burst' },
+                { word: 'POT', hint: 'Cooking vessel' },
+                { word: 'POW', hint: 'Hit sound' },
+                { word: 'PUB', hint: 'Bar' },
+                { word: 'PUP', hint: 'Young dog' },
+                { word: 'PUT', hint: 'Place' },
+                { word: 'RAG', hint: 'Old cloth' },
+                { word: 'RAM', hint: 'Male sheep' },
+                { word: 'RAN', hint: 'Past of run' },
+                { word: 'RAP', hint: 'Quick knock' },
+                { word: 'RAT', hint: 'Rodent' },
+                { word: 'RAW', hint: 'Uncooked' },
+                { word: 'RAY', hint: 'Light beam' },
+                { word: 'RED', hint: 'Color' },
+                { word: 'REP', hint: 'Representative' },
+                { word: 'RIB', hint: 'Chest bone' },
+                { word: 'RID', hint: 'Get free of' },
+                { word: 'RIG', hint: 'Equipment' },
+                { word: 'RIM', hint: 'Edge' },
+                { word: 'RIP', hint: 'Tear' },
+                { word: 'ROB', hint: 'Steal from' },
+                { word: 'ROW', hint: 'Line of things' },
+                { word: 'RUB', hint: 'Polish surface' },
+                { word: 'RUG', hint: 'Floor mat' },
+                { word: 'RUN', hint: 'Fast move' },
+                { word: 'RYE', hint: 'Grain' },
+                { word: 'SAD', hint: 'Not happy' },
+                { word: 'SAG', hint: 'Droop' },
+                { word: 'SAP', hint: 'Tree fluid' },
+                { word: 'SAT', hint: 'Past of sit' },
+                { word: 'SAW', hint: 'Cutting tool' },
+                { word: 'SAY', hint: 'Speak' },
+                { word: 'SEA', hint: 'Ocean' },
+                { word: 'SEE', hint: 'Use eyes' },
+                { word: 'SET', hint: 'Collection' },
+                { word: 'SEW', hint: 'Stitch' },
+                { word: 'SHE', hint: 'Female' },
+                { word: 'SHY', hint: 'Timid' },
+                { word: 'SIP', hint: 'Small drink' },
+                { word: 'SIR', hint: 'Polite title' },
+                { word: 'SIS', hint: 'Sister' },
+                { word: 'SIT', hint: 'Use chair' },
+                { word: 'SIX', hint: 'Number 6' },
+                { word: 'SKI', hint: 'Snow sport' },
+                { word: 'SKY', hint: 'Above us' },
+                { word: 'SLY', hint: 'Sneaky' },
+                { word: 'SOB', hint: 'Cry' },
+                { word: 'SOD', hint: 'Grass' },
+                { word: 'SON', hint: 'Male child' },
+                { word: 'SOW', hint: 'Plant seeds' },
+                { word: 'SOY', hint: 'Bean type' },
+                { word: 'SPA', hint: 'Relax place' },
+                { word: 'SPY', hint: 'Secret agent' },
+                { word: 'STY', hint: 'Pig home' },
+                { word: 'SUB', hint: 'Underwater boat' },
+                { word: 'SUM', hint: 'Total' },
+                { word: 'TAB', hint: 'Bill' },
+                { word: 'TAG', hint: 'Label' },
+                { word: 'TAN', hint: 'Brown color' },
+                { word: 'TAP', hint: 'Light hit' },
+                { word: 'TAR', hint: 'Black goo' },
+                { word: 'TAX', hint: 'Money to government' },
+                { word: 'TEA', hint: 'Hot drink' },
+                { word: 'TEN', hint: 'Number 10' },
+                { word: 'THE', hint: 'Article' },
+                { word: 'TIE', hint: 'Necktie' },
+                { word: 'TIN', hint: 'Metal' },
+                { word: 'TIP', hint: 'End point' },
+                { word: 'TOE', hint: 'Foot digit' },
+                { word: 'TON', hint: 'Heavy weight' },
+                { word: 'TOO', hint: 'Also' },
+                { word: 'TOP', hint: 'Highest point' },
+                { word: 'TOW', hint: 'Pull' },
+                { word: 'TOY', hint: 'Play thing' },
+                { word: 'TRY', hint: 'Attempt' },
+                { word: 'TUB', hint: 'Bath' },
+                { word: 'TWO', hint: 'Number 2' },
+                { word: 'USE', hint: 'Employ' },
+                { word: 'VAN', hint: 'Large car' },
+                { word: 'VAT', hint: 'Large tank' },
+                { word: 'VET', hint: 'Animal doctor' },
+                { word: 'VOW', hint: 'Promise' },
+                { word: 'WAG', hint: 'Tail move' },
+                { word: 'WAR', hint: 'Battle' },
+                { word: 'WAS', hint: 'Past of is' },
+                { word: 'WAX', hint: 'Candle stuff' },
+                { word: 'WAY', hint: 'Path' },
+                { word: 'WEB', hint: 'Spider home' },
+                { word: 'WED', hint: 'Marry' },
+                { word: 'WET', hint: 'Not dry' },
+                { word: 'WHO', hint: 'Which person' },
+                { word: 'WHY', hint: 'For what reason' },
+                { word: 'WIG', hint: 'Fake hair' },
+                { word: 'WIN', hint: 'Victory' },
+                { word: 'WIT', hint: 'Cleverness' },
+                { word: 'WON', hint: 'Past of win' },
+                { word: 'WOW', hint: 'Amazement' },
+                { word: 'YAM', hint: 'Sweet potato' },
+                { word: 'YEA', hint: 'Yes' },
+                { word: 'YEN', hint: 'Japanese money' },
+                { word: 'YES', hint: 'Agree' },
+                { word: 'YET', hint: 'Still' },
+                { word: 'YOU', hint: 'Person spoken to' },
+                { word: 'ZAP', hint: 'Electric shock' },
+                { word: 'ZEN', hint: 'Calm state' },
+                { word: 'ZIP', hint: 'Fast move' },
+                { word: 'ZOO', hint: 'Animal park' }
+            ],
+            easy_plus: [
+                // 4 letter words (150+ words)
+                { word: 'BOOK', hint: 'Reading material' },
+                { word: 'BIRD', hint: 'Flying animal' },
+                { word: 'FISH', hint: 'Water animal' },
+                { word: 'TREE', hint: 'Tall plant' },
+                { word: 'MOON', hint: 'Night light' },
+                { word: 'STAR', hint: 'Sky twinkler' },
+                { word: 'RAIN', hint: 'Water drops' },
+                { word: 'WIND', hint: 'Moving air' },
+                { word: 'FIRE', hint: 'Hot flames' },
+                { word: 'ROCK', hint: 'Hard stone' },
+                { word: 'SAND', hint: 'Beach grains' },
+                { word: 'WAVE', hint: 'Ocean motion' },
+                { word: 'BOAT', hint: 'Water vehicle' },
+                { word: 'SHIP', hint: 'Large boat' },
+                { word: 'BIKE', hint: 'Two wheels' },
+                { word: 'BALL', hint: 'Round toy' },
+                { word: 'GAME', hint: 'Fun activity' },
+                { word: 'PLAY', hint: 'Have fun' },
+                { word: 'WORK', hint: 'Job activity' },
+                { word: 'HOME', hint: 'Where you live' },
+                { word: 'ROOM', hint: 'House space' },
+                { word: 'DOOR', hint: 'Entry way' },
+                { word: 'WALL', hint: 'Room divider' },
+                { word: 'ROOF', hint: 'House top' },
+                { word: 'FOOD', hint: 'What you eat' },
+                { word: 'MILK', hint: 'Dairy drink' },
+                { word: 'MEAT', hint: 'Animal protein' },
+                { word: 'RICE', hint: 'Asian grain' },
+                { word: 'CORN', hint: 'Yellow crop' },
+                { word: 'BEAN', hint: 'Protein seed' },
+                { word: 'CAKE', hint: 'Sweet dessert' },
+                { word: 'SOUP', hint: 'Liquid meal' },
+                { word: 'FORK', hint: 'Eating tool' },
+                { word: 'BOWL', hint: 'Round dish' },
+                { word: 'HAND', hint: 'Body part' },
+                { word: 'FOOT', hint: 'Walk on it' },
+                { word: 'HEAD', hint: 'Top body part' },
+                { word: 'FACE', hint: 'Front of head' },
+                { word: 'NOSE', hint: 'Smell with it' },
+                { word: 'EYES', hint: 'See with them' },
+                { word: 'EARS', hint: 'Hear with them' },
+                { word: 'HAIR', hint: 'Head covering' },
+                { word: 'BACK', hint: 'Body rear' },
+                { word: 'NECK', hint: 'Head connector' },
+                { word: 'KNEE', hint: 'Leg joint' },
+                { word: 'TIME', hint: 'Clock measure' },
+                { word: 'HOUR', hint: '60 minutes' },
+                { word: 'WEEK', hint: '7 days' },
+                { word: 'YEAR', hint: '365 days' },
+                { word: 'FAST', hint: 'Quick speed' },
+                { word: 'SLOW', hint: 'Not fast' },
+                { word: 'HIGH', hint: 'Up tall' },
+                { word: 'TALL', hint: 'Great height' },
+                { word: 'WIDE', hint: 'Broad across' },
+                { word: 'DEEP', hint: 'Far down' },
+                { word: 'LONG', hint: 'Extended length' },
+                { word: 'FULL', hint: 'Completely filled' },
+                { word: 'HALF', hint: '50 percent' },
+                { word: 'COOL', hint: 'Slightly cold' },
+                { word: 'WARM', hint: 'Slightly hot' },
+                { word: 'COLD', hint: 'Low temperature' },
+                { word: 'SOFT', hint: 'Not hard' },
+                { word: 'HARD', hint: 'Not soft' },
+                { word: 'DARK', hint: 'No light' },
+                { word: 'SAFE', hint: 'No danger' },
+                { word: 'LOUD', hint: 'High volume' },
+                { word: 'NICE', hint: 'Pleasant' },
+                { word: 'GOOD', hint: 'Positive quality' },
+                { word: 'BEST', hint: 'Top quality' },
+                { word: 'REAL', hint: 'Actually exists' },
+                { word: 'FAKE', hint: 'Not real' },
+                { word: 'TRUE', hint: 'Correct fact' },
+                { word: 'OPEN', hint: 'Not closed' },
+                { word: 'SHUT', hint: 'Closed tight' },
+                { word: 'STOP', hint: 'Cease motion' },
+                { word: 'MOVE', hint: 'Change position' },
+                { word: 'TURN', hint: 'Rotate direction' },
+                { word: 'PUSH', hint: 'Force forward' },
+                { word: 'PULL', hint: 'Draw toward' },
+                { word: 'LIFT', hint: 'Raise up' },
+                { word: 'DROP', hint: 'Let fall' },
+                { word: 'HOLD', hint: 'Keep grip' },
+                { word: 'TAKE', hint: 'Grab possession' },
+                { word: 'GIVE', hint: 'Offer to another' },
+                { word: 'MAKE', hint: 'Create something' },
+                { word: 'FIND', hint: 'Discover location' },
+                { word: 'LOSE', hint: 'Misplace item' },
+                { word: 'KNOW', hint: 'Have knowledge' },
+                { word: 'CALL', hint: 'Phone someone' },
+                { word: 'TEXT', hint: 'Send message' },
+                { word: 'READ', hint: 'Look at words' },
+                { word: 'SING', hint: 'Musical voice' },
+                { word: 'JUMP', hint: 'Leap up' },
+                { word: 'SWIM', hint: 'Water movement' },
+                { word: 'WALK', hint: 'Move on foot' },
+                { word: 'TALK', hint: 'Speak words' },
+                { word: 'LOOK', hint: 'Use eyes' },
+                { word: 'HEAR', hint: 'Use ears' },
+                { word: 'FEEL', hint: 'Touch sense' },
+                { word: 'LOVE', hint: 'Deep affection' },
+                { word: 'LIKE', hint: 'Enjoy something' },
+                { word: 'HATE', hint: 'Strong dislike' },
+                { word: 'FEAR', hint: 'Scared feeling' },
+                { word: 'HOPE', hint: 'Wish for' },
+                { word: 'WISH', hint: 'Desire something' },
+                { word: 'WANT', hint: 'Desire to have' },
+                { word: 'NEED', hint: 'Must have' },
+                { word: 'HELP', hint: 'Give assistance' },
+                { word: 'HURT', hint: 'Cause pain' },
+                { word: 'HEAL', hint: 'Make better' },
+                { word: 'SICK', hint: 'Not healthy' },
+                { word: 'WELL', hint: 'In good health' },
+                { word: 'MIND', hint: 'Thinking organ' },
+                { word: 'SOUL', hint: 'Inner spirit' },
+                { word: 'LIFE', hint: 'Being alive' },
+                { word: 'LIVE', hint: 'Be alive' },
+                { word: 'DEAD', hint: 'Not alive' },
+                { word: 'BORN', hint: 'Come to life' },
+                { word: 'GROW', hint: 'Get bigger' },
+                { word: 'AGED', hint: 'Got older' },
+                { word: 'BLUE', hint: 'Sky color' },
+                { word: 'GRAY', hint: 'Between colors' },
+                { word: 'PINK', hint: 'Light red' },
+                { word: 'GOLD', hint: 'Precious metal' },
+                { word: 'IRON', hint: 'Strong metal' },
+                { word: 'WOOD', hint: 'Tree material' },
+                { word: 'CLAY', hint: 'Moldable earth' },
+                { word: 'DIRT', hint: 'Earth soil' },
+                { word: 'KING', hint: 'Male ruler' },
+                { word: 'LORD', hint: 'Noble title' },
+                { word: 'LADY', hint: 'Female title' },
+                { word: 'HERO', hint: 'Brave person' },
+                { word: 'TEAM', hint: 'Group together' },
+                { word: 'CLUB', hint: 'Organization' },
+                { word: 'ARMY', hint: 'Military force' },
+                { word: 'NAVY', hint: 'Sea force' },
+                { word: 'PORT', hint: 'Ship dock' },
+                { word: 'TOWN', hint: 'Small city' },
+                { word: 'CITY', hint: 'Urban area' },
+                { word: 'FARM', hint: 'Crop land' },
+                { word: 'PARK', hint: 'Green space' },
+                { word: 'ROAD', hint: 'Car path' },
+                { word: 'PATH', hint: 'Walking trail' },
+                { word: 'SIGN', hint: 'Written notice' },
+                { word: 'NAME', hint: 'Personal identifier' },
+                { word: 'WORD', hint: 'Language unit' },
+                { word: 'NOTE', hint: 'Short message' },
+                { word: 'LIST', hint: 'Items in order' },
+                { word: 'PLAN', hint: 'Future scheme' },
+                { word: 'IDEA', hint: 'Mental concept' },
+                { word: 'FACT', hint: 'True statement' },
+                { word: 'MYTH', hint: 'Ancient story' },
+                { word: 'TALE', hint: 'Story narrative' },
+                { word: 'POEM', hint: 'Verse writing' },
+                { word: 'SONG', hint: 'Musical piece' },
+                { word: 'BAND', hint: 'Music group' },
+                { word: 'DRUM', hint: 'Beat instrument' },
+                { word: 'BELL', hint: 'Ringing metal' },
+                { word: 'HORN', hint: 'Brass instrument' },
+                { word: 'TONE', hint: 'Sound quality' }
+            ],
+            medium: [
+                // 4 letter words ONLY for levels 3-4
+                { word: 'BOOK', hint: 'Reading material' },
+                { word: 'GAME', hint: 'Fun activity' },
+                { word: 'PLAY', hint: 'Have fun' },
+                { word: 'WORK', hint: 'Job activity' },
+                { word: 'HOME', hint: 'Where you live' },
+                { word: 'ROOM', hint: 'House space' },
+                { word: 'DOOR', hint: 'Entry way' },
+                { word: 'WALL', hint: 'Room barrier' },
+                { word: 'ROOF', hint: 'House top' },
+                { word: 'TREE', hint: 'Tall plant' },
+                { word: 'LEAF', hint: 'Tree part' },
+                { word: 'BIRD', hint: 'Flying animal' },
+                { word: 'FISH', hint: 'Water animal' },
+                { word: 'BEAR', hint: 'Large animal' },
+                { word: 'WOLF', hint: 'Wild dog' },
+                { word: 'LION', hint: 'Big cat' },
+                { word: 'DUCK', hint: 'Water bird' },
+                { word: 'FROG', hint: 'Jumping amphibian' },
+                { word: 'SNOW', hint: 'Winter precipitation' },
+                { word: 'RAIN', hint: 'Water from sky' },
+                { word: 'WIND', hint: 'Moving air' },
+                { word: 'FIRE', hint: 'Hot flames' },
+                { word: 'COLD', hint: 'Low temperature' },
+                { word: 'WARM', hint: 'Cozy temperature' },
+                { word: 'COOL', hint: 'Slightly cold' },
+                { word: 'FOOD', hint: 'What you eat' },
+                { word: 'MEAL', hint: 'Eating time' },
+                { word: 'CAKE', hint: 'Birthday dessert' },
+                { word: 'MILK', hint: 'Dairy drink' },
+                { word: 'MEAT', hint: 'Animal protein' },
+                { word: 'RICE', hint: 'Grain food' },
+                { word: 'SOUP', hint: 'Liquid food' },
+                { word: 'SALT', hint: 'Flavor enhancer' },
+                { word: 'SHIP', hint: 'Large boat' },
+                { word: 'BOAT', hint: 'Water vehicle' },
+                { word: 'BIKE', hint: 'Two wheels' },
+                { word: 'ROAD', hint: 'Car path' },
+                { word: 'PATH', hint: 'Walking trail' },
+                { word: 'WALK', hint: 'Move on foot' },
+                { word: 'JUMP', hint: 'Leap up' },
+                { word: 'SWIM', hint: 'Water movement' },
+                { word: 'HIDE', hint: 'Stay unseen' },
+                { word: 'SEEK', hint: 'Try to find' },
+                { word: 'FIND', hint: 'Discover' },
+                { word: 'LOSE', hint: 'Misplace' },
+                { word: 'TAKE', hint: 'Grab hold' },
+                { word: 'GIVE', hint: 'Hand over' },
+                { word: 'MAKE', hint: 'Create' },
+                { word: 'DRAW', hint: 'Create art' },
+                { word: 'LOVE', hint: 'Deep affection' },
+                { word: 'HATE', hint: 'Strong dislike' },
+                { word: 'LIKE', hint: 'Enjoy' },
+                { word: 'HOPE', hint: 'Wish for' },
+                { word: 'FEAR', hint: 'Be afraid' },
+                { word: 'HELP', hint: 'Assist' },
+                { word: 'SAVE', hint: 'Rescue' },
+                { word: 'HURT', hint: 'Cause pain' },
+                { word: 'HEAL', hint: 'Make better' },
+                { word: 'GROW', hint: 'Get bigger' },
+                { word: 'FALL', hint: 'Drop down' },
+                { word: 'RISE', hint: 'Go up' },
+                { word: 'TURN', hint: 'Change direction' },
+                { word: 'STOP', hint: 'Cease movement' },
+                { word: 'MOVE', hint: 'Change position' },
+                { word: 'COME', hint: 'Approach' },
+                { word: 'OPEN', hint: 'Not closed' },
+                { word: 'SHUT', hint: 'Close tight' },
+                { word: 'LOCK', hint: 'Secure with key' },
+                { word: 'TELL', hint: 'Inform someone' },
+                { word: 'TALK', hint: 'Speak to' },
+                { word: 'CALL', hint: 'Shout to' },
+                { word: 'HEAR', hint: 'Detect sound' },
+                { word: 'SEEN', hint: 'Past viewing' },
+                { word: 'LOOK', hint: 'Direct gaze' },
+                { word: 'FEEL', hint: 'Touch or emotion' },
+                { word: 'KNOW', hint: 'Have knowledge' },
+                { word: 'SHOW', hint: 'Display' },
+                { word: 'KEEP', hint: 'Retain' },
+                { word: 'HOLD', hint: 'Grasp firmly' },
+                { word: 'PUSH', hint: 'Apply force' },
+                { word: 'PULL', hint: 'Draw toward' },
+                { word: 'LIFT', hint: 'Raise up' },
+                { word: 'DROP', hint: 'Let fall' },
+                { word: 'WAIT', hint: 'Stay patient' },
+                { word: 'RUSH', hint: 'Hurry quickly' },
+                { word: 'BUSY', hint: 'Very active' },
+                { word: 'FREE', hint: 'Not trapped' },
+                { word: 'SAFE', hint: 'Not dangerous' },
+                { word: 'SURE', hint: 'Certain' },
+                { word: 'TRUE', hint: 'Not false' },
+                { word: 'REAL', hint: 'Actually exists' },
+                { word: 'FAKE', hint: 'Not genuine' },
+                { word: 'GOOD', hint: 'Positive quality' },
+                { word: 'BEST', hint: 'Highest quality' },
+                { word: 'NICE', hint: 'Pleasant' },
+                { word: 'FINE', hint: 'Satisfactory' },
+                { word: 'CUTE', hint: 'Adorably small' },
+                { word: 'UGLY', hint: 'Not attractive' },
+                { word: 'RICH', hint: 'Wealthy' },
+                { word: 'POOR', hint: 'Lacking money' },
+                { word: 'FULL', hint: 'Completely filled' },
+                { word: 'HALF', hint: 'Fifty percent' },
+                { word: 'MANY', hint: 'Large number' },
+                { word: 'SOME', hint: 'A few' },
+                { word: 'NONE', hint: 'Not any' },
+                { word: 'EACH', hint: 'Every one' },
+                { word: 'BOTH', hint: 'The two' },
+                { word: 'MAIN', hint: 'Most important' },
+                { word: 'ONLY', hint: 'Exclusively' },
+                { word: 'MOST', hint: 'Greatest amount' },
+                { word: 'LAST', hint: 'Final one' },
+                { word: 'NEXT', hint: 'Following' },
+                { word: 'PAST', hint: 'Previous time' },
+                { word: 'BACK', hint: 'Return direction' },
+                { word: 'SIDE', hint: 'Edge area' },
+                { word: 'LEFT', hint: 'Opposite of right' },
+                { word: 'HIGH', hint: 'Great height' },
+                { word: 'LONG', hint: 'Extended length' },
+                { word: 'WIDE', hint: 'Great width' },
+                { word: 'DEEP', hint: 'Far down' },
+                { word: 'FAST', hint: 'High speed' },
+                { word: 'SLOW', hint: 'Low speed' },
+                { word: 'HARD', hint: 'Difficult' },
+                { word: 'EASY', hint: 'Simple' },
+                { word: 'SOFT', hint: 'Not hard' },
+                { word: 'LOUD', hint: 'High volume' },
+                { word: 'DARK', hint: 'No light' },
+                { word: 'BLUE', hint: 'Sky color' },
+                { word: 'GOLD', hint: 'Precious metal' },
+                { word: 'IRON', hint: 'Strong metal' },
+                { word: 'WOOD', hint: 'Tree material' },
+                { word: 'ROCK', hint: 'Hard stone' },
+                { word: 'SAND', hint: 'Beach particles' },
+                { word: 'DIRT', hint: 'Earth soil' }
+            ],
+            hard: [
+                // 5 letter words ONLY for levels 5-6
+                { word: 'MOUSE', hint: 'Small rodent' },
+                { word: 'SNAKE', hint: 'Legless reptile' },
+                { word: 'EAGLE', hint: 'Large bird' },
+                { word: 'WHALE', hint: 'Ocean mammal' },
+                { word: 'SHARK', hint: 'Ocean predator' },
+                { word: 'TIGER', hint: 'Striped cat' },
+                { word: 'LIONS', hint: 'Big cats' },
+                { word: 'BEARS', hint: 'Large mammals' },
+                { word: 'ZEBRA', hint: 'Striped horse' },
+                { word: 'CAMEL', hint: 'Desert animal' },
+                { word: 'PANDA', hint: 'Black and white bear' },
+                { word: 'KOALA', hint: 'Australian marsupial' },
+                { word: 'FRUIT', hint: 'Sweet produce' },
+                { word: 'APPLE', hint: 'Red fruit' },
+                { word: 'GRAPE', hint: 'Vine fruit' },
+                { word: 'LEMON', hint: 'Sour citrus' },
+                { word: 'PEACH', hint: 'Fuzzy fruit' },
+                { word: 'MANGO', hint: 'Tropical fruit' },
+                { word: 'MELON', hint: 'Large fruit' },
+                { word: 'BERRY', hint: 'Small fruit' },
+                { word: 'BREAD', hint: 'Baked staple' },
+                { word: 'PIZZA', hint: 'Italian dish' },
+                { word: 'PASTA', hint: 'Italian noodles' },
+                { word: 'SALAD', hint: 'Vegetable mix' },
+                { word: 'STEAK', hint: 'Beef cut' },
+                { word: 'BACON', hint: 'Pork strips' },
+                { word: 'CREAM', hint: 'Milk product' },
+                { word: 'SUGAR', hint: 'Sweet substance' },
+                { word: 'HONEY', hint: 'Bee product' },
+                { word: 'SPICE', hint: 'Flavor enhancer' },
+                { word: 'HERBS', hint: 'Cooking plants' },
+                { word: 'ONION', hint: 'Tear-inducing vegetable' },
+                { word: 'BEANS', hint: 'Pod vegetables' },
+                { word: 'GREEN', hint: 'Nature color' },
+                { word: 'BLACK', hint: 'Darkest color' },
+                { word: 'WHITE', hint: 'Lightest color' },
+                { word: 'BROWN', hint: 'Earth color' },
+                { word: 'GLASS', hint: 'Transparent material' },
+                { word: 'STONE', hint: 'Rock material' },
+                { word: 'BRICK', hint: 'Building block' },
+                { word: 'PAPER', hint: 'Writing material' },
+                { word: 'CLOTH', hint: 'Fabric material' },
+                { word: 'SHIRT', hint: 'Upper garment' },
+                { word: 'DRESS', hint: 'Female garment' },
+                { word: 'PANTS', hint: 'Leg covering' },
+                { word: 'JEANS', hint: 'Denim pants' },
+                { word: 'SKIRT', hint: 'Lower garment' },
+                { word: 'GLOVE', hint: 'Hand covering' },
+                { word: 'SCARF', hint: 'Neck wrap' },
+                { word: 'CROWN', hint: 'Royal headpiece' },
+                { word: 'JEWEL', hint: 'Precious stone' },
+                { word: 'PEARL', hint: 'Ocean gem' },
+                { word: 'CHAIN', hint: 'Linked metal' },
+                { word: 'WATCH', hint: 'Time device' },
+                { word: 'CLOCK', hint: 'Wall timepiece' },
+                { word: 'MONEY', hint: 'Currency' },
+                { word: 'COINS', hint: 'Metal money' },
+                { word: 'BILLS', hint: 'Paper money' },
+                { word: 'PRICE', hint: 'Cost amount' },
+                { word: 'VALUE', hint: 'Worth amount' },
+                { word: 'TRADE', hint: 'Exchange goods' },
+                { word: 'STORE', hint: 'Shopping place' },
+                { word: 'HOTEL', hint: 'Lodging place' },
+                { word: 'TOWER', hint: 'Tall structure' },
+                { word: 'SPACE', hint: 'Open area' },
+                { word: 'PLACE', hint: 'Location' },
+                { word: 'WORLD', hint: 'Planet Earth' },
+                { word: 'EARTH', hint: 'Our planet' },
+                { word: 'FIELD', hint: 'Open land' },
+                { word: 'BEACH', hint: 'Sandy shore' },
+                { word: 'COAST', hint: 'Land edge' },
+                { word: 'TODAY', hint: 'This day' },
+                { word: 'EARLY', hint: 'Before time' },
+                { word: 'LATER', hint: 'After time' },
+                { word: 'QUICK', hint: 'Fast speed' },
+                { word: 'RAPID', hint: 'Very fast' },
+                { word: 'SPEED', hint: 'Rate of motion' },
+                { word: 'FORCE', hint: 'Power push' },
+                { word: 'POWER', hint: 'Strong force' },
+                { word: 'BRAVE', hint: 'Courageous' },
+                { word: 'SORRY', hint: 'Regretful' },
+                { word: 'PROUD', hint: 'Self-satisfied' },
+                { word: 'SHAME', hint: 'Embarrassment' },
+                { word: 'GUILT', hint: 'Wrongdoing feeling' },
+                { word: 'PEACE', hint: 'Calm state' },
+                { word: 'QUIET', hint: 'No noise' },
+                { word: 'NOISE', hint: 'Loud sound' },
+                { word: 'SOUND', hint: 'Audio wave' },
+                { word: 'VOICE', hint: 'Speaking sound' },
+                { word: 'SHOUT', hint: 'Loud voice' },
+                { word: 'SPEAK', hint: 'Use words' },
+                { word: 'CAUSE', hint: 'Make happen' },
+                { word: 'BUILD', hint: 'Construct' },
+                { word: 'BREAK', hint: 'Damage' },
+                { word: 'CLEAN', hint: 'Remove dirt' },
+                { word: 'DIRTY', hint: 'Not clean' },
+                { word: 'EMPTY', hint: 'Nothing inside' },
+                { word: 'WHOLE', hint: 'Complete' },
+                { word: 'PIECE', hint: 'Part of whole' },
+                { word: 'SHARE', hint: 'Divide among' },
+                { word: 'UNITE', hint: 'Join together' },
+                { word: 'MATCH', hint: 'Go together' },
+                { word: 'EQUAL', hint: 'Same value' },
+                { word: 'TOTAL', hint: 'Sum amount' },
+                { word: 'LARGE', hint: 'Big size' },
+                { word: 'SMALL', hint: 'Little size' },
+                { word: 'GIANT', hint: 'Very large' },
+                { word: 'MUSIC', hint: 'Sound art' },
+                { word: 'DANCE', hint: 'Movement art' },
+                { word: 'MAGIC', hint: 'Mysterious power' },
+                { word: 'SMILE', hint: 'Happy expression' },
+                { word: 'LAUGH', hint: 'Joy sound' },
+                { word: 'TEARS', hint: 'Crying drops' },
+                { word: 'DREAM', hint: 'Sleep vision' },
+                { word: 'SLEEP', hint: 'Rest time' },
+                { word: 'AWAKE', hint: 'Not sleeping' },
+                { word: 'THINK', hint: 'Use mind' },
+                { word: 'LEARN', hint: 'Gain knowledge' },
+                { word: 'TEACH', hint: 'Share knowledge' },
+                { word: 'STUDY', hint: 'Learn activity' },
+                { word: 'WRITE', hint: 'Put words' },
+                { word: 'OCEAN', hint: 'Large sea' },
+                { word: 'RIVER', hint: 'Water stream' },
+                { word: 'MOUNT', hint: 'High hill' },
+                { word: 'CLOUD', hint: 'Sky water' },
+                { word: 'STORM', hint: 'Bad weather' },
+                { word: 'LIGHT', hint: 'Bright energy' },
+                { word: 'NIGHT', hint: 'Dark time' },
+                { word: 'PHONE', hint: 'Call device' },
+                { word: 'HOUSE', hint: 'Living place' },
+                { word: 'PLANT', hint: 'Growing life' },
+                { word: 'WATER', hint: 'Clear liquid' },
+                { word: 'FLAME', hint: 'Fire tongue' },
+                { word: 'SMOKE', hint: 'Fire cloud' },
+                { word: 'SWEET', hint: 'Sugar taste' },
+                { word: 'SALTY', hint: 'Salt taste' },
+                { word: 'FRESH', hint: 'New condition' },
+                { word: 'SHARP', hint: 'Cutting edge' },
+                { word: 'SMOOTH', hint: 'Even surface' },
+                { word: 'ROUGH', hint: 'Bumpy surface' },
+                { word: 'THICK', hint: 'Not thin' },
+                { word: 'HEAVY', hint: 'Much weight' },
+                { word: 'LIGHT', hint: 'Little weight' },
+                { word: 'SOLID', hint: 'Not liquid' },
+                { word: 'CLEAR', hint: 'See through' },
+                { word: 'YOUNG', hint: 'Not old' },
+                { word: 'OLDER', hint: 'More aged' },
+                { word: 'HAPPY', hint: 'Joyful feeling' },
+                { word: 'ANGRY', hint: 'Mad emotion' },
+                { word: 'FUNNY', hint: 'Makes laugh' },
+                { word: 'CRAZY', hint: 'Very wild' },
+                { word: 'SILLY', hint: 'Playfully foolish' },
+                { word: 'SMART', hint: 'Very clever' },
+                { word: 'LUCKY', hint: 'Good fortune' },
+                { word: 'READY', hint: 'Prepared state' },
+                { word: 'CHAIR', hint: 'Sitting furniture' },
+                { word: 'TABLE', hint: 'Flat furniture' },
+                { word: 'FLOOR', hint: 'Bottom surface' },
+                { word: 'WEIRD', hint: 'Strange odd' }
+            ],
+            expert: [
+                // 6 letter words ONLY for levels 7-8
+                { word: 'TOMATO', hint: 'Red vegetable' },
+                { word: 'POTATO', hint: 'Starchy tuber' },
+                { word: 'CARROT', hint: 'Orange root' },
+                { word: 'CHEESE', hint: 'Dairy product' },
+                { word: 'SILVER', hint: 'Metallic gray' },
+                { word: 'BRONZE', hint: 'Brown metal' },
+                { word: 'COPPER', hint: 'Red-brown metal' },
+                { word: 'BRIDGE', hint: 'Crossing structure' },
+                { word: 'CASTLE', hint: 'Fortress home' },
+                { word: 'PALACE', hint: 'Royal home' },
+                { word: 'GARAGE', hint: 'Car storage' },
+                { word: 'GARDEN', hint: 'Plant area' },
+                { word: 'STREET', hint: 'City road' },
+                { word: 'AVENUE', hint: 'Wide street' },
+                { word: 'SQUARE', hint: 'Open area' },
+                { word: 'CIRCLE', hint: 'Round shape' },
+                { word: 'SPHERE', hint: 'Ball shape' },
+                { word: 'FOREST', hint: 'Tree area' },
+                { word: 'JUNGLE', hint: 'Dense forest' },
+                { word: 'DESERT', hint: 'Dry land' },
+                { word: 'VALLEY', hint: 'Low land' },
+                { word: 'ISLAND', hint: 'Water-surrounded land' },
+                { word: 'SPRING', hint: 'Season or water source' },
+                { word: 'SUMMER', hint: 'Hot season' },
+                { word: 'WINTER', hint: 'Cold season' },
+                { word: 'AUTUMN', hint: 'Fall season' },
+                { word: 'SEASON', hint: 'Time of year' },
+                { word: 'MONDAY', hint: 'Week start' },
+                { word: 'FRIDAY', hint: 'Week end' },
+                { word: 'SUNDAY', hint: 'Weekend day' },
+                { word: 'MOMENT', hint: 'Brief time' },
+                { word: 'MINUTE', hint: '60 seconds' },
+                { word: 'SECOND', hint: 'Time unit' },
+                { word: 'FUTURE', hint: 'Time ahead' },
+                { word: 'MEMORY', hint: 'Past recall' },
+                { word: 'FORGET', hint: 'Lose memory' },
+                { word: 'AFRAID', hint: 'Feeling fear' },
+                { word: 'REASON', hint: 'Logic cause' },
+                { word: 'EFFECT', hint: 'Result outcome' },
+                { word: 'CHANGE', hint: 'Make different' },
+                { word: 'REMAIN', hint: 'Stay same' },
+                { word: 'BECOME', hint: 'Transform into' },
+                { word: 'CREATE', hint: 'Make new' },
+                { word: 'REPAIR', hint: 'Fix damage' },
+                { word: 'FILLED', hint: 'Full inside' },
+                { word: 'GATHER', hint: 'Bring together' },
+                { word: 'SPREAD', hint: 'Extend out' },
+                { word: 'DIVIDE', hint: 'Separate' },
+                { word: 'DIFFER', hint: 'Not same' },
+                { word: 'AMOUNT', hint: 'Quantity' },
+                { word: 'NUMBER', hint: 'Numeric value' },
+                { word: 'DOUBLE', hint: 'Times two' },
+                { word: 'TRIPLE', hint: 'Times three' },
+                { word: 'SINGLE', hint: 'Just one' },
+                { word: 'COUPLE', hint: 'Two together' },
+                { word: 'MEDIUM', hint: 'Middle size' },
+                { word: 'NORMAL', hint: 'Usual state' },
+                { word: 'FRIEND', hint: 'Close companion' },
+                { word: 'FAMILY', hint: 'Related group' },
+                { word: 'PARENT', hint: 'Mother or father' },
+                { word: 'MOTHER', hint: 'Female parent' },
+                { word: 'FATHER', hint: 'Male parent' },
+                { word: 'SISTER', hint: 'Female sibling' },
+                { word: 'COUSIN', hint: 'Family relation' },
+                { word: 'NEPHEW', hint: 'Sibling\'s son' },
+                { word: 'PERSON', hint: 'Human being' },
+                { word: 'PEOPLE', hint: 'Multiple persons' },
+                { word: 'SENIOR', hint: 'Older person' },
+                { word: 'JUNIOR', hint: 'Younger person' },
+                { word: 'SCHOOL', hint: 'Learning place' },
+                { word: 'PENCIL', hint: 'Writing tool' },
+                { word: 'ANSWER', hint: 'Reply response' },
+                { word: 'LISTEN', hint: 'Hear actively' },
+                { word: 'MARKET', hint: 'Trading place' },
+                { word: 'OFFICE', hint: 'Work place' },
+                { word: 'PRISON', hint: 'Jail building' },
+                { word: 'CHURCH', hint: 'Worship place' },
+                { word: 'TEMPLE', hint: 'Sacred building' },
+                { word: 'MOSQUE', hint: 'Islamic temple' },
+                { word: 'GROUND', hint: 'Earth surface' },
+                { word: 'WINDOW', hint: 'Glass opening' },
+                { word: 'MIRROR', hint: 'Reflection glass' },
+                { word: 'BOTTLE', hint: 'Container' },
+                { word: 'BUCKET', hint: 'Carrying container' },
+                { word: 'BASKET', hint: 'Woven container' },
+                { word: 'LADDER', hint: 'Climbing steps' },
+                { word: 'HAMMER', hint: 'Hitting tool' },
+                { word: 'NEEDLE', hint: 'Sewing tool' },
+                { word: 'THREAD', hint: 'Sewing string' },
+                { word: 'BUTTON', hint: 'Clothing fastener' },
+                { word: 'ZIPPER', hint: 'Sliding fastener' },
+                { word: 'POCKET', hint: 'Clothing storage' },
+                { word: 'SLEEVE', hint: 'Arm covering' },
+                { word: 'COLLAR', hint: 'Neck part' },
+                { word: 'FABRIC', hint: 'Cloth material' },
+                { word: 'COTTON', hint: 'Soft fiber' },
+                { word: 'VELVET', hint: 'Smooth fabric' },
+                { word: 'PURPLE', hint: 'Royal color' },
+                { word: 'YELLOW', hint: 'Sun color' },
+                { word: 'ORANGE', hint: 'Citrus color' },
+                { word: 'PLANET', hint: 'Space body' },
+                { word: 'GALAXY', hint: 'Star group' },
+                { word: 'TURRET', hint: 'Castle tower' },
+                { word: 'COMET', hint: 'Space ice ball' },
+                { word: 'METEOR', hint: 'Falling space rock' },
+                { word: 'NATURE', hint: 'Natural world' },
+                { word: 'ANIMAL', hint: 'Living creature' },
+                { word: 'INSECT', hint: 'Six-legged creature' },
+                { word: 'SPIDER', hint: 'Eight-legged creature' },
+                { word: 'TURTLE', hint: 'Shelled reptile' },
+                { word: 'LIZARD', hint: 'Scaly reptile' },
+                { word: 'RABBIT', hint: 'Hopping mammal' },
+                { word: 'RODENT', hint: 'Small mammal' },
+                { word: 'HAMSTER', hint: 'Small pet' },
+                { word: 'KITTEN', hint: 'Baby cat' },
+                { word: 'PUPPY', hint: 'Baby dog' },
+                { word: 'FLOWER', hint: 'Bloom plant' },
+                { word: 'PETALS', hint: 'Flower parts' },
+                { word: 'LEAVES', hint: 'Tree parts' },
+                { word: 'BRANCH', hint: 'Tree limb' },
+                { word: 'SHADOW', hint: 'Dark area' },
+                { word: 'BRIGHT', hint: 'Full of light' },
+                { word: 'CANDLE', hint: 'Wax light' },
+                { word: 'PUZZLE', hint: 'Brain teaser' },
+                { word: 'DRAGON', hint: 'Mythical creature' },
+                { word: 'KNIGHT', hint: 'Armored warrior' },
+                { word: 'SHIELD', hint: 'Protection device' },
+                { word: 'THRONE', hint: 'Royal seat' },
+                { word: 'WISDOM', hint: 'Deep knowledge' },
+                { word: 'SECRET', hint: 'Hidden information' },
+                { word: 'LEGEND', hint: 'Famous story' },
+                { word: 'HEROES', hint: 'Brave people' },
+                { word: 'VOYAGE', hint: 'Sea journey' },
+                { word: 'SAILOR', hint: 'Sea worker' },
+                { word: 'ANCHOR', hint: 'Ship stopper' },
+                { word: 'RESCUE', hint: 'Save someone' },
+                { word: 'ROCKET', hint: 'Space vehicle' },
+                { word: 'PIRATE', hint: 'Sea robber' },
+                { word: 'JEWELS', hint: 'Precious stones' },
+                { word: 'GOLDEN', hint: 'Made of gold' },
+                { word: 'TROPHY', hint: 'Prize award' },
+                { word: 'WINNER', hint: 'First place' },
+                { word: 'PLAYER', hint: 'Game participant' },
+                { word: 'SPORTS', hint: 'Athletic games' },
+                { word: 'SOCCER', hint: 'Football sport' },
+                { word: 'TENNIS', hint: 'Racket sport' },
+                { word: 'HOCKEY', hint: 'Ice sport' },
+                { word: 'BOXING', hint: 'Fighting sport' },
+                { word: 'RACING', hint: 'Speed competition' },
+                { word: 'FINISH', hint: 'Complete end' },
+                { word: 'STRIPE', hint: 'Colored band' }
+            ]
+        };
+        
+        // Load dictionary from shared source - DISABLED for better gameplay
+        async function loadDictionary() {
+            // DISABLED: Dictionary contains obscure words like ORT, ILK, etc. that make the game frustrating
+            // We only use our curated list of common, fun words
+            console.log('Dictionary loading disabled - using curated common words only');
+            dictionaryLoaded = false;
+            updateStatus('Ready with fun words!');
+            return false;
+            
+            /* Original dictionary code - kept for reference but NEVER USED
+            try {
+                console.log('Loading dictionary for Anagram Rush...');
+                const response = await fetch('https://webtoys.ai/public/toybox-dictionary');
+                const html = await response.text();
+                
+                // Extract dictionary from the HTML (handle HTML-encoded quotes)
+                const match = html.match(/window\.WEBTOYS_DICTIONARY = (\[.*?\]);/s);
+                const matchByLength = html.match(/window\.WEBTOYS_DICTIONARY_BY_LENGTH = ({.*?});/s);
+                
+                if (match && matchByLength) {
+                    // Decode HTML entities
+                    const jsonStr = match[1].replace(/&quot;/g, '"');
+                    const jsonStrByLength = matchByLength[1].replace(/&quot;/g, '"');
+                    
+                    fullDictionary = JSON.parse(jsonStr);
+                    wordsByLength = JSON.parse(jsonStrByLength);
+                    dictionaryLoaded = true;
+                    console.log(`Loaded ${fullDictionary.length} words from shared dictionary`);
+                    updateStatus(`Dictionary loaded: ${fullDictionary.length.toLocaleString()} words available!`);
+                    return true;
+                }
+            } catch (error) {
+                console.error('Failed to load dictionary:', error);
+            }
+            
+            // Fallback if loading fails
+            console.log('Using fallback word lists');
+            dictionaryLoaded = false;
+            updateStatus('Using basic word list');
+            return false;
+            */
+        }
+        
+        // Generate a hint for a word (always shows a letter position)
+        function generateHint(word) {
+            const len = word.length;
+            
+            // Always provide a letter position hint
+            const positions = ['First', 'Second', 'Third', 'Fourth', 'Fifth', 'Sixth', 'Seventh', 'Eighth', 'Ninth', 'Tenth'];
+            
+            // Pick a random position within the word length
+            const randomIndex = Math.floor(Math.random() * Math.min(len, positions.length));
+            const positionName = positions[randomIndex] || `Position ${randomIndex + 1}`;
+            const letter = word[randomIndex];
+            
+            return `${positionName} letter: ${letter}`;
+        }
+        
+        // Get word lists based on difficulty
+        function getWordList(difficulty) {
+            if (!dictionaryLoaded) {
+                return fallbackWordLists[difficulty] || fallbackWordLists.easy;
+            }
+            
+            // Use dictionary words based on length for difficulty
+            let words = [];
+            switch(difficulty) {
+                case 'easy':
+                    // 3 letter words only
+                    words = [...(wordsByLength[3] || [])];
+                    break;
+                case 'medium':
+                    // 5-6 letter words
+                    words = [...(wordsByLength[5] || []), ...(wordsByLength[6] || [])];
+                    break;
+                case 'hard':
+                    // 7-8 letter words
+                    words = [...(wordsByLength[7] || []), ...(wordsByLength[8] || [])];
+                    break;
+                case 'expert':
+                    // 9+ letter words
+                    words = [...(wordsByLength[9] || []), ...(wordsByLength[10] || [])];
+                    break;
+            }
+            
+            // Filter to common words (those without special characters)
+            words = words.filter(w => /^[a-z]+$/.test(w));
+            
+            // Shuffle array for variety
+            for (let i = words.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [words[i], words[j]] = [words[j], words[i]];
+            }
+            
+            // Convert to game format with generated hints - take up to 500 words per difficulty
+            return words.slice(0, 500).map(word => ({
+                word: word.toUpperCase(),
+                hint: generateHint(word.toUpperCase())
+            }));
+        }
+        
+        // Word lists will be populated after dictionary loads
+        let wordLists = fallbackWordLists;
+
+        // Game state
+        let gameState = {
+            isPlaying: false,
+            score: 0,
+            wordsComplete: 0,
+            currentLevel: 1,
+            currentWord: null,
+            currentScrambled: '',
+            streak: 0,
+            hintsUsed: 0,
+            hintUsedForCurrentWord: false,
+            startTime: null,
+            timeRemaining: 120, // 2 minutes in seconds
+            timerInterval: null,
+            usedWords: new Set() // Track used words to prevent repeats
+        };
+
+        // Auth state
+        let currentUser = null;
+
+        // Update status message
+        function updateStatus(text) {
+            console.log('Status:', text);
+            // You can add a status element to the UI if desired
+        }
+
+        // Initialize auth
+        function initAuth() {
+            // Load from localStorage first
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser && currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        updateAuthStatus();
+                    }
+                } catch (e) {
+                    console.error('Error loading saved user:', e);
+                }
+            }
+
+            // Listen for auth messages
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'TOYBOX_AUTH' && e.data.user) {
+                    currentUser = e.data.user;
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthStatus();
+                }
+            });
+
+            // Request auth from parent
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+
+        function updateAuthStatus() {
+            // Auth display removed for mobile optimization
+        }
+
+        // Scramble a word
+        function scrambleWord(word) {
+            const letters = word.split('');
+            for (let i = letters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [letters[i], letters[j]] = [letters[j], letters[i]];
+            }
+            // Make sure it's actually scrambled
+            const scrambled = letters.join('');
+            if (scrambled === word && word.length > 2) {
+                return scrambleWord(word);
+            }
+            return scrambled;
+        }
+
+        // Get word for current level
+        function getWordForLevel() {
+            let difficulty;
+            // New progression: 
+            // Levels 1-2: 3 letters
+            // Level 3: 4 letters
+            // Level 4: 4 letters  
+            // Level 5: 5 letters
+            // Level 6+: 6 letters
+            if (gameState.currentLevel <= 2) difficulty = 'easy';      // 3 letters
+            else if (gameState.currentLevel <= 4) difficulty = 'medium'; // 4 letters
+            else if (gameState.currentLevel === 5) difficulty = 'hard';  // 5 letters
+            else difficulty = 'expert';                                  // 6 letters
+
+            // Always use our curated fallback words for better gameplay
+            // Dictionary words include too many obscure entries like ORT, ILK, etc.
+            const words = fallbackWordLists[difficulty];
+            
+            // Find a word that hasn't been used yet
+            let availableWords = words.filter(w => !gameState.usedWords.has(w.word));
+            
+            // If we've used all words in this difficulty, reset the used words for this difficulty
+            if (availableWords.length === 0) {
+                console.log(`Resetting used words for ${difficulty} difficulty`);
+                // Clear only words from this difficulty level
+                const difficultyWords = new Set(words.map(w => w.word));
+                gameState.usedWords = new Set([...gameState.usedWords].filter(w => !difficultyWords.has(w)));
+                availableWords = words;
+            }
+            
+            // Select a random word from available words
+            const selectedWord = availableWords[Math.floor(Math.random() * availableWords.length)];
+            
+            // Add to used words
+            gameState.usedWords.add(selectedWord.word);
+            
+            return selectedWord;
+        }
+
+        // Update level display
+        function updateLevelDisplay() {
+            const levelIndicator = document.getElementById('levelIndicator');
+            let difficulty;
+            if (gameState.currentLevel <= 3) difficulty = 'Easy (3 letters)';
+            else if (gameState.currentLevel <= 6) difficulty = 'Medium (5 letters)';
+            else if (gameState.currentLevel <= 9) difficulty = 'Hard (6 letters)';
+            else difficulty = 'Expert (7-8 letters)';
+            
+            levelIndicator.textContent = `Level ${gameState.currentLevel} - ${difficulty}`;
+        }
+
+        // Start new game
+        function startGame() {
+            gameState = {
+                isPlaying: true,
+                score: 0,
+                wordsComplete: 0,
+                currentLevel: 1,
+                currentWord: null,
+                currentScrambled: '',
+                streak: 0,
+                hintsUsed: 0,
+                hintUsedForCurrentWord: false,
+                startTime: Date.now(),
+                timeRemaining: 120, // Reset to 2 minutes
+                timerInterval: null,
+                usedWords: new Set() // Reset used words for new game
+            };
+
+            // Update UI
+            document.getElementById('score').textContent = '0';
+            document.getElementById('wordsComplete').textContent = '0';
+            document.getElementById('timeElapsed').textContent = '2:00';
+            // Reset timer color
+            document.getElementById('timeElapsed').style.color = '';
+            document.getElementById('timeElapsed').style.fontWeight = '';
+            document.getElementById('wordInput').disabled = false;
+            document.getElementById('wordInput').value = '';
+            document.getElementById('hintBtn').disabled = false;
+            document.getElementById('skipBtn').disabled = false;
+            document.getElementById('startBtn').textContent = 'RESTART';
+            document.getElementById('message').innerHTML = '';
+            document.getElementById('hint').textContent = '';
+            
+            // Start timer
+            gameState.timerInterval = setInterval(updateTimer, 1000);
+            
+            // Load first word
+            nextWord();
+        }
+
+        // Update timer
+        function updateTimer() {
+            gameState.timeRemaining--;
+            
+            if (gameState.timeRemaining <= 0) {
+                // Time's up! End the game
+                endGame();
+                return;
+            }
+            
+            const minutes = Math.floor(gameState.timeRemaining / 60);
+            const seconds = gameState.timeRemaining % 60;
+            document.getElementById('timeElapsed').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            
+            // Add warning color when time is running out
+            if (gameState.timeRemaining <= 10) {
+                document.getElementById('timeElapsed').style.color = '#ff0000';
+                document.getElementById('timeElapsed').style.fontWeight = 'bold';
+            } else if (gameState.timeRemaining <= 30) {
+                document.getElementById('timeElapsed').style.color = '#ff6600';
+            }
+        }
+
+        // Load next word
+        function nextWord() {
+            gameState.currentWord = getWordForLevel();
+            gameState.currentScrambled = scrambleWord(gameState.currentWord.word);
+            gameState.hintUsedForCurrentWord = false; // Reset hint flag for new word
+            
+            document.getElementById('scrambledLetters').textContent = gameState.currentScrambled;
+            document.getElementById('hint').textContent = '';
+            document.getElementById('wordInput').value = '';
+            document.getElementById('wordInput').focus();
+            
+            updateLevelDisplay();
+        }
+
+        // Check answer
+        function checkAnswer() {
+            const input = document.getElementById('wordInput');
+            const answer = input.value.trim().toUpperCase();
+            
+            if (answer === gameState.currentWord.word) {
+                // Correct!
+                gameState.wordsComplete++;
+                gameState.streak++;
+                
+                // Calculate score based on whether hint was used
+                let points;
+                if (gameState.hintUsedForCurrentWord) {
+                    // If hint was used, they get exactly 100 points
+                    points = 100;
+                } else {
+                    // Normal scoring without hint
+                    points = gameState.currentWord.word.length * 100;
+                    // Speed bonus for answering quickly (more time remaining = more bonus)
+                    if (gameState.timeRemaining > 90) {
+                        points += 50; // Speed bonus for first 30 seconds
+                    }
+                    points += 100; // No hint bonus
+                }
+                
+                gameState.score += points;
+                
+                // Update UI
+                document.getElementById('score').textContent = gameState.score;
+                document.getElementById('wordsComplete').textContent = gameState.wordsComplete;
+                
+                // Show streak
+                if (gameState.streak >= 3) {
+                    const streakIndicator = document.getElementById('streakIndicator');
+                    streakIndicator.textContent = `🔥 Streak: ${gameState.streak}`;
+                    streakIndicator.classList.add('active');
+                }
+                
+                // Visual feedback
+                input.classList.add('correct');
+                setTimeout(() => input.classList.remove('correct'), 500);
+                
+                showMessage(`Correct! +${points} points!`, 'success');
+                
+                // Level up every 3 words
+                if (gameState.wordsComplete % 3 === 0) {
+                    gameState.currentLevel++;
+                    showMessage(`Level ${gameState.currentLevel} unlocked!`, 'success');
+                }
+                
+                // Next word
+                setTimeout(nextWord, 1000);
+            }
+        }
+
+        // Show hint
+        function showHint() {
+            // Mark that a hint was used for this word
+            gameState.hintUsedForCurrentWord = true;
+            document.getElementById('hint').textContent = `Hint: ${gameState.currentWord.hint}`;
+            gameState.hintsUsed++;
+            showMessage('Hint provided! You\'ll get 100 points if correct', 'success');
+        }
+
+        // Skip word
+        function skipWord() {
+            gameState.streak = 0;
+            document.getElementById('streakIndicator').classList.remove('active');
+            showMessage('Word skipped! Streak lost.', 'error');
+            nextWord();
+        }
+
+        // End game
+        function endGame() {
+            gameState.isPlaying = false;
+            clearInterval(gameState.timerInterval);
+            
+            document.getElementById('wordInput').disabled = true;
+            document.getElementById('hintBtn').disabled = true;
+            document.getElementById('skipBtn').disabled = true;
+            document.getElementById('startBtn').textContent = 'START GAME';
+            document.getElementById('scrambledLetters').textContent = 'TIME\'S UP!';
+            
+            // Reset timer color
+            document.getElementById('timeElapsed').style.color = '';
+            document.getElementById('timeElapsed').style.fontWeight = '';
+            
+            showMessage(`Game Over! Final Score: ${gameState.score} | Words Completed: ${gameState.wordsComplete} | Level Reached: ${gameState.currentLevel}`, 'success');
+            
+            if (gameState.score > 0) {
+                saveScore();
+            }
+        }
+
+        // Save score
+        async function saveScore() {
+            if (!currentUser || !currentUser.participantId) {
+                console.log('No user logged in, score not saved');
+                return;
+            }
+
+            const scoreData = {
+                handle: currentUser.handle,
+                score: gameState.score,
+                wordsComplete: gameState.wordsComplete,
+                level: gameState.currentLevel,
+                time: 120 - gameState.timeRemaining, // Time used
+                timestamp: new Date().toISOString()
+            };
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-anagram-rush',
+                        participant_id: currentUser.participantId,
+                        action_type: 'high_score',
+                        content_data: scoreData
+                    })
+                });
+
+                if (response.ok) {
+                    console.log('Score saved successfully');
+                    loadLeaderboard();
+                }
+            } catch (error) {
+                console.error('Error saving score:', error);
+            }
+        }
+
+        // Load leaderboard
+        async function loadLeaderboard() {
+            try {
+                const response = await fetch('/api/zad/load?app_id=toybox-anagram-rush&action_type=high_score');
+                const data = await response.json();
+                
+                // Process and sort scores
+                const scores = data.map(entry => ({
+                    handle: entry.content_data.handle || 'Anonymous',
+                    score: entry.content_data.score,
+                    wordsComplete: entry.content_data.wordsComplete,
+                    level: entry.content_data.level
+                }));
+
+                // Get top scores per player
+                const topScores = {};
+                scores.forEach(score => {
+                    if (!topScores[score.handle] || topScores[score.handle].score < score.score) {
+                        topScores[score.handle] = score;
+                    }
+                });
+
+                // Sort and get top 10
+                const sortedScores = Object.values(topScores)
+                    .sort((a, b) => b.score - a.score)
+                    .slice(0, 10);
+
+                displayLeaderboard(sortedScores);
+            } catch (error) {
+                console.error('Error loading leaderboard:', error);
+                document.getElementById('leaderboardList').innerHTML = '<p style="color: #999;">Failed to load leaderboard</p>';
+            }
+        }
+
+        // Display leaderboard
+        function displayLeaderboard(scores) {
+            const leaderboardList = document.getElementById('leaderboardList');
+            
+            if (scores.length === 0) {
+                leaderboardList.innerHTML = '<p style="color: #999;">No scores yet. Be the first!</p>';
+                return;
+            }
+
+            leaderboardList.innerHTML = scores.map((score, index) => `
+                <div class="leaderboard-entry">
+                    <span class="leaderboard-rank">#${index + 1}</span>
+                    <span class="leaderboard-name">${score.handle}</span>
+                    <span class="leaderboard-score">${score.score} pts (L${score.level})</span>
+                </div>
+            `).join('');
+        }
+
+        // Show message
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.className = `message ${type}`;
+            messageEl.textContent = text;
+            
+            setTimeout(() => {
+                messageEl.innerHTML = '';
+                messageEl.className = '';
+            }, 3000);
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('hintBtn').addEventListener('click', showHint);
+        document.getElementById('skipBtn').addEventListener('click', skipWord);
+        
+        document.getElementById('wordInput').addEventListener('input', (e) => {
+            if (gameState.isPlaying) {
+                checkAnswer();
+            }
+        });
+
+        // Initialize
+        initAuth();
+        loadLeaderboard();
+        
+        // Skip dictionary loading - use our curated word lists for better gameplay
+        // Dictionary has too many obscure words like ORT that make the game frustrating
+        console.log('Anagram Rush ready with curated word lists');
+        updateStatus('Ready to play!');
+        
+        // Refresh leaderboard periodically
+        setInterval(loadLeaderboard, 30000);
+    </script>
+</body>
+</html>

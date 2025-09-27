@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KWords</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'DM Sans', -apple-system, sans-serif;
+            background: linear-gradient(135deg, #ffeef8 0%, #ffe0f0 100%);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+        }
+
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 105, 180, 0.2);
+            display: flex;
+            flex-direction: column;
+            padding: 24px;
+            gap: 24px;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            background: linear-gradient(90deg, #ff69b4, #ff1493);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .new-btn {
+            padding: 14px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .new-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .new-btn:active {
+            transform: translateY(0);
+        }
+
+        .docs-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .doc-item {
+            padding: 12px 16px;
+            background: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .doc-item:hover {
+            transform: translateX(4px);
+            border-color: rgba(255, 105, 180, 0.3);
+        }
+
+        .doc-item.active {
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+        }
+
+        .doc-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .doc-preview {
+            font-size: 12px;
+            opacity: 0.7;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        .editor-header {
+            padding: 20px 32px;
+            border-bottom: 1px solid rgba(255, 105, 180, 0.1);
+        }
+
+        .title-input {
+            width: 100%;
+            font-size: 32px;
+            font-weight: 700;
+            border: none;
+            outline: none;
+            color: #2d3748;
+            background: transparent;
+        }
+
+        .title-input::placeholder {
+            color: #cbd5e0;
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 32px;
+            overflow-y: auto;
+        }
+
+        .editor {
+            width: 100%;
+            min-height: 100%;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #2d3748;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'DM Sans', -apple-system, sans-serif;
+        }
+
+        .editor::placeholder {
+            color: #cbd5e0;
+        }
+
+        .floating-save {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            padding: 12px 20px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 24px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s;
+            pointer-events: none;
+        }
+
+        .floating-save.show {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: all;
+        }
+
+        .floating-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(255, 105, 180, 0.4);
+        }
+
+        .word-count {
+            position: absolute;
+            bottom: 24px;
+            left: 32px;
+            font-size: 12px;
+            color: #a0aec0;
+            font-weight: 500;
+        }
+
+        .login-modal {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            text-align: center;
+            display: none;
+            z-index: 1000;
+        }
+
+        .login-modal.show {
+            display: block;
+        }
+
+        .login-modal h2 {
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #ff69b4, #ff1493);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .login-modal p {
+            color: #718096;
+            margin-bottom: 24px;
+        }
+
+        .login-modal button {
+            padding: 10px 24px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(4px);
+            display: none;
+            z-index: 999;
+        }
+
+        .overlay.show {
+            display: block;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 101;
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #ff69b4, #ff1493);
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .mobile-menu-btn:hover {
+            transform: scale(1.05);
+        }
+
+        .mobile-menu-btn:active {
+            transform: scale(0.95);
+        }
+
+        .mobile-menu-btn span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: white;
+            margin: 4px auto;
+            transition: all 0.3s;
+        }
+
+        .mobile-menu-btn.active span:nth-child(1) {
+            transform: rotate(45deg) translate(5px, 5px);
+        }
+
+        .mobile-menu-btn.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .mobile-menu-btn.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(5px, -5px);
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .sidebar {
+                width: 280px;
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                z-index: 100;
+                transform: translateX(-100%);
+                transition: transform 0.3s;
+                box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+            }
+            
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main {
+                margin-left: 0;
+                width: 100%;
+            }
+
+            .editor-header {
+                padding: 20px 20px 20px 70px;
+            }
+
+            .mobile-backdrop {
+                display: none;
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.3);
+                z-index: 99;
+            }
+
+            .mobile-backdrop.show {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="mobile-menu-btn" id="mobileMenuBtn" onclick="toggleMobileMenu()">
+        <span></span>
+        <span></span>
+        <span></span>
+    </button>
+
+    <div class="mobile-backdrop" id="mobileBackdrop" onclick="closeMobileMenu()"></div>
+
+    <div class="sidebar" id="sidebar">
+        <div>
+            <div class="logo">KWords ✨</div>
+        </div>
+        
+        <button class="new-btn" onclick="createNew()">
+            + New Document
+        </button>
+        
+        <div class="docs-list" id="docsList"></div>
+    </div>
+
+    <div class="main">
+        <div class="editor-header">
+            <input type="text" class="title-input" id="docTitle" placeholder="Untitled" />
+        </div>
+        
+        <div class="editor-container">
+            <textarea class="editor" id="editor" placeholder="Start writing..."></textarea>
+        </div>
+        
+        <div class="word-count" id="wordCount">0 words</div>
+        
+        <button class="floating-save" id="saveBtn" onclick="saveDoc()">
+            Save
+        </button>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="login-modal" id="loginModal">
+        <h2>Sign in to save</h2>
+        <p>Use the desktop login to save your documents</p>
+        <button onclick="closeLogin()">Got it</button>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let currentDocId = null;
+        let saveTimer = null;
+        let hasChanges = false;
+
+        // Auth setup
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    loadDocs();
+                }
+            }
+        });
+
+        // Document management
+        function createNew() {
+            currentDocId = 'doc_' + Date.now();
+            document.getElementById('docTitle').value = '';
+            document.getElementById('editor').value = '';
+            updateWordCount();
+            document.querySelectorAll('.doc-item').forEach(d => d.classList.remove('active'));
+            
+            // Close mobile menu after creating new document
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        }
+
+        async function saveDoc() {
+            if (!currentUser) {
+                showLogin();
+                return;
+            }
+
+            const title = document.getElementById('docTitle').value || 'Untitled';
+            const content = document.getElementById('editor').value;
+            
+            if (!currentDocId) {
+                currentDocId = 'doc_' + Date.now();
+            }
+
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            try {
+                await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'kwords',
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocId,
+                            title: title,
+                            content: content,
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                hasChanges = false;
+                document.getElementById('saveBtn').classList.remove('show');
+                loadDocs();
+            } catch (error) {
+                console.error('Save failed:', error);
+            }
+        }
+
+        async function loadDocs() {
+            if (!currentUser) return;
+            
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            try {
+                const response = await fetch(`/api/zad/load?app_id=kwords&action_type=document`);
+                const allDocs = await response.json();
+                
+                const userDocs = allDocs.filter(doc => 
+                    doc.participant_id === participantId
+                );
+                
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            updatedAt: docTime
+                        };
+                    }
+                });
+                
+                const docsList = document.getElementById('docsList');
+                docsList.innerHTML = '';
+                
+                Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+                    .forEach(doc => {
+                        const div = document.createElement('div');
+                        div.className = 'doc-item';
+                        if (doc.id === currentDocId) {
+                            div.classList.add('active');
+                        }
+                        
+                        const preview = doc.content.substring(0, 50).replace(/\n/g, ' ') || 'Empty document';
+                        div.innerHTML = `
+                            <div class="doc-title">${doc.title}</div>
+                            <div class="doc-preview">${preview}</div>
+                        `;
+                        
+                        div.onclick = () => loadDoc(doc, div);
+                        docsList.appendChild(div);
+                    });
+            } catch (error) {
+                console.error('Load failed:', error);
+            }
+        }
+
+        function loadDoc(doc, element) {
+            currentDocId = doc.id;
+            document.getElementById('docTitle').value = doc.title;
+            document.getElementById('editor').value = doc.content;
+            updateWordCount();
+            
+            document.querySelectorAll('.doc-item').forEach(d => d.classList.remove('active'));
+            element.classList.add('active');
+            
+            // Close mobile menu after selecting a document
+            if (window.innerWidth <= 768) {
+                closeMobileMenu();
+            }
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${words} words`;
+        }
+
+        function showLogin() {
+            document.getElementById('overlay').classList.add('show');
+            document.getElementById('loginModal').classList.add('show');
+        }
+
+        function closeLogin() {
+            document.getElementById('overlay').classList.remove('show');
+            document.getElementById('loginModal').classList.remove('show');
+        }
+
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const backdrop = document.getElementById('mobileBackdrop');
+            
+            if (sidebar.classList.contains('open')) {
+                closeMobileMenu();
+            } else {
+                sidebar.classList.add('open');
+                menuBtn.classList.add('active');
+                backdrop.classList.add('show');
+            }
+        }
+
+        function closeMobileMenu() {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('mobileMenuBtn');
+            const backdrop = document.getElementById('mobileBackdrop');
+            
+            sidebar.classList.remove('open');
+            menuBtn.classList.remove('active');
+            backdrop.classList.remove('show');
+        }
+
+        // Auto-save setup
+        function setupAutoSave() {
+            const editor = document.getElementById('editor');
+            const title = document.getElementById('docTitle');
+            
+            [editor, title].forEach(el => {
+                el.addEventListener('input', () => {
+                    hasChanges = true;
+                    updateWordCount();
+                    
+                    if (currentUser) {
+                        document.getElementById('saveBtn').classList.add('show');
+                        
+                        clearTimeout(saveTimer);
+                        saveTimer = setTimeout(() => {
+                            if (hasChanges) saveDoc();
+                        }, 2000);
+                    }
+                });
+            });
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                loadDocs();
+            }
+            setupAutoSave();
+            
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        });
+    </script>
+</body>
+</html>

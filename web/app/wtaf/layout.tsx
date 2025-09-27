@@ -32,5 +32,6 @@ export default function WtafLayout({
 }: {
 	children: React.ReactNode;
 }) {
-	return <div className="wtaf-container">{children}</div>;
+	// TEMP: Remove wtaf-container to test desktop navbar issue
+	return children;
 }

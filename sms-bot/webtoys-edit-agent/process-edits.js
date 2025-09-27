@@ -165,17 +165,28 @@ async function executeEdit(prompt, requestId) {
     // Use spawn instead of exec for better handling of large content
     const { spawn } = await import('child_process');
     const fsModule = await import('fs');
-    
+
     // Create a promise to handle the Claude process
     const runClaude = () => {
       return new Promise((resolve, reject) => {
         let stdout = '';
         let stderr = '';
-        
-        // Spawn Claude process
+
+        // CRITICAL: Pass clean environment to ensure Claude auth works
+        // Remove any ANTHROPIC_API_KEY that might conflict with subscription auth
+        const cleanEnv = { ...process.env };
+        delete cleanEnv.ANTHROPIC_API_KEY;
+
+        // Ensure HOME is set correctly for Claude to find auth files
+        cleanEnv.HOME = process.env.HOME || '/Users/bartdecrem';
+
+        // Spawn Claude process with clean environment
         console.log(`  ⚙️  Starting Claude with --print flag...`);
+        console.log(`  🏠 Using HOME=${cleanEnv.HOME} for auth`);
         const claude = spawn(CLAUDE_PATH, ['--print'], {
-          maxBuffer: 1024 * 1024 * 50, // 50MB
+          maxBuffer: 1024 * 1024 * 50, // 50MB,
+          env: cleanEnv,
+          shell: false
         });
         
         // Feed the prompt file content to Claude's stdin
@@ -284,13 +295,19 @@ async function executeEdit(prompt, requestId) {
     if (error.message.includes('timed out')) {
       console.log('  🔄 Retrying with simpler exec approach...');
       try {
+        // Create clean environment without ANTHROPIC_API_KEY
+        const cleanEnv = { ...process.env };
+        delete cleanEnv.ANTHROPIC_API_KEY;
+        cleanEnv.HOME = process.env.HOME || '/Users/bartdecrem';
+
         // Just use the file directly with Claude
         const { stdout, stderr } = await execAsync(
           `${CLAUDE_PATH} --print < "${promptFile}"`,
           {
             maxBuffer: 1024 * 1024 * 50, // 50MB
             timeout: 300000, // 5 minutes
-            shell: '/bin/bash'
+            shell: '/bin/bash',
+            env: cleanEnv
           }
         );
         

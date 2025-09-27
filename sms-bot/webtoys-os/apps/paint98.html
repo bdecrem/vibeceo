@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paint 98</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'MS Sans Serif', sans-serif;
+            background: #008080;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .paint-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+        }
+
+        .title-bar {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: white;
+            padding: 2px 4px;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            height: 20px;
+        }
+
+        .title-bar-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            background: linear-gradient(135deg, #ff0000, #ffff00, #00ff00, #0000ff);
+            border: 1px solid #000;
+        }
+
+        .menu-bar {
+            background: #c0c0c0;
+            border-bottom: 1px solid #808080;
+            padding: 2px 4px;
+            display: flex;
+            gap: 10px;
+            font-size: 11px;
+        }
+
+        .menu-item {
+            padding: 2px 8px;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+
+        .menu-item:hover {
+            border: 1px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+        }
+
+        .toolbar {
+            background: #c0c0c0;
+            padding: 4px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            border-bottom: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            flex-wrap: wrap;
+        }
+
+        .tool-button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            padding: 4px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 60px;
+            text-align: center;
+        }
+
+        .tool-button:active {
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+
+        .tool-button.active {
+            background: #dfdfdf;
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+
+        .color-palette {
+            display: flex;
+            gap: 2px;
+            padding: 4px;
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+        }
+
+        .color-swatch {
+            width: 20px;
+            height: 20px;
+            border: 1px solid #000;
+            cursor: pointer;
+        }
+
+        .color-swatch.active {
+            outline: 2px solid #ff0;
+            outline-offset: 2px;
+        }
+
+        .thickness-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 8px;
+        }
+
+        .thickness-control label {
+            font-size: 11px;
+        }
+
+        .thickness-slider {
+            width: 100px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #808080;
+            padding: 10px;
+            overflow: auto;
+        }
+
+        #canvas {
+            background: white;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            cursor: crosshair;
+            display: block;
+        }
+
+        .status-bar {
+            background: #c0c0c0;
+            border-top: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            padding: 2px 4px;
+            font-size: 11px;
+            display: flex;
+            gap: 20px;
+        }
+
+        .gallery-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+            z-index: 1000;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80vh;
+        }
+
+        .gallery-modal.show {
+            display: block;
+        }
+
+        .gallery-header {
+            background: linear-gradient(to right, #000080, #1084d0);
+            color: white;
+            padding: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-button {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            padding: 0 6px;
+            cursor: pointer;
+            font-weight: bold;
+            color: black;
+        }
+
+        .gallery-content {
+            padding: 10px;
+            max-height: 60vh;
+            overflow-y: auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+        }
+
+        .gallery-item {
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            padding: 4px;
+            cursor: pointer;
+            background: white;
+        }
+
+        .gallery-item img {
+            width: 100%;
+            height: 100px;
+            object-fit: contain;
+            background: white;
+        }
+
+        .gallery-item-info {
+            font-size: 10px;
+            margin-top: 4px;
+            text-align: center;
+            color: #000080;
+        }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.3);
+            z-index: 999;
+        }
+
+        .modal-overlay.show {
+            display: block;
+        }
+
+        .surprise-effects {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+        }
+
+        @keyframes rainbow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .rainbow-mode {
+            animation: rainbow 2s linear infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="paint-container">
+        <div class="title-bar">
+            <div class="title-bar-icon"></div>
+            Paint 98 - Untitled
+        </div>
+        
+        <div class="menu-bar">
+            <span class="menu-item">File</span>
+            <span class="menu-item">Edit</span>
+            <span class="menu-item">View</span>
+            <span class="menu-item">Image</span>
+            <span class="menu-item">Help</span>
+        </div>
+        
+        <div class="toolbar">
+            <button class="tool-button active" data-tool="brush">BRUSH</button>
+            <button class="tool-button" id="undo-btn">UNDO</button>
+            <button class="tool-button" id="clear-btn">CLEAR</button>
+            <button class="tool-button" id="save-btn">SAVE</button>
+            <button class="tool-button" id="gallery-btn">GALLERY</button>
+            <button class="tool-button" id="surprise-btn">🎉 SURPRISE!</button>
+            
+            <div class="thickness-control">
+                <label>Size:</label>
+                <input type="range" class="thickness-slider" id="thickness" min="1" max="20" value="3">
+                <span id="thickness-value">3</span>
+            </div>
+            
+            <div class="color-palette">
+                <div class="color-swatch active" style="background: #000000" data-color="#000000"></div>
+                <div class="color-swatch" style="background: #ffffff" data-color="#ffffff"></div>
+                <div class="color-swatch" style="background: #ff0000" data-color="#ff0000"></div>
+                <div class="color-swatch" style="background: #00ff00" data-color="#00ff00"></div>
+                <div class="color-swatch" style="background: #0000ff" data-color="#0000ff"></div>
+                <div class="color-swatch" style="background: #ffff00" data-color="#ffff00"></div>
+                <div class="color-swatch" style="background: #ff00ff" data-color="#ff00ff"></div>
+                <div class="color-swatch" style="background: #00ffff" data-color="#00ffff"></div>
+                <div class="color-swatch" style="background: #808080" data-color="#808080"></div>
+                <div class="color-swatch" style="background: #ff8000" data-color="#ff8000"></div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <canvas id="canvas" width="640" height="480"></canvas>
+        </div>
+        
+        <div class="status-bar">
+            <span>Ready</span>
+            <span id="coords">0, 0</span>
+            <span id="art-count">0 artworks in gallery</span>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal-overlay"></div>
+    <div class="gallery-modal" id="gallery-modal">
+        <div class="gallery-header">
+            <span>Gallery - Public Art Collection</span>
+            <button class="close-button" id="close-gallery">X</button>
+        </div>
+        <div class="gallery-content" id="gallery-content">
+            <!-- Gallery items will be loaded here -->
+        </div>
+    </div>
+
+    <script>
+        // Paint 98 Application
+        const APP_ID = 'paint98-public-gallery';
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let isDrawing = false;
+        let currentColor = '#000000';
+        let currentThickness = 3;
+        let history = [];
+        let historyStep = -1;
+        let surpriseMode = null;
+
+        // Initialize canvas
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Save initial blank state
+        saveState();
+
+        // Drawing functions
+        function startDrawing(e) {
+            isDrawing = true;
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            
+            // Apply surprise effects if active
+            if (surpriseMode === 'rainbow') {
+                currentColor = getRandomColor();
+            } else if (surpriseMode === 'glitter') {
+                drawGlitter(x, y);
+            }
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            // Update coordinates
+            document.getElementById('coords').textContent = `${Math.round(x)}, ${Math.round(y)}`;
+            
+            if (surpriseMode === 'spray') {
+                drawSpray(x, y);
+            } else if (surpriseMode === 'stars') {
+                drawStar(x, y);
+            } else {
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentThickness;
+                ctx.lineTo(x, y);
+                ctx.stroke();
+            }
+            
+            if (surpriseMode === 'rainbow') {
+                currentColor = getRandomColor();
+                updateColorUI();
+            }
+        }
+
+        function stopDrawing() {
+            if (isDrawing) {
+                isDrawing = false;
+                saveState();
+            }
+        }
+
+        // Special drawing effects
+        function drawGlitter(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const offsetX = (Math.random() - 0.5) * 20;
+                const offsetY = (Math.random() - 0.5) * 20;
+                const size = Math.random() * 3;
+                
+                ctx.fillStyle = getRandomColor();
+                ctx.beginPath();
+                ctx.arc(x + offsetX, y + offsetY, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawSpray(x, y) {
+            for (let i = 0; i < 20; i++) {
+                const offsetX = (Math.random() - 0.5) * currentThickness * 3;
+                const offsetY = (Math.random() - 0.5) * currentThickness * 3;
+                
+                ctx.fillStyle = currentColor;
+                ctx.beginPath();
+                ctx.arc(x + offsetX, y + offsetY, 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function drawStar(x, y) {
+            ctx.fillStyle = currentColor;
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const angle = (i * 4 * Math.PI) / 5 - Math.PI / 2;
+                const r = i % 2 === 0 ? currentThickness * 2 : currentThickness;
+                const px = x + Math.cos(angle) * r;
+                const py = y + Math.sin(angle) * r;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function getRandomColor() {
+            const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ff8000'];
+            return colors[Math.floor(Math.random() * colors.length)];
+        }
+
+        // History management
+        function saveState() {
+            historyStep++;
+            if (historyStep < history.length) {
+                history.length = historyStep;
+            }
+            history.push(canvas.toDataURL());
+            
+            // Limit history to 50 steps
+            if (history.length > 50) {
+                history.shift();
+                historyStep--;
+            }
+        }
+
+        function undo() {
+            if (historyStep > 0) {
+                historyStep--;
+                const img = new Image();
+                img.src = history[historyStep];
+                img.onload = function() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(img, 0, 0);
+                };
+            }
+        }
+
+        // Save to gallery
+        async function saveToGallery() {
+            const imageData = canvas.toDataURL('image/png');
+            const timestamp = new Date().toISOString();
+            
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: 'PUBLIC_GALLERY',
+                        action_type: 'save_artwork',
+                        content_data: {
+                            image: imageData,
+                            created_at: timestamp,
+                            artist: 'Anonymous'
+                        }
+                    })
+                });
+                
+                if (response.ok) {
+                    alert('Artwork saved to gallery!');
+                    loadGalleryCount();
+                }
+            } catch (error) {
+                console.error('Error saving artwork:', error);
+                alert('Failed to save artwork');
+            }
+        }
+
+        // Load gallery
+        async function loadGallery() {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=save_artwork`);
+                const artworks = await response.json();
+                
+                const galleryContent = document.getElementById('gallery-content');
+                galleryContent.innerHTML = '';
+                
+                if (!artworks || artworks.length === 0) {
+                    galleryContent.innerHTML = '<p style="text-align: center; color: #808080;">No artworks yet. Be the first to create!</p>';
+                    return;
+                }
+                
+                // Sort by newest first
+                artworks.sort((a, b) => new Date(b.content_data.created_at) - new Date(a.content_data.created_at));
+                
+                artworks.forEach((artwork, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'gallery-item';
+                    
+                    const img = document.createElement('img');
+                    img.src = artwork.content_data.image;
+                    img.alt = 'Artwork';
+                    
+                    const info = document.createElement('div');
+                    info.className = 'gallery-item-info';
+                    const date = new Date(artwork.content_data.created_at);
+                    info.textContent = date.toLocaleDateString();
+                    
+                    item.appendChild(img);
+                    item.appendChild(info);
+                    
+                    // Click to view full size
+                    item.addEventListener('click', () => {
+                        const newWindow = window.open('', '_blank');
+                        newWindow.document.write(`
+                            <html>
+                            <head><title>Paint 98 Artwork</title></head>
+                            <body style="margin: 0; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #333;">
+                                <img src="${artwork.content_data.image}" style="max-width: 100%; max-height: 100vh;">
+                            </body>
+                            </html>
+                        `);
+                    });
+                    
+                    galleryContent.appendChild(item);
+                });
+            } catch (error) {
+                console.error('Error loading gallery:', error);
+            }
+        }
+
+        async function loadGalleryCount() {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=save_artwork`);
+                const artworks = await response.json();
+                const count = artworks ? artworks.length : 0;
+                document.getElementById('art-count').textContent = `${count} artwork${count !== 1 ? 's' : ''} in gallery`;
+            } catch (error) {
+                console.error('Error loading gallery count:', error);
+            }
+        }
+
+        // Surprise effects
+        const surprises = ['rainbow', 'glitter', 'spray', 'stars', 'shake', 'mirror'];
+        
+        function activateSurprise() {
+            const surprise = surprises[Math.floor(Math.random() * surprises.length)];
+            
+            if (surprise === 'shake') {
+                canvas.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    canvas.style.animation = '';
+                }, 500);
+            } else if (surprise === 'mirror') {
+                // Flip canvas horizontally
+                ctx.save();
+                ctx.scale(-1, 1);
+                ctx.drawImage(canvas, -canvas.width, 0);
+                ctx.restore();
+                saveState();
+            } else {
+                // Drawing mode surprises
+                surpriseMode = surpriseMode === surprise ? null : surprise;
+                
+                if (surpriseMode) {
+                    document.getElementById('surprise-btn').style.background = '#ffff00';
+                    alert(`🎉 ${surprise.toUpperCase()} MODE ACTIVATED!`);
+                } else {
+                    document.getElementById('surprise-btn').style.background = '#c0c0c0';
+                }
+            }
+        }
+
+        // Event listeners
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        canvas.addEventListener('mouseout', stopDrawing);
+
+        // Touch support
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousedown', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const mouseEvent = new MouseEvent('mousemove', {
+                clientX: touch.clientX,
+                clientY: touch.clientY
+            });
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            const mouseEvent = new MouseEvent('mouseup', {});
+            canvas.dispatchEvent(mouseEvent);
+        });
+
+        // Color palette
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                document.querySelector('.color-swatch.active')?.classList.remove('active');
+                swatch.classList.add('active');
+                currentColor = swatch.dataset.color;
+            });
+        });
+
+        function updateColorUI() {
+            // Update active color swatch if color matches
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.classList.remove('active');
+                if (swatch.dataset.color === currentColor) {
+                    swatch.classList.add('active');
+                }
+            });
+        }
+
+        // Thickness slider
+        document.getElementById('thickness').addEventListener('input', (e) => {
+            currentThickness = e.target.value;
+            document.getElementById('thickness-value').textContent = currentThickness;
+        });
+
+        // Buttons
+        document.getElementById('undo-btn').addEventListener('click', undo);
+
+        document.getElementById('clear-btn').addEventListener('click', () => {
+            if (confirm('Clear the canvas?')) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                saveState();
+            }
+        });
+
+        document.getElementById('save-btn').addEventListener('click', saveToGallery);
+
+        document.getElementById('gallery-btn').addEventListener('click', () => {
+            loadGallery();
+            document.getElementById('modal-overlay').classList.add('show');
+            document.getElementById('gallery-modal').classList.add('show');
+        });
+
+        document.getElementById('surprise-btn').addEventListener('click', activateSurprise);
+
+        // Gallery modal
+        document.getElementById('close-gallery').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.remove('show');
+            document.getElementById('gallery-modal').classList.remove('show');
+        });
+
+        document.getElementById('modal-overlay').addEventListener('click', () => {
+            document.getElementById('modal-overlay').classList.remove('show');
+            document.getElementById('gallery-modal').classList.remove('show');
+        });
+
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+                20%, 40%, 60%, 80% { transform: translateX(5px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Load initial gallery count
+        loadGalleryCount();
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'z') {
+                e.preventDefault();
+                undo();
+            } else if (e.ctrlKey && e.key === 's') {
+                e.preventDefault();
+                saveToGallery();
+            }
+        });
+    </script>
+</body>
+</html>

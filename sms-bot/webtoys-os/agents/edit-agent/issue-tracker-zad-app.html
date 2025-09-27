@@ -2600,8 +2600,8 @@
         async function reopenIssue(issueId) {
             await performSuperpowerAction(issueId, 'updateField', { 
                 field: 'status', 
-                value: 'new' 
-            }, 'Issue reopened');
+                value: 'admin_discussion' 
+            }, 'Issue reopened for discussion');
         }
         
         async function deleteIssue(issueId) {

@@ -34,6 +34,22 @@ export async function POST(request: NextRequest) {
                 contentData[field] = value;
                 contentData.superpower_updated_at = new Date().toISOString();
                 contentData.superpower_updated_by = 'admin';
+                
+                // If reopening to admin_discussion, trigger conversation
+                if (field === 'status' && value === 'admin_discussion') {
+                    contentData.trigger_conversation = true;
+                    contentData.conversation_triggered_at = new Date().toISOString();
+                    
+                    // Add system comment noting the reopen without comment
+                    const comments = contentData.admin_comments || [];
+                    comments.push({
+                        text: 'Issue reopened for further discussion',
+                        author: 'System',
+                        authorRole: 'SYSTEM',
+                        timestamp: new Date().toISOString()
+                    });
+                    contentData.admin_comments = comments;
+                }
                 break;
                 
             case 'addComment':

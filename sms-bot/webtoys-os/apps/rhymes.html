@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="window:rhymes" content="width=900,height=650,resizable=true">
+    <title>RHYMES - Poetry & Rhyme Helper</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Georgia', serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            min-height: 50px;
+        }
+
+        .title {
+            font-size: 20px;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .title .icon {
+            font-size: 24px;
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-3px); }
+        }
+
+        .toolbar {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn {
+            background: white;
+            color: #764ba2;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            font-family: inherit;
+            font-size: 14px;
+            min-height: 36px;
+        }
+
+        .btn:hover, .btn:active {
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .main-container {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .editor-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 10px;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .document-title {
+            padding: 12px;
+            background: rgba(240, 147, 251, 0.2);
+            border-bottom: 2px solid rgba(240, 147, 251, 0.3);
+        }
+
+        .document-title input {
+            width: 100%;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            background: transparent;
+            color: #764ba2;
+            outline: none;
+            font-family: inherit;
+        }
+
+        #editor {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            line-height: 1.8;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'Georgia', serif;
+            color: #333;
+            background: transparent;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .rhyme-panel {
+            background: rgba(255, 255, 255, 0.95);
+            margin: 0 10px 10px 10px;
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .rhyme-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .rhyme-input {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid rgba(250, 112, 154, 0.3);
+            border-radius: 10px;
+            outline: none;
+            font-family: inherit;
+        }
+
+        .rhyme-input:focus {
+            border-color: #fa709a;
+            box-shadow: 0 0 10px rgba(250, 112, 154, 0.2);
+        }
+
+        .find-btn {
+            background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .find-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .find-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .rhyme-results {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            min-height: 60px;
+        }
+
+        .rhyme-word {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 8px 14px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            white-space: nowrap;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .rhyme-word:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .rhyme-word:active {
+            transform: scale(0.95);
+        }
+
+        .loading-message {
+            color: #fa709a;
+            font-style: italic;
+            padding: 10px;
+            text-align: center;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .word-count {
+            font-weight: bold;
+            color: #764ba2;
+        }
+
+        .save-status {
+            color: #4CAF50;
+            font-style: italic;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 20px;
+        }
+
+        .file-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .file-item {
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .file-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        }
+
+        .file-date {
+            font-size: 11px;
+            opacity: 0.8;
+            margin-top: 4px;
+        }
+
+        .close-modal {
+            margin-top: 20px;
+            width: 100%;
+        }
+
+        /* Desktop styles */
+        @media (min-width: 768px) {
+            .main-container {
+                flex-direction: row;
+            }
+
+            .editor-panel {
+                flex: 1;
+                margin: 20px;
+                margin-right: 10px;
+            }
+
+            .rhyme-panel {
+                width: 350px;
+                margin: 20px;
+                margin-left: 10px;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .rhyme-input-group {
+                flex-direction: column;
+            }
+
+            .rhyme-results {
+                flex: 1;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">
+            <span class="icon">✨</span>
+            <span>RHYMES</span>
+        </div>
+        <div class="toolbar">
+            <button class="btn" onclick="newDocument()">📝 New</button>
+            <button class="btn" onclick="openDocument()">📂 Open</button>
+            <button class="btn" onclick="saveDocument()">💾 Save</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="editor-panel">
+            <div class="document-title">
+                <input type="text" id="docTitle" placeholder="Untitled Poem..." value="Untitled Poem">
+            </div>
+            <textarea id="editor" placeholder="Write your poetry here..."></textarea>
+        </div>
+
+        <div class="rhyme-panel">
+            <div class="rhyme-input-group">
+                <input type="text" class="rhyme-input" id="rhymeInput" placeholder="Enter a word to find rhymes...">
+                <button class="find-btn" id="findBtn" onclick="findRhymes()">Find Rhymes</button>
+            </div>
+            <div class="rhyme-results" id="rhymeResults">
+                <div style="color: #999; width: 100%; text-align: center;">
+                    Enter a word above and click "Find Rhymes"
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="word-count">
+            <span id="wordCount">0</span> words
+        </div>
+        <div class="save-status" id="saveStatus">Ready</div>
+    </div>
+
+    <!-- File browser modal -->
+    <div class="modal" id="fileModal">
+        <div class="modal-content">
+            <div class="modal-header">📚 Your Saved Poems</div>
+            <div class="file-list" id="fileList"></div>
+            <button class="btn close-modal" onclick="closeModal()">Cancel</button>
+        </div>
+    </div>
+
+    <script>
+        // App configuration
+        window.APP_ID = 'rhymes-editor';
+        let currentUser = null;
+        let currentDocId = null;
+        let autoSaveTimer = null;
+        let unsavedChanges = false;
+
+        // Helper functions
+        function getAppId() {
+            return window.APP_ID || 'rhymes-editor';
+        }
+
+        function getParticipantId() {
+            if (!currentUser) return 'anonymous';
+            // Use the UPPERCASE_HANDLE_PIN format consistently
+            const handle = (currentUser.handle || 'anonymous').toUpperCase();
+            const pin = currentUser.pin || '0000';
+            return `${handle}_${pin}`;
+        }
+
+        function getUsername() {
+            return currentUser?.handle?.toUpperCase() || 'anonymous';
+        }
+
+        // ZAD helper functions
+        async function save(dataType, data) {
+            try {
+                const app_id = getAppId();
+                const participant_id = getParticipantId();
+                const username = getUsername();
+                
+                console.log('🔄 Saving to ZAD API:', { dataType, participant_id, username });
+                
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: app_id,
+                        participant_id: participant_id,
+                        participant_data: { userLabel: username, username: username },
+                        action_type: dataType,
+                        content_data: {
+                            ...data,
+                            timestamp: data.timestamp || Date.now(),
+                            author: data.author || username
+                        }
+                    })
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Save failed: ${errorData.error || response.statusText}`);
+                }
+                
+                const result = await response.json();
+                console.log('✅ Saved successfully:', result);
+                return true;
+            } catch (error) {
+                console.error('❌ Save error:', error);
+                return false;
+            }
+        }
+
+        async function load(dataType) {
+            try {
+                const app_id = getAppId();
+                
+                console.log('🔄 Loading from ZAD API:', { app_id, dataType });
+                
+                const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(dataType)}`;
+                const response = await fetch(url);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Load failed: ${errorData.error || response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('✅ Loaded successfully:', data);
+                
+                // Transform ZAD data - properties are flattened, not nested in content_data
+                return data.map(item => ({
+                    id: item.id,
+                    ...item.content_data, // ZAD API returns content_data as separate property
+                    author: item.content_data.author || item.participant_data?.username || item.participant_data?.userLabel || 'Unknown',
+                    created_at: item.created_at,
+                    participant_id: item.participant_id // Keep for filtering
+                }));
+                
+            } catch (error) {
+                console.error('❌ Load error:', error);
+                return [];
+            }
+        }
+
+        // CRITICAL: Correct generateText implementation based on working example
+        async function generateText(prompt, options = {}) {
+            try {
+                const app_id = getAppId();
+                const participant_id = getParticipantId();
+                const username = getUsername();
+
+                console.log('🤖 Calling generateText for:', prompt);
+
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: app_id,
+                        participant_id: participant_id,
+                        participant_data: { userLabel: username, username: username },
+                        action_type: 'generate_text',
+                        content_data: { 
+                            prompt: prompt,
+                            maxTokens: options.maxTokens || 150,
+                            temperature: options.temperature || 0.7,
+                            systemPrompt: options.systemPrompt || 'You are a helpful assistant.',
+                            username: username
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Text generation failed: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+                console.log('✅ generateText result:', result);
+
+                // CRITICAL: The response is in result.text, not result.data!
+                return result.text || '';
+
+            } catch (error) {
+                console.error('❌ GenerateText error:', error);
+                return '';
+            }
+        }
+
+        // Load auth from localStorage
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    return true;
+                } catch (e) {
+                    console.error('Failed to parse saved user:', e);
+                }
+            }
+            return false;
+        }
+
+        // Listen for authentication
+        window.addEventListener('message', function(event) {
+            console.log('📨 Received message:', event.data);
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                console.log('🔐 Received auth data:', event.data.user);
+                currentUser = event.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                console.log('✅ Current user set:', currentUser);
+                updateUI();
+            }
+        });
+
+        // Request authentication on load
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+
+        function updateUI() {
+            const username = getUsername();
+            console.log('🔄 Updating UI with username:', username);
+            if (username === 'anonymous') {
+                document.getElementById('saveStatus').textContent = 'Not logged in';
+            } else {
+                document.getElementById('saveStatus').textContent = `@${username}`;
+            }
+        }
+
+        // Find rhymes - main function
+        async function findRhymes() {
+            const input = document.getElementById('rhymeInput');
+            const word = input.value.trim();
+            
+            if (!word) {
+                alert('Please enter a word to find rhymes!');
+                return;
+            }
+
+            const btn = document.getElementById('findBtn');
+            const resultsDiv = document.getElementById('rhymeResults');
+            
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.textContent = 'Finding...';
+            resultsDiv.innerHTML = '<div class="loading-message">Finding rhymes for "' + word + '"...</div>';
+
+            try {
+                // Call AI to get rhymes
+                const rhymes = await generateText(`Find rhyming words for: ${word}`, {
+                    systemPrompt: 'You are a rhyming dictionary. Return ONLY a comma-separated list of words that rhyme with the given word. Include perfect rhymes and near rhymes. No explanations or other text.',
+                    maxTokens: 150,
+                    temperature: 0.7
+                });
+
+                if (rhymes) {
+                    // Parse the comma-separated response
+                    const rhymeList = rhymes.split(',')
+                        .map(w => w.trim())
+                        .filter(w => w && w.length > 0 && w.toLowerCase() !== word.toLowerCase())
+                        .slice(0, 20); // Limit to 20 rhymes
+
+                    if (rhymeList.length > 0) {
+                        resultsDiv.innerHTML = rhymeList.map(rhyme => 
+                            `<div class="rhyme-word" onclick="insertWord('${rhyme}')">${rhyme}</div>`
+                        ).join('');
+                    } else {
+                        resultsDiv.innerHTML = '<div style="color: #999; width: 100%; text-align: center;">No rhymes found. Try another word!</div>';
+                    }
+                } else {
+                    resultsDiv.innerHTML = '<div style="color: #999; width: 100%; text-align: center;">Could not find rhymes. Please try again.</div>';
+                }
+            } catch (error) {
+                console.error('Error finding rhymes:', error);
+                resultsDiv.innerHTML = '<div style="color: #f44; width: 100%; text-align: center;">Error finding rhymes. Please try again.</div>';
+            }
+
+            // Re-enable button
+            btn.disabled = false;
+            btn.textContent = 'Find Rhymes';
+        }
+
+        // Handle Enter key in rhyme input and title changes
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('rhymeInput').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    findRhymes();
+                }
+            });
+            
+            // Track title changes
+            document.getElementById('docTitle').addEventListener('input', function() {
+                unsavedChanges = true;
+                const username = getUsername();
+                if (username !== 'anonymous') {
+                    document.getElementById('saveStatus').textContent = `@${username} - Modified`;
+                }
+            });
+
+            // Load auth and initialize
+            loadAuthFromStorage();
+            updateUI();
+            updateWordCount();
+        });
+
+        // Insert word at cursor
+        function insertWord(word) {
+            const editor = document.getElementById('editor');
+            const start = editor.selectionStart;
+            const end = editor.selectionEnd;
+            const text = editor.value;
+            
+            // Add space before if needed
+            const prefix = start > 0 && text[start-1] !== ' ' && text[start-1] !== '\n' ? ' ' : '';
+            const insertText = prefix + word;
+            
+            editor.value = text.substring(0, start) + insertText + text.substring(end);
+            editor.selectionStart = editor.selectionEnd = start + insertText.length;
+            editor.focus();
+            updateWordCount();
+        }
+
+        // Handle editor input
+        document.getElementById('editor').addEventListener('input', function() {
+            unsavedChanges = true;
+            updateWordCount();
+            
+            // Update status to show changes
+            const username = getUsername();
+            if (username !== 'anonymous') {
+                document.getElementById('saveStatus').textContent = `@${username} - Modified`;
+            }
+            
+            // Auto-save
+            clearTimeout(autoSaveTimer);
+            if (currentDocId && currentUser) {
+                autoSaveTimer = setTimeout(() => {
+                    saveDocument(true);
+                }, 3000);
+            }
+        });
+
+        // Update word count
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim().split(/\s+/).filter(w => w.length > 0);
+            document.getElementById('wordCount').textContent = words.length || 0;
+        }
+
+        // New document
+        function newDocument() {
+            if (unsavedChanges && !confirm('Create new? Unsaved changes will be lost.')) {
+                return;
+            }
+            
+            currentDocId = null;
+            unsavedChanges = false;
+            document.getElementById('docTitle').value = 'Untitled Poem';
+            document.getElementById('editor').value = '';
+            document.getElementById('rhymeInput').value = '';
+            document.getElementById('rhymeResults').innerHTML = '<div style="color: #999; width: 100%; text-align: center;">Enter a word above and click "Find Rhymes"</div>';
+            updateWordCount();
+            document.getElementById('saveStatus').textContent = currentUser ? `@${getUsername()}` : 'Not logged in';
+        }
+
+        // Save document
+        async function saveDocument(isAutoSave = false) {
+            if (!currentUser) {
+                if (!isAutoSave) alert('Please log in to save documents');
+                return;
+            }
+            
+            const title = document.getElementById('docTitle').value || 'Untitled Poem';
+            const content = document.getElementById('editor').value;
+            
+            if (!content.trim()) {
+                if (!isAutoSave) alert('Nothing to save!');
+                return;
+            }
+            
+            const docData = {
+                id: currentDocId || Date.now().toString(),
+                title: title,
+                content: content,
+                author: getUsername(),
+                updatedAt: new Date().toISOString()
+            };
+            
+            // Set currentDocId if it's a new document
+            if (!currentDocId) {
+                currentDocId = docData.id;
+            }
+            
+            const success = await save('poem_document', docData);
+            
+            if (success) {
+                unsavedChanges = false; // Clear unsaved flag after successful save
+                const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                document.getElementById('saveStatus').textContent = isAutoSave ? `Auto ${time}` : `Saved ${time}`;
+            } else {
+                document.getElementById('saveStatus').textContent = 'Save failed';
+            }
+        }
+
+        // Open document
+        async function openDocument() {
+            if (!currentUser) {
+                alert('Please log in to open documents');
+                return;
+            }
+
+            const modal = document.getElementById('fileModal');
+            const fileList = document.getElementById('fileList');
+            
+            fileList.innerHTML = '<div style="text-align: center; color: #999;">Loading...</div>';
+            modal.classList.add('active');
+            
+            const allDocs = await load('poem_document');
+            console.log('Loaded docs:', allDocs); // Debug log
+            
+            const participantId = getParticipantId();
+            console.log('Looking for docs by participant:', participantId);
+            
+            // Filter documents by current user's participant_id
+            const userDocs = allDocs.filter(doc => {
+                console.log('Doc participant_id:', doc.participant_id, 'Current:', participantId);
+                return doc.participant_id === participantId;
+            });
+            
+            console.log('Found user docs:', userDocs.length);
+            
+            if (userDocs.length === 0) {
+                fileList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No saved poems yet!</div>';
+            } else {
+                // Deduplicate by document ID - ZAD is append-only so we need latest version by timestamp
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id;
+                    // Use timestamp for deduplication (ZAD might have multiple versions)
+                    const docTimestamp = doc.updatedAt ? new Date(doc.updatedAt).getTime() : 0;
+                    
+                    if (!uniqueDocs[docId] || 
+                        (uniqueDocs[docId].timestamp < docTimestamp)) {
+                        uniqueDocs[docId] = { ...doc, timestamp: docTimestamp };
+                    }
+                });
+                
+                // Sort by date and create file list
+                const sortedDocs = Object.values(uniqueDocs)
+                    .filter(doc => doc.title && doc.id) // Ensure we have required fields
+                    .sort((a, b) => b.timestamp - a.timestamp); // Most recent first
+                
+                if (sortedDocs.length === 0) {
+                    fileList.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No saved poems yet!</div>';
+                } else {
+                    fileList.innerHTML = sortedDocs.map(doc => {
+                        const dateStr = doc.updatedAt 
+                            ? new Date(doc.updatedAt).toLocaleDateString() 
+                            : 'Unknown date';
+                        return `
+                            <div class="file-item" onclick="loadDocument('${doc.id}')">
+                                <div>${doc.title || 'Untitled'}</div>
+                                <div class="file-date">${dateStr}</div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            }
+        }
+
+        // Load document
+        async function loadDocument(docId) {
+            const allDocs = await load('poem_document');
+            const participantId = getParticipantId();
+            
+            console.log('Loading document:', docId, 'for participant:', participantId);
+            
+            // Filter for user's docs
+            const userDocs = allDocs.filter(d => d.participant_id === participantId);
+            
+            // Get all versions of this document and pick the latest by timestamp
+            const docVersions = userDocs.filter(d => d.id === docId);
+            
+            if (docVersions.length === 0) {
+                alert('Document not found');
+                return;
+            }
+            
+            // Sort by updatedAt timestamp to get latest version (ZAD is append-only)
+            const doc = docVersions.sort((a, b) => {
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return dateB - dateA;
+            })[0];
+            
+            if (doc) {
+                currentDocId = doc.id;
+                document.getElementById('docTitle').value = doc.title || 'Untitled Poem';
+                document.getElementById('editor').value = doc.content || '';
+                updateWordCount();
+                document.getElementById('saveStatus').textContent = 'Loaded';
+                unsavedChanges = false; // Clear unsaved flag when loading
+                closeModal();
+                console.log('Document loaded successfully:', doc.title);
+            }
+        }
+
+        // Close modal
+        function closeModal() {
+            document.getElementById('fileModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
