@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sudoku</title>
+    <!-- Window settings for WebtoysOS desktop -->
+    <meta name="window:sudoku" content="width=520,height=750,resizable=false">
     <style>
         * {
             margin: 0;
@@ -12,31 +14,102 @@
         }
         
         body {
-            font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Comic Sans MS', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 25%, #66D9EF 50%, #C594FF 75%, #FF6B9D 100%);
+            background-size: 400% 400%;
+            animation: rainbowShift 10s ease infinite;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             min-height: 100vh;
-            padding: 20px;
+            padding: 10px;
+        }
+        
+        @keyframes rainbowShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
         .app-container {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+            border-radius: 30px;
+            padding: 20px;
+            box-shadow: 0 25px 70px rgba(255, 105, 180, 0.4),
+                        0 10px 30px rgba(255, 215, 0, 0.3),
+                        inset 0 2px 10px rgba(255, 255, 255, 0.8);
+            max-width: 500px;
             width: 100%;
+            margin: 0 auto;
+            border: 3px solid transparent;
+            background-clip: padding-box;
+            position: relative;
+        }
+        
+        .app-container::before {
+            content: '';
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860, #66D9EF, #C594FF, #FF6B9D);
+            border-radius: 30px;
+            z-index: -1;
+            animation: borderGlow 3s ease infinite;
+        }
+        
+        @keyframes borderGlow {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
         }
 
+        .game-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            position: relative;
+            width: 100%;
+        }
+        
         h1 {
             text-align: center;
-            color: #764ba2;
-            margin-bottom: 20px;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860, #66D9EF, #C594FF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            font-size: 3em;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(255, 105, 180, 0.2);
+            animation: textPulse 2s ease infinite;
+            flex: 1;
+        }
+        
+        @keyframes textPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .leaderboard-icon {
             font-size: 2.5em;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: trophyFloat 3s ease infinite;
+            filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.4));
+            flex-shrink: 0;
+        }
+        
+        .leaderboard-icon:hover {
+            transform: scale(1.2) rotate(15deg);
+            filter: drop-shadow(0 6px 12px rgba(255, 215, 0, 0.6));
+        }
+        
+        @keyframes trophyFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
         }
 
         .controls {
@@ -48,32 +121,63 @@
         }
 
         button {
-            padding: 10px 20px;
+            padding: 12px 24px;
             font-size: 16px;
+            font-weight: bold;
             border: none;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 100%);
             color: white;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.6);
+        }
+        
+        button:hover::before {
+            width: 300px;
+            height: 300px;
         }
 
         button:active {
-            transform: translateY(0);
+            transform: translateY(0) scale(0.98);
         }
 
         select {
-            padding: 10px;
+            padding: 12px;
             font-size: 16px;
-            border: 2px solid #764ba2;
-            border-radius: 8px;
-            background: white;
+            font-weight: bold;
+            border: 3px solid transparent;
+            border-radius: 15px;
+            background: linear-gradient(white, white) padding-box,
+                        linear-gradient(135deg, #FF6B9D, #FEC860) border-box;
             cursor: pointer;
+            color: #FF6B9D;
+            transition: all 0.3s;
+        }
+        
+        select:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.3);
         }
 
         .sudoku-board {
@@ -82,8 +186,24 @@
             gap: 0;
             max-width: 450px;
             margin: 0 auto 20px;
-            border: 3px solid #333;
-            background: #333;
+            border: 4px solid transparent;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860, #66D9EF, #C594FF);
+            padding: 2px;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3),
+                        0 0 60px rgba(102, 217, 239, 0.2);
+            animation: boardGlow 3s ease infinite;
+        }
+        
+        @keyframes boardGlow {
+            0%, 100% { 
+                box-shadow: 0 10px 40px rgba(255, 107, 157, 0.3),
+                            0 0 60px rgba(102, 217, 239, 0.2);
+            }
+            50% { 
+                box-shadow: 0 15px 50px rgba(255, 107, 157, 0.5),
+                            0 0 80px rgba(197, 148, 255, 0.4);
+            }
         }
 
         .cell {
@@ -91,105 +211,651 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 20px;
+            font-size: 22px;
             font-weight: bold;
-            background: white;
+            background: linear-gradient(135deg, #FFFFFF, #FFF5F7);
             cursor: pointer;
             user-select: none;
-            border: 1px solid #ccc;
-            transition: background-color 0.2s;
+            border: 1px solid rgba(255, 182, 193, 0.3);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            color: #FF6B9D;
+            position: relative;
+        }
+        
+        .cell::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.3));
+            opacity: 0;
+            transition: opacity 0.3s;
         }
 
         .cell:hover:not(.given):not(.error) {
-            background: #e6e6ff;
+            background: linear-gradient(135deg, #FFE5EC, #FFF9E6);
+            transform: scale(1.1);
+            z-index: 10;
+            box-shadow: 0 5px 20px rgba(255, 107, 157, 0.4);
+        }
+        
+        .cell:hover:not(.given):not(.error)::after {
+            opacity: 1;
         }
 
         .cell.selected {
-            background: #ffd700 !important;
+            background: linear-gradient(135deg, #FFD700, #FFA500) !important;
+            animation: selectedPulse 1s ease infinite;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            transform: scale(1.1);
+            z-index: 20;
+        }
+        
+        @keyframes selectedPulse {
+            0%, 100% { 
+                box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+            }
+            50% { 
+                box-shadow: 0 0 35px rgba(255, 215, 0, 0.9);
+            }
         }
 
         .cell.given {
-            background: #f0f0f0;
-            color: #333;
+            background: linear-gradient(135deg, #E8F4FD, #E3E7FF);
+            color: #4A5568;
             cursor: default;
+            font-weight: 900;
+            text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
         }
 
         .cell.error {
-            background: #ffcccc;
-            color: #cc0000;
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E) !important;
+            color: white !important;
+            animation: errorShake 0.5s ease;
+            box-shadow: 0 0 15px rgba(255, 107, 107, 0.6);
+        }
+        
+        @keyframes errorShake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-2deg); }
+            75% { transform: translateX(5px) rotate(2deg); }
         }
 
         .cell.hint {
-            animation: pulse 1s ease-in-out;
+            animation: hintGlow 1s ease-in-out;
         }
 
         /* Thicker borders for 3x3 sections */
         .cell:nth-child(3n) {
-            border-right: 3px solid #333;
+            border-right: 3px solid rgba(197, 148, 255, 0.5);
         }
 
         .cell:nth-child(n+19):nth-child(-n+27),
         .cell:nth-child(n+46):nth-child(-n+54) {
-            border-bottom: 3px solid #333;
+            border-bottom: 3px solid rgba(197, 148, 255, 0.5);
         }
 
-        @keyframes pulse {
-            0%, 100% { background-color: white; }
-            50% { background-color: #90ee90; }
+        @keyframes hintGlow {
+            0%, 100% { 
+                background: linear-gradient(135deg, #FFFFFF, #FFF5F7);
+                box-shadow: none;
+            }
+            50% { 
+                background: linear-gradient(135deg, #90EE90, #98FB98);
+                box-shadow: 0 0 30px rgba(144, 238, 144, 0.8);
+                transform: scale(1.2);
+            }
         }
 
         .number-pad {
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             margin-bottom: 20px;
             flex-wrap: wrap;
         }
 
         .number-btn {
-            width: 40px;
-            height: 40px;
-            font-size: 18px;
+            width: 45px;
+            height: 45px;
+            font-size: 20px;
             font-weight: bold;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #66D9EF, #C594FF);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .number-btn:hover {
+            transform: rotate(15deg) scale(1.2);
+            background: linear-gradient(135deg, #C594FF, #FF6B9D);
+        }
+        
+        .number-btn:nth-child(even) {
+            background: linear-gradient(135deg, #FEC860, #FF6B9D);
+        }
+        
+        .number-btn:nth-child(even):hover {
+            background: linear-gradient(135deg, #FF6B9D, #66D9EF);
         }
 
         .status {
             text-align: center;
-            font-size: 18px;
-            color: #764ba2;
+            font-size: 20px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             margin-top: 10px;
-            min-height: 25px;
+            min-height: 30px;
+            animation: statusBounce 2s ease infinite;
+        }
+        
+        @keyframes statusBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        /* Confetti styles */
+        .confetti-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+            z-index: 9999;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            animation: confetti-fall 3s ease-in-out;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                transform: translateY(-100vh) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        
+        .completion-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .completion-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            animation: celebration-pop 0.5s ease-out;
+        }
+        
+        @keyframes celebration-pop {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .completion-title {
+            font-size: 32px;
+            color: #764ba2;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        
+        .completion-stats {
+            font-size: 20px;
+            color: #667eea;
+            margin-bottom: 30px;
+        }
+        
+        .completion-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
         }
 
         .timer {
-            text-align: center;
-            font-size: 20px;
+            font-size: 24px;
             font-weight: bold;
-            color: #667eea;
-            margin-bottom: 10px;
+            background: linear-gradient(45deg, #FF6B9D, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: timerPulse 1s ease infinite;
+            flex-shrink: 0;
+        }
+        
+        @keyframes timerPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
         }
 
-        @media (max-width: 600px) {
-            .cell {
-                font-size: 16px;
+        /* Leaderboard Styles */
+        
+        .leaderboard-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .leaderboard-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .leaderboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .leaderboard-title {
+            font-size: 24px;
+            color: #764ba2;
+            font-weight: bold;
+        }
+        
+        .close-leaderboard {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        
+        .difficulty-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+        }
+        
+        .difficulty-tab {
+            padding: 8px 16px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .difficulty-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .leaderboard-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .leaderboard-entry {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: transform 0.2s;
+        }
+        
+        .leaderboard-entry:hover {
+            transform: translateX(5px);
+            background: #e9ecef;
+        }
+        
+        .leaderboard-entry.current-user {
+            background: linear-gradient(135deg, #ffd700 0%, #ffb347 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .rank {
+            font-weight: bold;
+            font-size: 18px;
+            width: 30px;
+        }
+        
+        .player-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .player-name {
+            font-weight: bold;
+        }
+        
+        .player-date {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        
+        .score-time {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        /* Authentication Modal */
+        .auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1001;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .auth-content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .auth-title {
+            font-size: 24px;
+            color: #764ba2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .auth-form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .auth-input {
+            padding: 12px;
+            border: 2px solid #764ba2;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .auth-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .auth-button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .auth-submit {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .auth-cancel {
+            background: #ccc;
+            color: #333;
+        }
+        
+        .auth-mode-switch {
+            text-align: center;
+            margin-top: 15px;
+            color: #667eea;
+            cursor: pointer;
+        }
+        
+        
+        .logged-in-user {
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        /* Enhanced Mobile Responsive Styles */
+        @media (max-width: 767px) {
+            body {
+                padding: 0;
+                margin: 0;
+                min-height: 100vh;
+                height: 100vh;
+                overflow: hidden;
+            }
+            
+            .app-container {
+                width: 100vw;
+                height: 100vh;
+                max-width: none;
+                border-radius: 0;
+                padding: 10px;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+                background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+                box-shadow: none;
+            }
+            
+            .app-container::before {
+                display: none;
+            }
+            
+            .game-header {
+                margin-bottom: 10px;
+                justify-content: space-between;
             }
             
             h1 {
-                font-size: 2em;
+                font-size: 1.8em;
+                flex: 1;
+                text-align: center;
+            }
+            
+            .leaderboard-icon {
+                font-size: 1.5em;
+            }
+            
+            .timer {
+                font-size: 16px;
+            }
+            
+            .controls {
+                margin-bottom: 10px;
+                gap: 5px;
+                flex-shrink: 0;
             }
             
             button {
-                padding: 8px 16px;
-                font-size: 14px;
+                padding: 8px 12px;
+                font-size: 12px;
+                border-radius: 10px;
+            }
+            
+            select {
+                padding: 8px;
+                font-size: 12px;
+                border-radius: 10px;
+            }
+            
+            .game-area {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                overflow: hidden;
+            }
+            
+            .sudoku-board {
+                width: calc(100vw - 20px);
+                max-width: calc(100vw - 20px);
+                height: auto;
+                aspect-ratio: 1;
+                margin: 0 auto;
+                flex-shrink: 0;
+            }
+            
+            .cell {
+                font-size: calc(3.5vw);
+                border-width: 0.5px;
+            }
+            
+            .cell:hover:not(.given):not(.error) {
+                transform: scale(1.05);
+                box-shadow: 0 3px 10px rgba(255, 107, 157, 0.3);
+            }
+            
+            .cell.selected {
+                transform: scale(1.05);
+            }
+            
+            .number-pad {
+                margin-top: 10px;
+                margin-bottom: 10px;
+                gap: 5px;
+                flex-shrink: 0;
+            }
+            
+            .number-btn {
+                width: 35px;
+                height: 35px;
+                font-size: 16px;
+                padding: 0;
+                border-radius: 50%;
+            }
+            
+            .status {
+                font-size: 12px;
+                flex-shrink: 0;
+            }
+            
+            @media (max-height: 700px) {
+                .game-header {
+                    margin-bottom: 8px;
+                }
+                
+                h1 {
+                    font-size: 1.2em;
+                }
+                
+                .leaderboard-icon {
+                    font-size: 1.2em;
+                }
+                
+                .timer {
+                    font-size: 14px;
+                }
+                
+                .cell {
+                    font-size: calc(3vw);
+                }
+                
+                .number-btn {
+                    width: 28px;
+                    height: 28px;
+                    font-size: 12px;
+                }
+                
+                .sudoku-board {
+                    width: calc(100vw - 30px);
+                    max-width: calc(100vw - 30px);
+                }
+            }
+        }
+        
+        /* Landscape mode adjustments */
+        @media (max-width: 767px) and (orientation: landscape) {
+            .app-container {
+                padding: 5px;
+            }
+            
+            h1 {
+                font-size: 1.2em;
+                margin-bottom: 5px;
+            }
+            
+            .sudoku-board {
+                width: auto;
+                height: calc(100vh - 150px);
+                max-width: calc(100vh - 150px);
+            }
+            
+            .cell {
+                font-size: calc(3.5vh);
+            }
+            
+            .controls {
+                flex-direction: row;
+                justify-content: space-around;
+            }
+            
+            button, select {
+                padding: 4px 8px;
+                font-size: 11px;
+            }
+            
+            .num-btn {
+                width: 28px;
+                height: 28px;
+                font-size: 12px;
             }
         }
     </style>
 </head>
 <body>
     <div class="app-container">
-        <h1>🎯 Sudoku</h1>
-        
-        <div class="timer" id="timer">00:00</div>
+        <div class="game-header">
+            <div class="leaderboard-icon" onclick="showLeaderboard()" title="Leaderboard">🏆</div>
+            <h1>🎯 Sudoku</h1>
+            <div class="timer" id="timer">00:00</div>
+        </div>
         
         <div class="controls">
             <select id="difficulty">
@@ -204,30 +870,98 @@
             <button onclick="clearBoard()">Clear</button>
         </div>
         
-        <div class="sudoku-board" id="board"></div>
-        
-        <div class="number-pad">
-            <button class="number-btn" onclick="insertNumber(1)">1</button>
-            <button class="number-btn" onclick="insertNumber(2)">2</button>
-            <button class="number-btn" onclick="insertNumber(3)">3</button>
-            <button class="number-btn" onclick="insertNumber(4)">4</button>
-            <button class="number-btn" onclick="insertNumber(5)">5</button>
-            <button class="number-btn" onclick="insertNumber(6)">6</button>
-            <button class="number-btn" onclick="insertNumber(7)">7</button>
-            <button class="number-btn" onclick="insertNumber(8)">8</button>
-            <button class="number-btn" onclick="insertNumber(9)">9</button>
-            <button class="number-btn" onclick="insertNumber(0)" style="background: #ff6b6b;">✖</button>
+        <div class="game-area">
+            <div class="sudoku-board" id="board"></div>
+            
+            <div class="number-pad">
+                <button class="number-btn" onclick="insertNumber(1)">1</button>
+                <button class="number-btn" onclick="insertNumber(2)">2</button>
+                <button class="number-btn" onclick="insertNumber(3)">3</button>
+                <button class="number-btn" onclick="insertNumber(4)">4</button>
+                <button class="number-btn" onclick="insertNumber(5)">5</button>
+                <button class="number-btn" onclick="insertNumber(6)">6</button>
+                <button class="number-btn" onclick="insertNumber(7)">7</button>
+                <button class="number-btn" onclick="insertNumber(8)">8</button>
+                <button class="number-btn" onclick="insertNumber(9)">9</button>
+                <button class="number-btn" onclick="insertNumber(0)" style="background: #ff6b6b;">✖</button>
+            </div>
         </div>
         
         <div class="status" id="status"></div>
     </div>
+    
+    <!-- Leaderboard Modal -->
+    <div class="leaderboard-modal" id="leaderboardModal">
+        <div class="leaderboard-content">
+            <div class="leaderboard-header">
+                <div class="leaderboard-title">🏆 Leaderboard</div>
+                <button class="close-leaderboard" onclick="closeLeaderboard()">✕</button>
+            </div>
+            <div class="difficulty-tabs">
+                <button class="difficulty-tab active" onclick="switchDifficulty('easy')">Easy</button>
+                <button class="difficulty-tab" onclick="switchDifficulty('medium')">Medium</button>
+                <button class="difficulty-tab" onclick="switchDifficulty('hard')">Hard</button>
+                <button class="difficulty-tab" onclick="switchDifficulty('expert')">Expert</button>
+            </div>
+            <div class="leaderboard-list" id="leaderboardList">
+                <!-- Leaderboard entries will be inserted here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Completion Modal -->
+    <div class="completion-modal" id="completionModal">
+        <div class="completion-content">
+            <div class="completion-title">🎉 Puzzle Complete!</div>
+            <div class="completion-stats" id="completionStats"></div>
+            <div class="completion-buttons">
+                <button onclick="showLeaderboardFromCompletion()">View Leaderboard</button>
+                <button onclick="startNewGameFromCompletion()">New Game</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Confetti Container -->
+    <div class="confetti-container" id="confettiContainer"></div>
+    
+    <!-- Authentication Modal -->
+    <div class="auth-modal" id="authModal">
+        <div class="auth-content">
+            <div class="auth-title" id="authTitle">Login to Save Score</div>
+            <form class="auth-form" onsubmit="handleAuth(event)">
+                <input type="text" class="auth-input" id="authHandle" placeholder="Handle (3-15 characters)" maxlength="15" required>
+                <input type="text" class="auth-input" id="authPin" placeholder="4-digit PIN" pattern="[0-9]{4}" maxlength="4" required>
+                <div class="auth-buttons">
+                    <button type="submit" class="auth-button auth-submit" id="authSubmitBtn">Login</button>
+                    <button type="button" class="auth-button auth-cancel" onclick="closeAuthModal()">Cancel</button>
+                </div>
+            </form>
+            <div class="auth-mode-switch" onclick="toggleAuthMode()" id="authModeSwitch">
+                Don't have an account? Sign up
+            </div>
+        </div>
+    </div>
 
     <script>
+        // App identifier for ZAD API
+        window.APP_ID = 'sudoku-leaderboard';
+        
+        // Game state
         let board = [];
         let solution = [];
         let selectedCell = null;
         let timerInterval = null;
         let startTime = null;
+        let currentDifficulty = 'easy';
+        let hintsUsed = 0;
+        let mistakesMade = 0;
+        let lastBoard = [];
+        
+        // Authentication state
+        let currentUser = null;
+        let authMode = 'login';
+        let pendingCompletion = null;
+        let leaderboardDifficulty = 'easy';
 
         // Initialize board
         function initBoard() {
@@ -266,6 +1000,11 @@
             
             if (cell.classList.contains('given')) return;
             
+            // Track mistakes - check if we're placing a wrong number
+            if (num !== 0 && num !== solution[selectedCell]) {
+                mistakesMade++;
+            }
+            
             if (num === 0) {
                 // Clear cell
                 board[selectedCell] = 0;
@@ -275,7 +1014,7 @@
                 cell.textContent = num;
             }
             
-            // Check for errors
+            // Check for errors and completion
             checkErrors();
         }
 
@@ -304,6 +1043,8 @@
             const cells = document.querySelectorAll('.cell');
             cells.forEach(cell => cell.classList.remove('error'));
             
+            let hasErrors = false;
+            
             // Check rows, columns, and boxes
             for (let i = 0; i < 81; i++) {
                 if (board[i] === 0) continue;
@@ -317,6 +1058,7 @@
                     if (j !== i && board[j] === board[i]) {
                         cells[i].classList.add('error');
                         cells[j].classList.add('error');
+                        hasErrors = true;
                     }
                 }
                 
@@ -325,6 +1067,7 @@
                     if (j !== i && board[j] === board[i]) {
                         cells[i].classList.add('error');
                         cells[j].classList.add('error');
+                        hasErrors = true;
                     }
                 }
                 
@@ -337,10 +1080,23 @@
                         if (j !== i && board[j] === board[i]) {
                             cells[i].classList.add('error');
                             cells[j].classList.add('error');
+                            hasErrors = true;
                         }
                     }
                 }
             }
+            
+            // Check if board is complete and handle completion
+            if (!board.includes(0)) {
+                if (hasErrors) {
+                    document.getElementById('status').textContent = 'Board complete but has errors! Fix the highlighted cells.';
+                } else {
+                    // Board is complete and correct!
+                    handleAutomaticCompletion();
+                }
+            }
+            
+            return hasErrors;
         }
 
         // Generate a valid sudoku puzzle
@@ -351,7 +1107,7 @@
             
             // Remove numbers based on difficulty
             const cellsToRemove = {
-                easy: 35,
+                easy: 18,
                 medium: 45,
                 hard: 55,
                 expert: 64
@@ -465,8 +1221,8 @@
 
         // Start new game
         function newGame() {
-            const difficulty = document.getElementById('difficulty').value;
-            board = generatePuzzle(difficulty);
+            currentDifficulty = document.getElementById('difficulty').value;
+            board = generatePuzzle(currentDifficulty);
             
             const cells = document.querySelectorAll('.cell');
             cells.forEach((cell, i) => {
@@ -480,6 +1236,8 @@
             });
             
             selectedCell = null;
+            hintsUsed = 0;
+            mistakesMade = 0;
             document.getElementById('status').textContent = '';
             
             // Start timer
@@ -498,7 +1256,7 @@
             document.getElementById('timer').textContent = `${minutes}:${seconds}`;
         }
 
-        // Check solution
+        // Manual check solution button
         function checkSolution() {
             // Check if board is complete
             if (board.includes(0)) {
@@ -507,27 +1265,15 @@
             }
             
             // Check if there are any errors
-            const errors = document.querySelectorAll('.cell.error');
-            if (errors.length > 0) {
-                document.getElementById('status').textContent = 'There are errors in your solution!';
+            const hasErrors = checkErrors();
+            if (hasErrors) {
+                document.getElementById('status').textContent = 'There are errors in your solution! Check the highlighted cells.';
                 return;
             }
             
-            // Check if solution matches
-            let correct = true;
-            for (let i = 0; i < 81; i++) {
-                if (board[i] !== solution[i]) {
-                    correct = false;
-                    break;
-                }
-            }
-            
-            if (correct) {
-                clearInterval(timerInterval);
-                document.getElementById('status').textContent = '🎉 Congratulations! You solved it!';
-            } else {
-                document.getElementById('status').textContent = 'Solution is incorrect. Keep trying!';
-            }
+            // If we get here, the puzzle is complete and correct
+            // This will be handled automatically by checkErrors(), but user can force-check
+            document.getElementById('status').textContent = '✓ Solution is correct!';
         }
 
         // Get hint
@@ -544,6 +1290,7 @@
                 return;
             }
             
+            hintsUsed++;
             const hintIndex = emptyCells[Math.floor(Math.random() * emptyCells.length)];
             board[hintIndex] = solution[hintIndex];
             
@@ -556,7 +1303,7 @@
             }, 1000);
             
             checkErrors();
-            document.getElementById('status').textContent = 'Hint given!';
+            document.getElementById('status').textContent = `Hint given! (Hints used: ${hintsUsed})`;
         }
 
         // Clear board (remove non-given numbers)
@@ -572,7 +1319,399 @@
             document.getElementById('status').textContent = 'Board cleared!';
         }
 
+        // Authentication functions
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                    }
+                    // Auth loaded but no UI update needed
+                } catch (e) {
+                    console.error('Failed to parse saved user:', e);
+                }
+            }
+        }
+        
+        // Listen for auth from desktop
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                // Auth loaded but no UI update needed
+            }
+        });
+        
+        // Request auth from desktop
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+        
+        function updateAuthDisplay() {
+            // No longer showing auth status in UI
+            // Auth is handled silently in background
+        }
+        
+        // Leaderboard functions
+        async function saveCompletion(completionData) {
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: window.APP_ID,
+                        participant_id: completionData.participantId,
+                        action_type: `leaderboard_${completionData.difficulty}`,
+                        content_data: completionData
+                    })
+                });
+                return response.ok;
+            } catch (error) {
+                console.error('Failed to save completion:', error);
+                return false;
+            }
+        }
+        
+        async function loadLeaderboard(difficulty) {
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${window.APP_ID}&action_type=leaderboard_${difficulty}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data.map(item => item.content_data).filter(score => score);
+                }
+            } catch (error) {
+                console.error('Failed to load leaderboard:', error);
+            }
+            return [];
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function calculateScore(timeInSeconds) {
+            // Base score starts at 10000
+            let score = 10000;
+            
+            // Deduct points for time (1 point per second)
+            score -= timeInSeconds;
+            
+            // Heavy penalty for hints (300 points each)
+            score -= hintsUsed * 300;
+            
+            // Heavy penalty for mistakes (200 points each)
+            score -= mistakesMade * 200;
+            
+            // Difficulty multiplier
+            const multipliers = {
+                'easy': 1.0,
+                'medium': 1.5,
+                'hard': 2.0,
+                'expert': 3.0
+            };
+            score = Math.floor(score * multipliers[currentDifficulty]);
+            
+            // Ensure score doesn't go negative
+            return Math.max(0, score);
+        }
+        
+        // Automatic completion handler
+        function handleAutomaticCompletion() {
+            // Stop timer
+            clearInterval(timerInterval);
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const score = calculateScore(elapsed);
+            
+            // Show confetti
+            createConfetti();
+            
+            // Show completion modal
+            showCompletionModal(elapsed, score);
+            
+            // Save completion
+            handleCompletion(elapsed, score);
+        }
+        
+        function createConfetti() {
+            const container = document.getElementById('confettiContainer');
+            container.innerHTML = '';
+            
+            const colors = ['#667eea', '#764ba2', '#ffd700', '#ff6b6b', '#90ee90', '#87ceeb'];
+            const confettiCount = 100;
+            
+            for (let i = 0; i < confettiCount; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + '%';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 2 + 's';
+                confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+                container.appendChild(confetti);
+            }
+            
+            // Clear confetti after animation
+            setTimeout(() => {
+                container.innerHTML = '';
+            }, 5000);
+        }
+        
+        function showCompletionModal(timeInSeconds, score) {
+            const modal = document.getElementById('completionModal');
+            const stats = document.getElementById('completionStats');
+            
+            const timeStr = formatTime(timeInSeconds);
+            const difficultyStr = currentDifficulty.charAt(0).toUpperCase() + currentDifficulty.slice(1);
+            
+            stats.innerHTML = `
+                <div>Difficulty: <strong>${difficultyStr}</strong></div>
+                <div>Time: <strong>${timeStr}</strong></div>
+                <div>Score: <strong>${score} points</strong></div>
+                ${hintsUsed > 0 ? `<div>Hints Used: ${hintsUsed}</div>` : ''}
+                ${mistakesMade > 0 ? `<div>Mistakes: ${mistakesMade}</div>` : ''}
+            `;
+            
+            modal.style.display = 'flex';
+            
+            // Auto-hide after 5 seconds and show leaderboard
+            setTimeout(() => {
+                modal.style.display = 'none';
+                showLeaderboard(currentDifficulty);
+            }, 5000);
+        }
+        
+        function showLeaderboardFromCompletion() {
+            document.getElementById('completionModal').style.display = 'none';
+            showLeaderboard(currentDifficulty);
+        }
+        
+        function startNewGameFromCompletion() {
+            document.getElementById('completionModal').style.display = 'none';
+            newGame();
+        }
+        
+        async function handleCompletion(timeInSeconds, score) {
+            if (!currentUser) {
+                pendingCompletion = { time: timeInSeconds, score: score, difficulty: currentDifficulty };
+                // Don't show auth modal immediately during celebration
+                setTimeout(() => {
+                    if (pendingCompletion) {
+                        showAuthModal();
+                    }
+                }, 5000);
+                return;
+            }
+            
+            const completionData = {
+                handle: currentUser.handle,
+                participantId: currentUser.participantId,
+                time: timeInSeconds,
+                score: score,
+                hints: hintsUsed,
+                mistakes: mistakesMade,
+                difficulty: currentDifficulty,
+                timestamp: new Date().toISOString(),
+                date: new Date().toLocaleDateString()
+            };
+            
+            const saved = await saveCompletion(completionData);
+            if (saved) {
+                document.getElementById('status').textContent = `🎉 Score ${score} saved to ${currentDifficulty} leaderboard!`;
+            }
+        }
+        
+        async function showLeaderboard(difficulty) {
+            // If no difficulty specified, use the current game difficulty
+            if (!difficulty) {
+                difficulty = document.getElementById('difficulty').value;
+            }
+            leaderboardDifficulty = difficulty;
+            
+            const modal = document.getElementById('leaderboardModal');
+            modal.style.display = 'flex';
+            
+            // Update active tab
+            const tabs = document.querySelectorAll('.difficulty-tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+                if (tab.textContent.toLowerCase() === leaderboardDifficulty.toLowerCase()) {
+                    tab.classList.add('active');
+                }
+            });
+            
+            // Load and display scores
+            const scores = await loadLeaderboard(leaderboardDifficulty);
+            // Sort by score (highest first), then by time if scores are equal
+            const sortedScores = scores.sort((a, b) => {
+                if (a.score !== undefined && b.score !== undefined) {
+                    if (b.score !== a.score) return b.score - a.score;
+                }
+                return a.time - b.time;
+            }).slice(0, 10);
+            
+            const list = document.getElementById('leaderboardList');
+            if (sortedScores.length === 0) {
+                list.innerHTML = '<div style="text-align: center; color: #999; padding: 20px;">No completions yet. Be the first!</div>';
+            } else {
+                list.innerHTML = sortedScores.map((score, index) => {
+                    const isCurrentUser = currentUser && score.participantId === currentUser.participantId;
+                    const userClass = isCurrentUser ? 'current-user' : '';
+                    
+                    const displayScore = score.score !== undefined ? 
+                        `${score.score} pts` : 
+                        formatTime(score.time);
+                    const extraInfo = score.score !== undefined ? 
+                        `<div style="font-size: 10px; opacity: 0.6;">${formatTime(score.time)} | H:${score.hints || 0} M:${score.mistakes || 0}</div>` : 
+                        '';
+                    
+                    return `
+                        <div class="leaderboard-entry ${userClass}">
+                            <div class="rank">#${index + 1}</div>
+                            <div class="player-info">
+                                <div class="player-name">${score.handle}</div>
+                                <div class="player-date">${score.date}</div>
+                                ${extraInfo}
+                            </div>
+                            <div class="score-time">${displayScore}</div>
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+        
+        function closeLeaderboard() {
+            document.getElementById('leaderboardModal').style.display = 'none';
+        }
+        
+        function switchDifficulty(difficulty) {
+            leaderboardDifficulty = difficulty;
+            showLeaderboard();
+        }
+        
+        // Authentication modal functions
+        function showAuthModal() {
+            document.getElementById('authModal').style.display = 'flex';
+        }
+        
+        function closeAuthModal() {
+            document.getElementById('authModal').style.display = 'none';
+            pendingCompletion = null;
+        }
+        
+        function toggleAuthMode() {
+            authMode = authMode === 'login' ? 'signup' : 'login';
+            document.getElementById('authTitle').textContent = authMode === 'login' ? 'Login to Save Score' : 'Sign Up to Save Score';
+            document.getElementById('authSubmitBtn').textContent = authMode === 'login' ? 'Login' : 'Sign Up';
+            document.getElementById('authModeSwitch').textContent = authMode === 'login' ? "Don't have an account? Sign up" : 'Already have an account? Login';
+        }
+        
+        async function handleAuth(event) {
+            event.preventDefault();
+            
+            const handle = document.getElementById('authHandle').value.trim().toUpperCase();
+            const pin = document.getElementById('authPin').value;
+            
+            if (handle.length < 3 || handle.length > 15) {
+                alert('Handle must be 3-15 characters');
+                return;
+            }
+            
+            if (!/^[A-Z0-9]+$/.test(handle)) {
+                alert('Handle can only contain letters and numbers');
+                return;
+            }
+            
+            if (!/^\d{4}$/.test(pin)) {
+                alert('PIN must be exactly 4 digits');
+                return;
+            }
+            
+            const participantId = `${handle}_${pin}`;
+            
+            if (authMode === 'login') {
+                // Check if user exists
+                try {
+                    const response = await fetch(`/api/zad/load?app_id=toybox-users&participant_id=${participantId}&action_type=user_auth`);
+                    const users = await response.json();
+                    
+                    if (users.length > 0) {
+                        const user = users[0];
+                        currentUser = user.content_data;
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        // Auth loaded but no UI update needed
+                        closeAuthModal();
+                        
+                        // Save pending completion if any
+                        if (pendingCompletion) {
+                            await handleCompletion(pendingCompletion.time, pendingCompletion.score);
+                            pendingCompletion = null;
+                        }
+                    } else {
+                        alert('Invalid handle or PIN. Please try again or sign up.');
+                    }
+                } catch (error) {
+                    alert('Login failed. Please try again.');
+                }
+            } else {
+                // Sign up new user
+                const userData = {
+                    handle: handle,
+                    pin: pin,
+                    participantId: participantId,
+                    createdAt: new Date().toISOString()
+                };
+                
+                try {
+                    await fetch('/api/zad/save', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            app_id: 'toybox-users',
+                            participant_id: participantId,
+                            action_type: 'user_auth',
+                            content_data: userData
+                        })
+                    });
+                    
+                    currentUser = userData;
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    // Auth loaded but no UI update needed
+                    closeAuthModal();
+                    
+                    // Save pending completion if any
+                    if (pendingCompletion) {
+                        await handleCompletion(pendingCompletion.time, pendingCompletion.score);
+                        pendingCompletion = null;
+                    }
+                } catch (error) {
+                    alert('Sign up failed. Please try again.');
+                }
+            }
+        }
+        
         // Initialize game
+        loadAuthFromStorage();
         initBoard();
         newGame();
     </script>

@@ -37,11 +37,13 @@
 		"check-app": "npm run build && node dist/scripts/check-app.js",
 		"fix-single-app": "npm run build && node dist/scripts/fix-single-app.js",
 		"classify-app-types": "npm run build && node dist/scripts/classify-app-types.js",
-		"classify-app-types-sample": "npm run build && node dist/scripts/classify-app-types-sample.js"
+		"classify-app-types-sample": "npm run build && node dist/scripts/classify-app-types-sample.js",
+		"builderbot": "node webtoys-os/agents/builder-bot-server/server.js"
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",
 		"@sendgrid/mail": "^8.1.3",
+		"@supabase/mcp-server-supabase": "^0.5.1",
 		"@supabase/supabase-js": "^2.49.9",
 		"@types/multer": "^1.4.13",
 		"axios": "^1.9.0",

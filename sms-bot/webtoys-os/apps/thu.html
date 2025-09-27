@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THU - Word Processor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            color: #1a1a1a;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+
+        .sidebar {
+            width: 240px;
+            background: rgba(255, 255, 255, 0.6);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(0, 0, 0, 0.05);
+            padding: 24px 16px;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.3s ease;
+        }
+
+        .sidebar h2 {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .new-doc-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 20px 0;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .new-doc-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .doc-list {
+            flex: 1;
+            overflow-y: auto;
+            margin-top: 16px;
+        }
+
+        .doc-item {
+            padding: 12px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            border: 1px solid transparent;
+        }
+
+        .doc-item:hover {
+            background: rgba(102, 126, 234, 0.08);
+            transform: translateX(4px);
+        }
+
+        .doc-item.active {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        .doc-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 4px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .doc-preview {
+            font-size: 12px;
+            color: #666;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .doc-date {
+            font-size: 11px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            position: relative;
+        }
+
+        .editor-header {
+            padding: 20px 40px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+        }
+
+        .doc-title-input {
+            font-size: 24px;
+            font-weight: 700;
+            border: none;
+            outline: none;
+            width: 100%;
+            background: transparent;
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: background 0.2s ease;
+        }
+
+        .doc-title-input:focus {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 40px;
+            overflow-y: auto;
+            display: flex;
+            justify-content: center;
+        }
+
+        .editor {
+            width: 100%;
+            max-width: 800px;
+            min-height: 100%;
+            font-size: 16px;
+            line-height: 1.8;
+            color: #1a1a1a;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        }
+
+        .status-bar {
+            padding: 12px 40px;
+            background: rgba(255, 255, 255, 0.9);
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 13px;
+            color: #666;
+        }
+
+        .save-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4ade80;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(74, 222, 128, 0.3);
+        }
+
+        .save-indicator.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .auth-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            display: none;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .auth-prompt h3 {
+            margin-bottom: 16px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .auth-prompt p {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            display: none;
+        }
+
+        .toggle-sidebar {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            z-index: 100;
+        }
+
+        .toggle-sidebar:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                z-index: 200;
+                transform: translateX(-100%);
+                box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .toggle-sidebar {
+                display: flex;
+            }
+
+            .editor-container {
+                padding: 20px;
+            }
+
+            .editor-header {
+                padding: 20px;
+                padding-left: 60px;
+            }
+
+            .status-bar {
+                padding: 12px 20px;
+            }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+            color: #666;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="toggle-sidebar" onclick="toggleSidebar()">☰</button>
+        
+        <aside class="sidebar" id="sidebar">
+            <h2>THU</h2>
+            <p style="font-size: 12px; color: #666; margin-bottom: 20px;">Simple Word Processor</p>
+            
+            <button class="new-doc-btn" onclick="createNewDocument()">+ New Document</button>
+            
+            <div class="doc-list" id="docList">
+                <div class="empty-state">
+                    <p>No documents yet</p>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="editor-header">
+                <input type="text" class="doc-title-input" id="docTitle" placeholder="Untitled Document" />
+            </div>
+            
+            <div class="editor-container">
+                <textarea class="editor" id="editor" placeholder="Start writing..."></textarea>
+            </div>
+            
+            <div class="status-bar">
+                <span id="wordCount">0 words</span>
+                <span id="lastSaved">Not saved</span>
+            </div>
+        </main>
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="auth-prompt" id="authPrompt">
+        <h3>Sign In Required</h3>
+        <p>Please sign in using the desktop to save your documents</p>
+    </div>
+
+    <div class="save-indicator" id="saveIndicator">Saved</div>
+
+    <script>
+        // Global state
+        let currentUser = null;
+        let currentDocId = null;
+        let documents = [];
+        let autoSaveTimer = null;
+        let hasUnsavedChanges = false;
+
+        // App configuration
+        const APP_ID = 'toybox-thu';
+
+        // Authentication functions
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        // Listen for auth from desktop
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                }
+                hideAuthPrompt();
+                if (currentUser) loadDocuments();
+            }
+        });
+
+        // Document functions
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function createNewDocument() {
+            if (!checkAuth()) return;
+            
+            currentDocId = generateId();
+            document.getElementById('docTitle').value = 'Untitled Document';
+            document.getElementById('editor').value = '';
+            updateWordCount();
+            updateDocumentList();
+            hasUnsavedChanges = true;
+            autoSave();
+        }
+
+        async function saveDocument() {
+            if (!checkAuth()) return;
+            if (!currentDocId) currentDocId = generateId();
+
+            const title = document.getElementById('docTitle').value || 'Untitled Document';
+            const content = document.getElementById('editor').value;
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocId,
+                            title: title,
+                            content: content,
+                            wordCount: content.split(/\s+/).filter(w => w.length > 0).length,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    showSaveIndicator();
+                    hasUnsavedChanges = false;
+                    document.getElementById('lastSaved').textContent = 'Saved just now';
+                    loadDocuments();
+                }
+            } catch (error) {
+                console.error('Save failed:', error);
+            }
+        }
+
+        async function loadDocuments() {
+            if (!currentUser) return;
+
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=document`);
+                const allDocs = await response.json();
+
+                // Filter for current user's documents
+                const userDocs = allDocs.filter(doc => doc.participant_id === participantId);
+
+                // Deduplicate by latest timestamp
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            wordCount: doc.wordCount || doc.content_data?.wordCount || 0,
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime
+                        };
+                    }
+                });
+
+                documents = Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+                updateDocumentList();
+            } catch (error) {
+                console.error('Load failed:', error);
+            }
+        }
+
+        function loadDocument(doc) {
+            currentDocId = doc.id;
+            document.getElementById('docTitle').value = doc.title;
+            document.getElementById('editor').value = doc.content;
+            updateWordCount();
+            updateDocumentList();
+            hasUnsavedChanges = false;
+            
+            // Close sidebar on mobile
+            if (window.innerWidth <= 768) {
+                document.getElementById('sidebar').classList.remove('open');
+            }
+        }
+
+        function updateDocumentList() {
+            const listEl = document.getElementById('docList');
+            
+            if (documents.length === 0) {
+                listEl.innerHTML = '<div class="empty-state"><p>No documents yet</p></div>';
+                return;
+            }
+
+            listEl.innerHTML = documents.map(doc => `
+                <div class="doc-item ${doc.id === currentDocId ? 'active' : ''}" 
+                     onclick="loadDocument(${JSON.stringify(doc).replace(/"/g, '&quot;')})">
+                    <div class="doc-title">${doc.title}</div>
+                    <div class="doc-preview">${doc.content.substring(0, 50)}...</div>
+                    <div class="doc-date">${formatDate(doc.updatedAt)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            const date = new Date(dateStr);
+            const now = new Date();
+            const diff = now - date;
+            const mins = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (mins < 1) return 'Just now';
+            if (mins < 60) return `${mins} min ago`;
+            if (hours < 24) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            if (days < 7) return `${days} day${days > 1 ? 's' : ''} ago`;
+            return date.toLocaleDateString();
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.split(/\s+/).filter(w => w.length > 0).length;
+            document.getElementById('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+        }
+
+        function autoSave() {
+            if (autoSaveTimer) clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(() => {
+                if (hasUnsavedChanges && currentUser) {
+                    saveDocument();
+                }
+            }, 2000);
+        }
+
+        function showSaveIndicator() {
+            const indicator = document.getElementById('saveIndicator');
+            indicator.classList.add('show');
+            setTimeout(() => indicator.classList.remove('show'), 2000);
+        }
+
+        function checkAuth() {
+            if (!currentUser) {
+                document.getElementById('overlay').style.display = 'block';
+                document.getElementById('authPrompt').style.display = 'block';
+                return false;
+            }
+            return true;
+        }
+
+        function hideAuthPrompt() {
+            document.getElementById('overlay').style.display = 'none';
+            document.getElementById('authPrompt').style.display = 'none';
+        }
+
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Event listeners
+        document.getElementById('editor').addEventListener('input', () => {
+            updateWordCount();
+            hasUnsavedChanges = true;
+            autoSave();
+        });
+
+        document.getElementById('docTitle').addEventListener('input', () => {
+            hasUnsavedChanges = true;
+            autoSave();
+        });
+
+        document.getElementById('overlay').addEventListener('click', hideAuthPrompt);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + S to save
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                if (currentUser && hasUnsavedChanges) {
+                    saveDocument();
+                }
+            }
+            // Cmd/Ctrl + N for new document
+            if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+                e.preventDefault();
+                createNewDocument();
+            }
+        });
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                loadDocuments();
+            }
+            updateWordCount();
+        });
+
+        // Request auth from desktop on load
+        if (window.parent !== window) {
+            window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+        }
+    </script>
+</body>
+</html>

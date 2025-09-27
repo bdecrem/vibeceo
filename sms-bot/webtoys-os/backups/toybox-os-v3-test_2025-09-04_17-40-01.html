@@ -1,0 +1,2550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>BUILD PLAY SHARE</title>
+    <meta name="description" content="BUILD PLAY SHARE - WebtoysOS Community Desktop">
+    <meta property="og:title" content="BUILD PLAY SHARE">
+    <meta property="og:description" content="BUILD PLAY SHARE - WebtoysOS Community Desktop">
+    <meta property="og:type" content="website">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    
+    <!-- Supabase Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    
+    <style>
+        /* CSS Reset and Variables */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+        
+        :root {
+            --purple: #C47AFF;
+            --coral: #FF6B6B;
+            --warm-yellow: #FFD93D;
+            --mint-green: #98D8C8;
+            --deep-blue: #4E89E3;
+            --glass: rgba(255, 255, 255, 0.1);
+            --glass-heavy: rgba(255, 255, 255, 0.25);
+            --shadow-soft: rgba(0, 0, 0, 0.1);
+            --shadow-medium: rgba(0, 0, 0, 0.15);
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            touch-action: manipulation;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%);
+            background-size: 600% 600%;
+            animation: gradientShift 15s ease infinite;
+            position: relative;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            25% { background-position: 100% 25%; }
+            50% { background-position: 50% 100%; }
+            75% { background-position: 25% 0%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* Floating orbs */
+        .bg-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(40px);
+            opacity: 0.3;
+            animation: float 20s ease-in-out infinite;
+            pointer-events: none;
+        }
+        
+        .orb-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            top: -100px;
+            left: -100px;
+        }
+        
+        .orb-2 {
+            width: 250px;
+            height: 250px;
+            background: linear-gradient(135deg, #f093fb, #feca57);
+            bottom: -50px;
+            right: -50px;
+            animation-delay: -5s;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(30px, -30px) scale(1.1); }
+            66% { transform: translate(-20px, 20px) scale(0.9); }
+        }
+        
+        /* Top Bar */
+        .menu-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            z-index: 100;
+            pointer-events: none;
+        }
+        
+        .menu-bar > * {
+            pointer-events: auto;
+        }
+        
+        /* Score Display */
+        .score-display {
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 12px 20px;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px var(--shadow-soft);
+        }
+        
+        .score-value {
+            color: var(--warm-yellow);
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+        }
+        
+        /* User Display */
+        .user-display {
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 10px 16px;
+            box-shadow: 0 8px 32px var(--shadow-soft);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .user-display:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 40px var(--shadow-medium);
+        }
+        
+        .user-avatar {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--coral), var(--warm-yellow));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .user-info {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .user-label {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+        
+        .user-name {
+            font-family: 'Comfortaa', cursive;
+            font-size: 16px;
+            color: white;
+            font-weight: 700;
+        }
+        
+        /* Desktop Area */
+        #desktop {
+            position: absolute;
+            top: 80px;
+            left: 0;
+            right: 0;
+            bottom: 80px;
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        /* Mobile-first grid */
+        .desktop-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        /* Desktop Icons */
+        .desktop-icon {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 8px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            border-radius: 12px;
+        }
+        
+        .desktop-icon:hover {
+            transform: translateY(-5px) scale(1.05);
+        }
+        
+        .desktop-icon:active {
+            transform: scale(0.98);
+        }
+        
+        .desktop-icon.selected {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .desktop-icon .icon {
+            width: 56px;
+            height: 56px;
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            box-shadow: 0 8px 24px var(--shadow-soft);
+            transition: all 0.3s ease;
+        }
+        
+        .desktop-icon:hover .icon {
+            background: rgba(255, 255, 255, 0.35);
+            box-shadow: 0 12px 36px var(--shadow-medium);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+        
+        /* Icon types */
+        .icon.type-game {
+            background: linear-gradient(135deg, rgba(255, 217, 61, 0.3), rgba(255, 107, 107, 0.3));
+        }
+        
+        .icon.type-system {
+            background: linear-gradient(135deg, rgba(78, 137, 227, 0.3), rgba(152, 216, 200, 0.3));
+        }
+        
+        .icon.type-creative {
+            background: linear-gradient(135deg, rgba(196, 122, 255, 0.3), rgba(255, 107, 107, 0.3));
+        }
+        
+        .icon.type-productivity {
+            background: linear-gradient(135deg, rgba(152, 216, 200, 0.3), rgba(78, 137, 227, 0.3));
+        }
+        
+        .desktop-icon .label {
+            font-family: 'Comfortaa', cursive;
+            font-size: 11px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            text-shadow: 0 2px 8px var(--shadow-medium);
+            max-width: 100%;
+            line-height: 1.3;
+        }
+        
+        /* Windows - Modern Glass */
+        .desktop-window {
+            position: absolute;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px var(--shadow-medium);
+            min-width: 300px;
+            min-height: 200px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .window-header {
+            background: rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+            user-select: none;
+        }
+        
+        .window-title {
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .window-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .window-control {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        
+        .window-control:hover {
+            transform: scale(1.2);
+            filter: brightness(1.2);
+        }
+        
+        .window-control.close {
+            background: #FF6B6B;
+        }
+        
+        .window-control.minimize {
+            background: #FFD93D;
+        }
+        
+        .window-control.maximize {
+            background: #51CF66;
+        }
+        
+        .window-content {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+            background: rgba(255, 255, 255, 0.02);
+        }
+        
+        .window-content iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        /* Resize handles */
+        .resize-handle {
+            position: absolute;
+            background: transparent;
+        }
+        
+        .resize-handle-se {
+            bottom: 0;
+            right: 0;
+            width: 20px;
+            height: 20px;
+            cursor: se-resize;
+        }
+        
+        /* Taskbar */
+        .taskbar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 0 16px;
+            z-index: 90;
+        }
+        
+        .start-button {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
+            border-radius: 14px;
+            box-shadow: 0 6px 20px var(--shadow-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px var(--shadow-medium);
+        }
+        
+        .taskbar-apps {
+            flex: 1;
+            display: flex;
+            gap: 8px;
+            padding: 0 12px;
+            overflow-x: auto;
+        }
+        
+        .taskbar-app {
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex-shrink: 0;
+        }
+        
+        .taskbar-app:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+        }
+        
+        .taskbar-app.active {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: var(--warm-yellow);
+            box-shadow: 0 6px 20px var(--shadow-soft);
+        }
+        
+        /* Clock */
+        .clock-widget {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            padding: 8px 14px;
+            display: flex;
+            align-items: center;
+            font-family: 'Comfortaa', cursive;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+        }
+        
+        /* Auth Modal */
+        #auth-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #auth-modal.active {
+            display: flex;
+        }
+        
+        .auth-container {
+            background: var(--glass-heavy);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 24px;
+            padding: 32px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 20px 60px var(--shadow-medium);
+        }
+        
+        .auth-header {
+            text-align: center;
+            margin-bottom: 24px;
+        }
+        
+        .auth-header h2 {
+            font-family: 'Comfortaa', cursive;
+            font-size: 24px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+        
+        .auth-header p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 14px;
+        }
+        
+        .auth-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        
+        .auth-tab {
+            flex: 1;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .auth-tab.active {
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
+            border-color: transparent;
+        }
+        
+        .auth-input {
+            width: 100%;
+            padding: 12px 16px;
+            margin-bottom: 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+        
+        .auth-input:focus {
+            outline: none;
+            border-color: var(--warm-yellow);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .auth-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .auth-button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--deep-blue), var(--purple));
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 12px;
+        }
+        
+        .auth-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px var(--shadow-medium);
+        }
+        
+        .auth-close {
+            width: 100%;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: white;
+            font-family: 'Comfortaa', cursive;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .auth-close:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* Fullscreen App Mode for Mobile */
+        .fullscreen-app {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 9999;
+            background: var(--glass);
+            display: flex;
+            flex-direction: column;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+            }
+            to {
+                transform: translateX(0);
+            }
+        }
+        
+        .mobile-app-header {
+            height: 60px;
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            gap: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .mobile-back-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mobile-back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .mobile-app-title {
+            flex: 1;
+            font-family: 'Comfortaa', cursive;
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+            text-align: center;
+            padding-right: 55px; /* Balance with back button */
+        }
+        
+        .fullscreen-iframe {
+            flex: 1;
+            width: 100%;
+            border: none;
+            background: white;
+        }
+        
+        /* Mobile-specific window overrides */
+        @media (max-width: 767px) {
+            .desktop-window {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                transform: none !important;
+                border-radius: 0 !important;
+                border: none !important;
+                max-width: none !important;
+                max-height: none !important;
+            }
+            
+            .window-header {
+                position: sticky;
+                top: 0;
+                z-index: 10;
+                border-radius: 0;
+            }
+            
+            .window-content {
+                height: calc(100% - 40px);
+            }
+            
+            .window-content iframe {
+                height: 100%;
+            }
+            
+            /* Hide desktop-only elements on mobile */
+            .window-controls {
+                display: none;
+            }
+            
+            /* Show mobile back button instead */
+            .window-header::before {
+                content: '←';
+                position: absolute;
+                left: 15px;
+                top: 50%;
+                transform: translateY(-50%);
+                width: 30px;
+                height: 30px;
+                border-radius: 50%;
+                background: rgba(255, 255, 255, 0.2);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                cursor: pointer;
+            }
+            
+            /* Hide resize handles on mobile */
+            .resize-handle {
+                display: none !important;
+            }
+        }
+        
+        /* Background Changer Taskbar Button */
+        .bg-changer-button {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--purple), var(--coral), var(--warm-yellow));
+            background-size: 300% 300%;
+            animation: colorWheel 3s ease infinite;
+            border-radius: 14px;
+            box-shadow: 0 6px 20px var(--shadow-medium);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .bg-changer-button:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 8px 24px var(--shadow-medium);
+        }
+        
+        .bg-changer-button:active {
+            transform: scale(0.95);
+        }
+        
+        .bg-changer-icon {
+            font-size: 22px;
+            animation: spin 8s linear infinite;
+            position: relative;
+            z-index: 1;
+        }
+        
+        @keyframes colorWheel {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        /* Gradient transition */
+        body.gradient-transition {
+            transition: background 1s ease;
+        }
+        
+        /* Achievement Popup */
+        .achievement {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: var(--glass-heavy);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            padding: 24px 32px;
+            text-align: center;
+            z-index: 1000;
+            box-shadow: 0 20px 60px var(--shadow-medium);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .achievement.show {
+            transform: translate(-50%, -50%) scale(1);
+        }
+        
+        .achievement-title {
+            font-family: 'Comfortaa', cursive;
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--warm-yellow);
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(255, 217, 61, 0.5);
+        }
+        
+        .achievement-text {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            color: white;
+        }
+        
+        /* Click effect */
+        .click-effect {
+            position: absolute;
+            pointer-events: none;
+            width: 40px;
+            height: 40px;
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 50%;
+            animation: clickRipple 0.6s ease-out;
+            z-index: 500;
+        }
+        
+        @keyframes clickRipple {
+            from {
+                transform: scale(0);
+                opacity: 1;
+            }
+            to {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+        
+        /* Coin animation */
+        .coin {
+            position: absolute;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, var(--warm-yellow), var(--coral));
+            border-radius: 10px;
+            pointer-events: none;
+            z-index: 400;
+            font-family: 'Comfortaa', cursive;
+            font-size: 13px;
+            font-weight: 600;
+            color: white;
+            box-shadow: 0 4px 12px var(--shadow-soft);
+            animation: coinFloat 1s ease-out forwards;
+        }
+        
+        @keyframes coinFloat {
+            0% {
+                transform: translateY(0) scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px) scale(0.8) rotate(10deg);
+                opacity: 0;
+            }
+        }
+        
+        /* Mobile Responsive - Tablet */
+        @media (min-width: 768px) {
+            .desktop-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 20px;
+            }
+            
+            .desktop-icon .icon {
+                width: 64px;
+                height: 64px;
+                font-size: 32px;
+            }
+            
+            .desktop-icon .label {
+                font-size: 12px;
+            }
+            
+            .taskbar {
+                height: 70px;
+            }
+            
+            .start-button {
+                width: 50px;
+                height: 50px;
+                font-size: 24px;
+            }
+            
+            .bg-changer-button {
+                width: 50px;
+                height: 50px;
+            }
+            
+            .bg-changer-icon {
+                font-size: 24px;
+            }
+            
+            .taskbar-app {
+                width: 44px;
+                height: 44px;
+                font-size: 22px;
+            }
+        }
+        
+        /* Desktop */
+        @media (min-width: 1024px) {
+            .desktop-grid {
+                grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+                gap: 24px;
+            }
+            
+            .desktop-icon .icon {
+                width: 72px;
+                height: 72px;
+                font-size: 36px;
+                border-radius: 20px;
+            }
+            
+            .desktop-icon .label {
+                font-size: 13px;
+            }
+            
+            #desktop {
+                top: 90px;
+                bottom: 80px;
+                padding: 24px;
+            }
+            
+            .taskbar {
+                height: 80px;
+                gap: 20px;
+                padding: 0 24px;
+            }
+            
+            .start-button {
+                width: 60px;
+                height: 60px;
+                font-size: 30px;
+                border-radius: 18px;
+            }
+            
+            .bg-changer-button {
+                width: 60px;
+                height: 60px;
+                border-radius: 18px;
+            }
+            
+            .bg-changer-icon {
+                font-size: 30px;
+            }
+            
+            .taskbar-app {
+                width: 56px;
+                height: 56px;
+                font-size: 28px;
+                border-radius: 16px;
+            }
+            
+            .menu-bar {
+                padding: 18px 24px;
+            }
+            
+            .score-display {
+                padding: 12px 22px;
+                font-size: 15px;
+            }
+            
+            .user-display {
+                padding: 10px 18px;
+            }
+            
+            .user-avatar {
+                width: 38px;
+                height: 38px;
+                font-size: 22px;
+            }
+            
+            .user-name {
+                font-size: 16px;
+            }
+        }
+        
+        /* Mobile specific */
+        @media (max-width: 767px) {
+            #desktop {
+                padding: 12px;
+                top: 70px;
+                bottom: 60px;
+            }
+            
+            .menu-bar {
+                padding: 12px;
+            }
+            
+            .score-display {
+                padding: 8px 14px;
+                font-size: 12px;
+            }
+            
+            .user-display {
+                padding: 8px 12px;
+            }
+            
+            .user-avatar {
+                width: 32px;
+                height: 32px;
+                font-size: 18px;
+            }
+            
+            .user-label {
+                font-size: 9px;
+            }
+            
+            .user-name {
+                font-size: 14px;
+            }
+            
+            /* Windows fullscreen on mobile */
+            .desktop-window {
+                position: fixed !important;
+                top: 0 !important;
+                left: 0 !important;
+                right: 0 !important;
+                bottom: 0 !important;
+                width: 100% !important;
+                height: 100% !important;
+                border-radius: 0 !important;
+                max-width: none !important;
+                max-height: none !important;
+            }
+            
+            .window-header {
+                border-radius: 0;
+            }
+            
+            .clock-widget {
+                padding: 6px 10px;
+                font-size: 11px;
+            }
+        }
+        
+        /* Utility classes */
+        .hidden {
+            display: none !important;
+        }
+        
+        .dragging {
+            opacity: 0.5;
+        }
+        
+        /* Loading state */
+        .loading {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background orbs -->
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    
+    <!-- Top Bar -->
+    <div class="menu-bar">
+        <div class="score-display">
+            SCORE: <span class="score-value" id="score">0</span>
+        </div>
+        <div class="user-display" id="user-display" onclick="toggleAuth(event)">
+            <div class="user-avatar" id="profile-emoji">👤</div>
+            <div class="user-info">
+                <div class="user-label" id="user-label">CLICK TO</div>
+                <div class="user-name" id="username-display">Login</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Desktop -->
+    <div id="desktop">
+        <div class="desktop-grid" id="desktop-grid">
+            <!-- Icons will be dynamically loaded here -->
+        </div>
+    </div>
+    
+    <!-- Window Container -->
+    <div id="window-container"></div>
+    
+    <!-- Taskbar -->
+    <div class="taskbar">
+        <div class="start-button" id="start-button">🏠</div>
+        <div class="bg-changer-button" onclick="changeBackground()" title="Change background">
+            <div class="bg-changer-icon">🎨</div>
+        </div>
+        <div class="taskbar-apps" id="taskbar-apps"></div>
+        <div class="clock-widget" id="menu-time">--:--</div>
+    </div>
+    
+    <!-- Authentication Modal -->
+    <div id="auth-modal">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h2>Welcome to WebtoysOS</h2>
+                <p>Sign in or create an account</p>
+            </div>
+            
+            <div class="auth-tabs">
+                <button class="auth-tab active" onclick="switchAuthTab('login')">Login</button>
+                <button class="auth-tab" onclick="switchAuthTab('register')">Register</button>
+            </div>
+            
+            <div class="auth-form" id="auth-form">
+                <input type="text" id="auth-handle" class="auth-input" placeholder="Username (3-15 characters)" maxlength="15">
+                <input type="password" id="auth-pin" class="auth-input" placeholder="PIN (4 digits)" maxlength="4" pattern="[0-9]{4}">
+                <button class="auth-button" onclick="handleAuth()">Login</button>
+                <button class="auth-close" onclick="closeAuth()">Cancel</button>
+            </div>
+            
+            <div id="auth-message" style="color: #ff6464; text-align: center; margin-top: 12px; display: none;"></div>
+        </div>
+    </div>
+    
+    <!-- Achievement Popup -->
+    <div class="achievement" id="achievement">
+        <div class="achievement-title">ACHIEVEMENT!</div>
+        <div class="achievement-text">Welcome to WebtoysOS!</div>
+    </div>
+    
+    <script>
+        // Initialize Supabase
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        
+        let supabaseInstance = null;
+        if (typeof window.supabase !== 'undefined') {
+            supabaseInstance = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
+        } else {
+            console.error('❌ Supabase library not loaded!');
+        }
+        
+        // Background Gradient Presets - Gorgeous combinations
+        const GRADIENTS = [
+            // Original vibrant
+            'linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%)',
+            
+            // Sunset Paradise
+            'linear-gradient(135deg, #ff6b9d 0%, #feca57 25%, #ff8177 50%, #ff0844 75%, #c33764 100%)',
+            
+            // Ocean Dream
+            'linear-gradient(135deg, #2E3192 0%, #1BFFFF 33%, #09C6F9 66%, #045DE9 100%)',
+            
+            // Northern Lights
+            'linear-gradient(135deg, #00d2ff 0%, #3a47d5 25%, #d400ff 50%, #3a47d5 75%, #00d2ff 100%)',
+            
+            // Cotton Candy
+            'linear-gradient(135deg, #ee9ca7 0%, #ffdde1 25%, #ffb7d5 50%, #e3a7d5 75%, #b8a9c6 100%)',
+            
+            // Tropical Paradise
+            'linear-gradient(135deg, #16A085 0%, #2ECC71 25%, #3498DB 50%, #9B59B6 75%, #E74C3C 100%)',
+            
+            // Aurora Borealis
+            'linear-gradient(135deg, #43cea2 0%, #185a9d 25%, #ba5370 50%, #f4e2d8 75%, #43cea2 100%)',
+            
+            // Cosmic Nebula
+            'linear-gradient(135deg, #0F2027 0%, #203A43 25%, #2C5364 50%, #764ba2 75%, #f093fb 100%)',
+            
+            // Peachy Keen
+            'linear-gradient(135deg, #ffecd2 0%, #fcb69f 25%, #ff9a9e 50%, #fecfef 75%, #fecfef 100%)',
+            
+            // Electric Violet
+            'linear-gradient(135deg, #4776E6 0%, #8E54E9 25%, #B06AB3 50%, #DD5E89 75%, #F7BB97 100%)',
+            
+            // Forest Mist
+            'linear-gradient(135deg, #134E5E 0%, #71B280 25%, #659999 50%, #f4791f 75%, #134E5E 100%)',
+            
+            // Candy Shop
+            'linear-gradient(135deg, #D3CCE3 0%, #E9E4F0 20%, #ffeaa7 40%, #fab1a0 60%, #ff7675 80%, #fd79a8 100%)',
+            
+            // Deep Space
+            'linear-gradient(135deg, #000428 0%, #004e92 25%, #1e3c72 50%, #2a5298 75%, #7e57c2 100%)',
+            
+            // Miami Vice
+            'linear-gradient(135deg, #ec008c 0%, #fc6767 25%, #fec837 50%, #5cb85c 75%, #00bcd4 100%)',
+            
+            // Lavender Dreams
+            'linear-gradient(135deg, #C471F5 0%, #FA71CD 25%, #ff9a9e 50%, #fecfef 75%, #fda085 100%)',
+            
+            // Fire & Ice
+            'linear-gradient(135deg, #00416A 0%, #799F0C 25%, #FFE000 50%, #FF8008 75%, #FF0080 100%)',
+            
+            // Bubble Gum
+            'linear-gradient(135deg, #ff9a9e 0%, #fecfef 20%, #fecfef 40%, #fad0c4 60%, #ffd1ff 80%, #ffecd2 100%)',
+            
+            // Mystic River
+            'linear-gradient(135deg, #330867 0%, #30cfd0 25%, #a8ff78 50%, #78ffd6 75%, #330867 100%)'
+        ];
+        
+        let currentGradientIndex = 0;
+        
+        // Change background gradient
+        function changeBackground() {
+            currentGradientIndex = (currentGradientIndex + 1) % GRADIENTS.length;
+            const newGradient = GRADIENTS[currentGradientIndex];
+            
+            // Add transition class
+            document.body.classList.add('gradient-transition');
+            
+            // Change the gradient
+            document.body.style.background = newGradient;
+            document.body.style.backgroundSize = '600% 600%';
+            
+            // Remove transition class after animation
+            setTimeout(() => {
+                document.body.classList.remove('gradient-transition');
+            }, 1000);
+            
+            // Save preference
+            localStorage.setItem('desktopGradient', currentGradientIndex);
+            
+            // Fun animation on the widget
+            const widget = document.querySelector('.bg-changer-widget');
+            widget.style.animation = 'none';
+            setTimeout(() => {
+                widget.style.animation = 'colorWheel 3s ease infinite, pulse 0.5s ease';
+            }, 10);
+        }
+        
+        // Load saved gradient on startup
+        function loadSavedGradient() {
+            const saved = localStorage.getItem('desktopGradient');
+            if (saved !== null) {
+                currentGradientIndex = parseInt(saved);
+                if (currentGradientIndex >= 0 && currentGradientIndex < GRADIENTS.length) {
+                    document.body.style.background = GRADIENTS[currentGradientIndex];
+                    document.body.style.backgroundSize = '600% 600%';
+                }
+            }
+        }
+        
+        // Desktop Config Client
+        class DesktopConfigClient {
+            constructor() {
+                this.supabase = supabaseInstance;
+                this.config = null;
+                this.userId = null;
+                this.saveTimeout = null;
+            }
+            
+            async loadConfig(userId = null) {
+                this.userId = userId;
+                console.log('🔄 Loading desktop config...');
+                
+                try {
+                    // Try user config first
+                    if (userId) {
+                        const { data: userConfigs } = await this.supabase
+                            .from('wtaf_desktop_config')
+                            .select('*')
+                            .eq('user_id', userId)
+                            .eq('desktop_version', 'webtoys-os-v3')
+                            .limit(1);
+                        
+                        if (userConfigs?.[0]) {
+                            this.config = userConfigs[0];
+                            console.log('✅ Loaded user config');
+                            return userConfigs[0];
+                        }
+                    }
+                    
+                    // Fall back to default config
+                    const { data: defaultConfigs } = await this.supabase
+                        .from('wtaf_desktop_config')
+                        .select('*')
+                        .is('user_id', null)
+                        .eq('desktop_version', 'webtoys-os-v3')
+                        .limit(1);
+                    
+                    if (defaultConfigs?.[0]) {
+                        this.config = defaultConfigs[0];
+                        console.log('✅ Loaded default config');
+                        return defaultConfigs[0];
+                    }
+                    
+                    // Hardcoded fallback with modern icons
+                    console.warn('⚠️ Using hardcoded fallback config');
+                    return this.getDefaultConfig();
+                } catch (error) {
+                    console.error('💥 Error loading config:', error);
+                    return this.getDefaultConfig();
+                }
+            }
+            
+            getDefaultConfig() {
+                return {
+                    app_registry: [
+                        { id: 'notepad', name: 'Notepad', icon: '📝', url: '/public/community-notepad', type: 'productivity', width: 800, height: 600 },
+                        { id: 'issue-tracker', name: 'Bug Tracker', icon: '🐛', url: '/public/toybox-issue-tracker-v3', type: 'system', width: 900, height: 700 },
+                        { id: 'textz', name: 'TextZ', icon: '📄', url: '/public/toybox-textz', type: 'productivity', width: 800, height: 600 },
+                        { id: 'paint', name: 'Paint', icon: '🎨', url: 'apps/paint.html', type: 'creative', width: 800, height: 600 },
+                        { id: 'fortune', name: 'Magic 8', icon: '🔮', url: 'apps/fortune-cookie.html', type: 'game', width: 600, height: 700 },
+                        { id: 'sudoku', name: 'Sudoku Pro', icon: '🎯', url: '/public/toybox-sudoku', type: 'game', width: 750, height: 750, resizable: true },
+                        { id: 'chat', name: 'Chat', icon: '💬', url: '/public/toybox-chat', type: 'system', width: 700, height: 500 }
+                    ],
+                    icon_positions: {},
+                    widget_positions: {},
+                    settings: {
+                        background: 'gradient'
+                    }
+                };
+            }
+            
+            async saveIconPosition(iconId, position) {
+                if (!this.config) return;
+                
+                if (!this.config.icon_positions) {
+                    this.config.icon_positions = {};
+                }
+                
+                this.config.icon_positions[iconId] = position;
+                
+                clearTimeout(this.saveTimeout);
+                this.saveTimeout = setTimeout(() => this.saveConfig(), 1000);
+            }
+            
+            async saveConfig() {
+                if (!this.config) return;
+                
+                try {
+                    await this.supabase
+                        .from('wtaf_desktop_config')
+                        .update({
+                            icon_positions: this.config.icon_positions,
+                            widget_positions: this.config.widget_positions,
+                            settings: this.config.settings,
+                            updated_at: new Date().toISOString()
+                        })
+                        .eq('id', this.config.id);
+                    
+                    console.log('💾 Config saved');
+                } catch (error) {
+                    console.error('❌ Failed to save config:', error);
+                }
+            }
+        }
+        
+        // Global state
+        let currentUser = null;
+        let authMode = 'login';
+        let windows = [];
+        let nextWindowZ = 1000;
+        let selectedIcons = new Set();
+        let draggedIcon = null;
+        let desktopConfig = null;
+        let configClient = new DesktopConfigClient();
+        let score = 0;
+        let clickCount = 0;
+        
+        console.log('🎯 Script loaded, waiting for DOM...');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('📄 DOM Content Loaded!');
+            console.log('🎨 Loading saved gradient...');
+            loadSavedGradient();
+            console.log('🔧 Initializing desktop...');
+            await initializeDesktop();
+            console.log('⏰ Setting up clock...');
+            updateClock();
+            setInterval(updateClock, 1000);
+            console.log('🔑 Loading auth from storage...');
+            loadAuthFromStorage();
+            console.log('✨ Setting up click effects...');
+            setupClickEffects();
+            console.log('🏆 Loading score...');
+            loadScore();
+            console.log('✅ All initialization complete!');
+        });
+        
+        async function initializeDesktop() {
+            console.log('🚀 Starting desktop initialization...');
+            try {
+                console.log('📝 Loading config from configClient...');
+                const config = await configClient.loadConfig(currentUser?.id);
+                console.log('📝 Config loaded:', config);
+                
+                // Fix: Properly structure the config for renderDesktop()
+                desktopConfig = {
+                    app_registry: config.app_registry || [],
+                    icon_positions: config.icon_positions || {},
+                    widget_positions: config.widget_positions || {},
+                    settings: config.settings || {}
+                };
+                console.log('📝 Desktop config structured:', desktopConfig);
+                console.log('📱 App registry has', desktopConfig.app_registry.length, 'apps');
+                
+                renderDesktop();
+                console.log('🎮 WebtoysOS Modern Playground initialized');
+            } catch (error) {
+                console.error('❌ Failed to initialize desktop:', error);
+                console.log('🔄 Falling back to default config...');
+                desktopConfig = configClient.getDefaultConfig();
+                console.log('📝 Default config:', desktopConfig);
+                renderDesktop();
+            }
+        }
+        
+        // Score system
+        function loadScore() {
+            const savedScore = localStorage.getItem('toybox_score');
+            if (savedScore) {
+                score = parseInt(savedScore) || 0;
+                updateScoreDisplay();
+            }
+        }
+        
+        function updateScore(points) {
+            score += points;
+            updateScoreDisplay();
+            localStorage.setItem('toybox_score', score);
+            
+            // Achievements
+            if (clickCount === 1) {
+                showAchievement('First Click!');
+            } else if (score >= 100 && score < 110) {
+                showAchievement('Century Mark!');
+            } else if (score >= 500 && score < 510) {
+                showAchievement('High Scorer!');
+            } else if (score >= 1000 && score < 1010) {
+                showAchievement('WebtoysOS Legend!');
+            }
+        }
+        
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = score.toLocaleString();
+        }
+        
+        function showAchievement(text) {
+            const achievement = document.getElementById('achievement');
+            achievement.querySelector('.achievement-text').textContent = text;
+            achievement.classList.add('show');
+            setTimeout(() => {
+                achievement.classList.remove('show');
+            }, 2500);
+        }
+        
+        // Click effects
+        function setupClickEffects() {
+            document.body.addEventListener('click', (e) => {
+                if (e.target.closest('.taskbar') || 
+                    e.target.closest('.menu-bar') || 
+                    e.target.closest('.desktop-window') ||
+                    e.target.closest('#auth-modal')) return;
+                
+                clickCount++;
+                updateScore(10);
+                
+                // Create click effect
+                const effect = document.createElement('div');
+                effect.className = 'click-effect';
+                effect.style.left = e.clientX - 20 + 'px';
+                effect.style.top = e.clientY - 20 + 'px';
+                document.body.appendChild(effect);
+                setTimeout(() => effect.remove(), 600);
+                
+                // Create coin
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                coin.textContent = '+10';
+                coin.style.left = e.clientX - 25 + 'px';
+                coin.style.top = e.clientY - 15 + 'px';
+                document.body.appendChild(coin);
+                setTimeout(() => coin.remove(), 1000);
+            });
+        }
+        
+        // Auth functions
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    // Ensure uppercase handle and participantId
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                            localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        }
+                    }
+                    updateAuthDisplay();
+                    broadcastAuth();
+                } catch (e) {
+                    console.error('Failed to load saved auth:', e);
+                    localStorage.removeItem('toybox_user');
+                }
+            }
+        }
+        
+        function toggleAuth(event) {
+            event.stopPropagation();
+            if (currentUser) {
+                if (confirm('Log out?')) {
+                    logout();
+                }
+            } else {
+                document.getElementById('auth-modal').classList.add('active');
+                document.getElementById('auth-handle').focus();
+            }
+        }
+        
+        function closeAuth() {
+            document.getElementById('auth-modal').classList.remove('active');
+            document.getElementById('auth-message').style.display = 'none';
+        }
+        
+        function switchAuthTab(mode) {
+            authMode = mode;
+            const tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const button = document.querySelector('.auth-button');
+            button.textContent = mode === 'login' ? 'Login' : 'Register';
+        }
+        
+        async function handleAuth() {
+            const handle = document.getElementById('auth-handle').value.trim();
+            const pin = document.getElementById('auth-pin').value;
+            const messageEl = document.getElementById('auth-message');
+            
+            if (!handle || handle.length < 3) {
+                messageEl.textContent = 'Username must be at least 3 characters';
+                messageEl.style.display = 'block';
+                return;
+            }
+            
+            if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                messageEl.textContent = 'PIN must be exactly 4 digits';
+                messageEl.style.display = 'block';
+                return;
+            }
+            
+            if (authMode === 'login') {
+                // Login logic
+                const response = await fetch(`/api/zad/load?app_id=desktop-auth&participant_id=${handle.toUpperCase()}_${pin}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    const user = data.find(d => d.participant_id === `${handle.toUpperCase()}_${pin}`);
+                    
+                    if (user) {
+                        currentUser = user.content_data;
+                        // Ensure proper format
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        updateAuthDisplay();
+                        broadcastAuth();
+                        closeAuth();
+                        showAchievement(`Welcome back, ${currentUser.handle}!`);
+                    } else {
+                        messageEl.textContent = 'Invalid username or PIN';
+                        messageEl.style.display = 'block';
+                    }
+                }
+            } else {
+                // Register logic
+                const upperHandle = handle.toUpperCase();
+                const userData = {
+                    handle: upperHandle,
+                    pin: pin,
+                    participantId: `${upperHandle}_${pin}`,
+                    id: upperHandle,
+                    created: new Date().toISOString()
+                };
+                
+                const saveResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'desktop-auth',
+                        participant_id: userData.participantId,
+                        action_type: 'register',
+                        content_data: userData
+                    })
+                });
+                
+                if (saveResponse.ok) {
+                    currentUser = userData;
+                    localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                    updateAuthDisplay();
+                    broadcastAuth();
+                    closeAuth();
+                    showAchievement(`Welcome to WebtoysOS, ${upperHandle}!`);
+                } else {
+                    messageEl.textContent = 'Registration failed. Try again.';
+                    messageEl.style.display = 'block';
+                }
+            }
+        }
+        
+        function logout() {
+            currentUser = null;
+            localStorage.removeItem('toybox_user');
+            updateAuthDisplay();
+            broadcastAuth();
+            showAchievement('Logged out successfully');
+        }
+        
+        function updateAuthDisplay() {
+            const userLabel = document.getElementById('user-label');
+            const username = document.getElementById('username-display');
+            const profileEmoji = document.getElementById('profile-emoji');
+            
+            if (currentUser) {
+                userLabel.textContent = 'LOGGED IN';
+                username.textContent = currentUser.handle;
+                profileEmoji.textContent = '😎';
+            } else {
+                userLabel.textContent = 'CLICK TO';
+                username.textContent = 'Login';
+                profileEmoji.textContent = '👤';
+            }
+        }
+        
+        function broadcastAuth() {
+            // Send auth update to all open windows
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                } catch (e) {
+                    console.error('Failed to send auth to iframe:', e);
+                }
+            });
+        }
+        
+        // Desktop rendering
+        function renderDesktop() {
+            console.log('🖥️ Rendering desktop...');
+            const grid = document.getElementById('desktop-grid');
+            if (!grid) {
+                console.error('❌ Desktop grid element not found!');
+                return;
+            }
+            
+            grid.innerHTML = '';
+            console.log('🧹 Grid cleared');
+            
+            if (!desktopConfig || !desktopConfig.app_registry) {
+                console.error('❌ No app registry found in desktopConfig:', desktopConfig);
+                return;
+            }
+            
+            console.log('📱 Rendering', desktopConfig.app_registry.length, 'apps');
+            desktopConfig.app_registry.forEach((app, index) => {
+                console.log(`📱 Rendering app ${index + 1}:`, app.name, app.icon);
+                const iconDiv = document.createElement('div');
+                iconDiv.className = 'desktop-icon';
+                iconDiv.dataset.appId = app.id;
+                iconDiv.draggable = true;
+                
+                const iconEl = document.createElement('div');
+                iconEl.className = `icon ${app.type ? 'type-' + app.type : ''}`;
+                iconEl.textContent = app.icon || '📱';
+                
+                const labelEl = document.createElement('div');
+                labelEl.className = 'label';
+                labelEl.textContent = app.name;
+                
+                iconDiv.appendChild(iconEl);
+                iconDiv.appendChild(labelEl);
+                
+                // Single click to show points and open
+                iconDiv.addEventListener('click', (e) => {
+                    // Allow the click effect to trigger first (it checks for desktop-icon in parents)
+                    // Then open the app after a tiny delay to see the effect
+                    setTimeout(() => openWindow(app), 100);
+                });
+                
+                // Touch support - single tap on mobile
+                let touchTimer;
+                let tapCount = 0;
+                iconDiv.addEventListener('touchstart', (e) => {
+                    tapCount++;
+                    if (tapCount === 1) {
+                        touchTimer = setTimeout(() => {
+                            openWindow(app);
+                            tapCount = 0;
+                        }, 300);
+                    } else {
+                        clearTimeout(touchTimer);
+                        openWindow(app);
+                        tapCount = 0;
+                    }
+                });
+                iconDiv.addEventListener('touchend', () => {
+                    // Touch end handled in touchstart
+                });
+                
+                grid.appendChild(iconDiv);
+            });
+        }
+        
+        // Mobile detection
+        function isMobile() {
+            return window.innerWidth < 768;
+        }
+        
+        function isTouchDevice() {
+            return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        }
+        
+        // Window management
+        function openWindow(app) {
+            // Use fullscreen mode on mobile
+            if (isMobile()) {
+                openFullscreenApp(app);
+                return;
+            }
+            
+            // Check if window already exists
+            const existingWindow = windows.find(w => w.app.id === app.id);
+            if (existingWindow) {
+                focusWindow(existingWindow.id);
+                return;
+            }
+            
+            console.log('Opening app:', app.name);
+            
+            const windowId = 'window-' + Date.now();
+            const windowDiv = document.createElement('div');
+            windowDiv.className = 'desktop-window';
+            windowDiv.id = windowId;
+            windowDiv.style.width = (app.width || 600) + 'px';
+            windowDiv.style.height = (app.height || 400) + 'px';
+            windowDiv.style.left = '50%';
+            windowDiv.style.top = '50%';
+            windowDiv.style.transform = 'translate(-50%, -50%)';
+            windowDiv.style.zIndex = nextWindowZ++;
+            
+            // Window header
+            const header = document.createElement('div');
+            header.className = 'window-header';
+            header.innerHTML = `
+                <div class="window-title">
+                    <span>${app.icon || '📱'}</span>
+                    <span>${app.name}</span>
+                </div>
+                <div class="window-controls">
+                    <div class="window-control maximize" onclick="maximizeWindow('${windowId}')"></div>
+                    <div class="window-control minimize" onclick="minimizeWindow('${windowId}')"></div>
+                    <div class="window-control close" onclick="closeWindow('${windowId}')"></div>
+                </div>
+            `;
+            
+            // Window content
+            const content = document.createElement('div');
+            content.className = 'window-content';
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = app.url.startsWith('http') ? app.url : 
+                        app.url.startsWith('/') ? `${window.location.protocol}//${window.location.host}${app.url}` : 
+                        `apps/${app.url}`;
+            iframe.style.width = '100%';
+            iframe.style.height = '100%';
+            iframe.style.border = 'none';
+            iframe.onload = () => {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                    console.log('Auth sent to app:', app.name);
+                } catch (e) {
+                    console.error('Failed to send auth to app:', e);
+                }
+            };
+            
+            content.appendChild(iframe);
+            windowDiv.appendChild(header);
+            windowDiv.appendChild(content);
+            
+            // Add resize handle if resizable
+            if (app.resizable) {
+                const resizeHandle = document.createElement('div');
+                resizeHandle.className = 'resize-handle resize-handle-se';
+                windowDiv.appendChild(resizeHandle);
+                setupResize(windowDiv, resizeHandle);
+            }
+            
+            document.getElementById('window-container').appendChild(windowDiv);
+            windows.push({ id: windowId, app: app });
+            
+            // Add to taskbar
+            updateTaskbar();
+            
+            // Make draggable (only on desktop)
+            if (!isMobile()) {
+                setupDragging(windowDiv, header);
+            }
+            
+            showAchievement(`Opened ${app.name}!`);
+            updateScore(5);
+        }
+        
+        function closeWindow(windowId) {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                // Check if it's a fullscreen app
+                if (windowEl.classList.contains('fullscreen-app')) {
+                    closeFullscreenApp(windowId);
+                    return;
+                }
+                windowEl.remove();
+                windows = windows.filter(w => w.id !== windowId);
+                updateTaskbar();
+            }
+        }
+        
+        // Fullscreen app functions for mobile
+        function openFullscreenApp(app) {
+            // Check if app already open
+            const existingApp = document.querySelector('.fullscreen-app');
+            if (existingApp) {
+                existingApp.remove();
+            }
+            
+            const appId = 'fullscreen-' + Date.now();
+            const appContainer = document.createElement('div');
+            appContainer.className = 'fullscreen-app';
+            appContainer.id = appId;
+            
+            // Create header with back button
+            const header = document.createElement('div');
+            header.className = 'mobile-app-header';
+            header.innerHTML = `
+                <button class="mobile-back-btn" onclick="closeFullscreenApp('${appId}')">←</button>
+                <div class="mobile-app-title">${app.icon || '📱'} ${app.name}</div>
+            `;
+            
+            // Create iframe
+            const iframe = document.createElement('iframe');
+            iframe.className = 'fullscreen-iframe';
+            iframe.src = app.url.startsWith('http') ? app.url : 
+                        app.url.startsWith('/') ? `${window.location.protocol}//${window.location.host}${app.url}` : 
+                        `apps/${app.url}`;
+            
+            // Send auth to app when loaded
+            iframe.onload = () => {
+                try {
+                    iframe.contentWindow.postMessage({
+                        type: 'TOYBOX_AUTH',
+                        user: currentUser
+                    }, '*');
+                    iframe.contentWindow.postMessage({
+                        type: 'MOBILE_MODE',
+                        isMobile: true
+                    }, '*');
+                } catch (e) {
+                    console.error('Failed to send messages to app:', e);
+                }
+            };
+            
+            appContainer.appendChild(header);
+            appContainer.appendChild(iframe);
+            document.body.appendChild(appContainer);
+            
+            // Hide desktop UI elements
+            document.getElementById('desktop').style.display = 'none';
+            document.querySelector('.taskbar').style.display = 'none';
+            document.querySelector('.menu-bar').style.display = 'none';
+            
+            // Track in windows array
+            windows.push({ id: appId, app: app, fullscreen: true });
+        }
+        
+        function closeFullscreenApp(appId) {
+            const appEl = document.getElementById(appId);
+            if (appEl) {
+                appEl.remove();
+                windows = windows.filter(w => w.id !== appId);
+                
+                // Restore desktop UI
+                document.getElementById('desktop').style.display = '';
+                document.querySelector('.taskbar').style.display = '';
+                document.querySelector('.menu-bar').style.display = '';
+            }
+        }
+        
+        // Handle back button on mobile browsers
+        window.addEventListener('popstate', function(e) {
+            const fullscreenApp = document.querySelector('.fullscreen-app');
+            if (fullscreenApp) {
+                closeFullscreenApp(fullscreenApp.id);
+                e.preventDefault();
+            }
+        });
+        
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            // Adjust layout after orientation change
+            setTimeout(() => {
+                if (isMobile()) {
+                    const iframe = document.querySelector('.fullscreen-iframe');
+                    if (iframe) {
+                        iframe.style.height = window.innerHeight - 60 + 'px';
+                    }
+                }
+            }, 100);
+        });
+        
+        function minimizeWindow(windowId) {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.style.display = 'none';
+                updateTaskbar();
+            }
+        }
+        
+        function maximizeWindow(windowId) {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                const isMaximized = windowEl.dataset.maximized === 'true';
+                
+                if (isMaximized) {
+                    // Restore
+                    windowEl.style.width = windowEl.dataset.originalWidth;
+                    windowEl.style.height = windowEl.dataset.originalHeight;
+                    windowEl.style.left = windowEl.dataset.originalLeft;
+                    windowEl.style.top = windowEl.dataset.originalTop;
+                    windowEl.style.transform = windowEl.dataset.originalTransform;
+                    windowEl.dataset.maximized = 'false';
+                } else {
+                    // Maximize
+                    windowEl.dataset.originalWidth = windowEl.style.width;
+                    windowEl.dataset.originalHeight = windowEl.style.height;
+                    windowEl.dataset.originalLeft = windowEl.style.left;
+                    windowEl.dataset.originalTop = windowEl.style.top;
+                    windowEl.dataset.originalTransform = windowEl.style.transform;
+                    
+                    windowEl.style.width = '100%';
+                    windowEl.style.height = 'calc(100% - 80px)';
+                    windowEl.style.left = '0';
+                    windowEl.style.top = '0';
+                    windowEl.style.transform = 'none';
+                    windowEl.dataset.maximized = 'true';
+                }
+            }
+        }
+        
+        function focusWindow(windowId) {
+            const windowEl = document.getElementById(windowId);
+            if (windowEl) {
+                windowEl.style.display = 'flex';
+                windowEl.style.zIndex = nextWindowZ++;
+            }
+        }
+        
+        function updateTaskbar() {
+            const taskbarApps = document.getElementById('taskbar-apps');
+            taskbarApps.innerHTML = '';
+            
+            windows.forEach(w => {
+                const appBtn = document.createElement('div');
+                appBtn.className = 'taskbar-app';
+                const windowEl = document.getElementById(w.id);
+                if (windowEl && windowEl.style.display !== 'none') {
+                    appBtn.classList.add('active');
+                }
+                appBtn.textContent = w.app.icon || '📱';
+                appBtn.onclick = () => focusWindow(w.id);
+                taskbarApps.appendChild(appBtn);
+            });
+        }
+        
+        // Dragging
+        function setupDragging(element, handle) {
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            handle.addEventListener('mousedown', startDrag);
+            handle.addEventListener('touchstart', startDrag, { passive: false });
+            
+            function startDrag(e) {
+                isDragging = true;
+                element.style.zIndex = nextWindowZ++;
+                
+                if (e.type === 'touchstart') {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                } else {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                }
+                
+                const rect = element.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+                
+                document.addEventListener('mousemove', drag);
+                document.addEventListener('mouseup', stopDrag);
+                document.addEventListener('touchmove', drag, { passive: false });
+                document.addEventListener('touchend', stopDrag);
+            }
+            
+            function drag(e) {
+                if (!isDragging) return;
+                
+                e.preventDefault();
+                
+                let currentX, currentY;
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                } else {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+                }
+                
+                const deltaX = currentX - startX;
+                const deltaY = currentY - startY;
+                
+                element.style.left = (initialX + deltaX) + 'px';
+                element.style.top = (initialY + deltaY) + 'px';
+                element.style.transform = 'none';
+            }
+            
+            function stopDrag() {
+                isDragging = false;
+                document.removeEventListener('mousemove', drag);
+                document.removeEventListener('mouseup', stopDrag);
+                document.removeEventListener('touchmove', drag);
+                document.removeEventListener('touchend', stopDrag);
+            }
+        }
+        
+        // Resizing
+        function setupResize(element, handle) {
+            let isResizing = false;
+            let startX, startY, startWidth, startHeight;
+            
+            handle.addEventListener('mousedown', startResize);
+            handle.addEventListener('touchstart', startResize, { passive: false });
+            
+            function startResize(e) {
+                isResizing = true;
+                
+                if (e.type === 'touchstart') {
+                    startX = e.touches[0].clientX;
+                    startY = e.touches[0].clientY;
+                } else {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                }
+                
+                startWidth = parseInt(window.getComputedStyle(element).width, 10);
+                startHeight = parseInt(window.getComputedStyle(element).height, 10);
+                
+                document.addEventListener('mousemove', resize);
+                document.addEventListener('mouseup', stopResize);
+                document.addEventListener('touchmove', resize, { passive: false });
+                document.addEventListener('touchend', stopResize);
+            }
+            
+            function resize(e) {
+                if (!isResizing) return;
+                
+                e.preventDefault();
+                
+                let currentX, currentY;
+                if (e.type === 'touchmove') {
+                    currentX = e.touches[0].clientX;
+                    currentY = e.touches[0].clientY;
+                } else {
+                    currentX = e.clientX;
+                    currentY = e.clientY;
+                }
+                
+                const newWidth = startWidth + (currentX - startX);
+                const newHeight = startHeight + (currentY - startY);
+                
+                element.style.width = Math.max(300, newWidth) + 'px';
+                element.style.height = Math.max(200, newHeight) + 'px';
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                document.removeEventListener('mousemove', resize);
+                document.removeEventListener('mouseup', stopResize);
+                document.removeEventListener('touchmove', resize);
+                document.removeEventListener('touchend', stopResize);
+            }
+        }
+        
+        // Clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            document.getElementById('menu-time').textContent = `${hours}:${minutes}`;
+        }
+        
+        // Message handling
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'GET_AUTH') {
+                event.source.postMessage({
+                    type: 'TOYBOX_AUTH',
+                    user: currentUser
+                }, '*');
+            }
+        });
+        
+        // Space key bonus
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && !e.target.closest('input')) {
+                e.preventDefault();
+                document.body.style.animation = 'shake 0.5s';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                }, 500);
+                updateScore(50);
+                showAchievement('Space Bonus! +50');
+            }
+        });
+        
+        // Add shake animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+        `;
+        document.head.appendChild(style);
+        
+        // Music Player Implementation
+        const MUSIC_GENRES = {
+            chill: {
+                name: 'Chill Vibes',
+                emoji: '🎶',
+                tags: ['lo-fi', 'chill', 'relaxing', 'ambient'],
+                prompt: 'Create a chill lo-fi beat perfect for studying, relaxing instrumental',
+                color: 'genre-chill'
+            },
+            happy: {
+                name: 'Happy Beats',
+                emoji: '🎉',
+                tags: ['upbeat', 'happy', 'pop', 'energetic'],
+                prompt: 'Create an upbeat happy pop instrumental, cheerful and energetic',
+                color: 'genre-happy'
+            },
+            focus: {
+                name: 'Focus Mode',
+                emoji: '🎹',
+                tags: ['classical', 'piano', 'focus', 'concentration'],
+                prompt: 'Create a classical piano piece for deep focus and concentration',
+                color: 'genre-focus'
+            }
+        };
+        
+        class MusicPlayer {
+            constructor() {
+                this.audio = new Audio();
+                this.currentGenre = 'chill';
+                this.isPlaying = false;
+                this.volume = 0.5;
+                this.queue = new Map();
+                this.currentTrack = null;
+                this.isGenerating = false;
+                this.minimized = false;
+                
+                // Initialize audio element
+                this.audio.volume = this.volume;
+                this.audio.addEventListener('ended', () => this.onTrackEnded());
+                this.audio.addEventListener('error', (e) => this.onError(e));
+                
+                // Initialize queue for each genre
+                Object.keys(MUSIC_GENRES).forEach(genre => {
+                    this.queue.set(genre, []);
+                });
+                
+                // Load saved preferences
+                this.loadPreferences();
+            }
+            
+            async generateMusic(genre) {
+                if (this.isGenerating) return null;
+                
+                this.isGenerating = true;
+                this.updateStatus(`<span class="music-loading">🎵</span> Generating ${MUSIC_GENRES[genre].name}...`);
+                
+                try {
+                    const response = await fetch('/api/sonauto', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            prompt: MUSIC_GENRES[genre].prompt,
+                            tags: MUSIC_GENRES[genre].tags,
+                            instrumental: true,
+                            num_songs: 1,
+                            output_format: 'mp3'
+                        })
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to generate music');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    if (data.task_id) {
+                        // Poll for completion
+                        return await this.pollForCompletion(data.task_id);
+                    } else if (data.audio_url) {
+                        // Direct response (might happen with cached results)
+                        return data;
+                    }
+                    
+                } catch (error) {
+                    console.error('Music generation error:', error);
+                    this.updateStatus(`<span class="music-error">Failed to generate music 😔</span>`);
+                    return null;
+                } finally {
+                    this.isGenerating = false;
+                }
+            }
+            
+            async pollForCompletion(taskId, attempts = 0) {
+                const maxAttempts = 60; // 60 seconds max
+                
+                if (attempts >= maxAttempts) {
+                    throw new Error('Generation timeout');
+                }
+                
+                try {
+                    const response = await fetch(`/api/sonauto?taskId=${taskId}`);
+                    const data = await response.json();
+                    
+                    if (data.status === 'completed' && data.audio_url) {
+                        return data;
+                    } else if (data.status === 'failed') {
+                        throw new Error('Generation failed');
+                    } else {
+                        // Still processing, wait and retry
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                        return this.pollForCompletion(taskId, attempts + 1);
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                    throw error;
+                }
+            }
+            
+            async play(genre = this.currentGenre) {
+                // Check if we have a track in queue
+                const queuedTracks = this.queue.get(genre);
+                
+                if (queuedTracks && queuedTracks.length > 0) {
+                    // Use queued track
+                    this.currentTrack = queuedTracks.shift();
+                } else {
+                    // Generate new track
+                    this.currentTrack = await this.generateMusic(genre);
+                    if (!this.currentTrack) {
+                        return; // Generation failed
+                    }
+                }
+                
+                // Play the track
+                this.audio.src = this.currentTrack.audio_url;
+                this.audio.play().then(() => {
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                    this.updateStatus(`♪ Now Playing ♪`);
+                    document.getElementById('musicWidget').classList.add('playing');
+                    
+                    // Pre-generate next track
+                    this.preGenerateNext(genre);
+                }).catch(error => {
+                    console.error('Playback error:', error);
+                    this.updateStatus(`<span class="music-error">Playback failed 😔</span>`);
+                });
+            }
+            
+            async preGenerateNext(genre) {
+                // Generate and queue next track in background
+                const nextTrack = await this.generateMusic(genre);
+                if (nextTrack) {
+                    this.queue.get(genre).push(nextTrack);
+                }
+            }
+            
+            togglePlay() {
+                if (this.isPlaying) {
+                    this.pause();
+                } else {
+                    if (this.currentTrack) {
+                        this.audio.play();
+                        this.isPlaying = true;
+                    } else {
+                        this.play();
+                    }
+                }
+                this.updatePlayButton();
+            }
+            
+            pause() {
+                this.audio.pause();
+                this.isPlaying = false;
+                document.getElementById('musicWidget').classList.remove('playing');
+                this.updatePlayButton();
+            }
+            
+            async next() {
+                this.play(this.currentGenre);
+            }
+            
+            async previous() {
+                // Just restart current track
+                if (this.currentTrack) {
+                    this.audio.currentTime = 0;
+                    if (!this.isPlaying) {
+                        this.togglePlay();
+                    }
+                }
+            }
+            
+            async shuffle() {
+                // Generate new random track
+                const track = await this.generateMusic(this.currentGenre);
+                if (track) {
+                    this.currentTrack = track;
+                    this.audio.src = track.audio_url;
+                    this.audio.play();
+                    this.isPlaying = true;
+                    this.updatePlayButton();
+                }
+            }
+            
+            setVolume(value) {
+                this.volume = value;
+                this.audio.volume = value;
+                document.getElementById('volumeFill').style.width = (value * 100) + '%';
+                localStorage.setItem('musicPlayerVolume', value);
+            }
+            
+            updateStatus(text) {
+                const statusEl = document.getElementById('musicStatus');
+                if (statusEl) {
+                    const textEl = statusEl.querySelector('.music-status-text');
+                    if (textEl) {
+                        textEl.innerHTML = text;
+                    }
+                }
+            }
+            
+            updatePlayButton() {
+                const btn = document.getElementById('playPauseBtn');
+                if (btn) {
+                    btn.textContent = this.isPlaying ? '⏸️' : '▶️';
+                }
+            }
+            
+            onTrackEnded() {
+                // Auto-play next track
+                this.next();
+            }
+            
+            onError(error) {
+                console.error('Audio error:', error);
+                this.updateStatus(`<span class="music-error">Playback error 😔</span>`);
+                this.isPlaying = false;
+                this.updatePlayButton();
+            }
+            
+            loadPreferences() {
+                const savedVolume = localStorage.getItem('musicPlayerVolume');
+                if (savedVolume) {
+                    this.setVolume(parseFloat(savedVolume));
+                }
+                
+                const savedGenre = localStorage.getItem('musicPlayerGenre');
+                if (savedGenre && MUSIC_GENRES[savedGenre]) {
+                    this.currentGenre = savedGenre;
+                }
+            }
+        }
+        
+        // Initialize music player
+        let musicPlayer = null;
+        
+        function initMusicPlayer() {
+            if (!musicPlayer) {
+                musicPlayer = new MusicPlayer();
+            }
+        }
+        
+        function selectGenre(genre) {
+            if (!musicPlayer) initMusicPlayer();
+            
+            // Update UI
+            document.querySelectorAll('.genre-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            const activeBtn = document.querySelector(`[data-genre="${genre}"]`);
+            if (activeBtn) {
+                activeBtn.classList.add('active');
+            }
+            
+            // Update widget theme
+            const widget = document.getElementById('musicWidget');
+            if (widget) {
+                widget.className = `music-player-widget ${MUSIC_GENRES[genre].color}`;
+            }
+            
+            // Update genre name
+            const genreName = document.getElementById('currentGenreName');
+            if (genreName) {
+                genreName.textContent = MUSIC_GENRES[genre].name;
+            }
+            
+            // Update player
+            musicPlayer.currentGenre = genre;
+            localStorage.setItem('musicPlayerGenre', genre);
+            
+            // If playing, switch to new genre
+            if (musicPlayer.isPlaying) {
+                musicPlayer.play(genre);
+            }
+        }
+        
+        function setVolume(event) {
+            if (!musicPlayer) initMusicPlayer();
+            
+            const slider = event.currentTarget;
+            const rect = slider.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const percentage = Math.max(0, Math.min(1, x / rect.width));
+            musicPlayer.setVolume(percentage);
+        }
+        
+        function toggleMusicWidget() {
+            const widget = document.getElementById('musicWidget');
+            if (widget) {
+                widget.classList.toggle('minimized');
+                if (musicPlayer) {
+                    musicPlayer.minimized = !musicPlayer.minimized;
+                }
+            }
+        }
+        
+        // Make widget draggable
+        function makeMusicWidgetDraggable() {
+            const widget = document.getElementById('musicWidget');
+            if (!widget) return;
+            
+            let isDragging = false;
+            let startX, startY, initialX, initialY;
+            
+            const header = widget.querySelector('.music-header');
+            if (!header) return;
+            
+            header.style.cursor = 'move';
+            
+            header.addEventListener('mousedown', (e) => {
+                if (widget.classList.contains('minimized')) {
+                    widget.classList.remove('minimized');
+                    return;
+                }
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                const rect = widget.getBoundingClientRect();
+                initialX = rect.left;
+                initialY = rect.top;
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                widget.style.left = (initialX + deltaX) + 'px';
+                widget.style.top = (initialY + deltaY) + 'px';
+                widget.style.right = 'auto';
+                widget.style.bottom = 'auto';
+            });
+            
+            document.addEventListener('mouseup', () => {
+                isDragging = false;
+            });
+        }
+        
+        // Initialize music widget when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                initMusicPlayer();
+                makeMusicWidgetDraggable();
+                
+                // Load saved genre
+                const savedGenre = localStorage.getItem('musicPlayerGenre');
+                if (savedGenre && MUSIC_GENRES[savedGenre]) {
+                    selectGenre(savedGenre);
+                }
+            });
+        } else {
+            // DOM already loaded
+            initMusicPlayer();
+            makeMusicWidgetDraggable();
+            
+            const savedGenre = localStorage.getItem('musicPlayerGenre');
+            if (savedGenre && MUSIC_GENRES[savedGenre]) {
+                selectGenre(savedGenre);
+            }
+        }
+    </script>
+</body>
+</html>

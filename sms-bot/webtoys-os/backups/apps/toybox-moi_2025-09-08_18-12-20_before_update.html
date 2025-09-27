@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moi - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            color: #333;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 12px 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            color: #667eea;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header-buttons {
+            display: flex;
+            gap: 8px;
+            margin-left: auto;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .secondary-btn {
+            background: #6c757d;
+        }
+
+        .danger-btn {
+            background: #dc3545;
+        }
+
+        .main-container {
+            flex: 1;
+            display: flex;
+            background: rgba(255, 255, 255, 0.95);
+            margin: 20px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #f8f9fa;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 15px;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            color: #667eea;
+        }
+
+        .document-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 10px;
+        }
+
+        .document-item {
+            padding: 10px;
+            margin-bottom: 5px;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .document-item:hover {
+            background: #f0f4ff;
+            border-color: #667eea;
+        }
+
+        .document-item.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .document-title {
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .document-date {
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+
+        .title-input {
+            font-size: 24px;
+            font-weight: 600;
+            border: none;
+            outline: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: transparent;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .title-input:focus {
+            border-bottom-color: #667eea;
+        }
+
+        #editor {
+            flex: 1;
+            width: 100%;
+            padding: 15px;
+            border: none;
+            outline: none;
+            font-size: 16px;
+            line-height: 1.6;
+            resize: none;
+            background: transparent;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+        }
+
+        .status-bar {
+            padding: 10px 20px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .auth-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 5px 10px;
+            background: #fff;
+            border-radius: 20px;
+        }
+
+        .auth-status.logged-in {
+            border: 1px solid #28a745;
+            color: #28a745;
+        }
+
+        .auth-status.logged-out {
+            border: 1px solid #dc3545;
+            color: #dc3545;
+        }
+
+        .empty-state {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .empty-state h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .header-buttons {
+                gap: 5px;
+            }
+            
+            button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📝 Moi</h1>
+        <div class="header-buttons">
+            <button onclick="newDocument()">New</button>
+            <button onclick="saveDocument()">Save</button>
+            <button onclick="toggleDocumentList()" class="secondary-btn">Documents</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">My Documents</div>
+            <div class="document-list" id="documentList">
+                <div class="empty-state">
+                    <p>No documents yet</p>
+                    <p style="font-size: 12px; margin-top: 5px;">Create your first document!</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-container">
+            <input type="text" class="title-input" id="titleInput" placeholder="Document Title..." />
+            <textarea id="editor" placeholder="Start writing..."></textarea>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <div class="auth-status logged-out" id="authStatus">
+            <span>Not logged in</span>
+        </div>
+        <div id="wordCount">0 words</div>
+    </div>
+
+    <script>
+        const APP_ID = 'toybox-moi';
+        
+        let currentUser = null;
+        let currentDocumentId = null;
+        let documents = [];
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuthFromStorage();
+            setupAuthListener();
+            updateWordCount();
+            loadDocuments();
+            
+            // Auto-save every 30 seconds
+            setInterval(() => {
+                if (currentDocumentId && currentUser) {
+                    saveDocument(true); // Silent save
+                }
+            }, 30000);
+        });
+
+        // Load auth from localStorage
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    updateAuthStatus();
+                }
+            }
+        }
+
+        // Listen for auth from desktop
+        function setupAuthListener() {
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE') {
+                    currentUser = e.data.user || {
+                        handle: e.data.handle,
+                        pin: e.data.pin,
+                        participantId: e.data.participantId
+                    };
+                    
+                    if (currentUser) {
+                        if (currentUser.handle) {
+                            currentUser.handle = currentUser.handle.toUpperCase();
+                        }
+                        if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                            currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                        }
+                        localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                        updateAuthStatus();
+                        loadDocuments();
+                    }
+                }
+            });
+
+            // Request auth from desktop
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+
+        function updateAuthStatus() {
+            const authStatus = document.getElementById('authStatus');
+            if (currentUser && currentUser.handle) {
+                authStatus.className = 'auth-status logged-in';
+                authStatus.innerHTML = `<span>👤 ${currentUser.handle}</span>`;
+            } else {
+                authStatus.className = 'auth-status logged-out';
+                authStatus.innerHTML = '<span>Not logged in</span>';
+            }
+        }
+
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        async function saveDocument(silent = false) {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                if (!silent) alert('Please log in to save documents');
+                return;
+            }
+
+            const title = document.getElementById('titleInput').value || 'Untitled';
+            const content = document.getElementById('editor').value;
+
+            if (!currentDocumentId) {
+                currentDocumentId = 'doc_' + Date.now();
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocumentId,
+                            title: title,
+                            content: content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    if (!silent) {
+                        showNotification('Document saved!');
+                    }
+                    loadDocuments();
+                } else {
+                    console.error('Save failed:', await response.text());
+                    if (!silent) alert('Failed to save document');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                if (!silent) alert('Error saving document');
+            }
+        }
+
+        async function loadDocuments() {
+            const participantId = getParticipantId();
+            if (!participantId) {
+                documents = [];
+                renderDocumentList();
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=document`);
+                if (!response.ok) {
+                    console.error('Load failed');
+                    return;
+                }
+
+                const allDocs = await response.json();
+                
+                // Filter for current user's documents
+                const userDocs = allDocs.filter(doc => 
+                    doc.participant_id === participantId
+                );
+
+                // Deduplicate by latest timestamp
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime
+                        };
+                    }
+                });
+
+                documents = Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                
+                renderDocumentList();
+            } catch (error) {
+                console.error('Load error:', error);
+            }
+        }
+
+        function renderDocumentList() {
+            const listEl = document.getElementById('documentList');
+            
+            if (documents.length === 0) {
+                listEl.innerHTML = `
+                    <div class="empty-state">
+                        <p>No documents yet</p>
+                        <p style="font-size: 12px; margin-top: 5px;">Create your first document!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = documents.map(doc => `
+                <div class="document-item ${doc.id === currentDocumentId ? 'active' : ''}" 
+                     onclick="openDocument('${doc.id}')">
+                    <div class="document-title">${doc.title}</div>
+                    <div class="document-date">${formatDate(doc.updatedAt)}</div>
+                </div>
+            `).join('');
+        }
+
+        function openDocument(docId) {
+            const doc = documents.find(d => d.id === docId);
+            if (doc) {
+                currentDocumentId = doc.id;
+                document.getElementById('titleInput').value = doc.title;
+                document.getElementById('editor').value = doc.content;
+                renderDocumentList();
+                updateWordCount();
+            }
+        }
+
+        function newDocument() {
+            currentDocumentId = null;
+            document.getElementById('titleInput').value = '';
+            document.getElementById('editor').value = '';
+            renderDocumentList();
+            updateWordCount();
+        }
+
+        function toggleDocumentList() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function updateWordCount() {
+            const text = document.getElementById('editor').value;
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+        }
+
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            const minutes = Math.floor(diff / 60000);
+            const hours = Math.floor(diff / 3600000);
+            const days = Math.floor(diff / 86400000);
+
+            if (minutes < 1) return 'Just now';
+            if (minutes < 60) return `${minutes} min ago`;
+            if (hours < 24) return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+            if (days < 7) return `${days} day${days !== 1 ? 's' : ''} ago`;
+            
+            return date.toLocaleDateString();
+        }
+
+        function showNotification(message) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 12px 20px;
+                border-radius: 8px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 2000);
+        }
+
+        // Update word count on typing
+        document.getElementById('editor').addEventListener('input', updateWordCount);
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            // Cmd/Ctrl + S to save
+            if ((e.metaKey || e.ctrlKey) && e.key === 's') {
+                e.preventDefault();
+                saveDocument();
+            }
+            // Cmd/Ctrl + N for new
+            if ((e.metaKey || e.ctrlKey) && e.key === 'n') {
+                e.preventDefault();
+                newDocument();
+            }
+        });
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

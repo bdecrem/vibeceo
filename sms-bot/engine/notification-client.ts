@@ -13,11 +13,17 @@ const __dirname = dirname(__filename);
 export async function sendConfirmationSms(message: string, phoneNumber: string | null = null): Promise<boolean> {
     try {
         logWithTimestamp(`📱 Sending confirmation SMS: ${message}`);
-        
+
+        // Skip SMS for Poke/MCP integration requests (invalid phone numbers)
+        if (phoneNumber && phoneNumber.startsWith('+1999')) {
+            logWithTimestamp(`🤖 Skipping SMS for Poke/MCP request: ${phoneNumber}`);
+            return true;  // Return success without sending
+        }
+
         // Use compiled JavaScript instead of TypeScript
         const smsScriptPath = join(dirname(__dirname), "scripts", "send-direct-sms.js");
         const cmd = ["node", smsScriptPath, message];
-        
+
         if (phoneNumber) {
             cmd.push(phoneNumber);
             logWithTimestamp(`📱 Sending to: ${phoneNumber}`);

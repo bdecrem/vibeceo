@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>iPhone17 - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            backdrop-filter: blur(10px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 280px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .sidebar h2 {
+            color: white;
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .new-doc-btn {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+
+        .new-doc-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .documents-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .document-item {
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .document-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateX(4px);
+        }
+
+        .document-item.active {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .document-title {
+            color: white;
+            font-weight: 500;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .document-preview {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .document-date {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            margin-top: 4px;
+        }
+
+        /* Main Editor */
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .editor-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .document-title-input {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            outline: none;
+            flex: 1;
+            margin-right: 16px;
+        }
+
+        .document-title-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .save-status {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 13px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .save-status.show {
+            opacity: 1;
+        }
+
+        .editor {
+            flex: 1;
+            padding: 24px;
+            background: none;
+            border: none;
+            outline: none;
+            resize: none;
+            color: white;
+            font-size: 16px;
+            line-height: 1.6;
+            font-family: inherit;
+        }
+
+        .editor::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Footer */
+        .editor-footer {
+            padding: 16px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .word-count {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+        }
+
+        /* Auth Prompt */
+        .auth-prompt {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+
+        .auth-prompt.show {
+            display: block;
+        }
+
+        .auth-prompt h3 {
+            color: #333;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .auth-prompt p {
+            color: #666;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+
+        .auth-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+
+        .auth-btn:hover {
+            transform: translateY(-1px);
+        }
+
+        /* Empty State */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: rgba(255, 255, 255, 0.6);
+            text-align: center;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: fixed;
+                left: -280px;
+                top: 0;
+                height: 100vh;
+                z-index: 100;
+                transition: left 0.3s ease;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .container {
+                flex-direction: column;
+            }
+
+            .editor-container {
+                width: 100%;
+            }
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <aside class="sidebar">
+            <h2>📝 Documents</h2>
+            <button class="new-doc-btn" onclick="createNewDocument()">
+                ✨ New Document
+            </button>
+            <div class="documents-list" id="documentsList">
+                <!-- Documents will be loaded here -->
+            </div>
+        </aside>
+
+        <main class="editor-container">
+            <div id="emptyState" class="empty-state">
+                <div class="empty-state-icon">📱</div>
+                <h3>iPhone17 Text Editor</h3>
+                <p>Create a new document to get started</p>
+            </div>
+
+            <div id="editorArea" style="display: none; height: 100%; flex-direction: column;">
+                <header class="editor-header">
+                    <input type="text" 
+                           class="document-title-input" 
+                           id="documentTitle"
+                           placeholder="Untitled Document"
+                           oninput="handleTitleChange()">
+                    <div class="save-status" id="saveStatus">Saved</div>
+                </header>
+
+                <textarea class="editor" 
+                          id="documentContent"
+                          placeholder="Start writing your masterpiece..."
+                          oninput="handleContentChange()"></textarea>
+
+                <footer class="editor-footer">
+                    <div class="word-count" id="wordCount">0 words</div>
+                    <div style="color: rgba(255, 255, 255, 0.6); font-size: 13px;">
+                        Auto-saves as you type
+                    </div>
+                </footer>
+            </div>
+        </main>
+    </div>
+
+    <!-- Auth Prompt -->
+    <div class="auth-prompt" id="authPrompt">
+        <h3>🔐 Login Required</h3>
+        <p>Please log in to save your documents and access your work across devices.</p>
+        <button class="auth-btn" onclick="requestAuth()">Login to Continue</button>
+    </div>
+
+    <script>
+        // Global auth state
+        let currentUser = null;
+        let documents = [];
+        let currentDocument = null;
+        let saveTimeout = null;
+        let unsavedChanges = false;
+
+        // Load auth from localStorage (immediate)
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+            }
+            return !!currentUser;
+        }
+
+        // Listen for auth from desktop (real-time)
+        window.addEventListener('message', (e) => {
+            if (e.data && e.data.type === 'TOYBOX_AUTH') {
+                currentUser = e.data.user;
+                if (currentUser) {
+                    if (currentUser.handle) currentUser.handle = currentUser.handle.toUpperCase();
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                }
+                hideAuthPrompt();
+                loadUserDocuments();
+            }
+        });
+
+        // Initialize on load
+        document.addEventListener('DOMContentLoaded', () => {
+            if (loadAuthFromStorage()) {
+                loadUserDocuments();
+            } else {
+                // Request auth from parent
+                if (parent !== window) {
+                    parent.postMessage({ type: 'GET_AUTH' }, '*');
+                }
+            }
+        });
+
+        function requestAuth() {
+            if (parent !== window) {
+                parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        }
+
+        function showAuthPrompt() {
+            document.getElementById('authPrompt').classList.add('show');
+        }
+
+        function hideAuthPrompt() {
+            document.getElementById('authPrompt').classList.remove('show');
+        }
+
+        function getParticipantId() {
+            if (!currentUser?.handle || !currentUser?.pin) return null;
+            return `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+        }
+
+        async function loadUserDocuments() {
+            const participantId = getParticipantId();
+            if (!participantId) return;
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=toybox-iphone17&action_type=document`);
+                if (!response.ok) throw new Error('Failed to load documents');
+                
+                const allDocs = await response.json();
+                
+                // Filter for current user and deduplicate
+                const userDocs = allDocs.filter(doc => doc.participant_id === participantId);
+                
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime,
+                            participant_id: doc.participant_id
+                        };
+                    }
+                });
+                
+                documents = Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                
+                renderDocumentsList();
+            } catch (error) {
+                console.error('Failed to load documents:', error);
+            }
+        }
+
+        function renderDocumentsList() {
+            const list = document.getElementById('documentsList');
+            list.innerHTML = '';
+
+            documents.forEach(doc => {
+                const item = document.createElement('div');
+                item.className = `document-item ${currentDocument?.id === doc.id ? 'active' : ''}`;
+                item.onclick = () => openDocument(doc);
+                
+                const preview = doc.content.slice(0, 50).replace(/\n/g, ' ') || 'No content';
+                const date = new Date(doc.updatedAt).toLocaleDateString();
+                
+                item.innerHTML = `
+                    <div class="document-title">${doc.title}</div>
+                    <div class="document-preview">${preview}${doc.content.length > 50 ? '...' : ''}</div>
+                    <div class="document-date">${date}</div>
+                `;
+                
+                list.appendChild(item);
+            });
+        }
+
+        function createNewDocument() {
+            const newDoc = {
+                id: 'doc_' + Date.now(),
+                title: 'Untitled Document',
+                content: '',
+                author: currentUser?.handle || 'Anonymous',
+                updatedAt: new Date().toISOString()
+            };
+            
+            openDocument(newDoc);
+        }
+
+        function openDocument(doc) {
+            currentDocument = doc;
+            
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('editorArea').style.display = 'flex';
+            
+            document.getElementById('documentTitle').value = doc.title;
+            document.getElementById('documentContent').value = doc.content;
+            
+            updateWordCount();
+            renderDocumentsList();
+            unsavedChanges = false;
+            updateSaveStatus();
+        }
+
+        function handleTitleChange() {
+            if (!currentDocument) return;
+            
+            currentDocument.title = document.getElementById('documentTitle').value || 'Untitled Document';
+            unsavedChanges = true;
+            scheduleAutoSave();
+            renderDocumentsList();
+        }
+
+        function handleContentChange() {
+            if (!currentDocument) return;
+            
+            currentDocument.content = document.getElementById('documentContent').value;
+            currentDocument.updatedAt = new Date().toISOString();
+            unsavedChanges = true;
+            updateWordCount();
+            scheduleAutoSave();
+        }
+
+        function updateWordCount() {
+            const content = document.getElementById('documentContent').value;
+            const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+        }
+
+        function scheduleAutoSave() {
+            if (!currentUser) {
+                showAuthPrompt();
+                return;
+            }
+
+            updateSaveStatus('saving');
+            
+            clearTimeout(saveTimeout);
+            saveTimeout = setTimeout(async () => {
+                await saveCurrentDocument();
+            }, 1000);
+        }
+
+        async function saveCurrentDocument() {
+            if (!currentDocument || !currentUser) return;
+            
+            const participantId = getParticipantId();
+            if (!participantId) {
+                showAuthPrompt();
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: 'toybox-iphone17',
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocument.id,
+                            title: currentDocument.title,
+                            content: currentDocument.content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: currentDocument.updatedAt
+                        }
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Save failed');
+                }
+
+                unsavedChanges = false;
+                updateSaveStatus('saved');
+                
+                // Update documents list
+                const existingIndex = documents.findIndex(d => d.id === currentDocument.id);
+                if (existingIndex >= 0) {
+                    documents[existingIndex] = { ...currentDocument };
+                } else {
+                    documents.unshift({ ...currentDocument });
+                }
+                documents.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+                renderDocumentsList();
+
+            } catch (error) {
+                console.error('Save failed:', error);
+                updateSaveStatus('error');
+            }
+        }
+
+        function updateSaveStatus(status = '') {
+            const statusElement = document.getElementById('saveStatus');
+            
+            switch (status) {
+                case 'saving':
+                    statusElement.textContent = 'Saving...';
+                    statusElement.style.color = 'rgba(255, 255, 255, 0.7)';
+                    break;
+                case 'saved':
+                    statusElement.textContent = 'Saved';
+                    statusElement.style.color = 'rgba(76, 175, 80, 0.9)';
+                    break;
+                case 'error':
+                    statusElement.textContent = 'Error saving';
+                    statusElement.style.color = 'rgba(244, 67, 54, 0.9)';
+                    break;
+                default:
+                    statusElement.textContent = unsavedChanges ? 'Unsaved changes' : 'Saved';
+                    statusElement.style.color = unsavedChanges ? 'rgba(255, 193, 7, 0.9)' : 'rgba(76, 175, 80, 0.9)';
+            }
+            
+            statusElement.classList.add('show');
+            setTimeout(() => {
+                if (status === 'saved') {
+                    statusElement.classList.remove('show');
+                }
+            }, 2000);
+        }
+
+        // Auto-save on page unload
+        window.addEventListener('beforeunload', (e) => {
+            if (unsavedChanges && currentDocument && currentUser) {
+                saveCurrentDocument();
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    </script>
+</body>
+</html>

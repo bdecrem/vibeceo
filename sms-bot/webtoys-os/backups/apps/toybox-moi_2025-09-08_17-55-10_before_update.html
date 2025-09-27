@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moi - Text Editor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f7;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .toolbar {
+            background: linear-gradient(to bottom, #ffffff, #f5f5f7);
+            border-bottom: 1px solid #d1d1d6;
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .toolbar button {
+            padding: 6px 12px;
+            border: 1px solid #d1d1d6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #f0f0f2;
+            transform: translateY(-1px);
+        }
+
+        .toolbar button:active {
+            transform: translateY(0);
+        }
+
+        .toolbar .separator {
+            width: 1px;
+            height: 20px;
+            background: #d1d1d6;
+            margin: 0 4px;
+        }
+
+        .status-bar {
+            background: #f5f5f7;
+            border-top: 1px solid #d1d1d6;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: #6e6e73;
+            display: flex;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .editor-container {
+            flex: 1;
+            padding: 20px;
+            overflow: auto;
+            background: white;
+        }
+
+        #editor {
+            width: 100%;
+            min-height: 100%;
+            border: none;
+            outline: none;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: none;
+            background: transparent;
+        }
+
+        .file-name {
+            font-weight: 600;
+            color: #1d1d1f;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal h3 {
+            margin-bottom: 15px;
+            color: #1d1d1f;
+        }
+
+        .modal input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #d1d1d6;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .modal button {
+            padding: 8px 16px;
+            border: 1px solid #d1d1d6;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .modal button.primary {
+            background: #007aff;
+            color: white;
+            border-color: #007aff;
+        }
+
+        .modal button:hover {
+            opacity: 0.9;
+        }
+
+        /* Authentication UI */
+        .auth-required {
+            padding: 20px;
+            text-align: center;
+            color: #6e6e73;
+        }
+
+        .auth-required button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button onclick="newDocument()">📄 New</button>
+        <button onclick="showOpenDialog()">📂 Open</button>
+        <button onclick="saveDocument()">💾 Save</button>
+        <div class="separator"></div>
+        <button onclick="undoEdit()">↶ Undo</button>
+        <button onclick="redoEdit()">↷ Redo</button>
+        <div class="separator"></div>
+        <button onclick="findText()">🔍 Find</button>
+        <button onclick="toggleWordWrap()">↩️ Wrap</button>
+        <span class="file-name" id="fileName">Untitled</span>
+    </div>
+
+    <div class="editor-container">
+        <div id="authMessage" class="auth-required" style="display: none;">
+            <p>Please log in to save and load documents</p>
+            <button onclick="requestAuth()">Request Login</button>
+        </div>
+        <textarea id="editor" placeholder="Start typing..." spellcheck="false"></textarea>
+    </div>
+
+    <div class="status-bar">
+        <span id="charCount">0 characters</span>
+        <span id="wordCount">0 words</span>
+        <span id="savedStatus">Ready</span>
+    </div>
+
+    <!-- Save Dialog -->
+    <div class="modal" id="saveModal">
+        <div class="modal-content">
+            <h3>Save Document</h3>
+            <input type="text" id="saveFileName" placeholder="Enter document name...">
+            <div class="modal-buttons">
+                <button onclick="closeSaveModal()">Cancel</button>
+                <button class="primary" onclick="confirmSave()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Open Dialog -->
+    <div class="modal" id="openModal">
+        <div class="modal-content">
+            <h3>Open Document</h3>
+            <div id="documentList" style="max-height: 300px; overflow-y: auto; margin-bottom: 15px;">
+                <!-- Documents will be listed here -->
+            </div>
+            <div class="modal-buttons">
+                <button onclick="closeOpenModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        const APP_ID = 'toybox-moi';
+
+        let currentUser = null;
+        let currentDocument = {
+            id: null,
+            title: 'Untitled',
+            content: '',
+            saved: true
+        };
+        let undoStack = [];
+        let redoStack = [];
+        let wordWrap = true;
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', () => {
+            loadAuthFromStorage();
+            setupEventListeners();
+            updateStatus();
+            
+            // Listen for auth from desktop
+            window.addEventListener('message', (e) => {
+                if (e.data.type === 'TOYBOX_AUTH' || e.data.type === 'AUTH_RESPONSE') {
+                    handleAuthMessage(e.data);
+                }
+            });
+
+            // Request auth from desktop
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'GET_AUTH' }, '*');
+            }
+        });
+
+        function loadAuthFromStorage() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                currentUser = JSON.parse(savedUser);
+                if (currentUser) {
+                    if (currentUser.handle) {
+                        currentUser.handle = currentUser.handle.toUpperCase();
+                    }
+                    if (!currentUser.participantId && currentUser.handle && currentUser.pin) {
+                        currentUser.participantId = `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+                    }
+                    updateAuthUI();
+                }
+            }
+        }
+
+        function handleAuthMessage(data) {
+            if (data.user || (data.handle && data.pin)) {
+                currentUser = data.user || {
+                    handle: data.handle.toUpperCase(),
+                    pin: data.pin,
+                    participantId: data.participantId || `${data.handle.toUpperCase()}_${data.pin}`
+                };
+                
+                localStorage.setItem('toybox_user', JSON.stringify(currentUser));
+                updateAuthUI();
+            }
+        }
+
+        function updateAuthUI() {
+            const authMessage = document.getElementById('authMessage');
+            if (currentUser) {
+                authMessage.style.display = 'none';
+            } else {
+                authMessage.style.display = 'block';
+            }
+        }
+
+        function requestAuth() {
+            if (window.parent !== window) {
+                window.parent.postMessage({ type: 'REQUEST_AUTH' }, '*');
+            }
+        }
+
+        function setupEventListeners() {
+            const editor = document.getElementById('editor');
+            
+            // Track changes
+            editor.addEventListener('input', () => {
+                currentDocument.saved = false;
+                currentDocument.content = editor.value;
+                updateStatus();
+                saveToUndoStack();
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.metaKey || e.ctrlKey) {
+                    switch(e.key) {
+                        case 's':
+                            e.preventDefault();
+                            saveDocument();
+                            break;
+                        case 'o':
+                            e.preventDefault();
+                            showOpenDialog();
+                            break;
+                        case 'n':
+                            e.preventDefault();
+                            newDocument();
+                            break;
+                        case 'z':
+                            e.preventDefault();
+                            undoEdit();
+                            break;
+                        case 'y':
+                            e.preventDefault();
+                            redoEdit();
+                            break;
+                        case 'f':
+                            e.preventDefault();
+                            findText();
+                            break;
+                    }
+                }
+            });
+        }
+
+        function updateStatus() {
+            const editor = document.getElementById('editor');
+            const text = editor.value;
+            
+            // Character count
+            document.getElementById('charCount').textContent = `${text.length} characters`;
+            
+            // Word count
+            const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+            document.getElementById('wordCount').textContent = `${words} words`;
+            
+            // Saved status
+            document.getElementById('savedStatus').textContent = currentDocument.saved ? 'Saved' : 'Modified';
+            
+            // File name
+            document.getElementById('fileName').textContent = currentDocument.title || 'Untitled';
+        }
+
+        function newDocument() {
+            if (!currentDocument.saved) {
+                if (!confirm('You have unsaved changes. Continue?')) {
+                    return;
+                }
+            }
+            
+            currentDocument = {
+                id: null,
+                title: 'Untitled',
+                content: '',
+                saved: true
+            };
+            
+            document.getElementById('editor').value = '';
+            undoStack = [];
+            redoStack = [];
+            updateStatus();
+        }
+
+        async function saveDocument() {
+            if (!currentUser) {
+                alert('Please log in to save documents');
+                return;
+            }
+
+            if (!currentDocument.title || currentDocument.title === 'Untitled') {
+                document.getElementById('saveModal').classList.add('active');
+                document.getElementById('saveFileName').value = '';
+                document.getElementById('saveFileName').focus();
+                return;
+            }
+
+            await performSave();
+        }
+
+        async function performSave() {
+            if (!currentUser) return;
+
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+            
+            if (!currentDocument.id) {
+                currentDocument.id = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: APP_ID,
+                        participant_id: participantId,
+                        action_type: 'document',
+                        content_data: {
+                            id: currentDocument.id,
+                            title: currentDocument.title,
+                            content: currentDocument.content,
+                            author: currentUser.handle.toUpperCase(),
+                            updatedAt: new Date().toISOString()
+                        }
+                    })
+                });
+
+                if (response.ok) {
+                    currentDocument.saved = true;
+                    updateStatus();
+                    document.getElementById('savedStatus').textContent = 'Saved!';
+                    setTimeout(() => updateStatus(), 2000);
+                } else {
+                    alert('Failed to save document');
+                }
+            } catch (error) {
+                console.error('Save error:', error);
+                alert('Error saving document');
+            }
+        }
+
+        function confirmSave() {
+            const fileName = document.getElementById('saveFileName').value.trim();
+            if (!fileName) {
+                alert('Please enter a document name');
+                return;
+            }
+            
+            currentDocument.title = fileName;
+            closeSaveModal();
+            performSave();
+        }
+
+        function closeSaveModal() {
+            document.getElementById('saveModal').classList.remove('active');
+        }
+
+        async function showOpenDialog() {
+            if (!currentUser) {
+                alert('Please log in to open documents');
+                return;
+            }
+
+            const documents = await loadDocuments();
+            const listContainer = document.getElementById('documentList');
+            
+            if (documents.length === 0) {
+                listContainer.innerHTML = '<p style="color: #6e6e73; padding: 10px;">No saved documents</p>';
+            } else {
+                listContainer.innerHTML = documents.map(doc => `
+                    <div style="padding: 10px; border: 1px solid #d1d1d6; border-radius: 6px; margin-bottom: 8px; cursor: pointer;"
+                         onclick="openDocument('${doc.id}')">
+                        <div style="font-weight: 600;">${doc.title}</div>
+                        <div style="font-size: 12px; color: #6e6e73;">
+                            ${new Date(doc.updatedAt).toLocaleDateString()} ${new Date(doc.updatedAt).toLocaleTimeString()}
+                        </div>
+                    </div>
+                `).join('');
+            }
+            
+            document.getElementById('openModal').classList.add('active');
+        }
+
+        async function loadDocuments() {
+            if (!currentUser) return [];
+
+            const participantId = currentUser.participantId || `${currentUser.handle.toUpperCase()}_${currentUser.pin}`;
+
+            try {
+                const response = await fetch(`/api/zad/load?app_id=${APP_ID}&action_type=document`);
+                const allDocs = await response.json();
+                
+                // Filter for current user's documents
+                const userDocs = allDocs.filter(doc => 
+                    doc.participant_id === participantId
+                );
+                
+                // Deduplicate by latest timestamp
+                const uniqueDocs = {};
+                userDocs.forEach(doc => {
+                    const docId = doc.id || doc.content_data?.id;
+                    const docTime = doc.updatedAt || doc.content_data?.updatedAt || doc.created_at;
+                    
+                    if (!uniqueDocs[docId] || 
+                        new Date(docTime) > new Date(uniqueDocs[docId].updatedAt || uniqueDocs[docId].created_at)) {
+                        uniqueDocs[docId] = {
+                            id: docId,
+                            title: doc.title || doc.content_data?.title || 'Untitled',
+                            content: doc.content || doc.content_data?.content || '',
+                            author: doc.author || doc.content_data?.author,
+                            updatedAt: docTime,
+                            participant_id: doc.participant_id
+                        };
+                    }
+                });
+                
+                return Object.values(uniqueDocs)
+                    .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+            } catch (error) {
+                console.error('Load error:', error);
+                return [];
+            }
+        }
+
+        async function openDocument(docId) {
+            const documents = await loadDocuments();
+            const doc = documents.find(d => d.id === docId);
+            
+            if (doc) {
+                currentDocument = {
+                    id: doc.id,
+                    title: doc.title,
+                    content: doc.content,
+                    saved: true
+                };
+                
+                document.getElementById('editor').value = doc.content;
+                updateStatus();
+                closeOpenModal();
+            }
+        }
+
+        function closeOpenModal() {
+            document.getElementById('openModal').classList.remove('active');
+        }
+
+        function saveToUndoStack() {
+            if (undoStack.length === 0 || undoStack[undoStack.length - 1] !== currentDocument.content) {
+                undoStack.push(currentDocument.content);
+                if (undoStack.length > 50) {
+                    undoStack.shift();
+                }
+                redoStack = [];
+            }
+        }
+
+        function undoEdit() {
+            if (undoStack.length > 1) {
+                redoStack.push(undoStack.pop());
+                const previousContent = undoStack[undoStack.length - 1];
+                document.getElementById('editor').value = previousContent;
+                currentDocument.content = previousContent;
+                currentDocument.saved = false;
+                updateStatus();
+            }
+        }
+
+        function redoEdit() {
+            if (redoStack.length > 0) {
+                const redoContent = redoStack.pop();
+                undoStack.push(redoContent);
+                document.getElementById('editor').value = redoContent;
+                currentDocument.content = redoContent;
+                currentDocument.saved = false;
+                updateStatus();
+            }
+        }
+
+        function findText() {
+            const searchText = prompt('Find text:');
+            if (searchText) {
+                const editor = document.getElementById('editor');
+                const content = editor.value;
+                const index = content.toLowerCase().indexOf(searchText.toLowerCase());
+                
+                if (index !== -1) {
+                    editor.focus();
+                    editor.setSelectionRange(index, index + searchText.length);
+                } else {
+                    alert('Text not found');
+                }
+            }
+        }
+
+        function toggleWordWrap() {
+            wordWrap = !wordWrap;
+            const editor = document.getElementById('editor');
+            editor.style.whiteSpace = wordWrap ? 'pre-wrap' : 'pre';
+            editor.style.overflowX = wordWrap ? 'hidden' : 'auto';
+        }
+    </script>
+</body>
+</html>

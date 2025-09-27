@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>WordO - Word Snake Grid Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+            -khtml-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px 10px 10px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .title {
+            font-size: 32px;
+            font-weight: bold;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .score-area {
+            display: flex;
+            justify-content: space-between;
+            max-width: 300px;
+            margin: 0 auto;
+            font-size: 16px;
+        }
+
+        .game-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 8px;
+            width: 280px;
+            height: 280px;
+            margin-bottom: 20px;
+        }
+
+        .letter-cell {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 3px solid transparent;
+            text-shadow: none;
+        }
+
+        .letter-cell.selected {
+            background: #4CAF50;
+            color: white;
+            border-color: #2E7D32;
+            transform: scale(1.1);
+        }
+
+        .letter-cell.path {
+            background: #81C784;
+            color: white;
+            border-color: #4CAF50;
+        }
+
+        .current-word {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 20px;
+            border-radius: 25px;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 15px;
+            min-width: 280px;
+        }
+
+        .word-display {
+            font-size: 24px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .submit-btn {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .submit-btn:active {
+            background: #45a049;
+            transform: scale(0.95);
+        }
+
+        .clear-btn {
+            background: #f44336;
+            color: white;
+        }
+
+        .clear-btn:active {
+            background: #da190b;
+            transform: scale(0.95);
+        }
+
+        .new-grid-btn {
+            background: #FF9800;
+            color: white;
+        }
+
+        .new-grid-btn:active {
+            background: #e68900;
+            transform: scale(0.95);
+        }
+
+        .words-found {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            max-height: 100px;
+            overflow-y: auto;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .found-word {
+            display: inline-block;
+            background: rgba(76,175,80,0.8);
+            margin: 2px;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .feedback {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .feedback.show {
+            opacity: 1;
+        }
+
+        .feedback.success {
+            background: rgba(76,175,80,0.9);
+        }
+
+        .feedback.error {
+            background: rgba(244,67,54,0.9);
+        }
+
+        @media (max-height: 700px) {
+            .header {
+                padding: 15px 10px 5px;
+            }
+            .title {
+                font-size: 28px;
+            }
+            .grid {
+                width: 240px;
+                height: 240px;
+            }
+            .letter-cell {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">WordO</div>
+        <div class="score-area">
+            <span>Score: <span id="score">0</span></span>
+            <span>Words: <span id="word-count">0</span></span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="grid" id="grid"></div>
+        
+        <div class="current-word">
+            <div class="word-display" id="current-word">Start swiping!</div>
+        </div>
+
+        <div class="controls">
+            <button class="btn submit-btn" id="submit-btn">Submit Word</button>
+            <button class="btn clear-btn" id="clear-btn">Clear</button>
+            <button class="btn new-grid-btn" id="new-grid-btn">New Grid</button>
+        </div>
+    </div>
+
+    <div class="words-found" id="words-found">
+        <div style="margin-bottom: 5px; font-weight: bold;">Words Found:</div>
+    </div>
+
+    <div class="feedback" id="feedback"></div>
+
+    <script>
+        class WordOGame {
+            constructor() {
+                this.grid = [];
+                this.selectedCells = [];
+                this.currentWord = '';
+                this.score = 0;
+                this.wordsFound = new Set();
+                this.isSelecting = false;
+                this.touchStartCell = null;
+                this.wordList = new Set();
+                
+                this.initGame();
+                this.loadDictionary();
+            }
+
+            async loadDictionary() {
+                try {
+                    // Load the WebtoysOS Dictionary from toybox-dictionary
+                    // Try both possible URLs for the dictionary
+                    let response = await fetch('https://webtoys.ai/public/toybox-dictionary');
+                    if (!response.ok) {
+                        // Fallback to relative URL if absolute fails
+                        response = await fetch('/public/toybox-dictionary');
+                    }
+                    if (response.ok) {
+                        const content = await response.text();
+                        
+                        // Extract the WEBTOYS_DICTIONARY array from the script
+                        const match = content.match(/window\.WEBTOYS_DICTIONARY\s*=\s*(\[[\s\S]*?\])/);
+                        if (match) {
+                            try {
+                                const words = JSON.parse(match[1]);
+                                // Add all words to our word list (convert to uppercase for matching)
+                                words.forEach(word => {
+                                    if (word && word.length >= 3) {
+                                        this.wordList.add(word.toUpperCase());
+                                    }
+                                });
+                                console.log(`✅ Loaded ${this.wordList.size} words from WebtoysOS Dictionary`);
+                                // Check if common words are loaded
+                                console.log('Dictionary check - COW:', this.wordList.has('COW'));
+                                console.log('Dictionary check - LOW:', this.wordList.has('LOW'));
+                                console.log('Dictionary check - THE:', this.wordList.has('THE'));
+                                this.showFeedback(`Dictionary loaded: ${this.wordList.size.toLocaleString()} words!`, 'success');
+                                return; // Success - don't use fallback
+                            } catch (parseError) {
+                                console.error('Failed to parse dictionary:', parseError);
+                            }
+                        } else {
+                            console.error('Could not find WEBTOYS_DICTIONARY in content');
+                        }
+                    }
+                } catch (error) {
+                    console.log('Could not load WebtoysOS Dictionary, using fallback');
+                }
+                
+                // Fallback word list if dictionary doesn't load
+                console.log('Using fallback word list');
+                if (this.wordList.size === 0) {
+                    const fallbackWords = [
+                        'THE', 'AND', 'FOR', 'ARE', 'BUT', 'NOT', 'YOU', 'ALL', 'CAN', 'HER', 'WAS', 'ONE', 'OUR',
+                        'HAD', 'DID', 'GET', 'MAY', 'HIM', 'OLD', 'SEE', 'TWO', 'WAY', 'WHO', 'BOY', 'MAN', 'NEW',
+                        'NOW', 'DAY', 'USE', 'HOW', 'ITS', 'OUT', 'TOP', 'TRY', 'ASK', 'SUN', 'SET', 'RUN', 'HOT',
+                        'LET', 'SAY', 'SHE', 'TOO', 'END', 'WHY', 'FAR', 'OFF', 'BAD', 'GOT', 'EAT', 'AGO', 'YES',
+                        'COW', 'LOW', 'ROW', 'BOW', 'HOW', 'NOW', 'WOW', 'SOW', 'TOW', 'VOW', 'MOW', 'POW', 'DOW',
+                        'WORD', 'WORK', 'PART', 'TAKE', 'TELL', 'PLAY', 'CAME', 'SHOW', 'EACH', 'JUST', 'FORM',
+                        'GOOD', 'HELP', 'MOVE', 'RIGHT', 'THINK', 'PLACE', 'LITTLE', 'WORLD', 'YEAR', 'COME',
+                        'GREAT', 'WHERE', 'THROUGH', 'MUCH', 'BEFORE', 'LINE', 'WRITE', 'SHOULD', 'BECAUSE'
+                    ];
+                    fallbackWords.forEach(word => this.wordList.add(word));
+                }
+            }
+
+            initGame() {
+                this.generateGrid();
+                this.setupEventListeners();
+                this.updateDisplay();
+            }
+
+            generateGrid() {
+                // Letter frequency based on English language (simplified)
+                const letters = 'AAAAABCCDDEEEEEEFGHIIJKLMNNNOOOOPQRSTTUUUVWXYZ';
+                this.grid = [];
+                
+                const gridElement = document.getElementById('grid');
+                gridElement.innerHTML = '';
+                
+                for (let i = 0; i < 16; i++) {
+                    const letter = letters[Math.floor(Math.random() * letters.length)];
+                    this.grid.push(letter);
+                    
+                    const cell = document.createElement('div');
+                    cell.className = 'letter-cell';
+                    cell.textContent = letter;
+                    cell.dataset.index = i;
+                    gridElement.appendChild(cell);
+                }
+            }
+
+            setupEventListeners() {
+                const grid = document.getElementById('grid');
+                
+                // Touch events for mobile
+                grid.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    const cell = e.target.closest('.letter-cell');
+                    if (cell) {
+                        this.startSelection(parseInt(cell.dataset.index));
+                        this.isSelecting = true;
+                    }
+                });
+
+                grid.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (!this.isSelecting) return;
+                    
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    const cell = element?.closest('.letter-cell');
+                    if (cell) {
+                        this.addToSelection(parseInt(cell.dataset.index));
+                    }
+                });
+
+                grid.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.isSelecting = false;
+                });
+
+                // Mouse events for desktop testing
+                grid.addEventListener('mousedown', (e) => {
+                    const cell = e.target.closest('.letter-cell');
+                    if (cell) {
+                        this.startSelection(parseInt(cell.dataset.index));
+                        this.isSelecting = true;
+                    }
+                });
+
+                grid.addEventListener('mousemove', (e) => {
+                    if (!this.isSelecting) return;
+                    const cell = e.target.closest('.letter-cell');
+                    if (cell) {
+                        this.addToSelection(parseInt(cell.dataset.index));
+                    }
+                });
+
+                grid.addEventListener('mouseup', () => {
+                    this.isSelecting = false;
+                });
+
+                // Button events
+                document.getElementById('submit-btn').addEventListener('click', () => this.submitWord());
+                document.getElementById('clear-btn').addEventListener('click', () => this.clearSelection());
+                document.getElementById('new-grid-btn').addEventListener('click', () => this.generateGrid());
+            }
+
+            startSelection(index) {
+                this.clearSelection();
+                this.selectedCells = [index];
+                this.currentWord = this.grid[index];
+                this.updateDisplay();
+            }
+
+            addToSelection(index) {
+                if (this.selectedCells.includes(index)) return;
+                
+                const lastIndex = this.selectedCells[this.selectedCells.length - 1];
+                if (!this.areAdjacent(lastIndex, index)) return;
+                
+                this.selectedCells.push(index);
+                this.currentWord += this.grid[index];
+                this.updateDisplay();
+            }
+
+            areAdjacent(index1, index2) {
+                const row1 = Math.floor(index1 / 4);
+                const col1 = index1 % 4;
+                const row2 = Math.floor(index2 / 4);
+                const col2 = index2 % 4;
+                
+                return Math.abs(row1 - row2) <= 1 && Math.abs(col1 - col2) <= 1;
+            }
+
+            clearSelection() {
+                this.selectedCells = [];
+                this.currentWord = '';
+                this.updateDisplay();
+            }
+
+            updateDisplay() {
+                // Update grid display
+                const cells = document.querySelectorAll('.letter-cell');
+                cells.forEach((cell, index) => {
+                    cell.className = 'letter-cell';
+                    if (this.selectedCells.includes(index)) {
+                        if (index === this.selectedCells[this.selectedCells.length - 1]) {
+                            cell.classList.add('selected');
+                        } else {
+                            cell.classList.add('path');
+                        }
+                    }
+                });
+
+                // Update current word display
+                document.getElementById('current-word').textContent = this.currentWord || 'Start swiping!';
+                
+                // Update score and count
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('word-count').textContent = this.wordsFound.size;
+            }
+
+            submitWord() {
+                if (this.currentWord.length < 3) {
+                    this.showFeedback('Word must be at least 3 letters!', 'error');
+                    return;
+                }
+
+                if (this.wordsFound.has(this.currentWord)) {
+                    this.showFeedback('Already found that word!', 'error');
+                    return;
+                }
+
+                if (!this.wordList.has(this.currentWord)) {
+                    // Show different message based on whether dictionary loaded
+                    if (this.wordList.size > 100) {
+                        this.showFeedback(`Not in dictionary!`, 'error');
+                    } else {
+                        this.showFeedback(`Dictionary not loaded - using fallback words only`, 'error');
+                    }
+                    return;
+                }
+
+                // Valid word!
+                this.wordsFound.add(this.currentWord);
+                const points = this.calculatePoints(this.currentWord);
+                this.score += points;
+                
+                this.showFeedback(`+${points} points!`, 'success');
+                this.addWordToFound(this.currentWord);
+                this.clearSelection();
+            }
+
+            calculatePoints(word) {
+                // Scoring: 1 point per letter + bonus for longer words
+                let points = word.length;
+                if (word.length >= 6) points += 3;
+                else if (word.length >= 5) points += 2;
+                else if (word.length >= 4) points += 1;
+                return points;
+            }
+
+            addWordToFound(word) {
+                const wordsFoundDiv = document.getElementById('words-found');
+                const wordSpan = document.createElement('span');
+                wordSpan.className = 'found-word';
+                wordSpan.textContent = word;
+                wordsFoundDiv.appendChild(wordSpan);
+            }
+
+            showFeedback(message, type) {
+                const feedback = document.getElementById('feedback');
+                feedback.textContent = message;
+                feedback.className = `feedback show ${type}`;
+                
+                setTimeout(() => {
+                    feedback.classList.remove('show');
+                }, 1500);
+            }
+        }
+
+        // Start the game
+        let game;
+        window.addEventListener('load', () => {
+            game = new WordOGame();
+        });
+    </script>
+</body>
+</html>

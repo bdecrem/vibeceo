@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="window:builder-bot" content="width=720,height=260,resizable=true" />
+  <title>Builder Bot</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; background: transparent; }
+    .wrap { display: flex; flex-direction: column; gap: 6px; padding: 6px 10px; background: rgba(255,255,255,0.92); border-top: 1px solid rgba(0,0,0,0.06); backdrop-filter: blur(6px); }
+    .status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: #374151; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .badge { padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; }
+    .ok { background: #DCFCE7; color: #166534; }
+    .busy { background: #FFE4E6; color: #9F1239; }
+    .controls { display: flex; gap: 8px; align-items: center; }
+    .btn { padding: 6px 10px; border: 1px solid #e5e7eb; background: white; border-radius: 8px; font-size: 13px; cursor: pointer; }
+    .btn.primary { background: linear-gradient(135deg, #4f46e5, #7c3aed); color: white; border: none; }
+    .row { display: flex; gap: 8px; }
+    .chat { display: flex; flex-direction: column; gap: 6px; }
+    .messages { display: flex; flex-direction: column; gap: 6px; max-height: 120px; overflow: auto; background: rgba(255,255,255,0.7); border: 1px solid #e5e7eb; border-radius: 8px; padding: 6px; }
+    .msg { font-size: 13px; line-height: 1.4; }
+    .msg.me { color: #111827; }
+    .msg.bot { color: #4f46e5; }
+    .input { display: flex; gap: 6px; }
+    .input input { flex: 1; padding: 8px 10px; border: 1px solid #e5e7eb; border-radius: 8px; font-size: 13px; }
+    .hint { font-size: 12px; color: #6b7280; }
+    .gear { margin-left: auto; cursor: pointer; font-size: 18px; color: #6b7280; }
+    .settings { display: none; gap: 6px; align-items: center; }
+    .settings input { flex: 1; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="status">
+      <span id="statusBadge" class="badge ok">Available</span>
+      <span id="statusText">Builder Bot is ready.</span>
+      <span id="authUser" class="hint"></span>
+      <span class="gear" id="settingsToggle" title="Webhook settings">⚙️</span>
+    </div>
+    <div class="settings" id="settingsRow">
+      <input id="webhookUrl" placeholder="https://your-ngrok-url.ngrok.app" />
+      <button class="btn" id="saveWebhook">Save</button>
+    </div>
+
+    <div class="controls" id="controlsRow">
+      <button class="btn primary" id="startBtn">Start Session</button>
+      <button class="btn" id="endBtn" style="display:none;">End Session</button>
+      <span class="hint" id="lockInfo" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+    </div>
+
+    <div class="chat" id="chatArea" style="display:none;">
+      <div class="messages" id="messages"></div>
+      <div class="input">
+        <input id="chatInput" placeholder="Describe the app you want to build…" />
+        <button class="btn primary" id="sendBtn">Send</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Identity
+    window.APP_ID = 'toybox-builder-bot';
+    function getAppId() { return window.APP_ID || 'toybox-builder-bot'; }
+
+    // Auth
+    let currentUser = null;
+    function getUsername() { return (currentUser?.handle || 'anonymous').toUpperCase(); }
+    function getParticipantId() {
+      if (!currentUser) return 'anonymous_0000';
+      return currentUser.participantId || `${getUsername()}_${currentUser.pin || '0000'}`;
+    }
+    function loadAuthFromStorage() {
+      const saved = localStorage.getItem('toybox_user');
+      if (saved) {
+        try {
+          currentUser = JSON.parse(saved);
+          if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
+          if (!currentUser.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+        } catch {}
+      }
+    }
+    window.addEventListener('message', e => {
+      if (e.data && e.data.type === 'TOYBOX_AUTH') {
+        currentUser = e.data.user || null;
+        if (currentUser?.handle) currentUser.handle = currentUser.handle.toUpperCase();
+        if (!currentUser?.participantId && currentUser?.pin) currentUser.participantId = `${currentUser.handle}_${currentUser.pin}`;
+        render();
+      }
+    });
+
+    // ZAD helpers
+    async function zadSave(dataType, data) {
+      const username = getUsername();
+      const participant_id = getParticipantId();
+      const res = await fetch('/api/zad/save', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app_id: getAppId(), participant_id,
+          participant_data: { userLabel: username, username },
+          action_type: dataType,
+          content_data: { timestamp: Date.now(), author: username, ...data }
+        })
+      });
+      if (!res.ok) throw new Error('save failed');
+      return true;
+    }
+    async function zadLoad(dataType) {
+      const url = `/api/zad/load?app_id=${encodeURIComponent(getAppId())}&action_type=${encodeURIComponent(dataType)}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('load failed');
+      const data = await res.json();
+      return (data || []).map(item => ({
+        id: item.content_data?.id || item.id,
+        ...item.content_data,
+        created_at: item.created_at,
+        participant_id: item.participant_id
+      }));
+    }
+
+    // UI refs
+    const statusBadge = document.getElementById('statusBadge');
+    const statusText = document.getElementById('statusText');
+    const authUser = document.getElementById('authUser');
+    const startBtn = document.getElementById('startBtn');
+    const endBtn = document.getElementById('endBtn');
+    const lockInfo = document.getElementById('lockInfo');
+    const chatArea = document.getElementById('chatArea');
+    const messagesEl = document.getElementById('messages');
+    const chatInput = document.getElementById('chatInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const settingsToggle = document.getElementById('settingsToggle');
+    const settingsRow = document.getElementById('settingsRow');
+    const webhookInput = document.getElementById('webhookUrl');
+    const saveWebhook = document.getElementById('saveWebhook');
+
+    // Settings
+    function getWebhookUrl() { return localStorage.getItem('builderbot_webhook_url') || ''; }
+    function setWebhookUrl(v) { localStorage.setItem('builderbot_webhook_url', v); }
+    settingsToggle.onclick = () => {
+      settingsRow.style.display = settingsRow.style.display === 'flex' ? 'none' : 'flex';
+      webhookInput.value = getWebhookUrl();
+    };
+    saveWebhook.onclick = () => { setWebhookUrl(webhookInput.value.trim()); settingsRow.style.display = 'none'; };
+
+    // Lock state
+    let lockState = { locked_by: null, locked_at: null, expires_at: null };
+
+    async function refreshLock() {
+      try {
+        const locks = await zadLoad('lock');
+        if (locks.length > 0) {
+          // latest by created_at
+          locks.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
+          const last = locks[0];
+          lockState = { locked_by: last.locked_by || null, locked_at: last.locked_at || null, expires_at: last.expires_at || null };
+        } else {
+          lockState = { locked_by: null, locked_at: null, expires_at: null };
+        }
+      } catch (e) { /* ignore */ }
+    }
+
+    async function refreshMessages() {
+      try {
+        const msgs = await zadLoad('chat_message');
+        msgs.sort((a,b)=> (a.timestamp||0) - (b.timestamp||0));
+        messagesEl.innerHTML = msgs.map(m => `<div class="msg ${m.author===getUsername()?'me':'bot'}"><strong>${m.author}:</strong> ${escapeHtml(m.text||'')}</div>`).join('');
+        messagesEl.scrollTop = messagesEl.scrollHeight;
+      } catch (e) {}
+    }
+
+    function escapeHtml(t){ const d=document.createElement('div'); d.textContent=t||''; return d.innerHTML; }
+
+    async function requestLock() {
+      console.log('🔐 Lock request starting...', { currentUser, webhookUrl: getWebhookUrl() });
+      
+      if (!currentUser) { 
+        alert('Please log into the desktop first.'); 
+        console.log('❌ No current user'); 
+        return; 
+      }
+      
+      const url = getWebhookUrl(); 
+      if (!url) { 
+        alert('Set the webhook URL (⚙️). Use: https://ad463d4a606f.ngrok.app'); 
+        console.log('❌ No webhook URL configured');
+        return; 
+      }
+      
+      const payload = { 
+        type: 'lock_request', 
+        user: { 
+          handle: getUsername(), 
+          participantId: getParticipantId() 
+        } 
+      };
+      
+      console.log('📤 Sending lock request:', payload, 'to:', url + '/builderbot/webhook');
+      
+      try {
+        const res = await fetch(url + '/builderbot/webhook', { 
+          method: 'POST', 
+          headers: { 'Content-Type': 'application/json' }, 
+          body: JSON.stringify(payload) 
+        });
+        
+        console.log('📥 Response status:', res.status, res.statusText);
+        
+        if (!res.ok) {
+          const error = await res.text();
+          console.error('❌ Lock request failed:', error);
+          alert(`Lock request failed: ${res.status} ${error}`);
+          return;
+        }
+        
+        const result = await res.json();
+        console.log('✅ Lock acquired:', result);
+        
+        await refreshLock();
+        render();
+      } catch (error) {
+        console.error('❌ Network error:', error);
+        alert(`Network error: ${error.message}`);
+      }
+    }
+
+    async function releaseLock() {
+      const url = getWebhookUrl(); if (!url) return;
+      await fetch(url + '/builderbot/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'lock_release', user: { handle: getUsername(), participantId: getParticipantId() } }) });
+      await refreshLock();
+      render();
+    }
+
+    async function sendMessage() {
+      const text = chatInput.value.trim(); if (!text) return;
+      const url = getWebhookUrl(); if (!url) { alert('Set the webhook URL (⚙️).'); return; }
+      chatInput.value = '';
+      const payload = { type: 'chat_message', user: { handle: getUsername(), participantId: getParticipantId() }, text };
+      const res = await fetch(url + '/builderbot/webhook', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!res.ok) { alert('Message failed'); return; }
+      await refreshMessages();
+    }
+
+    startBtn.onclick = requestLock;
+    endBtn.onclick = releaseLock;
+    sendBtn.onclick = sendMessage;
+    chatInput.addEventListener('keydown', (e)=>{ if (e.key==='Enter') sendMessage(); });
+
+    function render() {
+      authUser.textContent = currentUser ? `@${getUsername()}` : '(not logged in)';
+      const me = getParticipantId();
+      const heldBy = lockState.locked_by || null;
+      const handleMatch = heldBy && heldBy.split('_')[0] === getUsername();
+      const iHold = !!heldBy && (heldBy === me || handleMatch);
+      const available = !heldBy;
+
+      statusBadge.className = 'badge ' + (available ? 'ok' : 'busy');
+      statusBadge.textContent = available ? 'Available' : 'Busy';
+      statusText.textContent = available ? 'Builder Bot is ready.' : `Helping ${heldBy?.split('_')[0] || 'someone'}…`;
+      lockInfo.textContent = available ? '' : (iHold ? 'You hold the session.' : 'Please wait until current session ends.');
+      startBtn.style.display = available ? 'inline-flex' : 'none';
+      endBtn.style.display = iHold ? 'inline-flex' : 'none';
+      chatArea.style.display = iHold ? 'flex' : 'none';
+    }
+
+    async function tick() { await refreshLock(); if (chatArea.style.display==='flex') { await refreshMessages(); } render(); }
+
+    // Init
+    console.log('🚀 Builder Bot initializing...');
+    loadAuthFromStorage();
+    console.log('👤 Initial auth state:', { currentUser, username: getUsername(), participantId: getParticipantId() });
+    render();
+    
+    // Request auth from parent (desktop)
+    if (window.parent !== window) { 
+      console.log('📡 Requesting auth from desktop...');
+      window.parent.postMessage({ type: 'GET_AUTH' }, '*'); 
+    }
+    
+    // Start polling
+    setInterval(tick, 4000);
+    
+    // Initial auth check after a short delay
+    setTimeout(() => {
+      console.log('🔍 Auth check after 1 second:', { currentUser, username: getUsername() });
+      render();
+    }, 1000);
+  </script>
+</body>
+</html>

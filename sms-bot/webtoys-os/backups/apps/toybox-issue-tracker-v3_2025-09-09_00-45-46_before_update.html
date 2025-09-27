@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Issue Tracker v3</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 20%, #f093fb 40%, #feca57 60%, #ff6b6b 80%, #98D8C8 100%);
+            background-size: 600% 600%;
+            animation: gradientShift 15s ease infinite;
+            color: #1d1d1f;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 50%, #66D9EF 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 30px rgba(255, 107, 157, 0.3);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+            opacity: 0.9;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FF6B9D 0%, #FEC860 100%);
+            color: white;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.5);
+        }
+        
+        .btn-secondary {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 245, 0.95));
+            color: #FF6B9D;
+            border: 2px solid rgba(255, 107, 157, 0.3);
+            font-weight: 500;
+        }
+        
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #FFE5EC, #FFF9E6);
+            transform: translateY(-1px);
+            border-color: #FF6B9D;
+        }
+        
+        .issues-container {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .issue-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.15);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            background-clip: padding-box;
+        }
+        
+        .issue-card:hover {
+            box-shadow: 0 8px 25px rgba(255, 107, 157, 0.25);
+            transform: translateY(-2px) scale(1.02);
+            border-color: rgba(255, 107, 157, 0.2);
+        }
+        
+        .issue-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        
+        .issue-title {
+            font-size: 18px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #FF6B9D, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            flex: 1;
+        }
+        
+        .issue-number {
+            color: #C594FF;
+            font-size: 14px;
+            font-weight: 600;
+        }
+        
+        .issue-meta {
+            display: flex;
+            gap: 16px;
+            font-size: 13px;
+            color: #8B7AA8;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+        
+        .issue-description {
+            color: #5A4A6B;
+            margin-bottom: 16px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        
+        .issue-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .issue-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .status-badge {
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .status-open {
+            background: linear-gradient(135deg, #90EE90, #98FB98);
+            color: white;
+            box-shadow: 0 2px 8px rgba(144, 238, 144, 0.3);
+        }
+        
+        .status-closed {
+            background: linear-gradient(135deg, #FF6B6B, #FF8E8E);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+        }
+        
+        .status-in-progress {
+            background: linear-gradient(135deg, #FEC860, #FFD700);
+            color: white;
+            box-shadow: 0 2px 8px rgba(254, 200, 96, 0.3);
+        }
+        
+        .status-processing {
+            background: linear-gradient(135deg, #66D9EF, #4FC3F7);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 217, 239, 0.3);
+        }
+        
+        .status-completed {
+            background: linear-gradient(135deg, #C594FF, #B47EFF);
+            color: white;
+            box-shadow: 0 2px 8px rgba(197, 148, 255, 0.3);
+        }
+        
+        .status-pending {
+            background: linear-gradient(135deg, #FF6B9D, #FF8FAB);
+            color: white;
+            box-shadow: 0 2px 8px rgba(255, 107, 157, 0.3);
+        }
+        
+        .status-new {
+            background: linear-gradient(135deg, #98D8C8, #B2E1D4);
+            color: white;
+            box-shadow: 0 2px 8px rgba(152, 216, 200, 0.3);
+        }
+        
+        .comments-section {
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid #f0f0f0;
+        }
+        
+        .comment {
+            background: linear-gradient(135deg, #FFF5F7, #F0F4FF);
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .agent-comment {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        
+        .agent-comment .comment-header {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .agent-comment .comment-body {
+            color: white;
+            white-space: pre-wrap;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+            font-size: 13px;
+        }
+        
+        .comment-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 12px;
+            color: #6e6e73;
+        }
+        
+        .comment-body {
+            color: #333;
+            font-size: 14px;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            animation: fadeIn 0.3s;
+        }
+        
+        .modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(255, 240, 245, 0.98));
+            border-radius: 20px;
+            padding: 24px;
+            max-width: 600px;
+            width: 90%;
+            border: 3px solid rgba(255, 107, 157, 0.2);
+            max-height: 80vh;
+            overflow-y: auto;
+            animation: slideUp 0.3s;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+        }
+        
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #6e6e73;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(255, 107, 157, 0.2);
+            border-radius: 12px;
+            font-size: 14px;
+            transition: all 0.3s;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 240, 245, 0.9));
+        }
+        
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: #FF6B9D;
+            box-shadow: 0 0 0 3px rgba(255, 107, 157, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            background: linear-gradient(45deg, #FF6B9D, #66D9EF);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 240, 245, 0.95));
+            border-radius: 20px;
+            border: 2px dashed rgba(255, 107, 157, 0.3);
+        }
+        
+        .empty-state h3 {
+            font-size: 24px;
+            margin-bottom: 12px;
+            background: linear-gradient(45deg, #FF6B9D, #FEC860);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+        }
+        
+        .empty-state p {
+            color: #8B7AA8;
+            font-weight: 500;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 12px;
+            }
+            
+            .header {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+    <!-- Supabase Client Library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📋 Issue Tracker v3</h1>
+            <div class="stats">
+                <div class="stat">
+                    <span>📊</span>
+                    <span id="total-issues">0 issues</span>
+                </div>
+                <div class="stat">
+                    <span>✅</span>
+                    <span id="open-issues">0 open</span>
+                </div>
+                <div class="stat">
+                    <span>📁</span>
+                    <span id="closed-issues">0 closed</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-primary" onclick="showNewIssueModal()">
+                <span>➕</span> New Issue
+            </button>
+            <button class="btn btn-secondary" onclick="loadIssues()">
+                <span>🔄</span> Refresh
+            </button>
+            <button class="btn btn-secondary" onclick="toggleFilter('open')" id="filter-open">
+                <span>👁</span> <span id="filter-open-text">Show Open</span>
+            </button>
+            <button class="btn btn-secondary" onclick="toggleFilter('closed')" id="filter-closed">
+                <span>📦</span> <span id="filter-closed-text">Show Closed</span>
+            </button>
+            <button class="btn btn-secondary" onclick="showWebhookSettings()">
+                <span>⚙️</span> Webhook
+            </button>
+        </div>
+        
+        <div id="issues-container" class="issues-container">
+            <div class="loading">Loading issues...</div>
+        </div>
+    </div>
+    
+    <!-- New Issue Modal -->
+    <div id="new-issue-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Create New Issue</h2>
+                <button class="close-btn" onclick="closeNewIssueModal()">×</button>
+            </div>
+            <form id="new-issue-form" onsubmit="createIssue(event)">
+                <div class="form-group">
+                    <label class="form-label" for="issue-title">Title</label>
+                    <input type="text" id="issue-title" class="form-input" required placeholder="Brief description of the issue">
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="issue-description">Description</label>
+                    <textarea id="issue-description" class="form-textarea" required placeholder="Provide more details about the issue"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeNewIssueModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Issue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Webhook Settings Modal -->
+    <div id="webhook-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Edit Agent CLI Webhook Settings</h2>
+                <button class="close-btn" onclick="closeWebhookModal()">×</button>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="webhook-url">Webhook URL</label>
+                <input type="text" id="webhook-url" class="form-input" placeholder="https://your-ngrok-url.ngrok.app">
+                <small style="color: #666; display: block; margin-top: 8px;">
+                    Enter the ngrok URL for your Edit Agent CLI webhook server.<br>
+                    Leave empty to disable webhook notifications.
+                </small>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeWebhookModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveWebhookSettings()">
+                    <span>💾</span> Save Settings
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comment Modal -->
+    <div id="comment-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Add Comment</h2>
+                <button class="close-btn" onclick="closeCommentModal()">×</button>
+            </div>
+            <form id="comment-form" onsubmit="addComment(event)">
+                <input type="hidden" id="comment-issue-id">
+                <div class="form-group">
+                    <label class="form-label" for="comment-text">Comment</label>
+                    <textarea id="comment-text" class="form-textarea" required placeholder="Write your comment here"></textarea>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeCommentModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Comment</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        // Configuration
+        window.APP_ID = 'toybox-issue-tracker-v3';
+        
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_wZCf4S2dQo6sCI2_GMhHQw_tJ_p7Ty0';
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // State
+        let issues = [];
+        let currentUser = null;
+        let filters = {
+            open: true,
+            closed: true
+        };
+        
+        // Load authentication
+        function loadAuth() {
+            const savedUser = localStorage.getItem('toybox_user');
+            if (savedUser) {
+                try {
+                    currentUser = JSON.parse(savedUser);
+                    console.log('Logged in as:', currentUser.handle);
+                } catch (e) {
+                    console.error('Failed to parse saved user');
+                }
+            }
+        }
+        
+        // Listen for auth updates
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'TOYBOX_AUTH') {
+                currentUser = event.data.user;
+                console.log('Auth update:', currentUser);
+            }
+        });
+        
+        // Issue Management
+        async function loadIssues() {
+            try {
+                const container = document.getElementById('issues-container');
+                container.innerHTML = '<div class="loading">Loading issues...</div>';
+                
+                // Load issues from new table
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .select('*')
+                    .eq('app_id', window.APP_ID)
+                    .eq('action_type', 'issue')
+                    .order('created_at', { ascending: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                // Filter out deleted issues
+                issues = (data || []).filter(item => 
+                    item.content_data && 
+                    (item.content_data.title || item.content_data.description) && 
+                    !item.content_data.deleted
+                );
+                
+                renderIssues();
+                updateStats();
+            } catch (error) {
+                console.error('Failed to load issues:', error);
+                document.getElementById('issues-container').innerHTML = 
+                    '<div class="empty-state"><h3>Failed to load issues</h3><p>Please try refreshing the page</p></div>';
+            }
+        }
+        
+        function renderIssues() {
+            const container = document.getElementById('issues-container');
+            
+            // Filter issues
+            const filteredIssues = issues.filter(issue => {
+                const status = issue.content_data.status || 'open';
+                // Consider 'open', 'processing', 'pending' as open
+                // Consider 'completed', 'closed', 'fixed' as closed
+                const isOpen = ['open', 'processing', 'pending', 'new'].includes(status);
+                const isClosed = ['completed', 'closed', 'fixed', 'merged'].includes(status);
+                
+                // If both filters are on, show all
+                // If only one filter is on, show only that type
+                // If both filters are off, show nothing
+                if (!filters.open && !filters.closed) return false;
+                if (filters.open && filters.closed) return true;
+                return (isOpen && filters.open) || (isClosed && filters.closed);
+            });
+            
+            if (filteredIssues.length === 0) {
+                container.innerHTML = '<div class="empty-state"><h3>No issues found</h3><p>Create your first issue to get started</p></div>';
+                return;
+            }
+            
+            container.innerHTML = filteredIssues.map((issue, index) => {
+                const data = issue.content_data;
+                // Database returns numeric IDs
+                const issueId = issue.id;
+                const issueNumber = `#${issueId}`;
+                const status = data.status || 'open';
+                const comments = data.comments || [];
+                const adminComments = data.admin_comments || [];
+                const allComments = [...comments, ...adminComments].sort((a, b) => 
+                    new Date(a.timestamp) - new Date(b.timestamp)
+                );
+                
+                return `
+                    <div class="issue-card" data-id="${issue.id}">
+                        <div class="issue-header">
+                            <h3 class="issue-title">${escapeHtml(data.title)}</h3>
+                            <span class="issue-number">${issueNumber}</span>
+                        </div>
+                        <div class="issue-meta">
+                            <span>👤 ${escapeHtml(data.author || 'anonymous')}</span>
+                            <span>📅 ${formatDate(issue.created_at)}</span>
+                            <span>💬 ${allComments.length} comments</span>
+                        </div>
+                        <div class="issue-description">${escapeHtml(data.description)}</div>
+                        ${allComments.length > 0 ? renderComments(allComments) : ''}
+                        <div class="issue-footer">
+                            <span class="status-badge status-${status}">${status}</span>
+                            <div class="issue-actions">
+                                <button class="btn btn-secondary" onclick="showCommentModal('${issue.id}')">
+                                    💬 Comment
+                                </button>
+                                ${['open', 'processing', 'pending', 'new'].includes(status) ? 
+                                    `<button class="btn btn-secondary" onclick="closeIssue('${issue.id}')">
+                                        ✅ Close
+                                    </button>` : 
+                                    `<button class="btn btn-secondary" onclick="reopenIssue('${issue.id}')">
+                                        🔄 Reopen
+                                    </button>`
+                                }
+                                ${currentUser && (currentUser.handle === data.author || currentUser.handle === 'admin') ?
+                                    `<button class="btn btn-secondary" onclick="deleteIssue('${issue.id}')">
+                                        🗑️ Delete
+                                    </button>` : ''
+                                }
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function renderComments(comments) {
+            return `
+                <div class="comments-section">
+                    <h4 style="font-size: 14px; margin-bottom: 8px;">Comments</h4>
+                    ${comments.map(comment => {
+                        const isAgent = comment.authorRole === 'AGENT' || comment.author === 'Edit Agent';
+                        return `
+                        <div class="comment ${isAgent ? 'agent-comment' : ''}">
+                            <div class="comment-header">
+                                <span>${isAgent ? '🤖' : '👤'} ${escapeHtml(comment.author || 'anonymous')}</span>
+                                <span>${formatDate(comment.timestamp)}</span>
+                            </div>
+                            <div class="comment-body">${isAgent ? formatAgentComment(comment.text) : escapeHtml(comment.text)}</div>
+                        </div>
+                    `}).join('')}
+                </div>
+            `;
+        }
+        
+        function formatAgentComment(text) {
+            // For agent comments, preserve formatting but escape HTML
+            return text
+                .split('\n')
+                .map(line => {
+                    if (line.startsWith('##')) {
+                        return `<strong>${escapeHtml(line.replace(/^#+\s*/, ''))}</strong>`;
+                    } else if (line.startsWith('###')) {
+                        return `<em>${escapeHtml(line.replace(/^#+\s*/, ''))}</em>`;
+                    } else if (line.startsWith('-')) {
+                        return `• ${escapeHtml(line.substring(1).trim())}`;
+                    }
+                    return escapeHtml(line);
+                })
+                .join('<br>');
+        }
+        
+        async function createIssue(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('issue-title').value;
+            const description = document.getElementById('issue-description').value;
+            
+            const issueData = {
+                title: title,
+                description: description,
+                status: 'open',
+                author: currentUser?.handle || 'anonymous',
+                comments: [],
+                created: new Date().toISOString()
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .insert({
+                        app_id: window.APP_ID,
+                        action_type: 'issue',
+                        participant_id: currentUser?.handle || 'anonymous',
+                        content_data: issueData
+                    })
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                // Trigger webhook notification to Edit Agent CLI
+                await triggerWebhook(data);
+                
+                closeNewIssueModal();
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to create issue:', error);
+                alert('Failed to create issue. Please try again.');
+            }
+        }
+        
+        async function addComment(event) {
+            event.preventDefault();
+            
+            const issueId = document.getElementById('comment-issue-id').value;
+            const commentText = document.getElementById('comment-text').value;
+            
+            const issue = issues.find(i => i.id == issueId);
+            if (!issue) {
+                alert('Issue not found');
+                return;
+            }
+            
+            const comment = {
+                text: commentText,
+                author: currentUser?.handle || 'anonymous',
+                timestamp: new Date().toISOString()
+            };
+            
+            // Update the issue with new comment
+            const updatedData = {
+                ...issue.content_data,
+                comments: [...(issue.content_data.comments || []), comment]
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                closeCommentModal();
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to add comment:', error);
+                alert('Failed to add comment. Please try again.');
+            }
+        }
+        
+        async function closeIssue(issueId) {
+            const issue = issues.find(i => i.id == issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                status: 'completed',
+                closedAt: new Date().toISOString(),
+                closedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to close issue:', error);
+                alert('Failed to close issue. Please try again.');
+            }
+        }
+        
+        async function reopenIssue(issueId) {
+            const issue = issues.find(i => i.id == issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                status: 'open',
+                reopenedAt: new Date().toISOString(),
+                reopenedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to reopen issue:', error);
+                alert('Failed to reopen issue. Please try again.');
+            }
+        }
+        
+        async function deleteIssue(issueId) {
+            if (!confirm('Are you sure you want to delete this issue?')) return;
+            
+            // Soft delete - mark as deleted rather than removing
+            const issue = issues.find(i => i.id == issueId);
+            if (!issue) return;
+            
+            const updatedData = {
+                ...issue.content_data,
+                deleted: true,
+                deletedAt: new Date().toISOString(),
+                deletedBy: currentUser?.handle || 'anonymous'
+            };
+            
+            try {
+                const { data, error } = await supabase
+                    .from('webtoys_issue_tracker_data')
+                    .update({
+                        content_data: updatedData,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', issueId)
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                await loadIssues();
+            } catch (error) {
+                console.error('Failed to delete issue:', error);
+                alert('Failed to delete issue. Please try again.');
+            }
+        }
+        
+        // UI Functions
+        function showNewIssueModal() {
+            document.getElementById('new-issue-modal').classList.add('show');
+        }
+        
+        function closeNewIssueModal() {
+            document.getElementById('new-issue-modal').classList.remove('show');
+            document.getElementById('new-issue-form').reset();
+        }
+        
+        function showCommentModal(issueId) {
+            document.getElementById('comment-issue-id').value = issueId;
+            document.getElementById('comment-modal').classList.add('show');
+        }
+        
+        function closeCommentModal() {
+            document.getElementById('comment-modal').classList.remove('show');
+            document.getElementById('comment-form').reset();
+        }
+        
+        function toggleFilter(type) {
+            filters[type] = !filters[type];
+            const btn = document.getElementById(`filter-${type}`);
+            const textSpan = document.getElementById(`filter-${type}-text`);
+            
+            // Update button appearance and text
+            btn.style.opacity = filters[type] ? '1' : '0.5';
+            if (textSpan) {
+                const label = type.charAt(0).toUpperCase() + type.slice(1);
+                textSpan.textContent = filters[type] ? `Hide ${label}` : `Show ${label}`;
+            }
+            
+            renderIssues();
+            updateStats();
+        }
+        
+        function updateStats() {
+            const total = issues.filter(i => !i.content_data.deleted).length;
+            const openStatuses = ['open', 'processing', 'pending', 'new'];
+            const closedStatuses = ['completed', 'closed', 'fixed', 'merged', 'done'];
+            const open = issues.filter(i => !i.content_data.deleted && openStatuses.includes(i.content_data.status || 'open')).length;
+            const closed = issues.filter(i => !i.content_data.deleted && closedStatuses.includes(i.content_data.status)).length;
+            
+            document.getElementById('total-issues').textContent = `${total} issues`;
+            document.getElementById('open-issues').textContent = `${open} open`;
+            document.getElementById('closed-issues').textContent = `${closed} closed`;
+        }
+        
+        // Utility Functions
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Webhook notification for Edit Agent CLI
+        async function triggerWebhook(issueData) {
+            // Check if webhook URL is configured
+            const webhookUrl = localStorage.getItem('edit_agent_webhook_url');
+            if (!webhookUrl) {
+                console.log('No webhook URL configured for Edit Agent CLI');
+                return;
+            }
+            
+            try {
+                const response = await fetch(webhookUrl + '/webhook', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: 'new_issue',
+                        issue: issueData,
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Edit Agent CLI notified of new issue');
+                } else {
+                    console.error('Failed to notify Edit Agent CLI:', response.status);
+                }
+            } catch (error) {
+                // Silently fail - webhook is optional
+                console.error('Webhook notification failed:', error);
+            }
+        }
+        
+        // Configure webhook URL (can be called from console or settings)
+        window.configureWebhook = function(url) {
+            if (url) {
+                localStorage.setItem('edit_agent_webhook_url', url);
+                console.log('Webhook URL configured:', url);
+            } else {
+                localStorage.removeItem('edit_agent_webhook_url');
+                console.log('Webhook URL removed');
+            }
+        };
+        
+        // Webhook Settings Modal Functions
+        function showWebhookSettings() {
+            const modal = document.getElementById('webhook-modal');
+            const urlInput = document.getElementById('webhook-url');
+            
+            // Load current webhook URL
+            const currentUrl = localStorage.getItem('edit_agent_webhook_url') || '';
+            urlInput.value = currentUrl;
+            
+            modal.style.display = 'flex';
+        }
+        
+        function closeWebhookModal() {
+            document.getElementById('webhook-modal').style.display = 'none';
+        }
+        
+        function saveWebhookSettings() {
+            const urlInput = document.getElementById('webhook-url');
+            const url = urlInput.value.trim();
+            
+            if (url) {
+                // Validate URL format
+                try {
+                    new URL(url);
+                    window.configureWebhook(url);
+                    alert('✅ Webhook URL saved! New issues will trigger the Edit Agent CLI.');
+                } catch (e) {
+                    alert('❌ Invalid URL format. Please enter a valid URL.');
+                    return;
+                }
+            } else {
+                window.configureWebhook(null);
+                alert('Webhook notifications disabled.');
+            }
+            
+            closeWebhookModal();
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const now = new Date();
+            const diff = now - date;
+            
+            if (diff < 60000) return 'just now';
+            if (diff < 3600000) return `${Math.floor(diff / 60000)}m ago`;
+            if (diff < 86400000) return `${Math.floor(diff / 3600000)}h ago`;
+            if (diff < 604800000) return `${Math.floor(diff / 86400000)}d ago`;
+            
+            return date.toLocaleDateString();
+        }
+        
+        // Close modals on ESC
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeNewIssueModal();
+                closeCommentModal();
+            }
+        });
+        
+        // Initialize
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAuth();
+            loadIssues();
+            
+            // Initialize filter buttons
+            const openBtn = document.getElementById('filter-open');
+            const closedBtn = document.getElementById('filter-closed');
+            const openText = document.getElementById('filter-open-text');
+            const closedText = document.getElementById('filter-closed-text');
+            
+            if (openBtn) {
+                openBtn.style.opacity = filters.open ? '1' : '0.5';
+                if (openText) openText.textContent = filters.open ? 'Hide Open' : 'Show Open';
+            }
+            if (closedBtn) {
+                closedBtn.style.opacity = filters.closed ? '1' : '0.5';
+                if (closedText) closedText.textContent = filters.closed ? 'Hide Closed' : 'Show Closed';
+            }
+            
+            // Refresh every 30 seconds
+            setInterval(loadIssues, 30000);
+        });
+    </script>
+</body>
+</html>

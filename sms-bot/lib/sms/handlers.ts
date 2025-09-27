@@ -4,10 +4,11 @@ import { fileURLToPath } from 'url';
 import { SMS_CONFIG } from './config.js';
 import { generateAiResponse } from './ai.js';
 import type { TwilioClient } from './webhooks.js';
-import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers, createNewSubscriber } from '../subscribers.js';
+import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate, updateLastInspirationDate, confirmSubscriber, getActiveSubscribers, createNewSubscriber, setAiDailySubscription, updateAiDailyLastSent } from '../subscribers.js';
 import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,6 +120,40 @@ let inspirationsData: any[] = [];
 let marketingMessages: any[] = [];
 let dayTrackerPath: string = '';
 let usageTrackerPath: string = '';
+
+const AI_DAILY_FALLBACK_MESSAGE = 'AI Daily is temporarily unavailable. Please try again in a few minutes.';
+
+interface AiDailyDeliveryOptions {
+  prefix?: string;
+  forceRefresh?: boolean;
+  recordDelivery?: boolean;
+}
+
+async function deliverAiDailyEpisode(
+  to: string,
+  normalizedPhoneNumber: string,
+  twilioClient: TwilioClient,
+  options: AiDailyDeliveryOptions = {}
+): Promise<void> {
+  const { prefix, forceRefresh = false, recordDelivery = true } = options;
+
+  try {
+    const episode = await getLatestAiDailyEpisode(forceRefresh);
+    const shortLink = await getAiDailyShortLink(episode, normalizedPhoneNumber);
+    const baseMessage = formatAiDailySms(episode, { shortLink });
+    const responseMessage = prefix ? `${prefix}\n\n${baseMessage}` : baseMessage;
+
+    await sendSmsResponse(to, responseMessage, twilioClient);
+
+    if (recordDelivery) {
+      await updateAiDailyLastSent(normalizedPhoneNumber);
+    }
+  } catch (error) {
+    console.error('AI Daily delivery failed:', error);
+    const fallbackMessage = prefix ? `${prefix}\n\n${AI_DAILY_FALLBACK_MESSAGE}` : AI_DAILY_FALLBACK_MESSAGE;
+    await sendSmsResponse(to, fallbackMessage, twilioClient);
+  }
+}
 
 // NEW: Load data from Supabase instead of JSON file
 async function loadInspirationsDataFromSupabase() {
@@ -1650,6 +1685,108 @@ export async function processIncomingSms(from: string, body: string, twilioClien
       await updateLastMessageDate(normalizedPhoneNumber);
     }
 
+    const aiDailyNormalizedCommand = messageUpper.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+
+    if (aiDailyNormalizedCommand === 'AI DAILY SUBSCRIBE') {
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
+
+      if (!subscriber) {
+        await sendSmsResponse(
+          from,
+          'Text START to join The Foundry first, then send AI DAILY SUBSCRIBE.',
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      if (subscriber.ai_daily_subscribed) {
+        await sendSmsResponse(
+          from,
+          'You are already subscribed to AI Daily. Text AI DAILY for today\'s episode or AI DAILY STOP to opt out.',
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      const updated = await setAiDailySubscription(normalizedPhoneNumber, true);
+
+      if (!updated) {
+        await sendSmsResponse(
+          from,
+          'We could not update your AI Daily subscription. Please try again later.',
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      await deliverAiDailyEpisode(
+        from,
+        normalizedPhoneNumber,
+        twilioClient,
+        {
+          prefix: '✅ You\'re now subscribed to AI Daily. Expect a fresh episode at 7am PT each morning.',
+          forceRefresh: true,
+          recordDelivery: true
+        }
+      );
+
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
+    if (aiDailyNormalizedCommand === 'AI DAILY STOP' || aiDailyNormalizedCommand === 'AI DAILY UNSUBSCRIBE') {
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
+
+      if (!subscriber || !subscriber.ai_daily_subscribed) {
+        await sendSmsResponse(
+          from,
+          'You are not currently subscribed to AI Daily. Text AI DAILY SUBSCRIBE to opt in.',
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      const updated = await setAiDailySubscription(normalizedPhoneNumber, false);
+
+      if (!updated) {
+        await sendSmsResponse(
+          from,
+          'We could not update your AI Daily settings. Please try again later.',
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      await sendSmsResponse(
+        from,
+        '✅ You will no longer receive AI Daily episodes. Text AI DAILY SUBSCRIBE if you change your mind.',
+        twilioClient
+      );
+
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
+    if (aiDailyNormalizedCommand === 'AI DAILY') {
+      await deliverAiDailyEpisode(
+        from,
+        normalizedPhoneNumber,
+        twilioClient,
+        {
+          forceRefresh: true,
+          recordDelivery: false
+        }
+      );
+
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
     // Handle CODE command first - before loading any messages
     if (message.match(/^CODE[\s:-]/i)) {
       console.log(`Processing CODE command from ${from}`);
@@ -2005,7 +2142,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     }
 
     // Check for commands that should end the conversation
-    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'UPLOADS', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC'];
+    const commandsThatEndConversation = ['COMMANDS', 'HELP', 'INFO', 'STOP', 'START', 'UNSTOP', 'TODAY', 'MORE', 'WTF', 'KAILEY PLZ', 'AF HELP', 'VENUS MODE', 'ROHAN SAYS', 'TOO REAL', 'SKIP', 'ADD', 'SEND', 'SAVE', 'CODE', 'WTAF', 'MEME', 'UPLOADS', 'HIDE-DEFAULT', 'HIDE', 'UNHIDE', 'FAVE', 'PUBLIC', 'AI DAILY', 'AI-DAILY', 'AI DAILY SUBSCRIBE', 'AI DAILY STOP', 'AI DAILY UNSUBSCRIBE'];
     if (commandsThatEndConversation.includes(messageUpper) || message.match(/^(SKIP|MORE)\s+\d+$/i) || message.match(/^ADD\s+\{/i) || message.match(/^(CODE|WTAF|MEME)[\s:]/i) || message.match(/^about\s+@\w+/i) || message.match(/[^\s@]+@[^\s@]+\.[^\s@]+/) || message.match(/^--stack(db|data|email)?\s/i) || message.match(/^(HIDE-DEFAULT|HIDE|UNHIDE|FAVE|PUBLIC)\s/i) || message.match(/^--make-public\s/i)) {
       console.log(`Command ${messageUpper} received - ending any active conversation`);
       endConversation(from);
@@ -2031,6 +2168,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
       let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
+
+      helpText += '\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');

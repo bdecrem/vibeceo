@@ -20,6 +20,12 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+// Ensure backups directory exists
+const backupDir = path.join(__dirname, '../backups/apps');
+if (!fs.existsSync(backupDir)) {
+    fs.mkdirSync(backupDir, { recursive: true });
+}
+
 // Load environment variables
 let result = dotenv.config({ path: path.join(__dirname, '../../.env.local') });
 if (result.error) {
@@ -49,6 +55,8 @@ const DEFAULT_ICONS = {
     'text': '📝',
     'editor': '📝',
     'notepad': '📝',
+    'flappy': '🐦',
+    'bird': '🐦',
     'game': '🎮',
     'music': '🎵',
     'chat': '💬',
@@ -122,11 +130,49 @@ async function deployApp(filename, iconOverride = null) {
     const appName = generateAppName(filename);
     const appIcon = iconOverride || guessIcon(appName);
     
+    // Try to detect canvas dimensions from HTML for games
+    let appWidth = 800;
+    let appHeight = 600;
+    let resizable = true;
+    
+    // Check for window metadata first
+    const windowMetaMatch = htmlContent.match(/<meta\s+name=["']window:[^"']+["']\s+content=["']([^"']+)["']/);
+    if (windowMetaMatch) {
+        const metaContent = windowMetaMatch[1];
+        const widthMatch = metaContent.match(/width=(\d+)/);
+        const heightMatch = metaContent.match(/height=(\d+)/);
+        const resizableMatch = metaContent.match(/resizable=(true|false)/);
+        
+        if (widthMatch) appWidth = parseInt(widthMatch[1]);
+        if (heightMatch) appHeight = parseInt(heightMatch[1]);
+        if (resizableMatch) resizable = resizableMatch[1] === 'true';
+        
+        console.log(`   Detected window metadata: ${appWidth}x${appHeight}, resizable: ${resizable}`);
+    } else {
+        // Check for canvas element with width/height attributes
+        const canvasMatch = htmlContent.match(/<canvas[^>]+width=["'](\d+)["'][^>]+height=["'](\d+)["']/);
+        if (canvasMatch) {
+            appWidth = parseInt(canvasMatch[1]);
+            appHeight = parseInt(canvasMatch[2]);
+            resizable = false; // Games with fixed canvas should not be resizable
+            console.log(`   Detected canvas size: ${appWidth}x${appHeight}`);
+        } else {
+            // Check for explicit window size in a comment or meta tag
+            const sizeMatch = htmlContent.match(/<!--\s*window-size:\s*(\d+)x(\d+)\s*-->/);
+            if (sizeMatch) {
+                appWidth = parseInt(sizeMatch[1]);
+                appHeight = parseInt(sizeMatch[2]);
+                console.log(`   Detected window size from comment: ${appWidth}x${appHeight}`);
+            }
+        }
+    }
+    
     console.log(`\n📦 App Metadata:`);
     console.log(`   Slug: ${appSlug}`);
     console.log(`   ID: ${appId}`);
     console.log(`   Name: ${appName}`);
     console.log(`   Icon: ${appIcon}`);
+    console.log(`   Dimensions: ${appWidth}x${appHeight} (resizable: ${resizable})`);
     
     // Step 2: Deploy to Supabase
     console.log(`\n📤 Deploying to Supabase...`);
@@ -142,6 +188,26 @@ async function deployApp(filename, iconOverride = null) {
     const timestamp = new Date().toISOString();
     
     if (existing) {
+        // Backup existing app before updating
+        console.log('💾 Creating backup of existing app...');
+        const { data: currentApp, error: fetchError } = await supabase
+            .from('wtaf_content')
+            .select('html_content')
+            .eq('user_slug', 'public')
+            .eq('app_slug', appSlug)
+            .single();
+        
+        if (currentApp && currentApp.html_content) {
+            const backupTimestamp = new Date().toISOString()
+                .replace(/:/g, '-')
+                .replace(/\./g, '-')
+                .replace('T', '_')
+                .slice(0, -5);
+            const backupFile = path.join(backupDir, `${appSlug}_${backupTimestamp}_before_update.html`);
+            fs.writeFileSync(backupFile, currentApp.html_content);
+            console.log(`   Backup saved: ${backupFile}`);
+        }
+        
         // Update existing
         const { error: updateError } = await supabase
             .from('wtaf_content')
@@ -206,8 +272,9 @@ async function deployApp(filename, iconOverride = null) {
         name: appName,
         url: `/public/${appSlug}`,
         icon: appIcon,
-        width: 800,
-        height: 600,
+        width: appWidth,
+        height: appHeight,
+        resizable: resizable,
         category: 'apps'
     };
     
