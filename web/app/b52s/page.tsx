@@ -125,7 +125,7 @@ export default function B52LandingPage() {
           </div>
         </div>
 
-        <h1>B52s.me</h1>
+        <h1>B52s</h1>
 
         <div className="ornament">⚙ ═══ ⚙ ═══ ⚙</div>
 
