@@ -18,8 +18,8 @@
   - `AI_DAILY_BASE_URL` – required (ngrok host or LAN URL).
   - `AI_DAILY_SEND_HOUR`, `AI_DAILY_SEND_MINUTE` – optional overrides (defaults 7:00 PT).
   - `AI_DAILY_TIMEOUT_MS`, `AI_DAILY_CACHE_TTL_MS`, `AI_DAILY_PER_MESSAGE_DELAY_MS` – optional tuning.
-  - `SHORTLINK_SERVICE_URL` – points to the Web short-link API (`https://b52s.me/api/short-links`).
-  - `SHORTLINK_SERVICE_TOKEN` – bearer token that authenticates the SMS bot when it requests short links.
+  - `SHORTLINK_SERVICE_URL` – points to the Web short-link API (`https://b52s.me/api/short-links`). (Falls back to `SHORTLINK_BASE_URL` for compatibility.)
+  - `SHORTLINK_SERVICE_TOKEN` – bearer token that authenticates the SMS bot when it requests short links. (Falls back to `SHORTLINK_API_TOKEN`.)
   - `SHORTLINK_SERVICE_TIMEOUT_MS` – optional override (default 2000ms).
   - `URL_SHORTENER_ENDPOINT` / `WEBTOYS_SHORTENER_ENDPOINT` – legacy; can be removed once the in-house short links are live.
 - `sms_subscribers` now has `ai_daily_subscribed` (boolean) and `ai_daily_last_sent_at` (timestamp). `AI DAILY SUBSCRIBE/STOP` updates these fields.
