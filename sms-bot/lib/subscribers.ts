@@ -53,7 +53,7 @@ export async function getSubscriber(phoneNumber: string): Promise<SMSSubscriber 
   try {
     // Normalize the phone number first
     const normalizedNumber = normalizePhoneNumber(phoneNumber);
-    
+
     const { data, error } = await supabase
       .from('sms_subscribers')
       .select('*')
@@ -257,7 +257,8 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
         unsubscribed: false,
         is_admin: false,
         role: 'coder',
-        slug: slug
+        slug: slug,
+        ai_daily_subscribed: false
       });
       
     if (error) {
@@ -270,6 +271,69 @@ export async function createNewSubscriber(phoneNumber: string): Promise<boolean>
   } catch (error) {
     console.error('Error in createNewSubscriber:', error);
     return false;
+  }
+}
+
+export async function setAiDailySubscription(phoneNumber: string, subscribed: boolean): Promise<boolean> {
+  try {
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+
+    const updates: Record<string, unknown> = {
+      ai_daily_subscribed: subscribed
+    };
+
+    if (!subscribed) {
+      updates.ai_daily_last_sent_at = null;
+    }
+
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update(updates)
+      .eq('phone_number', normalizedNumber);
+
+    if (error) {
+      console.error('Error updating AI Daily subscription:', error);
+      return false;
+    }
+
+    console.log(`Updated AI Daily subscription for ${normalizedNumber}: ${subscribed}`);
+    return true;
+  } catch (error) {
+    console.error('Error in setAiDailySubscription:', error);
+    return false;
+  }
+}
+
+export async function getAiDailySubscribers(): Promise<SMSSubscriber[]> {
+  const { data, error } = await supabase
+    .from('sms_subscribers')
+    .select('*')
+    .eq('ai_daily_subscribed', true)
+    .eq('consent_given', true)
+    .eq('unsubscribed', false);
+
+  if (error) {
+    console.error('Error fetching AI Daily subscribers:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+export async function updateAiDailyLastSent(phoneNumber: string, date: Date = new Date()): Promise<void> {
+  try {
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update({ ai_daily_last_sent_at: date.toISOString() })
+      .eq('phone_number', normalizedNumber);
+
+    if (error) {
+      console.error('Error updating AI Daily last sent timestamp:', error);
+    }
+  } catch (error) {
+    console.error('Error in updateAiDailyLastSent:', error);
   }
 }
 

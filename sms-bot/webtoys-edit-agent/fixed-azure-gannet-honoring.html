@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>WTAF – Delusional App Generator</title>
+    <meta property="og:title" content="WTAF by AF" />
+    <meta property="og:description" content="Vibecoded chaos, shipped via SMS." />
+    <meta property="og:image" content="https://theaf.us/og-types/og-type-app-1.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://www.wtaf.me/bart/azure-gannet-honoring" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>Message Board</title>
+    <style>
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background-color: #FCFCF7;
+            color: #333;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .screen {
+            display: none;
+        }
+        .screen.active {
+            display: block;
+        }
+        .card {
+            background: white;
+            border: 4px solid #FFD63D;
+            box-shadow: 8px 8px #C9C2F9;
+            margin-bottom: 20px;
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .button {
+            background: #FFD63D;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px 0;
+            width: 100%;
+        }
+        .button:hover {
+            background: #FFC107;
+        }
+        .button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        input[type="text"], textarea {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 3px solid #333;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        input[type="text"]:focus, textarea:focus {
+            border-color: #FFD63D;
+        }
+        .comment {
+            background: #f5f5f5;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border-left: 3px solid #FFD63D;
+        }
+        .post-actions {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+        .post-actions .button {
+            flex: 1;
+            width: auto;
+        }
+    </style>
+<script>
+// ZAD Helper Functions - Inline version for test apps
+
+// SIMPLIFIED UUID INJECTION: Set window.APP_ID for backup
+window.APP_ID = '9b3c0388-a785-4aec-a1c1-c10cd76574b7';
+console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '9b3c0388-a785-4aec-a1c1-c10cd76574b7');
+
+console.log('🚀 Loading ZAD Helper Functions (inline)...');
+
+// Auth state - Use existing global currentUser or create zadCurrentUser
+let zadCurrentUser = (typeof currentUser !== 'undefined') ? currentUser : null;
+let authInitialized = false;
+
+// Get app ID from window.APP_ID (set by system) - ENHANCED DEBUG VERSION
+function getAppId() {
+    console.log('🆔 SIMPLIFIED UUID INJECTION: window.APP_ID set to:', '9b3c0388-a785-4aec-a1c1-c10cd76574b7');
+    return '9b3c0388-a785-4aec-a1c1-c10cd76574b7';
+}
+
+                // Get participant ID - return stored ID or generate temporary one
+                function getParticipantId() {
+                    let participantId = localStorage.getItem('zad_participant_id');
+                    if (!participantId) {
+                        // Check if demo mode is enabled (multiple detection methods for iframe compatibility)
+                        const isDemoMode =
+                            window.location.search.includes('demo=true') ||
+                            window.parent?.location?.search?.includes('demo=true') ||
+                            window.top?.location?.search?.includes('demo=true') ||
+                            document.referrer.includes('demo=true');
+
+                        // Clear demo mode if not detected in current session
+                        if (!isDemoMode) {
+                            localStorage.removeItem('demo_mode');
+                            // Also clear participant_id if it was a demo ID, so user gets fresh normal ID
+                            const existingId = localStorage.getItem('zad_participant_id');
+                            if (existingId && existingId.startsWith('demo_')) {
+                                localStorage.removeItem('zad_participant_id');
+                                localStorage.removeItem('zad_username');
+                            }
+                        }
+
+                        if (isDemoMode) {
+                            // Generate demo ID that will trigger backend demo table routing
+                            participantId = 'demo_user_' + Math.random().toString(36).substr(2, 8);
+                            localStorage.setItem('demo_mode', 'true');
+                            localStorage.setItem('zad_username', 'Demo User');
+                            console.log('🎭 Demo mode detected - generated demo participant ID:', participantId);
+                        } else {
+                            // Generate temporary ID - app's authentication system will set the real one
+                            participantId = 'temp_' + Math.random().toString(36).substr(2, 12);
+                            localStorage.setItem('zad_username', 'Anonymous');
+                        }
+
+                        localStorage.setItem('zad_participant_id', participantId);
+                    }
+                    return participantId;
+                }
+
+                // Get username from current session
+                function getUsername() {
+                    // Ensure participant ID is initialized first (which sets up localStorage)
+                    getParticipantId();
+                    return localStorage.getItem('zad_username') || 'Anonymous';
+                }
+
+                // Update ZAD helper functions with app's authentication state
+                function updateZadAuth(userLabel, participantId) {
+                    localStorage.setItem('zad_participant_id', participantId);
+                    localStorage.setItem('zad_username', userLabel);
+                    zadCurrentUser = {
+                        username: userLabel,
+                        participantId: participantId
+                    };
+                    console.log('🔄 Updated ZAD auth state:', zadCurrentUser);
+                }
+
+                // Initialize authentication (simplified)
+                function initAuth() {
+                    console.log('🔐 Initializing authentication...');
+                    if (authInitialized) return;
+                    authInitialized = true;
+
+                    // Don't clear localStorage or prompt during initialization
+                    // Let the app's authentication system handle user setup
+                    zadCurrentUser = {
+                        username: getUsername(),
+                        participantId: localStorage.getItem('zad_participant_id') || null
+                    };
+
+                    console.log('✅ Authentication ready:', zadCurrentUser);
+                }
+
+                // Get current user (compatible with zad-helpers.ts)
+                function getCurrentUser() {
+                    if (!zadCurrentUser) return null;
+
+                    return {
+                        username: zadCurrentUser.username || getUsername(),
+                        id: zadCurrentUser.participantId || getParticipantId(),
+                        userLabel: zadCurrentUser.username || getUsername(),
+                        participantId: zadCurrentUser.participantId || getParticipantId(),
+                        passcode: zadCurrentUser.passcode || null
+                    };
+                }
+
+// Save data to ZAD API
+async function save(type, data) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+        const username = getUsername();
+
+        const zadData = {
+            app_id: app_id,
+            participant_id: participant_id,
+            participant_data: {
+                userLabel: username,
+                username: username
+            },
+            action_type: type,
+            content_data: {
+                ...data,
+                timestamp: data.timestamp || Date.now(),
+                author: data.author || username
+            }
+        };
+
+        console.log('🔄 Saving to ZAD API:', { type, data: zadData });
+
+        const response = await fetch('/api/zad/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(zadData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Save failed: ${errorData.error || response.statusText}`);
+        }
+
+        const result = await response.json();
+        console.log('✅ Saved successfully:', result);
+        return result;
+
+    } catch (error) {
+        console.error('❌ Save error:', error);
+        alert(`Failed to save: ${error.message}`);
+        throw error;
+    }
+}
+
+// Load data from ZAD API
+async function load(type) {
+    try {
+        const app_id = getAppId();
+        const participant_id = getParticipantId();
+
+        console.log('🔄 Loading from ZAD API:', { app_id, type, participant_id });
+
+        const url = `/api/zad/load?app_id=${encodeURIComponent(app_id)}&action_type=${encodeURIComponent(type)}&participant_id=${encodeURIComponent(participant_id)}`;
+        console.log('🔍 ZAD load URL:', url);
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(`Load failed: ${errorData.error || response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('✅ Loaded successfully:', data);
+
+        // Transform ZAD data back to simple format
+        return data.map(item => ({
+            id: item.id,
+            ...item.content_data,
+            author: item.content_data.author || item.participant_data?.username || 'Unknown',
+            created_at: item.created_at
+        }));
+
+    } catch (error) {
+        console.error('❌ Load error:', error);
+        alert(`Failed to load: ${error.message}`);
+        return [];
+    }
+}
+
+                // Make functions globally available
+                window.initAuth = initAuth;
+                window.save = save;
+                window.load = load;
+                window.getAppId = getAppId;
+                window.getParticipantId = getParticipantId;
+                window.getUsername = getUsername;
+                window.getCurrentUser = getCurrentUser;
+                window.updateZadAuth = updateZadAuth;
+
+console.log('🚀 ZAD Helper Functions loaded successfully');
+
+// DEMO MODE: Complete demo mode implementation with localStorage isolation
+if (window.location.search.includes('demo=true')) {
+    console.log('🎭 DEMO MODE - Activating complete demo mode');
+
+    // Create fake demo user credentials
+    let demoUser = {
+        userLabel: 'Demo User',
+        participantId: 'demo-user-' + Math.random().toString(36).substr(2, 8),
+        username: 'Demo User'
+    };
+
+    // Override ZAD helper functions to use localStorage instead of backend
+    const originalSave = window.save;
+    window.save = async function(type, data) {
+        try {
+            const demoKey = `demo_${type}_${demoUser.participantId}`;
+            const existing = JSON.parse(localStorage.getItem(demoKey) || '[]');
+
+            const newItem = {
+                id: Date.now(),
+                created_at: new Date().toISOString(),
+                author: data.author || demoUser.userLabel,
+                ...data
+            };
+
+            existing.push(newItem);
+            localStorage.setItem(demoKey, JSON.stringify(existing));
+
+            console.log('🎭 Demo save:', { type, data: newItem });
+            return { success: true, data: newItem };
+
+        } catch (error) {
+            console.error('❌ Demo save error:', error);
+            return { success: false, error: error.message };
+        }
+    };
+
+    const originalLoad = window.load;
+    window.load = async function(type) {
+        try {
+            const demoKey = `demo_${type}_${demoUser.participantId}`;
+            const data = JSON.parse(localStorage.getItem(demoKey) || '[]');
+
+            // Transform demo data to match real ZAD API structure
+            const transformedData = data.map(item => {
+                // Extract metadata fields
+                const { id, created_at, author, ...contentData } = item;
+
+                // Return in same format as real ZAD API: content_data contains the actual data
+                return {
+                    id: id,
+                    created_at: created_at,
+                    content_data: contentData,
+                    author: author || demoUser.userLabel
+                };
+            });
+
+            console.log('🎭 Demo load:', { type, count: transformedData.length });
+            return transformedData;
+
+        } catch (error) {
+            console.error('❌ Demo load error:', error);
+            return [];
+        }
+    };
+
+    // Override authentication functions to work with demo user
+    window.getCurrentUser = function() {
+        return demoUser;
+    };
+
+    window.getUsername = function() {
+        return demoUser.userLabel;
+    };
+
+    window.getParticipantId = function() {
+        return demoUser.participantId;
+    };
+
+    // Set global currentUser for apps that expect it
+    if (typeof window.currentUser === 'undefined') {
+        window.currentUser = demoUser;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Hide welcome/auth screens and show main screen
+        const welcomeScreen = document.getElementById('welcome-screen');
+        const mainScreen = document.getElementById('main-screen');
+
+        if (welcomeScreen && mainScreen) {
+            welcomeScreen.style.display = 'none';
+            mainScreen.style.display = 'block';
+            console.log('🎭 Auth screens bypassed for demo mode');
+        }
+
+        // Add demo banner if user status exists
+        const userStatus = document.getElementById('user-status');
+        if (userStatus) {
+            userStatus.innerHTML = '🎭 DEMO MODE - Try it out! Data saved locally.';
+        }
+
+        // Update user display elements
+        const userLabelElements = document.querySelectorAll('#current-user-label, .current-user-label');
+        userLabelElements.forEach(elem => {
+            elem.textContent = demoUser.userLabel;
+        });
+
+        // Auto-initialize demo user authentication state
+        if (typeof window.updateZadAuth === 'function') {
+            window.updateZadAuth(demoUser.userLabel, demoUser.participantId);
+        }
+
+        console.log('🎭 Demo mode fully activated:', demoUser);
+    });
+}
+
+</script>
+</head>
+<body>
+    <div id="welcome-screen" class="screen active">
+        <h1>Welcome to the Chaos Board!</h1>
+        <button class="button" onclick="showCustomUserScreen()">New User</button>
+        <button class="button" onclick="showCustomLoginScreen()">Returning User</button>
+    </div>
+
+    <div id="custom-user-screen" class="screen">
+        <h1>Create Your Identity</h1>
+        <input type="text" id="custom-handle" placeholder="Your Handle (3-15 chars)" maxlength="15">
+        <input type="text" id="custom-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <div id="custom-user-feedback"></div>
+        <button class="button" onclick="checkAndRegisterCustomUser()">Claim Identity</button>
+        <button class="button" onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+
+    <div id="custom-login-screen" class="screen">
+        <h1>Login</h1>
+        <input type="text" id="custom-login-handle" placeholder="Your Handle">
+        <input type="text" id="custom-login-pin" placeholder="Your 4-digit PIN" maxlength="4">
+        <button class="button" onclick="loginCustomUser()">Login</button>
+        <button class="button" onclick="showScreen('welcome-screen')">Back</button>
+    </div>
+
+    <div id="main-screen" class="screen">
+        <h1>Chaos Board</h1>
+        <div id="user-status">Welcome, <span id="current-user-label"></span>!</div>
+        <div id="post-form">
+            <input type="text" id="post-content" placeholder="Type your message here...">
+            <button class="button" onclick="addPost()">Post</button>
+        </div>
+        <div id="posts-container"></div>
+        <button class="button" onclick="showScreen('welcome-screen')">Leave</button>
+    </div>
+
+    <script>
+        let currentUser = null;
+        let pollingInterval;
+        let allPosts = [];
+        let allComments = [];
+        let allLikes = [];
+
+        function showCustomUserScreen() {
+            showScreen('custom-user-screen');
+            document.getElementById('custom-handle').value = '';
+            document.getElementById('custom-pin').value = '';
+            document.getElementById('custom-user-feedback').innerHTML = '';
+        }
+
+        async function checkAndRegisterCustomUser() {
+            const handle = document.getElementById('custom-handle').value.trim();
+            const pin = document.getElementById('custom-pin').value.trim();
+            const feedback = document.getElementById('custom-user-feedback');
+
+            if (!handle || handle.length < 3) {
+                feedback.innerHTML = '⚠️ Handle must be 3-15 characters';
+                return;
+            }
+
+            if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+                feedback.innerHTML = '⚠️ PIN must be exactly 4 digits';
+                return;
+            }
+
+            feedback.innerHTML = '🔄 Checking availability...';
+
+            try {
+                const checkResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'check_custom_handle',
+                        content_data: { handle: handle }
+                    })
+                });
+
+                const checkResult = await checkResponse.json();
+                if (!checkResult.available) {
+                    feedback.innerHTML = `❌ ${checkResult.error}`;
+                    return;
+                }
+
+                feedback.innerHTML = '✅ Handle available! Registering...';
+
+                const registerResponse = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'register_custom_user',
+                        content_data: { handle: handle, pin: pin }
+                    })
+                });
+
+                const registerResult = await registerResponse.json();
+                if (registerResult.success) {
+                    currentUser = {
+                        username: registerResult.userLabel,
+                        userLabel: registerResult.userLabel,
+                        participantId: registerResult.participantId
+                    };
+
+                    updateZadAuth(registerResult.userLabel, registerResult.participantId);
+                    enterMainScreen();
+                } else {
+                    feedback.innerHTML = `❌ ${registerResult.error}`;
+                }
+            } catch (error) {
+                feedback.innerHTML = '❌ Registration failed - please try again';
+            }
+        }
+
+        function showCustomLoginScreen() {
+            showScreen('custom-login-screen');
+            document.getElementById('custom-login-handle').value = '';
+            document.getElementById('custom-login-pin').value = '';
+        }
+
+        async function loginCustomUser() {
+            const handle = document.getElementById('custom-login-handle').value.trim();
+            const pin = document.getElementById('custom-login-pin').value.trim();
+
+            if (!handle || !pin) {
+                alert('Enter both handle and PIN!');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/zad/save', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        app_id: getAppId(),
+                        action_type: 'authenticate_custom_user',
+                        content_data: { handle: handle, pin: pin }
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentUser = {
+                        username: result.user.userLabel,
+                        userLabel: result.user.userLabel,
+                        participantId: result.user.participantId
+                    };
+
+                    updateZadAuth(result.user.userLabel, result.user.participantId);
+                    enterMainScreen();
+                } else {
+                    alert(result.error || 'Login failed');
+                }
+            } catch (error) {
+                alert('Login failed - please try again');
+            }
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            if (screenId !== 'main-screen') stopPolling();
+        }
+
+        function enterMainScreen() {
+            showScreen('main-screen');
+            document.getElementById('current-user-label').textContent = currentUser.userLabel;
+            startPolling();
+            loadLatestData();
+        }
+
+        async function addPost() {
+            const content = document.getElementById('post-content').value.trim();
+            if (!content) {
+                alert('Please enter some content!');
+                return;
+            }
+            await save('post', { content: content, likes: 0 });
+            document.getElementById('post-content').value = '';
+            // Refresh data immediately after posting
+            loadLatestData();
+        }
+
+        async function loadLatestData() {
+            try {
+                allPosts = await load('post');
+                allComments = await load('comment');
+                allLikes = await load('like');
+                updateUI(allPosts, allComments, allLikes);
+            } catch (error) {
+                console.error('Error loading data:', error);
+            }
+        }
+
+        function updateUI(posts, comments, likes) {
+            const postsContainer = document.getElementById('posts-container');
+            postsContainer.innerHTML = '';
+
+            // Sort posts by creation time (newest first)
+            const sortedPosts = posts.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+            const dedupedPosts = getLatestVersions(sortedPosts, 'id');
+
+            dedupedPosts.forEach(post => {
+                const postComments = comments.filter(comment => comment.postId == post.id);
+                const postLikes = likes.filter(like => like.postId == post.id);
+                const isAuthor = currentUser && currentUser.userLabel === post.author;
+
+                const postDiv = document.createElement('div');
+                postDiv.className = 'card';
+                postDiv.innerHTML = `
+                    <div><strong>${post.author}</strong> said:</div>
+                    <div>${post.content}</div>
+                    <div>Likes: ${postLikes.length}</div>
+                    <div class="post-actions">
+                        <button class="button" onclick="likePost(${post.id})">👍 Like</button>
+                        <button class="button" ${isAuthor ? '' : 'disabled'} onclick="showEditPost(${post.id})" ${isAuthor ? '' : 'title="Only the author can edit"'}>✏️ Edit</button>
+                    </div>
+                    <div>
+                        <input type="text" id="comment-input-${post.id}" placeholder="Add a comment...">
+                        <button class="button" onclick="addComment(${post.id})">💬 Comment</button>
+                    </div>
+                    <div id="comments-${post.id}">
+                        ${postComments.map(comment => `
+                            <div class="comment"><strong>${comment.author}</strong>: ${comment.content}</div>
+                        `).join('')}
+                    </div>
+                `;
+                postsContainer.appendChild(postDiv);
+            });
+        }
+
+        async function likePost(postId) {
+            await save('like', { postId: postId });
+            // Refresh data immediately after liking
+            loadLatestData();
+        }
+
+        async function addComment(postId) {
+            const commentInput = document.getElementById(`comment-input-${postId}`);
+            const content = commentInput.value.trim();
+            if (!content) {
+                alert('Please enter a comment!');
+                return;
+            }
+            await save('comment', { postId: postId, content: content });
+            commentInput.value = '';
+            // Refresh data immediately after commenting
+            loadLatestData();
+        }
+
+        function showEditPost(postId) {
+            // Check if current user is the author of the post
+            const post = allPosts.find(p => p.id == postId);
+            if (!post) {
+                alert('Post not found!');
+                return;
+            }
+
+            if (!currentUser || currentUser.userLabel !== post.author) {
+                alert('You can only edit your own posts!');
+                return;
+            }
+
+            const newContent = prompt('Edit your post:', post.content);
+            if (newContent !== null && newContent.trim() !== '') {
+                // Save the edited post with the same ID to create a new version
+                save('post', {
+                    id: post.id,
+                    content: newContent.trim(),
+                    likes: 0, // Reset likes for edited posts
+                    edited: true,
+                    originalId: post.id
+                }).then(() => {
+                    // Refresh data immediately after editing
+                    loadLatestData();
+                });
+            }
+        }
+
+        function startPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+            pollingInterval = setInterval(() => loadLatestData(), 3000);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) clearInterval(pollingInterval);
+        }
+
+        function getLatestVersions(items, uniqueField = 'id') {
+            return items.reduce((acc, item) => {
+                const existing = acc.find(i => i[uniqueField] == item[uniqueField]);
+                if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
+                    if (existing) {
+                        const index = acc.indexOf(existing);
+                        acc[index] = item;
+                    } else {
+                        acc.push(item);
+                    }
+                }
+                return acc;
+            }, []);
+        }
+
+        initAuth();
+    </script>
+</body>
+</html>
