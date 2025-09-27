@@ -5,6 +5,10 @@ const description = "Steam-powered artificial intelligence at your service. Tele
 export const metadata: Metadata = {
   title: "B52s.me - Steam-Powered AI Intelligence",
   description,
+  icons: {
+    icon: "/temp-b52s.png",
+    shortcut: "/temp-b52s.png",
+  },
   openGraph: {
     title: "B52s.me - Steam-Powered AI Intelligence",
     description,
