@@ -782,7 +782,7 @@ export default function B52LandingPage() {
         .modal-backdrop {
           position: fixed;
           inset: 0;
-          background: rgba(10, 6, 4, 0.7);
+          background: rgba(10, 6, 4, 0.55);
           display: flex;
           justify-content: center;
           align-items: center;
@@ -828,7 +828,7 @@ export default function B52LandingPage() {
           transform-style: preserve-3d;
           transform: rotateX(90deg);
           transform-origin: top center;
-          transition: transform 2.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          transition: transform 3.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
 
         .scroll-container.unfolded {
@@ -939,7 +939,7 @@ export default function B52LandingPage() {
         }
 
         .typewriter-active .typewriter-text {
-          animation: typewriter 1.6s ease-out forwards;
+          animation: typewriter 2.4s ease-out forwards;
         }
 
         .typewriter-active .typewriter-text:nth-child(1) {
