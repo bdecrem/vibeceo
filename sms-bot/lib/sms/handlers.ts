@@ -8,7 +8,7 @@ import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate,
 import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
-import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink, formatAiDailyLinks } from './ai-daily.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
