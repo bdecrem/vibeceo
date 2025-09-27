@@ -210,25 +210,30 @@ export default function B52LandingPage() {
 
     playCreakSound();
 
-    setNoteVisible(true);
     setIsAnimating(true);
     setScrollUnfolded(false);
     setShowTypewriter(false);
 
-    const unfoldTimer = window.setTimeout(() => {
-      setScrollUnfolded(true);
-      const typeTimer = window.setTimeout(() => {
-        setShowTypewriter(true);
-      }, 900);
-      noteAnimationTimersRef.current.push(typeTimer);
-    }, 350);
+    const modalTimer = window.setTimeout(() => {
+      setNoteVisible(true);
 
-    noteAnimationTimersRef.current.push(unfoldTimer);
+      const unfoldTimer = window.setTimeout(() => {
+        setScrollUnfolded(true);
+        const typeTimer = window.setTimeout(() => {
+          setShowTypewriter(true);
+        }, 900);
+        noteAnimationTimersRef.current.push(typeTimer);
+      }, 350);
 
-    noteHideTimeoutRef.current = window.setTimeout(() => {
-      noteHideTimeoutRef.current = null;
-      closeNote();
-    }, 90000);
+      noteAnimationTimersRef.current.push(unfoldTimer);
+
+      noteHideTimeoutRef.current = window.setTimeout(() => {
+        noteHideTimeoutRef.current = null;
+        closeNote();
+      }, 90000);
+    }, 2000);
+
+    noteAnimationTimersRef.current.push(modalTimer);
   };
 
   const closeNote = () => {
