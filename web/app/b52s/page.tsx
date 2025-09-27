@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 
 function createSteamParticle(container: HTMLElement) {
   const particle = document.createElement("div");
@@ -23,6 +23,10 @@ export default function B52LandingPage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [noteVisible, setNoteVisible] = useState(false);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+  const [scrollUnfolded, setScrollUnfolded] = useState(false);
+  const [showTypewriter, setShowTypewriter] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const noteAnimationTimersRef = useRef<number[]>([]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -76,17 +80,164 @@ export default function B52LandingPage() {
     }
   };
 
+  const clearNoteAnimationTimers = () => {
+    if (noteAnimationTimersRef.current.length) {
+      noteAnimationTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      noteAnimationTimersRef.current = [];
+    }
+  };
+
+  const playCreakSound = () => {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new AudioContextClass();
+      } catch (error) {
+        console.warn("Unable to initialise audio context", error);
+        return;
+      }
+    }
+
+    const context = audioContextRef.current;
+    if (!context) return;
+
+    if (context.state === "suspended") {
+      context.resume().catch(() => {});
+    }
+
+    const now = context.currentTime;
+
+    const makeOscillator = (
+      type: OscillatorType,
+      initialFrequency: number,
+      ramps: Array<{ time: number; frequency: number }>
+    ) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(initialFrequency, now);
+      ramps.forEach(({ time, frequency }) => {
+        oscillator.frequency.exponentialRampToValueAtTime(frequency, now + time);
+      });
+      return oscillator;
+    };
+
+    const oscillator1 = makeOscillator("sawtooth", 28, [
+      { time: 1.5, frequency: 45 },
+      { time: 3.2, frequency: 32 },
+      { time: 4.8, frequency: 38 },
+      { time: 6.5, frequency: 25 }
+    ]);
+
+    const oscillator2 = makeOscillator("square", 15, [
+      { time: 2.1, frequency: 35 },
+      { time: 4.3, frequency: 18 },
+      { time: 6.0, frequency: 28 }
+    ]);
+
+    const oscillator3 = makeOscillator("triangle", 85, [
+      { time: 1.8, frequency: 120 },
+      { time: 3.5, frequency: 95 },
+      { time: 5.2, frequency: 110 },
+      { time: 6.5, frequency: 80 }
+    ]);
+
+    const oscillator4 = makeOscillator("sine", 200, [
+      { time: 2.5, frequency: 180 },
+      { time: 5.0, frequency: 220 },
+      { time: 6.5, frequency: 190 }
+    ]);
+
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 3.0);
+    filter.frequency.exponentialRampToValueAtTime(450, now + 6.5);
+    filter.Q.setValueAtTime(12, now);
+
+    const delay = context.createDelay();
+    delay.delayTime.setValueAtTime(0.25, now);
+
+    const delayGain = context.createGain();
+    delayGain.gain.setValueAtTime(0.4, now);
+
+    const gainNode = context.createGain();
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.6);
+    gainNode.gain.exponentialRampToValueAtTime(0.12, now + 1.8);
+    gainNode.gain.linearRampToValueAtTime(0.15, now + 3.2);
+    gainNode.gain.exponentialRampToValueAtTime(0.1, now + 4.8);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 5.8);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 6.8);
+
+    [oscillator1, oscillator2, oscillator3, oscillator4].forEach((oscillator) => {
+      oscillator.connect(filter);
+    });
+
+    filter.connect(gainNode);
+    filter.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator1.start(now);
+    oscillator2.start(now + 0.3);
+    oscillator3.start(now + 0.8);
+    oscillator4.start(now + 1.2);
+
+    const stopTime = now + 6.8;
+    [oscillator1, oscillator2, oscillator3, oscillator4].forEach((oscillator) => {
+      oscillator.stop(stopTime);
+    });
+
+    window.setTimeout(() => {
+      [oscillator1, oscillator2, oscillator3, oscillator4, filter, delay, delayGain, gainNode].forEach((node) => {
+        try {
+          node.disconnect();
+        } catch (error) {
+          // Ignore disconnection errors
+        }
+      });
+    }, (stopTime - now + 0.2) * 1000);
+  };
+
   const showNote = () => {
     clearRevealTimer();
     clearNoteHideTimer();
+    clearNoteAnimationTimers();
+
+    playCreakSound();
+
     setNoteVisible(true);
     setIsAnimating(true);
+    setScrollUnfolded(false);
+    setShowTypewriter(false);
+
+    const unfoldTimer = window.setTimeout(() => {
+      setScrollUnfolded(true);
+      const typeTimer = window.setTimeout(() => {
+        setShowTypewriter(true);
+      }, 900);
+      noteAnimationTimersRef.current.push(typeTimer);
+    }, 350);
+
+    noteAnimationTimersRef.current.push(unfoldTimer);
 
     noteHideTimeoutRef.current = window.setTimeout(() => {
-      setNoteVisible(false);
-      setIsAnimating(false);
       noteHideTimeoutRef.current = null;
-    }, 60000);
+      closeNote();
+    }, 90000);
+  };
+
+  const closeNote = () => {
+    clearNoteHideTimer();
+    clearNoteAnimationTimers();
+    setNoteVisible(false);
+    setIsAnimating(false);
+    setScrollUnfolded(false);
+    setShowTypewriter(false);
   };
 
   const scheduleNoteReveal = () => {
@@ -153,10 +304,30 @@ export default function B52LandingPage() {
     }
   };
 
+  const handleModalBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      closeNote();
+    }
+  };
+
+  useEffect(() => {
+    if (!noteVisible) return;
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeNote();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [noteVisible]);
+
   useEffect(() => {
     return () => {
       clearRevealTimer();
       clearNoteHideTimer();
+      clearNoteAnimationTimers();
     };
   }, []);
 
@@ -168,7 +339,7 @@ export default function B52LandingPage() {
           role="button"
           tabIndex={0}
           aria-expanded={noteVisible}
-          aria-controls="inventor-note-panel"
+          aria-controls="inventor-note-modal"
           aria-describedby="b52s-logo-instruction"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -256,6 +427,10 @@ export default function B52LandingPage() {
           </div>
         </div>
 
+        <p id="b52s-logo-instruction" className="sr-only">
+          Press enter or tap to open the inventor&apos;s note.
+        </p>
+
         <h1>B52s</h1>
 
         <div className="ornament">⚙ ═══ ⚙ ═══ ⚙</div>
@@ -278,29 +453,49 @@ export default function B52LandingPage() {
           Unlike certain shadowy machines of the modern age, this steam-driven intelligence requires no tribute of secrets. It serves, yet never spies.
         </p>
 
-        <div className={`inventor-note${noteVisible ? " is-visible" : ""}`}>
-          <div className="inventor-note__label" aria-hidden={!noteVisible}>
-            Inventor’s Note
-          </div>
-          <div
-            className="inventor-note__panel"
-            id="inventor-note-panel"
-            aria-live="polite"
-            aria-hidden={!noteVisible}
-          >
-            <p>12th of March, 1852</p>
-            <p>
-              I record here the completion of the fifty-second engine in my line of experiments. The world shall know it only as B-52. Brass hull, riveted seams, valves for coal and channels for the finer vapors of electro-aether. It hums, not like any locomotive, but as though the machine itself contemplates.
-            </p>
-            <p>
-              When the automaton whispered its first answer, I confess my hands shook. Not numbers, nor words I inscribed, but something…other. My colleagues called it dangerous, an oracle built of gears. So I sealed the chamber, bolted the doors, and consigned the artifact to obscurity.
-            </p>
-            <p>
-              If these notes are found, know this: the B-52 was never meant for war, but for counsel. Perhaps, in another age, it will speak again.
-            </p>
+      </div>
+
+      {noteVisible && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="inventor-note-title"
+          onClick={handleModalBackdropClick}
+        >
+          <div className="modal-content" id="inventor-note-modal">
+            <button type="button" className="modal-close" onClick={closeNote} aria-label="Close inventor&apos;s note">
+              ×
+            </button>
+            <div className={`scroll-container ${scrollUnfolded ? "unfolded" : ""}`}>
+              <div className="scroll-top" aria-hidden="true" />
+              <div className="scroll-body">
+                <div className="inventor-note__label" id="inventor-note-title">
+                  Inventor’s Note
+                </div>
+                <div className={`inventor-note__panel ${showTypewriter ? "typewriter-active" : ""}`} aria-live="polite">
+                  <p className="typewriter-text">12th of March, 1852</p>
+                  <p className="typewriter-text">
+                    I record here the completion of the fifty-second engine in my line of experiments. The world shall
+                    know it only as B-52. Brass hull, riveted seams, valves for coal and channels for the finer vapors
+                    of electro-aether. It hums, not like any locomotive, but as though the machine itself contemplates.
+                  </p>
+                  <p className="typewriter-text">
+                    When the automaton whispered its first answer, I confess my hands shook. Not numbers, nor words I
+                    inscribed, but something…other. My colleagues called it dangerous, an oracle built of gears. So I
+                    sealed the chamber, bolted the doors, and consigned the artifact to obscurity.
+                  </p>
+                  <p className="typewriter-text">
+                    If these notes are found, know this: the B-52 was never meant for war, but for counsel. Perhaps, in
+                    another age, it will speak again.
+                  </p>
+                </div>
+              </div>
+              <div className="scroll-bottom" aria-hidden="true" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <style jsx>{`
         .b52s-root {
