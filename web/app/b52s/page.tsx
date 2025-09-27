@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 
 function createSteamParticle(container: HTMLElement) {
   const particle = document.createElement("div");
@@ -17,6 +18,11 @@ function createSteamParticle(container: HTMLElement) {
 
 export default function B52LandingPage() {
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const animationTimeoutRef = useRef<number | null>(null);
+  const noteHideTimeoutRef = useRef<number | null>(null);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [noteVisible, setNoteVisible] = useState(false);
+  const [isCoarsePointer, setIsCoarsePointer] = useState(false);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -42,11 +48,139 @@ export default function B52LandingPage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(pointer: coarse)");
+    const updatePointerType = () => setIsCoarsePointer(mediaQuery.matches);
+
+    updatePointerType();
+    mediaQuery.addEventListener("change", updatePointerType);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updatePointerType);
+    };
+  }, []);
+
+  const clearRevealTimer = () => {
+    if (animationTimeoutRef.current) {
+      window.clearTimeout(animationTimeoutRef.current);
+      animationTimeoutRef.current = null;
+    }
+  };
+
+  const clearNoteHideTimer = () => {
+    if (noteHideTimeoutRef.current) {
+      window.clearTimeout(noteHideTimeoutRef.current);
+      noteHideTimeoutRef.current = null;
+    }
+  };
+
+  const showNote = () => {
+    clearRevealTimer();
+    clearNoteHideTimer();
+    setNoteVisible(true);
+    setIsAnimating(true);
+
+    noteHideTimeoutRef.current = window.setTimeout(() => {
+      setNoteVisible(false);
+      setIsAnimating(false);
+      noteHideTimeoutRef.current = null;
+    }, 60000);
+  };
+
+  const scheduleNoteReveal = () => {
+    if (noteVisible) return;
+
+    clearRevealTimer();
+    animationTimeoutRef.current = window.setTimeout(() => {
+      animationTimeoutRef.current = null;
+      showNote();
+    }, 3200);
+  };
+
+  const startAnimation = (shouldRevealNote: boolean) => {
+    if (!isAnimating) {
+      setIsAnimating(true);
+    }
+
+    if (shouldRevealNote && !noteVisible) {
+      scheduleNoteReveal();
+    }
+  };
+
+  const stopAnimation = () => {
+    clearRevealTimer();
+
+    if (!noteVisible) {
+      setIsAnimating(false);
+      clearNoteHideTimer();
+    }
+  };
+
+  const handleMouseEnter = () => {
+    if (isCoarsePointer) return;
+    startAnimation(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isCoarsePointer) return;
+    stopAnimation();
+  };
+
+  const handleFocus = () => {
+    if (isCoarsePointer) return;
+    startAnimation(true);
+  };
+
+  const handleBlur = () => {
+    if (isCoarsePointer) return;
+    stopAnimation();
+  };
+
+  const handleClick = () => {
+    if (isCoarsePointer && !isAnimating) {
+      startAnimation(false);
+    }
+
+    showNote();
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === " " || event.key === "Enter") {
+      event.preventDefault();
+      handleClick();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      clearRevealTimer();
+      clearNoteHideTimer();
+    };
+  }, []);
+
   return (
     <div className="b52s-root" ref={rootRef}>
       <div className="container">
-        <div className="logo-container">
-          <div className="logo" aria-hidden="true">
+        <div
+          className={`logo-container${isAnimating ? " is-animating" : ""}${noteVisible ? " note-open" : ""}`}
+          role="button"
+          tabIndex={0}
+          aria-expanded={noteVisible}
+          aria-controls="inventor-note-panel"
+          aria-describedby="b52s-logo-instruction"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onClick={handleClick}
+          onKeyDown={handleKeyDown}
+        >
+          <span className="logo-instruction" id="b52s-logo-instruction">
+            {isCoarsePointer ? "Tap the porthole" : "Hover the porthole"}
+          </span>
+          <div className={`logo${noteVisible ? " note-ready" : ""}`} aria-hidden="true">
             <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg" role="img">
               <title>B52s Steampunk Emblem</title>
               <circle cx="200" cy="200" r="180" fill="url(#brassBg)" stroke="#8b4513" strokeWidth="6" />
@@ -146,6 +280,29 @@ export default function B52LandingPage() {
         <p className="privacy-note">
           Unlike certain shadowy machines of the modern age, this steam-driven intelligence requires no tribute of secrets. It serves, yet never spies.
         </p>
+
+        <div className={`inventor-note${noteVisible ? " is-visible" : ""}`}>
+          <div className="inventor-note__label" aria-hidden={!noteVisible}>
+            Inventor’s Note
+          </div>
+          <div
+            className="inventor-note__panel"
+            id="inventor-note-panel"
+            aria-live="polite"
+            aria-hidden={!noteVisible}
+          >
+            <p>12th of March, 1852</p>
+            <p>
+              I record here the completion of the fifty-second engine in my line of experiments. The world shall know it only as B-52. Brass hull, riveted seams, valves for coal and channels for the finer vapors of electro-aether. It hums, not like any locomotive, but as though the machine itself contemplates.
+            </p>
+            <p>
+              When the automaton whispered its first answer, I confess my hands shook. Not numbers, nor words I inscribed, but something…other. My colleagues called it dangerous, an oracle built of gears. So I sealed the chamber, bolted the doors, and consigned the artifact to obscurity.
+            </p>
+            <p>
+              If these notes are found, know this: the B-52 was never meant for war, but for counsel. Perhaps, in another age, it will speak again.
+            </p>
+          </div>
+        </div>
       </div>
 
       <style jsx>{`
@@ -176,6 +333,29 @@ export default function B52LandingPage() {
         .logo-container {
           margin-bottom: 50px;
           position: relative;
+          cursor: pointer;
+          outline: none;
+        }
+
+        .logo-container:focus-visible {
+          box-shadow: 0 0 0 3px rgba(212, 175, 55, 0.65);
+          border-radius: 50%;
+        }
+
+        .logo-instruction {
+          display: block;
+          margin-bottom: 12px;
+          font-size: 0.85rem;
+          letter-spacing: 0.4em;
+          text-transform: uppercase;
+          color: rgba(212, 175, 55, 0.55);
+          transition: opacity 0.4s ease, transform 0.4s ease;
+          opacity: 0.85;
+        }
+
+        .logo-container.note-open .logo-instruction {
+          opacity: 0;
+          transform: translateY(-6px);
         }
 
         .logo {
@@ -184,11 +364,29 @@ export default function B52LandingPage() {
           margin: 0 auto;
           position: relative;
           filter: drop-shadow(0 0 20px rgba(212, 175, 55, 0.3));
+          transition: transform 0.6s ease, filter 0.6s ease;
+        }
+
+        .logo::after {
+          content: '';
+          position: absolute;
+          inset: -12px;
+          border-radius: 50%;
+          background: radial-gradient(circle, rgba(255, 214, 102, 0.45) 0%, rgba(255, 214, 102, 0) 70%);
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.4s ease;
         }
 
         .logo svg {
           width: 100%;
           height: 100%;
+        }
+
+        .gear,
+        .gear-fast,
+        .logo svg .craft {
+          animation-play-state: paused;
         }
 
         .gear {
@@ -205,6 +403,37 @@ export default function B52LandingPage() {
           transform-box: fill-box;
           transform-origin: center;
           animation: sway 7s ease-in-out infinite;
+        }
+
+        .logo-container.is-animating .logo {
+          transform: scale(1.05) rotate(-2deg);
+          filter: drop-shadow(0 0 28px rgba(212, 175, 55, 0.46));
+        }
+
+        .logo-container.is-animating .logo::after {
+          opacity: 1;
+          animation: rivetGlow 1.4s infinite alternate;
+        }
+
+        .logo-container.is-animating .gear,
+        .logo-container.is-animating .gear-fast,
+        .logo-container.is-animating .logo svg .craft {
+          animation-play-state: running;
+        }
+
+        .logo.note-ready::after {
+          opacity: 1;
+        }
+
+        @keyframes rivetGlow {
+          0% {
+            box-shadow: 0 0 12px rgba(255, 206, 120, 0.45);
+            opacity: 0.7;
+          }
+          100% {
+            box-shadow: 0 0 30px rgba(255, 225, 170, 0.95);
+            opacity: 1;
+          }
         }
 
         @keyframes rotate {
@@ -362,6 +591,79 @@ export default function B52LandingPage() {
           font-family: 'Georgia', serif;
         }
 
+        .inventor-note {
+          margin-top: 0;
+          max-height: 0;
+          max-width: 720px;
+          margin-left: auto;
+          margin-right: auto;
+          position: relative;
+          opacity: 0;
+          overflow: hidden;
+          pointer-events: none;
+          transition:
+            max-height 0.6s ease,
+            opacity 0.6s ease,
+            margin-top 0.6s ease;
+        }
+
+        .inventor-note.is-visible {
+          margin-top: 60px;
+          max-height: 1000px;
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .inventor-note__label {
+          display: inline-block;
+          padding: 6px 16px;
+          background: rgba(23, 14, 8, 0.85);
+          border: 1px solid rgba(212, 175, 55, 0.4);
+          border-bottom: none;
+          letter-spacing: 0.45em;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          color: rgba(212, 175, 55, 0.75);
+          opacity: 0;
+          transform: translateY(-8px);
+          transition: opacity 0.45s ease 0.2s, transform 0.45s ease 0.2s;
+        }
+
+        .inventor-note.is-visible .inventor-note__label {
+          opacity: 1;
+          transform: translateY(0);
+        }
+
+        .inventor-note__panel {
+          border: 1px solid rgba(212, 175, 55, 0.4);
+          background: rgba(26, 16, 10, 0.92);
+          padding: 28px;
+          transform: translateY(16px) scaleY(0.85);
+          transform-origin: top;
+          opacity: 0;
+          transition: transform 0.6s ease, opacity 0.6s ease;
+          box-shadow:
+            inset 0 0 20px rgba(0, 0, 0, 0.35),
+            0 14px 30px rgba(0, 0, 0, 0.35);
+          text-align: left;
+          font-size: 1rem;
+          line-height: 1.7;
+          color: #e8cf8d;
+        }
+
+        .inventor-note__panel p:first-of-type {
+          font-family: 'Georgia', serif;
+          letter-spacing: 0.12em;
+          text-transform: uppercase;
+          color: #f4e4a6;
+          margin-bottom: 18px;
+        }
+
+        .inventor-note.is-visible .inventor-note__panel {
+          transform: translateY(0) scaleY(1);
+          opacity: 1;
+        }
+
         .ornament {
           color: #8b4513;
           font-size: 2rem;
@@ -404,6 +706,11 @@ export default function B52LandingPage() {
             height: 150px;
           }
 
+          .logo-instruction {
+            font-size: 0.75rem;
+            letter-spacing: 0.28em;
+          }
+
           .subtitle {
             font-size: 1.2rem;
           }
@@ -411,6 +718,15 @@ export default function B52LandingPage() {
           .cta-button {
             padding: 20px 35px;
             font-size: 1.1rem;
+          }
+
+          .inventor-note.is-visible {
+            margin-top: 40px;
+          }
+
+          .inventor-note__panel {
+            padding: 22px;
+            font-size: 0.95rem;
           }
         }
       `}</style>
