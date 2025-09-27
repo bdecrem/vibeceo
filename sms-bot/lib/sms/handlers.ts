@@ -1734,7 +1734,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         normalizedPhoneNumber,
         twilioClient,
         {
-          prefix: '✅ You\'re now subscribed to AI Daily. Expect a fresh episode at 7am PT each morning.',
+          prefix: '✅ You\'re now subscribed to AI Daily ⚙️\nExpect a fresh episode at ⏰ 7am PT each morning.',
           forceRefresh: true,
           recordDelivery: true
         }
