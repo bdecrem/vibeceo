@@ -139,7 +139,7 @@ export default function B52LandingPage() {
           ⚡ Engage Automaton
         </a>
 
-        <div className="phone-display">Telegraph: 866-330-0015</div>
+        <div className="phone-display">Telegraph: +1-866-330-0015</div>
       </div>
 
       <style jsx>{`
