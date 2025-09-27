@@ -112,15 +112,16 @@ export function formatAiDailySms(
   const dateToFormat = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
   const formattedDate = PACIFIC_DATE_FORMATTER.format(dateToFormat);
   const snippet = episode.snippet?.trim() || '';
-  const messageParts = [
-    `AI Daily ${formattedDate}.`,
-    snippet,
-    options.shortLink
-      ? `Hear it: ${options.shortLink} or text LINKS.`
-      : 'Hear it: text LISTEN or LINKS.'
-  ];
+  const micPrefix = '🎙 ';
+  const headlineBase = snippet
+    ? `AI Daily ${formattedDate} — ${snippet}`
+    : `AI Daily ${formattedDate}`;
+  const headline = `${micPrefix}${headlineBase}`;
+  const cta = options.shortLink
+    ? `Hear it here: ${options.shortLink} or text LINKS.`
+    : 'Hear it here: text LISTEN or LINKS.';
 
-  return messageParts.filter(part => part.length > 0).join(' ');
+  return `${headline}\n${cta}`.trim();
 }
 
 export async function getAiDailyShortLink(
