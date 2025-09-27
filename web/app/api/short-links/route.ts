@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { randomBytes } from 'crypto';
 
-const SLUG_ALPHABET = 'abcdefghijklmnopqrstuvwxyz0123456789';
-const DEFAULT_SLUG_LENGTH = 8;
-const MAX_SLUG_ATTEMPTS = 5;
+const SLUG_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const DEFAULT_SLUG_LENGTH = 4;
+const MAX_SLUG_ATTEMPTS = 12;
 
 interface ShortLinkBody {
   targetUrl?: unknown;
