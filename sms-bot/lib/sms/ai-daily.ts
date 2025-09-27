@@ -14,6 +14,15 @@ export interface AiDailyEpisode {
   wordCount: number;
   updatedAt: string;
   currentEpisodeNumber: number;
+  showNotesJson?: {
+    links?: Array<{
+      url: string;
+      target: string;
+      type: string;
+    }>;
+    notes?: string;
+    summary?: string;
+  };
 }
 
 const DEFAULT_BASE_URL = 'https://theaf-web.ngrok.io';
@@ -163,5 +172,8 @@ export function formatAiDailyLinks(episode: AiDailyEpisode): string | null {
     return `${label}: ${shortenedUrl}`;
   });
 
-  return ['🎙️ LINKS', ...formattedLinks].join('\n');
+  return [
+    "Here's the papers we cover in today's episode of the AI Daily:",
+    ...formattedLinks
+  ].join('\n');
 }
