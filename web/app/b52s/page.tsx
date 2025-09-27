@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import spaceship from "/b52s.png";
 
 function createSteamParticle(container: HTMLElement) {
   const particle = document.createElement("div");
@@ -77,7 +76,7 @@ export default function B52LandingPage() {
                 <rect x="65" y="65" width="270" height="270" fill="url(#copperGrad)" opacity="0.15" />
                 <g className="craft">
                   <image
-                    href={spaceship.src}
+                    href="/b52s.png"
                     x="72"
                     y="119"
                     width="247"
