@@ -112,7 +112,7 @@ export function formatAiDailySms(
   const dateToFormat = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
   const formattedDate = PACIFIC_DATE_FORMATTER.format(dateToFormat);
   const snippet = episode.snippet?.trim() || '';
-  const micPrefix = '🎙 ';
+  const micPrefix = '🎙️ ';
   const headlineBase = snippet
     ? `AI Daily ${formattedDate} — ${snippet}`
     : `AI Daily ${formattedDate}`;
