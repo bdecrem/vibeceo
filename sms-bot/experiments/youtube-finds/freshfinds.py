@@ -3,9 +3,11 @@ from datetime import datetime, timedelta, timezone
 from googleapiclient.discovery import build
 from dotenv import load_dotenv
 from anthropic import Anthropic
+from pathlib import Path
 
-# Load API keys
-load_dotenv('.env.local')
+# Load API keys from sms-bot/.env.local
+env_path = Path(__file__).resolve().parent.parent.parent / '.env.local'
+load_dotenv(env_path, override=True)  # Force reload
 YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY')
 ANTHROPIC_API_KEY = os.getenv('ANTHROPIC_API_KEY')
 
