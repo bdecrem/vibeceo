@@ -9,6 +9,7 @@ import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
 import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
+import { handleStockAgent } from './stock-agent.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -4169,6 +4170,39 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       return;
     }
 
+    // ========================================
+    // HANDLE STOCK AGENT COMMANDS
+    // ========================================
+    
+    // Check if message is a stock-related command
+    const stockCommands = ['STOCK', 'WATCH', 'PORTFOLIO', 'ANALYZE', 'ALERTS', 'TRENDS', 'HELP'];
+    const isStockCommand = stockCommands.some(cmd => messageUpper.startsWith(cmd)) || 
+                          messageUpper.includes('STOCK') || 
+                          messageUpper.includes('PRICE') ||
+                          messageUpper.includes('MARKET') ||
+                          messageUpper.includes('INVEST') ||
+                          messageUpper.includes('TRADE');
+    
+    if (isStockCommand) {
+      console.log(`Processing stock agent command from ${from}`);
+      
+      try {
+        const handled = await handleStockAgent(message, twilioClient, from);
+        if (handled) {
+          console.log(`✅ Stock agent handled command from ${from}`);
+          return;
+        }
+      } catch (error) {
+        console.error(`Error in stock agent: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ Stock agent error: ${error.message}. Try "HELP" for stock commands.`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Handle unrecognized commands/text - fallback response
     console.log(`Unrecognized command/message from ${from}: ${message}`);
     await sendSmsResponse(
@@ -4259,7 +4293,7 @@ function isTestPhoneNumber(phoneNumber: string): boolean {
  * @param message Message content
  * @param twilioClient Twilio client instance
  */
-async function sendSmsResponse(
+export async function sendSmsResponse(
   to: string,
   message: string,
   twilioClient: TwilioClient
