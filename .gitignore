@@ -100,6 +100,13 @@ tiny/
 # Processed data files - temporary processing files
 /sms-bot/data/processed/
 
+# Large DALL-E images - these are too large for git
+/sms-bot/data/dalle-images/
+/sms-bot/mobile-test-screenshot.png
+
+# Large experiment files
+/discord-bot/experiments-codex/
+
 # Test scripts - often contain hardcoded secrets
 /sms-bot/test-scripts/
 /web/test-scripts/
