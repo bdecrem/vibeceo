@@ -44,10 +44,12 @@ export function middleware(request: NextRequest) {
   }
 
   // CRITICAL FIX: Bypass auth routes and global pages - no processing whatsoever
-  if (pathname.startsWith('/login') || 
+  if (pathname === '/l' ||
+      pathname.startsWith('/login') || 
       pathname.startsWith('/register') || 
       pathname.startsWith('/link') || 
       pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/l/') ||
       pathname.startsWith('/trending') ||
       pathname.startsWith('/recents') ||
       pathname.startsWith('/featured') ||
