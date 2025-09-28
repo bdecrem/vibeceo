@@ -14,9 +14,254 @@ import { sendSmsResponse } from "./handlers.js";
 import type { TwilioClient } from "./webhooks.js";
 import { supabase } from "../supabase.js";
 import { getStockData as fetchStockData, type StockData } from "./stock-api.js";
+import {
+  createScheduledTask,
+  getUserScheduledTasks,
+  deleteScheduledTask,
+  initializeScheduler,
+} from "./stock-scheduler.js";
 
 // Types for stock agent (re-exported from stock-api)
 export type { StockData } from "./stock-api.js";
+
+/**
+ * Parse delete schedule commands from natural language
+ */
+function parseDeleteScheduleCommand(
+  message: string
+): { taskType: string; time: string; symbol: string } | null {
+  const lowerMessage = message.toLowerCase();
+
+  // Check if message contains delete keywords
+  const hasDeleteKeywords = [
+    "delete",
+    "remove",
+    "cancel",
+    "stop",
+    "disable",
+  ].some((keyword) => lowerMessage.includes(keyword));
+
+  if (!hasDeleteKeywords) {
+    return null;
+  }
+
+  // Check if message contains schedule keywords
+  const hasScheduleKeywords = [
+    "schedule",
+    "daily",
+    "every day",
+    "every morning",
+    "every evening",
+    "remind me",
+    "send me",
+    "update me",
+    "tell me",
+    "stock",
+    "portfolio",
+    "task",
+    "alert",
+    "notification",
+    "updates", // Add this to catch "updates"
+    "sending", // Add this to catch "sending me"
+  ].some((keyword) => lowerMessage.includes(keyword));
+
+  if (!hasScheduleKeywords) {
+    return null;
+  }
+
+  // Extract task type
+  let taskType = "";
+  if (
+    lowerMessage.includes("portfolio") ||
+    lowerMessage.includes("watchlist")
+  ) {
+    taskType = "portfolio";
+  } else if (
+    lowerMessage.includes("update") ||
+    lowerMessage.includes("updates") ||
+    lowerMessage.includes("price")
+  ) {
+    taskType = "update";
+  } else if (
+    lowerMessage.includes("analysis") ||
+    lowerMessage.includes("analyze")
+  ) {
+    taskType = "analysis";
+  } else if (
+    lowerMessage.includes("alert") ||
+    lowerMessage.includes("notification")
+  ) {
+    taskType = "alert";
+  }
+
+  // Extract symbol/stock name
+  let symbol = "";
+  const stockNames = [
+    "apple",
+    "microsoft",
+    "google",
+    "tesla",
+    "amazon",
+    "meta",
+    "nvidia",
+  ];
+  const stockSymbols = [
+    "aapl",
+    "msft",
+    "googl",
+    "tsla",
+    "amzn",
+    "meta",
+    "nvda",
+  ];
+
+  for (const stock of stockNames) {
+    if (lowerMessage.includes(stock)) {
+      symbol = stock;
+      break;
+    }
+  }
+
+  for (const sym of stockSymbols) {
+    if (lowerMessage.includes(sym)) {
+      symbol = sym;
+      break;
+    }
+  }
+
+  // Extract time if mentioned
+  let time = "";
+  const timeRegex = /(\d{1,2})(am|pm|:00)/gi;
+  const timeMatch = lowerMessage.match(timeRegex);
+  if (timeMatch) {
+    time = timeMatch[0];
+  }
+
+  return {
+    taskType,
+    time,
+    symbol,
+  };
+}
+
+/**
+ * Parse scheduling commands from natural language
+ */
+function parseSchedulingCommand(
+  message: string
+): { taskType: string; scheduleTime: string; symbols: string[] } | null {
+  const lowerMessage = message.toLowerCase();
+
+  // Skip if this is an exact command (not a scheduling request)
+  if (
+    lowerMessage === "schedules" ||
+    lowerMessage === "help" ||
+    lowerMessage === "portfolio"
+  ) {
+    return null;
+  }
+
+  // Check if message contains scheduling keywords
+  const hasScheduleKeywords = [
+    "schedule",
+    "daily",
+    "every day",
+    "every morning",
+    "every evening",
+    "remind me",
+    "send me",
+    "update me",
+    "tell me",
+    "show me",
+    "at 7am",
+    "at 8am",
+    "at 9am",
+    "at 10am",
+    "at 11am",
+    "at 12pm",
+    "at 1pm",
+    "at 2pm",
+    "at 3pm",
+    "at 4pm",
+    "at 5pm",
+    "at 6pm",
+    "at 7pm",
+    "at 8pm",
+    "at 9pm",
+    "at 10pm",
+    "at 11pm",
+  ].some((keyword) => lowerMessage.includes(keyword));
+
+  if (!hasScheduleKeywords) {
+    return null;
+  }
+
+  // Extract time from message
+  const timeMatch = lowerMessage.match(/(\d{1,2})(am|pm)/);
+  let scheduleTime = "09:00"; // Default to 9 AM
+
+  if (timeMatch) {
+    let hour = parseInt(timeMatch[1]);
+    const period = timeMatch[2];
+
+    if (period === "pm" && hour !== 12) {
+      hour += 12;
+    } else if (period === "am" && hour === 12) {
+      hour = 0;
+    }
+
+    scheduleTime = `${hour.toString().padStart(2, "0")}:00`;
+  }
+
+  // Determine task type
+  let taskType = "daily_update";
+  if (
+    lowerMessage.includes("portfolio") ||
+    lowerMessage.includes("watchlist")
+  ) {
+    taskType = "portfolio_summary";
+  } else if (
+    lowerMessage.includes("market") ||
+    lowerMessage.includes("analysis")
+  ) {
+    taskType = "market_analysis";
+  }
+
+  // Extract stock symbols
+  const symbols: string[] = [];
+  const stockSymbols = [
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "TSLA",
+    "AMZN",
+    "META",
+    "NVDA",
+    "NFLX",
+    "AMD",
+    "INTC",
+  ];
+
+  for (const symbol of stockSymbols) {
+    if (
+      lowerMessage.includes(symbol.toLowerCase()) ||
+      lowerMessage.includes(symbol)
+    ) {
+      symbols.push(symbol);
+    }
+  }
+
+  // If no specific symbols mentioned, use common ones for daily updates
+  if (symbols.length === 0 && taskType === "daily_update") {
+    symbols.push("AAPL", "MSFT", "GOOGL");
+  }
+
+  return {
+    taskType,
+    scheduleTime,
+    symbols,
+  };
+}
 
 /**
  * Detect natural language stock queries and extract company/symbol
@@ -98,6 +343,39 @@ function detectNaturalStockQuery(
     "set alert",
     "price alert",
     "when it hits",
+    // Scheduling
+    "schedule",
+    "daily",
+    "every day",
+    "every morning",
+    "every evening",
+    "at 7am",
+    "at 8am",
+    "at 9am",
+    "at 10am",
+    "at 11am",
+    "at 12pm",
+    "at 1pm",
+    "at 2pm",
+    "at 3pm",
+    "at 4pm",
+    "at 5pm",
+    "at 6pm",
+    "at 7pm",
+    "at 8pm",
+    "at 9pm",
+    "at 10pm",
+    "at 11pm",
+    "at midnight",
+    "every hour",
+    "every week",
+    "weekly",
+    "monthly",
+    "remind me",
+    "send me",
+    "update me",
+    "tell me",
+    "show me",
     "when it reaches",
     "above",
     "below",
@@ -484,7 +762,7 @@ export function saveStockConversationHistory(
  */
 export async function getUserStockProfile(
   phoneNumber: string
-): Promise<UserStockProfile | null> {
+): Promise<UserStockProfile> {
   try {
     const { data, error } = await supabase
       .from("user_stock_profiles")
@@ -493,12 +771,50 @@ export async function getUserStockProfile(
       .single();
 
     if (error && error.code !== "PGRST116") {
-      // Not found is OK
+      // Not found is OK, return default profile
       console.error("Error fetching user stock profile:", error);
-      return null;
+      return {
+        phoneNumber,
+        watchedStocks: [],
+        alertPreferences: {
+          dailyUpdates: false,
+          priceThresholds: {},
+          volatilityAlerts: false,
+        },
+        riskTolerance: "moderate",
+        preferredSectors: [],
+        lastInteraction: new Date().toISOString(),
+      };
     }
 
-    return data;
+    if (data) {
+      return {
+        phoneNumber: data.phone_number,
+        watchedStocks: data.watched_stocks || [],
+        alertPreferences: data.alert_preferences || {
+          dailyUpdates: false,
+          priceThresholds: {},
+          volatilityAlerts: false,
+        },
+        riskTolerance: data.risk_tolerance || "moderate",
+        preferredSectors: data.preferred_sectors || [],
+        lastInteraction: data.last_interaction || new Date().toISOString(),
+      };
+    }
+
+    // If no data found, return a default profile
+    return {
+      phoneNumber,
+      watchedStocks: [],
+      alertPreferences: {
+        dailyUpdates: false,
+        priceThresholds: {},
+        volatilityAlerts: false,
+      },
+      riskTolerance: "moderate",
+      preferredSectors: [],
+      lastInteraction: new Date().toISOString(),
+    };
   } catch (error) {
     console.error("Error in getUserStockProfile:", error);
     // Return a default profile if database is not available
@@ -724,6 +1040,159 @@ Be educational and guide them naturally.`;
       return true;
     }
 
+    // Check for delete schedule commands in natural language
+    const deleteScheduleCommand = parseDeleteScheduleCommand(message);
+    if (deleteScheduleCommand) {
+      try {
+        const scheduledTasks = await getUserScheduledTasks(from);
+
+        if (scheduledTasks.length === 0) {
+          await sendSmsResponse(
+            from,
+            "📅 No scheduled tasks found to delete.",
+            twilioClient
+          );
+          return true;
+        }
+
+        // Find matching tasks
+        const matchingTasks = scheduledTasks.filter((task) => {
+          const taskType = task.task_type.replace("_", " ");
+          const config = task.task_config || {};
+          const symbols = config.symbols || [];
+
+          return (
+            taskType.includes(deleteScheduleCommand.taskType.toLowerCase()) ||
+            symbols.some((symbol) =>
+              symbol
+                .toLowerCase()
+                .includes(deleteScheduleCommand.symbol.toLowerCase())
+            ) ||
+            task.schedule_time.includes(deleteScheduleCommand.time)
+          );
+        });
+
+        if (matchingTasks.length === 0) {
+          await sendSmsResponse(
+            from,
+            `❌ No matching tasks found for "${deleteScheduleCommand.taskType}" at ${deleteScheduleCommand.time}. Use "SCHEDULES" to see your tasks.`,
+            twilioClient
+          );
+          return true;
+        }
+
+        if (matchingTasks.length === 1) {
+          // Single match - delete it
+          const success = await deleteScheduledTask(matchingTasks[0].id, from);
+          if (success) {
+            const taskTypeText = deleteScheduleCommand.taskType || "scheduled";
+            const timeText = deleteScheduleCommand.time
+              ? ` at ${deleteScheduleCommand.time}`
+              : "";
+            const symbolText = deleteScheduleCommand.symbol
+              ? ` for ${deleteScheduleCommand.symbol.toUpperCase()}`
+              : "";
+
+            await sendSmsResponse(
+              from,
+              `✅ Deleted your ${taskTypeText} schedule${timeText}${symbolText}!`,
+              twilioClient
+            );
+          } else {
+            await sendSmsResponse(
+              from,
+              "❌ Could not delete the scheduled task. Please try again.",
+              twilioClient
+            );
+          }
+        } else {
+          // Multiple matches - show options
+          let response = `Found ${matchingTasks.length} matching tasks:\n\n`;
+          for (let i = 0; i < matchingTasks.length; i++) {
+            const task = matchingTasks[i];
+            const timeStr = task.schedule_time;
+            const taskType = task.task_type.replace("_", " ");
+            const config = task.task_config || {};
+            const symbols = config.symbols || [];
+
+            response += `#${i + 1} 🕐 ${timeStr} - ${taskType}\n`;
+            if (symbols.length > 0) {
+              response += `📊 Tracking: ${symbols.join(", ")}\n`;
+            }
+            response += `\n`;
+          }
+          response += `💡 Delete with "DELETE #1" or "DELETE #2"`;
+
+          await sendSmsResponse(from, response, twilioClient);
+        }
+
+        return true;
+      } catch (error) {
+        console.error("Error processing delete schedule command:", error);
+        await sendSmsResponse(
+          from,
+          "❌ Error processing delete request. Please try again.",
+          twilioClient
+        );
+        return true;
+      }
+    }
+
+    // Check for scheduling commands first
+    const schedulingCommand = parseSchedulingCommand(message);
+    if (schedulingCommand) {
+      console.log(
+        `📅 Scheduling command detected: ${schedulingCommand.taskType} at ${schedulingCommand.scheduleTime}`
+      );
+
+      try {
+        const taskId = await createScheduledTask(
+          from,
+          schedulingCommand.taskType as any,
+          schedulingCommand.scheduleTime,
+          "America/New_York",
+          { symbols: schedulingCommand.symbols }
+        );
+
+        if (taskId) {
+          const timeStr = schedulingCommand.scheduleTime.includes(":")
+            ? schedulingCommand.scheduleTime
+            : `${schedulingCommand.scheduleTime}:00`;
+
+          let response = `✅ Scheduled ${schedulingCommand.taskType.replace(
+            "_",
+            " "
+          )} for ${timeStr} daily\n\n`;
+
+          if (schedulingCommand.symbols.length > 0) {
+            response += `📊 Tracking: ${schedulingCommand.symbols.join(
+              ", "
+            )}\n\n`;
+          }
+
+          response += `💡 Reply "SCHEDULES" to view all your scheduled tasks`;
+
+          await sendSmsResponse(from, response, twilioClient);
+          return true;
+        } else {
+          await sendSmsResponse(
+            from,
+            "❌ Could not create scheduled task. Please try again.",
+            twilioClient
+          );
+          return true;
+        }
+      } catch (error) {
+        console.error("Error creating scheduled task:", error);
+        await sendSmsResponse(
+          from,
+          "❌ Error setting up scheduled task. Please try again.",
+          twilioClient
+        );
+        return true;
+      }
+    }
+
     // Check for natural language stock queries first
     const naturalStockQuery = detectNaturalStockQuery(message);
     if (naturalStockQuery) {
@@ -821,6 +1290,15 @@ Be educational and guide them naturally.`;
 
             if (targetPrice) {
               const userProfile = await getUserStockProfile(from);
+              if (!userProfile) {
+                await sendSmsResponse(
+                  from,
+                  `❌ Could not access your profile. Please try again.`,
+                  twilioClient
+                );
+                return true;
+              }
+
               if (!userProfile.alertPreferences.priceThresholds[symbol]) {
                 userProfile.alertPreferences.priceThresholds[symbol] = {};
               }
@@ -1019,6 +1497,54 @@ Be educational and guide them naturally.`;
       return true;
     }
 
+    if (upperMessage === "SCHEDULES") {
+      try {
+        const scheduledTasks = await getUserScheduledTasks(from);
+
+        if (scheduledTasks.length === 0) {
+          await sendSmsResponse(
+            from,
+            '📅 No scheduled tasks found. Create one with "tell me the price of apple at 7am everyday"',
+            twilioClient
+          );
+          return true;
+        }
+
+        let response = "📅 Your Scheduled Tasks:\n\n";
+
+        for (let i = 0; i < scheduledTasks.length; i++) {
+          const task = scheduledTasks[i];
+          const timeStr = task.schedule_time;
+          const taskType = task.task_type.replace("_", " ");
+          const config = task.task_config || {};
+          const symbols = config.symbols || [];
+
+          response += `#${i + 1} 🕐 ${timeStr} - ${taskType}\n`;
+          if (symbols.length > 0) {
+            response += `📊 Tracking: ${symbols.join(", ")}\n`;
+          }
+          response += `🔄 Next: ${
+            task.next_execution
+              ? new Date(task.next_execution).toLocaleString()
+              : "Not scheduled"
+          }\n\n`;
+        }
+
+        response += `💡 To delete: "DELETE #1" or "stop my apple updates"`;
+
+        await sendSmsResponse(from, response, twilioClient);
+        return true;
+      } catch (error) {
+        console.error("Error fetching scheduled tasks:", error);
+        await sendSmsResponse(
+          from,
+          "❌ Error fetching scheduled tasks. Please try again.",
+          twilioClient
+        );
+        return true;
+      }
+    }
+
     if (upperMessage === "PORTFOLIO") {
       if (!userProfile?.watchedStocks?.length) {
         await sendSmsResponse(
@@ -1091,6 +1617,97 @@ Be educational and guide them naturally.`;
       return true;
     }
 
+    if (
+      upperMessage.startsWith("DELETE SCHEDULE") ||
+      upperMessage.startsWith("DELETE #")
+    ) {
+      let taskId: string;
+
+      if (upperMessage.startsWith("DELETE #")) {
+        // Handle "DELETE #1" format
+        const match = upperMessage.match(/DELETE #(\d+)/);
+        if (!match) {
+          await sendSmsResponse(
+            from,
+            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            twilioClient
+          );
+          return true;
+        }
+
+        const taskNumber = parseInt(match[1]);
+        if (isNaN(taskNumber) || taskNumber < 1) {
+          await sendSmsResponse(
+            from,
+            "❌ Please provide a valid task number (1, 2, 3, etc.).",
+            twilioClient
+          );
+          return true;
+        }
+
+        // Get the actual task ID from the task number
+        try {
+          const scheduledTasks = await getUserScheduledTasks(from);
+          if (taskNumber > scheduledTasks.length) {
+            await sendSmsResponse(
+              from,
+              `❌ Task #${taskNumber} not found. You have ${scheduledTasks.length} scheduled task(s).`,
+              twilioClient
+            );
+            return true;
+          }
+
+          taskId = scheduledTasks[taskNumber - 1].id;
+        } catch (error) {
+          await sendSmsResponse(
+            from,
+            "❌ Error fetching your tasks. Please try again.",
+            twilioClient
+          );
+          return true;
+        }
+      } else {
+        // Handle "DELETE SCHEDULE [ID]" format
+        const parts = upperMessage.split(" ");
+        taskId = parts[2];
+
+        if (!taskId) {
+          await sendSmsResponse(
+            from,
+            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            twilioClient
+          );
+          return true;
+        }
+      }
+
+      try {
+        const success = await deleteScheduledTask(taskId, from);
+        if (success) {
+          await sendSmsResponse(
+            from,
+            `✅ Deleted scheduled task successfully!`,
+            twilioClient
+          );
+        } else {
+          await sendSmsResponse(
+            from,
+            "❌ Could not delete task. Please check the task number.",
+            twilioClient
+          );
+        }
+        return true;
+      } catch (error) {
+        console.error("Error deleting scheduled task:", error);
+        await sendSmsResponse(
+          from,
+          "❌ Error deleting task. Please try again.",
+          twilioClient
+        );
+        return true;
+      }
+    }
+
     if (upperMessage === "HELP") {
       const response =
         `📈 Stock Bot Commands:\n\n` +
@@ -1100,7 +1717,16 @@ Be educational and guide them naturally.`;
         `• ANALYZE [SYMBOL] - Get AI analysis\n` +
         `• ALERTS - Manage price alerts\n` +
         `• TRENDS - Market overview\n` +
+        `• SCHEDULES - View scheduled tasks\n` +
         `• HELP - Show this menu\n\n` +
+        `📅 Scheduling Examples:\n` +
+        `• "tell me the price of apple at 7am everyday"\n` +
+        `• "send me my portfolio every morning at 8am"\n` +
+        `• "update me on microsoft and google at 9am daily"\n\n` +
+        `🗑️ Delete Examples:\n` +
+        `• "stop sending me apple updates"\n` +
+        `• "stop my portfolio updates"\n` +
+        `• "DELETE #1" or "DELETE SCHEDULE 1"\n\n` +
         `💡 Example: "STOCK AAPL" or "WATCH TSLA"`;
 
       await sendSmsResponse(from, response, twilioClient);
