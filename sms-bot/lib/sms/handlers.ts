@@ -1982,6 +1982,70 @@ export async function processIncomingSms(
       return;
     }
 
+    // ========================================
+    // STOCK AGENT COMMAND DETECTION (HIGH PRIORITY)
+    // ========================================
+    // Check if this is a stock-related command first - before other handlers
+    const stockCommands = [
+      "STOCK",
+      "WATCH",
+      "PORTFOLIO",
+      "ANALYZE",
+      "ALERTS",
+      "TRENDS",
+      "HELP",
+      "SCHEDULES",
+      "DELETE",
+    ];
+    const isStockCommand =
+      stockCommands.some((cmd) => messageUpper.startsWith(cmd)) ||
+      messageUpper.includes("STOCK") ||
+      messageUpper.includes("PRICE") ||
+      messageUpper.includes("MARKET") ||
+      messageUpper.includes("INVEST") ||
+      messageUpper.includes("TRADE") ||
+      messageUpper.includes("ALERT") ||
+      messageUpper.includes("ADD") ||
+      messageUpper.includes("PORTFOLIO") ||
+      messageUpper.includes("SHOW") ||
+      messageUpper.includes("TESLA") ||
+      messageUpper.includes("APPLE") ||
+      messageUpper.includes("MICROSOFT") ||
+      messageUpper.includes("GOOGLE") ||
+      messageUpper.includes("AMAZON") ||
+      messageUpper.includes("META") ||
+      messageUpper.includes("NVDA") ||
+      messageUpper.includes("NVIDIA") ||
+      messageUpper.includes("SCHEDULE") ||
+      messageUpper.includes("DAILY") ||
+      messageUpper.includes("UPDATE") ||
+      messageUpper.includes("STOP") ||
+      messageUpper.includes("DELETE");
+
+    // If it's a stock command, route to stock agent
+    if (isStockCommand) {
+      try {
+        console.log(`📈 Processing stock agent command from ${from}: ${message}`);
+        const stockAgentHandled = await handleStockAgent(
+          message,
+          twilioClient,
+          from
+        );
+        if (stockAgentHandled) {
+          console.log(`✅ Stock agent handled command from ${from}`);
+          return;
+        }
+      } catch (error) {
+        console.error(`Error in stock agent: ${error}`);
+        await sendSmsResponse(
+          from,
+          `❌ Stock agent error: ${error.message}. Try "HELP" for stock commands.`,
+          twilioClient
+        );
+        return;
+      }
+    }
+
     // Handle CODE command first - before loading any messages
     if (message.match(/^CODE[\s:-]/i)) {
       console.log(`Processing CODE command from ${from}`);
@@ -2466,66 +2530,6 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       // Continue processing - we might not need the messages
     }
 
-    // Check if this is a stock-related command first
-    const stockCommands = [
-      "STOCK",
-      "WATCH",
-      "PORTFOLIO",
-      "ANALYZE",
-      "ALERTS",
-      "TRENDS",
-      "HELP",
-      "SCHEDULES",
-      "DELETE",
-    ];
-    const isStockCommand =
-      stockCommands.some((cmd) => messageUpper.startsWith(cmd)) ||
-      messageUpper.includes("STOCK") ||
-      messageUpper.includes("PRICE") ||
-      messageUpper.includes("MARKET") ||
-      messageUpper.includes("INVEST") ||
-      messageUpper.includes("TRADE") ||
-      messageUpper.includes("ALERT") ||
-      messageUpper.includes("ADD") ||
-      messageUpper.includes("PORTFOLIO") ||
-      messageUpper.includes("SHOW") ||
-      messageUpper.includes("TESLA") ||
-      messageUpper.includes("APPLE") ||
-      messageUpper.includes("MICROSOFT") ||
-      messageUpper.includes("GOOGLE") ||
-      messageUpper.includes("AMAZON") ||
-      messageUpper.includes("META") ||
-      messageUpper.includes("NVDA") ||
-      messageUpper.includes("NVIDIA") ||
-      messageUpper.includes("SCHEDULE") ||
-      messageUpper.includes("DAILY") ||
-      messageUpper.includes("UPDATE") ||
-      messageUpper.includes("STOP") ||
-      messageUpper.includes("DELETE");
-
-    // If it's a stock command, route to stock agent
-    if (isStockCommand) {
-      try {
-        console.log(`Processing stock agent command from ${from}`);
-        const stockAgentHandled = await handleStockAgent(
-          message,
-          twilioClient,
-          from
-        );
-        if (stockAgentHandled) {
-          console.log(`✅ Stock agent handled command from ${from}`);
-          return;
-        }
-      } catch (error) {
-        console.error(`Error in stock agent: ${error}`);
-        await sendSmsResponse(
-          from,
-          `❌ Stock agent error: ${error.message}. Try "HELP" for stock commands.`,
-          twilioClient
-        );
-        return;
-      }
-    }
 
     // Always check for system commands first
     if (
