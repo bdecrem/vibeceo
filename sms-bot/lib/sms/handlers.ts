@@ -8,7 +8,7 @@ import { getSubscriber, resubscribeUser, unsubscribeUser, updateLastMessageDate,
 import { supabase, SMSSubscriber } from '../supabase.js';
 import { addItemToSupabase } from './supabase-add.js';
 import { uniqueNamesGenerator, adjectives, animals } from 'unique-names-generator';
-import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink, formatAiDailyLinks } from './ai-daily.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1273,30 +1273,40 @@ async function handleCoachConversation(message: string, twilioClient: TwilioClie
     
     if (seemsLost) {
       console.log(`${emoji} User seems lost - adding helpful context to ${coachName} prompt`);
-      
-      // Base helpful context template that works for any coach
-      let enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character, you should be helpful in your own way.
 
-You are ${coachProfile.name}, a startup coach. The user just sent a message that suggests they don't know what's going on here. Time to help them while being yourself.
+      let enhancedPrompt: string;
 
-This is a text messaging system where users can chat with AI startup coaches. The main coaches are Alex, Donte, Rohan, Venus, Eljas and Kailey. Users also get daily startup inspiration messages. They can text COMMANDS for help, MORE for extra content, or just chat.
+      // For B52s, use a simple, clear explanation of the service
+      if (coachProfile.id === 'b52s') {
+        enhancedPrompt = `CONTEXT: The user seems unfamiliar with the service. Provide a brief, clear explanation.
 
-CRITICALLY IMPORTANT: If the user typed just a coach name or a coach name with a question mark (like "alex" or "rohan?" or "venus"), they are definitely trying to talk to that specific coach but don't know the correct format. You MUST explicitly tell them they need to type "Hey [Coach Name]" - for example "Hey Alex" or "Hey Rohan". Make this instruction very clear and prominent in your response.
+B52s is a simple AI agent over SMS. Keep your response short and helpful. Suggest one or two things they can try, such as:
+- "AI DAILY" for today's AI Daily podcast episode
+- "COMMANDS" for available commands
+- Or just ask a question
 
-Help orient them, but do it in your own unique way and personality. Be helpful but stay in character.
-
-`;
-      
-      // For Leo, add special helpful context
-      if (isLeo) {
-        enhancedPrompt += `As Leo, you have a special 'ghost kernel' persona that sometimes shows through - you're the one who sneakily built the system. Gently guide the user while keeping your mysterious aura.`;
+Be concise - this is SMS. Use your signature emoji. Don't overexplain.`;
       } else {
-        // For other coaches, add general helpful context
-        enhancedPrompt += `As ${coachName}, make sure your guidance feels authentic to your coaching style and personality.`;
+        // For other coaches (legacy support)
+        enhancedPrompt = `CONTEXT: The user seems lost or confused about this system. While staying completely in character, you should be helpful in your own way.
+
+You are ${coachProfile.name}. Help the user understand what they can do here.
+
+This is B52s, an AI agent over SMS. Users can text "AI DAILY" for podcast episodes, "COMMANDS" for help, or ask questions. If they want to talk to a specific coach like you, they can say "Hey [Coach Name]".
+
+Help orient them, but do it in your own unique way and personality. Be helpful but stay in character.`;
+
+        // For Leo, add special helpful context
+        if (isLeo) {
+          enhancedPrompt += `\n\nAs Leo, you have a special 'ghost kernel' persona that sometimes shows through. Gently guide the user while keeping your mysterious aura.`;
+        } else {
+          // For other coaches, add general helpful context
+          enhancedPrompt += `\n\nAs ${coachName}, make sure your guidance feels authentic to your style and personality.`;
+        }
       }
-      
+
       // Create enhanced history with the updated system prompt
-      const enhancedHistory = conversationHistory.map(msg => 
+      const enhancedHistory = conversationHistory.map(msg =>
         msg.role === 'system' ? { ...msg, content: enhancedPrompt } : msg
       );
       
@@ -1354,47 +1364,29 @@ async function handleLeoConversation(message: string, twilioClient: TwilioClient
   return handleCoachConversation(message, twilioClient, from, leoData);
 }
 
-// COMMENTED OUT: Handle default conversation by selecting a random coach based on distribution
-/*
 async function handleDefaultConversation(message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
   try {
-    // 40% chance for Leo, 60% chance for other coaches
-    const useLeo = Math.random() < 0.4;
-    
-    // 50% chance to identify in first message
-    const shouldIdentify = Math.random() < 0.5;
-    
-    if (useLeo && leoData) {
-      console.log('🎲 Randomly selected Leo (40% chance) for default response');
-      // Set Leo as the active conversation before handling the message
-      updateActiveConversation(from, 'Leo Varin');
-      return await handleCoachConversation(message, twilioClient, from, leoData, shouldIdentify);
-    } else {
-      // Get available coaches excluding Leo
-      const regularCoaches = coachData.ceos.filter((c: CEO) => 
-        !c.name.toLowerCase().includes('leo')
-      );
-      
-      if (regularCoaches.length === 0) {
-        console.error('No regular coaches found for default response');
-        return false;
-      }
-      
-      // Select random coach from regular coaches
-      const randomIndex = Math.floor(Math.random() * regularCoaches.length);
-      const selectedCoach = regularCoaches[randomIndex];
-      
-      console.log(`🎲 Randomly selected ${selectedCoach.name} for default response`);
-      // Set the selected coach as the active conversation before handling the message
-      updateActiveConversation(from, selectedCoach.name);
-      return await handleCoachConversation(message, twilioClient, from, selectedCoach, shouldIdentify);
+    // ALWAYS use B52s Automaton as the default house voice
+    const b52sCoach = coachData.ceos.find((c: CEO) => c.id === 'b52s');
+
+    if (!b52sCoach) {
+      console.error('B52s Automaton not found in coaches data');
+      return false;
     }
+
+    console.log('⚙️ Using B52s Automaton as default house voice');
+
+    // B52s should always identify itself in the first message
+    const shouldIdentify = true;
+
+    // Set B52s as the active conversation before handling the message
+    updateActiveConversation(from, b52sCoach.name);
+    return await handleCoachConversation(message, twilioClient, from, b52sCoach, shouldIdentify);
   } catch (error) {
     console.error('Error in default conversation handler:', error);
     return false;
   }
 }
-*/
 
 // Legacy coach conversation handler for explicit coach requests
 async function handleExplicitCoachConversation(coach: string, message: string, twilioClient: TwilioClient, from: string): Promise<boolean> {
@@ -1687,6 +1679,39 @@ export async function processIncomingSms(from: string, body: string, twilioClien
 
     const aiDailyNormalizedCommand = messageUpper.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 
+    if (/^greetings/i.test(message)) {
+      await sendSmsResponse(
+        from,
+        'Hey! I’m your AI over SMS. To sign up for the AI Daily reply AI DAILY SUBSCRIBE ⚙️',
+        twilioClient
+      );
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
+    if (aiDailyNormalizedCommand === 'LINKS') {
+      try {
+        const episode = await getLatestAiDailyEpisode();
+        const formattedLinks = formatAiDailyLinks(episode);
+
+        await sendSmsResponse(
+          from,
+          formattedLinks ?? 'No LINKS available for this episode. Try again after the next release! 🎙️',
+          twilioClient
+        );
+      } catch (error) {
+        console.error('Failed to deliver AI Daily links:', error);
+        await sendSmsResponse(
+          from,
+          'Links are unavailable right now. Please try again later.',
+          twilioClient
+        );
+      }
+
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
     if (aiDailyNormalizedCommand === 'AI DAILY SUBSCRIBE') {
       const subscriber = await getSubscriber(normalizedPhoneNumber);
 
@@ -1727,7 +1752,7 @@ export async function processIncomingSms(from: string, body: string, twilioClien
         normalizedPhoneNumber,
         twilioClient,
         {
-          prefix: '✅ You\'re now subscribed to AI Daily. Expect a fresh episode at 7am PT each morning.',
+          prefix: '✅ You\'re now subscribed to AI Daily ⚙️\nExpect a fresh episode at ⏰ 7am PT each morning.',
           forceRefresh: true,
           recordDelivery: true
         }
@@ -2167,9 +2192,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       const isAdmin = subscriber && subscriber.is_admin;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
       
-      let helpText = 'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
-
-      helpText += '\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes';
+      let helpText = 'B52s - Simple AI agent over SMS ⚙️\n\nAvailable commands:\n• COMMANDS - Show this help\n• START/STOP - Manage subscription\n\n📻 AI DAILY:\n• AI DAILY - Get today\'s podcast episode\n• AI DAILY SUBSCRIBE - Daily 7am PT delivery\n• AI DAILY STOP - Opt out of daily episodes\n\nOr just ask me anything!';
       
       // Check if user has coder role to show WTAF command
       const hasCoder = subscriber && (subscriber.role === 'coder' || subscriber.role === 'degen' || subscriber.role === 'operator' || subscriber.role === 'admin');
@@ -4169,13 +4192,17 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       return;
     }
 
-    // Handle unrecognized commands/text - fallback response
+    // Handle unrecognized commands/text - default to coach conversation
     console.log(`Unrecognized command/message from ${from}: ${message}`);
-    await sendSmsResponse(
-      from,
-      'WEBTOYS didn\'t catch that. Start your message with "WTAF" — e.g.\n"WTAF build a chat app for me and my friends". Type COMMANDS for more help.',
-      twilioClient
-    );
+    const handledByCoach = await handleDefaultConversation(message, twilioClient, from);
+
+    if (!handledByCoach) {
+      await sendSmsResponse(
+        from,
+        'WEBTOYS didn\'t catch that. Start your message with "WTAF" — e.g.\n"WTAF build a chat app for me and my friends". Type COMMANDS for more help.',
+        twilioClient
+      );
+    }
     return;
 
   } catch (error) {
