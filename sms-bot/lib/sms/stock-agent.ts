@@ -1060,7 +1060,6 @@ Available commands:
 - "$ANALYZE AAPL" - Get detailed analysis
 - "$ALERTS" - Set price alerts
 - "$HELP" - Show all commands
-- "HELP" - Show all commands
 
 Be educational and guide them naturally.`;
 
@@ -1112,7 +1111,7 @@ Be educational and guide them naturally.`;
         if (matchingTasks.length === 0) {
           await sendSmsResponse(
             from,
-            `❌ No matching tasks found for "${deleteScheduleCommand.taskType}" at ${deleteScheduleCommand.time}. Use "SCHEDULES" to see your tasks.`,
+            `❌ No matching tasks found for "${deleteScheduleCommand.taskType}" at ${deleteScheduleCommand.time}. Use "$SCHEDULES" to see your tasks.`,
             twilioClient
           );
           return true;
@@ -1207,7 +1206,7 @@ Be educational and guide them naturally.`;
             )}\n\n`;
           }
 
-          response += `💡 Reply "SCHEDULES" to view all your scheduled tasks`;
+          response += `💡 Reply "$SCHEDULES" to view all your scheduled tasks`;
 
           await sendSmsResponse(from, response, twilioClient);
           return true;
@@ -1666,7 +1665,7 @@ My take: ${analysis}`;
         if (!match) {
           await sendSmsResponse(
             from,
-            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            '❌ Please provide a task number. Use "$SCHEDULES" to see your tasks.',
             twilioClient
           );
           return true;
@@ -1711,7 +1710,7 @@ My take: ${analysis}`;
         if (!taskId) {
           await sendSmsResponse(
             from,
-            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            '❌ Please provide a task number. Use "$SCHEDULES" to see your tasks.',
             twilioClient
           );
           return true;
@@ -1787,7 +1786,7 @@ My take: ${analysis}`;
     console.error("Error in stock agent:", error);
     await sendSmsResponse(
       from,
-      `❌ Stock agent error: ${error.message}. Try "HELP" for commands.`,
+      `❌ Stock agent error: ${error.message}. Try "$HELP" for commands.`,
       twilioClient
     );
     return true;
