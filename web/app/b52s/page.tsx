@@ -76,6 +76,9 @@ export default function B52LandingPage() {
             >
               Try it now
             </a>
+            <p className="mt-4 text-sm text-gray-600">
+              +1-866-330-0015 • SMS/WhatsApp
+            </p>
           </div>
         </div>
       </div>
