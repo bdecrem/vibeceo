@@ -19,11 +19,10 @@ export default function B52LandingPage() {
         {/* Colorful grid with B52S letters */}
         <div className="relative aspect-[4/3] md:aspect-[16/10] overflow-hidden">
           {/* Background color blocks */}
-          <div className="absolute inset-0 grid grid-cols-2 grid-rows-2">
-            <div className="bg-[#f4c430]" />
-            <div className="bg-[#ff5722]" />
-            <div className="bg-[#f4c430]" />
-            <div className="bg-[#1976d2]" />
+          <div className="absolute inset-0 grid grid-cols-2 grid-rows-3">
+            <div className="bg-[#f4c430] row-span-3" />
+            <div className="bg-[#ff5722] row-span-2" />
+            <div className="bg-[#1976d2] row-span-1" />
           </div>
 
           {/* B52S Letters */}
