@@ -1982,45 +1982,59 @@ export async function processIncomingSms(
       return;
     }
 
+    if (aiDailyNormalizedCommand === "LINKS") {
+      try {
+        const { getLatestAiDailyEpisode, formatAiDailyLinks } = await import(
+          "./ai-daily.js"
+        );
+        
+        const episode = await getLatestAiDailyEpisode();
+        const linksMessage = formatAiDailyLinks(episode);
+        
+        if (linksMessage) {
+          await sendSmsResponse(from, linksMessage, twilioClient);
+        } else {
+          await sendSmsResponse(
+            from,
+            "No paper links available for today's AI Daily episode. Try 'AI DAILY' to get the episode details.",
+            twilioClient
+          );
+        }
+        
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      } catch (error) {
+        console.error(`Error processing LINKS command: ${error}`);
+        await sendSmsResponse(
+          from,
+          "❌ Could not retrieve AI Daily links. The service may be temporarily unavailable.",
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+    }
+
     // ========================================
     // STOCK AGENT COMMAND DETECTION (HIGH PRIORITY)
     // ========================================
-    // Check if this is a stock-related command first - before other handlers
+    // Check if this is a stock-related command using $ prefix system
     const stockCommands = [
-      "STOCK",
-      "WATCH",
-      "PORTFOLIO",
-      "ANALYZE",
-      "ALERTS",
-      "TRENDS",
-      "HELP",
-      "SCHEDULES",
-      "DELETE",
+      "$STOCK",
+      "$WATCH",
+      "$PORTFOLIO",
+      "$ANALYZE",
+      "$ALERTS",
+      "$TRENDS",
+      "$HELP",
+      "$SCHEDULES",
+      "$DELETE",
     ];
-    const isStockCommand =
-      stockCommands.some((cmd) => messageUpper.startsWith(cmd)) ||
-      messageUpper.includes("STOCK") ||
-      messageUpper.includes("PRICE") ||
-      messageUpper.includes("MARKET") ||
-      messageUpper.includes("INVEST") ||
-      messageUpper.includes("TRADE") ||
-      messageUpper.includes("ALERT") ||
-      messageUpper.includes("ADD") ||
-      messageUpper.includes("PORTFOLIO") ||
-      messageUpper.includes("SHOW") ||
-      messageUpper.includes("TESLA") ||
-      messageUpper.includes("APPLE") ||
-      messageUpper.includes("MICROSOFT") ||
-      messageUpper.includes("GOOGLE") ||
-      messageUpper.includes("AMAZON") ||
-      messageUpper.includes("META") ||
-      messageUpper.includes("NVDA") ||
-      messageUpper.includes("NVIDIA") ||
-      messageUpper.includes("SCHEDULE") ||
-      messageUpper.includes("DAILY") ||
-      messageUpper.includes("UPDATE") ||
-      messageUpper.includes("STOP") ||
-      messageUpper.includes("DELETE");
+
+    // Check for $ prefix commands only
+    const isStockCommand = stockCommands.some((cmd) =>
+      messageUpper.startsWith(cmd)
+    );
 
     // If it's a stock command, route to stock agent
     if (isStockCommand) {
@@ -2506,6 +2520,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       "AI DAILY SUBSCRIBE",
       "AI DAILY STOP",
       "AI DAILY UNSUBSCRIBE",
+      "LINKS",
     ];
     if (
       commandsThatEndConversation.includes(messageUpper) ||
