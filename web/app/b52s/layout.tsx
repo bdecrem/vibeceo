@@ -6,8 +6,9 @@ export const metadata: Metadata = {
   title: "B52s - Little Blasts of AI",
   description,
   icons: {
-    icon: "/temp-b52s.png",
-    shortcut: "/temp-b52s.png",
+    icon: "/b52s-favicon.png",
+    shortcut: "/b52s-favicon.png",
+    apple: "/b52s-favicon.png",
   },
   openGraph: {
     title: "B52s - Little Blasts of AI",
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
     siteName: "B52s.me",
     images: [
       {
-        url: "/b52s-og.png",
+        url: "/b52s-og-modern.png",
         width: 1200,
         height: 630,
         alt: "B52s - Little Blasts of AI",
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "B52s - Little Blasts of AI",
     description,
-    images: ["/b52s-og.png"],
+    images: ["/b52s-og-modern.png"],
   },
 };
 
