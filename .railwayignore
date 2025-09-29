@@ -1,0 +1,60 @@
+# Railway ignore file - exclude large files and directories
+.git/
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+logs/
+*.log
+*.tmp
+*.temp
+.DS_Store
+*.pem
+.env*
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Large data directories
+data/
+uploads/
+experiments/
+test-scripts/
+scripts/test-*
+
+# Discord bot specific
+discord-bot/dist/
+discord-bot/node_modules/
+discord-bot/logs/
+discord-bot/experiments-*/
+discord-bot/data/weekend-stories/
+discord-bot/data/weekend-conversations/
+
+# SMS bot specific
+sms-bot/dist/
+sms-bot/node_modules/
+sms-bot/experiments/
+sms-bot/data/claude_outputs/
+sms-bot/data/processed/
+sms-bot/test-scripts/
+
+# Web specific
+web/node_modules/
+web/.next/
+web/build/
+web/UPLOADS/
+web/test-scripts/
+
+# iOS specific
+iPhone/Webtoys/Webtoys/APIKeys.plist
+
+# Tiny folder
+tiny/
+
+# Backup files
+*.bak
+*.backup
+*-backup
+*.working-backup
