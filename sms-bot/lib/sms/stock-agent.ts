@@ -966,22 +966,34 @@ export function formatStockResponse(
   const trend = stockData.change >= 0 ? "📈" : "📉";
   const sign = stockData.change >= 0 ? "+" : "";
   const isPositive = stockData.change >= 0;
-  
+
   // Get company name if available, otherwise use symbol
   const companyName = getCompanyName(stockData.symbol);
   const displayName = companyName || stockData.symbol;
 
-  let response = `Hey! ${displayName} (${stockData.symbol}) is at $${stockData.currentPrice.toFixed(2)} right now ${trend}\n\n`;
+  let response = `Hey! ${displayName} (${
+    stockData.symbol
+  }) is at $${stockData.currentPrice.toFixed(2)} right now ${trend}\n\n`;
 
   // More conversational price movement
   if (isPositive) {
-    response += `It's up $${Math.abs(stockData.change).toFixed(2)} (${sign}${stockData.changePercent.toFixed(2)}%) this week, which is pretty solid.`;
+    response += `It's up $${Math.abs(stockData.change).toFixed(
+      2
+    )} (${sign}${stockData.changePercent.toFixed(
+      2
+    )}%) this week, which is pretty solid.`;
   } else {
-    response += `It's down $${Math.abs(stockData.change).toFixed(2)} (${stockData.changePercent.toFixed(2)}%) this week, but nothing too concerning.`;
+    response += `It's down $${Math.abs(stockData.change).toFixed(
+      2
+    )} (${stockData.changePercent.toFixed(
+      2
+    )}%) this week, but nothing too concerning.`;
   }
 
   if (stockData.volume) {
-    response += ` Volume looks healthy at ${(stockData.volume / 1000000).toFixed(1)}M shares.\n\n`;
+    response += ` Volume looks healthy at ${(
+      stockData.volume / 1000000
+    ).toFixed(1)}M shares.\n\n`;
   } else {
     response += `\n\n`;
   }
@@ -1003,29 +1015,29 @@ export function formatStockResponse(
 // Helper function to get company names
 function getCompanyName(symbol: string): string {
   const companyNames: { [key: string]: string } = {
-    'AAPL': 'Apple',
-    'TSLA': 'Tesla', 
-    'MSFT': 'Microsoft',
-    'GOOGL': 'Google',
-    'AMZN': 'Amazon',
-    'META': 'Meta',
-    'NVDA': 'NVIDIA',
-    'NFLX': 'Netflix',
-    'AMD': 'AMD',
-    'INTC': 'Intel',
-    'CRM': 'Salesforce',
-    'ORCL': 'Oracle',
-    'ADBE': 'Adobe',
-    'PYPL': 'PayPal',
-    'UBER': 'Uber',
-    'LYFT': 'Lyft',
-    'SPOT': 'Spotify',
-    'SQ': 'Square',
-    'ROKU': 'Roku',
-    'ZM': 'Zoom'
+    AAPL: "Apple",
+    TSLA: "Tesla",
+    MSFT: "Microsoft",
+    GOOGL: "Google",
+    AMZN: "Amazon",
+    META: "Meta",
+    NVDA: "NVIDIA",
+    NFLX: "Netflix",
+    AMD: "AMD",
+    INTC: "Intel",
+    CRM: "Salesforce",
+    ORCL: "Oracle",
+    ADBE: "Adobe",
+    PYPL: "PayPal",
+    UBER: "Uber",
+    LYFT: "Lyft",
+    SPOT: "Spotify",
+    SQ: "Square",
+    ROKU: "Roku",
+    ZM: "Zoom",
   };
-  
-  return companyNames[symbol.toUpperCase()] || '';
+
+  return companyNames[symbol.toUpperCase()] || "";
 }
 
 /**
@@ -1060,7 +1072,6 @@ Available commands:
 - "$ANALYZE AAPL" - Get detailed analysis
 - "$ALERTS" - Set price alerts
 - "$HELP" - Show all commands
-- "HELP" - Show all commands
 
 Be educational and guide them naturally.`;
 
@@ -1112,7 +1123,7 @@ Be educational and guide them naturally.`;
         if (matchingTasks.length === 0) {
           await sendSmsResponse(
             from,
-            `❌ No matching tasks found for "${deleteScheduleCommand.taskType}" at ${deleteScheduleCommand.time}. Use "SCHEDULES" to see your tasks.`,
+            `❌ No matching tasks found for "${deleteScheduleCommand.taskType}" at ${deleteScheduleCommand.time}. Use "$SCHEDULES" to see your tasks.`,
             twilioClient
           );
           return true;
@@ -1158,7 +1169,7 @@ Be educational and guide them naturally.`;
             }
             response += `\n`;
           }
-          response += `💡 Delete with "DELETE #1" or "DELETE #2"`;
+          response += ``;
 
           await sendSmsResponse(from, response, twilioClient);
         }
@@ -1207,7 +1218,7 @@ Be educational and guide them naturally.`;
             )}\n\n`;
           }
 
-          response += `💡 Reply "SCHEDULES" to view all your scheduled tasks`;
+          response += ``;
 
           await sendSmsResponse(from, response, twilioClient);
           return true;
@@ -1247,14 +1258,29 @@ Be educational and guide them naturally.`;
           const trend = stockData.change >= 0 ? "📈" : "📉";
           const sign = stockData.change >= 0 ? "+" : "";
 
-          const response = `Hey! ${companyName} (${symbol}) is at $${stockData.currentPrice.toFixed(2)} right now ${stockData.change >= 0 ? "📈" : "📉"}
+          const response = `Hey! ${companyName} (${symbol}) is at $${stockData.currentPrice.toFixed(
+            2
+          )} right now ${stockData.change >= 0 ? "📈" : "📉"}
 
-${stockData.change >= 0 ? 
-  `It's up $${Math.abs(stockData.change).toFixed(2)} (${sign}${stockData.changePercent.toFixed(2)}%) this week, which is pretty solid.` :
-  `It's down $${Math.abs(stockData.change).toFixed(2)} (${stockData.changePercent.toFixed(2)}%) this week, but nothing too concerning.`
+${
+  stockData.change >= 0
+    ? `It's up $${Math.abs(stockData.change).toFixed(
+        2
+      )} (${sign}${stockData.changePercent.toFixed(
+        2
+      )}%) this week, which is pretty solid.`
+    : `It's down $${Math.abs(stockData.change).toFixed(
+        2
+      )} (${stockData.changePercent.toFixed(
+        2
+      )}%) this week, but nothing too concerning.`
 }
 
-Volume looks healthy at ${stockData.volume ? (stockData.volume / 1000000).toFixed(1) + "M" : "N/A"} shares.
+Volume looks healthy at ${
+            stockData.volume
+              ? (stockData.volume / 1000000).toFixed(1) + "M"
+              : "N/A"
+          } shares.
 
 My take: ${analysis}`;
 
@@ -1299,11 +1325,14 @@ My take: ${analysis}`;
               const sign = stockData.change >= 0 ? "+" : "";
               const companyName = getCompanyName(stockSymbol);
               const displayName = companyName || stockSymbol;
-              const changeText = stockData.changePercent >= 0 ? 
-                `up ${stockData.changePercent.toFixed(1)}%` : 
-                `down ${Math.abs(stockData.changePercent).toFixed(1)}%`;
-              
-              response += `${displayName}: $${stockData.currentPrice.toFixed(2)} (${changeText}) ${trend}\n`;
+              const changeText =
+                stockData.changePercent >= 0
+                  ? `up ${stockData.changePercent.toFixed(1)}%`
+                  : `down ${Math.abs(stockData.changePercent).toFixed(1)}%`;
+
+              response += `${displayName}: $${stockData.currentPrice.toFixed(
+                2
+              )} (${changeText}) ${trend}\n`;
             } catch (error) {
               response += `❌ ${stockSymbol}: Data unavailable\n`;
             }
@@ -1648,7 +1677,7 @@ My take: ${analysis}`;
         `• "$ALERTS AAPL BELOW 140" - Alert when AAPL goes below $140\n` +
         `• "$ALERTS LIST" - View current alerts\n` +
         `• "$ALERTS OFF" - Disable all alerts\n\n` +
-        `💡 I'll send you SMS alerts when conditions are met!`;
+        ``;
 
       await sendSmsResponse(from, response, twilioClient);
       return true;
@@ -1666,7 +1695,7 @@ My take: ${analysis}`;
         if (!match) {
           await sendSmsResponse(
             from,
-            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            '❌ Please provide a task number. Use "$SCHEDULES" to see your tasks.',
             twilioClient
           );
           return true;
@@ -1711,7 +1740,7 @@ My take: ${analysis}`;
         if (!taskId) {
           await sendSmsResponse(
             from,
-            '❌ Please provide a task number. Use "SCHEDULES" to see your tasks.',
+            '❌ Please provide a task number. Use "$SCHEDULES" to see your tasks.',
             twilioClient
           );
           return true;
@@ -1766,7 +1795,7 @@ My take: ${analysis}`;
         `**Delete:**\n` +
         `"stop sending me apple updates"\n` +
         `"$DELETE #1"\n\n` +
-        `💡 "$STOCK AAPL" or "what's the price of apple?"`;
+        ``;
 
       await sendSmsResponse(from, response, twilioClient);
       return true;
@@ -1787,7 +1816,7 @@ My take: ${analysis}`;
     console.error("Error in stock agent:", error);
     await sendSmsResponse(
       from,
-      `❌ Stock agent error: ${error.message}. Try "HELP" for commands.`,
+      `❌ Stock agent error: ${error.message}. Try "$HELP" for commands.`,
       twilioClient
     );
     return true;
