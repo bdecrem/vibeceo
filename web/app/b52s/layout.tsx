@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
-const description = "Steam-powered artificial intelligence at your service. Telegraph your queries for research papers, moving pictures, and web contraptions.";
+const description = "Little blasts of AI. Text us for AI Daily, research papers, and web apps.";
 
 export const metadata: Metadata = {
-  title: "B52s.me - Steam-Powered AI Intelligence",
+  title: "B52s - Little Blasts of AI",
   description,
   icons: {
     icon: "/temp-b52s.png",
     shortcut: "/temp-b52s.png",
   },
   openGraph: {
-    title: "B52s.me - Steam-Powered AI Intelligence",
+    title: "B52s - Little Blasts of AI",
     description,
     type: "website",
     siteName: "B52s.me",
@@ -19,13 +19,13 @@ export const metadata: Metadata = {
         url: "/b52s-og.png",
         width: 1200,
         height: 630,
-        alt: "B52s steampunk intelligence",
+        alt: "B52s - Little Blasts of AI",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "B52s.me - Steam-Powered AI Intelligence",
+    title: "B52s - Little Blasts of AI",
     description,
     images: ["/b52s-og.png"],
   },
