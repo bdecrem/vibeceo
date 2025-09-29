@@ -72,7 +72,7 @@ export default function B52LandingPage() {
             </p>
             <a
               href="sms:+14155154370"
-              className="inline-block px-8 py-3 bg-[#1976d2] text-white text-lg md:text-xl font-semibold rounded-lg hover:bg-[#1ba0c8] transition-colors"
+              className="inline-block px-10 py-3 border-2 border-gray-800 text-gray-800 text-base md:text-lg font-medium tracking-wide hover:bg-gray-800 hover:text-white transition-all duration-300"
             >
               Try it now
             </a>
