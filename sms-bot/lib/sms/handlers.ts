@@ -1987,10 +1987,10 @@ export async function processIncomingSms(
         const { getLatestAiDailyEpisode, formatAiDailyLinks } = await import(
           "./ai-daily.js"
         );
-        
+
         const episode = await getLatestAiDailyEpisode();
         const linksMessage = formatAiDailyLinks(episode);
-        
+
         if (linksMessage) {
           await sendSmsResponse(from, linksMessage, twilioClient);
         } else {
@@ -2000,7 +2000,7 @@ export async function processIncomingSms(
             twilioClient
           );
         }
-        
+
         await updateLastMessageDate(normalizedPhoneNumber);
         return;
       } catch (error) {

@@ -718,13 +718,12 @@ export function getStockConversationHistory(phoneNumber: string): any[] {
 You have access to live market data and can provide intelligent analysis beyond just numbers. Be conversational, educational, and proactive. Remember their preferences and suggest relevant actions.
 
 Available commands:
-- "STOCK AAPL" - Get current price and 7-day movement
-- "WATCH AAPL" - Add to watchlist with alerts
-- "PORTFOLIO" - View tracked stocks
-- "ANALYZE AAPL" - Get detailed analysis
-- "ALERTS" - Manage price alerts
-- "TRENDS" - Market overview and trends
-- "HELP" - Show all commands
+- "$STOCK AAPL" - Get current price and 7-day movement
+- "$WATCH AAPL" - Add to watchlist with alerts
+- "$PORTFOLIO" - View tracked stocks
+- "$ANALYZE AAPL" - Get detailed analysis
+- "$ALERTS" - Manage price alerts
+- "$HELP" - Show all commands
 
 Always be helpful and educational while staying in character as a knowledgeable financial advisor.`,
       },
@@ -986,7 +985,7 @@ export function formatStockResponse(
     response += `\n📋 This stock is in your watchlist!`;
   }
 
-  response += `\n\n💡 Commands: "WATCH ${stockData.symbol}", "ANALYZE ${stockData.symbol}", "ALERTS"`;
+  response += `\n\n💡 "$WATCH ${stockData.symbol}", "$ANALYZE ${stockData.symbol}", "$ALERTS"`;
 
   return response;
 }
@@ -1017,12 +1016,12 @@ export async function handleStockAgent(
       const enhancedPrompt = `CONTEXT: The user seems confused about stock commands. Help them understand the available commands while being helpful and educational.
 
 Available commands:
-- "STOCK AAPL" - Get current price and 7-day movement
-- "WATCH AAPL" - Add to watchlist with alerts
-- "PORTFOLIO" - View tracked stocks
-- "ANALYZE AAPL" - Get detailed analysis
-- "ALERTS" - Set price alerts
-- "TRENDS" - Market overview and trends
+- "$STOCK AAPL" - Get current price and 7-day movement
+- "$WATCH AAPL" - Add to watchlist with alerts
+- "$PORTFOLIO" - View tracked stocks
+- "$ANALYZE AAPL" - Get detailed analysis
+- "$ALERTS" - Set price alerts
+- "$HELP" - Show all commands
 - "HELP" - Show all commands
 
 Be educational and guide them naturally.`;
@@ -1220,10 +1219,7 @@ Be educational and guide them naturally.`;
 
 🤖 Analysis: ${analysis}
 
-💡 Commands:
-• "WATCH ${symbol}" - Add to watchlist
-• "ANALYZE ${symbol}" - Detailed analysis
-• "ALERTS" - Set price alerts`;
+💡 "$WATCH ${symbol}", "$ANALYZE ${symbol}", "$ALERTS"`;
 
           await sendSmsResponse(from, response, twilioClient);
           return true;
@@ -1241,7 +1237,7 @@ Be educational and guide them naturally.`;
             await saveUserStockProfile(from, userProfile);
             await sendSmsResponse(
               from,
-              `✅ Added ${companyName} (${symbol}) to your watchlist! I'll track this stock for you.\n\n💡 Set alerts with "ALERTS ${symbol}" or get updates with "PORTFOLIO"`,
+              `✅ Added ${companyName} (${symbol}) to your watchlist! I'll track this stock for you.\n\n💡 "$ALERTS ${symbol}", "$PORTFOLIO"`,
               twilioClient
             );
           }
@@ -1252,7 +1248,7 @@ Be educational and guide them naturally.`;
           if (!userProfile.watchedStocks?.length) {
             await sendSmsResponse(
               from,
-              '📋 Your watchlist is empty. Add stocks with "WATCH AAPL" or get a stock price with "STOCK AAPL"',
+              '📋 Your watchlist is empty. Add stocks with "$WATCH AAPL" or get a stock price with "$STOCK AAPL"',
               twilioClient
             );
             return true;
@@ -1278,7 +1274,7 @@ Be educational and guide them naturally.`;
             } more stocks`;
           }
 
-          response += '\n\n💡 Use "STOCK [SYMBOL]" for detailed analysis';
+          response += '\n\n💡 "$STOCK [SYMBOL]" for detailed analysis';
           await sendSmsResponse(from, response, twilioClient);
           return true;
         } else if (commandType === "alert") {
@@ -1417,22 +1413,22 @@ Be educational and guide them naturally.`;
         console.error(`Error processing natural language command:`, error);
         await sendSmsResponse(
           from,
-          `❌ Could not process that request. Please try a simpler command like "STOCK AAPL" or "HELP"`,
+          `❌ Could not process that request. Please try a simpler command like "$STOCK AAPL" or "$HELP"`,
           twilioClient
         );
         return true;
       }
     }
 
-    // Handle specific stock commands
+    // Handle specific stock commands (support both $ prefix and old format)
     const upperMessage = message.toUpperCase();
 
-    if (upperMessage.startsWith("STOCK ")) {
-      const symbol = message.substring(6).trim().toUpperCase();
+    if (upperMessage.startsWith("$STOCK ")) {
+      const symbol = message.substring(7).trim().toUpperCase();
       if (!symbol) {
         await sendSmsResponse(
           from,
-          "❌ Please specify a stock symbol. Example: STOCK AAPL",
+          "❌ Please specify a stock symbol. Example: $STOCK AAPL",
           twilioClient
         );
         return true;
@@ -1452,12 +1448,12 @@ Be educational and guide them naturally.`;
       return true;
     }
 
-    if (upperMessage.startsWith("WATCH ")) {
-      const symbol = message.substring(6).trim().toUpperCase();
+    if (upperMessage.startsWith("$WATCH ")) {
+      const symbol = message.substring(7).trim().toUpperCase();
       if (!symbol) {
         await sendSmsResponse(
           from,
-          "❌ Please specify a stock symbol. Example: WATCH AAPL",
+          "❌ Please specify a stock symbol. Example: $WATCH AAPL",
           twilioClient
         );
         return true;
@@ -1483,7 +1479,7 @@ Be educational and guide them naturally.`;
 
         await sendSmsResponse(
           from,
-          `✅ Added ${symbol} to your watchlist! I'll track this stock for you.\n\n💡 Set alerts with "ALERTS ${symbol}" or get updates with "PORTFOLIO"`,
+          `✅ Added ${symbol} to your watchlist! I'll track this stock for you.\n\n💡 "$ALERTS ${symbol}", "$PORTFOLIO"`,
           twilioClient
         );
       } else {
@@ -1497,7 +1493,7 @@ Be educational and guide them naturally.`;
       return true;
     }
 
-    if (upperMessage === "SCHEDULES") {
+    if (upperMessage === "$SCHEDULES") {
       try {
         const scheduledTasks = await getUserScheduledTasks(from);
 
@@ -1545,11 +1541,11 @@ Be educational and guide them naturally.`;
       }
     }
 
-    if (upperMessage === "PORTFOLIO") {
+    if (upperMessage === "$PORTFOLIO") {
       if (!userProfile?.watchedStocks?.length) {
         await sendSmsResponse(
           from,
-          '📋 Your watchlist is empty. Add stocks with "WATCH AAPL" or get a stock price with "STOCK AAPL"',
+          '📋 Your watchlist is empty. Add stocks with "$WATCH AAPL" or get a stock price with "$STOCK AAPL"',
           twilioClient
         );
         return true;
@@ -1584,12 +1580,12 @@ Be educational and guide them naturally.`;
       return true;
     }
 
-    if (upperMessage.startsWith("ANALYZE ")) {
-      const symbol = message.substring(8).trim().toUpperCase();
+    if (upperMessage.startsWith("$ANALYZE ")) {
+      const symbol = message.substring(9).trim().toUpperCase();
       if (!symbol) {
         await sendSmsResponse(
           from,
-          "❌ Please specify a stock symbol. Example: ANALYZE AAPL",
+          "❌ Please specify a stock symbol. Example: $ANALYZE AAPL",
           twilioClient
         );
         return true;
@@ -1603,14 +1599,14 @@ Be educational and guide them naturally.`;
       return true;
     }
 
-    if (upperMessage === "ALERTS" || upperMessage.startsWith("ALERTS ")) {
+    if (upperMessage === "$ALERTS" || upperMessage.startsWith("$ALERTS ")) {
       const response =
         `🔔 Alert Management:\n\n` +
-        `• "ALERTS DAILY ON" - Daily updates for watched stocks\n` +
-        `• "ALERTS AAPL ABOVE 150" - Alert when AAPL goes above $150\n` +
-        `• "ALERTS AAPL BELOW 140" - Alert when AAPL goes below $140\n` +
-        `• "ALERTS LIST" - View current alerts\n` +
-        `• "ALERTS OFF" - Disable all alerts\n\n` +
+        `• "$ALERTS DAILY ON" - Daily updates for watched stocks\n` +
+        `• "$ALERTS AAPL ABOVE 150" - Alert when AAPL goes above $150\n` +
+        `• "$ALERTS AAPL BELOW 140" - Alert when AAPL goes below $140\n` +
+        `• "$ALERTS LIST" - View current alerts\n` +
+        `• "$ALERTS OFF" - Disable all alerts\n\n` +
         `💡 I'll send you SMS alerts when conditions are met!`;
 
       await sendSmsResponse(from, response, twilioClient);
@@ -1618,14 +1614,14 @@ Be educational and guide them naturally.`;
     }
 
     if (
-      upperMessage.startsWith("DELETE SCHEDULE") ||
-      upperMessage.startsWith("DELETE #")
+      upperMessage.startsWith("$DELETE SCHEDULE") ||
+      upperMessage.startsWith("$DELETE #")
     ) {
       let taskId: string;
 
-      if (upperMessage.startsWith("DELETE #")) {
-        // Handle "DELETE #1" format
-        const match = upperMessage.match(/DELETE #(\d+)/);
+      if (upperMessage.startsWith("$DELETE #")) {
+        // Handle "$DELETE #1" format
+        const match = upperMessage.match(/\$DELETE #(\d+)/);
         if (!match) {
           await sendSmsResponse(
             from,
@@ -1667,9 +1663,9 @@ Be educational and guide them naturally.`;
           return true;
         }
       } else {
-        // Handle "DELETE SCHEDULE [ID]" format
+        // Handle "$DELETE SCHEDULE [ID]" format
         const parts = upperMessage.split(" ");
-        taskId = parts[2];
+        taskId = parts[parts.length - 1]; // Get the last part (ID)
 
         if (!taskId) {
           await sendSmsResponse(
@@ -1708,26 +1704,28 @@ Be educational and guide them naturally.`;
       }
     }
 
-    if (upperMessage === "HELP") {
+    if (upperMessage === "$HELP") {
       const response =
-        `📈 Stock Bot Commands:\n\n` +
-        `• STOCK [SYMBOL] - Get current price & 7-day change\n` +
-        `• WATCH [SYMBOL] - Add to your watchlist\n` +
-        `• PORTFOLIO - View your watched stocks\n` +
-        `• ANALYZE [SYMBOL] - Get AI analysis\n` +
-        `• ALERTS - Manage price alerts\n` +
-        `• TRENDS - Market overview\n` +
-        `• SCHEDULES - View scheduled tasks\n` +
-        `• HELP - Show this menu\n\n` +
-        `📅 Scheduling Examples:\n` +
-        `• "tell me the price of apple at 7am everyday"\n` +
-        `• "send me my portfolio every morning at 8am"\n` +
-        `• "update me on microsoft and google at 9am daily"\n\n` +
-        `🗑️ Delete Examples:\n` +
-        `• "stop sending me apple updates"\n` +
-        `• "stop my portfolio updates"\n` +
-        `• "DELETE #1" or "DELETE SCHEDULE 1"\n\n` +
-        `💡 Example: "STOCK AAPL" or "WATCH TSLA"`;
+        `📈 Stock Bot:\n\n` +
+        `$STOCK [SYMBOL] - Get price & 7-day change\n` +
+        `$WATCH [SYMBOL] - Add to watchlist\n` +
+        `$PORTFOLIO - View your stocks\n` +
+        `$ANALYZE [SYMBOL] - Get AI analysis\n` +
+        `$ALERTS - Manage price alerts\n` +
+        `$SCHEDULES - View scheduled tasks\n` +
+        `$HELP - Show this menu\n\n` +
+        `**Natural Language:**\n` +
+        `"what's the price of apple?"\n` +
+        `"analyze microsoft stock"\n` +
+        `"show my portfolio"\n` +
+        `"alert me when tesla hits $400"\n\n` +
+        `**Scheduling:**\n` +
+        `"tell me the price of apple at 7am everyday"\n` +
+        `"send me my portfolio every morning at 8am"\n\n` +
+        `**Delete:**\n` +
+        `"stop sending me apple updates"\n` +
+        `"$DELETE #1"\n\n` +
+        `💡 "$STOCK AAPL" or "what's the price of apple?"`;
 
       await sendSmsResponse(from, response, twilioClient);
       return true;
