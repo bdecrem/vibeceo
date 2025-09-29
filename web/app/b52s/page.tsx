@@ -29,25 +29,25 @@ export default function B52LandingPage() {
           <div className="absolute inset-0 flex items-start justify-center pt-4 md:pt-12">
             <div className="flex items-start justify-center -space-x-1 md:-space-x-4">
               <span
-                className="text-[#1ba0c8] text-[28vw] md:text-[18rem] lg:text-[22rem] font-extrabold leading-none select-none"
+                className="text-[#1ba0c8] text-[28vw] md:text-[20rem] lg:text-[24rem] font-extrabold leading-none select-none -mt-2 md:-mt-10"
                 style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
               >
                 B
               </span>
               <span
-                className="text-[#e8e4d9] text-[24vw] md:text-[16rem] lg:text-[20rem] font-extrabold leading-none mt-3 md:mt-10 select-none"
+                className="text-[#e8e4d9] text-[24vw] md:text-[16rem] lg:text-[20rem] font-extrabold leading-none mt-4 md:mt-10 select-none"
                 style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
               >
                 5
               </span>
               <span
-                className="text-[#e8e4d9] text-[24vw] md:text-[16rem] lg:text-[20rem] font-extrabold leading-none mt-3 md:mt-10 select-none"
+                className="text-[#e8e4d9] text-[24vw] md:text-[16rem] lg:text-[20rem] font-extrabold leading-none mt-2 md:mt-[25px] select-none"
                 style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
               >
                 2
               </span>
               <span
-                className="text-[#1976d2] text-[20vw] md:text-[13rem] lg:text-[16rem] font-extrabold leading-none mt-6 md:mt-16 select-none"
+                className="text-[#1976d2] text-[20vw] md:text-[13rem] lg:text-[16rem] font-extrabold leading-none mt-8 md:mt-16 select-none"
                 style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
               >
                 S
@@ -57,7 +57,7 @@ export default function B52LandingPage() {
         </div>
 
         {/* Tagline Section */}
-        <div className="bg-[#e8e4d9] px-6 md:px-16 py-6 md:py-16 flex-shrink-0">
+        <div className="bg-[#f5f3f0] md:bg-[#e8e4d9] px-6 md:px-16 py-6 md:py-16 flex-shrink-0">
           <h1
             className="text-3xl md:text-7xl lg:text-8xl font-extrabold text-black leading-tight tracking-tight text-center"
             style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
