@@ -985,8 +985,6 @@ export function formatStockResponse(
     response += `\n📋 This stock is in your watchlist!`;
   }
 
-  response += `\n\n💡 "$WATCH ${stockData.symbol}", "$ANALYZE ${stockData.symbol}", "$ALERTS"`;
-
   return response;
 }
 
@@ -1217,9 +1215,7 @@ Be educational and guide them naturally.`;
           )} (${sign}${stockData.changePercent.toFixed(2)}%)
 📈 Volume: ${stockData.volume?.toLocaleString() || "N/A"}
 
-🤖 Analysis: ${analysis}
-
-💡 "$WATCH ${symbol}", "$ANALYZE ${symbol}", "$ALERTS"`;
+🤖 Analysis: ${analysis}`;
 
           await sendSmsResponse(from, response, twilioClient);
           return true;
@@ -1237,7 +1233,7 @@ Be educational and guide them naturally.`;
             await saveUserStockProfile(from, userProfile);
             await sendSmsResponse(
               from,
-              `✅ Added ${companyName} (${symbol}) to your watchlist! I'll track this stock for you.\n\n💡 "$ALERTS ${symbol}", "$PORTFOLIO"`,
+              `✅ Added ${companyName} (${symbol}) to your watchlist! I'll track this stock for you.`,
               twilioClient
             );
           }
@@ -1274,7 +1270,7 @@ Be educational and guide them naturally.`;
             } more stocks`;
           }
 
-          response += '\n\n💡 "$STOCK [SYMBOL]" for detailed analysis';
+          response += '';
           await sendSmsResponse(from, response, twilioClient);
           return true;
         } else if (commandType === "alert") {
@@ -1479,7 +1475,7 @@ Be educational and guide them naturally.`;
 
         await sendSmsResponse(
           from,
-          `✅ Added ${symbol} to your watchlist! I'll track this stock for you.\n\n💡 "$ALERTS ${symbol}", "$PORTFOLIO"`,
+          `✅ Added ${symbol} to your watchlist! I'll track this stock for you.`,
           twilioClient
         );
       } else {
@@ -1526,7 +1522,7 @@ Be educational and guide them naturally.`;
           }\n\n`;
         }
 
-        response += `💡 To delete: "DELETE #1" or "stop my apple updates"`;
+        response += ``;
 
         await sendSmsResponse(from, response, twilioClient);
         return true;
@@ -1574,7 +1570,7 @@ Be educational and guide them naturally.`;
         } more stocks`;
       }
 
-      response += '\n\n💡 Use "STOCK [SYMBOL]" for detailed analysis';
+      response += '';
 
       await sendSmsResponse(from, response, twilioClient);
       return true;
