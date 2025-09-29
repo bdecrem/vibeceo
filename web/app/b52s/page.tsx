@@ -14,7 +14,7 @@ export default function B52LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f5f3f0] flex items-center justify-center p-3 md:p-8">
+    <div className="min-h-screen bg-[#f5f3f0] flex items-start md:items-center justify-center p-3 md:p-8">
       <div className="w-full max-h-[calc(100vh-1.5rem)] md:max-h-none md:max-w-5xl md:shadow-2xl flex flex-col">
         {/* Colorful grid with B52S letters */}
         <div className="relative flex-shrink-0 aspect-[4/3] md:aspect-[16/10] overflow-hidden">
