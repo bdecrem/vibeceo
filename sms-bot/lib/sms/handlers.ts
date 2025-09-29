@@ -1785,59 +1785,59 @@ export async function processIncomingSms(
       return;
     }
 
-    // Handle YES confirmation responses
-    if (messageUpper === "YES") {
-      console.log("Processing YES confirmation...");
-      const success = await confirmSubscriber(normalizedPhoneNumber);
-      if (success) {
-        // Send welcome/confirmation message first
-        await sendSmsResponse(
-          from,
-          "You're in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
-          twilioClient
-        );
-
-        // Then send the correct day's inspiration message based on signup date
-        const signupDate = new Date();
-        const correctDayData = await getInspirationForNewSubscriber(signupDate);
-
-        // If no message is available yet, send welcome message only
-        if (!correctDayData) {
-          console.log(
-            `No daily message available yet for new subscriber ${normalizedPhoneNumber}, sent welcome only`
-          );
-          return;
-        }
-
-        const inspirationMessage = formatDailyMessage(
-          correctDayData.inspiration
-        );
-
-        try {
-          await twilioClient.messages.create({
-            body: inspirationMessage,
-            to: from,
-            from: process.env.TWILIO_PHONE_NUMBER,
-          });
-
-          console.log(
-            `Successfully sent Day ${correctDayData.day} message to new subscriber ${normalizedPhoneNumber} (correct day based on signup date)`
-          );
-        } catch (error) {
-          console.error(
-            `Failed to send message to new subscriber ${normalizedPhoneNumber}:`,
-            error
-          );
-        }
-      } else {
-        await sendSmsResponse(
-          from,
-          "We couldn't process your confirmation. Please try again or contact support if the issue persists.",
-          twilioClient
-        );
-      }
-      return;
-    }
+    //     // Handle YES confirmation responses
+    //     if (messageUpper === "YES") {
+    //       console.log("Processing YES confirmation...");
+    //       const success = await confirmSubscriber(normalizedPhoneNumber);
+    //       if (success) {
+    //         // Send welcome/confirmation message first
+    //         await sendSmsResponse(
+    //           from,
+    //           "You're in. Our AI coaches text now. This is the timeline we chose.\n\nText COMMANDS for options.\nText STOP to vanish quietly.",
+    //           twilioClient
+    //         );
+    // 
+    //         // Then send the correct day's inspiration message based on signup date
+    //         const signupDate = new Date();
+    //         const correctDayData = await getInspirationForNewSubscriber(signupDate);
+    // 
+    //         // If no message is available yet, send welcome message only
+    //         if (!correctDayData) {
+    //           console.log(
+    //             `No daily message available yet for new subscriber ${normalizedPhoneNumber}, sent welcome only`
+    //           );
+    //           return;
+    //         }
+    // 
+    //         const inspirationMessage = formatDailyMessage(
+    //           correctDayData.inspiration
+    //         );
+    // 
+    //         try {
+    //           await twilioClient.messages.create({
+    //             body: inspirationMessage,
+    //             to: from,
+    //             from: process.env.TWILIO_PHONE_NUMBER,
+    //           });
+    // 
+    //           console.log(
+    //             `Successfully sent Day ${correctDayData.day} message to new subscriber ${normalizedPhoneNumber} (correct day based on signup date)`
+    //           );
+    //         } catch (error) {
+    //           console.error(
+    //             `Failed to send message to new subscriber ${normalizedPhoneNumber}:`,
+    //             error
+    //           );
+    //         }
+    //       } else {
+    //         await sendSmsResponse(
+    //           from,
+    //           "We couldn't process your confirmation. Please try again or contact support if the issue persists.",
+    //           twilioClient
+    //         );
+    //       }
+    //       return;
+    //     }
 
     // ========================================
     // AUTO-CREATE SUBSCRIBER RECORD IF NEEDED
