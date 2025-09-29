@@ -67,14 +67,14 @@ export default function B52LandingPage() {
 
           {/* SMS CTA */}
           <div className="mt-8 text-center">
-            <p className="text-lg md:text-xl text-gray-700 mb-4">
-              Text a question to
+            <p className="text-lg md:text-xl text-gray-700 mb-6">
+              Private AI over SMS.
             </p>
             <a
               href="sms:+14155154370"
-              className="inline-block text-2xl md:text-3xl font-bold text-[#1976d2] hover:text-[#1ba0c8] transition-colors"
+              className="inline-block px-8 py-3 bg-[#1976d2] text-white text-lg md:text-xl font-semibold rounded-lg hover:bg-[#1ba0c8] transition-colors"
             >
-              (415) 515-4370
+              Try it now
             </a>
           </div>
         </div>
