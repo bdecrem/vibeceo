@@ -2031,10 +2031,10 @@ export async function processIncomingSms(
       "$DELETE",
     ];
 
-    // Check for $ prefix commands only
+    // Check for $ prefix commands - either specific commands or any message starting with $
     const isStockCommand = stockCommands.some((cmd) =>
       messageUpper.startsWith(cmd)
-    );
+    ) || messageUpper.startsWith('$');
 
     // If it's a stock command, route to stock agent
     if (isStockCommand) {
