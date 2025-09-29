@@ -1,4 +1,4 @@
-# Cache bust: 2025-09-29-02
+# Cache bust: 2025-09-29-03 - Deploy stock agent fix
 [build]
 builder = "NIXPACKS"
 
