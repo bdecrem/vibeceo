@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 
 export default function B52LandingPage() {
   const [mounted, setMounted] = useState(false);
@@ -78,31 +77,6 @@ export default function B52LandingPage() {
             >
               (415) 515-4370
             </a>
-            <p className="text-sm md:text-base text-gray-600 mt-4">
-              AI Daily • Research Papers • Web Apps
-            </p>
-          </div>
-
-          {/* Links */}
-          <div className="mt-12 flex justify-center space-x-6 text-sm md:text-base">
-            <Link
-              href="/trending"
-              className="text-gray-700 hover:text-[#1976d2] transition-colors"
-            >
-              Trending
-            </Link>
-            <Link
-              href="/featured"
-              className="text-gray-700 hover:text-[#1976d2] transition-colors"
-            >
-              Featured
-            </Link>
-            <Link
-              href="/recents"
-              className="text-gray-700 hover:text-[#1976d2] transition-colors"
-            >
-              Recent
-            </Link>
           </div>
         </div>
       </div>
