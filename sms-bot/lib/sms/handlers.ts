@@ -2032,9 +2032,9 @@ export async function processIncomingSms(
     ];
 
     // Check for $ prefix commands - either specific commands or any message starting with $
-    const isStockCommand = stockCommands.some((cmd) =>
-      messageUpper.startsWith(cmd)
-    ) || messageUpper.startsWith('$');
+    const isStockCommand =
+      stockCommands.some((cmd) => messageUpper.startsWith(cmd)) ||
+      messageUpper.startsWith("$");
 
     // If it's a stock command, route to stock agent
     if (isStockCommand) {
