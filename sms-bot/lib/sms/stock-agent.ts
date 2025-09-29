@@ -1270,7 +1270,7 @@ Be educational and guide them naturally.`;
             } more stocks`;
           }
 
-          response += '';
+          response += "";
           await sendSmsResponse(from, response, twilioClient);
           return true;
         } else if (commandType === "alert") {
@@ -1570,7 +1570,7 @@ Be educational and guide them naturally.`;
         } more stocks`;
       }
 
-      response += '';
+      response += "";
 
       await sendSmsResponse(from, response, twilioClient);
       return true;
