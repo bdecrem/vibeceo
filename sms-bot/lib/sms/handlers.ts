@@ -2025,7 +2025,9 @@ export async function processIncomingSms(
     // If it's a stock command, route to stock agent
     if (isStockCommand) {
       try {
-        console.log(`📈 Processing stock agent command from ${from}: ${message}`);
+        console.log(
+          `📈 Processing stock agent command from ${from}: ${message}`
+        );
         const stockAgentHandled = await handleStockAgent(
           message,
           twilioClient,
@@ -2529,7 +2531,6 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.error("ERROR: Failed to load from Supabase:", error);
       // Continue processing - we might not need the messages
     }
-
 
     // Always check for system commands first
     if (
