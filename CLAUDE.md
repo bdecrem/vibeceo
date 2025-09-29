@@ -550,6 +550,42 @@ Include:
 
 **DO NOT continue trying the same type of fix after 2 failures. Use the Task tool.**
 
+## MCP Server Management
+
+### Standardized MCP Configuration Approach
+
+**We use a master configuration file system for all MCP servers across devices and projects:**
+
+1. **Master Config Location**: `/Users/bartdecrem/Documents/Dropbox/coding2025/mcp-master.json`
+   - Contains all available MCP servers (puppeteer, filesystem, github, postgres, etc.)
+   - Uses environment variables for sensitive tokens
+   - Syncs via Dropbox across all devices
+
+2. **Setup for Any Project**:
+   ```bash
+   # Quick setup from any project directory
+   /Users/bartdecrem/Documents/Dropbox/coding2025/setup-mcp.sh
+   
+   # Or with alias (if configured)
+   mcp-setup
+   
+   # Then restart Claude Code to load MCP servers
+   ```
+
+3. **Key Files**:
+   - **Master Config**: `/Users/bartdecrem/Documents/Dropbox/coding2025/mcp-master.json`
+   - **Setup Script**: `/Users/bartdecrem/Documents/Dropbox/coding2025/setup-mcp.sh`
+   - **Documentation**: `/Users/bartdecrem/Documents/Dropbox/coding2025/MCP-SETUP-GUIDE.md`
+
+4. **Environment Variables Required**:
+   - Set in shell profile (`~/.zshrc` or `~/.bashrc`)
+   - `GITHUB_PERSONAL_ACCESS_TOKEN`
+   - `DATABASE_URI`
+   - `SLACK_BOT_TOKEN`
+   - Other API keys as needed
+
+**This standardized approach ensures consistent MCP server availability across all projects without manual configuration each time.**
+
 ## Automatic Commits and Testing
 
 ### When to Auto-Commit (Without Asking)

@@ -14,6 +14,15 @@ export interface AiDailyEpisode {
   wordCount: number;
   updatedAt: string;
   currentEpisodeNumber: number;
+  showNotesJson?: {
+    links?: Array<{
+      url: string;
+      target: string;
+      type: string;
+    }>;
+    notes?: string;
+    summary?: string;
+  };
 }
 
 const DEFAULT_BASE_URL = 'https://theaf-web.ngrok.io';
@@ -112,14 +121,16 @@ export function formatAiDailySms(
   const dateToFormat = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
   const formattedDate = PACIFIC_DATE_FORMATTER.format(dateToFormat);
   const snippet = episode.snippet?.trim() || '';
-  const messageParts = [
-    `AI Papers Daily for ${formattedDate}.`,
-    snippet,
-    options.shortLink ? `Listen: ${options.shortLink}` : '',
-    'Reply LINKS for sources or LISTEN for the audio.'
-  ];
+  const micPrefix = '🎙️ ';
+  const headlineBase = snippet
+    ? `AI Daily ${formattedDate} — ${snippet}`
+    : `AI Daily ${formattedDate}`;
+  const headline = `${micPrefix}${headlineBase}`;
+  const cta = options.shortLink
+    ? `Hear it here: ${options.shortLink} or text LINKS.`
+    : 'Hear it here: text LISTEN or LINKS.';
 
-  return messageParts.filter(part => part.length > 0).join(' ');
+  return `${headline}\n${cta}`.trim();
 }
 
 export async function getAiDailyShortLink(
@@ -135,4 +146,34 @@ export async function getAiDailyShortLink(
     createdFor,
     createdBy: 'sms-bot'
   });
+}
+
+interface EpisodeLink {
+  url: string;
+  target: string;
+  type: string;
+}
+
+export function formatAiDailyLinks(episode: AiDailyEpisode): string | null {
+  const links = (episode.showNotesJson as { links?: EpisodeLink[] } | undefined)?.links;
+  if (!links?.length) {
+    return null;
+  }
+
+  const huggingfaceLinks = links.filter((link) => link.type === 'huggingface').slice(0, 3);
+
+  if (!huggingfaceLinks.length) {
+    return null;
+  }
+
+  const formattedLinks = huggingfaceLinks.map((link) => {
+    const label = link.target.split(':')[0].trim();
+    const shortenedUrl = link.url.replace(/^https?:\/\//i, '');
+    return `${label}: ${shortenedUrl}`;
+  });
+
+  return [
+    "Here's the papers we cover in today's episode of the AI Daily:",
+    ...formattedLinks
+  ].join('\n');
 }

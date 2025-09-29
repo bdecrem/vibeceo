@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { KeyboardEvent } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
 
 function createSteamParticle(container: HTMLElement) {
   const particle = document.createElement("div");
@@ -23,6 +23,10 @@ export default function B52LandingPage() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [noteVisible, setNoteVisible] = useState(false);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
+  const [scrollUnfolded, setScrollUnfolded] = useState(false);
+  const [showTypewriter, setShowTypewriter] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const noteAnimationTimersRef = useRef<number[]>([]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -76,17 +80,169 @@ export default function B52LandingPage() {
     }
   };
 
+  const clearNoteAnimationTimers = () => {
+    if (noteAnimationTimersRef.current.length) {
+      noteAnimationTimersRef.current.forEach((timerId) => window.clearTimeout(timerId));
+      noteAnimationTimersRef.current = [];
+    }
+  };
+
+  const playCreakSound = () => {
+    if (typeof window === "undefined") return;
+    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioContextClass) return;
+
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new AudioContextClass();
+      } catch (error) {
+        console.warn("Unable to initialise audio context", error);
+        return;
+      }
+    }
+
+    const context = audioContextRef.current;
+    if (!context) return;
+
+    if (context.state === "suspended") {
+      context.resume().catch(() => {});
+    }
+
+    const now = context.currentTime;
+
+    const makeOscillator = (
+      type: OscillatorType,
+      initialFrequency: number,
+      ramps: Array<{ time: number; frequency: number }>
+    ) => {
+      const oscillator = context.createOscillator();
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(initialFrequency, now);
+      ramps.forEach(({ time, frequency }) => {
+        oscillator.frequency.exponentialRampToValueAtTime(frequency, now + time);
+      });
+      return oscillator;
+    };
+
+    const oscillator1 = makeOscillator("sawtooth", 28, [
+      { time: 1.5, frequency: 45 },
+      { time: 3.2, frequency: 32 },
+      { time: 4.8, frequency: 38 },
+      { time: 6.5, frequency: 25 }
+    ]);
+
+    const oscillator2 = makeOscillator("square", 15, [
+      { time: 2.1, frequency: 35 },
+      { time: 4.3, frequency: 18 },
+      { time: 6.0, frequency: 28 }
+    ]);
+
+    const oscillator3 = makeOscillator("triangle", 85, [
+      { time: 1.8, frequency: 120 },
+      { time: 3.5, frequency: 95 },
+      { time: 5.2, frequency: 110 },
+      { time: 6.5, frequency: 80 }
+    ]);
+
+    const oscillator4 = makeOscillator("sine", 200, [
+      { time: 2.5, frequency: 180 },
+      { time: 5.0, frequency: 220 },
+      { time: 6.5, frequency: 190 }
+    ]);
+
+    const filter = context.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(400, now);
+    filter.frequency.exponentialRampToValueAtTime(300, now + 3.0);
+    filter.frequency.exponentialRampToValueAtTime(450, now + 6.5);
+    filter.Q.setValueAtTime(12, now);
+
+    const delay = context.createDelay();
+    delay.delayTime.setValueAtTime(0.25, now);
+
+    const delayGain = context.createGain();
+    delayGain.gain.setValueAtTime(0.4, now);
+
+    const gainNode = context.createGain();
+    gainNode.gain.setValueAtTime(0, now);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 0.6);
+    gainNode.gain.exponentialRampToValueAtTime(0.12, now + 1.8);
+    gainNode.gain.linearRampToValueAtTime(0.15, now + 3.2);
+    gainNode.gain.exponentialRampToValueAtTime(0.1, now + 4.8);
+    gainNode.gain.linearRampToValueAtTime(0.08, now + 5.8);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, now + 6.8);
+
+    [oscillator1, oscillator2, oscillator3, oscillator4].forEach((oscillator) => {
+      oscillator.connect(filter);
+    });
+
+    filter.connect(gainNode);
+    filter.connect(delay);
+    delay.connect(delayGain);
+    delayGain.connect(gainNode);
+    gainNode.connect(context.destination);
+
+    oscillator1.start(now);
+    oscillator2.start(now + 0.3);
+    oscillator3.start(now + 0.8);
+    oscillator4.start(now + 1.2);
+
+    const stopTime = now + 6.8;
+    [oscillator1, oscillator2, oscillator3, oscillator4].forEach((oscillator) => {
+      oscillator.stop(stopTime);
+    });
+
+    window.setTimeout(() => {
+      [oscillator1, oscillator2, oscillator3, oscillator4, filter, delay, delayGain, gainNode].forEach((node) => {
+        try {
+          node.disconnect();
+        } catch (error) {
+          // Ignore disconnection errors
+        }
+      });
+    }, (stopTime - now + 0.2) * 1000);
+  };
+
   const showNote = () => {
     clearRevealTimer();
     clearNoteHideTimer();
-    setNoteVisible(true);
-    setIsAnimating(true);
+    clearNoteAnimationTimers();
 
-    noteHideTimeoutRef.current = window.setTimeout(() => {
-      setNoteVisible(false);
-      setIsAnimating(false);
-      noteHideTimeoutRef.current = null;
-    }, 60000);
+    playCreakSound();
+
+    setIsAnimating(true);
+    setScrollUnfolded(false);
+    setShowTypewriter(false);
+
+    const modalTimer = window.setTimeout(() => {
+      setNoteVisible(true);
+
+      const unfoldTimer = window.setTimeout(() => {
+        setScrollUnfolded(true);
+        const typeTimer = window.setTimeout(() => {
+          setShowTypewriter(true);
+        }, 900);
+        noteAnimationTimersRef.current.push(typeTimer);
+      }, 350);
+
+      noteAnimationTimersRef.current.push(unfoldTimer);
+
+      noteHideTimeoutRef.current = window.setTimeout(() => {
+        noteHideTimeoutRef.current = null;
+        closeNote();
+      }, 90000);
+    }, 2000);
+
+    noteAnimationTimersRef.current.push(modalTimer);
+  };
+
+  const closeNote = () => {
+    clearNoteHideTimer();
+    clearNoteAnimationTimers();
+    setNoteVisible(false);
+    setIsAnimating(false);
+    setScrollUnfolded(false);
+    setShowTypewriter(false);
   };
 
   const scheduleNoteReveal = () => {
@@ -153,10 +309,30 @@ export default function B52LandingPage() {
     }
   };
 
+  const handleModalBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      closeNote();
+    }
+  };
+
+  useEffect(() => {
+    if (!noteVisible) return;
+
+    const handleEscape = (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeNote();
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [noteVisible]);
+
   useEffect(() => {
     return () => {
       clearRevealTimer();
       clearNoteHideTimer();
+      clearNoteAnimationTimers();
     };
   }, []);
 
@@ -168,7 +344,7 @@ export default function B52LandingPage() {
           role="button"
           tabIndex={0}
           aria-expanded={noteVisible}
-          aria-controls="inventor-note-panel"
+          aria-controls="inventor-note-modal"
           aria-describedby="b52s-logo-instruction"
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
@@ -256,6 +432,10 @@ export default function B52LandingPage() {
           </div>
         </div>
 
+        <p id="b52s-logo-instruction" className="sr-only">
+          Press enter or tap to open the inventor&apos;s note.
+        </p>
+
         <h1>B52s</h1>
 
         <div className="ornament">⚙ ═══ ⚙ ═══ ⚙</div>
@@ -278,29 +458,49 @@ export default function B52LandingPage() {
           Unlike certain shadowy machines of the modern age, this steam-driven intelligence requires no tribute of secrets. It serves, yet never spies.
         </p>
 
-        <div className={`inventor-note${noteVisible ? " is-visible" : ""}`}>
-          <div className="inventor-note__label" aria-hidden={!noteVisible}>
-            Inventor’s Note
-          </div>
-          <div
-            className="inventor-note__panel"
-            id="inventor-note-panel"
-            aria-live="polite"
-            aria-hidden={!noteVisible}
-          >
-            <p>12th of March, 1852</p>
-            <p>
-              I record here the completion of the fifty-second engine in my line of experiments. The world shall know it only as B-52. Brass hull, riveted seams, valves for coal and channels for the finer vapors of electro-aether. It hums, not like any locomotive, but as though the machine itself contemplates.
-            </p>
-            <p>
-              When the automaton whispered its first answer, I confess my hands shook. Not numbers, nor words I inscribed, but something…other. My colleagues called it dangerous, an oracle built of gears. So I sealed the chamber, bolted the doors, and consigned the artifact to obscurity.
-            </p>
-            <p>
-              If these notes are found, know this: the B-52 was never meant for war, but for counsel. Perhaps, in another age, it will speak again.
-            </p>
+      </div>
+
+      {noteVisible && (
+        <div
+          className="modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="inventor-note-title"
+          onClick={handleModalBackdropClick}
+        >
+          <div className="modal-content" id="inventor-note-modal">
+            <button type="button" className="modal-close" onClick={closeNote} aria-label="Close inventor&apos;s note">
+              ×
+            </button>
+            <div className={`scroll-container ${scrollUnfolded ? "unfolded" : ""}`}>
+              <div className="scroll-top" aria-hidden="true" />
+              <div className="scroll-body">
+                <div className="inventor-note__label" id="inventor-note-title">
+                  Inventor’s Note
+                </div>
+                <div className={`inventor-note__panel ${showTypewriter ? "typewriter-active" : ""}`} aria-live="polite">
+                  <p className="typewriter-text">12th of March, 1852</p>
+                  <p className="typewriter-text">
+                    I record here the completion of the fifty-second engine in my line of experiments. The world shall
+                    know it only as B-52. Brass hull, riveted seams, valves for coal and channels for the finer vapors
+                    of electro-aether. It hums, not like any locomotive, but as though the machine itself contemplates.
+                  </p>
+                  <p className="typewriter-text">
+                    When the automaton whispered its first answer, I confess my hands shook. Not numbers, nor words I
+                    inscribed, but something…other. My colleagues called it dangerous, an oracle built of gears. So I
+                    sealed the chamber, bolted the doors, and consigned the artifact to obscurity.
+                  </p>
+                  <p className="typewriter-text">
+                    If these notes are found, know this: the B-52 was never meant for war, but for counsel. Perhaps, in
+                    another age, it will speak again.
+                  </p>
+                </div>
+              </div>
+              <div className="scroll-bottom" aria-hidden="true" />
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       <style jsx>{`
         .b52s-root {
@@ -572,77 +772,237 @@ export default function B52LandingPage() {
           font-family: 'Georgia', serif;
         }
 
-        .inventor-note {
-          margin-top: 0;
-          max-height: 0;
-          max-width: 720px;
-          margin-left: auto;
-          margin-right: auto;
-          position: relative;
-          opacity: 0;
+        .sr-only {
+          position: absolute;
+          width: 1px;
+          height: 1px;
+          padding: 0;
+          margin: -1px;
           overflow: hidden;
-          pointer-events: none;
-          transition:
-            max-height 0.6s ease,
-            opacity 0.6s ease,
-            margin-top 0.6s ease;
+          clip: rect(0, 0, 0, 0);
+          white-space: nowrap;
+          border: 0;
         }
 
-        .inventor-note.is-visible {
-          margin-top: 60px;
-          max-height: 1000px;
-          opacity: 1;
-          pointer-events: auto;
+        .modal-backdrop {
+          position: fixed;
+          inset: 0;
+          background: rgba(10, 6, 4, 0.55);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 24px;
+          z-index: 1000;
+          animation: modalFadeIn 0.4s ease-out;
+        }
+
+        .modal-content {
+          position: relative;
+          width: min(92vw, 720px);
+          max-height: 90vh;
+          overflow-y: auto;
+          animation: modalSlideIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .modal-close {
+          position: absolute;
+          top: 12px;
+          right: 16px;
+          background: rgba(26, 16, 10, 0.8);
+          border: 1px solid rgba(212, 175, 55, 0.5);
+          border-radius: 50%;
+          color: #f4e4a6;
+          width: 36px;
+          height: 36px;
+          font-size: 1.5rem;
+          line-height: 1;
+          cursor: pointer;
+          transition: background 0.2s ease, transform 0.2s ease;
+        }
+
+        .modal-close:hover,
+        .modal-close:focus-visible {
+          background: rgba(139, 69, 19, 0.9);
+          transform: scale(1.05);
+          outline: none;
+        }
+
+        .scroll-container {
+          position: relative;
+          perspective: 1200px;
+          transform-style: preserve-3d;
+          transform: rotateX(90deg);
+          transform-origin: top center;
+          transition: transform 3.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .scroll-container.unfolded {
+          transform: rotateX(0deg);
+        }
+
+        .scroll-top,
+        .scroll-bottom {
+          height: 26px;
+          background:
+            linear-gradient(135deg, #8b4513 0%, #a0522d 30%, #cd853f 50%, #a0522d 70%, #8b4513 100%),
+            radial-gradient(ellipse at center, rgba(212, 175, 55, 0.3) 0%, transparent 70%);
+          border: 3px solid #cd853f;
+          border-radius: 14px;
+          position: relative;
+          box-shadow:
+            inset 0 3px 6px rgba(255, 255, 255, 0.28),
+            inset 0 -3px 6px rgba(0, 0, 0, 0.45),
+            0 6px 12px rgba(0, 0, 0, 0.55),
+            0 0 18px rgba(212, 175, 55, 0.25);
+        }
+
+        .scroll-top::before,
+        .scroll-bottom::before {
+          content: '';
+          position: absolute;
+          left: 50%;
+          top: 50%;
+          transform: translate(-50%, -50%);
+          width: 68%;
+          height: 6px;
+          background: linear-gradient(90deg, #f4e4a6 0%, #d4af37 50%, #f4e4a6 100%);
+          border-radius: 3px;
+          box-shadow:
+            0 2px 4px rgba(0, 0, 0, 0.4),
+            inset 0 1px 2px rgba(255, 255, 255, 0.25);
+        }
+
+        .scroll-body {
+          background:
+            linear-gradient(135deg, rgba(244, 228, 166, 0.97) 0%, rgba(232, 207, 141, 0.96) 100%),
+            url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120" viewBox="0 0 120 120"><defs><pattern id="paper" x="0" y="0" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="24" height="24" fill="%23f2e1b5"/><circle cx="12" cy="12" r="0.8" fill="%23d4af37" opacity="0.25"/><circle cx="6" cy="18" r="0.4" fill="%23cd853f" opacity="0.15"/><circle cx="18" cy="6" r="0.6" fill="%23b8860b" opacity="0.18"/></pattern></defs><rect width="120" height="120" fill="url(%23paper)"/></svg>');
+          border-left: 3px solid #cd853f;
+          border-right: 3px solid #cd853f;
+          padding: clamp(32px, 6vw, 80px) clamp(24px, 7vw, 120px);
+          box-shadow:
+            inset 6px 0 12px rgba(139, 69, 19, 0.2),
+            inset -6px 0 12px rgba(139, 69, 19, 0.2),
+            inset 0 4px 8px rgba(0, 0, 0, 0.12);
+          position: relative;
+        }
+
+        .scroll-body::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background:
+            repeating-linear-gradient(
+              0deg,
+              transparent 0px,
+              transparent 28px,
+              rgba(139, 69, 19, 0.08) 29px,
+              rgba(139, 69, 19, 0.08) 30px
+            );
+          pointer-events: none;
         }
 
         .inventor-note__label {
           display: inline-block;
-          padding: 6px 16px;
-          background: rgba(23, 14, 8, 0.85);
-          border: 1px solid rgba(212, 175, 55, 0.4);
-          border-bottom: none;
+          padding: 18px 28px;
+          margin: 0 auto 24px;
+          background:
+            linear-gradient(135deg, rgba(139, 69, 19, 0.95) 0%, rgba(160, 82, 45, 0.95) 50%, rgba(139, 69, 19, 0.95) 100%);
+          border: 3px solid #cd853f;
+          border-radius: 14px 14px 0 0;
+          font-family: 'Georgia', serif;
           letter-spacing: 0.45em;
-          font-size: 0.75rem;
+          font-size: 0.85rem;
           text-transform: uppercase;
-          color: rgba(212, 175, 55, 0.75);
-          opacity: 0;
-          transform: translateY(-8px);
-          transition: opacity 0.45s ease 0.2s, transform 0.45s ease 0.2s;
+          color: #f4e4a6;
+          text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+          box-shadow:
+            0 -4px 8px rgba(0, 0, 0, 0.35),
+            inset 0 2px 4px rgba(255, 255, 255, 0.2),
+            0 0 18px rgba(212, 175, 55, 0.25);
         }
 
-        .inventor-note.is-visible .inventor-note__label {
+        .inventor-note__panel {
+          position: relative;
+          text-align: left;
+          font-size: 1.05rem;
+          line-height: 1.8;
+          color: #4a2c17;
+          text-shadow: 0 1px 2px rgba(255, 255, 255, 0.45);
+          opacity: 0;
+          transform: translateY(12px);
+          transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        .typewriter-active {
           opacity: 1;
           transform: translateY(0);
         }
 
-        .inventor-note__panel {
-          border: 1px solid rgba(212, 175, 55, 0.4);
-          background: rgba(26, 16, 10, 0.92);
-          padding: 28px;
-          transform: translateY(16px) scaleY(0.85);
-          transform-origin: top;
+        .typewriter-text {
           opacity: 0;
-          transition: transform 0.6s ease, opacity 0.6s ease;
-          box-shadow:
-            inset 0 0 20px rgba(0, 0, 0, 0.35),
-            0 14px 30px rgba(0, 0, 0, 0.35);
-          text-align: left;
-          font-size: 1rem;
-          line-height: 1.7;
-          color: #e8cf8d;
+          margin-bottom: 22px;
         }
 
-        .inventor-note__panel p:first-of-type {
+        .typewriter-active .typewriter-text {
+          animation: typewriter 2.4s ease-out forwards;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(1) {
+          animation-delay: 0s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(2) {
+          animation-delay: 0.6s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(3) {
+          animation-delay: 2s;
+        }
+
+        .typewriter-active .typewriter-text:nth-child(4) {
+          animation-delay: 3.4s;
+        }
+
+        .typewriter-text:first-of-type {
           font-family: 'Georgia', serif;
           letter-spacing: 0.12em;
           text-transform: uppercase;
-          color: #f4e4a6;
-          margin-bottom: 18px;
+          color: #6e3f1f;
         }
 
-        .inventor-note.is-visible .inventor-note__panel {
-          transform: translateY(0) scaleY(1);
-          opacity: 1;
+        @keyframes modalFadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            transform: translateY(-40px) scale(0.95);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0) scale(1);
+            opacity: 1;
+          }
+        }
+
+        @keyframes typewriter {
+          0% {
+            opacity: 0;
+            transform: translateY(12px);
+          }
+          25% {
+            opacity: 1;
+            transform: translateY(0);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
 
         .ornament {
@@ -696,13 +1056,55 @@ export default function B52LandingPage() {
             font-size: 1.1rem;
           }
 
-          .inventor-note.is-visible {
-            margin-top: 40px;
+          .modal-content {
+            width: min(96vw, 640px);
+          }
+
+          .modal-close {
+            top: 10px;
+            right: 14px;
+          }
+
+          .scroll-body {
+            padding: clamp(28px, 8vw, 60px) clamp(18px, 8vw, 50px);
           }
 
           .inventor-note__panel {
-            padding: 22px;
-            font-size: 0.95rem;
+            font-size: 0.98rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .logo {
+            width: 120px;
+            height: 120px;
+          }
+
+          h1 {
+            font-size: clamp(2.5rem, 10vw, 3.2rem);
+          }
+
+          .subtitle {
+            font-size: 1.05rem;
+          }
+
+          .modal-content {
+            width: 100%;
+            max-height: 92vh;
+          }
+
+          .scroll-body {
+            padding: 28px 20px;
+          }
+
+          .inventor-note__label {
+            letter-spacing: 0.32em;
+            font-size: 0.72rem;
+          }
+
+          .modal-close {
+            top: 4px;
+            right: 10px;
           }
         }
       `}</style>
