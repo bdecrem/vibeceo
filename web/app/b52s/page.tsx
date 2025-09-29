@@ -71,7 +71,7 @@ export default function B52LandingPage() {
               Private AI over SMS.
             </p>
             <a
-              href="sms:+14155154370"
+              href="sms:8663300015?body=Howdy,%20what%20can%20you%20do?"
               className="inline-block px-10 py-3 border-2 border-gray-800 text-gray-800 text-base md:text-lg font-medium tracking-wide hover:bg-gray-800 hover:text-white transition-all duration-300"
             >
               Try it now
