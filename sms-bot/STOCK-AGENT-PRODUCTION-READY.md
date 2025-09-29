@@ -16,7 +16,9 @@ The Stock Agent is now production-ready and fully integrated into the SMS bot sy
 - **Scheduled Updates** - Automated daily stock updates and portfolio summaries
 - **Natural Language Processing** - Understand conversational queries
 
-### 💬 Natural Language Examples
+### 💬 Command Examples
+
+**Natural Language (Recommended):**
 
 - "what's the price of apple?"
 - "analyze microsoft stock"
@@ -27,6 +29,16 @@ The Stock Agent is now production-ready and fully integrated into the SMS bot sy
 - "send me my portfolio every morning at 8am"
 - "stop sending me apple updates"
 - "what can you do with stocks?"
+
+**$ Prefix Commands (Required):**
+
+- "$STOCK AAPL" - Get Apple stock price
+- "$WATCH TSLA" - Add Tesla to watchlist
+- "$PORTFOLIO" - View your stocks
+- "$ANALYZE MSFT" - Analyze Microsoft
+- "$ALERTS" - Manage price alerts
+- "$HELP" - Show all commands
+- "$SCHEDULES" - View scheduled tasks
 
 ### 🔧 Technical Implementation
 
@@ -121,11 +133,10 @@ The stock agent has been thoroughly tested with:
 
 The stock agent is production-ready and can be deployed immediately. Consider adding:
 
+- Scheduled daily updates
 - Advanced portfolio analytics
 - Integration with more data sources
 - Enhanced alerting capabilities
-- Custom timezone support
-- Advanced scheduling options
 
 ---
 
