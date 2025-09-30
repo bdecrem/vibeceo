@@ -2,6 +2,102 @@
 
 import { useEffect, useState } from "react";
 
+const SMS_EXCHANGES = [
+  {
+    user: "AI Daily",
+    response: "🎙️ AI Daily 9/28 — Here's what's new today: VCRL boosts large language models, plus 2 more papers!\nHear it here: https://b52s.me/l/khQf or text LINKS."
+  },
+  {
+    user: "$ nvidia",
+    response: "Hey! NVIDIA (NVDA) is at $181.85 right now 📈\nIt's up $3.42 (+1.92%) this week, which is pretty solid.\nStrong demand in AI is driving interest."
+  }
+];
+
+function TypingMessage({ text, delay = 0 }: { text: string; delay?: number }) {
+  const [displayText, setDisplayText] = useState("");
+  const [isComplete, setIsComplete] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        if (currentIndex <= text.length) {
+          setDisplayText(text.slice(0, currentIndex));
+          currentIndex++;
+        } else {
+          setIsComplete(true);
+          clearInterval(interval);
+        }
+      }, 20); // Type speed: 20ms per character
+
+      return () => clearInterval(interval);
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [text, delay]);
+
+  return (
+    <div className="relative">
+      <p className="whitespace-pre-wrap break-words">{displayText}</p>
+      {!isComplete && <span className="inline-block w-1 h-4 bg-gray-800 ml-0.5 animate-pulse" />}
+    </div>
+  );
+}
+
+function SMSExchange() {
+  const [currentExchange, setCurrentExchange] = useState(0);
+  const [showUser, setShowUser] = useState(false);
+  const [showResponse, setShowResponse] = useState(false);
+
+  useEffect(() => {
+    // Show user message
+    setShowUser(true);
+
+    // Show response after user message finishes typing
+    const userTypingTime = SMS_EXCHANGES[currentExchange].user.length * 20 + 500;
+    const responseTimer = setTimeout(() => {
+      setShowResponse(true);
+    }, userTypingTime);
+
+    // Switch to next exchange
+    const totalTime = userTypingTime + SMS_EXCHANGES[currentExchange].response.length * 20 + 2000;
+    const switchTimer = setTimeout(() => {
+      setShowUser(false);
+      setShowResponse(false);
+      setCurrentExchange((prev) => (prev + 1) % SMS_EXCHANGES.length);
+    }, totalTime);
+
+    return () => {
+      clearTimeout(responseTimer);
+      clearTimeout(switchTimer);
+    };
+  }, [currentExchange]);
+
+  const exchange = SMS_EXCHANGES[currentExchange];
+
+  return (
+    <div className="max-w-md mx-auto space-y-3 h-[240px] md:h-[260px]">
+      {/* User message (right-aligned, dark grey bubble) */}
+      {showUser && (
+        <div className="flex justify-end">
+          <div className="bg-[#3a3a3a] text-white px-4 py-2.5 rounded-2xl rounded-tr-sm max-w-[85%] text-sm md:text-base">
+            <TypingMessage text={exchange.user} delay={0} />
+          </div>
+        </div>
+      )}
+
+      {/* Response message (left-aligned, gray bubble) */}
+      {showResponse && (
+        <div className="flex justify-start">
+          <div className="bg-[#e8e4d9] text-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-sm max-w-[85%] text-sm md:text-base">
+            <TypingMessage text={exchange.response} delay={0} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function B52LandingPage() {
   const [mounted, setMounted] = useState(false);
 
@@ -64,6 +160,11 @@ export default function B52LandingPage() {
           >
             little blasts of AI.
           </h1>
+
+          {/* SMS Exchange Animation */}
+          <div className="mt-6 md:mt-10 mb-6 md:mb-10">
+            <SMSExchange />
+          </div>
 
           {/* SMS CTA */}
           <div className="mt-4 md:mt-8 text-center">
