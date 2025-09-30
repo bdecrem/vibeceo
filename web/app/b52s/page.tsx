@@ -86,10 +86,10 @@ function SMSExchange() {
         </div>
       )}
 
-      {/* Response message (left-aligned, gray bubble) */}
+      {/* Response message (left-aligned, light grey bubble) */}
       {showResponse && (
         <div className="flex justify-start">
-          <div className="bg-[#e8e4d9] text-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-sm max-w-[85%] text-sm md:text-base">
+          <div className="bg-[#d3d3d3] text-gray-800 px-4 py-2.5 rounded-2xl rounded-tl-sm max-w-[85%] text-sm md:text-base">
             <TypingMessage text={exchange.response} delay={0} />
           </div>
         </div>
