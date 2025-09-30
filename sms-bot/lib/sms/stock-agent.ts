@@ -264,6 +264,188 @@ function parseSchedulingCommand(
 }
 
 /**
+ * Extract potential stock symbols from a message
+ * This function tries to find stock symbols in various formats
+ */
+function extractStockSymbolFromMessage(message: string): string | null {
+  const upperMessage = message.toUpperCase();
+
+  // Pattern 1: Look for common index names and convert to symbols FIRST
+  const indexMap: { [key: string]: string } = {
+    "DOW JONES": "^DJI",
+    DOW: "^DJI",
+    "DOW JONES INDUSTRIAL AVERAGE": "^DJI",
+    "S&P 500": "^GSPC",
+    SP500: "^GSPC",
+    "S&P": "^GSPC",
+    NASDAQ: "^IXIC",
+    "NASDAQ COMPOSITE": "^IXIC",
+    "RUSSELL 2000": "^RUT",
+    RUSSELL: "^RUT",
+  };
+
+  for (const [indexName, symbol] of Object.entries(indexMap)) {
+    if (upperMessage.includes(indexName)) {
+      return symbol;
+    }
+  }
+
+  // Pattern 2: Direct ticker symbols - only match if it's a standalone ticker
+  // Examples: $AAPL, $^DJI, $TSLA (but NOT $can you tell me...)
+  const standaloneTickerMatch = message.match(/^\$\s*(\^?[A-Z]{1,5})\s*$/i);
+  if (standaloneTickerMatch) {
+    return standaloneTickerMatch[1].toUpperCase();
+  }
+
+  // Pattern 2b: Handle $stock SYMBOL pattern specifically
+  const stockCommandMatch = message.match(/^\$\s*stock\s+(\^?[A-Z]{1,5})\b/i);
+  if (stockCommandMatch) {
+    return stockCommandMatch[1].toUpperCase();
+  }
+
+  // Pattern 3: Look for potential ticker symbols in the message (3-5 uppercase letters)
+  // This catches cases like "price of AAPL" or "tell me about TSLA"
+  // But be more selective - look for common stock patterns
+  const tickerInTextMatch = message.match(/\b([A-Z]{3,5})\b/g);
+  if (tickerInTextMatch) {
+    // Filter out common words that aren't stock symbols
+    const commonWords = [
+      "THE",
+      "AND",
+      "FOR",
+      "CAN",
+      "YOU",
+      "TELL",
+      "ME",
+      "WHAT",
+      "PRICE",
+      "STOCK",
+      "CURRENT",
+      "ABOUT",
+      "WITH",
+      "FROM",
+      "THIS",
+      "THAT",
+      "WILL",
+      "SHOULD",
+      "COULD",
+      "WOULD",
+      "MIGHT",
+      "MAY",
+      "MUST",
+      "HAVE",
+      "HAS",
+      "HAD",
+      "WAS",
+      "WERE",
+      "BEEN",
+      "BEING",
+      "HERE",
+      "THERE",
+      "WHERE",
+      "WHEN",
+      "WHY",
+      "HOW",
+      "MUCH",
+      "MANY",
+      "SOME",
+      "ANY",
+      "ALL",
+      "EACH",
+      "EVERY",
+      "BOTH",
+      "EITHER",
+      "NEITHER",
+      "ONE",
+      "TWO",
+      "THREE",
+      "FOUR",
+      "FIVE",
+      "SIX",
+      "SEVEN",
+      "EIGHT",
+      "NINE",
+      "TEN",
+      "MICROSOFT",
+      "APPLE",
+      "GOOGLE",
+      "TESLA",
+      "AMAZON",
+      "META",
+      "NETFLIX",
+      "NVIDIA",
+      "INTEL",
+      "AMD",
+      "DISNEY",
+      "COCA",
+      "COLA",
+      "PEPSI",
+      "MCDONALDS",
+      "STARBUCKS",
+      "WALMART",
+      "TARGET",
+      "NIKE",
+      "UBER",
+      "LYFT",
+      "AIRBNB",
+      "SPOTIFY",
+      "TWITTER",
+      "SNAPCHAT",
+      "SNAP",
+      "ZOOM",
+      "SALESFORCE",
+      "ORACLE",
+      "BOEING",
+      "FORD",
+      "GENERAL",
+      "MOTORS",
+      "VERIZON",
+      "COMCAST",
+      "VISA",
+      "MASTERCARD",
+      "JPMORGAN",
+      "MORGAN",
+      "BANK",
+      "AMERICA",
+      "WELLS",
+      "FARGO",
+      "GOLDMAN",
+      "SACHS",
+    ];
+
+    // Look for patterns that are more likely to be stock symbols
+    // Prioritize 4-5 letter symbols and those that appear after "of" or "about"
+    const stockContextPatterns = [
+      /(?:of|about|for|with)\s+([A-Z]{3,5})\b/i,
+      /\b([A-Z]{4,5})\b/g, // 4-5 letter symbols are more likely to be stocks
+    ];
+
+    for (const pattern of stockContextPatterns) {
+      const matches = message.match(pattern);
+      if (matches) {
+        for (const match of matches) {
+          const symbol = match.replace(/(?:of|about|for|with)\s+/i, "").trim();
+          if (symbol && !commonWords.includes(symbol.toUpperCase())) {
+            return symbol.toUpperCase();
+          }
+        }
+      }
+    }
+
+    // Fallback: sort by length (longer first) to prioritize more specific matches
+    const sortedTickers = tickerInTextMatch.sort((a, b) => b.length - a.length);
+
+    for (const potentialTicker of sortedTickers) {
+      if (!commonWords.includes(potentialTicker)) {
+        return potentialTicker.toUpperCase();
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
  * Detect natural language stock queries and extract company/symbol
  */
 function detectNaturalStockQuery(
@@ -685,7 +867,7 @@ function detectNaturalStockQuery(
     "goldman sachs": { symbol: "GS", name: "Goldman Sachs" },
   };
 
-  // Look for company names in the message
+  // Look for company names in the message first (fallback)
   for (const [companyName, data] of Object.entries(companyMap)) {
     if (lowerMessage.includes(companyName)) {
       return { symbol: data.symbol, companyName: data.name, commandType };
@@ -695,6 +877,17 @@ function detectNaturalStockQuery(
   // Handle commands without specific companies (like "show my portfolio")
   if (commandType === "portfolio" || commandType === "help") {
     return { symbol: "", companyName: "", commandType };
+  }
+
+  // NEW: Extract potential stock symbols from the message and let Yahoo Finance validate
+  const extractedSymbol = extractStockSymbolFromMessage(message);
+  if (extractedSymbol) {
+    console.log(`📊 Extracted potential symbol: ${extractedSymbol}`);
+    return {
+      symbol: extractedSymbol,
+      companyName: extractedSymbol,
+      commandType,
+    };
   }
 
   return null;
