@@ -23,11 +23,32 @@ const RAW_SMS_SCREENS = [
       {
         id: "nvidia-response",
         variant: "response" as const,
-        text: "Hey! NVIDIA (NVDA) is at $181.85 right now 📈\nIt's up $3.42 (+1.92%) this week, which is pretty solid.\nStrong demand in AI is driving interest.",
+        text: "Hey! NVIDIA (NVDA) is at $181.85 right now 📈\nIt's up $3.42 (+1.92%) this week, which is pretty solid. Strong demand in AI is driving interest.",
         holdAfter: 1200
-      }
+      },
+      { id: "yt-request", variant: "user" as const, text: "YT the most insightful analysis of Claude Code 2 from today" }
     ],
-    holdAfter: 2000
+    holdAfter: 1400
+  },
+  {
+    id: "screen-3",
+    messages: [
+      {
+        id: "yt-followup",
+        variant: "response" as const,
+        text: "News, analysis, or technical reviews?",
+        holdAfter: 600
+      },
+      { id: "yt-refinement", variant: "user" as const, text: "Analysis" },
+      {
+        id: "yt-results",
+        variant: "response" as const,
+        text: "This one's good, from 2 hrs ago:\nTech Analysis Hub:\nyoutube.com/watch?v=abc123",
+        holdAfter: 800
+      },
+      { id: "user-thanks", variant: "user" as const, text: "🙏💯🔥" }
+    ],
+    holdAfter: 2400
   }
 ];
 

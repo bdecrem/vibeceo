@@ -470,6 +470,15 @@ function detectNaturalStockQuery(
     lowerMessage.includes(keyword)
   );
 
+  // Check if user provided a ticker symbol directly BEFORE checking keywords
+  // (e.g., "$ VZ", "$ vz" - these don't contain stock keywords)
+  const tickerMatch = message.match(/^\$\s*([A-Za-z]{1,5})$/);
+  if (tickerMatch) {
+    const ticker = tickerMatch[1].toUpperCase();
+    console.log(`📊 Direct ticker symbol detected: ${ticker}`);
+    return { symbol: ticker, companyName: ticker, commandType: "price" };
+  }
+
   if (!hasStockPhrase && !hasStockKeyword) return null;
 
   // Determine command type based on phrases
@@ -658,6 +667,22 @@ function detectNaturalStockQuery(
     ford: { symbol: "F", name: "Ford" },
     "general motors": { symbol: "GM", name: "General Motors" },
     gm: { symbol: "GM", name: "General Motors" },
+    verizon: { symbol: "VZ", name: "Verizon" },
+    "at&t": { symbol: "T", name: "AT&T" },
+    att: { symbol: "T", name: "AT&T" },
+    "t-mobile": { symbol: "TMUS", name: "T-Mobile" },
+    tmobile: { symbol: "TMUS", name: "T-Mobile" },
+    comcast: { symbol: "CMCSA", name: "Comcast" },
+    visa: { symbol: "V", name: "Visa" },
+    mastercard: { symbol: "MA", name: "Mastercard" },
+    jpmorgan: { symbol: "JPM", name: "JPMorgan Chase" },
+    "jp morgan": { symbol: "JPM", name: "JPMorgan Chase" },
+    "bank of america": { symbol: "BAC", name: "Bank of America" },
+    bofa: { symbol: "BAC", name: "Bank of America" },
+    wells: { symbol: "WFC", name: "Wells Fargo" },
+    "wells fargo": { symbol: "WFC", name: "Wells Fargo" },
+    goldman: { symbol: "GS", name: "Goldman Sachs" },
+    "goldman sachs": { symbol: "GS", name: "Goldman Sachs" },
   };
 
   // Look for company names in the message
