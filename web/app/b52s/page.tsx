@@ -26,10 +26,10 @@ export default function B52LandingPage() {
           </div>
 
           {/* B52S Letters */}
-          <div className="absolute inset-0 flex items-start justify-center pt-4 md:pt-12">
-            <div className="flex items-start justify-center -space-x-1 md:-space-x-4">
+          <div className="absolute inset-0 flex items-center md:items-start justify-center md:pt-12">
+            <div className="flex items-start justify-center -space-x-1 md:-space-x-4 pt-8 md:pt-0">
               <span
-                className="text-[#1ba0c8] text-[28vw] md:text-[20rem] lg:text-[24rem] font-extrabold leading-none select-none -mt-2 md:-mt-10"
+                className="text-[#1ba0c8] text-[28vw] md:text-[20rem] lg:text-[24rem] font-extrabold leading-none select-none md:-mt-10"
                 style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
               >
                 B
