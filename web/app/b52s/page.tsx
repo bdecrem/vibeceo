@@ -106,8 +106,8 @@ export default function B52LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f5f3f0]">
-      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-12 pt-6 pb-12">
-        <div className="bg-[#f5f3f0] md:bg-white md:shadow-2xl md:rounded-[32px] overflow-hidden flex flex-col">
+      <div className="mx-auto w-full max-w-5xl px-4 sm:px-6 lg:px-12 pt-6 pb-0">
+        <div className="bg-[#f5f3f0] md:bg-white md:shadow-2xl md:rounded-t-[32px] overflow-hidden flex flex-col min-h-[calc(100vh-1.5rem)]">
           <div className="relative aspect-[4/3] md:aspect-[16/9] overflow-hidden">
             <div className="absolute inset-0 grid grid-cols-2 grid-rows-3">
               <div className="bg-[#f4c430] row-span-3" />
@@ -145,7 +145,7 @@ export default function B52LandingPage() {
             </div>
           </div>
 
-          <div className="bg-[#f5f3f0] px-6 sm:px-10 md:px-16 py-8 md:py-10">
+          <div className="bg-[#f5f3f0] px-6 sm:px-10 md:px-16 pt-8 md:pt-10 pb-8 md:pb-12 flex-1 flex flex-col justify-center">
             <h1
               className="text-3xl md:text-6xl lg:text-7xl font-extrabold text-black leading-tight tracking-tight text-center"
               style={{ fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif' }}
