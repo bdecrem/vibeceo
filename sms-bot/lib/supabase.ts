@@ -1,13 +1,20 @@
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { fileURLToPath } from "url";
+import path from "path";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === "production";
 
 // Load environment variables in development
 if (!isProduction) {
-	// Load from current working directory (where npm/node was run from)
-	dotenv.config({ path: '.env.local' });
+	// Load from sms-bot directory (two levels up from dist/lib/)
+	const envPath = path.join(__dirname, '..', '..', '.env.local');
+	dotenv.config({ path: envPath });
+	console.log(`Loading env from: ${envPath}`);
 }
 
 // Type definitions
