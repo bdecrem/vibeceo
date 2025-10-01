@@ -1,0 +1,194 @@
+# Claude Agent SDK Summary
+
+## What We Built
+
+A Python script that uses the **Claude Agent SDK** to create an autonomous AI agent that:
+1. Searches the web for real-time Bitcoin and Ethereum data
+2. Extracts prices, news, and market information
+3. Compiles it into a professional research report
+4. Saves it as a markdown file
+
+**Key insight:** We gave the agent a high-level goal, and it figured out how to accomplish it using available tools.
+
+## What is the Claude Agent SDK?
+
+The Claude Agent SDK is infrastructure that lets Claude autonomously:
+- **Read and write files** (Read, Write, Edit tools)
+- **Execute bash commands** (Bash tool)
+- **Search the web** (WebSearch, WebFetch tools)
+- **Maintain context** across long sessions
+- **Make decisions** about what steps to take
+
+**It's NOT just an API wrapper.** It's an agent framework that gives Claude:
+- Tools to interact with the system
+- Permission controls for safety
+- Context management to prevent token limit issues
+- Session handling for multi-step workflows
+
+## How It Works
+
+### 1. Installation
+```bash
+# Requires Python 3.10+
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install claude-agent-sdk
+
+# Also requires Claude Code
+npm install -g @anthropic-ai/claude-code
+claude setup-token  # Authenticate
+```
+
+### 2. Basic Structure
+```python
+from claude_agent_sdk import query, ClaudeAgentOptions
+
+# Configure permissions
+options = ClaudeAgentOptions(
+    permission_mode='acceptEdits',  # Auto-approve file edits
+    allowed_tools=['WebSearch', 'Write', 'Read', 'Bash'],
+    cwd=str(Path.cwd())
+)
+
+# Run agent
+async for message in query(prompt="your task", options=options):
+    # Handle streaming messages
+    print(message)
+```
+
+### 3. Key Components
+
+**ClaudeAgentOptions:**
+- `permission_mode`: Controls what agent can do without asking
+  - `'default'`: Ask for permission for most actions
+  - `'acceptEdits'`: Auto-approve file edits
+  - `'bypassPermissions'`: Full autonomy (dangerous)
+- `allowed_tools`: Whitelist of tools agent can use
+- `cwd`: Working directory
+
+**Available Tools:**
+- `Read`: Read files
+- `Write`: Create/overwrite files
+- `Edit`: Modify files via string replacement
+- `Bash`: Run shell commands
+- `WebSearch`: Search the web
+- `WebFetch`: Fetch specific URLs
+- `Task`: Delegate to subagents
+- `Glob`, `Grep`: File search operations
+
+### 4. The Agent Loop
+
+The SDK enables this autonomous loop:
+1. **Agent analyzes the goal** → "I need to search for BTC price"
+2. **Agent chooses tools** → Uses WebSearch tool
+3. **Agent gets results** → Receives search data
+4. **Agent decides next step** → "Now I'll search ETH price"
+5. **Agent iterates** → Continues until goal complete
+6. **Agent writes output** → Uses Write tool to save file
+
+**You don't specify HOW** - the agent figures out the steps.
+
+## Production Integration Considerations
+
+### 1. **Error Handling**
+```python
+from claude_agent_sdk import CLINotFoundError, ProcessError
+
+try:
+    async for message in query(prompt=prompt, options=options):
+        handle_message(message)
+except CLINotFoundError:
+    print("Claude Code not installed")
+except ProcessError as e:
+    print(f"Agent failed: {e.exit_code}")
+```
+
+### 2. **Cost Management**
+- Each agent session costs money (API usage)
+- Check `message.total_cost_usd` in ResultMessage
+- Our crypto agent: ~$0.06 per report
+
+### 3. **Timeouts & Long-Running Tasks**
+- Agent can run for hours autonomously
+- Set reasonable timeouts for production
+- Consider using `Task` tool to spawn subagents for parallel work
+
+### 4. **Security**
+- **Never use `bypassPermissions` in production**
+- Whitelist only necessary tools via `allowed_tools`
+- Run in isolated environment (container)
+- Validate agent outputs before using them
+
+### 5. **File Paths**
+- Agent works relative to `cwd` parameter
+- Always use absolute paths or verify cwd
+- Check file existence after agent claims to create it
+
+## Common Gotchas We Hit
+
+1. **"Permission denied" errors**: Need to explicitly allow tools via `allowed_tools`
+2. **Agent says it did something but didn't**: Check for ToolUseBlock with name='Write' in messages
+3. **Files not created**: Agent might generate content but not use Write tool - be explicit in prompt
+4. **Python version**: Requires 3.10+, won't work on 3.9
+
+## Integration Example for Your Codebase
+
+```python
+import asyncio
+from claude_agent_sdk import query, ClaudeAgentOptions
+from pathlib import Path
+
+async def generate_daily_crypto_report():
+    """Production-ready crypto report generator"""
+    
+    options = ClaudeAgentOptions(
+        permission_mode='acceptEdits',
+        allowed_tools=['WebSearch', 'Write'],
+        cwd='/path/to/output/directory'
+    )
+    
+    prompt = """
+    Search web for Bitcoin and Ethereum prices and news.
+    Write report to: crypto_reports/report_YYYY-MM-DD.md
+    Include: prices, 24h changes, top 3 news items, sources.
+    """
+    
+    try:
+        async for message in query(prompt=prompt, options=options):
+            # Log progress, handle errors
+            pass
+        
+        # Verify output
+        report_path = Path('crypto_reports/report_2025-10-01.md')
+        if not report_path.exists():
+            raise Exception("Report generation failed")
+            
+        return report_path
+        
+    except Exception as e:
+        # Log error, alert team
+        raise
+```
+
+## Key Difference from Regular API
+
+| Regular Claude API | Claude Agent SDK |
+|-------------------|------------------|
+| One prompt → one response | Multi-turn autonomous operation |
+| No file access | Can read/write/edit files |
+| No tool use | Can use bash, web search, etc. |
+| Stateless | Maintains session context |
+| You control flow | Agent controls flow |
+
+## Authentication Note
+
+Requires OAuth token from Claude Code:
+```bash
+export CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat01-...
+```
+
+Store this securely - treat it like an API key.
+
+---
+
+**Bottom line:** The Claude Agent SDK lets you give Claude high-level goals and it autonomously figures out the steps, uses tools, and delivers results. It's more like having an AI employee than an API endpoint.
