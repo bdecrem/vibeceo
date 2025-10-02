@@ -1,14 +1,15 @@
-# Use Node.js base image with Python support
-FROM node:20-bullseye
+# Use Node.js base image with Python 3.11 support
+FROM node:20-bookworm
 
-# Install Python and pip
+# Install Python 3.11 and pip (claude-agent-sdk requires Python 3.10+)
 RUN apt-get update && apt-get install -y \
-    python3 \
+    python3.11 \
     python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Create symlink for 'python' command
-RUN ln -s /usr/bin/python3 /usr/bin/python
+# Create symlinks for python commands
+RUN ln -sf /usr/bin/python3.11 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python
 
 # Set working directory
 WORKDIR /app
