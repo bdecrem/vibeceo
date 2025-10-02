@@ -25,8 +25,9 @@ COPY . .
 # Build TypeScript
 RUN npm run build
 
-# Install Python dependencies
-RUN pip3 install openai requests python-dotenv pathlib supabase
+# Install Python dependencies from requirements.txt
+COPY requirements.txt ./
+RUN pip3 install -r requirements.txt
 
 # Make startup script executable
 RUN chmod +x start-production-typescript.sh
