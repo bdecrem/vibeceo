@@ -18,6 +18,7 @@ export interface CommandContext {
     maxLength?: number
   ) => Promise<void>;
   updateLastMessageDate: (phoneNumber: string) => Promise<void>;
+  commandHelpers?: Record<string, unknown>;
 }
 
 export interface CommandHandler {
