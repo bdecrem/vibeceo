@@ -12,10 +12,18 @@ interface YouTubeSearchState {
   originalQuery: string;
   hours: number;
   timestamp: number;
+  cachedResults: YouTubeVideo[];
+  offset: number;
 }
 
 const FOLLOW_UP_TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
 const MAX_RESULTS = 3;
+
+const STOP_KEYWORDS = new Set(['stop', 'end', 'cancel', 'done', 'quit', 'exit']);
+const GREETING_KEYWORDS = ['hi', 'hello', 'hey'];
+const TIME_HINTS = ['last 3 hours', 'last three hours', 'past 3 hours'];
+
+type YouTubeVideo = Awaited<ReturnType<typeof searchRecentVideos>>[number];
 
 function getStateMap(
   context: CommandContext
@@ -81,6 +89,8 @@ async function startSearch(
       originalQuery: cleanedTopic,
       hours,
       timestamp: Date.now(),
+      cachedResults: [],
+      offset: 0,
     });
 
     const prompt = followup ||
@@ -111,39 +121,181 @@ async function continueSearch(
   state: YouTubeSearchState,
   userResponse: string
 ): Promise<boolean> {
-  let finalQuery: string;
+  const trimmed = userResponse.trim();
+  const lower = trimmed.toLowerCase();
+  const upper = trimmed.toUpperCase();
 
-  try {
-    if (!userResponse || ['skip', 'no', 'none'].includes(userResponse.toLowerCase())) {
-      finalQuery = cleanQuery(state.originalQuery);
-    } else {
-      finalQuery = await generateSearchQuery(state.originalQuery, userResponse);
-    }
-  } catch (error) {
-    console.error('YouTube query refinement failed:', error);
-    finalQuery = cleanQuery(state.originalQuery);
+  if (!trimmed) {
+    await context.sendSmsResponse(
+      context.from,
+      'Reply MORE, LAST 3 HRS, REVIEWS, NEW [topic], or STOP to exit.',
+      context.twilioClient
+    );
+    await context.updateLastMessageDate(context.normalizedFrom);
+    return true;
   }
 
-  try {
-    let effectiveHours = state.hours;
-    let videos = await searchRecentVideos(finalQuery, effectiveHours);
-
-    if (videos.length === 0 && effectiveHours <= 24) {
-      effectiveHours = 168;
-      videos = await searchRecentVideos(finalQuery, effectiveHours);
-    }
-
-    const response = formatVideosForSMS(
-      videos.slice(0, MAX_RESULTS),
-      finalQuery,
-      effectiveHours
-    );
-    await context.sendChunkedSmsResponse(
+  if (STOP_KEYWORDS.has(lower)) {
+    stateMap.delete(context.from);
+    await context.sendSmsResponse(
       context.from,
-      response,
-      context.twilioClient,
-      1200
+      'Got it, ending the YouTube search.',
+      context.twilioClient
     );
+    await context.updateLastMessageDate(context.normalizedFrom);
+    return true;
+  }
+
+  if (GREETING_KEYWORDS.includes(lower)) {
+    stateMap.delete(context.from);
+    return false;
+  }
+
+  if (upper === 'AI DAILY' || upper.startsWith('AI DAILY ')) {
+    stateMap.delete(context.from);
+    return false;
+  }
+
+  if (upper === 'MORE' || upper === 'NEXT') {
+    return sendFromCacheOrFetch(context, stateMap, state);
+  }
+
+  if (upper === 'SKIP' || upper === 'NO' || upper === 'NONE') {
+    state.timestamp = Date.now();
+    state.offset = 0;
+    return fetchAndSend(context, stateMap, state, state.originalQuery, true);
+  }
+
+  if (upper.startsWith('NEW ')) {
+    const newTopic = trimmed.replace(/^new\s+/i, '').trim();
+    stateMap.delete(context.from);
+    return startSearch(context, stateMap, newTopic);
+  }
+
+  const quickHours = interpretTimeAdjustment(trimmed);
+  if (quickHours !== null) {
+    state.hours = quickHours;
+    state.timestamp = Date.now();
+    state.offset = 0;
+    return fetchAndSend(context, stateMap, state, state.originalQuery, true);
+  }
+
+  if (!looksLikeRefinement(trimmed)) {
+    stateMap.delete(context.from);
+    return false;
+  }
+
+  let finalQuery: string;
+  try {
+    finalQuery = await generateSearchQuery(state.originalQuery, trimmed);
+  } catch (error) {
+    console.error('YouTube query refinement failed:', error);
+    finalQuery = `${state.originalQuery} ${trimmed}`.trim();
+  }
+
+  state.originalQuery = finalQuery;
+  state.timestamp = Date.now();
+  state.offset = 0;
+  return fetchAndSend(context, stateMap, state, finalQuery, false);
+}
+
+async function fetchVideos(
+  query: string,
+  hours: number,
+  allowFallback: boolean
+): Promise<{ videos: YouTubeVideo[]; hoursUsed: number }> {
+  let videos = await searchRecentVideos(query, hours);
+  let hoursUsed = hours;
+
+  // If no results and fallback is allowed, try expanding to 7 days
+  if (videos.length === 0 && allowFallback && hours <= 24) {
+    console.log(`📺 No results in ${hours}h, expanding to 7 days`);
+    videos = await searchRecentVideos(query, 168);
+    hoursUsed = 168;
+  }
+
+  return { videos, hoursUsed };
+}
+
+async function sendFromCacheOrFetch(
+  context: CommandContext,
+  stateMap: Map<string, YouTubeSearchState>,
+  state: YouTubeSearchState
+): Promise<boolean> {
+  const { cachedResults, offset } = state;
+
+  if (cachedResults.length === 0) {
+    await context.sendSmsResponse(
+      context.from,
+      `No videos found for "${state.originalQuery}" in the last ${state.hours} hours. Try a different topic or time range.`,
+      context.twilioClient
+    );
+    stateMap.delete(context.from);
+    await context.updateLastMessageDate(context.normalizedFrom);
+    return true;
+  }
+
+  // Show next batch of MAX_RESULTS videos
+  const batch = cachedResults.slice(offset, offset + MAX_RESULTS);
+  const remaining = cachedResults.length - (offset + batch.length);
+
+  if (batch.length === 0) {
+    await context.sendSmsResponse(
+      context.from,
+      'No more results. Reply NEW [topic] to start a new search.',
+      context.twilioClient
+    );
+    stateMap.delete(context.from);
+    await context.updateLastMessageDate(context.normalizedFrom);
+    return true;
+  }
+
+  // Build message
+  let message = `📺 Fresh videos (last ${state.hours}h):\n\n`;
+
+  batch.forEach((video, idx) => {
+    message += `${offset + idx + 1}. [${video.timeAgo}] ${video.title}\n`;
+    message += `   📺 ${video.channel}\n`;
+    message += `   🔗 youtube.com/watch?v=${video.videoId}\n\n`;
+  });
+
+  if (remaining > 0) {
+    message += `Reply MORE for ${remaining} more result${remaining === 1 ? '' : 's'}.`;
+  } else {
+    message += `That's all! Reply NEW [topic] to search something else.`;
+  }
+
+  await context.sendSmsResponse(
+    context.from,
+    message.trim(),
+    context.twilioClient
+  );
+
+  // Update offset for next "MORE" request
+  state.offset = offset + batch.length;
+  state.timestamp = Date.now();
+  stateMap.set(context.from, state);
+
+  await context.updateLastMessageDate(context.normalizedFrom);
+  return true;
+}
+
+async function fetchAndSend(
+  context: CommandContext,
+  stateMap: Map<string, YouTubeSearchState>,
+  state: YouTubeSearchState,
+  query: string,
+  allowFallback: boolean
+): Promise<boolean> {
+  try {
+    const { videos, hoursUsed } = await fetchVideos(query, state.hours, allowFallback);
+    state.cachedResults = videos;
+    state.hours = hoursUsed;
+    state.offset = 0;
+    state.timestamp = Date.now();
+    stateMap.set(context.from, state);
+
+    return sendFromCacheOrFetch(context, stateMap, state);
   } catch (error) {
     console.error('YouTube search failed:', error);
     await context.sendSmsResponse(
@@ -151,12 +303,10 @@ async function continueSearch(
       '❌ YouTube search failed. Please try again later.',
       context.twilioClient
     );
-  } finally {
     stateMap.delete(context.from);
     await context.updateLastMessageDate(context.normalizedFrom);
+    return true;
   }
-
-  return true;
 }
 
 export const youtubeCommandHandler: CommandHandler = {
@@ -206,3 +356,72 @@ export const youtubeCommandHandler: CommandHandler = {
     return false;
   },
 };
+function interpretTimeAdjustment(userInput: string): number | null {
+  const lower = userInput.toLowerCase();
+
+  if (TIME_HINTS.some((pattern) => lower.includes(pattern))) {
+    return 3;
+  }
+
+  if (lower.includes('last hour') || lower.includes('past hour')) {
+    return 1;
+  }
+
+  if (lower.includes('last day') || lower.includes('past day') || lower.includes('24 hour')) {
+    return 24;
+  }
+
+  if (lower.includes('last week') || lower.includes('past week')) {
+    return 168;
+  }
+
+  if (lower.includes('48 hour')) {
+    return 48;
+  }
+
+  return null;
+}
+
+function isGreeting(text: string): boolean {
+  const lower = text.toLowerCase();
+  return GREETING_KEYWORDS.includes(lower);
+}
+
+function looksUnrelated(text: string): boolean {
+  const lower = text.toLowerCase();
+  if (isGreeting(lower)) {
+    return true;
+  }
+
+  if (lower.startsWith('ai ')) {
+    return true;
+  }
+
+  const unrelatedKeywords = [
+    'weather',
+    'temperature',
+    'surf',
+    'snow',
+    'crypto',
+    'stock',
+    'coach',
+    'slug',
+    'help',
+    'wtaf',
+    'index',
+  ];
+
+  return unrelatedKeywords.some((keyword) => lower.includes(keyword));
+}
+
+function looksLikeRefinement(text: string): boolean {
+  if (!text) {
+    return false;
+  }
+
+  if (looksUnrelated(text)) {
+    return false;
+  }
+
+  return true;
+}
