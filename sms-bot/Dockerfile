@@ -20,6 +20,9 @@ COPY package*.json ./
 # Install Node.js dependencies
 RUN npm install
 
+# Install Claude Code CLI globally (required by claude-agent-sdk)
+RUN npm install -g @anthropic-ai/claude-code
+
 # Copy the rest of the application
 COPY . .
 
