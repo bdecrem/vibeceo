@@ -37,6 +37,8 @@ import {
   formatVideosForSMS,
   cleanQuery,
 } from "../../agents/youtube-agent.js";
+import { commandHandlers } from "../../commands/index.js";
+import type { CommandContext } from "../../commands/types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1902,6 +1904,30 @@ export async function processIncomingSms(
       await updateLastMessageDate(normalizedPhoneNumber);
     }
 
+    const commandContext: CommandContext = {
+      from,
+      normalizedFrom: normalizedPhoneNumber,
+      message,
+      messageUpper,
+      twilioClient,
+      sendSmsResponse,
+      sendChunkedSmsResponse,
+      updateLastMessageDate,
+    };
+
+    for (const handler of commandHandlers) {
+      try {
+        if (handler.matches(commandContext)) {
+          const handled = await handler.handle(commandContext);
+          if (handled) {
+            return;
+          }
+        }
+      } catch (error) {
+        console.error(`Error in command handler ${handler.name}:`, error);
+      }
+    }
+
     const aiDailyNormalizedCommand = messageUpper
       .replace(/-/g, " ")
       .replace(/\s+/g, " ")
@@ -2037,6 +2063,9 @@ export async function processIncomingSms(
       }
     }
 
+    // ========================================
+    // CRYPTO RESEARCH HANDLER
+    // ========================================
     // ========================================
     // YOUTUBE SEARCH HANDLER
     // ========================================
@@ -2646,6 +2675,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       "AI DAILY STOP",
       "AI DAILY UNSUBSCRIBE",
       "LINKS",
+      "CRYPTO",
+      "CRYPTO RESEARCH",
     ];
     if (
       commandsThatEndConversation.includes(messageUpper) ||
@@ -2695,6 +2726,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
 
       helpText +=
         "\n\n📻 AI DAILY:\n• AI DAILY - Get today's episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes";
+
+      helpText +=
+        "\n\n💰 CRYPTO RESEARCH:\n• CRYPTO - Get BTC/ETH prices & market summary";
 
       // Check if user has coder role to show WTAF command
       const hasCoder =

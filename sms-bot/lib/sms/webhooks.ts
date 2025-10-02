@@ -88,8 +88,10 @@ export function setupTwilioWebhooks(app: Application): void {
         messages: {
           create: async (params: any) => {
             // For dev webhook, always just capture the response (no real SMS)
-            console.log(`🧪 DEV: Captured response: ${params.body.substring(0, 100)}...`);
-            devResponses.push(params.body);
+          console.log('🧪 DEV RESPONSE START');
+          console.log(params.body);
+          console.log('🧪 DEV RESPONSE END');
+          devResponses.push(params.body);
             return {
               sid: `DEV${Date.now()}`,
               to: params.to,
