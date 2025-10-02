@@ -29,14 +29,6 @@ import {
   getAiDailyShortLink,
 } from "./ai-daily.js";
 import { handleStockAgent } from "./stock-agent.js";
-import {
-  getFollowupQuestion,
-  generateSearchQuery,
-  searchRecentVideos,
-  parseTimeFromInput,
-  formatVideosForSMS,
-  cleanQuery,
-} from "../../agents/youtube-agent.js";
 import { commandHandlers } from "../../commands/index.js";
 import type { CommandContext } from "../../commands/types.js";
 
@@ -1913,6 +1905,9 @@ export async function processIncomingSms(
       sendSmsResponse,
       sendChunkedSmsResponse,
       updateLastMessageDate,
+      commandHelpers: {
+        youtubeSearchStates,
+      },
     };
 
     for (const handler of commandHandlers) {
@@ -2070,105 +2065,6 @@ export async function processIncomingSms(
     // YOUTUBE SEARCH HANDLER
     // ========================================
     // Check if user is in YouTube search flow
-    const ytState = youtubeSearchStates.get(from);
-    if (ytState) {
-      try {
-        console.log(`📺 Continuing YouTube search for ${from}`);
-
-        // User is responding to follow-up question
-        const userResponse = message.trim();
-
-        let finalQuery: string;
-        // If user skips or gives non-substantive response, use cleaned topic only
-        if (!userResponse || ['skip', 'no', 'none'].includes(userResponse.toLowerCase())) {
-          finalQuery = cleanQuery(ytState.originalQuery);
-        } else {
-          // Use Claude to generate optimized search query
-          console.log(`📺 Generating search query from: "${ytState.originalQuery}" + "${userResponse}"`);
-          finalQuery = await generateSearchQuery(ytState.originalQuery, userResponse);
-        }
-
-        console.log(`📺 Final search query: "${finalQuery}"`);
-
-        // Search videos
-        let videos = await searchRecentVideos(finalQuery, ytState.hours);
-
-        // If no results and time range is 24 hours or less, try 7 days
-        if (videos.length === 0 && ytState.hours <= 24) {
-          console.log(`📺 No results in ${ytState.hours}h, expanding to 7 days`);
-          videos = await searchRecentVideos(finalQuery, 168); // 7 days
-          const response = formatVideosForSMS(videos, finalQuery, 168);
-          await sendSmsResponse(from, response, twilioClient);
-        } else {
-          const response = formatVideosForSMS(videos, finalQuery, ytState.hours);
-          await sendSmsResponse(from, response, twilioClient);
-        }
-
-        // Clear state
-        youtubeSearchStates.delete(from);
-
-        await updateLastMessageDate(normalizedPhoneNumber);
-        return;
-      } catch (error) {
-        console.error(`Error in YouTube search: ${error}`);
-        await sendSmsResponse(
-          from,
-          '❌ YouTube search failed. Please try again later.',
-          twilioClient
-        );
-        youtubeSearchStates.delete(from);
-        await updateLastMessageDate(normalizedPhoneNumber);
-        return;
-      }
-    }
-
-    // Check if user is starting a YouTube search
-    if (message.match(/^YT\s+/i)) {
-      try {
-        const query = message.replace(/^YT\s+/i, '').trim();
-
-        if (!query) {
-          await sendSmsResponse(
-            from,
-            'Usage: YT [topic]\nExample: YT bitcoin trading',
-            twilioClient
-          );
-          await updateLastMessageDate(normalizedPhoneNumber);
-          return;
-        }
-
-        console.log(`📺 Starting YouTube search for ${from}: ${query}`);
-
-        // Parse time from query
-        const hours = parseTimeFromInput(query);
-
-        // Get follow-up question
-        const followup = await getFollowupQuestion(query);
-
-        // Store state
-        youtubeSearchStates.set(from, {
-          originalQuery: query,
-          hours,
-          timestamp: new Date(),
-        });
-
-        // Send follow-up question
-        await sendSmsResponse(from, `🤔 ${followup}`, twilioClient);
-
-        await updateLastMessageDate(normalizedPhoneNumber);
-        return;
-      } catch (error) {
-        console.error(`Error starting YouTube search: ${error}`);
-        await sendSmsResponse(
-          from,
-          '❌ YouTube search failed. Please try again later.',
-          twilioClient
-        );
-        await updateLastMessageDate(normalizedPhoneNumber);
-        return;
-      }
-    }
-
     // ========================================
     // STOCK AGENT COMMAND DETECTION (HIGH PRIORITY)
     // ========================================
