@@ -1,10 +1,31 @@
-# Claude Code Rules for WEBTOYS (formerly WTAF.me)
+# Claude Code Rules for B52s.me
+
+## 🎯 Current Focus (As of October 2, 2025)
+
+**B52s.me** is our new brand/product - a personal agent assistant over SMS. It builds on our Webtoys and sms-bot infrastructure:
+
+- **What it is**: SMS-based AI agent/assistant platform
+- **Landing page**: `web/app/b52s-landing` or similar in `web/app/`
+- **Infrastructure**: Uses the sms-bot listener and Webtoys platform
+- **Key difference**: Focuses on being a personal assistant (agents, automation, information retrieval) rather than creating apps/websites
+- **Agent architecture**: See `sms-bot/documentation/AGENT-PIPELINE.md` for detailed agent patterns
+
+### Products in This Codebase
+
+1. **B52s.me** (Current focus) - Personal SMS agent assistant
+2. **WEBTOYS** (formerly WTAF.me) - "Vibecoding over SMS" for creating web content
 
 ## Project Context
 
-**WEBTOYS** (formerly WTAF.me) is a "vibecoding over SMS" system that enables users to create web content via text messages:
-
 ### What We Build
+
+**B52s.me capabilities:**
+- **AI Agents**: Crypto research, YouTube search, stock tracking, daily insights
+- **Personal Assistant**: Information retrieval, task automation over SMS
+- **Conversational AI**: Multi-turn conversations with specialized coach personalities
+- **Daily Reports**: Automated daily briefings (crypto, AI news, etc.)
+
+**Webtoys capabilities (still supported):**
 - **Web Pages**: Simple HTML pages with embedded CSS
 - **Apps**: Including CRUD apps (multi-user capable, called ZAD apps)
 - **Games**: Simple arcade-style games
@@ -28,7 +49,8 @@ Our CRUD/social apps feature:
 
 ### Website Structure
 - **Main Site**: AdvisorsFoundry (parent directory)
-- **WEBTOYS.ai Website** (as of August 6, 2025): 
+- **B52s.me Landing**: `/web/app/` (simple landing page for the B52s brand)
+- **WEBTOYS.ai Website**:
   - **Important**: "The website" refers to the Webtoys.ai website specifically, NOT everything in the web/ folder
   - **Homepage**: `/web/wtaf-landing`
   - **Gallery Pages**:
@@ -39,13 +61,40 @@ Our CRUD/social apps feature:
 
 ## Project Architecture Overview
 
+### SMS Bot Architecture
 The SMS bot follows a microservices architecture with strict separation of concerns:
 - **Controller (controller.ts)**: Business logic orchestration, request routing
 - **Processors**: Specialized handlers for different content types
 - **Managers**: Domain-specific functionality (storage, social, stackables)
 - **Shared utilities**: Common functions and configurations
 
-**📚 For detailed technical documentation on the classifier and routing system, see: `sms-bot/engine/CLAUDE.md`**
+**📚 For detailed technical documentation:**
+- **Engine/Routing**: `sms-bot/engine/CLAUDE.md`
+- **Agent Pipeline**: `sms-bot/documentation/AGENT-PIPELINE.md` (READ THIS for all agent work)
+
+### Agent Architecture (B52s.me Focus)
+
+**Two types of agents:**
+
+1. **Autonomous Agents** (using claude-agent-sdk):
+   - Example: Crypto research agent (`sms-bot/agents/crypto-research/`)
+   - Fully autonomous - you give high-level goal, agent figures out steps
+   - Uses tools: WebSearch, Write, Read, Bash
+   - Requires: Python 3.10+, claude-agent-sdk, Claude Code CLI, CLAUDE_CODE_OAUTH_TOKEN
+   - Pattern documented in `sms-bot/documentation/AGENT-PIPELINE.md`
+
+2. **Scripted Workflow Agents** (traditional code):
+   - Example: YouTube search agent (`sms-bot/agents/youtube-agent.ts`)
+   - Hardcoded workflow with AI for specific sub-tasks
+   - Uses Claude API for text generation only (questions, query optimization)
+   - Simpler, lower cost, more predictable
+
+**Shared Infrastructure:**
+- **Commands**: All agent commands in `sms-bot/commands/` (auto-dispatched)
+- **Subscriptions**: `agent_subscriptions` table (via `lib/agent-subscriptions.ts`)
+- **Reports**: Supabase storage + metadata (`agents/report-storage.ts`)
+- **Scheduler**: Shared daily job system (`lib/scheduler/index.ts`)
+- **Broadcasting**: SMS delivery to subscribers with rate limiting
 
 ## Strict Rules for Code Agents
 
