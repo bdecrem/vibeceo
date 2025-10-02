@@ -1147,11 +1147,21 @@ interface YouTubeSearchState {
 
 const youtubeSearchStates = new Map<string, YouTubeSearchState>();
 
+// YouTube Agent SDK state (new simplified version)
+interface YouTubeAgentState {
+  videos: any[];
+  originalQuery: string;
+  offset: number;
+  timestamp: number;
+}
+const youtubeAgentStates = new Map<string, YouTubeAgentState>();
+
 // Clear conversation state
 function endConversation(phoneNumber: string) {
   console.log(`Ending conversation for ${phoneNumber}`);
   activeConversations.delete(phoneNumber);
   youtubeSearchStates.delete(phoneNumber);
+  youtubeAgentStates.delete(phoneNumber);
 }
 
 // Check if user is in active conversation
@@ -1907,6 +1917,7 @@ export async function processIncomingSms(
       updateLastMessageDate,
       commandHelpers: {
         youtubeSearchStates,
+        youtubeAgentStates,
       },
     };
 
