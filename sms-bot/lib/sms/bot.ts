@@ -1,16 +1,15 @@
 import express from "express";
 import bodyParser from "body-parser";
-import twilio from "twilio";
 import { setupTwilioWebhooks, setupWhatsAppWebhooks } from "./webhooks.js";
 import { setupSupabaseWebhooks } from "./supabase-webhooks.js";
 import { setupEmailWebhooks } from "./email-webhooks.js";
 import { initializeMessageHandlers } from "./handlers.js";
-import { SMS_CONFIG } from "./config.js";
-import { startDailyScheduler } from "./scheduler.js";
-import { startAiDailyScheduler } from "./ai-daily-scheduler.js";
+import { registerAiDailyJob } from "./ai-daily-scheduler.js";
 import { initializeTwilioClient } from "./webhooks.js";
 import { initializeAI } from "./ai.js";
 import { initializeScheduler } from "./stock-scheduler.js";
+import { startScheduler } from "../scheduler/index.js";
+import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 
 // Express server for webhook handling
 let server: express.Application | null = null;
@@ -35,12 +34,13 @@ export async function startSmsBot(): Promise<void> {
   // Initialize Twilio client
   const twilioClient = initializeTwilioClient();
 
-  // COMMENTED OUT: Start the daily scheduler
-  // await startDailyScheduler(twilioClient);
-  startAiDailyScheduler(twilioClient);
+  registerAiDailyJob(twilioClient);
+  registerCryptoDailyJob(twilioClient);
 
   // Initialize stock scheduler service
   await initializeScheduler();
+
+  startScheduler();
 
   // Setup Twilio webhooks
   setupTwilioWebhooks(server);

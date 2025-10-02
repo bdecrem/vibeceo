@@ -16,6 +16,8 @@
 		"scripts/**/*",
 		"test-scripts/**/*",
 		"engine/**/*",
+		"commands/**/*",
+		"agents/**/*",
 		"test-wtaf-production.ts"
 	],
 	"exclude": ["node_modules", "scripts/archives"]
