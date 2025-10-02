@@ -28,7 +28,7 @@ RUN npm run build
 
 # Install Python dependencies from requirements.txt
 COPY requirements.txt ./
-RUN pip3 install -r requirements.txt
+RUN pip3 install --break-system-packages -r requirements.txt
 
 # Make startup script executable
 RUN chmod +x start-production-typescript.sh
