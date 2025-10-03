@@ -88,6 +88,7 @@ Simply text the SMS bot with natural language queries like:
 - "send me my portfolio every morning at 8am"
 - "stop sending me apple updates"
 - "help" or "what can you do with stocks?"
+- "$ verizon" or "$ ford" — ticker lookup works even when you only remember the company name
 
 ### For Developers
 

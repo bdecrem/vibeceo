@@ -24,6 +24,64 @@ import {
 // Types for stock agent (re-exported from stock-api)
 export type { StockData } from "./stock-api.js";
 
+const COMPANY_LOOKUP: Record<string, { symbol: string; name: string }> = {
+  apple: { symbol: "AAPL", name: "Apple" },
+  microsoft: { symbol: "MSFT", name: "Microsoft" },
+  google: { symbol: "GOOGL", name: "Google" },
+  alphabet: { symbol: "GOOGL", name: "Alphabet" },
+  amazon: { symbol: "AMZN", name: "Amazon" },
+  tesla: { symbol: "TSLA", name: "Tesla" },
+  meta: { symbol: "META", name: "Meta" },
+  facebook: { symbol: "META", name: "Meta" },
+  netflix: { symbol: "NFLX", name: "Netflix" },
+  nvidia: { symbol: "NVDA", name: "NVIDIA" },
+  intel: { symbol: "INTC", name: "Intel" },
+  amd: { symbol: "AMD", name: "AMD" },
+  disney: { symbol: "DIS", name: "Disney" },
+  "coca cola": { symbol: "KO", name: "Coca-Cola" },
+  coke: { symbol: "KO", name: "Coca-Cola" },
+  pepsi: { symbol: "PEP", name: "PepsiCo" },
+  mcdonalds: { symbol: "MCD", name: "McDonald's" },
+  starbucks: { symbol: "SBUX", name: "Starbucks" },
+  walmart: { symbol: "WMT", name: "Walmart" },
+  target: { symbol: "TGT", name: "Target" },
+  nike: { symbol: "NKE", name: "Nike" },
+  uber: { symbol: "UBER", name: "Uber" },
+  lyft: { symbol: "LYFT", name: "Lyft" },
+  airbnb: { symbol: "ABNB", name: "Airbnb" },
+  spotify: { symbol: "SPOT", name: "Spotify" },
+  twitter: { symbol: "TWTR", name: "Twitter" },
+  x: { symbol: "TWTR", name: "X (Twitter)" },
+  snapchat: { symbol: "SNAP", name: "Snapchat" },
+  snap: { symbol: "SNAP", name: "Snap" },
+  zoom: { symbol: "ZM", name: "Zoom" },
+  salesforce: { symbol: "CRM", name: "Salesforce" },
+  oracle: { symbol: "ORCL", name: "Oracle" },
+  ibm: { symbol: "IBM", name: "IBM" },
+  "general electric": { symbol: "GE", name: "General Electric" },
+  ge: { symbol: "GE", name: "General Electric" },
+  boeing: { symbol: "BA", name: "Boeing" },
+  ford: { symbol: "F", name: "Ford" },
+  "general motors": { symbol: "GM", name: "General Motors" },
+  gm: { symbol: "GM", name: "General Motors" },
+  verizon: { symbol: "VZ", name: "Verizon" },
+  "at&t": { symbol: "T", name: "AT&T" },
+  att: { symbol: "T", name: "AT&T" },
+  "t-mobile": { symbol: "TMUS", name: "T-Mobile" },
+  tmobile: { symbol: "TMUS", name: "T-Mobile" },
+  comcast: { symbol: "CMCSA", name: "Comcast" },
+  visa: { symbol: "V", name: "Visa" },
+  mastercard: { symbol: "MA", name: "Mastercard" },
+  jpmorgan: { symbol: "JPM", name: "JPMorgan Chase" },
+  "jp morgan": { symbol: "JPM", name: "JPMorgan Chase" },
+  "bank of america": { symbol: "BAC", name: "Bank of America" },
+  bofa: { symbol: "BAC", name: "Bank of America" },
+  wells: { symbol: "WFC", name: "Wells Fargo" },
+  "wells fargo": { symbol: "WFC", name: "Wells Fargo" },
+  goldman: { symbol: "GS", name: "Goldman Sachs" },
+  "goldman sachs": { symbol: "GS", name: "Goldman Sachs" },
+};
+
 /**
  * Parse delete schedule commands from natural language
  */
@@ -445,6 +503,38 @@ function extractStockSymbolFromMessage(message: string): string | null {
   return null;
 }
 
+function lookupCompanyInMessage(
+  message: string
+): { symbol: string; name: string } | null {
+  const lowerMessage = message.toLowerCase();
+
+  for (const [companyName, data] of Object.entries(COMPANY_LOOKUP)) {
+    if (lowerMessage.includes(companyName)) {
+      return data;
+    }
+  }
+
+  return null;
+}
+
+function normalizePotentialTicker(text: string): string | null {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const cleaned = trimmed.replace(/[^A-Za-z0-9^]/g, "").toUpperCase();
+  if (!cleaned) {
+    return null;
+  }
+
+  if (/^\^?[A-Z]{1,5}$/.test(cleaned)) {
+    return cleaned;
+  }
+
+  return null;
+}
+
 /**
  * Detect natural language stock queries and extract company/symbol
  */
@@ -646,6 +736,7 @@ function detectNaturalStockQuery(
     "amzn",
     "meta",
     "nvda",
+    ...Object.keys(COMPANY_LOOKUP),
   ];
 
   const hasStockKeyword = stockKeywords.some((keyword) =>
@@ -661,7 +752,43 @@ function detectNaturalStockQuery(
     return { symbol: ticker, companyName: ticker, commandType: "price" };
   }
 
-  if (!hasStockPhrase && !hasStockKeyword) return null;
+  const looseDollarMatch = message.match(/^\$\s*(.+)$/);
+  if (looseDollarMatch) {
+    const rawInput = looseDollarMatch[1].trim();
+
+    if (rawInput) {
+      const normalizedTicker = normalizePotentialTicker(rawInput);
+      if (normalizedTicker) {
+        return {
+          symbol: normalizedTicker,
+          companyName: normalizedTicker,
+          commandType: "price",
+        };
+      }
+
+      const companyResult = lookupCompanyInMessage(rawInput);
+      if (companyResult) {
+        return {
+          symbol: companyResult.symbol,
+          companyName: companyResult.name,
+          commandType: "price",
+        };
+      }
+    }
+  }
+
+  if (!hasStockPhrase && !hasStockKeyword) {
+    const companyResult = lookupCompanyInMessage(message);
+    if (companyResult) {
+      return {
+        symbol: companyResult.symbol,
+        companyName: companyResult.name,
+        commandType: "price",
+      };
+    }
+
+    return null;
+  }
 
   // Determine command type based on phrases
   let commandType = "price"; // default
@@ -808,70 +935,13 @@ function detectNaturalStockQuery(
     commandType = "help";
   }
 
-  // Company name to symbol mapping
-  const companyMap: { [key: string]: { symbol: string; name: string } } = {
-    apple: { symbol: "AAPL", name: "Apple" },
-    microsoft: { symbol: "MSFT", name: "Microsoft" },
-    google: { symbol: "GOOGL", name: "Google" },
-    alphabet: { symbol: "GOOGL", name: "Alphabet" },
-    amazon: { symbol: "AMZN", name: "Amazon" },
-    tesla: { symbol: "TSLA", name: "Tesla" },
-    meta: { symbol: "META", name: "Meta" },
-    facebook: { symbol: "META", name: "Meta" },
-    netflix: { symbol: "NFLX", name: "Netflix" },
-    nvidia: { symbol: "NVDA", name: "NVIDIA" },
-    intel: { symbol: "INTC", name: "Intel" },
-    amd: { symbol: "AMD", name: "AMD" },
-    disney: { symbol: "DIS", name: "Disney" },
-    "coca cola": { symbol: "KO", name: "Coca-Cola" },
-    coke: { symbol: "KO", name: "Coca-Cola" },
-    pepsi: { symbol: "PEP", name: "PepsiCo" },
-    mcdonalds: { symbol: "MCD", name: "McDonald's" },
-    starbucks: { symbol: "SBUX", name: "Starbucks" },
-    walmart: { symbol: "WMT", name: "Walmart" },
-    target: { symbol: "TGT", name: "Target" },
-    nike: { symbol: "NKE", name: "Nike" },
-    uber: { symbol: "UBER", name: "Uber" },
-    lyft: { symbol: "LYFT", name: "Lyft" },
-    airbnb: { symbol: "ABNB", name: "Airbnb" },
-    spotify: { symbol: "SPOT", name: "Spotify" },
-    twitter: { symbol: "TWTR", name: "Twitter" },
-    x: { symbol: "TWTR", name: "X (Twitter)" },
-    snapchat: { symbol: "SNAP", name: "Snapchat" },
-    snap: { symbol: "SNAP", name: "Snap" },
-    zoom: { symbol: "ZM", name: "Zoom" },
-    salesforce: { symbol: "CRM", name: "Salesforce" },
-    oracle: { symbol: "ORCL", name: "Oracle" },
-    ibm: { symbol: "IBM", name: "IBM" },
-    "general electric": { symbol: "GE", name: "General Electric" },
-    ge: { symbol: "GE", name: "General Electric" },
-    boeing: { symbol: "BA", name: "Boeing" },
-    ford: { symbol: "F", name: "Ford" },
-    "general motors": { symbol: "GM", name: "General Motors" },
-    gm: { symbol: "GM", name: "General Motors" },
-    verizon: { symbol: "VZ", name: "Verizon" },
-    "at&t": { symbol: "T", name: "AT&T" },
-    att: { symbol: "T", name: "AT&T" },
-    "t-mobile": { symbol: "TMUS", name: "T-Mobile" },
-    tmobile: { symbol: "TMUS", name: "T-Mobile" },
-    comcast: { symbol: "CMCSA", name: "Comcast" },
-    visa: { symbol: "V", name: "Visa" },
-    mastercard: { symbol: "MA", name: "Mastercard" },
-    jpmorgan: { symbol: "JPM", name: "JPMorgan Chase" },
-    "jp morgan": { symbol: "JPM", name: "JPMorgan Chase" },
-    "bank of america": { symbol: "BAC", name: "Bank of America" },
-    bofa: { symbol: "BAC", name: "Bank of America" },
-    wells: { symbol: "WFC", name: "Wells Fargo" },
-    "wells fargo": { symbol: "WFC", name: "Wells Fargo" },
-    goldman: { symbol: "GS", name: "Goldman Sachs" },
-    "goldman sachs": { symbol: "GS", name: "Goldman Sachs" },
-  };
-
-  // Look for company names in the message first (fallback)
-  for (const [companyName, data] of Object.entries(companyMap)) {
-    if (lowerMessage.includes(companyName)) {
-      return { symbol: data.symbol, companyName: data.name, commandType };
-    }
+  const companyLookupResult = lookupCompanyInMessage(message);
+  if (companyLookupResult) {
+    return {
+      symbol: companyLookupResult.symbol,
+      companyName: companyLookupResult.name,
+      commandType,
+    };
   }
 
   // Handle commands without specific companies (like "show my portfolio")

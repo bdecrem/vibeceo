@@ -10,6 +10,7 @@ import { initializeAI } from "./ai.js";
 import { initializeScheduler } from "./stock-scheduler.js";
 import { startScheduler } from "../scheduler/index.js";
 import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
+import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 
 // Express server for webhook handling
 let server: express.Application | null = null;
@@ -36,6 +37,7 @@ export async function startSmsBot(): Promise<void> {
 
   registerAiDailyJob(twilioClient);
   registerCryptoDailyJob(twilioClient);
+  registerPeerReviewJob(twilioClient);
 
   // Initialize stock scheduler service
   await initializeScheduler();
