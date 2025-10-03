@@ -11,6 +11,10 @@ interface AgentSubscriptionRow {
   last_sent_at: string | null;
 }
 
+export interface AgentSubscriber extends SMSSubscriber {
+  last_sent_at: string | null;
+}
+
 type SubscribeResult = 'subscribed' | 'reactivated' | 'already' | 'missing_subscriber' | 'error';
 type UnsubscribeResult = 'unsubscribed' | 'not_subscribed' | 'missing_subscriber' | 'error';
 
@@ -154,10 +158,10 @@ export async function markAgentReportSent(
 
 export async function getAgentSubscribers(
   agentSlug: string
-): Promise<SMSSubscriber[]> {
+): Promise<AgentSubscriber[]> {
   const { data, error } = await supabase
     .from('agent_subscriptions')
-    .select('subscriber_id')
+    .select('subscriber_id, last_sent_at')
     .eq('agent_slug', agentSlug)
     .eq('active', true);
 
@@ -166,7 +170,9 @@ export async function getAgentSubscribers(
     return [];
   }
 
-  const ids = (data || []).map((row) => row.subscriber_id);
+  const rows = (data || []) as Array<{ subscriber_id: string; last_sent_at: string | null }>;
+  const ids = rows.map((row) => row.subscriber_id);
+
   if (ids.length === 0) {
     return [];
   }
@@ -183,5 +189,25 @@ export async function getAgentSubscribers(
     return [];
   }
 
-  return (subscribers as SMSSubscriber[]) || [];
+  const subscriberMap = new Map<string, SMSSubscriber>();
+  for (const subscriber of subscribers as SMSSubscriber[] | null | undefined) {
+    if (subscriber?.id) {
+      subscriberMap.set(subscriber.id, subscriber);
+    }
+  }
+
+  const merged: AgentSubscriber[] = [];
+  for (const row of rows) {
+    const subscriber = subscriberMap.get(row.subscriber_id);
+    if (!subscriber) {
+      continue;
+    }
+
+    merged.push({
+      ...subscriber,
+      last_sent_at: row.last_sent_at ?? null,
+    });
+  }
+
+  return merged;
 }

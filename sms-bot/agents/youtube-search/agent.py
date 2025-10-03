@@ -25,73 +25,67 @@ async def search_youtube(user_query: str, hours: int = 48) -> dict:
         }
     """
 
+    # Create a temporary file for the agent to write to
+    import tempfile
+    temp_dir = Path(tempfile.gettempdir())
+    output_file = temp_dir / f"yt_search_{int(asyncio.get_event_loop().time() * 1000)}.json"
+
     options = ClaudeAgentOptions(
         permission_mode='acceptEdits',
-        allowed_tools=['WebSearch'],
-        cwd=str(Path.cwd())
+        allowed_tools=['WebSearch', 'Write'],
+        cwd=str(temp_dir)
     )
 
-    prompt = f"""You are a YouTube search assistant. Your job is to find recent videos and suggest a follow-up question.
+    prompt = f"""Execute these steps EXACTLY in order:
 
-USER QUERY: "{user_query}"
-TIME RANGE: Last {hours} hours
+1. Use WebSearch ONCE with query: "site:youtube.com {user_query} after:2024"
+2. From search results, extract up to 10 YouTube videos with:
+   - Video title
+   - Channel name
+   - Time posted (e.g., "2 hours ago" → "2h ago")
+   - Video ID from the URL (part after "watch?v=")
+3. Generate ONE follow-up question (e.g., "Want tutorials, news, or analysis?")
+4. Use Write tool to save JSON to: {output_file}
 
-TASK:
-1. Use WebSearch to search YouTube for videos matching the query
-2. Focus on videos from the last {hours} hours (look for "hours ago", "days ago" in results)
-3. Extract up to 10 videos with: title, channel name, time posted (e.g. "2h ago"), and video ID
-4. Generate ONE smart follow-up question to help refine the search (e.g. "Want tutorials, news, or reviews?")
-
-IMPORTANT:
-- Video IDs are the part after "watch?v=" in YouTube URLs
-- Extract exact time posted from search results (e.g. "3 hours ago" → "3h ago")
-- Be concise - extract data, don't explain
-
-OUTPUT FORMAT (return ONLY this JSON, nothing else):
+JSON format:
 {{
     "videos": [
-        {{"title": "Video Title", "channel": "Channel Name", "age": "2h ago", "videoId": "abc123xyz"}},
+        {{"title": "Video Title", "channel": "Channel Name", "age": "2h ago", "videoId": "abc123"}},
         ...
     ],
-    "followup": "One follow-up question here?",
-    "query_used": "the search query you actually used"
+    "followup": "Your follow-up question?",
+    "query_used": "site:youtube.com {user_query} after:2024"
 }}
 
-Start searching now. Return ONLY the JSON output."""
+DO NOT search multiple times. One search, extract data, write file, done."""
 
-    collected_text = []
-
+    # Run the agent (it will write to the file)
     async for message in query(prompt=prompt, options=options):
-        # Collect all text output from the agent
-        if hasattr(message, 'type'):
-            if message.type == 'text' and hasattr(message, 'text'):
-                collected_text.append(message.text)
+        # Debug output to stderr
+        if hasattr(message, 'text'):
+            print(f"AGENT TEXT: {message.text[:100]}...", file=sys.stderr)
+        if hasattr(message, 'tool_use'):
+            print(f"TOOL USE: {getattr(message, 'tool_use', 'unknown')}", file=sys.stderr)
 
-    # Find JSON in the collected output
-    full_output = '\n'.join(collected_text)
+    # Read the results from the file the agent created
+    if output_file.exists():
+        try:
+            with open(output_file, 'r') as f:
+                data = json.load(f)
+            # Clean up temp file
+            output_file.unlink()
+            return data
+        except (json.JSONDecodeError, Exception) as e:
+            print(f"DEBUG: Error reading output file: {e}", file=sys.stderr)
+            if output_file.exists():
+                output_file.unlink()
 
-    # Try to extract JSON from output
-    try:
-        # Look for JSON object in the text
-        start = full_output.find('{')
-        end = full_output.rfind('}') + 1
-
-        if start >= 0 and end > start:
-            json_str = full_output[start:end]
-            data = json.loads(json_str)
-
-            # Validate structure
-            if 'videos' in data and isinstance(data['videos'], list):
-                return data
-    except json.JSONDecodeError:
-        pass
-
-    # Fallback if no valid JSON found
+    # Fallback if no file was created
     return {
         "videos": [],
         "followup": "",
         "query_used": user_query,
-        "error": "Could not parse agent output"
+        "error": "Agent did not create output file"
     }
 
 

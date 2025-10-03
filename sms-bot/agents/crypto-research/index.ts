@@ -9,7 +9,11 @@ import {
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
-import { getAgentSubscribers, markAgentReportSent } from '../../lib/agent-subscriptions.js';
+import {
+  getAgentSubscribers,
+  markAgentReportSent,
+  type AgentSubscriber,
+} from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 
 interface AgentRunResult {
@@ -303,6 +307,7 @@ async function resolveLink(publicUrl: string | null | undefined, recipient: stri
 }
 
 const BROADCAST_DELAY_MS = Number(process.env.CRYPTO_BROADCAST_DELAY_MS || 150);
+const AUTOMATED_DEDUP_WINDOW_MS = 20 * 60 * 60 * 1000; // 20 hours
 
 async function broadcastCryptoReport(
   metadata: StoredReportMetadata,
@@ -316,10 +321,22 @@ async function broadcastCryptoReport(
       return;
     }
 
-    console.log(`Crypto broadcast: sending to ${subscribers.length} subscriber(s).`);
+    const now = Date.now();
+    let skipped = 0;
+    let sent = 0;
+
+    console.log(`Crypto broadcast: evaluating ${subscribers.length} subscriber(s).`);
 
     for (const subscriber of subscribers) {
       try {
+        if (shouldSkipAutomatedDelivery(subscriber, now)) {
+          skipped += 1;
+          console.log(
+            `Crypto broadcast: skipping ${subscriber.phone_number} (last sent at ${subscriber.last_sent_at ?? 'never'})`
+          );
+          continue;
+        }
+
         const message = await buildCryptoReportMessage(
           metadata.summary,
           metadata.date,
@@ -334,6 +351,7 @@ async function broadcastCryptoReport(
         });
 
         await markAgentReportSent(subscriber.phone_number, CRYPTO_AGENT_SLUG);
+        sent += 1;
 
         if (BROADCAST_DELAY_MS > 0) {
           await new Promise((resolve) => setTimeout(resolve, BROADCAST_DELAY_MS));
@@ -345,7 +363,24 @@ async function broadcastCryptoReport(
         );
       }
     }
+
+    console.log(
+      `Crypto broadcast: sent to ${sent} subscriber(s), skipped ${skipped} due to dedupe window.`
+    );
   } catch (error) {
     console.error('Crypto broadcast failed:', error);
   }
+}
+
+function shouldSkipAutomatedDelivery(subscriber: AgentSubscriber, now: number): boolean {
+  if (!subscriber.last_sent_at) {
+    return false;
+  }
+
+  const lastSent = Date.parse(subscriber.last_sent_at);
+  if (Number.isNaN(lastSent)) {
+    return false;
+  }
+
+  return now - lastSent < AUTOMATED_DEDUP_WINDOW_MS;
 }
