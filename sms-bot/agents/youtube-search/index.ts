@@ -26,8 +26,8 @@ const AGENT_SCRIPT = path.join(
   'youtube-search',
   'agent.py'
 );
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
-const DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python3.11';
+const DEFAULT_TIMEOUT_MS = 90000; // 90 seconds (agents can be slow)
 
 /**
  * Search YouTube using autonomous agent
@@ -56,21 +56,32 @@ export async function searchYouTubeWithAgent(
     subprocess.stderr.setEncoding('utf-8');
     subprocess.stderr.on('data', (chunk) => {
       stderr += chunk;
+      // Log stderr in real-time for debugging
+      console.error(`[YouTube Agent stderr]: ${chunk}`);
     });
 
     // Timeout handler
     const timeout = setTimeout(() => {
       subprocess.kill();
-      reject(new Error(`YouTube agent timed out after ${DEFAULT_TIMEOUT_MS}ms`));
+      const errorMsg = stderr
+        ? `YouTube agent timed out after ${DEFAULT_TIMEOUT_MS}ms. Last error: ${stderr.substring(0, 200)}`
+        : `YouTube agent timed out after ${DEFAULT_TIMEOUT_MS}ms`;
+      reject(new Error(errorMsg));
     }, DEFAULT_TIMEOUT_MS);
 
     subprocess.on('error', (error) => {
       clearTimeout(timeout);
+      console.error('[YouTube Agent] Process error:', error);
       reject(error);
     });
 
     subprocess.on('close', (exitCode) => {
       clearTimeout(timeout);
+
+      // Log what we got for debugging
+      if (stderr) {
+        console.error(`[YouTube Agent] stderr: ${stderr}`);
+      }
 
       if (exitCode !== 0 && exitCode !== 1) {
         reject(

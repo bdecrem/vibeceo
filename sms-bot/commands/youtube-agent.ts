@@ -80,7 +80,14 @@ async function startNewSearch(
   try {
     console.log(`📺 YouTube agent searching for: "${trimmed}"`);
 
-    // Call autonomous agent
+    // Send immediate response so user knows we're working
+    await context.sendSmsResponse(
+      context.from,
+      '🔍 Searching YouTube, one moment...',
+      context.twilioClient
+    );
+
+    // Call autonomous agent (may take 10-30 seconds)
     const result = await searchYouTubeWithAgent(trimmed);
 
     if (result.error) {
