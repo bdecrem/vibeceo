@@ -46,8 +46,12 @@ async function handleReport(context: CommandContext): Promise<boolean> {
     const message = await buildCryptoReportMessage(
       latest.summary,
       latest.date,
-      latest.publicUrl,
-      context.normalizedFrom
+      latest.reportShortLink ?? latest.publicUrl,
+      context.normalizedFrom,
+      {
+        podcastLink:
+          latest.podcast?.shortLink ?? latest.podcast?.audioUrl ?? null,
+      }
     );
 
     await sendSmsResponse(from, message, twilioClient);
@@ -85,12 +89,16 @@ async function handleRun(context: CommandContext): Promise<boolean> {
   );
 
   try {
-    const metadata = await runAndStoreCryptoReport();
+    const metadata = await runAndStoreCryptoReport({ forcePodcast: true });
     const message = await buildCryptoReportMessage(
       metadata.summary,
       metadata.date,
-      metadata.publicUrl,
-      context.normalizedFrom
+      metadata.reportShortLink ?? metadata.publicUrl,
+      context.normalizedFrom,
+      {
+        podcastLink:
+          metadata.podcast?.shortLink ?? metadata.podcast?.audioUrl ?? null,
+      }
     );
 
     await sendSmsResponse(from, message, twilioClient);
