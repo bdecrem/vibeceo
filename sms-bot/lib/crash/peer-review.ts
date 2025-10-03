@@ -146,6 +146,15 @@ export async function getLatestPeerReviewEpisode(): Promise<PeerReviewEpisode> {
   return toPeerReviewEpisode(topic, episode);
 }
 
+function ensureTrailingPeriod(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return '';
+  }
+
+  return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
+}
+
 export function formatPeerReviewSms(
   episode: PeerReviewEpisode,
   options: { shortLink?: string } = {}
@@ -155,34 +164,54 @@ export function formatPeerReviewSms(
   const dateToFormat = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
   const formattedDate = DATE_FORMATTER.format(dateToFormat);
 
-  const snippet = extractSnippet(episode);
-  const header = `🎙️ Peer Review ${formattedDate}`;
-  const body = snippet ? `${header} — ${snippet}` : header;
+  const snippet = ensureTrailingPeriod(
+    extractSnippet(episode) || 'Latest episode update.'
+  );
+  const base = `🎙️ Peer Review Fight Club ${formattedDate}`;
+  const headline = `${base} — ${snippet}`;
 
   const listenUrl = options.shortLink ?? episode.audioUrl ?? undefined;
   const listenLine = listenUrl
-    ? `Listen: ${listenUrl}`
-    : 'Listen link unavailable right now.';
-  const cta = `${listenLine} (text PEER REVIEW LINKS for sources)`;
+    ? `Listen here: ${listenUrl} or text PR LINKS.`
+    : 'Listen link unavailable right now. Text PR LINKS for sources.';
 
-  return `${body}\n${cta}`.trim();
+  return `${headline} ${listenLine}`.trim();
+}
+
+function stripBrandPrefix(text: string): string {
+  const pattern = new RegExp(`^${PEER_REVIEW_DEFAULT_TITLE}[^A-Za-z0-9]+`, 'i');
+  return text.replace(pattern, '').trim();
 }
 
 function extractSnippet(episode: PeerReviewEpisode): string {
-  const fromTitle = episode.title?.trim();
-  if (fromTitle && fromTitle.toLowerCase() !== PEER_REVIEW_DEFAULT_TITLE.toLowerCase()) {
-    return fromTitle;
+  const titleCandidate = episode.title?.trim();
+  if (titleCandidate) {
+    const sanitized = stripBrandPrefix(titleCandidate);
+    if (sanitized && sanitized.toLowerCase() !== PEER_REVIEW_DEFAULT_TITLE.toLowerCase()) {
+      return sanitized;
+    }
+    if (titleCandidate.toLowerCase() !== PEER_REVIEW_DEFAULT_TITLE.toLowerCase()) {
+      return titleCandidate;
+    }
   }
 
   const showNotes = episode.showNotesJson as { summary?: string } | null | undefined;
-  const fromSummary = showNotes?.summary?.trim();
-  if (fromSummary) {
-    return fromSummary;
+  const summaryCandidate = showNotes?.summary?.trim();
+  if (summaryCandidate) {
+    const sanitized = stripBrandPrefix(summaryCandidate);
+    if (sanitized) {
+      return sanitized;
+    }
+    return summaryCandidate;
   }
 
-  const description = episode.description?.trim();
-  if (description) {
-    return description;
+  const descriptionCandidate = episode.description?.trim();
+  if (descriptionCandidate) {
+    const sanitized = stripBrandPrefix(descriptionCandidate);
+    if (sanitized) {
+      return sanitized;
+    }
+    return descriptionCandidate;
   }
 
   return '';

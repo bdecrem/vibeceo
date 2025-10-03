@@ -23,10 +23,16 @@ const RAW_SMS_SCREENS = [
       {
         id: "nvidia-response",
         variant: "response" as const,
-        text: "Hey! NVIDIA (NVDA) is at $181.85 right now 📈\nIt's up $3.42 (+1.92%) this week, which is pretty solid. Strong demand in AI is driving interest.",
+        text: "📈 Hey! NVIDIA (NVDA) is at $181.85 right now. It's up $3.42 (+1.92%) this week, which is pretty solid. Strong demand in AI is driving interest.",
         holdAfter: 1200
       },
-      { id: "yt-request", variant: "user" as const, text: "YT the most insightful analysis of Claude Code 2 from today" }
+      { id: "crypto-request", variant: "user" as const, text: "Crypto report" },
+      {
+        id: "crypto-response-part1",
+        variant: "response" as const,
+        text: "Crypto report Oct 2, 2025 — Bitcoin surged above $123,000, approaching a new all-time high after a 15% weekly rally driven by record",
+        holdAfter: 600
+      }
     ],
     holdAfter: 1400
   },
@@ -34,17 +40,17 @@ const RAW_SMS_SCREENS = [
     id: "screen-3",
     messages: [
       {
-        id: "yt-followup",
+        id: "crypto-response-part2",
         variant: "response" as const,
-        text: "News, analysis, or technical reviews?",
-        holdAfter: 600
+        text: "ETF inflows.\n🔗 https://b52s.me/l/007u",
+        holdAfter: 1200
       },
-      { id: "yt-refinement", variant: "user" as const, text: "Analysis" },
+      { id: "crypto-subscribe", variant: "user" as const, text: "Crypto subscribe" },
       {
-        id: "yt-results",
+        id: "crypto-subscribe-response",
         variant: "response" as const,
-        text: "This one's good, from 2 hrs ago:\nTech Analysis Hub:\nyoutube.com/watch?v=abc123",
-        holdAfter: 800
+        text: "I'll send you a daily btc/eth research report every morning around 7am",
+        holdAfter: 600
       },
       { id: "user-thanks", variant: "user" as const, text: "🙏💯🔥" }
     ],
