@@ -1,0 +1,411 @@
+Crash App Data Flow Summary
+
+  Overview
+
+  Crash App is a podcast/audio content application that serves pre-generated
+   shows and transcripts to users. The app fetches content from a backend
+  service, which retrieves data from a Supabase PostgreSQL database.
+
+  Supabase Data Storage
+
+  Core Tables & Schema
+
+  shows table - Main content repository
+  - id (integer, primary key) - Unique show identifier
+  - title (text) - Show title/name
+  - description (text) - Show description
+  - audio_url (text) - URL to the audio file (stored on Supabase Storage or
+  external CDN)
+  - duration (integer) - Audio duration in seconds
+  - created_at (timestamp) - Creation timestamp
+  - Additional metadata fields for categorization/filtering
+
+  transcripts table - Time-aligned transcription data
+  - id (integer, primary key)
+  - show_id (integer, foreign key → shows.id)
+  - segments (jsonb) - Array of transcript segments with timestamps:
+  [
+    {
+      "start": 0.0,
+      "end": 5.2,
+      "text": "Welcome to the show...",
+      "speaker": "Host"
+    }
+  ]
+  - full_text (text) - Complete transcript as plain text
+  - created_at (timestamp)
+
+  Supabase Storage Buckets
+  - audio-files - Stores MP3/audio files referenced by audio_url
+  - Public bucket with authenticated access patterns
+
+  Backend Service (Node.js + PostgreSQL Worker)
+
+  Architecture
+
+  - Tech Stack: Node.js/Express backend with pg-promise for database access
+  - Database Connection: Direct PostgreSQL connection to Supabase using
+  connection string
+  - Authentication: Supabase service key for server-side access
+
+  Key API Endpoints
+
+  1. GET /api/shows - List all available shows
+    - Queries: SELECT id, title, description, audio_url, duration FROM shows
+   ORDER BY created_at DESC
+    - Returns: Array of show objects
+  2. GET /api/shows/:id - Get single show with transcript
+    - Queries both shows and transcripts tables with JOIN
+    - Returns: Complete show object including transcript segments
+  3. GET /api/shows/:id/transcript - Get transcript only
+    - Queries: SELECT segments, full_text FROM transcripts WHERE show_id = 
+  $1
+    - Returns: Transcript data with time-aligned segments
+
+  Data Flow: Backend → App
+
+  Supabase PostgreSQL
+         ↓
+  Backend queries via pg-promise
+         ↓
+  JSON response formatted
+         ↓
+  Frontend app fetches via HTTP
+         ↓
+  Audio player + synchronized transcript display
+
+  Frontend App Integration
+
+  The mobile/web app:
+  1. Fetches show list from /api/shows
+  2. Displays available episodes
+  3. When user selects show:
+    - Fetches full show data including transcript
+    - Loads audio from audio_url
+    - Displays synchronized transcript segments that highlight as audio
+  plays
+    - Uses start/end timestamps to sync text with audio position
+
+  What Your Service Needs to Do
+
+  To generate a new show that integrates with Crash App:
+
+  1. Generate Content
+
+  - Create audio file (MP3 format recommended)
+  - Generate transcript with time-aligned segments
+
+  2. Upload to Supabase
+
+  Upload audio file:
+  // Upload to Supabase Storage
+  const { data, error } = await supabase.storage
+    .from('audio-files')
+    .upload(`shows/${showId}.mp3`, audioFile)
+
+  // Get public URL
+  const { data: { publicUrl } } = supabase.storage
+    .from('audio-files')
+    .getPublicUrl(`shows/${showId}.mp3`)
+
+  Insert show record:
+  INSERT INTO shows (title, description, audio_url, duration)
+  VALUES ($1, $2, $3, $4)
+  RETURNING id;
+
+  Insert transcript:
+  INSERT INTO transcripts (show_id, segments, full_text)
+  VALUES ($1, $2, $3);
+
+  3. Required Format
+
+  Transcript segments JSON structure:
+  {
+    "segments": [
+      {
+        "start": 0.0,
+        "end": 5.2,
+        "text": "First sentence of transcript",
+        "speaker": "Host" // optional
+      },
+      {
+        "start": 5.2,
+        "end": 10.8,
+        "text": "Next sentence...",
+        "speaker": "Guest"
+      }
+    ]
+  }
+
+  4. Database Credentials
+
+  Your service will need:
+  - Supabase project URL
+  - Supabase service role key (for server-side inserts)
+  - Or use Supabase client SDK with these credentials
+
+  Once the data is inserted into Supabase, the Crash App backend will
+  automatically serve it through existing API endpoints—no backend changes
+  needed.
+
+
+
+
+ Supabase Database Tables - Complete Reference
+
+  Core Data Tables
+
+  1. topics - Podcast Shows/Series
+
+  The main table representing podcast shows. Each topic is either a one-off
+  episode, an evergreen series, or a dated daily show.
+
+  Key Fields:
+  - id (uuid, PK) - Unique identifier for the show
+  - title (text) - Show display name (e.g., "AI Research Papers - Daily")
+  - description (text) - Brief show description
+  - user_prompt (text) - Original user request that created the topic
+  - category (text) - Classification: Technology, Science, History,
+  Business, Health, Arts, Personal Growth, Nature, Skills, Culture
+  - device_token (text) - Links to the user who created it (no FK, plain
+  text)
+  - type (text) - Show type: 'one-off', 'evergreen', or 'dated'
+    - one-off: Single episode, doesn't update
+    - evergreen: Sequential series (1-9 episodes), start at episode 1
+    - dated: Daily/time-sensitive content, all users see current episode
+  - status (text) - Generation status: 'generating', 'ready', 'failed'
+  - featured (boolean) - Whether shown in Discover tab
+  - duration_requested (integer) - Target episode length in minutes
+  - number_of_episodes (smallint) - Total episodes (1-9)
+  - current_episode_id (bigint, FK → episodes) - Only used for dated shows -
+   points to today's episode
+  - episode_structure (jsonb) - Metadata about episode series structure
+  - created_at, duration_actual, play_count, last_played_at,
+  last_played_position, favorited, rating, audio_chunks (jsonb)
+
+  Usage:
+  - Backend queries by featured=true for Discover tab
+  - Backend queries by device_token for "My Collection"
+  - iOS app tracks episode progress locally (Core Data) for evergreen shows
+  - iOS app uses current_episode_id for dated shows
+
+  ---
+  2. episodes - Individual Podcast Episodes
+
+  Contains the actual content - transcripts, audio, and metadata for each
+  episode within a show.
+
+  Key Fields:
+  - id (bigint, PK, auto-increment) - Unique episode identifier
+  - topic_id (uuid, FK → topics) - Parent show this episode belongs to
+  - episode_number (smallint) - Sequential number within series (1, 2, 3...)
+  - title (text) - Episode-specific title
+  - description (text) - Episode summary/teaser
+  - transcript (text) - Full text content of the episode - source for TTS
+  generation
+  - word_count (integer) - Number of words in transcript
+  - estimated_duration (numeric) - Calculated duration in minutes
+  - audio_generated (boolean) - Has TTS been performed?
+  - audio_url (text) - Public URL to generated MP3 file (stored in Supabase
+  Storage)
+  - show_notes (text) - Markdown-formatted show notes
+  - show_notes_json (jsonb) - Structured show notes with links/references
+  - status (text) - Episode status: 'ready', 'generating', 'failed'
+  - papers_data (jsonb) - For AI Papers Daily: stores paper metadata
+  - stories_data (jsonb) - For other content types: stores story metadata
+  - created_at, updated_at, play_count, last_played_at
+
+  Usage:
+  - Backend generates transcript via Claude API → saves here
+  - Backend generates audio via ElevenLabs TTS → uploads to Supabase Storage
+   → saves URL here
+  - iOS app fetches transcript and audio_url via
+  /api/topics/:topicId/current-episode
+  - Endpoint /api/episodes/:episodeId/play handles on-demand TTS if
+  audio_url missing
+
+  ---
+  3. users - User Accounts
+
+  Tracks users by device token (no password-based auth).
+
+  Key Fields:
+  - id (uuid, PK) - Unique user ID
+  - device_token (text) - iOS device identifier (used for auth)
+  - preferences (jsonb) - User settings (default: {})
+  - learning_history (jsonb) - Track of what user has listened to (default:
+  [])
+  - created_at, last_seen
+
+  Usage:
+  - Backend creates user on first /api/auth request with device_token
+  - No foreign keys from other tables (device_token stored as plain text
+  elsewhere)
+  - Subscription data stored separately (see below)
+
+  ---
+  Queue & Job Processing
+
+  4. content_jobs - Background Content Generation Queue
+
+  PostgreSQL-backed job queue for async content generation. Worker
+  (pg-worker.js) polls this every 5 seconds.
+
+  Key Fields:
+  - id (uuid, PK) - Job identifier
+  - topic_id (uuid, FK → topics) - Which show this job generates for
+  - episode_number (smallint) - Which episode to generate (1-9)
+  - topic (text) - Subject matter for generation
+  - duration (integer) - Target length in minutes
+  - device_token (text) - User who requested generation
+  - status (text) - Job state: 'pending', 'processing', 'completed',
+  'failed'
+  - processed (boolean) - Has job been claimed by worker?
+  - worker_id (text) - Which worker instance is processing
+  - priority (integer) - Higher = processed first (default: 10)
+  - attempts (integer) - Retry counter
+  - max_attempts (integer) - Max retries before failure (default: 3)
+  - transcript (text) - Generated transcript (stored on completion)
+  - audio_data (text) - Deprecated - audio now stored in Supabase Storage
+  - word_count (integer) - Transcript word count
+  - error_message (text) - Failure reason if status='failed'
+  - metadata (jsonb) - Extra data: numberOfEpisodes, voiceId, narratorId,
+  episodeOne info
+  - created_at, started_at, completed_at, failed_at
+
+  Usage:
+  - Backend endpoint /api/generate-content-queued inserts job
+  - Worker pg-worker.js calls stored procedure get_next_content_job() to
+  claim jobs atomically
+  - Worker generates transcript (Claude) → audio (ElevenLabs) → saves to
+  episodes table → calls complete_content_job()
+  - iOS app polls /api/job-status/:jobId to track progress
+
+  Stored Procedures:
+  - get_next_content_job() - Atomically claims highest priority pending job
+  - complete_content_job(job_id, transcript, audio_data, word_count) - Marks
+   job complete
+  - fail_content_job(job_id, error_message) - Marks job failed, increments
+  attempts
+
+  ---
+  Content Tracking (Deduplication)
+
+  5. covered_papers - AI Papers Already Featured
+
+  Tracks which academic papers have been covered in episodes to avoid
+  repetition.
+
+  Key Fields:
+  - paper_id (text, PK) - Unique identifier from HuggingFace API
+  - title (text) - Paper title
+  - episode_id (bigint, FK → episodes) - Episode that covered this paper
+  - covered_at (timestamp) - When it was featured
+  - upvotes (integer) - Engagement metric from HuggingFace
+  - arxiv_url (text) - Link to arXiv paper
+  - pdf_url (text) - Direct PDF link
+  - paper_content (text) - Extracted abstract/summary
+
+  Usage:
+  - AIPapersService checks this table before generating daily episode
+  - Prevents featuring same paper twice
+  - Used by "AI Research Papers - Daily" automated show
+
+  ---
+  6. covered_stories - Academic Drama Stories Already Featured
+
+  Tracks which academic controversies/stories have been covered to avoid
+  repetition.
+
+  Key Fields:
+  - story_id (text, PK) - Unique identifier (hash of title/URL)
+  - title (text) - Story headline
+  - episode_id (bigint, FK → episodes) - Episode that covered this story
+  - covered_at (timestamp) - When it was featured
+  - engagement_score (integer) - Calculated relevance score
+  - source_url (text) - Original source link
+  - source_type (text) - Where story came from (e.g., 'retractionwatch',
+  'arxiv')
+
+  Usage:
+  - AcademicDramaService checks this table before generating episodes
+  - Prevents rehashing same controversies
+  - Used by "Peer Review Fight Club" automated show
+
+  ---
+  Subscription/Payments (Referenced in Code)
+
+  7. subscriptions - User Subscription Status
+
+  Note: Table schema not in migration files but referenced in
+  server.js:155-252
+
+  Inferred Fields (from code):
+  - device_token (text, PK) - User identifier
+  - product_id (text) - App Store product SKU
+  - transaction_id (text) - App Store transaction ID
+  - receipt_data (text) - Base64-encoded App Store receipt
+  - status (text) - Subscription status: 'active', 'expired', 'cancelled'
+  - purchased_at (timestamp) - When subscription started
+  - expires_at (timestamp) - When subscription ends
+  - updated_at (timestamp) - Last status check
+
+  Usage:
+  - Backend endpoint /api/subscription/validate upserts subscription records
+  - Backend endpoint /api/subscription/status checks active status
+  - iOS app sends receipt → backend validates with Apple (production
+  implementation pending)
+
+  ---
+  Data Flow Summary
+
+  Creating & Playing a Show
+
+  1. User creates show in iOS app:
+    - App sends topic/duration to /api/generate-content-queued
+    - Backend inserts row into content_jobs (status='pending')
+    - Returns jobId to app
+  2. Worker processes job:
+    - pg-worker.js claims job via get_next_content_job()
+    - Calls Claude API to generate transcript
+    - Calls ElevenLabs to synthesize audio
+    - Uploads audio to Supabase Storage → gets public URL
+    - Creates row in episodes with transcript + audio_url
+    - Updates topics.current_episode_id (for dated shows)
+    - Marks job complete via complete_content_job()
+  3. iOS app plays episode:
+    - Polls /api/job-status/:jobId until status='completed'
+    - Fetches episode via
+  /api/topics/:topicId/current-episode?episodeNumber=N
+    - Receives: { transcript, audio_url, title, description, show_notes_json
+   }
+    - Downloads MP3 from audio_url and plays
+    - Displays synchronized transcript
+
+  Automated Daily Shows
+
+  - GitHub Actions workflow runs daily at 5 AM EST
+  - Triggers /api/generate-ai-papers-episode (AI Papers Daily)
+  - Triggers /api/generate-academic-drama-episode (Peer Review Fight Club)
+  - Services check covered_papers/covered_stories for deduplication
+  - Generate new episode → save to episodes → update
+  topic.current_episode_id
+  - SMS bot fetches latest via /api/ai-daily/latest or /api/prfc/latest
+
+  ---
+  Storage Buckets (Supabase Storage)
+
+  audio-files - Public bucket storing episode MP3s
+  - Path format: episodes/{topic_id}/{episode_id}.mp3
+  - Referenced by episodes.audio_url field
+  - Publicly accessible via signed URLs
+
+  ---
+  This schema supports:
+  - One-off episodes (single standalone content)
+  - Evergreen series (1-9 episode courses with local progress tracking)
+  - Dated shows (daily content with central current_episode_id)
+  - Background job processing (async content generation)
+  - Content deduplication (covered_papers/covered_stories)
+  - Subscription management (App Store purchases)
+

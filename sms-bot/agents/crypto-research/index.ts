@@ -15,6 +15,11 @@ import {
   type AgentSubscriber,
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
+import {
+  generateCryptoPodcast,
+  lookupCryptoPodcastEpisode,
+  type PodcastGenerationResult,
+} from './podcast.js';
 
 interface AgentRunResult {
   outputFile: string;
@@ -188,21 +193,61 @@ export const cryptoResearchAgent = {
   },
 };
 
+export interface CryptoReportWithPodcast extends StoredReportMetadata {
+  podcast?: PodcastGenerationResult | null;
+  reportShortLink?: string | null;
+}
+
 export async function runAndStoreCryptoReport(
-  options: { date?: string } = {}
-): Promise<StoredReportMetadata> {
+  options: { date?: string; forcePodcast?: boolean } = {}
+): Promise<CryptoReportWithPodcast> {
   const result = await cryptoResearchAgent.run(options);
 
-  return storeAgentReport({
+  const stored = await storeAgentReport({
     agent: 'crypto-research',
     date: result.date,
     markdown: result.markdown,
     summary: result.summary,
   });
+
+  let podcast: PodcastGenerationResult | null = null;
+  let reportShortLink: string | null = null;
+
+  if (stored.publicUrl) {
+    try {
+      reportShortLink = await createShortLink(stored.publicUrl, {
+        context: 'crypto-report',
+        createdBy: 'sms-bot',
+        createdFor: 'podcast',
+      });
+    } catch (error) {
+      console.warn('Failed to create short link for crypto report:', error);
+    }
+  }
+
+  try {
+    podcast = await generateCryptoPodcast({
+      date: result.date,
+      markdown: result.markdown,
+      summary: result.summary,
+      reportUrl: stored.publicUrl ?? null,
+      reportShortLink,
+      forceRegenerate: options.forcePodcast,
+    });
+  } catch (error) {
+    console.error('Crypto podcast generation failed:', error);
+  }
+
+  return {
+    ...stored,
+    publicUrl: stored.publicUrl ?? null,
+    reportShortLink,
+    podcast,
+  };
 }
 
 export async function getLatestStoredCryptoReport(): Promise<
-  (StoredReportMetadata & { publicUrl: string | null }) | null
+  (CryptoReportWithPodcast & { publicUrl: string | null }) | null
 > {
   const metadata = await getLatestReportMetadata('crypto-research');
 
@@ -213,9 +258,27 @@ export async function getLatestStoredCryptoReport(): Promise<
   const publicUrl =
     metadata.publicUrl ?? (await getReportPublicUrl(metadata.reportPath));
 
-  return {
+  let podcast: PodcastGenerationResult | null = null;
+  let reportShortLink: string | null = null;
+  try {
+    podcast = await lookupCryptoPodcastEpisode(metadata.date);
+  } catch (error) {
+    console.error('Failed to load existing crypto podcast episode:', error);
+  }
+
+  const base = {
     ...metadata,
     publicUrl: publicUrl ?? null,
+    podcast,
+  } as CryptoReportWithPodcast & { publicUrl: string | null };
+
+  if (podcast?.reportLink) {
+    reportShortLink = podcast.reportLink;
+  }
+
+  return {
+    ...base,
+    reportShortLink,
   };
 }
 
@@ -245,13 +308,29 @@ export async function buildCryptoReportMessage(
   summary: string | null | undefined,
   isoDate: string,
   publicUrl: string | null | undefined,
-  recipient: string
+  recipient: string,
+  options: { podcastLink?: string | null } = {}
 ): Promise<string> {
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
   const link = await resolveLink(publicUrl, recipient);
+  const podcastLink = options.podcastLink ?? null;
 
-  return link ? `${headline} — ${summaryLine}\n🔗 ${link}` : `${headline} — ${summaryLine}`;
+  const lines = [`${headline} — ${summaryLine}`];
+
+  if (podcastLink) {
+    lines.push(`🎧 Listen: ${podcastLink}`);
+  }
+
+  if (link) {
+    if (podcastLink) {
+      lines.push(`📄 Full report: ${link}`);
+    } else {
+      lines.push(`🔗 ${link}`);
+    }
+  }
+
+  return lines.join('\n');
 }
 
 function formatHeadline(isoDate: string): string {
@@ -310,7 +389,7 @@ const BROADCAST_DELAY_MS = Number(process.env.CRYPTO_BROADCAST_DELAY_MS || 150);
 const AUTOMATED_DEDUP_WINDOW_MS = 20 * 60 * 60 * 1000; // 20 hours
 
 async function broadcastCryptoReport(
-  metadata: StoredReportMetadata,
+  metadata: CryptoReportWithPodcast,
   twilioClient: TwilioClient
 ): Promise<void> {
   try {
@@ -340,8 +419,12 @@ async function broadcastCryptoReport(
         const message = await buildCryptoReportMessage(
           metadata.summary,
           metadata.date,
-          metadata.publicUrl,
-          subscriber.phone_number
+          metadata.reportShortLink ?? metadata.publicUrl,
+          subscriber.phone_number,
+          {
+            podcastLink:
+              metadata.podcast?.shortLink ?? metadata.podcast?.audioUrl ?? null,
+          }
         );
 
         await twilioClient.messages.create({
