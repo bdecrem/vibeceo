@@ -7,6 +7,8 @@ import { youtubeAgentHandler } from './youtube-agent.js';
 
 export const commandHandlers: CommandHandler[] = [
   cryptoCommandHandler,
+  medicalDailyCommandHandler,
   peerReviewCommandHandler,
   youtubeAgentHandler,
 ];
+
