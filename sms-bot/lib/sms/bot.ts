@@ -1,4 +1,4 @@
-import express from "express";
+﻿import express from "express";
 import bodyParser from "body-parser";
 import { setupTwilioWebhooks, setupWhatsAppWebhooks } from "./webhooks.js";
 import { setupSupabaseWebhooks } from "./supabase-webhooks.js";
@@ -10,6 +10,7 @@ import { initializeAI } from "./ai.js";
 import { initializeScheduler } from "./stock-scheduler.js";
 import { startScheduler } from "../scheduler/index.js";
 import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
+import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 
 // Express server for webhook handling
@@ -37,6 +38,7 @@ export async function startSmsBot(): Promise<void> {
 
   registerAiDailyJob(twilioClient);
   registerCryptoDailyJob(twilioClient);
+  registerMedicalDailyJob(twilioClient);
   registerPeerReviewJob(twilioClient);
 
   // Initialize stock scheduler service
@@ -96,3 +98,5 @@ export async function startSmsBot(): Promise<void> {
 
   return Promise.resolve();
 }
+
+
