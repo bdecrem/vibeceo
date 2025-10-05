@@ -29,6 +29,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
   
+  // SPECIFIC FIX: Bypass music player route immediately
+  if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
+    if (host?.includes('localhost') || host?.includes('ngrok')) {
+      console.log(`[Middleware] Music player bypassed: ${pathname}`)
+    }
+    return NextResponse.next()
+  }
+  
   // SPECIFIC FIX: Bypass webtoys-logo immediately
   if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
     console.log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
