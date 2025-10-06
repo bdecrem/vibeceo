@@ -1,10 +1,22 @@
+import { handleEventSearch } from "../agents/ticketmaster-events/agent.js";
 import { CommandContext, CommandHandler } from "./types.js";
 
 const TICKETMASTER_PREFIX = "EVENTS";
 
-async function handleEventSearch(context: CommandContext): Promise<boolean> {
-  const { from, twilioClient, sendSmsResponse, updateLastMessageDate } =
-    context;
+async function handleSearch(context: CommandContext): Promise<boolean> {
+  const { from, twilioClient, sendSmsResponse } = context;
+  try {
+    const message = await handleEventSearch(context.message);
+
+    await sendSmsResponse(from, message, twilioClient);
+  } catch (error) {
+    console.error("Failed to fetch Ticketmaster events:", error);
+    await sendSmsResponse(
+      from,
+      "❌ Could not fetch Ticketmaster events. Please try again.",
+      twilioClient
+    );
+  }
   return true;
 }
 
@@ -15,7 +27,7 @@ export const ticketmasterCommandHandler: CommandHandler = {
   },
   async handle(context) {
     if (context.messageUpper.startsWith(TICKETMASTER_PREFIX)) {
-      return handleEventSearch(context);
+      return handleSearch(context);
     }
   },
 };

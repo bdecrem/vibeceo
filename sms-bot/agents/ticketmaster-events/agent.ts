@@ -91,7 +91,7 @@ export const agentOptions: Options = {
   `,
 };
 
-export async function chat(chatMessage: string) {
+export async function handleEventSearch(chatMessage: string) {
   const response = await query({ prompt: chatMessage, options: agentOptions });
 
   for await (const message of response) {
