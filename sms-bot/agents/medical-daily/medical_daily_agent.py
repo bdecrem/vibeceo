@@ -386,9 +386,13 @@ Host: {host_name}.
         self.cache_dir = Path("medical_daily_cache")
         self.cache_dir.mkdir(exist_ok=True)
         supabase_url = os.getenv('SUPABASE_URL')
-        supabase_key = os.getenv('SUPABASE_SERVICE_ROLE_KEY') or os.getenv('SUPABASE_ANON_KEY')
-        supabase_bucket = os.getenv('SUPABASE_AUDIO_BUCKET')
-        supabase_folder = os.getenv('SUPABASE_AUDIO_FOLDER', 'podcasts')
+        supabase_key = (
+            os.getenv('SUPABASE_SERVICE_ROLE_KEY')
+            or os.getenv('SUPABASE_SERVICE_KEY')
+            or os.getenv('SUPABASE_ANON_KEY')
+        )
+        supabase_bucket = os.getenv('SUPABASE_AUDIO_BUCKET', 'audio')
+        supabase_folder = os.getenv('SUPABASE_AUDIO_FOLDER', 'topics/medical-daily/episodes')
         if supabase_url and supabase_key and supabase_bucket:
             self.audio_uploader = SupabaseAudioUploader(
                 url=supabase_url,
@@ -1344,7 +1348,10 @@ JSON:"""
         print("=" * 50)
         print("[MEDICAL DAILY] MEDICAL DAILY - Generating Today's Digest")
         print("=" * 50)
-        
+
+        now = datetime.now()
+        service_date = now.date().isoformat()
+
         # Fetch content
         pubmed_articles = self.fetch_pubmed_articles(max_results=7)
         fda_approvals = self.fetch_fda_approvals()
@@ -1367,13 +1374,17 @@ JSON:"""
         self.podcast_script = self.create_podcast_script(all_articles)
 
         # Generate audio
-        audio_file = self.generate_audio(self.podcast_script)
+        audio_file = self.generate_audio(
+            self.podcast_script,
+            output_file=f"medical_daily_{service_date}.mp3"
+        )
 
         # Build landing page if audio is available\n        self.audio_page_url = None\n        # Landing page generation is disabled for the SMS bot integration.\n        # Uncomment the block below if we want to publish HTML again.\n        # landing_path = None\n        # if self.audio_url:\n        #     landing_path = self._build_landing_page(self.audio_url, all_articles)\n        #     if landing_path:\n        #         landing_link = None\n        #         if self.audio_uploader:\n        #             landing_link = self.audio_uploader.publish(landing_path)\n        #         if not landing_link:\n        #             landing_link = landing_path.as_uri()\n        #         self.audio_page_url = landing_link
 
         # Save metadata
         metadata = {
-            'date': datetime.now().isoformat(),
+            'date': now.isoformat(),
+            'service_date': service_date,
             'article_count': len(all_articles),
             'articles': all_articles,
             'script': self.podcast_script,
@@ -1382,7 +1393,7 @@ JSON:"""
             'audio_page_url': self.audio_page_url
         }
 
-        metadata_file = self.cache_dir / f"digest_{datetime.now().strftime('%Y%m%d')}.json"
+        metadata_file = self.cache_dir / f"digest_{now.strftime('%Y%m%d')}.json"
         with open(metadata_file, 'w') as f:
             json.dump(metadata, f, indent=2)
         
