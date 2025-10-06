@@ -3,7 +3,6 @@ import {
   tool,
   createSdkMcpServer,
   Options,
-  SDKResultMessage,
 } from "@anthropic-ai/claude-agent-sdk";
 
 import { z } from "zod";
