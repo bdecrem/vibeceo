@@ -52,6 +52,10 @@ function formatTime(seconds: number): string {
   return `${minutes}:${remainingSeconds}`;
 }
 
+function dbToGain(db: number): number {
+  return Number.isFinite(db) ? Math.pow(10, db / 20) : 1;
+}
+
 function MusicPlayerContent(): JSX.Element {
   const searchParams = useSearchParams();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -62,6 +66,11 @@ function MusicPlayerContent(): JSX.Element {
   const [loadedPlaylist, setLoadedPlaylist] = useState<TrackItem[]>(FALLBACK_PLAYLIST);
   const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const preGainNodeRef = useRef<GainNode | null>(null);
+  const compressorNodeRef = useRef<DynamicsCompressorNode | null>(null);
+  const makeupGainNodeRef = useRef<GainNode | null>(null);
 
   const customTrack = useMemo(() => {
     if (!searchParams) {
@@ -167,6 +176,9 @@ function MusicPlayerContent(): JSX.Element {
     }
 
     try {
+      if (audioContextRef.current && audioContextRef.current.state === 'suspended') {
+        await audioContextRef.current.resume().catch(() => undefined);
+      }
       await audio.play();
       setIsPlaying(true);
     } catch (error) {
@@ -331,6 +343,78 @@ function MusicPlayerContent(): JSX.Element {
       });
     }
   }, [currentTrackIndex, isPlaying, playlist]);
+
+  useEffect(() => {
+    const audioElement = audioRef.current;
+    if (!audioElement || typeof window === 'undefined') {
+      return;
+    }
+
+    const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioContextCtor) {
+      console.warn('Web Audio API not supported; skipping dynamics processing.');
+      return;
+    }
+
+    if (!audioContextRef.current) {
+      try {
+        audioContextRef.current = new AudioContextCtor();
+      } catch (error) {
+        console.warn('Unable to create AudioContext:', error);
+        return;
+      }
+    }
+
+    const audioContext = audioContextRef.current;
+    if (!audioContext) {
+      return;
+    }
+
+    try {
+      const sourceNode = audioContext.createMediaElementSource(audioElement);
+      const preGain = audioContext.createGain();
+      preGain.gain.value = dbToGain(10); // +10 dB lift before compression
+
+      const compressor = audioContext.createDynamicsCompressor();
+      compressor.threshold.value = -12;
+      compressor.knee.value = 12;
+      compressor.ratio.value = 3.5;
+      compressor.attack.value = 0.003;
+      compressor.release.value = 0.22;
+
+      const makeupGain = audioContext.createGain();
+      makeupGain.gain.value = dbToGain(3); // gentle make-up gain
+
+      sourceNode.connect(preGain);
+      preGain.connect(compressor);
+      compressor.connect(makeupGain);
+      makeupGain.connect(audioContext.destination);
+
+      sourceNodeRef.current = sourceNode;
+      preGainNodeRef.current = preGain;
+      compressorNodeRef.current = compressor;
+      makeupGainNodeRef.current = makeupGain;
+    } catch (error) {
+      console.warn('Failed to initialise audio processing chain:', error);
+    }
+
+    return () => {
+      makeupGainNodeRef.current?.disconnect();
+      compressorNodeRef.current?.disconnect();
+      preGainNodeRef.current?.disconnect();
+      sourceNodeRef.current?.disconnect();
+
+      makeupGainNodeRef.current = null;
+      compressorNodeRef.current = null;
+      preGainNodeRef.current = null;
+      sourceNodeRef.current = null;
+
+      if (audioContextRef.current) {
+        void audioContextRef.current.close().catch(() => undefined);
+        audioContextRef.current = null;
+      }
+    };
+  }, []);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6 py-10">
