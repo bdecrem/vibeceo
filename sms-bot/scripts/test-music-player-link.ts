@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { buildAiDailyMusicPlayerUrl } from '../lib/utils/music-player-link.js';
+import { buildAiDailyMusicPlayerUrl, buildMusicPlayerUrl } from '../lib/utils/music-player-link.js';
 import type { AiDailyEpisode } from '../lib/sms/ai-daily.js';
 
 function createEpisode(overrides: Partial<AiDailyEpisode>): AiDailyEpisode {
@@ -62,6 +62,29 @@ try {
   assert.equal(fallbackParams.get('title'), expectedTitle);
   assertTruncation(fallbackParams.get('description'));
   assert.equal(fallbackParams.get('autoplay'), '1');
+
+  const genericUrl = buildMusicPlayerUrl({
+    src: 'https://cdn.example.com/audio.mp3',
+    title: ' Generic Title ',
+    description: '   Short generic description.   ',
+  });
+
+  const genericParsed = new URL(genericUrl);
+  assert.equal(genericParsed.searchParams.get('title'), 'Generic Title');
+  assert.equal(genericParsed.searchParams.get('description'), 'Short generic description.');
+  assert.equal(genericParsed.searchParams.get('autoplay'), '1');
+
+  const fallbackGenericUrl = buildMusicPlayerUrl({
+    src: 'https://cdn.example.com/audio.mp3',
+    title: '   ',
+    description: '   ',
+    autoplay: false,
+  });
+
+  const fallbackGenericParsed = new URL(fallbackGenericUrl);
+  assert.equal(fallbackGenericParsed.searchParams.get('title'), 'Audio track');
+  assert.equal(fallbackGenericParsed.searchParams.get('description'), null);
+  assert.equal(fallbackGenericParsed.searchParams.get('autoplay'), null);
 
   console.log('✅ music player link helper tests passed');
 } finally {
