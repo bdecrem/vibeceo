@@ -1,44 +1,14 @@
 import { getLatestAiDailyEpisode, type AiDailyEpisode } from '../lib/sms/ai-daily.js';
+import { buildAiDailyMusicPlayerUrl } from '../lib/utils/music-player-link.js';
 import { createShortLink } from '../lib/utils/shortlink-service.js';
 import type { CommandContext, CommandHandler } from './types.js';
 
 const AUDIO_TEST_KEYWORDS = ['AUDIO TEST', 'AUDIO-TEST'];
-const PLAYER_BASE_FALLBACK = 'https://b52s.me';
-
-function buildMusicPlayerUrl(episode: AiDailyEpisode): string {
-  const baseUrl = (process.env.SHORTLINK_BASE_URL || PLAYER_BASE_FALLBACK).replace(/\/$/, '');
-  const params = new URLSearchParams();
-  params.set('src', episode.audioUrl);
-
-  const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : new Date();
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Los_Angeles',
-    month: 'short',
-    day: 'numeric',
-  });
-  const formattedDate = formatter.format(
-    Number.isNaN(publishedDate.getTime()) ? new Date() : publishedDate
-  );
-
-  const title = episode.title?.trim() || `AI Daily ${formattedDate}`;
-  params.set('title', title);
-
-  const snippet = episode.snippet?.trim();
-  if (snippet) {
-    const clipped = snippet.length > 160 ? `${snippet.slice(0, 157).trim()}…` : snippet;
-    params.set('description', clipped);
-  }
-
-  params.set('autoplay', '1');
-
-  return `${baseUrl}/music-player?${params.toString()}`;
-}
-
 async function resolvePlayerLink(
   episode: AiDailyEpisode,
   createdFor: string
 ): Promise<string> {
-  const playerUrl = buildMusicPlayerUrl(episode);
+  const playerUrl = buildAiDailyMusicPlayerUrl(episode);
 
   try {
     const shortLink = await createShortLink(playerUrl, {
