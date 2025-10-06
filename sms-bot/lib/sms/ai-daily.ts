@@ -36,7 +36,10 @@ const PACIFIC_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   day: 'numeric'
 });
 
+// Episode cache: stores episode data and its associated short link
+// Both are cleared when a new episode is fetched or cache expires
 let cachedEpisode: AiDailyEpisode | null = null;
+let cachedShortLink: string | null = null;
 let cacheTimestamp = 0;
 
 function getBaseUrl(): string {
@@ -61,6 +64,8 @@ function isCacheValid(): boolean {
 }
 
 function recordCache(episode: AiDailyEpisode): AiDailyEpisode {
+  // Clear the short link cache when a new episode is cached
+  cachedShortLink = null;
   cachedEpisode = episode;
   cacheTimestamp = Date.now();
   return episode;
@@ -142,6 +147,11 @@ export async function getAiDailyShortLink(
     return null;
   }
 
+  // Return cached short link if available and cache is still valid
+  if (cachedShortLink && isCacheValid()) {
+    return cachedShortLink;
+  }
+
   const playerUrl = buildAiDailyMusicPlayerUrl(episode);
 
   try {
@@ -150,6 +160,11 @@ export async function getAiDailyShortLink(
       createdFor,
       createdBy: 'sms-bot'
     });
+
+    // Cache the short link for reuse
+    if (shortLink) {
+      cachedShortLink = shortLink;
+    }
 
     return shortLink ?? playerUrl;
   } catch (error) {
