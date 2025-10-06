@@ -4,8 +4,8 @@ const nextConfig = {
     unoptimized: true,
   },
   eslint: {
-    // Global lint currently fails due to legacy pages; skip during CI builds
-    ignoreDuringBuilds: true,
+    // Limit linting during build to the new music-player entrypoint
+    dirs: ['app/music-player'],
   },
   // Add output configuration for Netlify
   // output: 'standalone',  // COMMENTED OUT FOR LOCAL DEV
