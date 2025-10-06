@@ -4,12 +4,10 @@
 	"description": "",
 	"private": true,
 	"scripts": {
-		"prebuild": "npm run lint:music-player",
 		"dev": "next dev",
-		"build": "NEXT_DISABLE_ESLINT=1 next build",
+		"build": "next build",
 		"start": "next start",
 		"lint": "next lint",
-		"lint:music-player": "next lint --dir app/music-player",
 		"test": "playwright test",
 		"test:smoke": "node scripts/smoke-test.js"
 	},
