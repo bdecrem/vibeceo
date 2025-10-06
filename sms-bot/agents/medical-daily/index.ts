@@ -275,6 +275,19 @@ function isLikelyShortLink(url: string | null | undefined): boolean {
   return /b52s\.me/i.test(url);
 }
 
+function normalizeHttpUrl(candidate: string | null | undefined): string | null {
+  if (!candidate) {
+    return null;
+  }
+
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return /^https?:\/\//i.test(trimmed) ? trimmed : null;
+}
+
 async function ensureShortLink(
   url: string | null | undefined,
   context: string,
@@ -402,12 +415,11 @@ export async function runAndStoreMedicalDailyReport(): Promise<MedicalDailyRepor
     }
   }
 
-  const audioCandidate =
-    details.audio_page_url ||
-    details.audio_url ||
-    result.audioPageUrl ||
-    result.audioUrl ||
-    null;
+  const rawAudioPageUrl = details.audio_page_url ?? result.audioPageUrl ?? null;
+  const rawAudioUrl = details.audio_url ?? result.audioUrl ?? null;
+  const normalizedAudioPageUrl = normalizeHttpUrl(rawAudioPageUrl);
+  const normalizedAudioUrl = normalizeHttpUrl(rawAudioUrl);
+  const audioCandidate = normalizedAudioPageUrl ?? normalizedAudioUrl ?? null;
 
   let audioShortLink: string | null = null;
   if (audioCandidate) {
@@ -425,6 +437,18 @@ export async function runAndStoreMedicalDailyReport(): Promise<MedicalDailyRepor
   details.summary = details.summary ?? summary;
   details.headline = details.headline ?? result.headline ?? undefined;
   details.daily_intro = details.daily_intro ?? result.dailyIntro ?? undefined;
+  if (normalizedAudioPageUrl) {
+    details.audio_page_url = normalizedAudioPageUrl;
+  } else if (!details.audio_page_url && rawAudioPageUrl) {
+    details.audio_page_url = rawAudioPageUrl;
+  }
+  if (normalizedAudioUrl) {
+    details.audio_url = normalizedAudioUrl;
+  } else if (!details.audio_url && rawAudioUrl) {
+    details.audio_url = rawAudioUrl;
+  } else if (!normalizedAudioUrl && !rawAudioUrl) {
+    details.audio_url = null;
+  }
   if (reportShortLink) {
     details.report_short_link = reportShortLink;
   }
@@ -440,8 +464,8 @@ export async function runAndStoreMedicalDailyReport(): Promise<MedicalDailyRepor
     publicUrl: stored.publicUrl ?? null,
     reportShortLink,
     audioShortLink,
-    audioUrl: details.audio_url ?? result.audioUrl ?? null,
-    audioPageUrl: details.audio_page_url ?? result.audioPageUrl ?? null,
+    audioUrl: normalizedAudioUrl ?? rawAudioUrl ?? null,
+    audioPageUrl: normalizedAudioPageUrl ?? rawAudioPageUrl ?? null,
     headline: details.headline ?? null,
     dailyIntro: details.daily_intro ?? null,
     detailsPath: detailsPath ?? null,
@@ -457,6 +481,18 @@ export async function getLatestStoredMedicalReport(): Promise<MedicalDailyReport
 
   const details =
     (await loadMedicalDailyDetailsFromStorage(stored.date)) || undefined;
+
+  const normalizedDetailsAudioPage = normalizeHttpUrl(details?.audio_page_url ?? undefined);
+  const normalizedDetailsAudio = normalizeHttpUrl(details?.audio_url ?? undefined);
+
+  if (details) {
+    if (normalizedDetailsAudioPage) {
+      details.audio_page_url = normalizedDetailsAudioPage;
+    }
+    if (normalizedDetailsAudio) {
+      details.audio_url = normalizedDetailsAudio;
+    }
+  }
 
   let reportShortLink = details?.report_short_link ?? null;
   if (!reportShortLink && stored.publicUrl) {
@@ -491,8 +527,8 @@ export async function getLatestStoredMedicalReport(): Promise<MedicalDailyReport
     summary: stored.summary,
     reportShortLink,
     audioShortLink,
-    audioUrl: details?.audio_url ?? null,
-    audioPageUrl: details?.audio_page_url ?? null,
+    audioUrl: normalizedDetailsAudio ?? details?.audio_url ?? null,
+    audioPageUrl: normalizedDetailsAudioPage ?? details?.audio_page_url ?? null,
     headline: details?.headline ?? null,
     dailyIntro: details?.daily_intro ?? null,
     detailsPath: `${DETAILS_PREFIX}/${stored.date}.json`,
