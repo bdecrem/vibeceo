@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { buildAiDailyMusicPlayerUrl } from '../utils/music-player-link.js';
 import { createShortLink } from '../utils/shortlink-service.js';
 
 export interface AiDailyEpisode {
@@ -141,11 +142,20 @@ export async function getAiDailyShortLink(
     return null;
   }
 
-  return createShortLink(episode.audioUrl, {
-    context: 'ai_daily',
-    createdFor,
-    createdBy: 'sms-bot'
-  });
+  const playerUrl = buildAiDailyMusicPlayerUrl(episode);
+
+  try {
+    const shortLink = await createShortLink(playerUrl, {
+      context: 'ai_daily',
+      createdFor,
+      createdBy: 'sms-bot'
+    });
+
+    return shortLink ?? playerUrl;
+  } catch (error) {
+    console.warn('Failed to create AI Daily player short link:', error);
+    return playerUrl;
+  }
 }
 
 interface EpisodeLink {
