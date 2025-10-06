@@ -8,7 +8,7 @@ import json
 import random
 import requests
 from datetime import datetime, timedelta
-from typing import List, Dict
+from typing import List, Dict, Optional
 import xml.etree.ElementTree as ET
 from pathlib import Path
 import shutil
@@ -406,6 +406,51 @@ Host: {host_name}.
                 base_url=os.getenv('PUBLIC_AUDIO_BASE_URL'),
                 target_dir=os.getenv('PUBLIC_AUDIO_TARGET_DIR', 'public_audio')
             )
+
+        self.elevenlabs_api_key = (
+            os.getenv('MEDICAL_DAILY_ELEVENLABS_API_KEY')
+            or os.getenv('ELEVENLABS_API_KEY')
+        )
+        self.elevenlabs_voice_id = (
+            os.getenv('MEDICAL_DAILY_ELEVENLABS_VOICE_ID')
+            or os.getenv('ELEVENLABS_VOICE_ID')
+            or 'MF3mGyEYCl7XYWbV9V6O'
+        )
+        self.elevenlabs_model_id = (
+            os.getenv('MEDICAL_DAILY_ELEVENLABS_MODEL_ID')
+            or os.getenv('ELEVENLABS_MODEL_ID')
+            or 'eleven_turbo_v2'
+        )
+        self.elevenlabs_base_url = (
+            os.getenv('MEDICAL_DAILY_ELEVENLABS_BASE_URL')
+            or os.getenv('ELEVENLABS_BASE_URL')
+            or 'https://api.elevenlabs.io'
+        )
+        self.elevenlabs_output_format = (
+            os.getenv('MEDICAL_DAILY_ELEVENLABS_OUTPUT_FORMAT')
+            or os.getenv('ELEVENLABS_OUTPUT_FORMAT')
+            or 'mp3_44100_128'
+        )
+        self.elevenlabs_latency = self._parse_int_env(
+            ['MEDICAL_DAILY_ELEVENLABS_STREAMING_LATENCY', 'ELEVENLABS_STREAMING_LATENCY'],
+            None,
+        )
+        self.elevenlabs_stability = self._parse_float_env(
+            ['MEDICAL_DAILY_ELEVENLABS_STABILITY', 'ELEVENLABS_STABILITY'],
+            0.5,
+        )
+        self.elevenlabs_similarity = self._parse_float_env(
+            ['MEDICAL_DAILY_ELEVENLABS_SIMILARITY', 'ELEVENLABS_SIMILARITY'],
+            0.5,
+        )
+        self.elevenlabs_style = self._parse_float_env(
+            ['MEDICAL_DAILY_ELEVENLABS_STYLE', 'ELEVENLABS_STYLE'],
+            0.0,
+        )
+        self.elevenlabs_speaker_boost = self._parse_bool_env(
+            ['MEDICAL_DAILY_ELEVENLABS_SPEAKER_BOOST', 'ELEVENLABS_SPEAKER_BOOST'],
+            True,
+        )
 
         default_max_age = PUBMED_DEFAULT_MAX_AGE_DAYS
         env_max_age = os.getenv('MEDICAL_DAILY_PUBMED_MAX_AGE_DAYS')
@@ -1223,6 +1268,110 @@ JSON:"""
 
         return self.create_fallback_script(articles)
 
+    def _parse_float_env(self, keys: List[str], default: float) -> float:
+        for key in keys:
+            value = os.getenv(key)
+            if value is None:
+                continue
+            try:
+                return float(value)
+            except ValueError:
+                print(f"[WARN] {key} must be a number; using default {default}.")
+        return default
+
+    def _parse_int_env(self, keys: List[str], default: Optional[int]) -> Optional[int]:
+        for key in keys:
+            value = os.getenv(key)
+            if value is None:
+                continue
+            try:
+                return int(value)
+            except ValueError:
+                print(f"[WARN] {key} must be an integer; ignoring provided value.")
+        return default
+
+    def _parse_bool_env(self, keys: List[str], default: bool) -> bool:
+        truthy = {'1', 'true', 'yes', 'on'}
+        falsy = {'0', 'false', 'no', 'off'}
+        for key in keys:
+            value = os.getenv(key)
+            if value is None:
+                continue
+            normalized = value.strip().lower()
+            if normalized in truthy:
+                return True
+            if normalized in falsy:
+                return False
+            print(f"[WARN] {key} must be boolean; using default {default}.")
+        return default
+
+    def _finalize_audio_output(self, output_path: Path) -> str:
+        audio_path = str(output_path)
+        self.audio_file = audio_path
+        try:
+            self.audio_url = output_path.resolve().as_uri()
+        except Exception:
+            self.audio_url = None
+        if self.audio_uploader:
+            published = self.audio_uploader.publish(output_path)
+            if published:
+                self.audio_url = published
+        print(f"[OK] Audio saved to {output_path}")
+        return audio_path
+
+    def _generate_audio_with_elevenlabs(self, script: str, output_path: Path) -> Optional[str]:
+        if not self.elevenlabs_api_key or not self.elevenlabs_voice_id:
+            return None
+
+        base_url = (self.elevenlabs_base_url or 'https://api.elevenlabs.io').rstrip('/')
+        endpoint = f"{base_url}/v1/text-to-speech/{self.elevenlabs_voice_id}"
+
+        voice_settings = {
+            'stability': self.elevenlabs_stability,
+            'similarity_boost': self.elevenlabs_similarity,
+            'use_speaker_boost': self.elevenlabs_speaker_boost,
+        }
+        if self.elevenlabs_style:
+            voice_settings['style'] = self.elevenlabs_style
+
+        payload = {
+            'text': script,
+            'model_id': self.elevenlabs_model_id,
+            'voice_settings': voice_settings,
+            'output_format': self.elevenlabs_output_format,
+        }
+        if self.elevenlabs_latency is not None:
+            payload['optimize_streaming_latency'] = self.elevenlabs_latency
+
+        try:
+            response = requests.post(
+                endpoint,
+                headers={
+                    'xi-api-key': self.elevenlabs_api_key,
+                    'Accept': 'audio/mpeg',
+                    'Content-Type': 'application/json',
+                },
+                json=payload,
+                stream=True,
+                timeout=60,
+            )
+            response.raise_for_status()
+        except Exception as exc:
+            print(f"[ERROR] ElevenLabs TTS request failed: {exc}")
+            return None
+
+        try:
+            with output_path.open('wb') as handle:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        handle.write(chunk)
+        except Exception as exc:
+            print(f"[ERROR] ElevenLabs TTS write failed: {exc}")
+            return None
+
+        print('[OK] ElevenLabs audio synthesis complete.')
+        return self._finalize_audio_output(output_path)
+
     def create_fallback_script(self, articles: List[Dict]) -> str:
         """Create a fallback script when LLM fails - MUST be under 4096 chars for TTS"""
         date_str = datetime.now().strftime("%B %d, %Y")
@@ -1288,47 +1437,37 @@ JSON:"""
         script = self._ensure_tts_safe_length(script, articles)
         return script
 
-    def generate_audio(self, script: str, output_file: str = "medical_daily.mp3") -> str:
-        """Generate audio from script using OpenAI TTS"""
+    def generate_audio(self, script: str, output_file: str = "medical_daily.mp3") -> Optional[str]:
+        """Generate audio from script using ElevenLabs, falling back to OpenAI TTS."""
         print("[MUSIC] Generating audio...")
-        # TTS safety guard
         script = self._ensure_tts_safe_length(script, getattr(self, "articles", None))
-        
+
+        output_path = self.cache_dir / output_file
+
+        if self.elevenlabs_api_key:
+            audio_path = self._generate_audio_with_elevenlabs(script, output_path)
+            if audio_path:
+                return audio_path
+            print('[WARN] ElevenLabs TTS failed; falling back to OpenAI.')
+
         if not self.openai_api_key:
-            print("[WARN] No OpenAI API key - skipping audio generation")
+            print('[WARN] No OpenAI API key - skipping audio generation')
             return None
-        
+
         try:
             import openai
             client = openai.OpenAI(api_key=self.openai_api_key)
-            
-            output_path = self.cache_dir / output_file
-            
             response = client.audio.speech.create(
                 model="tts-1",
-                voice="nova",  # Professional female voice
+                voice="nova",
                 input=script
             )
-            
-            # Use the correct streaming method
-            with open(output_path, 'wb') as f:
+            with output_path.open('wb') as handle:
                 for chunk in response.iter_bytes():
-                    f.write(chunk)
-            audio_path = str(output_path)
-            self.audio_file = audio_path
-            try:
-                self.audio_url = output_path.resolve().as_uri()
-            except Exception:
-                self.audio_url = None
-            if self.audio_uploader:
-                published = self.audio_uploader.publish(output_path)
-                if published:
-                    self.audio_url = published
-            print(f"[OK] Audio saved to {output_path}")
-            return audio_path
-            
-        except Exception as e:
-            print(f"[ERROR] Error generating audio: {e}")
+                    handle.write(chunk)
+            return self._finalize_audio_output(output_path)
+        except Exception as exc:
+            print(f"[ERROR] Error generating audio: {exc}")
             self.audio_file = None
             self.audio_url = None
             return None
