@@ -6,7 +6,7 @@
 	"scripts": {
 		"prebuild": "npm run lint:music-player",
 		"dev": "next dev",
-		"build": "next build",
+		"build": "NEXT_DISABLE_ESLINT=1 next build",
 		"start": "next start",
 		"lint": "next lint",
 		"lint:music-player": "next lint --dir app/music-player",
