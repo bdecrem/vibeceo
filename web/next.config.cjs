@@ -4,8 +4,8 @@ const nextConfig = {
     unoptimized: true,
   },
   eslint: {
-    // Limit linting during build to the new music-player entrypoint
-    dirs: ['app/music-player'],
+    // Global lint remains noisy; prebuild script handles targeted checks
+    ignoreDuringBuilds: true,
   },
   // Add output configuration for Netlify
   // output: 'standalone',  // COMMENTED OUT FOR LOCAL DEV
