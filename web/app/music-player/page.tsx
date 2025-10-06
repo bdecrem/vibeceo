@@ -1,10 +1,7 @@
 'use client';
 
-import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-
-// Disable static generation for this page since it uses searchParams
-export const dynamic = 'force-dynamic';
 
 interface TrackItem {
   id: string;
@@ -47,7 +44,7 @@ function formatTime(seconds: number): string {
   return `${minutes}:${remainingSeconds}`;
 }
 
-export default function MusicPlayerPage(): JSX.Element {
+function MusicPlayerContent(): JSX.Element {
   const searchParams = useSearchParams();
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -353,5 +350,13 @@ export default function MusicPlayerPage(): JSX.Element {
         playsInline
       />
     </main>
+  );
+}
+
+export default function MusicPlayerPage(): JSX.Element {
+  return (
+    <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center' }}>Loading player...</div>}>
+      <MusicPlayerContent />
+    </Suspense>
   );
 }
