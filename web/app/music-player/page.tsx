@@ -3,6 +3,9 @@
 import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+// Disable static generation for this page since it uses searchParams
+export const dynamic = 'force-dynamic';
+
 interface TrackItem {
   id: string;
   title: string;
