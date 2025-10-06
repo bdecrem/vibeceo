@@ -4,7 +4,7 @@
 - Crash backend (running on the iMac) exposes `GET /api/ai-daily/latest` via the active ngrok URL; that endpoint must return the latest episode JSON (title, snippet, `audioUrl`, etc.).
 - Webtoys SMS bot (Mac mini) reads the base URL from `AI_DAILY_BASE_URL` and runs the scheduler inside `startSmsBot()`.
 - Every minute the scheduler checks Pacific Time (`AI_DAILY_SEND_HOUR`, `AI_DAILY_SEND_MINUTE`; defaults 7:00). When the clock matches, it fetches the latest episode (2 second timeout, 1 retry, 5 minute cache), builds the `/music-player` deep link with the episode metadata, mints a `b52s.me/l/{slug}` short link for that player URL, formats the SMS, and sends it via Twilio to any subscriber with `ai_daily_subscribed = true`. After sending, it updates `ai_daily_last_sent_at` to avoid duplicates.
-  - Production builds now lint only the `/music-player` Next.js page to keep deploys unblocked while legacy pages are cleaned up.
+  - Production builds run `npm run lint:music-player` before compiling and skip full-site lint to keep deploys unblocked while legacy pages are cleaned up.
 - On-demand command `AI DAILY` fetches the episode immediately without updating `ai_daily_last_sent_at` (still cached). `AI DAILY SUBSCRIBE` toggles the flag, confirms, and sends the latest episode right away. `AI DAILY STOP` clears the flag and confirmation.
 - If Crash returns an error (timeout / 404 / offline ngrok), the scheduler and command handler both send a fallback message (“AI Daily is temporarily unavailable…”) and log the failure. Once Crash is reachable again, no code changes are needed; the next fetch succeeds automatically.
 
