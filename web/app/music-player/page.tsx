@@ -8,26 +8,34 @@ interface TrackItem {
   title: string;
   description?: string;
   src: string;
+  showName?: string;
+  order?: number;
 }
 
-const DEFAULT_PLAYLIST: TrackItem[] = [
+const FALLBACK_PLAYLIST: TrackItem[] = [
   {
     id: 'ai-daily-demo',
     title: 'AI Daily — Sample Episode',
     description: 'A short sample clip to demonstrate the player controls.',
     src: 'https://samplelib.com/lib/preview/mp3/sample-3s.mp3',
+    showName: 'AI Daily',
+    order: 0,
   },
   {
     id: 'peer-review-demo',
     title: 'Peer Review Fight Club — Sample',
     description: 'Another sample audio file for the play-next flow.',
     src: 'https://samplelib.com/lib/preview/mp3/sample-6s.mp3',
+    showName: 'Peer Review Fight Club',
+    order: 1,
   },
   {
     id: 'crypto-demo',
-    title: 'Crypto Brief — Sample',
+    title: 'Crypto Daily — Sample',
     description: 'Final sample track to round out the playlist.',
     src: 'https://samplelib.com/lib/preview/mp3/sample-9s.mp3',
+    showName: 'Crypto Daily',
+    order: 2,
   },
 ];
 
@@ -51,6 +59,9 @@ function MusicPlayerContent(): JSX.Element {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [loadedPlaylist, setLoadedPlaylist] = useState<TrackItem[]>(FALLBACK_PLAYLIST);
+  const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
 
   const customTrack = useMemo(() => {
     if (!searchParams) {
@@ -83,12 +94,34 @@ function MusicPlayerContent(): JSX.Element {
     } satisfies TrackItem;
   }, [searchParams]);
 
+  // Fetch real episodes on mount
+  useEffect(() => {
+    async function fetchEpisodes() {
+      try {
+        const response = await fetch('/api/podcast-episodes');
+        if (!response.ok) {
+          throw new Error('Failed to fetch episodes');
+        }
+        const data = await response.json();
+        if (data.episodes && data.episodes.length > 0) {
+          setLoadedPlaylist(data.episodes);
+        }
+      } catch (error) {
+        console.error('Error fetching episodes:', error);
+        // Keep using fallback playlist
+      } finally {
+        setIsLoadingEpisodes(false);
+      }
+    }
+    void fetchEpisodes();
+  }, []);
+
   const playlist = useMemo(() => {
     if (customTrack) {
-      return [customTrack, ...DEFAULT_PLAYLIST];
+      return [customTrack, ...loadedPlaylist];
     }
-    return DEFAULT_PLAYLIST;
-  }, [customTrack]);
+    return loadedPlaylist;
+  }, [customTrack, loadedPlaylist]);
 
   const autoPlayRequested = useMemo(() => {
     if (!searchParams) {
@@ -112,6 +145,20 @@ function MusicPlayerContent(): JSX.Element {
   }, [autoPlayRequested, customTrack]);
 
   const currentTrack = useMemo(() => playlist[currentTrackIndex], [playlist, currentTrackIndex]);
+
+  // Shorten title for display
+  const displayTitle = useMemo(() => {
+    const track = currentTrack;
+    if (!track) return '';
+
+    // Extract the part after the " — " separator
+    const parts = track.title.split(' — ');
+    if (parts.length > 1) {
+      // Return everything after the show name
+      return parts.slice(1).join(' — ');
+    }
+    return track.title;
+  }, [currentTrack]);
 
   const handlePlay = useCallback(async () => {
     const audio = audioRef.current;
@@ -189,22 +236,47 @@ function MusicPlayerContent(): JSX.Element {
       return;
     }
 
-    const target = Math.min(audio.currentTime + 30, duration || audio.duration || 0);
+    const target = Math.min(audio.currentTime + 15, duration || audio.duration || 0);
     audio.currentTime = target;
     setCurrentTime(audio.currentTime);
   }, [duration]);
 
   const handleNext = useCallback(() => {
-    setCurrentTrackIndex((index) => (index + 1) % playlist.length);
+    // Circular rotation: AI Daily (0) → Peer Review (1) → Crypto (2) → AI Daily (0)
+    setCurrentTrackIndex((index) => {
+      const nextIndex = (index + 1) % playlist.length;
+      return nextIndex;
+    });
     setCurrentTime(0);
     setIsPlaying(true);
   }, [playlist.length]);
 
   const handlePrevious = useCallback(() => {
-    setCurrentTrackIndex((index) => (index - 1 + playlist.length) % playlist.length);
+    // Circular rotation backwards: AI Daily (0) ← Peer Review (1) ← Crypto (2) ← AI Daily (0)
+    setCurrentTrackIndex((index) => {
+      const prevIndex = (index - 1 + playlist.length) % playlist.length;
+      return prevIndex;
+    });
     setCurrentTime(0);
     setIsPlaying(true);
   }, [playlist.length]);
+
+  const handleInfo = useCallback(() => {
+    setShowInfo((prev) => !prev);
+  }, []);
+
+  const handleShare = useCallback(() => {
+    // TODO: Implement share functionality
+    if (navigator.share) {
+      void navigator.share({
+        title: currentTrack.title,
+        text: currentTrack.description || '',
+        url: window.location.href,
+      }).catch(() => {
+        // Share cancelled or failed
+      });
+    }
+  }, [currentTrack]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -261,22 +333,48 @@ function MusicPlayerContent(): JSX.Element {
   }, [currentTrackIndex, isPlaying, playlist]);
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-6 py-10 text-slate-50">
-      <article className="w-full max-w-xl rounded-2xl bg-slate-900 p-6 shadow-xl ring-1 ring-slate-700">
-        <header className="mb-6 text-center">
-          <p className="text-sm uppercase tracking-[0.2em] text-slate-400">b52s.me</p>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6 py-10">
+      <article className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
+        <header className="mb-8 text-center">
+          <p className="text-lg font-bold uppercase tracking-wider text-gray-800">B52S.ME</p>
         </header>
 
-        <section className="space-y-4">
-          <div className="rounded-xl bg-slate-800/60 p-4 ring-1 ring-slate-700/80">
-            <p className="text-xs uppercase tracking-widest text-slate-400">Now Playing</p>
-            <h2 className="mt-2 text-xl font-semibold text-slate-50">{currentTrack.title}</h2>
-            {currentTrack.description ? (
-              <p className="mt-1 text-sm text-slate-300">{currentTrack.description}</p>
+        <section className="space-y-6">
+          <div className="relative rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 p-6 shadow-lg">
+            <div className="absolute right-4 top-4 flex gap-2">
+              <button
+                type="button"
+                onClick={handleInfo}
+                className={`rounded-full p-2 backdrop-blur-sm transition active:scale-95 ${
+                  showInfo ? 'bg-white/40' : 'bg-white/20 hover:bg-white/30'
+                }`}
+                aria-label="Episode info"
+              >
+                <svg className="h-5 w-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </button>
+              <button
+                type="button"
+                onClick={handleShare}
+                className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition hover:bg-white/30 active:scale-95"
+                aria-label="Share episode"
+              >
+                <svg className="h-5 w-5 text-gray-900" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+            </div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-orange-900/70">Now Playing</p>
+            <h2 className="mt-2 pr-20 text-xl font-bold text-gray-900">{displayTitle}</h2>
+            {showInfo && currentTrack.description ? (
+              <p className="mt-3 border-t border-orange-900/20 pt-3 text-sm leading-relaxed text-gray-800">
+                {currentTrack.description}
+              </p>
             ) : null}
           </div>
 
-          <div className="rounded-xl bg-slate-800/40 p-4 ring-1 ring-slate-700/60">
+          <div className="rounded-2xl bg-gray-50 p-6 shadow-md">
             <div className="flex flex-col gap-3">
               <input
                 type="range"
@@ -284,55 +382,43 @@ function MusicPlayerContent(): JSX.Element {
                 max={duration || 0}
                 value={currentTime}
                 onChange={handleScrub}
-                className="w-full accent-sky-400"
+                className="w-full accent-orange-500"
                 aria-label="Seek"
               />
-              <div className="flex items-center justify-between text-xs font-medium uppercase tracking-widest text-slate-400">
+              <div className="flex items-center justify-between text-sm font-bold text-gray-600">
                 <span>{formatTime(currentTime)}</span>
                 <span>{formatTime(duration)}</span>
               </div>
             </div>
 
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
-              <button
-                type="button"
-                onClick={handlePrevious}
-                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 shadow transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-              >
-                ◀︎ Prev
-              </button>
-              <button
-                type="button"
-                onClick={handleRewind}
-                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 shadow transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-              >
-                ↺ 15s
-              </button>
-              <button
-                type="button"
-                onClick={handlePlayPause}
-                className="rounded-full bg-sky-500 px-6 py-3 text-base font-semibold text-white shadow transition hover:bg-sky-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                {isPlaying ? 'Pause' : 'Play'}
-              </button>
-              <button
-                type="button"
-                onClick={handleStop}
-                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 shadow transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-              >
-                Stop
-              </button>
-              <button
-                type="button"
-                onClick={handleForward}
-                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 shadow transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
-              >
-                30s ↻
-              </button>
+            <div className="mt-6 flex flex-col items-center gap-4">
+              <div className="flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleRewind}
+                  className="rounded-full bg-gray-200 px-4 py-2.5 text-xl font-bold text-gray-700 shadow-md transition hover:bg-gray-300 active:scale-95"
+                >
+                  ↺
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePlayPause}
+                  className="rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3.5 text-lg font-bold text-white shadow-xl transition hover:from-orange-600 hover:to-orange-700 active:scale-95"
+                >
+                  {isPlaying ? 'Pause' : 'Play'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleForward}
+                  className="rounded-full bg-gray-200 px-4 py-2.5 text-xl font-bold text-gray-700 shadow-md transition hover:bg-gray-300 active:scale-95"
+                >
+                  ↻
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={handleNext}
-                className="rounded-full bg-slate-800 px-4 py-2 text-sm font-semibold text-slate-200 shadow transition hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-400"
+                className="rounded-full bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-600 active:scale-95"
               >
                 Next ▶︎
               </button>
