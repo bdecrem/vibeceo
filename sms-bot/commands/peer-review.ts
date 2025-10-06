@@ -31,12 +31,12 @@ async function deliverPeerReviewEpisode(
 
   try {
     const episode = await getLatestPeerReviewEpisode();
-    const shortLink = await getPeerReviewShortLink(
+    const playerLink = await getPeerReviewShortLink(
       episode,
       options.createdFor || normalizedFrom
     );
     const messageBody = formatPeerReviewSms(episode, {
-      shortLink: shortLink ?? episode.audioUrl ?? undefined,
+      shortLink: playerLink ?? undefined,
     });
 
     const responseMessage = options.prefix

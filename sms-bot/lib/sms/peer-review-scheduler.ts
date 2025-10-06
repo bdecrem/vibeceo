@@ -96,9 +96,9 @@ async function runPeerReviewBroadcast(twilioClient: TwilioClient): Promise<void>
   let message: string;
   try {
     const episode = await getLatestPeerReviewEpisode();
-    const shortLink = await getPeerReviewShortLink(episode, 'peer_review_broadcast');
+    const playerLink = await getPeerReviewShortLink(episode, 'peer_review_broadcast');
     message = formatPeerReviewSms(episode, {
-      shortLink: shortLink ?? episode.audioUrl ?? undefined,
+      shortLink: playerLink ?? undefined,
     });
   } catch (error) {
     console.error('Peer Review scheduler: failed to retrieve latest episode. Sending fallback message.', error);
@@ -118,4 +118,3 @@ export function registerPeerReviewJob(twilioClient: TwilioClient): void {
     run: () => runPeerReviewBroadcast(twilioClient),
   });
 }
-
