@@ -64,12 +64,19 @@ async function handleLinks(context: CommandContext): Promise<void> {
     context;
 
   try {
+    console.log('[PR LINKS] Fetching latest episode...');
     const episode = await getLatestPeerReviewEpisode();
+    console.log('[PR LINKS] Episode fetched:', episode.episodeId, episode.title);
+
     const linksMessage = formatPeerReviewLinks(episode);
+    console.log('[PR LINKS] Formatted message:', linksMessage ? linksMessage.substring(0, 100) : 'NULL');
 
     if (linksMessage) {
+      console.log('[PR LINKS] Sending chunked SMS...');
       await sendChunkedSmsResponse(from, linksMessage, twilioClient);
+      console.log('[PR LINKS] SMS sent successfully');
     } else {
+      console.log('[PR LINKS] No links found, sending fallback message');
       await sendSmsResponse(
         from,
         "No source links are available for today's Peer Review Fight Club episode. Text 'PEER REVIEW' to get the latest summary.",
@@ -77,7 +84,7 @@ async function handleLinks(context: CommandContext): Promise<void> {
       );
     }
   } catch (error) {
-    console.error('Peer Review links command failed:', error);
+    console.error('[PR LINKS] Command failed:', error);
     await sendSmsResponse(from, PEER_REVIEW_FALLBACK_MESSAGE, twilioClient);
   } finally {
     await updateLastMessageDate(normalizedFrom);

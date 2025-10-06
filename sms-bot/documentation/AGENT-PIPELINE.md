@@ -1,4 +1,4 @@
-# SMS Agent Pipeline (Crypto Research Reference)
+ # SMS Agent Pipeline (Crypto Research Reference)
 
 This document captures the patterns introduced with the **crypto research agent** so future SMS agents can reuse the same infrastructure.
 
