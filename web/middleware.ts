@@ -36,7 +36,15 @@ export function middleware(request: NextRequest) {
     }
     return NextResponse.next()
   }
-  
+
+  // SPECIFIC FIX: Bypass report viewer route immediately
+  if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer/')) {
+    if (host?.includes('localhost') || host?.includes('ngrok')) {
+      console.log(`[Middleware] Report viewer bypassed: ${pathname}`)
+    }
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass webtoys-logo immediately
   if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
     console.log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
@@ -53,9 +61,9 @@ export function middleware(request: NextRequest) {
 
   // CRITICAL FIX: Bypass auth routes and global pages - no processing whatsoever
   if (pathname === '/l' ||
-      pathname.startsWith('/login') || 
-      pathname.startsWith('/register') || 
-      pathname.startsWith('/link') || 
+      pathname.startsWith('/login') ||
+      pathname.startsWith('/register') ||
+      pathname.startsWith('/link') ||
       pathname.startsWith('/dashboard') ||
       pathname.startsWith('/l/') ||
       pathname.startsWith('/trending') ||
@@ -65,6 +73,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/test-subscriber') ||
       pathname.startsWith('/console') ||
       pathname.startsWith('/webtoys-logo') ||
+      pathname.startsWith('/report-viewer') ||
       pathname.startsWith('/reset-password') ||
       pathname.startsWith('/payments') ||
       pathname.startsWith('/b52s')) {

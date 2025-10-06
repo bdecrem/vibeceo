@@ -46,7 +46,7 @@ async function handleReport(context: CommandContext): Promise<boolean> {
     const message = await buildCryptoReportMessage(
       latest.summary,
       latest.date,
-      latest.reportShortLink ?? latest.publicUrl,
+      latest.reportPath, // Use report path for viewer
       context.normalizedFrom,
       {
         podcastLink:
@@ -93,7 +93,7 @@ async function handleRun(context: CommandContext): Promise<boolean> {
     const message = await buildCryptoReportMessage(
       metadata.summary,
       metadata.date,
-      metadata.reportShortLink ?? metadata.publicUrl,
+      metadata.reportPath, // Use report path for viewer
       context.normalizedFrom,
       {
         podcastLink:
