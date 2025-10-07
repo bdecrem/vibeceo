@@ -327,6 +327,7 @@ function MusicPlayerContent(): JSX.Element {
     };
   }, [handleNext]);
 
+  // Fix #2: Only call load() when track changes, not on pause/play
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) {
@@ -336,45 +337,37 @@ function MusicPlayerContent(): JSX.Element {
     audio.load();
     audio.currentTime = 0;
     setCurrentTime(0);
+  }, [currentTrackIndex, playlist]);
 
-    if (isPlaying) {
+  // Separate effect for play state - no load() on pause/play
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) {
+      return;
+    }
+
+    if (isPlaying && audio.paused) {
       void audio.play().catch(() => {
         setIsPlaying(false);
       });
+    } else if (!isPlaying && !audio.paused) {
+      audio.pause();
     }
-  }, [currentTrackIndex, isPlaying, playlist]);
+  }, [isPlaying]);
 
+  // Fix #1: Create Web Audio graph once and reuse across tracks
   useEffect(() => {
     const audioElement = audioRef.current;
     if (!audioElement || typeof window === 'undefined') {
       return;
     }
 
-    const resolveSourceUrl = (): URL | null => {
-      const candidate = audioElement.currentSrc || audioElement.src;
-      if (!candidate) {
-        return null;
-      }
-
-      try {
-        return new URL(candidate, window.location.href);
-      } catch {
-        return null;
-      }
-    };
-
-    const targetUrl = resolveSourceUrl();
-    const isSameOrigin = targetUrl ? targetUrl.origin === window.location.origin : true;
-    const corsWhitelist = ['supabase.co', 'supabase.in'];
-    const isWhitelisted = targetUrl
-      ? corsWhitelist.some((domain) => targetUrl.hostname.endsWith(domain))
-      : false;
-
-    if (!isSameOrigin && !isWhitelisted) {
-      audioElement.removeAttribute('crossorigin');
+    // Only create the graph once - reuse for all tracks
+    if (sourceNodeRef.current) {
       return;
     }
 
+    // Set CORS for all potential sources
     if (!audioElement.crossOrigin) {
       audioElement.crossOrigin = 'anonymous';
     }
@@ -400,6 +393,7 @@ function MusicPlayerContent(): JSX.Element {
     }
 
     try {
+      // createMediaElementSource can only be called ONCE per audio element
       const sourceNode = audioContext.createMediaElementSource(audioElement);
       const preGain = audioContext.createGain();
       preGain.gain.value = dbToGain(10); // +10 dB lift before compression
@@ -427,6 +421,7 @@ function MusicPlayerContent(): JSX.Element {
       console.warn('Failed to initialise audio processing chain:', error);
     }
 
+    // Only cleanup on component unmount
     return () => {
       makeupGainNodeRef.current?.disconnect();
       compressorNodeRef.current?.disconnect();
@@ -443,7 +438,7 @@ function MusicPlayerContent(): JSX.Element {
         audioContextRef.current = null;
       }
     };
-  }, [currentTrack?.src]);
+  }, []); // Empty deps - create once, reuse across all tracks
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6 py-10">
