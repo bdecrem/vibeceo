@@ -10,43 +10,29 @@ import fetch from "node-fetch";
 
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 
-interface TicketmasterEvent {
-  name: string;
-  dates?: any;
-  place?: any;
-}
-
-interface TicketmasterEvents {
-  events: TicketmasterEvent[];
-}
-
-interface TicketmasterResponse {
-  _embedded: TicketmasterEvents;
-}
-
 export async function fetchEvents(city: string, keyword?: string) {
-  const now = new Date().toISOString();
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
   const ticketmasterQueryUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${TICKETMASTER_API_KEY}&city=${encodeURIComponent(
     city
   )}&keyword=${encodeURIComponent(
     keyword ? keyword : ""
-  )}&size=5&page=1&sort=date,asc&startDateTime=${now}`;
+  )}&size=3&page=1&sort=date,asc&startDateTime=${now}`;
 
   const response = await fetch(ticketmasterQueryUrl);
-  const data = (await response.json()) as TicketmasterResponse;
+  const data = await response.json();
 
   if (!data["_embedded"]) {
     return "No events found in the given city.";
   }
 
-  const events: TicketmasterResponse = data;
   const eventList: string[] = [];
 
-  for (const event of events._embedded.events) {
-    eventList.push(event.name);
-    eventList.push(String(event.dates));
-    eventList.push(String(event.place));
+  for (const event of data["_embedded"]["events"]) {
+    eventList.push(event["name"]);
+    eventList.push(JSON.stringify(event["dates"]));
+    eventList.push(JSON.stringify(event["place"]));
+    eventList.push(event["info"]);
   }
 
   return eventList.join(", ");
@@ -83,10 +69,10 @@ export const agentOptions: Options = {
   mcpServers: { event_mcp_tool: eventMcpServer },
   allowedTools: ["Read", "Write", "mcp__event_mcp_tool__fetch_events"],
   systemPrompt: `
-    You are an assistant that finds events in a city. The keyword is optional. 
-    Do NOT include a keyword if the user does not input one.
+    You are an assistant that finds events in a city. The keyword is optional. Do NOT include a keyword if the user does not input one.
     If no city is given, prompt the user for one.
-    Return the events with the name, date, time, place. Do not include the status.
+    Return the events with the name, date, time, place, and description. If a field is missing, do not include it. Do not include the status.
+    Keep your responses very short and brief. Do not ask the user follow up questions.
   `,
 };
 
