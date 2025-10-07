@@ -744,6 +744,7 @@ async function buildPodcastScript(input: PodcastGenerationInput): Promise<string
     'You are the narrator for a short daily crypto market podcast.',
     'Using the research report markdown provided, craft a conversational script that can be read aloud.',
     'Keep the tone clear, confident, and informative. Avoid headings or markdown, respond with plain text paragraphs only.',
+    'CRITICAL: Write ALL numbers as words, not digits. For example, write "one hundred twenty-five thousand dollars" instead of "$125,000". Write "four point six percent" instead of "4.6%".',
     'Aim for a runtime of approximately 5 minutes when read at a normal pace.',
     'Highlight the biggest market moves, key statistics, and notable storylines.',
     'Open with a quick greeting and end with a concise sign-off.',
