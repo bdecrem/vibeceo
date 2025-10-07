@@ -61,8 +61,155 @@ This document captures the patterns introduced with the **crypto research agent*
      4. Send SMS summary + report link + “🎧 Listen” link using the same composer as the on-demand command.
      5. Update `last_sent_at` per subscriber.
 
-7. **Environment variables to set in production**
-   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`.
+7. **Report Viewer & Music Player Integration**
+   - **DO NOT link directly to raw Supabase URLs in SMS messages.** Always use the branded viewer/player pages.
+   - Helper modules:
+     - `sms-bot/lib/utils/report-viewer-link.ts` - Creates URLs to `/report-viewer` page
+     - `sms-bot/lib/utils/music-player-link.ts` - Creates URLs to `/music-player` page
+   - Web routes (Next.js):
+     - `web/app/report-viewer/page.tsx` - Markdown viewer with B52s branding
+     - `web/app/music-player/page.tsx` - Audio player with B52s branding and controls
+     - `web/app/api/report/route.ts` - API endpoint to fetch markdown from Supabase Storage
+
+   ### Pattern for Markdown Reports:
+   ```typescript
+   import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
+   import { createShortLink } from '../../lib/utils/shortlink-service.js';
+
+   // After storing report to Supabase
+   const stored = await storeAgentReport({
+     agent: 'your-agent-slug',
+     date: '2025-10-07',
+     markdown: reportMarkdown,
+     summary: reportSummary,
+   });
+
+   // Build viewer URL from the storage path
+   const viewerUrl = buildReportViewerUrl({
+     path: stored.reportPath  // e.g., "your-agent-slug/reports/2025-10-07.md"
+   });
+
+   // Create shortlink for SMS
+   const reportShortLink = await createShortLink(viewerUrl, {
+     context: 'your-agent-report',
+     createdBy: 'sms-bot',
+     createdFor: recipient,
+   });
+
+   // Use in SMS: reportShortLink will redirect to viewer
+   ```
+
+   ### Pattern for Audio Content:
+   ```typescript
+   import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
+   import { createShortLink } from '../../lib/utils/shortlink-service.js';
+
+   // After generating/uploading audio to Supabase
+   const audioUrl = 'https://...supabase.co/storage/v1/object/public/audio/file.mp3';
+
+   // Build player URL with metadata
+   const playerUrl = buildMusicPlayerUrl({
+     src: audioUrl,           // Raw MP3 URL from Supabase
+     title: 'Agent Name Oct 7',
+     description: 'One-sentence summary for player UI',
+     autoplay: true,          // Start playing immediately
+   });
+
+   // Create shortlink for SMS
+   const audioShortLink = await createShortLink(playerUrl, {
+     context: 'your-agent-audio',
+     createdBy: 'sms-bot',
+     createdFor: recipient,
+   });
+
+   // Use in SMS: audioShortLink will redirect to player
+   ```
+
+   ### Real Examples:
+
+   **Medical Daily** (`sms-bot/agents/medical-daily/index.ts:407-450`):
+   ```typescript
+   // Report viewer
+   const viewerUrl = buildReportViewerUrl({ path: stored.reportPath });
+   const reportShortLink = await createShortLink(viewerUrl, {
+     context: 'medical-daily-report',
+     createdBy: 'sms-bot',
+     createdFor: 'medical-daily',
+   });
+
+   // Audio player
+   const playerUrl = buildMusicPlayerUrl({
+     src: audioCandidate,
+     title: `Medical Daily ${result.date}`,
+     description: summary,
+     autoplay: true,
+   });
+   const audioShortLink = await createShortLink(playerUrl, {
+     context: 'medical-daily-audio',
+     createdBy: 'sms-bot',
+     createdFor: 'medical-daily',
+   });
+   ```
+
+   **Crypto Research** (`sms-bot/agents/crypto-research/index.ts:369-390`):
+   ```typescript
+   const viewerUrl = buildReportViewerUrl({ path: reportPath });
+   const short = await createShortLink(viewerUrl, {
+     context: 'crypto-report-viewer',
+     createdFor: recipient,
+     createdBy: 'sms-bot',
+   });
+   ```
+
+   **Crypto Podcast** (`sms-bot/agents/crypto-research/podcast.ts:150-166`):
+   ```typescript
+   const playerUrl = buildMusicPlayerUrl({
+     src: audioUrl,
+     title: episodeTitle,
+     description: input.summary,
+     autoplay: true,
+   });
+   const shortLink = await createShortLink(playerUrl, {
+     context: 'crypto-podcast',
+     createdBy: 'sms-bot',
+     createdFor: 'crypto-agent',
+   });
+   ```
+
+   **AI Daily** (`sms-bot/lib/sms/ai-daily.ts:149-167`):
+   ```typescript
+   const playerUrl = buildAiDailyMusicPlayerUrl(episode);  // Wrapper around buildMusicPlayerUrl
+   const shortLink = await createShortLink(playerUrl, {
+     context: 'ai_daily',
+     createdFor,
+     createdBy: 'sms-bot'
+   });
+   ```
+
+   **Peer Review** (`sms-bot/lib/crash/peer-review.ts:187-245`):
+   ```typescript
+   const playerUrl = buildMusicPlayerUrl({
+     src: episode.audioUrl,
+     title: buildPeerReviewPlayerTitle(episode),
+     description: buildPeerReviewPlayerDescription(episode),
+     autoplay: true,
+   });
+   const shortLink = await createShortLink(playerUrl, {
+     context: 'peer_review_fight_club',
+     createdFor,
+     createdBy: 'sms-bot',
+   });
+   ```
+
+   ### Why Use Viewer/Player Pages?
+   - **Branded experience**: B52s design, not raw markdown/audio
+   - **Better UX**: Formatted markdown with clickable links, audio controls with scrubbing
+   - **Mobile-optimized**: Works on all devices, iOS Safari audio issues handled
+   - **Consistent**: All agents use same UI/UX
+   - **Tracking**: Can add analytics to viewer/player pages
+
+8. **Environment variables to set in production**
+   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `SHORTLINK_BASE_URL` (defaults to `https://b52s.me` - used by viewer/player link builders).
    - Optional overrides:
      - `CRYPTO_REPORT_HOUR` / `CRYPTO_REPORT_MINUTE` (default 7:05 PT)
      - `CRYPTO_BROADCAST_DELAY_MS` (default 150 ms between SMS to avoid throttling)
@@ -70,7 +217,7 @@ This document captures the patterns introduced with the **crypto research agent*
      - `CRYPTO_PODCAST_AUDIO_BUCKET` (defaults to `audio`; legacy `audio-files` is auto-migrated but no longer recommended)
      - `CRYPTO_PODCAST_TITLE`, `CRYPTO_PODCAST_DESCRIPTION`, `CRYPTO_PODCAST_DEVICE_TOKEN`, etc. for fine-tuning Crash metadata
      - `CRYPTO_PODCAST_TARGET_MINUTES`, `CRYPTO_PODCAST_ELEVENLABS_*` for speech synthesis tuning
-     - `PYTHON_BIN` if the runtime isn’t `python3`
+     - `PYTHON_BIN` if the runtime isn't `python3`
 
 ## Steps to add a new daily agent
 
