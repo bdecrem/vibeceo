@@ -1,21 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import dotenv from "dotenv";
-import { fileURLToPath } from "url";
-import path from "path";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Environment detection
-const isProduction = process.env.NODE_ENV === "production";
-
-// Load environment variables in development
-if (!isProduction) {
-	// Load from sms-bot directory (two levels up from dist/lib/)
-	const envPath = path.join(__dirname, '..', '..', '.env.local');
-	dotenv.config({ path: envPath });
-	console.log(`Loading env from: ${envPath}`);
-}
+// Note: Environment variables are loaded in src/index.ts
+// Do NOT load them again here to avoid conflicts
 
 // Type definitions
 export type SMSSubscriber = {
@@ -39,18 +25,22 @@ export type SMSSubscriber = {
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL as string;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY as string;
+const isProduction = process.env.NODE_ENV === "production";
 
 if (!supabaseUrl || !supabaseKey) {
-	console.error(
-		"Missing Supabase credentials. Set SUPABASE_URL and SUPABASE_SERVICE_KEY."
-	);
+	console.error("❌ Missing Supabase credentials!");
+	console.error("SUPABASE_URL:", supabaseUrl || "MISSING");
+	console.error("SUPABASE_SERVICE_KEY:", supabaseKey ? `${supabaseKey.substring(0, 20)}...` : "MISSING");
 	if (!isProduction) {
-		console.error("Make sure these are set in your .env.local file");
+		console.error("Make sure these are set in sms-bot/.env.local file");
 	} else {
-		console.error(
-			"Make sure these are set in your Railway environment variables"
-		);
+		console.error("Make sure these are set in Railway environment variables");
 	}
+	process.exit(1);
 }
+
+console.log("✅ Supabase client initialized:");
+console.log("   URL:", supabaseUrl);
+console.log("   Key:", `${supabaseKey.substring(0, 20)}...`);
 
 export const supabase = createClient(supabaseUrl, supabaseKey);

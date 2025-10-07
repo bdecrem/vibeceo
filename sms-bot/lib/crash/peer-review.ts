@@ -1,4 +1,5 @@
 import { supabase } from '../supabase.js';
+import { buildMusicPlayerUrl } from '../utils/music-player-link.js';
 import { createShortLink } from '../utils/shortlink-service.js';
 
 export interface PeerReviewLink {
@@ -44,6 +45,12 @@ const DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Los_Angeles',
   month: 'numeric',
   day: 'numeric'
+});
+
+const PLAYER_TITLE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  timeZone: 'America/Los_Angeles',
+  month: 'short',
+  day: 'numeric',
 });
 
 let cachedTopic: TopicRow | null = null;
@@ -155,6 +162,48 @@ function ensureTrailingPeriod(text: string): string {
   return /[.!?]$/.test(trimmed) ? trimmed : `${trimmed}.`;
 }
 
+function buildPeerReviewPlayerTitle(episode: PeerReviewEpisode): string {
+  const candidate = episode.title?.trim();
+  if (candidate) {
+    return candidate;
+  }
+
+  const fallbackDate = new Date();
+  const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : fallbackDate;
+  const validDate = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
+  const formattedDate = PLAYER_TITLE_FORMATTER.format(validDate);
+  return `${PEER_REVIEW_DEFAULT_TITLE} ${formattedDate}`;
+}
+
+function buildPeerReviewPlayerDescription(episode: PeerReviewEpisode): string | null {
+  const snippet = extractSnippet(episode);
+  if (snippet) {
+    const normalized = ensureTrailingPeriod(snippet);
+    return normalized.trim().length ? normalized : null;
+  }
+
+  const descriptionCandidate = episode.description?.trim();
+  if (descriptionCandidate) {
+    const normalized = ensureTrailingPeriod(descriptionCandidate);
+    return normalized.trim().length ? normalized : null;
+  }
+
+  return null;
+}
+
+function buildPeerReviewPlayerUrl(episode: PeerReviewEpisode): string | null {
+  if (!episode.audioUrl) {
+    return null;
+  }
+
+  return buildMusicPlayerUrl({
+    src: episode.audioUrl,
+    title: buildPeerReviewPlayerTitle(episode),
+    description: buildPeerReviewPlayerDescription(episode),
+    autoplay: true,
+  });
+}
+
 export function formatPeerReviewSms(
   episode: PeerReviewEpisode,
   options: { shortLink?: string } = {}
@@ -170,7 +219,10 @@ export function formatPeerReviewSms(
   const base = `🎙️ Peer Review Fight Club ${formattedDate}`;
   const headline = `${base} — ${snippet}`;
 
-  const listenUrl = options.shortLink ?? episode.audioUrl ?? undefined;
+  const listenUrl = options.shortLink
+    ?? buildPeerReviewPlayerUrl(episode)
+    ?? episode.audioUrl
+    ?? undefined;
   const listenLine = listenUrl
     ? `Listen here: ${listenUrl} or text PR LINKS.`
     : 'Listen link unavailable right now. Text PR LINKS for sources.';
@@ -225,11 +277,24 @@ export async function getPeerReviewShortLink(
     return null;
   }
 
-  return createShortLink(episode.audioUrl, {
-    context: 'peer_review_fight_club',
-    createdFor,
-    createdBy: 'sms-bot',
-  });
+  const playerUrl = buildPeerReviewPlayerUrl(episode);
+
+  if (!playerUrl) {
+    return null;
+  }
+
+  try {
+    const shortLink = await createShortLink(playerUrl, {
+      context: 'peer_review_fight_club',
+      createdFor,
+      createdBy: 'sms-bot',
+    });
+
+    return shortLink ?? playerUrl;
+  } catch (error) {
+    console.warn('Failed to create Peer Review player short link:', error);
+    return playerUrl;
+  }
 }
 
 export function extractPeerReviewLinks(episode: PeerReviewEpisode): PeerReviewLink[] {
