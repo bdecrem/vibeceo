@@ -91,13 +91,38 @@ export const agentOptions: Options = {
 };
 
 export async function handleEventSearch(chatMessage: string) {
-  const response = await query({ prompt: chatMessage, options: agentOptions });
+  if (!TICKETMASTER_API_KEY) {
+    return "❌ Ticketmaster API key not configured. Please contact support.";
+  }
 
-  for await (const message of response) {
-    console.log(message);
+  try {
+    const response = await query({ prompt: chatMessage, options: agentOptions });
+    let lastResult: string | undefined;
 
-    if ("result" in message) {
-      return message.result;
+    for await (const message of response) {
+      console.log("[Ticketmaster Agent]", JSON.stringify(message, null, 2));
+
+      // Check for result property
+      if ("result" in message && message.result) {
+        lastResult = String(message.result);
+      }
+
+      // Also check for text/content in other message types
+      if ("text" in message && message.text) {
+        lastResult = String(message.text);
+      }
     }
+
+    // Return the last result found, or a helpful error
+    if (lastResult) {
+      return lastResult;
+    }
+
+    console.error("[Ticketmaster Agent] No result found in agent response");
+    return "❌ Could not find events. Please try with: EVENTS [city] [optional: keyword]\nExample: EVENTS Oakland\nExample: EVENTS San Francisco concert";
+
+  } catch (error) {
+    console.error("[Ticketmaster Agent] Query failed:", error);
+    return "❌ Event search failed. Please try again with: EVENTS [city] [keyword]";
   }
 }

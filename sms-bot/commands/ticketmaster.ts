@@ -6,7 +6,28 @@ const TICKETMASTER_PREFIX = "EVENTS";
 async function handleSearch(context: CommandContext): Promise<boolean> {
   const { from, twilioClient, sendSmsResponse } = context;
   try {
-    const message = await handleEventSearch(context.message);
+    // Extract query after "EVENTS" prefix
+    const query = context.message.replace(/^EVENTS\s*/i, '').trim();
+
+    if (!query) {
+      await sendSmsResponse(
+        from,
+        "Usage: EVENTS [city] [optional: keyword]\n\nExamples:\n• EVENTS Oakland\n• EVENTS San Francisco concert\n• EVENTS New York jazz",
+        twilioClient
+      );
+      return true;
+    }
+
+    console.log(`[Ticketmaster] Searching for: "${query}"`);
+
+    // Send immediate acknowledgment
+    await sendSmsResponse(
+      from,
+      "🎫 Searching for events...",
+      twilioClient
+    );
+
+    const message = await handleEventSearch(query);
 
     await sendSmsResponse(from, message, twilioClient);
   } catch (error) {
