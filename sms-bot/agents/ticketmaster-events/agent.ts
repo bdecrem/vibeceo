@@ -17,7 +17,7 @@ export async function fetchEvents(city: string, keyword?: string) {
     city
   )}&keyword=${encodeURIComponent(
     keyword ? keyword : ""
-  )}&size=5&page=1&sort=date,asc&startDateTime=${now}`;
+  )}&size=3&page=1&sort=date,asc&startDateTime=${now}`;
 
   const response = await fetch(ticketmasterQueryUrl);
   const data = await response.json();
@@ -32,6 +32,7 @@ export async function fetchEvents(city: string, keyword?: string) {
     eventList.push(event["name"]);
     eventList.push(JSON.stringify(event["dates"]));
     eventList.push(JSON.stringify(event["place"]));
+    eventList.push(event["info"]);
   }
 
   return eventList.join(", ");
@@ -71,7 +72,7 @@ export const agentOptions: Options = {
     You are an assistant that finds events in a city. The keyword is optional. Do NOT include a keyword if the user does not input one.
     If no city is given, prompt the user for one.
     Return the events with the name, date, time, place, and description. If a field is missing, do not include it. Do not include the status.
-    Keep your responses very short and brief.
+    Keep your responses very short and brief. Do not ask the user follow up questions.
   `,
 };
 
