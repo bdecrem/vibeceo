@@ -4,7 +4,8 @@ import { CommandContext, CommandHandler } from "./types.js";
 const TICKETMASTER_PREFIX = "EVENTS";
 
 async function handleSearch(context: CommandContext): Promise<boolean> {
-  const { from, twilioClient, sendSmsResponse } = context;
+  const { from, twilioClient, sendSmsResponse, updateLastMessageDate } =
+    context;
   try {
     const message = await handleEventSearch(context.message);
 
@@ -16,6 +17,8 @@ async function handleSearch(context: CommandContext): Promise<boolean> {
       "❌ Could not fetch Ticketmaster events. Please try again.",
       twilioClient
     );
+  } finally {
+    await updateLastMessageDate(context.normalizedFrom);
   }
   return true;
 }
