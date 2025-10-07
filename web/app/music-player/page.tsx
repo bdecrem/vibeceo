@@ -350,6 +350,33 @@ function MusicPlayerContent(): JSX.Element {
       return;
     }
 
+    // Ensure cross-origin requests include credentials so Web Audio can process remote files.
+    if (!audioElement.crossOrigin) {
+      audioElement.crossOrigin = 'anonymous';
+    }
+
+    const resolveSourceUrl = (): URL | null => {
+      const candidate = audioElement.currentSrc || audioElement.src;
+      if (!candidate) {
+        return null;
+      }
+
+      try {
+        return new URL(candidate, window.location.href);
+      } catch {
+        return null;
+      }
+    };
+
+    const targetUrl = resolveSourceUrl();
+    const isSameOrigin = targetUrl ? targetUrl.origin === window.location.origin : true;
+    const hasCors = audioElement.crossOrigin === 'anonymous';
+
+    if (!isSameOrigin && !hasCors) {
+      console.warn('Skipping audio processing chain: cross-origin audio without CORS support.');
+      return;
+    }
+
     const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!AudioContextCtor) {
       console.warn('Web Audio API not supported; skipping dynamics processing.');
@@ -518,6 +545,7 @@ function MusicPlayerContent(): JSX.Element {
         preload="auto"
         controls={false}
         playsInline
+        crossOrigin="anonymous"
       />
     </main>
   );
