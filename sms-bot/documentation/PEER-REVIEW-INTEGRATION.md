@@ -20,9 +20,11 @@ Peer Review Fight Club now mirrors the AI Daily experience while sourcing data d
 - Uses shared cron infrastructure (`lib/scheduler/index.ts`) and Twilio client to broadcast
 - Delivery tracking: `agent_subscriptions.last_sent_at` via `markAgentReportSent`
 
-## Short Links
-- Audio URLs are shortened through the existing short link service (`SHORTLINK_SERVICE_URL` + `SHORTLINK_SERVICE_TOKEN`)
-- Fallback to the raw `audio_url` when the short link service is unavailable
+## Audio Player & Short Links
+- The SMS bot now deep-links to the shared `/music-player` page (same experience as AI Daily).
+- `getPeerReviewShortLink` builds the player URL (`https://b52s.me/music-player?...`) with title, description snippet, autoplay, and then shortens it via `SHORTLINK_SERVICE_URL` + `SHORTLINK_SERVICE_TOKEN`.
+- If the short link service is unavailable, the raw player URL is sent (never the legacy `audio_url`).
+- The player metadata mirrors the SMS headline (title fallback + summary snippet) so Crash and SMS stay in lockstep.
 
 ## Required Environment
 Make sure these variables are configured (all already used elsewhere):

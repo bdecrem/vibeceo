@@ -110,7 +110,10 @@ Report structure:
 ---
 
 ## Sources
-[List all sources with URLs]
+
+- List every reference that informed the report.
+- Use this exact markdown format for each entry: `- [Source Name](https://example.com) - one sentence on what the source contributes`.
+- Group related links together by repeating the source name if needed.
 
 Important: Always use the Write tool to save the markdown report to the provided path.
 """

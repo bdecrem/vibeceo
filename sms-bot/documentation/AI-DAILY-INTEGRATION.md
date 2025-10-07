@@ -3,7 +3,8 @@
 ## High-Level
 - Crash backend (running on the iMac) exposes `GET /api/ai-daily/latest` via the active ngrok URL; that endpoint must return the latest episode JSON (title, snippet, `audioUrl`, etc.).
 - Webtoys SMS bot (Mac mini) reads the base URL from `AI_DAILY_BASE_URL` and runs the scheduler inside `startSmsBot()`.
-- Every minute the scheduler checks Pacific Time (`AI_DAILY_SEND_HOUR`, `AI_DAILY_SEND_MINUTE`; defaults 7:00). When the clock matches, it fetches the latest episode (2 second timeout, 1 retry, 5 minute cache), mints a `b52s.me/l/{slug}` short link for the `audioUrl`, formats the SMS, and sends it via Twilio to any subscriber with `ai_daily_subscribed = true`. After sending, it updates `ai_daily_last_sent_at` to avoid duplicates.
+- Every minute the scheduler checks Pacific Time (`AI_DAILY_SEND_HOUR`, `AI_DAILY_SEND_MINUTE`; defaults 7:00). When the clock matches, it fetches the latest episode (2 second timeout, 1 retry, 5 minute cache), builds the `/music-player` deep link with the episode metadata, mints a `b52s.me/l/{slug}` short link for that player URL, formats the SMS, and sends it via Twilio to any subscriber with `ai_daily_subscribed = true`. After sending, it updates `ai_daily_last_sent_at` to avoid duplicates.
+  - Production builds run `npm run lint:music-player` before compiling, then set `NEXT_DISABLE_ESLINT=1` for `next build` so legacy pages no longer break the deploy.
 - On-demand command `AI DAILY` fetches the episode immediately without updating `ai_daily_last_sent_at` (still cached). `AI DAILY SUBSCRIBE` toggles the flag, confirms, and sends the latest episode right away. `AI DAILY STOP` clears the flag and confirmation.
 - If Crash returns an error (timeout / 404 / offline ngrok), the scheduler and command handler both send a fallback message (“AI Daily is temporarily unavailable…”) and log the failure. Once Crash is reachable again, no code changes are needed; the next fetch succeeds automatically.
 
@@ -40,7 +41,7 @@
   - `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` (existing)
   - `SHORTLINK_API_TOKEN` (same value as the SMS bot’s `SHORTLINK_SERVICE_TOKEN`)
   - `SHORTLINK_BASE_URL=https://b52s.me`
-- The SMS bot calls the service whenever an episode has an `audioUrl`. On success, AI Daily texts include `Listen: https://b52s.me/l/{slug}`; failures fall back to the full Supabase URL.
+- The SMS bot calls the service whenever an episode has an `audioUrl`. On success, AI Daily texts include `Listen: https://b52s.me/l/{slug}` that resolves into `/music-player` with title/description/autoplay. If shortening fails, the SMS falls back to the full player URL so the deep link still works.
 
 ## Failure Handling
 - Failed fetch → fallback SMS, log entry. No state change (unless the command success path already updated). Next successful fetch resumes normal behaviour automatically.

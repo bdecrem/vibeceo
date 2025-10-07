@@ -9,6 +9,7 @@ import {
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import {
   getAgentSubscribers,
   markAgentReportSent,
@@ -307,27 +308,24 @@ export function registerCryptoDailyJob(twilioClient: TwilioClient): void {
 export async function buildCryptoReportMessage(
   summary: string | null | undefined,
   isoDate: string,
-  publicUrl: string | null | undefined,
+  reportPathOrUrl: string | null | undefined,
   recipient: string,
   options: { podcastLink?: string | null } = {}
 ): Promise<string> {
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
-  const link = await resolveLink(publicUrl, recipient);
-  const podcastLink = options.podcastLink ?? null;
+  const rawLink = await resolveLink(reportPathOrUrl, recipient);
+  const displayLink = formatLinkForSms(rawLink);
+  const displayPodcastLink = formatLinkForSms(options.podcastLink ?? null);
 
-  const lines = [`${headline} — ${summaryLine}`];
+  const introLine = displayLink
+    ? `${headline} — ${summaryLine} ${displayLink}`
+    : `${headline} — ${summaryLine}`;
 
-  if (podcastLink) {
-    lines.push(`🎧 Listen: ${podcastLink}`);
-  }
+  const lines = [introLine.trim()];
 
-  if (link) {
-    if (podcastLink) {
-      lines.push(`📄 Full report: ${link}`);
-    } else {
-      lines.push(`🔗 ${link}`);
-    }
+  if (displayPodcastLink) {
+    lines.push(`🎧 Listen: ${displayPodcastLink}`);
   }
 
   return lines.join('\n');
@@ -337,7 +335,7 @@ function formatHeadline(isoDate: string): string {
   const parsed = new Date(isoDate);
 
   if (Number.isNaN(parsed.getTime())) {
-    return '✅ Crypto report';
+    return '🪙 Crypto report';
   }
 
   const formatted = new Intl.DateTimeFormat('en-US', {
@@ -347,7 +345,20 @@ function formatHeadline(isoDate: string): string {
     timeZone: 'America/Los_Angeles',
   }).format(parsed);
 
-  return `✅ Crypto report ${formatted}`;
+  return `🪙 Crypto report ${formatted}`;
+}
+
+function formatLinkForSms(url: string | null | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/^https?:\/\//i, '');
 }
 
 function formatSummary(summary?: string | null): string {
@@ -366,22 +377,26 @@ function formatSummary(summary?: string | null): string {
   return sentence.trim();
 }
 
-async function resolveLink(publicUrl: string | null | undefined, recipient: string): Promise<string | null> {
-  if (!publicUrl) {
+async function resolveLink(reportPath: string | null | undefined, recipient: string): Promise<string | null> {
+  if (!reportPath) {
     return null;
   }
 
+  // Build report viewer URL from the storage path
+  // reportPath is like "crypto-research/reports/2025-10-06.md"
+  const viewerUrl = buildReportViewerUrl({ path: reportPath });
+
   try {
-    const short = await createShortLink(publicUrl, {
-      context: 'crypto-report',
+    const short = await createShortLink(viewerUrl, {
+      context: 'crypto-report-viewer',
       createdFor: recipient,
       createdBy: 'sms-bot',
     });
 
-    return short || publicUrl;
+    return short || viewerUrl;
   } catch (error) {
-    console.warn('Failed to shorten crypto report link:', error);
-    return publicUrl;
+    console.warn('Failed to shorten crypto report viewer link:', error);
+    return viewerUrl;
   }
 }
 
@@ -419,7 +434,7 @@ async function broadcastCryptoReport(
         const message = await buildCryptoReportMessage(
           metadata.summary,
           metadata.date,
-          metadata.reportShortLink ?? metadata.publicUrl,
+          metadata.reportPath, // Pass the storage path for report viewer
           subscriber.phone_number,
           {
             podcastLink:
