@@ -27,7 +27,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         '--model',
-        default=os.getenv('MEDICAL_DAILY_MODEL', 'gpt-5'),
+        default=os.getenv('MEDICAL_DAILY_MODEL', 'gpt-4o'),
         help='Override the LLM model used for summarisation.'
     )
     parser.add_argument(
