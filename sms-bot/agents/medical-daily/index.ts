@@ -594,11 +594,11 @@ export async function buildMedicalDailyMessage(
   const lines: string[] = [`${headline} - ${summary}`];
 
   if (audioLink) {
-    lines.push(`Listen: ${audioLink}`);
+    lines.push(`🎧 Listen: ${audioLink}`);
   }
 
   if (reportLink) {
-    lines.push(`Full briefing: ${reportLink}`);
+    lines.push(`📄 Full briefing: ${reportLink}`);
   }
 
   lines.push('Reply MD LINKS for sources.');
@@ -691,5 +691,4 @@ export function registerMedicalDailyJob(twilioClient: TwilioClient): void {
     },
   });
 }
-
 
