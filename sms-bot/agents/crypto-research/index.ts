@@ -43,7 +43,7 @@ const AGENT_SCRIPT = path.join(
   'crypto-research',
   'agent.py'
 );
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
+const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
 const CRYPTO_JOB_HOUR = Number(process.env.CRYPTO_REPORT_HOUR || 7);
 const CRYPTO_JOB_MINUTE = Number(process.env.CRYPTO_REPORT_MINUTE || 5);
 export const CRYPTO_AGENT_SLUG = 'crypto-daily';
@@ -133,9 +133,18 @@ async function runPythonAgent(date?: string): Promise<AgentRunResult> {
     args.push('--date', date);
   }
 
+  // Create environment for Python agent
+  // Use ANTHROPIC_API_KEY (not OAuth) for authentication
+  const agentEnv = {
+    ...process.env,
+    ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
+    // Remove any OAuth tokens to force API key usage
+    CLAUDE_CODE_OAUTH_TOKEN: undefined,
+  };
+
   const subprocess = spawn(PYTHON_BIN, args, {
     cwd: process.cwd(),
-    env: process.env,
+    env: agentEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -318,11 +327,11 @@ export async function buildCryptoReportMessage(
   const displayLink = formatLinkForSms(rawLink);
   const displayPodcastLink = formatLinkForSms(options.podcastLink ?? null);
 
-  const introLine = displayLink
-    ? `${headline} — ${summaryLine} ${displayLink}`
-    : `${headline} — ${summaryLine}`;
+  const lines = [`${headline} — ${summaryLine}`.trim()];
 
-  const lines = [introLine.trim()];
+  if (displayLink) {
+    lines.push(`📄 Full report: ${displayLink}`);
+  }
 
   if (displayPodcastLink) {
     lines.push(`🎧 Listen: ${displayPodcastLink}`);
@@ -358,7 +367,11 @@ function formatLinkForSms(url: string | null | undefined): string | null {
     return null;
   }
 
-  return trimmed.replace(/^https?:\/\//i, '');
+  if (/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `https://${trimmed}`;
 }
 
 function formatSummary(summary?: string | null): string {
