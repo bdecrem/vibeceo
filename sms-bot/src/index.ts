@@ -1,8 +1,6 @@
-import express from 'express';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { startSmsBot } from '../lib/sms/bot.js';
 
 // Get the sms-bot directory (not the dist/src directory)
 const __filename = fileURLToPath(import.meta.url);
@@ -32,8 +30,14 @@ if (!isProduction) {
   }
 }
 
-// Start the SMS bot
-startSmsBot().catch(console.error);
+async function start() {
+  const { startSmsBot } = await import('../lib/sms/bot.js');
+  await startSmsBot();
+}
+
+start().catch((error) => {
+  console.error(error);
+});
 
 // Handle graceful shutdown
 process.on('SIGTERM', () => {
