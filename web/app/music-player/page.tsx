@@ -350,11 +350,6 @@ function MusicPlayerContent(): JSX.Element {
       return;
     }
 
-    // Ensure cross-origin requests include credentials so Web Audio can process remote files.
-    if (!audioElement.crossOrigin) {
-      audioElement.crossOrigin = 'anonymous';
-    }
-
     const resolveSourceUrl = (): URL | null => {
       const candidate = audioElement.currentSrc || audioElement.src;
       if (!candidate) {
@@ -370,11 +365,18 @@ function MusicPlayerContent(): JSX.Element {
 
     const targetUrl = resolveSourceUrl();
     const isSameOrigin = targetUrl ? targetUrl.origin === window.location.origin : true;
-    const hasCors = audioElement.crossOrigin === 'anonymous';
+    const corsWhitelist = ['supabase.co', 'supabase.in'];
+    const isWhitelisted = targetUrl
+      ? corsWhitelist.some((domain) => targetUrl.hostname.endsWith(domain))
+      : false;
 
-    if (!isSameOrigin && !hasCors) {
-      console.warn('Skipping audio processing chain: cross-origin audio without CORS support.');
+    if (!isSameOrigin && !isWhitelisted) {
+      audioElement.removeAttribute('crossorigin');
       return;
+    }
+
+    if (!audioElement.crossOrigin) {
+      audioElement.crossOrigin = 'anonymous';
     }
 
     const AudioContextCtor = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -441,7 +443,7 @@ function MusicPlayerContent(): JSX.Element {
         audioContextRef.current = null;
       }
     };
-  }, []);
+  }, [currentTrack?.src]);
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6 py-10">
@@ -545,7 +547,6 @@ function MusicPlayerContent(): JSX.Element {
         preload="auto"
         controls={false}
         playsInline
-        crossOrigin="anonymous"
       />
     </main>
   );
