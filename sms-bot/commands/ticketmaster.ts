@@ -26,8 +26,6 @@ export const ticketmasterCommandHandler: CommandHandler = {
     return context.messageUpper.startsWith(TICKETMASTER_PREFIX);
   },
   async handle(context) {
-    if (context.messageUpper.startsWith(TICKETMASTER_PREFIX)) {
-      return handleSearch(context);
-    }
+    return handleSearch(context);
   },
 };
