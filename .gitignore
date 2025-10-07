@@ -130,3 +130,13 @@ tiny/
 
 # iOS App Security - API Keys
 iPhone/Webtoys/Webtoys/APIKeys.plist
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Agent-generated data files
+/sms-bot/data/crypto-reports/
+/sms-bot/data/medical-daily/
