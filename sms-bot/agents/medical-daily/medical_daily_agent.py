@@ -366,7 +366,7 @@ Host: {host_name}.
         return trimmed
 
 
-    def __init__(self, openai_api_key: str = None, model: str = "gpt-5", pubmed_max_age_days: int | None = None, pubmed_search_window_days: int | None = None):
+    def __init__(self, openai_api_key: str = None, model: str = "gpt-4o", pubmed_max_age_days: int | None = None, pubmed_search_window_days: int | None = None):
         """
         Initialize Medical Daily Agent
 
@@ -1376,7 +1376,7 @@ JSON:"""
                 tmax=PODCAST_TARGET_SECONDS_MAX
             )
             resp = client.chat.completions.create(
-                model=self.model or "gpt-5",
+                model=self.model or "gpt-4o",
                 messages=[
                     {"role": "system", "content": "You are a meticulous science radio writer. Be engaging, accurate, and concise."},
                     {"role": "user", "content": prompt}
@@ -1762,7 +1762,7 @@ def main():
     print("[MEDICAL DAILY] Medical Daily Agent - Demo Mode\n")
     
     # Initialize agent (will use OPENAI_API_KEY env variable if available)
-    agent = MedicalDailyAgent(model="gpt-5")
+    agent = MedicalDailyAgent(model="gpt-4o")
     
     print(f"[INFO] Using model: {agent.model}")
     

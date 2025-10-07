@@ -10,6 +10,8 @@ import {
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
+import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import {
   getAgentSubscribers,
   markAgentReportSent,
@@ -403,15 +405,19 @@ export async function runAndStoreMedicalDailyReport(): Promise<MedicalDailyRepor
   });
 
   let reportShortLink: string | null = null;
-  if (stored.publicUrl) {
+  if (stored.reportPath) {
+    // Build report viewer URL from storage path
+    const viewerUrl = buildReportViewerUrl({ path: stored.reportPath });
     try {
-      reportShortLink = await createShortLink(stored.publicUrl, {
+      reportShortLink = await createShortLink(viewerUrl, {
         context: 'medical-daily-report',
         createdBy: 'sms-bot',
         createdFor: 'medical-daily',
       });
     } catch (error) {
-      console.warn('Failed to create Medical Daily report short link:', error);
+      console.warn('Failed to create Medical Daily report viewer short link:', error);
+      // Fallback to viewer URL without shortening
+      reportShortLink = viewerUrl;
     }
   }
 
@@ -423,14 +429,24 @@ export async function runAndStoreMedicalDailyReport(): Promise<MedicalDailyRepor
 
   let audioShortLink: string | null = null;
   if (audioCandidate) {
+    // Build music player URL from audio source
+    const playerUrl = buildMusicPlayerUrl({
+      src: audioCandidate,
+      title: `Medical Daily ${result.date}`,
+      description: summary,
+      autoplay: true,
+    });
+
     try {
-      audioShortLink = await createShortLink(audioCandidate, {
+      audioShortLink = await createShortLink(playerUrl, {
         context: 'medical-daily-audio',
         createdBy: 'sms-bot',
         createdFor: 'medical-daily',
       });
     } catch (error) {
-      console.warn('Failed to create Medical Daily audio short link:', error);
+      console.warn('Failed to create Medical Daily player short link:', error);
+      // Fallback to player URL without shortening
+      audioShortLink = playerUrl;
     }
   }
 
@@ -495,29 +511,43 @@ export async function getLatestStoredMedicalReport(): Promise<MedicalDailyReport
   }
 
   let reportShortLink = details?.report_short_link ?? null;
-  if (!reportShortLink && stored.publicUrl) {
+  if (!reportShortLink && stored.reportPath) {
+    // Build report viewer URL from storage path
+    const viewerUrl = buildReportViewerUrl({ path: stored.reportPath });
     try {
-      reportShortLink = await createShortLink(stored.publicUrl, {
+      reportShortLink = await createShortLink(viewerUrl, {
         context: 'medical-daily-report',
         createdBy: 'sms-bot',
         createdFor: 'medical-daily',
       });
     } catch (error) {
-      console.warn('Failed to create Medical Daily report short link:', error);
+      console.warn('Failed to create Medical Daily report viewer short link:', error);
+      // Fallback to viewer URL without shortening
+      reportShortLink = viewerUrl;
     }
   }
 
   const audioCandidate = selectAudioLink(details, null);
   let audioShortLink = details?.audio_short_link ?? null;
   if (!audioShortLink && audioCandidate) {
+    // Build music player URL from audio source
+    const playerUrl = buildMusicPlayerUrl({
+      src: audioCandidate,
+      title: `Medical Daily ${stored.date}`,
+      description: stored.summary || 'Daily medical research briefing',
+      autoplay: true,
+    });
+
     try {
-      audioShortLink = await createShortLink(audioCandidate, {
+      audioShortLink = await createShortLink(playerUrl, {
         context: 'medical-daily-audio',
         createdBy: 'sms-bot',
         createdFor: 'medical-daily',
       });
     } catch (error) {
-      console.warn('Failed to create Medical Daily audio short link:', error);
+      console.warn('Failed to create Medical Daily player short link:', error);
+      // Fallback to player URL without shortening
+      audioShortLink = playerUrl;
     }
   }
 
