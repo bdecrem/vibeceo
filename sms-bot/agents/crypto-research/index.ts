@@ -314,21 +314,18 @@ export async function buildCryptoReportMessage(
 ): Promise<string> {
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
-  const link = await resolveLink(reportPathOrUrl, recipient);
-  const podcastLink = options.podcastLink ?? null;
+  const rawLink = await resolveLink(reportPathOrUrl, recipient);
+  const displayLink = formatLinkForSms(rawLink);
+  const displayPodcastLink = formatLinkForSms(options.podcastLink ?? null);
 
-  const lines = [`${headline} — ${summaryLine}`];
+  const introLine = displayLink
+    ? `${headline} — ${summaryLine} ${displayLink}`
+    : `${headline} — ${summaryLine}`;
 
-  if (podcastLink) {
-    lines.push(`🎧 Listen: ${podcastLink}`);
-  }
+  const lines = [introLine.trim()];
 
-  if (link) {
-    if (podcastLink) {
-      lines.push(`📄 Full report: ${link}`);
-    } else {
-      lines.push(`🔗 ${link}`);
-    }
+  if (displayPodcastLink) {
+    lines.push(`🎧 Listen: ${displayPodcastLink}`);
   }
 
   return lines.join('\n');
@@ -338,7 +335,7 @@ function formatHeadline(isoDate: string): string {
   const parsed = new Date(isoDate);
 
   if (Number.isNaN(parsed.getTime())) {
-    return '✅ Crypto report';
+    return '🪙 Crypto report';
   }
 
   const formatted = new Intl.DateTimeFormat('en-US', {
@@ -348,7 +345,20 @@ function formatHeadline(isoDate: string): string {
     timeZone: 'America/Los_Angeles',
   }).format(parsed);
 
-  return `✅ Crypto report ${formatted}`;
+  return `🪙 Crypto report ${formatted}`;
+}
+
+function formatLinkForSms(url: string | null | undefined): string | null {
+  if (!url) {
+    return null;
+  }
+
+  const trimmed = url.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return trimmed.replace(/^https?:\/\//i, '');
 }
 
 function formatSummary(summary?: string | null): string {

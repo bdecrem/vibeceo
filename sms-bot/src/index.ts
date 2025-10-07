@@ -1,15 +1,33 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import { fileURLToPath } from 'url';
+import { dirname, join } from 'path';
 import { startSmsBot } from '../lib/sms/bot.js';
+
+// Get the sms-bot directory (not the dist/src directory)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+// From dist/src/index.js -> go up to sms-bot/
+const smsBotRoot = join(__dirname, '..', '..');
 
 // Environment detection
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Load environment variables in development
+// Load environment variables - always use sms-bot/.env.local regardless of cwd
 if (!isProduction) {
-  const result = dotenv.config({ path: '.env.local' });
+  const envPath = join(smsBotRoot, '.env.local');
+  const result = dotenv.config({ path: envPath });
   if (result.error) {
-    console.error('Error loading .env.local file:', result.error);
+    console.error(`❌ Error loading .env.local from ${envPath}:`, result.error);
+    process.exit(1);
+  }
+  console.log(`✅ Loaded environment from ${envPath}`);
+
+  // Verify critical Supabase variables
+  if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_KEY) {
+    console.error('❌ Missing critical Supabase environment variables!');
+    console.error('SUPABASE_URL:', process.env.SUPABASE_URL ? '✅' : '❌ MISSING');
+    console.error('SUPABASE_SERVICE_KEY:', process.env.SUPABASE_SERVICE_KEY ? '✅' : '❌ MISSING');
     process.exit(1);
   }
 }
