@@ -452,6 +452,27 @@ Host: {host_name}.
             True,
         )
 
+        lookback_days = self._parse_int_env(
+            ['MEDICAL_DAILY_PREPRINT_LOOKBACK_DAYS', 'MEDICAL_DAILY_PREPRINT_WINDOW'],
+            2,
+        )
+        if lookback_days is None or lookback_days < 1:
+            lookback_days = 1
+        self.preprint_lookback_days = lookback_days
+
+        preprint_limit = self._parse_int_env(
+            ['MEDICAL_DAILY_PREPRINT_LIMIT', 'MEDICAL_DAILY_PREPRINT_MAX'],
+            3,
+        )
+        if preprint_limit is None:
+            preprint_limit = 3
+        self.preprint_max_results = max(preprint_limit, 0)
+
+        self.include_preprints = self._parse_bool_env(
+            ['MEDICAL_DAILY_INCLUDE_PREPRINTS', 'MEDICAL_DAILY_ENABLE_PREPRINTS'],
+            True,
+        )
+
         default_max_age = PUBMED_DEFAULT_MAX_AGE_DAYS
         env_max_age = os.getenv('MEDICAL_DAILY_PUBMED_MAX_AGE_DAYS')
         max_age_sentinel = object()
@@ -1083,6 +1104,109 @@ Host: {host_name}.
             return []
     
 
+
+
+    def fetch_preprint_articles(self, max_results: int = 3) -> List[Dict]:
+        '''Fetch recent medRxiv and bioRxiv preprints.'''
+        if max_results <= 0 or not self.include_preprints:
+            return []
+
+        print('[SEARCH] Fetching medRxiv/bioRxiv preprints...')
+
+        lookback_days = max(self.preprint_lookback_days or 1, 1)
+        end_date = datetime.utcnow().date()
+        start_date = end_date - timedelta(days=lookback_days)
+
+        base_url = 'https://api.biorxiv.org/details'
+        servers = [
+            ('medrxiv', 'medRxiv'),
+            ('biorxiv', 'bioRxiv'),
+        ]
+
+        sort_pool: list[Dict] = []
+        seen_dois: set[str] = set()
+
+        for server_id, label in servers:
+            try:
+                url = f"{base_url}/{server_id}/{start_date.isoformat()}/{end_date.isoformat()}"
+                response = requests.get(url, timeout=10)
+                response.raise_for_status()
+                payload = response.json()
+                records = payload.get('collection') or []
+                if not isinstance(records, list):
+                    continue
+
+                for entry in records:
+                    doi = (entry.get('doi') or '').strip()
+                    if doi and doi in seen_dois:
+                        continue
+
+                    title = (entry.get('title') or '').strip()
+                    abstract = (entry.get('abstract') or '').strip()
+                    if not title:
+                        continue
+
+                    iso_date = (entry.get('date') or '').strip()
+                    display_date = iso_date or 'Recent'
+                    sort_timestamp = 0.0
+                    if iso_date:
+                        try:
+                            parsed = datetime.strptime(iso_date, '%Y-%m-%d')
+                            display_date = parsed.strftime('%Y %b %d')
+                            sort_timestamp = parsed.timestamp()
+                        except ValueError:
+                            display_date = iso_date
+
+                    url_candidate = entry.get('link') or entry.get('rel_link') or ''
+                    if not url_candidate and doi:
+                        url_candidate = f"https://doi.org/{doi}"
+
+                    score = self._score_pubmed_article(
+                        title=title,
+                        abstract=abstract or title,
+                        journal=label,
+                        publication_types=['Preprint']
+                    )
+                    if server_id == 'medrxiv':
+                        score += 0.4
+
+                    record = {
+                        'title': title,
+                        'abstract': abstract,
+                        'journal': label,
+                        'date': display_date,
+                        'url': url_candidate or None,
+                        'doi': doi or None,
+                        'category': entry.get('category'),
+                        'importance_score': score,
+                        'authors': entry.get('authors'),
+                        'type': 'Preprint',
+                        '_sort_timestamp': sort_timestamp,
+                    }
+
+                    sort_pool.append(record)
+                    if doi:
+                        seen_dois.add(doi)
+            except Exception as exc:
+                print(f"[WARN] Preprint fetch failed for {label}: {exc}")
+                continue
+
+        if not sort_pool:
+            print('[WARN] No preprints found for the selected window.')
+            return []
+
+        sort_pool.sort(key=lambda item: (item.get('importance_score', 0.0), item.get('_sort_timestamp', 0.0)), reverse=True)
+
+        curated: list[Dict] = []
+        for item in sort_pool:
+            pruned = {k: v for k, v in item.items() if not k.startswith('_')}
+            curated.append(pruned)
+            if len(curated) >= max_results:
+                break
+
+        print(f"[OK] Curated {len(curated)} preprints (scanned {len(sort_pool)})")
+        return curated
+
     def generate_summaries(self, articles: List[Dict]) -> List[Dict]:
         """Generate concise summaries using LLM"""
         print('[BOT] Generating summaries with LLM...')
@@ -1400,42 +1524,59 @@ JSON:"""
         )
         max_chars = 3500
 
-        for idx, article in enumerate(articles):
-            title = article.get('title', 'A new study').strip() or 'A new study'
-            title_clean = title.rstrip('.!?')
-            summary = article.get('summary') or article.get('abstract') or article.get('description') or ''
-            summary = summary.replace('\n', ' ').strip()
-            if summary and len(summary) > 200:
-                summary = summary[:197] + '...'
-            if not summary or len(summary) <= 30:
-                fallback = article.get('journal', 'a leading medical journal')
-                summary = f"This update from {fallback} highlights an important development to watch."
-
-            if summary[-1] not in '.!?':
-                summary += '.'
-
-            if idx == 0:
-                lead_in = "First up"
-            else:
-                lead_in = transitions[min(idx - 1, len(transitions) - 1)]
-            segment_text = f"{lead_in}, {title_clean}. {summary}".strip()
-
-            tentative_segments = body_segments + [segment_text]
-            body_text = "\n\n".join(tentative_segments)
-            candidate = intro + ("\n\n" + body_text if body_text else "") + "\n\n" + closing
-            if len(candidate) > max_chars:
-                break
-
-            body_segments.append(segment_text)
-
-        parts = [intro]
-        if body_segments:
-            parts.append("\n\n".join(body_segments))
-        parts.append(closing)
-
-        script = "\n\n".join(parts)
-        script = self._ensure_tts_safe_length(script, articles)
-        return script
+        def _build_segment_summary(article: Dict) -> str:
+            candidate = (
+                article.get('detail_summary')
+                or article.get('summary')
+                or article.get('abstract')
+                or article.get('description')
+                or ''
+            )
+            summary = ' '.join(candidate.split())
+            if not summary:
+                fallback_source = article.get('journal', 'a leading medical journal')
+                return f"This update from {fallback_source} highlights an important development to watch."
+
+            max_chars = 600
+            if len(summary) > max_chars:
+                clipped = summary[:max_chars]
+                cutoff = max(clipped.rfind('.'), clipped.rfind('!'), clipped.rfind('?'))
+                if cutoff > 0:
+                    summary = clipped[:cutoff + 1]
+                else:
+                    summary = clipped.rstrip() + '...'
+
+            if summary[-1] not in '.!?':
+                summary += '.'
+            return summary
+
+        for idx, article in enumerate(articles):
+            title = article.get('title', 'A new study').strip() or 'A new study'
+            title_clean = title.rstrip('.!?')
+            summary = _build_segment_summary(article)
+
+            if idx == 0:
+                lead_in = 'First up'
+            else:
+                lead_in = transitions[min(idx - 1, len(transitions) - 1)]
+            segment_text = f"{lead_in}, {title_clean}. {summary}".strip()
+
+            tentative_segments = body_segments + [segment_text]
+            body_text = '\n\n'.join(tentative_segments)
+            candidate = intro + ('\n\n' + body_text if body_text else '') + '\n\n' + closing
+            if len(candidate) > max_chars:
+                break
+
+            body_segments.append(segment_text)
+
+        parts = [intro]
+        if body_segments:
+            parts.append('\n\n'.join(body_segments))
+        parts.append(closing)
+
+        script = '\n\n'.join(parts)
+        script = self._ensure_tts_safe_length(script, articles)
+        return script
 
     def generate_audio(self, script: str, output_file: str = "medical_daily.mp3") -> Optional[str]:
         """Generate audio from script using ElevenLabs, falling back to OpenAI TTS."""
@@ -1493,10 +1634,11 @@ JSON:"""
 
         # Fetch content
         pubmed_articles = self.fetch_pubmed_articles(max_results=7)
+        preprint_articles = self.fetch_preprint_articles(max_results=self.preprint_max_results)
         fda_approvals = self.fetch_fda_approvals()
         
         # Combine all articles
-        all_articles = pubmed_articles + fda_approvals
+        all_articles = pubmed_articles + preprint_articles + fda_approvals
         random.shuffle(all_articles)
 
         if not all_articles:
