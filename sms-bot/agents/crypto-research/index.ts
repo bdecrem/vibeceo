@@ -323,18 +323,21 @@ export async function buildCryptoReportMessage(
 ): Promise<string> {
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
-  const rawLink = await resolveLink(reportPathOrUrl, recipient);
-  const displayLink = formatLinkForSms(rawLink);
-  const displayPodcastLink = formatLinkForSms(options.podcastLink ?? null);
+  const link = await resolveLink(reportPathOrUrl, recipient);
+  const podcastLink = options.podcastLink ?? null;
 
-  const lines = [`${headline} — ${summaryLine}`.trim()];
+  const lines = [`${headline} — ${summaryLine}`];
 
-  if (displayLink) {
-    lines.push(`📄 Full report: ${displayLink}`);
+  if (podcastLink) {
+    lines.push(`🎧 Listen: ${podcastLink}`);
   }
 
-  if (displayPodcastLink) {
-    lines.push(`🎧 Listen: ${displayPodcastLink}`);
+  if (link) {
+    if (podcastLink) {
+      lines.push(`📄 Full report: ${link}`);
+    } else {
+      lines.push(`🔗 ${link}`);
+    }
   }
 
   return lines.join('\n');
@@ -355,23 +358,6 @@ function formatHeadline(isoDate: string): string {
   }).format(parsed);
 
   return `🪙 Crypto report ${formatted}`;
-}
-
-function formatLinkForSms(url: string | null | undefined): string | null {
-  if (!url) {
-    return null;
-  }
-
-  const trimmed = url.trim();
-  if (!trimmed) {
-    return null;
-  }
-
-  if (/^https?:\/\//i.test(trimmed)) {
-    return trimmed;
-  }
-
-  return `https://${trimmed}`;
 }
 
 function formatSummary(summary?: string | null): string {
