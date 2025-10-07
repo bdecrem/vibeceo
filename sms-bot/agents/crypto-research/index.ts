@@ -9,6 +9,7 @@ import {
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import {
   getAgentSubscribers,
   markAgentReportSent,
@@ -42,7 +43,7 @@ const AGENT_SCRIPT = path.join(
   'crypto-research',
   'agent.py'
 );
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
+const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
 const CRYPTO_JOB_HOUR = Number(process.env.CRYPTO_REPORT_HOUR || 7);
 const CRYPTO_JOB_MINUTE = Number(process.env.CRYPTO_REPORT_MINUTE || 5);
 export const CRYPTO_AGENT_SLUG = 'crypto-daily';
@@ -132,9 +133,18 @@ async function runPythonAgent(date?: string): Promise<AgentRunResult> {
     args.push('--date', date);
   }
 
+  // Create environment for Python agent
+  // Use ANTHROPIC_API_KEY (not OAuth) for authentication
+  const agentEnv = {
+    ...process.env,
+    ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
+    // Remove any OAuth tokens to force API key usage
+    CLAUDE_CODE_OAUTH_TOKEN: undefined,
+  };
+
   const subprocess = spawn(PYTHON_BIN, args, {
     cwd: process.cwd(),
-    env: process.env,
+    env: agentEnv,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -307,13 +317,13 @@ export function registerCryptoDailyJob(twilioClient: TwilioClient): void {
 export async function buildCryptoReportMessage(
   summary: string | null | undefined,
   isoDate: string,
-  publicUrl: string | null | undefined,
+  reportPathOrUrl: string | null | undefined,
   recipient: string,
   options: { podcastLink?: string | null } = {}
 ): Promise<string> {
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
-  const link = await resolveLink(publicUrl, recipient);
+  const link = await resolveLink(reportPathOrUrl, recipient);
   const podcastLink = options.podcastLink ?? null;
 
   const lines = [`${headline} — ${summaryLine}`];
@@ -337,7 +347,7 @@ function formatHeadline(isoDate: string): string {
   const parsed = new Date(isoDate);
 
   if (Number.isNaN(parsed.getTime())) {
-    return '✅ Crypto report';
+    return '🪙 Crypto report';
   }
 
   const formatted = new Intl.DateTimeFormat('en-US', {
@@ -347,7 +357,7 @@ function formatHeadline(isoDate: string): string {
     timeZone: 'America/Los_Angeles',
   }).format(parsed);
 
-  return `✅ Crypto report ${formatted}`;
+  return `🪙 Crypto report ${formatted}`;
 }
 
 function formatSummary(summary?: string | null): string {
@@ -366,22 +376,26 @@ function formatSummary(summary?: string | null): string {
   return sentence.trim();
 }
 
-async function resolveLink(publicUrl: string | null | undefined, recipient: string): Promise<string | null> {
-  if (!publicUrl) {
+async function resolveLink(reportPath: string | null | undefined, recipient: string): Promise<string | null> {
+  if (!reportPath) {
     return null;
   }
 
+  // Build report viewer URL from the storage path
+  // reportPath is like "crypto-research/reports/2025-10-06.md"
+  const viewerUrl = buildReportViewerUrl({ path: reportPath });
+
   try {
-    const short = await createShortLink(publicUrl, {
-      context: 'crypto-report',
+    const short = await createShortLink(viewerUrl, {
+      context: 'crypto-report-viewer',
       createdFor: recipient,
       createdBy: 'sms-bot',
     });
 
-    return short || publicUrl;
+    return short || viewerUrl;
   } catch (error) {
-    console.warn('Failed to shorten crypto report link:', error);
-    return publicUrl;
+    console.warn('Failed to shorten crypto report viewer link:', error);
+    return viewerUrl;
   }
 }
 
@@ -419,7 +433,7 @@ async function broadcastCryptoReport(
         const message = await buildCryptoReportMessage(
           metadata.summary,
           metadata.date,
-          metadata.reportShortLink ?? metadata.publicUrl,
+          metadata.reportPath, // Pass the storage path for report viewer
           subscriber.phone_number,
           {
             podcastLink:

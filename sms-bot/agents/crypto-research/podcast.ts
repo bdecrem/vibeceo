@@ -1,5 +1,6 @@
 import { supabase } from '../../lib/supabase.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
 import OpenAI from 'openai';
 import { v5 as uuidv5 } from 'uuid';
 import ElevenLabsProvider from './ElevenLabsProvider.js';
@@ -40,7 +41,19 @@ const ELEVENLABS_STYLE = process.env.CRYPTO_PODCAST_ELEVENLABS_STYLE
 
 const PODCAST_TARGET_DURATION_MINUTES = Number(process.env.CRYPTO_PODCAST_TARGET_MINUTES || 6);
 
-const PODCAST_BUCKET = process.env.CRYPTO_PODCAST_AUDIO_BUCKET || 'audio-files';
+const LEGACY_PODCAST_BUCKET = 'audio-files';
+const configuredPodcastBucket = process.env.CRYPTO_PODCAST_AUDIO_BUCKET;
+
+const PODCAST_BUCKET =
+  configuredPodcastBucket && configuredPodcastBucket !== LEGACY_PODCAST_BUCKET
+    ? configuredPodcastBucket
+    : 'audio';
+
+if (configuredPodcastBucket === LEGACY_PODCAST_BUCKET) {
+  console.warn(
+    'CRYPTO_PODCAST_AUDIO_BUCKET is set to legacy bucket "audio-files". Using "audio" instead.'
+  );
+}
 
 const elevenLabsProvider = new ElevenLabsProvider({
   apiKey: ELEVENLABS_API_KEY,
@@ -66,6 +79,11 @@ export interface PodcastGenerationResult {
   title: string;
   durationSeconds: number;
 }
+
+type ExistingEpisode = PodcastGenerationResult & {
+  episodeNumber: number;
+  rawShowNotesJson?: unknown;
+};
 
 class PodcastGenerationError extends Error {
   constructor(message: string, cause?: unknown) {
@@ -96,16 +114,36 @@ export async function generateCryptoPodcast(
     const topicId = await ensureTopicExists();
     console.log('✓ Topic ensured:', topicId);
 
-    const existingEpisode = await findExistingEpisode(topicId, input.date);
-    const shouldReuse = existingEpisode && !input.forceRegenerate;
+    await normalizeTopicEpisodes(topicId);
+
+    let existingEpisode = await findExistingEpisode(topicId, input.date);
+    let shouldRegenerate = Boolean(input.forceRegenerate);
 
     if (existingEpisode) {
       console.log('✓ Found existing episode:', existingEpisode.episodeId);
       await ensureTopicEpisodePointer(topicId, existingEpisode.episodeId);
-      if (shouldReuse) {
-        console.log('↩ Reusing existing episode (forceRegenerate=false)');
-        return existingEpisode;
+
+      if (!shouldRegenerate && isLegacyAudioUrl(existingEpisode.audioUrl)) {
+        console.log('🚚 Episode audio stored in legacy bucket; migrating to current storage...');
+        try {
+          existingEpisode = await migrateEpisodeAudioToCurrentBucket({
+            topicId,
+            episode: existingEpisode,
+          });
+          console.log('✓ Episode audio migrated to bucket:', PODCAST_BUCKET);
+        } catch (migrationError) {
+          console.warn('⚠️ Legacy audio migration failed, forcing regeneration:', migrationError);
+          shouldRegenerate = true;
+        }
       }
+    }
+
+    if (existingEpisode && !shouldRegenerate) {
+      console.log('↩ Reusing existing episode (forceRegenerate=false)');
+      return existingEpisode;
+    }
+
+    if (existingEpisode) {
       console.log('🔄 Regenerating episode (forceRegenerate=true)');
     }
 
@@ -118,15 +156,37 @@ export async function generateCryptoPodcast(
     console.log('✓ Audio synthesized:', audioBuffer.length, 'bytes,', durationSeconds, 'seconds');
 
     console.log('☁️ Uploading audio to Supabase storage...');
-    const { audioUrl, shortLink } = await uploadAndLinkAudio({
+    const { audioUrl } = await uploadAndLinkAudio({
       topicId,
       date: input.date,
       audioBuffer,
     });
     console.log('✓ Audio uploaded:', audioUrl);
-    console.log('✓ Short link created:', shortLink);
 
     const episodeTitle = buildEpisodeTitle(input.date);
+
+    const playerUrl = buildMusicPlayerUrl({
+      src: audioUrl,
+      title: episodeTitle,
+      description: input.summary,
+      autoplay: true,
+    });
+
+    let shortLink: string | null = null;
+    try {
+      shortLink = await createShortLink(playerUrl, {
+        context: 'crypto-podcast',
+        createdBy: 'sms-bot',
+        createdFor: 'crypto-agent',
+      });
+    } catch (error) {
+      console.warn('Failed to create player short link for crypto podcast:', error);
+    }
+
+    const resolvedShortLink = shortLink ?? playerUrl;
+
+    console.log('✓ Short link prepared:', resolvedShortLink);
+
 
     console.log('💾 Upserting episode to database...');
     const episodeId = await upsertEpisode({
@@ -137,7 +197,7 @@ export async function generateCryptoPodcast(
       audioUrl,
       summary: input.summary,
       publishedDate: input.date,
-      shortLink,
+      shortLink: resolvedShortLink,
       reportUrl: input.reportUrl,
       reportShortLink: input.reportShortLink,
       existingEpisode,
@@ -148,7 +208,7 @@ export async function generateCryptoPodcast(
 
     return {
       audioUrl,
-      shortLink,
+      shortLink: resolvedShortLink,
       reportLink: input.reportShortLink ?? input.reportUrl,
       topicId,
       episodeId,
@@ -182,6 +242,7 @@ export async function generateCryptoPodcast(
 export async function lookupCryptoPodcastEpisode(date: string): Promise<PodcastGenerationResult | null> {
   try {
     const topicId = await ensureTopicExists();
+    await normalizeTopicEpisodes(topicId);
     return findExistingEpisode(topicId, date);
   } catch (error) {
     console.error('Failed to lookup crypto podcast episode:', error);
@@ -210,6 +271,7 @@ async function ensureTopicExists(): Promise<string> {
   }
 
   if (existing) {
+    await syncTopicMetadata(topicId);
     return topicId;
   }
 
@@ -254,13 +316,65 @@ async function ensureTopicExists(): Promise<string> {
         throw fallback.error;
       }
 
+      await syncTopicMetadata(topicId);
       return topicId;
     }
 
     throw insertResult.error;
   }
 
+  await syncTopicMetadata(topicId);
   return topicId;
+}
+
+async function syncTopicMetadata(topicId: string): Promise<void> {
+  const baseUpdate = {
+    title: PODCAST_TITLE,
+    description: PODCAST_DESCRIPTION,
+    type: 'dated',
+    status: 'ready',
+  } as Record<string, unknown>;
+
+  const richUpdate = {
+    ...baseUpdate,
+    category: PODCAST_CATEGORY,
+    device_token: PODCAST_DEVICE_TOKEN,
+    user_prompt: 'Autogenerated daily crypto market briefing from B52s research agent.',
+    duration_requested: PODCAST_TARGET_DURATION_MINUTES,
+    number_of_episodes: 1,
+    episode_structure: {
+      cadence: 'daily',
+      generator: 'crypto-research-agent',
+    },
+  };
+
+  const { error } = await supabase
+    .from('topics')
+    .update(richUpdate)
+    .eq('id', topicId);
+
+  if (!error) {
+    return;
+  }
+
+  if (error.code === '42703' || error.code === '23502') {
+    console.warn(
+      'Topics table missing extended metadata columns – applying minimal crypto topic metadata update.'
+    );
+
+    const { error: fallbackError } = await supabase
+      .from('topics')
+      .update(baseUpdate)
+      .eq('id', topicId);
+
+    if (fallbackError) {
+      throw fallbackError;
+    }
+
+    return;
+  }
+
+  throw error;
 }
 
 function buildEpisodeTitle(isoDate: string): string {
@@ -277,7 +391,7 @@ function buildEpisodeTitle(isoDate: string): string {
 async function findExistingEpisode(
   topicId: string,
   isoDate: string
-): Promise<(PodcastGenerationResult & { episodeNumber: number }) | null> {
+): Promise<ExistingEpisode | null> {
   const episodeTitle = buildEpisodeTitle(isoDate);
 
   const { data, error } = await supabase
@@ -336,6 +450,29 @@ async function findExistingEpisode(
         reportLink = legacyReport;
       }
     }
+
+    if ((!shortLink || shortLink === data.audio_url) && typeof data.audio_url === 'string') {
+      const description = (() => {
+        const summary = typeof notes.summary === 'string' ? notes.summary : null;
+        if (summary && summary.trim().length) {
+          return summary;
+        }
+
+        const notesDescription = typeof notes.description === 'string' ? notes.description : null;
+        if (notesDescription && notesDescription.trim().length) {
+          return notesDescription;
+        }
+
+        return null;
+      })();
+
+      shortLink = buildMusicPlayerUrl({
+        src: data.audio_url,
+        title: episodeTitle,
+        description,
+        autoplay: true,
+      });
+    }
   }
 
   return {
@@ -347,7 +484,257 @@ async function findExistingEpisode(
     title: episodeTitle,
     durationSeconds,
     episodeNumber: data.episode_number || 1,
+    rawShowNotesJson: data.show_notes_json ?? undefined,
   };
+}
+
+async function normalizeTopicEpisodes(topicId: string): Promise<void> {
+  try {
+    const { data, error } = await supabase
+      .from('episodes')
+      .select('id, audio_url, show_notes_json, episode_number, title')
+      .eq('topic_id', topicId);
+
+    if (error) {
+      if (error.code === '42P01') {
+        console.warn('Episodes table not found while normalizing crypto topic; skipping.');
+        return;
+      }
+      throw error;
+    }
+
+    if (!data) {
+      return;
+    }
+
+    for (const row of data) {
+      if (!row || typeof row.id !== 'number') {
+        continue;
+      }
+
+      const audioUrl = typeof row.audio_url === 'string' ? row.audio_url : null;
+      const showNotes = row.show_notes_json ?? undefined;
+
+      if (!audioUrl) {
+        continue;
+      }
+
+      if (isLegacyAudioUrl(audioUrl)) {
+        try {
+          await migrateEpisodeAudio({
+            topicId,
+            episodeId: row.id,
+            audioUrl,
+            showNotesJson: showNotes,
+          });
+        } catch (migrationError) {
+          console.warn(
+            `⚠️ Failed migrating crypto episode ${row.id} to new audio bucket:`,
+            migrationError
+          );
+        }
+        continue;
+      }
+
+      const { changed, value } = prepareNormalizedShowNotesAudio(showNotes, audioUrl);
+
+      if (changed) {
+        const { error: updateError } = await supabase
+          .from('episodes')
+          .update({ show_notes_json: value })
+          .eq('id', row.id);
+
+        if (updateError) {
+          console.warn('⚠️ Failed to refresh show_notes_json for episode', row.id, updateError);
+        }
+      }
+    }
+  } catch (normalizationError) {
+    console.warn('⚠️ Failed to normalize crypto topic episodes:', normalizationError);
+  }
+}
+
+async function migrateEpisodeAudioToCurrentBucket(params: {
+  topicId: string;
+  episode: ExistingEpisode;
+}): Promise<ExistingEpisode> {
+  const { episode, topicId } = params;
+  const migrationResult = await migrateEpisodeAudio({
+    topicId,
+    episodeId: episode.episodeId,
+    audioUrl: episode.audioUrl,
+    showNotesJson: episode.rawShowNotesJson,
+  });
+
+  return {
+    ...episode,
+    audioUrl: migrationResult.audioUrl,
+    rawShowNotesJson: migrationResult.showNotesJson,
+  };
+}
+
+async function migrateEpisodeAudio(params: {
+  topicId: string;
+  episodeId: number;
+  audioUrl: string;
+  showNotesJson?: unknown;
+}): Promise<{ audioUrl: string; showNotesJson?: unknown }> {
+  const { topicId, episodeId, audioUrl, showNotesJson } = params;
+
+  const filePath = extractStoragePathFromPublicUrl(audioUrl, LEGACY_PODCAST_BUCKET);
+
+  if (!filePath) {
+    throw new PodcastGenerationError(
+      `Could not determine storage path for legacy crypto audio in bucket ${LEGACY_PODCAST_BUCKET}`
+    );
+  }
+
+  const { data: blob, error: downloadError } = await supabase.storage
+    .from(LEGACY_PODCAST_BUCKET)
+    .download(filePath);
+
+  if (downloadError) {
+    throw new PodcastGenerationError('Failed to download legacy crypto audio', downloadError);
+  }
+
+  if (!blob) {
+    throw new PodcastGenerationError('Legacy crypto audio download returned empty data');
+  }
+
+  const arrayBuffer = await blob.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+
+  await ensureAudioBucketExists();
+
+  const { error: uploadError } = await supabase.storage
+    .from(PODCAST_BUCKET)
+    .upload(filePath, buffer, {
+      contentType: 'audio/mpeg',
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new PodcastGenerationError('Failed to upload crypto audio to new bucket', uploadError);
+  }
+
+  const { data: publicData } = supabase.storage
+    .from(PODCAST_BUCKET)
+    .getPublicUrl(filePath);
+
+  const newAudioUrl = publicData?.publicUrl;
+
+  if (!newAudioUrl) {
+    throw new PodcastGenerationError('Could not obtain new public URL for migrated audio');
+  }
+
+  const updatedShowNotes = await applyEpisodeAudioUrlUpdate({
+    episodeId,
+    audioUrl: newAudioUrl,
+    showNotesJson,
+  });
+
+  console.log('✓ Migrated crypto audio for episode', episodeId, 'to bucket', PODCAST_BUCKET);
+
+  const { error: removeError } = await supabase.storage
+    .from(LEGACY_PODCAST_BUCKET)
+    .remove([filePath]);
+
+  if (removeError) {
+    console.warn(
+      `⚠️ Unable to remove legacy crypto audio file topics/${topicId} after migration:`,
+      removeError
+    );
+  }
+
+  return {
+    audioUrl: newAudioUrl,
+    showNotesJson: updatedShowNotes,
+  };
+}
+
+async function applyEpisodeAudioUrlUpdate(params: {
+  episodeId: number;
+  audioUrl: string;
+  showNotesJson?: unknown;
+}): Promise<unknown | undefined> {
+  const { episodeId, audioUrl, showNotesJson } = params;
+  const { changed, value } = prepareNormalizedShowNotesAudio(showNotesJson, audioUrl);
+
+  const updatePayload: Record<string, unknown> = { audio_url: audioUrl };
+
+  if (changed) {
+    updatePayload.show_notes_json = value;
+  }
+
+  const { error } = await supabase
+    .from('episodes')
+    .update(updatePayload)
+    .eq('id', episodeId);
+
+  if (error) {
+    throw error;
+  }
+
+  return changed ? value : showNotesJson;
+}
+
+function prepareNormalizedShowNotesAudio(
+  showNotesJson: unknown,
+  audioUrl: string
+): { changed: boolean; value?: Record<string, unknown> } {
+  if (!showNotesJson || typeof showNotesJson !== 'object') {
+    return {
+      changed: true,
+      value: {
+        audio: { url: audioUrl },
+      },
+    };
+  }
+
+  const cloned = JSON.parse(JSON.stringify(showNotesJson)) as Record<string, unknown>;
+  const audioEntry = cloned.audio && typeof cloned.audio === 'object'
+    ? { ...(cloned.audio as Record<string, unknown>) }
+    : {};
+
+  const currentUrl = typeof audioEntry.url === 'string' ? audioEntry.url : null;
+
+  if (currentUrl === audioUrl) {
+    return { changed: false };
+  }
+
+  audioEntry.url = audioUrl;
+  cloned.audio = audioEntry;
+
+  return { changed: true, value: cloned };
+}
+
+function isLegacyAudioUrl(audioUrl: string): boolean {
+  try {
+    const url = new URL(audioUrl);
+    return url.pathname.includes(`/storage/v1/object/public/${LEGACY_PODCAST_BUCKET}/`);
+  } catch (error) {
+    return audioUrl.includes(`${LEGACY_PODCAST_BUCKET}/`);
+  }
+}
+
+function extractStoragePathFromPublicUrl(audioUrl: string, bucket: string): string | null {
+  try {
+    const url = new URL(audioUrl);
+    const prefix = `/storage/v1/object/public/${bucket}/`;
+    const idx = url.pathname.indexOf(prefix);
+    if (idx === -1) {
+      return null;
+    }
+    const path = url.pathname.slice(idx + prefix.length);
+    return decodeURIComponent(path);
+  } catch (error) {
+    const fallbackPrefix = `${bucket}/`;
+    const idx = audioUrl.indexOf(fallbackPrefix);
+    if (idx === -1) {
+      return null;
+    }
+    return audioUrl.slice(idx + fallbackPrefix.length);
+  }
 }
 
 async function buildPodcastScript(input: PodcastGenerationInput): Promise<string> {
@@ -357,6 +744,7 @@ async function buildPodcastScript(input: PodcastGenerationInput): Promise<string
     'You are the narrator for a short daily crypto market podcast.',
     'Using the research report markdown provided, craft a conversational script that can be read aloud.',
     'Keep the tone clear, confident, and informative. Avoid headings or markdown, respond with plain text paragraphs only.',
+    'CRITICAL: Write ALL numbers as words, not digits. For example, write "one hundred twenty-five thousand dollars" instead of "$125,000". Write "four point six percent" instead of "4.6%".',
     'Aim for a runtime of approximately 5 minutes when read at a normal pace.',
     'Highlight the biggest market moves, key statistics, and notable storylines.',
     'Open with a quick greeting and end with a concise sign-off.',
@@ -419,7 +807,7 @@ async function uploadAndLinkAudio(params: {
   topicId: string;
   date: string;
   audioBuffer: Buffer;
-}): Promise<{ audioUrl: string; shortLink: string | null }> {
+}): Promise<{ audioUrl: string }> {
   const { topicId, date, audioBuffer } = params;
   await ensureAudioBucketExists();
   const filePath = `topics/${topicId}/episodes/${date}.mp3`;
@@ -445,18 +833,7 @@ async function uploadAndLinkAudio(params: {
     throw new PodcastGenerationError('Could not obtain public URL for podcast audio');
   }
 
-  let shortLink: string | null = null;
-  try {
-    shortLink = await createShortLink(publicUrl, {
-      context: 'crypto-podcast',
-      createdBy: 'sms-bot',
-      createdFor: 'crypto-agent',
-    });
-  } catch (error) {
-    console.warn('Failed to create short link for crypto podcast audio:', error);
-  }
-
-  return { audioUrl: publicUrl, shortLink };
+  return { audioUrl: publicUrl };
 }
 
 async function ensureAudioBucketExists(): Promise<void> {
@@ -490,7 +867,7 @@ interface EpisodeUpsertInput {
   shortLink: string | null;
   reportUrl: string | null;
   reportShortLink: string | null;
-  existingEpisode?: (PodcastGenerationResult & { episodeNumber: number });
+  existingEpisode?: ExistingEpisode;
 }
 
 async function upsertEpisode(input: EpisodeUpsertInput): Promise<number> {

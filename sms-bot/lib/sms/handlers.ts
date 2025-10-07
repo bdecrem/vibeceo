@@ -1977,7 +1977,7 @@ export async function processIncomingSms(
       await deliverAiDailyEpisode(from, normalizedPhoneNumber, twilioClient, {
         prefix:
           "✅ You're now subscribed to AI Daily. Expect a fresh episode at 7am PT each morning.",
-        forceRefresh: true,
+        forceRefresh: false, // Use cached episode and link (consistent with 7am broadcast)
         recordDelivery: true,
       });
 
@@ -2028,7 +2028,7 @@ export async function processIncomingSms(
 
     if (aiDailyNormalizedCommand === "AI DAILY") {
       await deliverAiDailyEpisode(from, normalizedPhoneNumber, twilioClient, {
-        forceRefresh: true,
+        forceRefresh: false, // Use cached episode and link (same as 7am broadcast)
         recordDelivery: false,
       });
 
