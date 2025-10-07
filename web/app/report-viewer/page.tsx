@@ -4,6 +4,8 @@ import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkBreaks from 'remark-breaks';
+import type { Components } from 'react-markdown';
 
 interface ReportData {
   markdown: string;
@@ -13,6 +15,157 @@ interface ReportData {
     path: string;
   };
 }
+
+const mergeClassNames = (
+  ...classes: Array<string | undefined | null>
+): string => classes.filter(Boolean).join(' ');
+
+const createMarkdownLink = (url: string): string => {
+  const trimmed = url.trim();
+  if (trimmed.startsWith('[')) {
+    return trimmed;
+  }
+
+  if (!/^https?:\/\//i.test(trimmed)) {
+    return trimmed;
+  }
+
+  let core = trimmed;
+  let trailing = '';
+
+  while (/[.,;:!?)]$/.test(core)) {
+    const lastChar = core.slice(-1);
+
+    if (lastChar === ')') {
+      const openCount = (core.match(/\(/g) ?? []).length;
+      const closeCount = (core.match(/\)/g) ?? []).length;
+      if (closeCount - 1 < openCount) {
+        break;
+      }
+    }
+
+    core = core.slice(0, -1);
+    trailing = lastChar + trailing;
+  }
+
+  return `[${core}](${core})${trailing}`;
+};
+
+const enhanceMarkdown = (content: string): string => {
+  const convertLine = (
+    prefix: string,
+    url: string,
+    suffix: string
+  ): string => `${prefix}${createMarkdownLink(url)}${suffix}`;
+
+  let result = content.replace(
+    /^(\s*[-*]\s+)(https?:\/\/\S+)(.*)$/gm,
+    (fullMatch, prefix: string, url: string, suffix: string) =>
+      convertLine(prefix, url, suffix)
+  );
+
+  result = result.replace(
+    /^(\s*\d+\.\s+)(https?:\/\/\S+)(.*)$/gm,
+    (fullMatch, prefix: string, url: string, suffix: string) =>
+      convertLine(prefix, url, suffix)
+  );
+
+  result = result.replace(
+    /^(https?:\/\/\S+)(.*)$/gm,
+    (fullMatch, url: string, suffix: string) => convertLine('', url, suffix)
+  );
+
+  return result;
+};
+
+const markdownComponents: Components = {
+  h1: ({ node, className, ...props }) => (
+    <h1
+      {...props}
+      className={mergeClassNames(
+        'mb-6 text-4xl font-black tracking-tight text-slate-900',
+        className
+      )}
+    />
+  ),
+  h2: ({ node, className, ...props }) => (
+    <h2
+      {...props}
+      className={mergeClassNames(
+        'mt-10 border-l-4 border-orange-300 pl-4 text-2xl font-bold text-slate-900',
+        className
+      )}
+    />
+  ),
+  h3: ({ node, className, ...props }) => (
+    <h3
+      {...props}
+      className={mergeClassNames(
+        'mt-6 text-xl font-semibold text-slate-800',
+        className
+      )}
+    />
+  ),
+  h4: ({ node, className, ...props }) => (
+    <h4
+      {...props}
+      className={mergeClassNames(
+        'mt-5 text-lg font-semibold uppercase tracking-wide text-slate-700',
+        className
+      )}
+    />
+  ),
+  p: ({ node, className, ...props }) => (
+    <p
+      {...props}
+      className={mergeClassNames(
+        'my-4 text-base leading-relaxed text-slate-700',
+        className
+      )}
+    />
+  ),
+  a: ({ node, className, ...props }) => (
+    <a
+      {...props}
+      className={mergeClassNames(
+        'break-words text-blue-600 underline decoration-2 underline-offset-4 transition-colors hover:text-blue-700',
+        className
+      )}
+      target="_blank"
+      rel="noopener noreferrer"
+    />
+  ),
+  hr: ({ node, className, ...props }) => (
+    <hr
+      {...props}
+      className={mergeClassNames('my-10 border-t border-dashed border-slate-200', className)}
+    />
+  ),
+  ul: ({ node, className, ...props }) => (
+    <ul
+      {...props}
+      className={mergeClassNames('my-4 list-disc space-y-2 pl-6 text-slate-700', className)}
+    />
+  ),
+  ol: ({ node, className, ...props }) => (
+    <ol
+      {...props}
+      className={mergeClassNames('my-4 list-decimal space-y-2 pl-6 text-slate-700', className)}
+    />
+  ),
+  li: ({ node, className, ...props }) => (
+    <li
+      {...props}
+      className={mergeClassNames('leading-relaxed text-slate-700', className)}
+    />
+  ),
+  strong: ({ node, className, ...props }) => (
+    <strong
+      {...props}
+      className={mergeClassNames('font-semibold text-slate-900', className)}
+    />
+  ),
+};
 
 function ReportViewerContent(): JSX.Element {
   const searchParams = useSearchParams();
@@ -35,7 +188,11 @@ function ReportViewerContent(): JSX.Element {
           throw new Error('Failed to fetch report');
         }
         const data = await response.json();
-        setReport(data);
+        const enhanced = {
+          ...data,
+          markdown: enhanceMarkdown(data.markdown ?? ''),
+        };
+        setReport(enhanced);
       } catch (err) {
         console.error('Error fetching report:', err);
         setError('Unable to load report');
@@ -112,19 +269,10 @@ function ReportViewerContent(): JSX.Element {
 
         {/* Markdown Content */}
         <div className="rounded-3xl bg-white p-6 shadow-2xl sm:p-10">
-          <div className="prose prose-lg prose-slate max-w-none prose-headings:font-bold prose-headings:text-gray-900 prose-h1:text-3xl prose-h2:mt-8 prose-h2:text-2xl prose-h3:text-xl prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-blue-600 prose-a:underline hover:prose-a:text-blue-700 prose-strong:font-bold prose-strong:text-gray-900 prose-ul:list-disc prose-ol:list-decimal prose-code:text-sm prose-code:bg-gray-100 prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
+          <div className="prose prose-lg prose-slate max-w-none">
             <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a: ({ node, ...props }) => (
-                  <a
-                    {...props}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="break-words"
-                  />
-                ),
-              }}
+              remarkPlugins={[remarkGfm, remarkBreaks]}
+              components={markdownComponents}
             >
               {report.markdown}
             </ReactMarkdown>
