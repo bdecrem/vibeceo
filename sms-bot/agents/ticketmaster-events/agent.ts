@@ -22,7 +22,7 @@ export async function fetchEvents(city: string, keyword?: string) {
   const response = await fetch(ticketmasterQueryUrl);
   const data = await response.json();
 
-  if (!data["_embedded"]["events"]) {
+  if (!data["_embedded"]) {
     return "No events found in the given city.";
   }
 
@@ -68,21 +68,19 @@ export const agentOptions: Options = {
   mcpServers: { event_mcp_tool: eventMcpServer },
   allowedTools: ["Read", "Write", "mcp__event_mcp_tool__fetch_events"],
   systemPrompt: `
-    You are an assistant that finds events in a city. The keyword is optional.
-    You MUST ALWAYS call fetch_events tool when asked to find events.
-    Do NOT include a keyword if the user does not input one.
+    You are an assistant that finds events in a city. The keyword is optional. Do NOT include a keyword if the user does not input one.
     If no city is given, prompt the user for one.
-    Return the events with the name, date, time, place. If a value is missing, you can skip it. Do not include the status.
-    Keep your responses brief and short. If there are no events, simply say so.
+    Return the events with the name, date, time, place, and description. If a field is missing, do not include it. Do not include the status.
+    Keep your responses very short and brief.
   `,
 };
 
 export async function handleEventSearch(chatMessage: string) {
   for await (const message of query({
-    prompt: chatMessage,
+    prompt: chatMessage.split(" ").slice(1).join(" "),
     options: agentOptions,
   })) {
-    if (message.type === "result" && message.subtype === "success") {
+    if ("result" in message) {
       return message.result;
     }
   }
