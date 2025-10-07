@@ -34,6 +34,7 @@
 		"react-d3-tree": "^3.6.6",
 		"react-dom": "18.2.0",
 		"react-markdown": "^10.1.0",
+		"remark-breaks": "^4.0.0",
 		"remark-gfm": "^4.0.1",
 		"styled-jsx": "^5.1.7",
 		"tailwind-merge": "^2.6.0",
