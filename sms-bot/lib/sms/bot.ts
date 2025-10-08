@@ -13,6 +13,14 @@ import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 
+function isAutomationEnabled(): boolean {
+  const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
+  if (override) {
+    return override.trim().toLowerCase() === "true";
+  }
+  return process.env.NODE_ENV === "production";
+}
+
 // Express server for webhook handling
 let server: express.Application | null = null;
 
@@ -36,10 +44,17 @@ export async function startSmsBot(): Promise<void> {
   // Initialize Twilio client
   const twilioClient = initializeTwilioClient();
 
-  registerAiDailyJob(twilioClient);
-  registerCryptoDailyJob(twilioClient);
-  registerMedicalDailyJob(twilioClient);
-  registerPeerReviewJob(twilioClient);
+  if (isAutomationEnabled()) {
+    console.log("✅ Subscription automation enabled – registering daily jobs.");
+    registerAiDailyJob(twilioClient);
+    registerCryptoDailyJob(twilioClient);
+    registerMedicalDailyJob(twilioClient);
+    registerPeerReviewJob(twilioClient);
+  } else {
+    console.log(
+      "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
+    );
+  }
 
   // Initialize stock scheduler service
   await initializeScheduler();
@@ -98,5 +113,4 @@ export async function startSmsBot(): Promise<void> {
 
   return Promise.resolve();
 }
-
 
