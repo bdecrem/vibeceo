@@ -22,9 +22,16 @@ export async function createShortLink(
   options: ShortLinkOptions = {}
 ): Promise<string | null> {
   const endpoint = process.env.SHORTLINK_SERVICE_URL;
-  const token = process.env.SHORTLINK_SERVICE_TOKEN;
+  const token =
+    process.env.SHORTLINK_SERVICE_TOKEN || process.env.SHORTLINK_API_TOKEN;
 
   if (!endpoint || !token) {
+    console.warn(
+      'Short link service disabled: missing',
+      !endpoint ? 'SHORTLINK_SERVICE_URL' : '',
+      'and/or',
+      !token ? 'SHORTLINK_SERVICE_TOKEN' : ''
+    );
     return null;
   }
 
@@ -46,9 +53,20 @@ export async function createShortLink(
     if (shortUrl) {
       return shortUrl;
     }
-  } catch (error) {
+  } catch (error: unknown) {
     const axiosError = error as AxiosError;
     console.warn('Short link service request failed:', axiosError.message);
+    if (axiosError.response) {
+      console.warn(
+        'Short link service response:',
+        axiosError.response.status,
+        axiosError.response.data
+      );
+    } else if (axiosError.request) {
+      console.warn('Short link service request made with no response received');
+    } else {
+      console.warn('Short link service unexpected error:', error);
+    }
   }
 
   return null;
