@@ -343,8 +343,19 @@ export async function buildCryptoReportMessage(
   return lines.join('\n');
 }
 
+function parseIsoDateForPacificMidday(isoDate: string): Date | null {
+  const parts = isoDate.split('-').map(Number);
+
+  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+    return null;
+  }
+
+  const [year, month, day] = parts;
+  return new Date(Date.UTC(year, month - 1, day, 12));
+}
+
 function formatHeadline(isoDate: string): string {
-  const parsed = new Date(isoDate);
+  const parsed = parseIsoDateForPacificMidday(isoDate) ?? new Date(isoDate);
 
   if (Number.isNaN(parsed.getTime())) {
     return '🪙 Crypto report';
