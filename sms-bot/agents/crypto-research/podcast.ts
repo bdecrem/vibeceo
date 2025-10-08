@@ -377,13 +377,26 @@ async function syncTopicMetadata(topicId: string): Promise<void> {
   throw error;
 }
 
+function parseIsoDateForPacificMidday(isoDate: string): Date | null {
+  const parts = isoDate.split('-').map(Number);
+
+  if (parts.length !== 3 || parts.some((part) => Number.isNaN(part))) {
+    return null;
+  }
+
+  const [year, month, day] = parts;
+  return new Date(Date.UTC(year, month - 1, day, 12));
+}
+
 function buildEpisodeTitle(isoDate: string): string {
+  const parsed = parseIsoDateForPacificMidday(isoDate) ?? new Date(isoDate);
+
   const formatted = new Intl.DateTimeFormat('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
     timeZone: 'America/Los_Angeles',
-  }).format(new Date(isoDate));
+  }).format(parsed);
 
   return `${PODCAST_TITLE} — ${formatted}`;
 }
