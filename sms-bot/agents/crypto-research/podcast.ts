@@ -1056,50 +1056,51 @@ async function upsertTranscript(params: {
   fullText: string;
 }): Promise<void> {
   try {
-    console.log('Deleting old transcript for episode:', params.episodeId);
-    const { error: deleteError } = await supabase
-      .from('transcripts')
-      .delete()
-      .eq('episode_id', params.episodeId);
+    console.log('Embedding transcript into episode:', params.episodeId);
 
-    if (deleteError && deleteError.code !== 'PGRST116' && deleteError.code !== '42P01') {
-      console.error('Delete transcript error:', deleteError);
-      throw deleteError;
+    const { data, error: fetchError } = await supabase
+      .from('episodes')
+      .select('show_notes_json')
+      .eq('id', params.episodeId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('Failed loading episode for transcript update:', fetchError);
+      throw fetchError;
     }
-    console.log('Old transcript deleted (or none existed)');
 
-    console.log('Inserting new transcript, segments count:', params.segments.length);
-    const { error } = await supabase
-      .from('transcripts')
-      .insert({
-        episode_id: params.episodeId,
-        segments: params.segments,
-        full_text: params.fullText,
-      });
+    const existingShowNotes =
+      data?.show_notes_json && typeof data.show_notes_json === 'object'
+        ? JSON.parse(JSON.stringify(data.show_notes_json)) as Record<string, unknown>
+        : {};
 
-    if (error) {
-      console.error('Insert transcript error:', error);
-      console.error('Error code:', error.code);
-      console.error('Error message:', error.message);
-      console.error('Error details:', error.details);
+    const updatedShowNotes = {
+      ...existingShowNotes,
+      transcriptSegments: params.segments,
+    };
 
-      if (error.code !== '23505') {
-        throw error;
-      } else {
-        console.log('Duplicate transcript (23505), ignoring');
-      }
+    const { error: updateError } = await supabase
+      .from('episodes')
+      .update({
+        transcript: params.fullText,
+        show_notes_json: updatedShowNotes,
+      })
+      .eq('id', params.episodeId);
+
+    if (updateError) {
+      console.error('Episode transcript update failed:', updateError);
+      throw updateError;
     }
-    console.log('Transcript insert completed');
+
+    console.log(
+      '✓ Transcript stored with episode; segments:',
+      params.segments.length
+    );
   } catch (error) {
     console.error('upsertTranscript caught error:', error);
     console.error('Error type:', typeof error);
     const code = (error as { code?: string } | null)?.code;
     console.error('Error code extracted:', code);
-
-    if (code === '42P01') {
-      console.warn('Transcripts table not available; skipping transcript insert for crypto podcast.');
-      return;
-    }
 
     console.error('Re-throwing transcript error');
     throw error;
