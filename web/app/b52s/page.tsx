@@ -268,6 +268,12 @@ export default function B52LandingPage() {
               <p className="text-xs md:text-sm text-gray-600">
                 +1-866-330-0015 (SMS/WhatsApp)
               </p>
+              <p className="text-xs md:text-sm text-gray-600">
+                &nbsp;
+              </p>
+              <p className="text-xs md:text-sm text-gray-600 mt-4">
+                © 2025 <a href="https://kochi.to" className="underline decoration-gray-400 hover:decoration-gray-600 transition-colors">Kochito Labs</a>. All rights reserved.
+              </p>
             </div>
           </div>
         </div>
