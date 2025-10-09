@@ -1424,16 +1424,16 @@ async function handleCoachConversation(
     // Prepare the user message with appropriate instructions
     let userMessageContent = message;
 
-    // Skip "seems lost" override for B52s - it should always use its core personality
-    const isB52s = coachName.toLowerCase().includes("b52s");
+    // Skip "seems lost" override for Kochi - it should always use its core personality
+    const isKochi = coachName.toLowerCase().includes("kochi");
 
     // Add introduction instructions if this is the first message and coach should identify
-    // But skip this for B52s - it has its own greeting style
-    if (isFirstMessage && shouldIdentify && !isB52s) {
+    // But skip this for Kochi - it has its own greeting style
+    if (isFirstMessage && shouldIdentify && !isKochi) {
       userMessageContent = `${message}\n\nIMPORTANT: This is your first message to this user. Naturally introduce yourself by name and briefly mention your role/expertise as part of your response.`;
     }
 
-    if (seemsLost && !isB52s) {
+    if (seemsLost && !isKochi) {
       console.log(
         `${emoji} User seems lost - adding helpful context to ${coachName} prompt`
       );
@@ -4929,22 +4929,22 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       return;
     }
 
-    // Handle unrecognized commands/text - use B52s chatbot
-    console.log(`Unrecognized command/message from ${from}: ${message} - routing to B52s chatbot`);
+    // Handle unrecognized commands/text - use Kochi chatbot
+    console.log(`Unrecognized command/message from ${from}: ${message} - routing to Kochi chatbot`);
 
-    // Always use B52s Automaton as the default chatbot (100% of the time)
-    const b52sCoach = coachData.ceos.find(c => c.id === 'b52s');
+    // Always use Kochi as the default chatbot (100% of the time)
+    const kochiCoach = coachData.ceos.find(c => c.id === 'kochi');
 
-    if (b52sCoach) {
-      console.log('⚙️ Routing to B52s Automaton for default conversation');
-      updateActiveConversation(from, 'B52s Automaton');
-      const handled = await handleCoachConversation(message, twilioClient, from, b52sCoach);
+    if (kochiCoach) {
+      console.log('⚙️ Routing to Kochi for default conversation');
+      updateActiveConversation(from, 'Kochi');
+      const handled = await handleCoachConversation(message, twilioClient, from, kochiCoach);
       if (handled) {
         return;
       }
     }
 
-    // If B52s chatbot fails, send fallback message
+    // If Kochi chatbot fails, send fallback message
     await sendSmsResponse(
       from,
       'Sorry, I encountered an error. Try "COMMANDS" for help or start with "WTAF" to create an app.',
