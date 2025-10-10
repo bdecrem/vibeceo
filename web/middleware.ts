@@ -76,10 +76,9 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/report-viewer') ||
       pathname.startsWith('/reset-password') ||
       pathname.startsWith('/payments') ||
-      pathname.startsWith('/b52s')) {
-    if (host?.includes('localhost') || host?.includes('ngrok')) {
-      console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
-    }
+      pathname.startsWith('/b52s') ||
+      pathname.startsWith('/kochi')) {
+    console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
