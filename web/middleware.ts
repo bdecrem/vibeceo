@@ -8,7 +8,30 @@ export function middleware(request: NextRequest) {
   console.log(`[Middleware] Processing: ${pathname}`)
 
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
+  const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
 
+  // Handle kochi.to domain
+  if (isKochiDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/kochi', request.url)
+      console.log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
+
+  // Handle b52s.me domain
   if (isB52Domain) {
     if (
       pathname.startsWith('/_next/') ||
