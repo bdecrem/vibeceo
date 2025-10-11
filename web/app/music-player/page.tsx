@@ -79,6 +79,7 @@ function MusicPlayerContent(): JSX.Element {
   const [isMicActive, setIsMicActive] = useState(false);
   const [aiResponse, setAiResponse] = useState('');
   const [aiStatus, setAiStatus] = useState('');
+  const [isMicAvailable, setIsMicAvailable] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
   const customTrack = useMemo(() => {
@@ -161,6 +162,18 @@ function MusicPlayerContent(): JSX.Element {
       setIsPlaying(autoPlayRequested);
     }
   }, [autoPlayRequested, customTrack]);
+
+  useEffect(() => {
+    setIsMicAvailable(false);
+    setAiStatus('');
+    setAiResponse('');
+    setIsMicActive(false);
+    if (realtimeClientRef.current) {
+      realtimeClientRef.current.disconnect();
+      realtimeClientRef.current = null;
+    }
+    audioPlayerRef.current?.stop();
+  }, [currentTrackIndex]);
 
   const currentTrack = useMemo(() => playlist[currentTrackIndex], [playlist, currentTrackIndex]);
 
@@ -263,6 +276,19 @@ function MusicPlayerContent(): JSX.Element {
   }, [duration]);
 
   const handleNext = useCallback(() => {
+    if (isMicActive) {
+      realtimeClientRef.current?.stopRecording();
+      setIsMicActive(false);
+    }
+    if (realtimeClientRef.current) {
+      realtimeClientRef.current.disconnect();
+      realtimeClientRef.current = null;
+    }
+    audioPlayerRef.current?.stop();
+    setAiResponse('');
+    setAiStatus('');
+    setIsMicAvailable(false);
+
     // Circular rotation: AI Daily (0) → Peer Review (1) → Crypto (2) → AI Daily (0)
     setCurrentTrackIndex((index) => {
       const nextIndex = (index + 1) % playlist.length;
@@ -270,9 +296,22 @@ function MusicPlayerContent(): JSX.Element {
     });
     setCurrentTime(0);
     setIsPlaying(true);
-  }, [playlist.length]);
+  }, [isMicActive, playlist.length]);
 
   const handlePrevious = useCallback(() => {
+    if (isMicActive) {
+      realtimeClientRef.current?.stopRecording();
+      setIsMicActive(false);
+    }
+    if (realtimeClientRef.current) {
+      realtimeClientRef.current.disconnect();
+      realtimeClientRef.current = null;
+    }
+    audioPlayerRef.current?.stop();
+    setAiResponse('');
+    setAiStatus('');
+    setIsMicAvailable(false);
+
     // Circular rotation backwards: AI Daily (0) ← Peer Review (1) ← Crypto (2) ← AI Daily (0)
     setCurrentTrackIndex((index) => {
       const prevIndex = (index - 1 + playlist.length) % playlist.length;
@@ -280,7 +319,7 @@ function MusicPlayerContent(): JSX.Element {
     });
     setCurrentTime(0);
     setIsPlaying(true);
-  }, [playlist.length]);
+  }, [isMicActive, playlist.length]);
 
   const handleInfo = useCallback(() => {
     setShowInfo((prev) => !prev);
@@ -299,20 +338,34 @@ function MusicPlayerContent(): JSX.Element {
     }
   }, [currentTrack]);
 
+  const micDisabled = isConnecting || (!isMicAvailable && !isMicActive);
+  const micTooltip = isMicActive
+    ? 'Stop recording'
+    : micDisabled
+      ? 'Mic unlocks after the episode finishes'
+      : 'Ask a question about this episode';
+
   const handleMic = useCallback(async () => {
     try {
+      if (!isMicActive && !isMicAvailable) {
+        setAiStatus('Mic will unlock once this episode finishes.');
+        return;
+      }
+
       if (isMicActive) {
         // Stop recording
         realtimeClientRef.current?.stopRecording();
         setIsMicActive(false);
         setAiResponse('');
         setAiStatus('Processing response...');
+        setIsMicAvailable(false);
         console.log('🎤 Stopped mic');
       } else {
         // Start recording
         setIsConnecting(true);
         setAiStatus('Connecting to WebSocket...');
         setAiResponse('');
+        setIsMicAvailable(false);
 
         if (!audioPlayerRef.current) {
           audioPlayerRef.current = new StreamingAudioPlayer();
@@ -355,7 +408,9 @@ function MusicPlayerContent(): JSX.Element {
               setIsMicActive(false);
               setIsConnecting(false);
               setAiStatus('Disconnected');
+              setIsMicAvailable(true);
               audioPlayerRef.current?.stop();
+              realtimeClientRef.current = null;
             },
             onError: (error) => {
               console.error('❌ [CALLBACK] Realtime Audio error:', error);
@@ -363,6 +418,8 @@ function MusicPlayerContent(): JSX.Element {
               setAiResponse('');
               setIsMicActive(false);
               setIsConnecting(false);
+              setIsMicAvailable(true);
+              realtimeClientRef.current = null;
             },
             onAudioCommitted: () => {
               setAiStatus('Processing response...');
@@ -372,6 +429,7 @@ function MusicPlayerContent(): JSX.Element {
             },
             onResponseFinished: () => {
               setAiStatus('Done');
+              setIsMicAvailable(true);
             },
             onSpeechStart: () => {
               setAiStatus('Listening...');
@@ -390,6 +448,7 @@ function MusicPlayerContent(): JSX.Element {
             setAiStatus('Cannot connect to WebSocket server (port 3001). Is it running?');
             setAiResponse('');
             setIsConnecting(false);
+            realtimeClientRef.current = null;
             return;
           }
         }
@@ -408,6 +467,8 @@ function MusicPlayerContent(): JSX.Element {
           setAiStatus('Microphone access denied. Check browser permissions.');
           setAiResponse('');
           setIsConnecting(false);
+          setIsMicAvailable(true);
+          realtimeClientRef.current = null;
           return;
         }
       }
@@ -417,8 +478,10 @@ function MusicPlayerContent(): JSX.Element {
       setAiResponse('');
       setIsMicActive(false);
       setIsConnecting(false);
+      setIsMicAvailable(true);
+      realtimeClientRef.current = null;
     }
-  }, [isMicActive]);
+  }, [isMicActive, isMicAvailable]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -433,13 +496,24 @@ function MusicPlayerContent(): JSX.Element {
     const handleLoadedMetadata = () => {
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       setCurrentTime(audio.currentTime);
+      setIsMicAvailable(false);
     };
 
     const handlePlaybackEnded = () => {
-      handleNext();
+      setIsPlaying(false);
+      setIsMicAvailable(true);
+      setAiStatus('Episode finished. Tap the mic to ask a question.');
+      if (realtimeClientRef.current) {
+        realtimeClientRef.current.disconnect();
+        realtimeClientRef.current = null;
+      }
+      audioPlayerRef.current?.stop();
     };
 
-    const handlePlayEvent = () => setIsPlaying(true);
+    const handlePlayEvent = () => {
+      setIsPlaying(true);
+      setIsMicAvailable(false);
+    };
     const handlePauseEvent = () => setIsPlaying(false);
 
     audio.addEventListener('timeupdate', handleTimeUpdate);
@@ -455,7 +529,7 @@ function MusicPlayerContent(): JSX.Element {
       audio.removeEventListener('play', handlePlayEvent);
       audio.removeEventListener('pause', handlePauseEvent);
     };
-  }, [handleNext]);
+  }, []);
 
   // Fix #2: Only call load() when track changes, not on pause/play
   useEffect(() => {
@@ -675,20 +749,20 @@ function MusicPlayerContent(): JSX.Element {
                 >
                   Next ▶︎
                 </button>
-                <button
-                  type="button"
-                  onClick={handleMic}
-                  disabled={isConnecting}
-                  className={`rounded-full p-2.5 shadow-md transition hover:scale-105 active:scale-95 ${
-                    isMicActive
-                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                      : isConnecting
-                      ? 'bg-gray-400 cursor-not-allowed'
-                      : 'bg-gray-200 hover:bg-gray-300'
-                  }`}
-                  aria-label="Microphone"
-                  title={isMicActive ? 'Stop recording' : 'Ask a question'}
-                >
+              <button
+                type="button"
+                onClick={handleMic}
+                disabled={micDisabled}
+                className={`rounded-full p-2.5 shadow-md transition hover:scale-105 active:scale-95 ${
+                  isMicActive
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                    : micDisabled
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-gray-200 hover:bg-gray-300'
+                }`}
+                aria-label="Microphone"
+                title={micTooltip}
+              >
                   <svg
                     className={`h-5 w-5 ${isMicActive ? 'text-white' : 'text-gray-700'}`}
                     fill="none"

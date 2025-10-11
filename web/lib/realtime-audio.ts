@@ -23,6 +23,8 @@ export class RealtimeAudioClient {
   private audioContext: AudioContext | null = null;
   private mediaStream: MediaStream | null = null;
   private audioWorkletNode: AudioWorkletNode | null = null;
+  private sourceNode: MediaStreamAudioSourceNode | null = null;
+  private processorNode: ScriptProcessorNode | null = null;
   private isRecording = false;
   private config: RealtimeAudioConfig;
   private recordedAudioData: Float32Array[] = [];
@@ -179,9 +181,11 @@ export class RealtimeAudioClient {
       console.log('✅ Audio context created, sample rate:', this.audioContext.sampleRate);
 
       const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+      this.sourceNode = source;
 
       // Create script processor for audio data
       const processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+      this.processorNode = processor;
       let chunkCount = 0;
 
       processor.onaudioprocess = (e) => {
@@ -236,13 +240,36 @@ export class RealtimeAudioClient {
     this.send({
       type: 'response.create',
       response: {
-        modalities: ['text', 'audio']
+        modalities: ['text', 'audio'],
+        voice: 'alloy',
+        output_audio_format: 'pcm16'
       }
     });
 
     // Clean up audio context
+    if (this.processorNode) {
+      try {
+        this.processorNode.disconnect();
+      } catch (error) {
+        console.warn('⚠️ Error disconnecting processor node:', error);
+      }
+      this.processorNode.onaudioprocess = null;
+      this.processorNode = null;
+    }
+
+    if (this.sourceNode) {
+      try {
+        this.sourceNode.disconnect();
+      } catch (error) {
+        console.warn('⚠️ Error disconnecting source node:', error);
+      }
+      this.sourceNode = null;
+    }
+
     if (this.audioContext) {
-      this.audioContext.close();
+      void this.audioContext.close().catch((error) => {
+        console.warn('⚠️ Error closing AudioContext:', error);
+      });
       this.audioContext = null;
     }
 
