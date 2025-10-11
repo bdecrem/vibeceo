@@ -2,6 +2,7 @@
 
 import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
 
 interface TrackItem {
   id: string;
@@ -71,6 +72,14 @@ function MusicPlayerContent(): JSX.Element {
   const preGainNodeRef = useRef<GainNode | null>(null);
   const compressorNodeRef = useRef<DynamicsCompressorNode | null>(null);
   const makeupGainNodeRef = useRef<GainNode | null>(null);
+
+  // Realtime Audio state
+  const realtimeClientRef = useRef<RealtimeAudioClient | null>(null);
+  const audioPlayerRef = useRef<StreamingAudioPlayer | null>(null);
+  const [isMicActive, setIsMicActive] = useState(false);
+  const [aiResponse, setAiResponse] = useState('');
+  const [aiStatus, setAiStatus] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const customTrack = useMemo(() => {
     if (!searchParams) {
@@ -290,6 +299,127 @@ function MusicPlayerContent(): JSX.Element {
     }
   }, [currentTrack]);
 
+  const handleMic = useCallback(async () => {
+    try {
+      if (isMicActive) {
+        // Stop recording
+        realtimeClientRef.current?.stopRecording();
+        setIsMicActive(false);
+        setAiResponse('');
+        setAiStatus('Processing response...');
+        console.log('🎤 Stopped mic');
+      } else {
+        // Start recording
+        setIsConnecting(true);
+        setAiStatus('Connecting to WebSocket...');
+        setAiResponse('');
+
+        if (!audioPlayerRef.current) {
+          audioPlayerRef.current = new StreamingAudioPlayer();
+        }
+
+        try {
+          await audioPlayerRef.current.prepare();
+          audioPlayerRef.current.stop();
+        } catch (error) {
+          console.error('❌ Failed to prepare audio playback:', error);
+          setAiStatus('Audio playback unavailable');
+        }
+
+        // Initialize client if needed
+        if (!realtimeClientRef.current) {
+          console.log('🔧 Creating new RealtimeAudioClient...');
+          const client = new RealtimeAudioClient({
+            onTranscriptDelta: (text) => {
+              console.log('📝 [CALLBACK] Transcript delta received:', text);
+              setAiStatus('Responding...');
+              setAiResponse((prev) => prev + text);
+            },
+            onAudioDelta: (audioData) => {
+              console.log('🔊 [CALLBACK] Audio delta received, size:', audioData.byteLength);
+              if (!audioPlayerRef.current) {
+                console.log('🔧 Creating new StreamingAudioPlayer...');
+                audioPlayerRef.current = new StreamingAudioPlayer();
+                void audioPlayerRef.current.prepare();
+              }
+              setAiStatus('Responding...');
+              void audioPlayerRef.current.addChunk(audioData);
+            },
+            onConnected: () => {
+              console.log('✅ [CALLBACK] Realtime Audio connected');
+              setIsConnecting(false);
+              setAiStatus('Connected. Starting microphone...');
+            },
+            onDisconnected: () => {
+              console.log('🔌 [CALLBACK] Realtime Audio disconnected');
+              setIsMicActive(false);
+              setIsConnecting(false);
+              setAiStatus('Disconnected');
+              audioPlayerRef.current?.stop();
+            },
+            onError: (error) => {
+              console.error('❌ [CALLBACK] Realtime Audio error:', error);
+              setAiStatus('WebSocket Error: ' + error.message);
+              setAiResponse('');
+              setIsMicActive(false);
+              setIsConnecting(false);
+            },
+            onAudioCommitted: () => {
+              setAiStatus('Processing response...');
+            },
+            onResponseStarted: () => {
+              setAiStatus('AI is thinking...');
+            },
+            onResponseFinished: () => {
+              setAiStatus('Done');
+            },
+            onSpeechStart: () => {
+              setAiStatus('Listening...');
+            },
+            onSpeechEnd: () => {
+              setAiStatus('Processing response...');
+            }
+          });
+
+          try {
+            await client.connect();
+            realtimeClientRef.current = client;
+            console.log('✅ WebSocket connected, now requesting microphone...');
+          } catch (wsError) {
+            console.error('❌ WebSocket connection failed:', wsError);
+            setAiStatus('Cannot connect to WebSocket server (port 3001). Is it running?');
+            setAiResponse('');
+            setIsConnecting(false);
+            return;
+          }
+        }
+
+        // Start recording
+        setAiStatus('Requesting microphone access...');
+        setAiResponse('');
+        try {
+          await realtimeClientRef.current.startRecording();
+          setIsMicActive(true);
+          setIsConnecting(false);
+          setAiStatus('Listening...');
+          console.log('🎤 Started mic');
+        } catch (micError) {
+          console.error('❌ Microphone access failed:', micError);
+          setAiStatus('Microphone access denied. Check browser permissions.');
+          setAiResponse('');
+          setIsConnecting(false);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error('❌ Unexpected error:', error);
+      setAiStatus('Error: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setAiResponse('');
+      setIsMicActive(false);
+      setIsConnecting(false);
+    }
+  }, [isMicActive]);
+
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) {
@@ -440,6 +570,20 @@ function MusicPlayerContent(): JSX.Element {
     };
   }, []); // Empty deps - create once, reuse across all tracks
 
+  // Cleanup Realtime Audio on unmount
+  useEffect(() => {
+    return () => {
+      if (realtimeClientRef.current) {
+        realtimeClientRef.current.disconnect();
+        realtimeClientRef.current = null;
+      }
+      if (audioPlayerRef.current) {
+        audioPlayerRef.current.close();
+        audioPlayerRef.current = null;
+      }
+    };
+  }, []);
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6 py-10">
       <article className="w-full max-w-xl rounded-3xl bg-white p-8 shadow-2xl">
@@ -523,15 +667,60 @@ function MusicPlayerContent(): JSX.Element {
                   ↻
                 </button>
               </div>
-              <button
-                type="button"
-                onClick={handleNext}
-                className="rounded-full bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-600 active:scale-95"
-              >
-                Next ▶︎
-              </button>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="rounded-full bg-blue-500 px-5 py-2.5 text-sm font-bold text-white shadow-md transition hover:bg-blue-600 active:scale-95"
+                >
+                  Next ▶︎
+                </button>
+                <button
+                  type="button"
+                  onClick={handleMic}
+                  disabled={isConnecting}
+                  className={`rounded-full p-2.5 shadow-md transition hover:scale-105 active:scale-95 ${
+                    isMicActive
+                      ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                      : isConnecting
+                      ? 'bg-gray-400 cursor-not-allowed'
+                      : 'bg-gray-200 hover:bg-gray-300'
+                  }`}
+                  aria-label="Microphone"
+                  title={isMicActive ? 'Stop recording' : 'Ask a question'}
+                >
+                  <svg
+                    className={`h-5 w-5 ${isMicActive ? 'text-white' : 'text-gray-700'}`}
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
+
+          {/* AI Response Display */}
+          {(aiStatus || aiResponse) && (
+            <div className="rounded-2xl bg-gradient-to-r from-blue-50 to-purple-50 p-4 shadow-md border border-blue-200">
+              <div className="flex items-start gap-2">
+                <svg className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-blue-800 mb-1">AI Assistant</p>
+                  {aiStatus ? (
+                    <p className="text-sm font-medium text-blue-900 mb-1">{aiStatus}</p>
+                  ) : null}
+                  {aiResponse ? (
+                    <p className="text-sm text-gray-800 leading-relaxed whitespace-pre-wrap">{aiResponse}</p>
+                  ) : null}
+                </div>
+              </div>
+            </div>
+          )}
         </section>
 
       </article>

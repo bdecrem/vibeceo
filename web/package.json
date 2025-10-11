@@ -4,9 +4,11 @@
 	"description": "",
 	"private": true,
 	"scripts": {
-		"dev": "next dev",
+		"dev": "node server.js",
+		"dev:ws": "node ws-server.js",
 		"build": "next build",
-		"start": "next start",
+		"start": "NODE_ENV=production node server.js",
+		"start:ws": "NODE_ENV=production node ws-server.js",
 		"lint": "next lint",
 		"test": "playwright test",
 		"test:smoke": "node scripts/smoke-test.js"
@@ -19,6 +21,7 @@
 		"@supabase/auth-helpers-nextjs": "^0.10.0",
 		"@supabase/supabase-js": "^2.49.9",
 		"@types/jsonwebtoken": "^9.0.10",
+		"@types/ws": "^8.18.1",
 		"axios": "^1.8.4",
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
@@ -41,6 +44,7 @@
 		"tailwindcss-animate": "^1.0.7",
 		"twilio": "^5.8.0",
 		"unique-names-generator": "^4.7.1",
+		"ws": "^8.18.3",
 		"zustand": "^5.0.3"
 	},
 	"devDependencies": {

@@ -69,6 +69,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/trending') ||
       pathname.startsWith('/recents') ||
       pathname.startsWith('/featured') ||
+      pathname.startsWith('/kochi') ||
       pathname.startsWith('/test-auth') ||
       pathname.startsWith('/test-subscriber') ||
       pathname.startsWith('/console') ||
