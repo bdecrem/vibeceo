@@ -212,7 +212,8 @@ export default function KochiLandingPage() {
           </div>
 
 
-          <button
+          <a
+            href="sms:8663300015?body=Howdy,%20what%20can%20you%20do?"
             className="px-10 py-5 rounded-full transition-all duration-300 hover:scale-105"
             style={{
               background: '#FF9B71',
@@ -228,17 +229,27 @@ export default function KochiLandingPage() {
                 letterSpacing: '0.02em'
               }}
             >
-              Get Early Access
+              Try it now
             </span>
-          </button>
+          </a>
           <p
             style={{
-              color: 'rgba(231, 216, 178, 0.5)',
+              color: 'rgba(231, 216, 178, 0.6)',
               fontFamily: 'Poppins, sans-serif',
-              fontSize: '14px',
+              fontSize: '13px',
             }}
           >
-            Launching soon. Weather permitting.
+            +1-866-330-0015 (SMS/WhatsApp)
+          </p>
+
+          <p
+            style={{
+              color: 'rgba(231, 216, 178, 0.4)',
+              fontFamily: 'Poppins, sans-serif',
+              fontSize: '12px',
+            }}
+          >
+            © 2025 Kochito Labs. All rights reserved.
           </p>
         </motion.footer>
       </div>
