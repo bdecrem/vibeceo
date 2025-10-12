@@ -16,7 +16,11 @@ export interface RealtimeAudioConfig {
   onAudioCommitted?: () => void;
   onResponseStarted?: () => void;
   onResponseFinished?: () => void;
+  initialInstructions?: string;
 }
+
+const DEFAULT_SESSION_INSTRUCTIONS =
+  'You are a helpful assistant answering questions about the podcast the user is listening to. Keep responses concise and relevant. If you reference the research papers provided in the session instructions, clearly cite the paper title in your answer.';
 
 export class RealtimeAudioClient {
   private ws: WebSocket | null = null;
@@ -28,6 +32,8 @@ export class RealtimeAudioClient {
   private isRecording = false;
   private config: RealtimeAudioConfig;
   private recordedAudioData: Float32Array[] = [];
+  private currentInstructions: string;
+  private pendingContext: string | null = null;
 
   constructor(config: RealtimeAudioConfig = {}) {
     // Default to port 3001 for WebSocket server
@@ -39,6 +45,10 @@ export class RealtimeAudioClient {
       wsUrl: config.wsUrl || defaultWsUrl,
       ...config,
     };
+    this.currentInstructions =
+      config.initialInstructions?.trim().length
+        ? config.initialInstructions
+        : DEFAULT_SESSION_INSTRUCTIONS;
   }
 
   /**
@@ -57,6 +67,7 @@ export class RealtimeAudioClient {
           // Configure session after connection
           console.log('⚙️ Configuring session...');
           this.configureSession();
+          this.flushPendingContext();
           resolve();
         };
 
@@ -132,7 +143,7 @@ export class RealtimeAudioClient {
       type: 'session.update',
       session: {
         modalities: ['text', 'audio'],
-        instructions: 'You are a helpful assistant answering questions about the podcast the user is listening to. Keep responses concise and relevant.',
+        instructions: this.currentInstructions,
         voice: 'alloy',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
@@ -147,6 +158,66 @@ export class RealtimeAudioClient {
 
     console.log('📤 Sending session config:', JSON.stringify(sessionConfig, null, 2));
     this.send(sessionConfig);
+  }
+
+  /**
+   * Update session instructions (context for AI responses)
+   */
+  setInstructions(instructions: string): void {
+    const normalized = instructions?.trim();
+    if (!normalized) {
+      return;
+    }
+
+    this.currentInstructions = normalized;
+
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.send({
+        type: 'session.update',
+        session: {
+          instructions: this.currentInstructions,
+        },
+      });
+      this.flushPendingContext();
+    }
+  }
+
+  /**
+   * Queue additional system context (e.g. paper content) to prime the conversation
+   */
+  setContext(context: string): void {
+    const normalized = context?.trim();
+    if (!normalized) {
+      return;
+    }
+
+    this.pendingContext = normalized;
+    this.flushPendingContext();
+  }
+
+  private flushPendingContext(): void {
+    if (!this.pendingContext || !this.ws || this.ws.readyState !== WebSocket.OPEN) {
+      return;
+    }
+
+    const excerpt = `${this.pendingContext.slice(0, 120)}${this.pendingContext.length > 120 ? '…' : ''}`;
+    console.log('📤 Sending conversation context snippet:', excerpt);
+
+    this.send({
+      type: 'conversation.item.create',
+      item: {
+        type: 'message',
+        role: 'system',
+        content: [
+          {
+            type: 'input_text',
+            text: this.pendingContext,
+          },
+        ],
+      },
+    });
+
+    this.pendingContext = null;
   }
 
   /**
@@ -289,7 +360,15 @@ export class RealtimeAudioClient {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       // Log all messages except audio data (too verbose)
       if (data.type !== 'input_audio_buffer.append') {
-        console.log('📤 Sending:', data.type, data);
+        if (data.type === 'conversation.item.create') {
+          const textContent = data?.item?.content?.[0]?.text as string | undefined;
+          const preview = textContent
+            ? `${textContent.slice(0, 80)}${textContent.length > 80 ? '…' : ''}`
+            : '';
+          console.log('📤 Sending conversation item:', preview);
+        } else {
+          console.log('📤 Sending:', data.type, data);
+        }
       }
       this.ws.send(JSON.stringify(data));
     } else {
