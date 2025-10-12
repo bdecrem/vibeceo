@@ -37,6 +37,50 @@ const conversations: Message[] = [
 
 const randomFrom = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
 
+const USER_TYPING_DELAY = 900;
+const USER_TYPING_SPEED = 26;
+const USER_POST_MESSAGE_DELAY = 600;
+const KOCHI_TYPING_DELAY = 1100;
+const KOCHI_TYPING_SPEED = 24;
+const KOCHI_POST_MESSAGE_DELAY = 2200;
+
+function TypingIndicator({ variant }: { variant: "user" | "kochi" }) {
+  const dotColor = variant === "user" ? "#252520" : "#E7D8B2";
+
+  return (
+    <div className="flex items-center gap-[6px]">
+      {[0, 1, 2].map((index) => (
+        <motion.span
+          key={index}
+          className="block rounded-full"
+          style={{ width: 10, height: 10, backgroundColor: dotColor }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            y: [0, -4, 0]
+          }}
+          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, delay: index * 0.15 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+const Caret = ({ tone }: { tone: "user" | "kochi" }) => (
+  <motion.span
+    aria-hidden
+    className="inline-block"
+    style={{
+      marginLeft: 4,
+      width: 10,
+      height: 18,
+      backgroundColor: tone === "user" ? "rgba(37, 37, 32, 0.6)" : "rgba(231, 216, 178, 0.6)",
+      borderRadius: 2
+    }}
+    animate={{ opacity: [0, 1, 0] }}
+    transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
+  />
+);
+
 function KochiMascot(): JSX.Element {
   const containerRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);
@@ -594,14 +638,119 @@ function KochiMascot(): JSX.Element {
 
 export default function KochiLandingPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [sequenceId, setSequenceId] = useState(0);
+  const [userState, setUserState] = useState<"typing" | "message">("typing");
+  const [kochiState, setKochiState] = useState<"hidden" | "typing" | "message">("hidden");
+  const [displayedUserText, setDisplayedUserText] = useState("");
+  const [displayedKochiText, setDisplayedKochiText] = useState("");
+
+  const timeoutsRef = useRef<number[]>([]);
+  const intervalsRef = useRef<number[]>([]);
+
+  const clearTimers = () => {
+    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
+    timeoutsRef.current = [];
+    intervalsRef.current.forEach((id) => window.clearInterval(id));
+    intervalsRef.current = [];
+  };
+
+  const registerTimeout = (handler: () => void, delay: number) => {
+    const id = window.setTimeout(() => {
+      timeoutsRef.current = timeoutsRef.current.filter((stored) => stored !== id);
+      handler();
+    }, delay);
+    timeoutsRef.current.push(id);
+    return id;
+  };
+
+  const registerInterval = (handler: () => void, delay: number) => {
+    const id = window.setInterval(handler, delay);
+    intervalsRef.current.push(id);
+    return id;
+  };
+
+  const typeText = (
+    fullText: string,
+    setter: (value: string) => void,
+    onCompleted: () => void,
+    speed: number
+  ) => {
+    let index = 0;
+    setter("");
+    const intervalId = registerInterval(() => {
+      index += 1;
+      setter(fullText.slice(0, index));
+      if (index >= fullText.length) {
+        window.clearInterval(intervalId);
+        intervalsRef.current = intervalsRef.current.filter((stored) => stored !== intervalId);
+        onCompleted();
+      }
+    }, speed);
+  };
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentIndex((prev) => (prev + 1) % conversations.length);
-    }, 5000);
-
-    return () => clearInterval(interval);
+    return () => {
+      clearTimers();
+    };
   }, []);
+
+  useEffect(() => {
+    clearTimers();
+    setUserState("typing");
+    setKochiState("hidden");
+    setDisplayedUserText("");
+    setDisplayedKochiText("");
+
+    const conversation = conversations[currentIndex];
+
+    registerTimeout(() => {
+      setUserState("message");
+      typeText(conversation.user, setDisplayedUserText, () => {
+        registerTimeout(() => {
+          setKochiState("typing");
+          registerTimeout(() => {
+            setKochiState("message");
+            typeText(conversation.kochi, setDisplayedKochiText, () => {
+              registerTimeout(() => {
+                setCurrentIndex((prev) => {
+                  const nextIndex = (prev + 1) % conversations.length;
+                  setSequenceId((id) => id + 1);
+                  return nextIndex;
+                });
+              }, KOCHI_POST_MESSAGE_DELAY);
+            }, KOCHI_TYPING_SPEED);
+          }, KOCHI_TYPING_DELAY);
+        }, USER_POST_MESSAGE_DELAY);
+      }, USER_TYPING_SPEED);
+    }, USER_TYPING_DELAY);
+
+    return () => {
+      clearTimers();
+    };
+  }, [currentIndex, sequenceId]);
+
+  const conversation = conversations[currentIndex];
+  const userFullText = conversation.user;
+  const kochiFullText = conversation.kochi;
+  const userTextComplete = displayedUserText.length >= userFullText.length && userState === "message";
+  const kochiTextComplete =
+    displayedKochiText.length >= kochiFullText.length && kochiState === "message";
+
+  let activeProgress = 0.32;
+  if (kochiState === "message") {
+    activeProgress = kochiTextComplete ? 1 : 0.88;
+  } else if (kochiState === "typing") {
+    activeProgress = 0.72;
+  } else if (userState === "message") {
+    activeProgress = userTextComplete ? 0.58 : 0.48;
+  }
+
+  const clampedProgress = Math.max(0, Math.min(activeProgress, 1));
+
+  const handleIndicatorClick = (index: number) => {
+    setCurrentIndex(index);
+    setSequenceId((id) => id + 1);
+  };
 
   return (
     <div
@@ -655,65 +804,160 @@ export default function KochiLandingPage() {
           </motion.div>
         </header>
 
-        <div className="flex-1 flex items-center justify-center px-6 py-0 relative">
-          <div className="w-full mx-auto relative" style={{ zIndex: 1 }}>
-            <div className="flex flex-col items-center gap-10">
-              <div className="flex flex-col items-center gap-6">
-                <div className="w-full flex justify-end">
-                  <AnimatePresence mode="wait">
+        <div className="flex-1 flex items-center justify-center px-6 md:px-10 lg:px-0 py-0 relative">
+          <div className="relative w-full flex justify-center" style={{ zIndex: 1 }}>
+            <div
+              className="w-full max-w-[520px] rounded-[48px] md:rounded-[56px] px-6 sm:px-10 md:px-12 py-12 md:py-16"
+              style={{
+                background: "radial-gradient(circle at 50% 0%, rgba(36, 36, 32, 0.85), rgba(30, 30, 27, 0.75))",
+                boxShadow: "0 48px 120px rgba(0, 0, 0, 0.35)",
+                border: "1px solid rgba(231, 216, 178, 0.05)",
+                backdropFilter: "blur(12px)"
+              }}
+            >
+              <div className="flex flex-col gap-8">
+                <div className="flex justify-end">
+                  <motion.div
+                    layout
+                    className="max-w-full"
+                    initial={false}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+                  >
                     <motion.div
-                      key={`user-${currentIndex}`}
-                      initial={{ opacity: 0, y: -30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -30 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
-                      className="max-w-[85%] md:max-w-lg"
+                      layout
+                      className="relative px-6 py-4 md:px-8 md:py-5 rounded-3xl"
+                      style={{
+                        background: "#FF9B71",
+                        color: "#252520",
+                        fontFamily: "Poppins, sans-serif",
+                        fontSize: "18px",
+                        lineHeight: "1.5",
+                        fontWeight: 400,
+                        borderBottomRightRadius: "12px"
+                      }}
+                      animate={{
+                        boxShadow:
+                          userState === "message"
+                            ? "0 18px 40px rgba(255, 155, 113, 0.45)"
+                            : "0 12px 28px rgba(255, 155, 113, 0.32)",
+                        y: userState === "typing" ? 4 : 0
+                      }}
+                      transition={{ duration: 0.45, ease: "easeOut" }}
                     >
-                      <div
-                        className="px-6 py-4 md:px-8 md:py-5 rounded-3xl"
+                      <motion.span
+                        className="pointer-events-none absolute inset-0 -z-10 rounded-[28px]"
                         style={{
-                          background: "#FF9B71",
-                          color: "#252520",
-                          fontFamily: "Poppins, sans-serif",
-                          fontSize: "18px",
-                          lineHeight: "1.5",
-                          fontWeight: 400,
-                          borderBottomRightRadius: "8px",
-                          boxShadow: "0 8px 24px rgba(255, 155, 113, 0.3)"
+                          background:
+                            "radial-gradient(circle at 30% 50%, rgba(255, 155, 113, 0.6), transparent 65%)"
                         }}
-                      >
-                        {conversations[currentIndex].user}
-                      </div>
+                        initial={{ opacity: 0.25 }}
+                        animate={{ opacity: userState === "message" ? 0.6 : 0.4 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                      />
+                      <AnimatePresence mode="wait" initial={false}>
+                        {userState === "typing" ? (
+                          <motion.div
+                            key="user-typing"
+                            className="flex justify-center"
+                            initial={{ opacity: 0, scale: 0.92 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.92 }}
+                            transition={{ duration: 0.3, ease: "easeOut" }}
+                          >
+                            <TypingIndicator variant="user" />
+                          </motion.div>
+                        ) : (
+                          <motion.p
+                            key={`user-text-${sequenceId}`}
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -16 }}
+                            transition={{ duration: 0.4, ease: "easeOut" }}
+                            style={{ margin: 0 }}
+                          >
+                            {displayedUserText}
+                            {!userTextComplete && <Caret tone="user" />}
+                          </motion.p>
+                        )}
+                      </AnimatePresence>
                     </motion.div>
-                  </AnimatePresence>
+                  </motion.div>
                 </div>
 
-                <div className="w-full flex justify-start">
-                  <AnimatePresence mode="wait">
-                    <motion.div
-                      key={`kochi-${currentIndex}`}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 30 }}
-                      transition={{ duration: 0.5, ease: "easeOut", delay: 0.6 }}
-                      className="max-w-[85%] md:max-w-lg"
-                    >
-                      <div
-                        className="px-6 py-4 md:px-8 md:py-5 rounded-3xl"
-                        style={{
-                          background: "rgba(231, 216, 178, 0.1)",
-                          color: "#E7D8B2",
-                          fontFamily: "Poppins, sans-serif",
-                          fontSize: "18px",
-                          lineHeight: "1.5",
-                          fontWeight: 400,
-                          borderBottomLeftRadius: "8px",
-                          border: "1px solid rgba(231, 216, 178, 0.2)"
-                        }}
+                <div className="flex justify-start">
+                  <AnimatePresence mode="wait" initial={false}>
+                    {kochiState !== "hidden" && (
+                      <motion.div
+                        key={`kochi-${sequenceId}-${kochiState}`}
+                        layout
+                        className="max-w-full"
+                        initial={{ opacity: 0, x: -36, scale: 0.92 }}
+                        animate={{ opacity: 1, x: 0, scale: 1 }}
+                        exit={{ opacity: 0, x: -36, scale: 0.92 }}
+                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
                       >
-                        {conversations[currentIndex].kochi}
-                      </div>
-                    </motion.div>
+                        <motion.div
+                          layout
+                          className="relative px-6 py-4 md:px-8 md:py-5 rounded-3xl"
+                          style={{
+                            background: "rgba(231, 216, 178, 0.12)",
+                            color: "#E7D8B2",
+                            fontFamily: "Poppins, sans-serif",
+                            fontSize: "18px",
+                            lineHeight: "1.5",
+                            fontWeight: 400,
+                            borderBottomLeftRadius: "12px",
+                            border: "1px solid rgba(231, 216, 178, 0.22)"
+                          }}
+                          animate={{
+                            boxShadow:
+                              kochiState === "message"
+                                ? "0 18px 40px rgba(231, 216, 178, 0.35)"
+                                : "0 12px 28px rgba(231, 216, 178, 0.2)",
+                            y: kochiState === "typing" ? 4 : 0
+                          }}
+                          transition={{ duration: 0.45, ease: "easeOut" }}
+                        >
+                          <motion.span
+                            className="pointer-events-none absolute inset-0 -z-10 rounded-[28px]"
+                            style={{
+                              background:
+                                "radial-gradient(circle at 70% 40%, rgba(231, 216, 178, 0.45), transparent 70%)"
+                            }}
+                            initial={{ opacity: 0.2 }}
+                            animate={{ opacity: kochiState === "message" ? 0.5 : 0.3 }}
+                            transition={{ duration: 0.6, ease: "easeOut" }}
+                          />
+                          <AnimatePresence mode="wait" initial={false}>
+                            {kochiState === "typing" ? (
+                              <motion.div
+                                key="kochi-typing"
+                                className="flex justify-center"
+                                initial={{ opacity: 0, scale: 0.92 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.92 }}
+                                transition={{ duration: 0.3, ease: "easeOut" }}
+                              >
+                                <TypingIndicator variant="kochi" />
+                              </motion.div>
+                            ) : (
+                              <motion.p
+                                key={`kochi-text-${sequenceId}`}
+                                initial={{ opacity: 0, y: 16 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -16 }}
+                                transition={{ duration: 0.4, ease: "easeOut" }}
+                                style={{ margin: 0 }}
+                              >
+                                {displayedKochiText}
+                                {!kochiTextComplete && <Caret tone="kochi" />}
+                              </motion.p>
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      </motion.div>
+                    )}
                   </AnimatePresence>
                 </div>
               </div>
@@ -737,23 +981,32 @@ export default function KochiLandingPage() {
           </motion.div>
 
           <div className="flex justify-center gap-2">
-            {conversations.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => setCurrentIndex(index)}
-                className="transition-all duration-300"
-                style={{
-                  width: currentIndex === index ? "40px" : "8px",
-                  height: "8px",
-                  borderRadius: "4px",
-                  background:
-                    currentIndex === index
-                      ? "#FF9B71"
-                      : "rgba(231, 216, 178, 0.2)"
-                }}
-                aria-label={`Go to conversation ${index + 1}`}
-              />
-            ))}
+            {conversations.map((_, index) => {
+              const isActive = currentIndex === index;
+              const width = isActive ? 12 + clampedProgress * 32 : 8;
+
+              return (
+                <motion.button
+                  key={index}
+                  type="button"
+                  onClick={() => handleIndicatorClick(index)}
+                  className="rounded-full"
+                  style={{ height: 8 }}
+                  initial={false}
+                  animate={{
+                    width,
+                    backgroundColor: isActive ? "#FF9B71" : "rgba(231, 216, 178, 0.25)",
+                    opacity: isActive ? 1 : 0.4,
+                    boxShadow: isActive
+                      ? "0 8px 24px rgba(255, 155, 113, 0.35)"
+                      : "0 0 0 rgba(0, 0, 0, 0)"
+                  }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                  aria-label={`Go to conversation ${index + 1}`}
+                />
+              );
+            })}
           </div>
 
           <a

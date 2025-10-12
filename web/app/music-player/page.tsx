@@ -4,6 +4,13 @@ import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, us
 import { useSearchParams } from 'next/navigation';
 import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
 
+interface TrackPaper {
+  id: string;
+  title: string;
+  summary?: string;
+  fullText?: string;
+}
+
 interface TrackItem {
   id: string;
   title: string;
@@ -11,6 +18,7 @@ interface TrackItem {
   src: string;
   showName?: string;
   order?: number;
+  papers?: TrackPaper[];
 }
 
 const FALLBACK_PLAYLIST: TrackItem[] = [
@@ -57,6 +65,58 @@ function dbToGain(db: number): number {
   return Number.isFinite(db) ? Math.pow(10, db / 20) : 1;
 }
 
+const BASE_REALTIME_INSTRUCTIONS =
+  'You are an expert co-host helping listeners understand the AI Daily episode they just heard. Use the provided paper details to answer questions accurately, cite paper titles when referencing them, and keep responses concise.';
+
+function truncateForContext(value: string | undefined, limit = 2000): string | null {
+  if (!value) {
+    return null;
+  }
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  if (trimmed.length <= limit) {
+    return trimmed;
+  }
+  return `${trimmed.slice(0, limit - 1).trim()}…`;
+}
+
+function buildRealtimeContext(
+  episodeTitle: string,
+  episodeDescription: string | undefined,
+  papers: TrackPaper[]
+): string {
+  const headerLines: string[] = [];
+
+  const normalizedTitle = episodeTitle?.trim() || 'AI Daily Episode';
+  headerLines.push(`Episode: ${normalizedTitle}`);
+
+  if (episodeDescription?.trim()) {
+    headerLines.push(`Episode Summary: ${episodeDescription.trim()}`);
+  }
+
+  const paperSections = papers.map((paper, index) => {
+    const lines: string[] = [];
+    const paperIndex = index + 1;
+    lines.push(`Paper ${paperIndex}: ${paper.title}`);
+    const summaryText = truncateForContext(paper.summary, 800);
+    if (summaryText) {
+      lines.push(`Summary: ${summaryText}`);
+    }
+    const fullText = truncateForContext(paper.fullText, 3200);
+    if (fullText) {
+      lines.push(`Full Text:\n${fullText}`);
+    }
+    return lines.join('\n');
+  });
+
+  headerLines.push('Research papers for reference:');
+  headerLines.push(paperSections.join('\n\n'));
+
+  return headerLines.join('\n');
+}
+
 function MusicPlayerContent(): JSX.Element {
   const searchParams = useSearchParams();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -65,7 +125,6 @@ function MusicPlayerContent(): JSX.Element {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [loadedPlaylist, setLoadedPlaylist] = useState<TrackItem[]>(FALLBACK_PLAYLIST);
-  const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -110,6 +169,7 @@ function MusicPlayerContent(): JSX.Element {
       title: titleParam?.trim() || 'AI Daily — Latest Episode',
       description: descriptionParam?.trim() || undefined,
       src,
+      showName: 'AI Daily',
     } satisfies TrackItem;
   }, [searchParams]);
 
@@ -122,14 +182,12 @@ function MusicPlayerContent(): JSX.Element {
           throw new Error('Failed to fetch episodes');
         }
         const data = await response.json();
-        if (data.episodes && data.episodes.length > 0) {
-          setLoadedPlaylist(data.episodes);
+        if (Array.isArray(data.episodes) && data.episodes.length > 0) {
+          setLoadedPlaylist(data.episodes as TrackItem[]);
         }
       } catch (error) {
         console.error('Error fetching episodes:', error);
         // Keep using fallback playlist
-      } finally {
-        setIsLoadingEpisodes(false);
       }
     }
     void fetchEpisodes();
@@ -176,6 +234,45 @@ function MusicPlayerContent(): JSX.Element {
   }, [currentTrackIndex]);
 
   const currentTrack = useMemo(() => playlist[currentTrackIndex], [playlist, currentTrackIndex]);
+
+  const aiDailyTrackData = useMemo(
+    () => loadedPlaylist.find((track) => track.showName === 'AI Daily'),
+    [loadedPlaylist]
+  );
+
+  const isAiDailyTrack = currentTrack?.showName === 'AI Daily';
+
+  const aiDailyPapers = useMemo(() => {
+    if (!isAiDailyTrack) {
+      return undefined;
+    }
+    if (currentTrack?.papers?.length) {
+      return currentTrack.papers;
+    }
+    return aiDailyTrackData?.papers;
+  }, [aiDailyTrackData, currentTrack, isAiDailyTrack]);
+
+  const hasAiDailyPapers = Boolean(isAiDailyTrack && aiDailyPapers && aiDailyPapers.length > 0);
+
+  const aiDailyContext = useMemo(() => {
+    if (!hasAiDailyPapers || !aiDailyPapers) {
+      return null;
+    }
+    return buildRealtimeContext(
+      currentTrack?.title || 'AI Daily Episode',
+      currentTrack?.description,
+      aiDailyPapers
+    );
+  }, [aiDailyPapers, currentTrack?.description, currentTrack?.title, hasAiDailyPapers]);
+
+  const aiDailyInstructions = useMemo(() => {
+    if (!aiDailyContext) {
+      return null;
+    }
+    return `${BASE_REALTIME_INSTRUCTIONS}\n\n${aiDailyContext}`;
+  }, [aiDailyContext]);
+
+  const canUseMic = Boolean(aiDailyInstructions && aiDailyContext);
 
   // Shorten title for display
   const displayTitle = useMemo(() => {
@@ -338,14 +435,23 @@ function MusicPlayerContent(): JSX.Element {
     }
   }, [currentTrack]);
 
-  const micDisabled = isConnecting || (!isMicAvailable && !isMicActive);
-  const micTooltip = isMicActive
-    ? 'Stop recording'
-    : micDisabled
-      ? 'Mic unlocks after the episode finishes'
-      : 'Ask a question about this episode';
+  const micDisabled = !canUseMic || isConnecting || (!isMicAvailable && !isMicActive);
+  const micTooltip = !canUseMic
+    ? 'Microphone is only available for AI Daily episodes with research context.'
+    : isMicActive
+      ? 'Stop recording'
+      : micDisabled
+        ? 'Mic unlocks after the episode finishes'
+        : 'Ask a question about this episode';
 
   const handleMic = useCallback(async () => {
+    if (!canUseMic || !aiDailyInstructions || !aiDailyContext) {
+      setAiStatus('Microphone is only available once the AI Daily papers finish loading.');
+      return;
+    }
+    const instructionsForSession = aiDailyInstructions;
+    const contextForSession = aiDailyContext;
+
     try {
       if (!isMicActive && !isMicAvailable) {
         setAiStatus('Mic will unlock once this episode finishes.');
@@ -383,6 +489,7 @@ function MusicPlayerContent(): JSX.Element {
         if (!realtimeClientRef.current) {
           console.log('🔧 Creating new RealtimeAudioClient...');
           const client = new RealtimeAudioClient({
+            initialInstructions: instructionsForSession,
             onTranscriptDelta: (text) => {
               console.log('📝 [CALLBACK] Transcript delta received:', text);
               setAiStatus('Responding...');
@@ -439,6 +546,9 @@ function MusicPlayerContent(): JSX.Element {
             }
           });
 
+          client.setInstructions(instructionsForSession);
+          client.setContext(contextForSession);
+
           try {
             await client.connect();
             realtimeClientRef.current = client;
@@ -452,6 +562,9 @@ function MusicPlayerContent(): JSX.Element {
             return;
           }
         }
+
+        realtimeClientRef.current?.setInstructions(instructionsForSession);
+        realtimeClientRef.current?.setContext(contextForSession);
 
         // Start recording
         setAiStatus('Requesting microphone access...');
@@ -481,7 +594,7 @@ function MusicPlayerContent(): JSX.Element {
       setIsMicAvailable(true);
       realtimeClientRef.current = null;
     }
-  }, [isMicActive, isMicAvailable]);
+  }, [aiDailyContext, aiDailyInstructions, canUseMic, isMicActive, isMicAvailable]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -749,29 +862,31 @@ function MusicPlayerContent(): JSX.Element {
                 >
                   Next ▶︎
                 </button>
-              <button
-                type="button"
-                onClick={handleMic}
-                disabled={micDisabled}
-                className={`rounded-full p-2.5 shadow-md transition hover:scale-105 active:scale-95 ${
-                  isMicActive
-                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
-                    : micDisabled
-                    ? 'bg-gray-400 cursor-not-allowed'
-                    : 'bg-gray-200 hover:bg-gray-300'
-                }`}
-                aria-label="Microphone"
-                title={micTooltip}
-              >
-                  <svg
-                    className={`h-5 w-5 ${isMicActive ? 'text-white' : 'text-gray-700'}`}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+                {canUseMic ? (
+                  <button
+                    type="button"
+                    onClick={handleMic}
+                    disabled={micDisabled}
+                    className={`rounded-full p-2.5 shadow-md transition hover:scale-105 active:scale-95 ${
+                      isMicActive
+                        ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                        : micDisabled
+                          ? 'bg-gray-400 cursor-not-allowed'
+                          : 'bg-gray-200 hover:bg-gray-300'
+                    }`}
+                    aria-label="Microphone"
+                    title={micTooltip}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-                </button>
+                    <svg
+                      className={`h-5 w-5 ${isMicActive ? 'text-white' : 'text-gray-700'}`}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
             </div>
           </div>

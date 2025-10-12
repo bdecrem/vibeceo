@@ -87,6 +87,41 @@ export async function GET() {
         }
 
         if (episode && episode.audio_url) {
+          let papers = undefined as
+            | Array<{
+                id: string;
+                title: string;
+                summary?: string;
+                fullText?: string;
+              }>
+            | undefined;
+
+          if (showInfo.name === 'AI Daily') {
+            try {
+              const { data: coveredPapers, error: coveredPapersError } = await supabase
+                .from('covered_papers')
+                .select(
+                  'paper_id, title, paper_content, paper_full_text, covered_at'
+                )
+                .eq('episode_id', episode.id)
+                .order('covered_at', { ascending: true })
+                .limit(3);
+
+              if (coveredPapersError) {
+                console.warn('Error fetching AI Daily papers:', coveredPapersError);
+              } else if (coveredPapers && coveredPapers.length > 0) {
+                papers = coveredPapers.map((paper) => ({
+                  id: paper.paper_id,
+                  title: paper.title,
+                  summary: paper.paper_content || undefined,
+                  fullText: paper.paper_full_text || undefined,
+                }));
+              }
+            } catch (papersError) {
+              console.warn('Unexpected error loading AI Daily papers:', papersError);
+            }
+          }
+
           episodes.push({
             id: `${showInfo.name.toLowerCase().replace(/\s+/g, '-')}-${episode.id}`,
             title: `${showInfo.name} — ${episode.title || `Episode ${episode.episode_number}`}`,
@@ -94,6 +129,7 @@ export async function GET() {
             src: episode.audio_url,
             showName: showInfo.name,
             order: showInfo.order,
+            papers,
           });
         }
       } catch (err) {
