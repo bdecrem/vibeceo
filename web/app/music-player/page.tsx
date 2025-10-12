@@ -141,7 +141,7 @@ function MusicPlayerContent(): JSX.Element {
   const [isMicAvailable, setIsMicAvailable] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
-  const customTrack = useMemo(() => {
+  const customTrack = useMemo((): TrackItem | null => {
     if (!searchParams) {
       return null;
     }
@@ -170,7 +170,7 @@ function MusicPlayerContent(): JSX.Element {
       description: descriptionParam?.trim() || undefined,
       src,
       showName: 'AI Daily',
-    } satisfies TrackItem;
+    };
   }, [searchParams]);
 
   // Fetch real episodes on mount
