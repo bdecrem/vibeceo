@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// Only log in development to reduce production overhead
+const isDev = process.env.NODE_ENV !== 'production'
+const log = (...args: any[]) => {
+  if (isDev) console.log(...args)
+}
+
 export function middleware(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   const host = request.headers.get('host')
 
-  // DEBUG: Log all requests
-  console.log(`[Middleware] Processing: ${pathname}`)
+  log(`[Middleware] Processing: ${pathname}`)
 
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
@@ -24,7 +29,7 @@ export function middleware(request: NextRequest) {
 
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
-      console.log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
+      log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 
@@ -45,7 +50,7 @@ export function middleware(request: NextRequest) {
 
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/b52s', request.url)
-      console.log(`[Middleware] B52 domain root rewrite -> ${newUrl.pathname}`)
+      log(`[Middleware] B52 domain root rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 
@@ -54,31 +59,25 @@ export function middleware(request: NextRequest) {
   
   // SPECIFIC FIX: Bypass music player route immediately
   if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
-    if (host?.includes('localhost') || host?.includes('ngrok')) {
-      console.log(`[Middleware] Music player bypassed: ${pathname}`)
-    }
+    log(`[Middleware] Music player bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
   // SPECIFIC FIX: Bypass report viewer route immediately
   if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer/')) {
-    if (host?.includes('localhost') || host?.includes('ngrok')) {
-      console.log(`[Middleware] Report viewer bypassed: ${pathname}`)
-    }
+    log(`[Middleware] Report viewer bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
   // SPECIFIC FIX: Bypass webtoys-logo immediately
   if (pathname === '/webtoys-logo' || pathname.startsWith('/webtoys-logo/')) {
-    console.log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
+    log(`[Middleware] WEBTOYS-LOGO bypassed: ${pathname}`)
     return NextResponse.next()
   }
-  
+
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
-    if (host?.includes('localhost') || host?.includes('ngrok')) {
-      console.log(`[Middleware] API route bypassed: ${pathname}`)
-    }
+    log(`[Middleware] API route bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
@@ -102,7 +101,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/payments') ||
       pathname.startsWith('/b52s') ||
       pathname.startsWith('/kochi')) {
-    console.log(`[Middleware] Auth/global route bypassed: ${pathname}`)
+    log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
@@ -116,10 +115,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // Debug logging for development
-  if (host?.includes('localhost') || host?.includes('ngrok')) {
-    console.log(`[Middleware] ${host}${pathname} - Processing request`)
-  }
+  log(`[Middleware] ${host}${pathname} - Processing request`)
 
   // Handle wtaf.me, webtoys.io, and webtoys.ai domains (both production and development)
   const isWtafDomain = host === 'wtaf.me' || host === 'www.wtaf.me' || host === 'webtoys.io' || host === 'www.webtoys.io' || host === 'webtoys.ai' || host === 'www.webtoys.ai'
@@ -129,9 +125,9 @@ export function middleware(request: NextRequest) {
   
   // Debug logging for WTAF domain routing
   if (isWtafDomain) {
-    console.log(`[Middleware] WTAF domain detected: ${host}${pathname}`)
-    console.log(`[Middleware] Search params: ${search}`)
-    console.log(`[Middleware] Full URL: ${request.url}`)
+    log(`[Middleware] WTAF domain detected: ${host}${pathname}`)
+    log(`[Middleware] Search params: ${search}`)
+    log(`[Middleware] Full URL: ${request.url}`)
   }
   
   if (isWtafDomain || isDevWtafRoute || isDevUserRoute) {
@@ -149,13 +145,13 @@ export function middleware(request: NextRequest) {
     // Root path - serve WTAF landing page (only for wtaf.me domain, not dev routes)
     if (pathname === '/' && isWtafDomain) {
       const newUrl = new URL('/wtaf-landing', request.url)
-      console.log(`[Middleware] Serving WTAF landing page for root path`)
+      log(`[Middleware] Serving WTAF landing page for root path`)
       return NextResponse.rewrite(newUrl)
     }
 
     // CRITICAL FIX: Prevent infinite loops by checking if path already starts with /wtaf/
     if (pathname.startsWith('/wtaf/')) {
-      console.log(`[Middleware] Path already starts with /wtaf/, continuing normally: ${pathname}`)
+      log(`[Middleware] Path already starts with /wtaf/, continuing normally: ${pathname}`)
       return NextResponse.next()
     }
 
@@ -171,13 +167,13 @@ export function middleware(request: NextRequest) {
       }
       
       const newUrl = new URL(`${rewritePath}${search}`, request.url)
-      console.log(`[Middleware] Rewriting wtaf.me ${host}${pathname} -> ${rewritePath}`)
-      console.log(`[Middleware] New URL: ${newUrl.toString()}`)
+      log(`[Middleware] Rewriting wtaf.me ${host}${pathname} -> ${rewritePath}`)
+      log(`[Middleware] New URL: ${newUrl.toString()}`)
       return NextResponse.rewrite(newUrl)
     } else if (isDevUserRoute) {
       // For dev user routes (e.g., /bart or /bart/app): rewrite to /wtaf/bart or /wtaf/bart/app
       const newUrl = new URL(`/wtaf${pathname}${search}`, request.url)
-      console.log(`[Middleware] Rewriting dev user route ${pathname} -> /wtaf${pathname}`)
+      log(`[Middleware] Rewriting dev user route ${pathname} -> /wtaf${pathname}`)
       return NextResponse.rewrite(newUrl)
     }
     
