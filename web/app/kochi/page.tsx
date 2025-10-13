@@ -11,7 +11,7 @@ type ChatMessage = {
   content: string;
 };
 
-const GREETING_TEXT = "Hey — I'm Kochi. I send short daily blasts on AI, science, and crypto. Wanna ask me one thing?";
+const GREETING_TEXT = "Hey — I'm Kochi. I send short daily blasts on AI, science, and finance. Wanna ask me one thing?";
 
 const randomFrom = <T,>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
@@ -269,6 +269,8 @@ export default function KochiLandingPage() {
   const [greetingDisplayed, setGreetingDisplayed] = useState("");
   const greetingIntervalRef = useRef<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConversation, setShowConversation] = useState(true);
+  const hideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -281,6 +283,15 @@ export default function KochiLandingPage() {
   }, [stage]);
 
   const handleMascotClick = () => {
+    if (stage === "response" && showConversation) {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
+      setShowConversation(false);
+      return;
+    }
+
     if (stage === "initial" || stage === "prompt") {
       setStage("input");
       setAnimationsEnabled(true);
@@ -403,6 +414,35 @@ export default function KochiLandingPage() {
     }
   }, [stage, animationsEnabled]);
 
+  useEffect(() => {
+    if (stage !== "response" && !showConversation) {
+      setShowConversation(true);
+    }
+  }, [stage, showConversation]);
+
+  useEffect(() => {
+    if (stage === "response" && showConversation) {
+      if (hideTimerRef.current) {
+        window.clearTimeout(hideTimerRef.current);
+      }
+      hideTimerRef.current = window.setTimeout(() => {
+        setShowConversation(false);
+        hideTimerRef.current = null;
+      }, 40000);
+      return () => {
+        if (hideTimerRef.current) {
+          window.clearTimeout(hideTimerRef.current);
+          hideTimerRef.current = null;
+        }
+      };
+    }
+
+    if (hideTimerRef.current) {
+      window.clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+  }, [stage, showConversation]);
+
   return (
     <div
       className="min-h-screen bg-[#fffef7] text-center flex items-center justify-center px-5 py-6"
@@ -417,24 +457,22 @@ export default function KochiLandingPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-[520px]">
+      <div className="w-full max-w-[520px] px-4 sm:px-0">
         <h1
+          className="text-[38px] sm:text-[60px] md:text-[72px] leading-[0.9] font-[800]"
           style={{
             fontFamily: "Poppins, sans-serif",
-            fontWeight: 800,
-            fontSize: "clamp(48px, 10vw, 72px)",
             color: "#2C3E1F",
-            margin: "0 0 8px 0",
-            lineHeight: 0.9
+            margin: "0 0 8px 0"
           }}
         >
           Kochi.to
         </h1>
 
         <p
+          className="text-[13px] sm:text-[14px]"
           style={{
             color: "#8a8a8a",
-            fontSize: "14px",
             marginBottom: "48px",
             fontStyle: "italic"
           }}
@@ -456,7 +494,7 @@ export default function KochiLandingPage() {
                 exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ type: "spring", stiffness: 420, damping: 14 }}
                 onClick={handleMascotClick}
-                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-base font-medium"
+                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[15px] sm:text-base font-medium"
               >
                 Tap Kochi to get started
               </motion.button>
@@ -465,7 +503,7 @@ export default function KochiLandingPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {stage === "input" && (
+          {showConversation && stage === "input" && (
             <motion.div
               key="input"
               initial={{ opacity: 0, y: 16 }}
@@ -481,12 +519,12 @@ export default function KochiLandingPage() {
                 className="inline-block mb-5"
               >
                 <div
+                  className="text-[15px] sm:text-[16px]"
                   style={{
                     background: "#FFF9E6",
                     color: "#2C3E1F",
                     padding: "16px 24px",
                     borderRadius: "24px",
-                    fontSize: "16px",
                     border: "2px solid #2C3E1F",
                     display: "inline-block",
                     maxWidth: "80%",
@@ -513,13 +551,13 @@ export default function KochiLandingPage() {
                     }
                   }}
                   placeholder="Try: “what were the best AI papers yesterday?”"
-                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-base outline-none w-full sm:min-w-[360px]"
+                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-[15px] sm:text-base outline-none w-full sm:min-w-[360px]"
                   autoFocus
                 />
                 <button
                   onClick={handleUserSubmit}
                   disabled={!userInput.trim() || isLoading}
-                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-base font-semibold transition-all duration-200 sm:w-auto w-full"
+                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-[15px] sm:text-base font-semibold transition-all duration-200 sm:w-auto w-full"
                   style={{
                     background: userInput.trim() && !isLoading ? "#FFE148" : "#e8e8e8",
                     color: userInput.trim() && !isLoading ? "#2C3E1F" : "#999",
@@ -532,7 +570,7 @@ export default function KochiLandingPage() {
             </motion.div>
           )}
 
-          {stage === "thinking" && (
+          {showConversation && stage === "thinking" && (
             <motion.div
               key="thinking"
               initial={{ opacity: 0, y: 16 }}
@@ -542,12 +580,12 @@ export default function KochiLandingPage() {
               className="mb-8"
             >
               <div
+                className="text-[15px] sm:text-[16px]"
                 style={{
                   background: "#ffffff",
                   color: "#2C3E1F",
                   padding: "16px 24px",
                   borderRadius: "24px",
-                  fontSize: "16px",
                   border: "2px solid #e8e8e8",
                   display: "inline-block",
                   marginBottom: "16px",
@@ -576,60 +614,64 @@ export default function KochiLandingPage() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
               transition={{ duration: 0.4 }}
-              className="mb-10"
+              className={showConversation ? "mb-10" : "mb-6"}
             >
-              <div
-                style={{
-                  background: "#ffffff",
-                  color: "#2C3E1F",
-                  padding: "16px 24px",
-                  borderRadius: "24px",
-                  fontSize: "16px",
-                  border: "2px solid #e8e8e8",
-                  display: "inline-block",
-                  marginBottom: "16px",
-                  maxWidth: "80%",
-                  textAlign: "left"
-                }}
-              >
-                {lastUserMessage || userInput}
-              </div>
-
-              <div style={{ height: "12px" }} />
-
-              <div
-                style={{
-                  background: "#FFF9E6",
-                  color: "#2C3E1F",
-                  padding: "16px 24px",
-                  borderRadius: "24px",
-                  fontSize: "16px",
-                  border: "2px solid #2C3E1F",
-                  display: "inline-block",
-                  marginBottom: "32px",
-                  maxWidth: "80%",
-                  textAlign: "left",
-                  fontFamily: "Poppins, sans-serif",
-                  fontWeight: 500
-                }}
-              >
-                <span>{displayedResponse || "\u00a0"}</span>
-                {isTyping && (
-                  <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
-                )}
-              </div>
-
               <div className="flex flex-col items-center gap-4">
-                <p
-                  style={{
-                    color: "#2C3E1F",
-                    fontSize: "16px",
-                    marginBottom: "0",
-                    fontWeight: 600
-                  }}
-                >
-                  Want to keep chatting?
-                </p>
+                {showConversation && (
+                  <>
+                    <div
+                      className="text-[15px] sm:text-[16px]"
+                      style={{
+                        background: "#ffffff",
+                        color: "#2C3E1F",
+                        padding: "16px 24px",
+                        borderRadius: "24px",
+                        border: "2px solid #e8e8e8",
+                        display: "inline-block",
+                        marginBottom: "16px",
+                        maxWidth: "80%",
+                        textAlign: "left"
+                      }}
+                    >
+                      {lastUserMessage || userInput}
+                    </div>
+
+                    <div style={{ height: "12px" }} />
+
+                    <div
+                      className="text-[15px] sm:text-[16px]"
+                      style={{
+                        background: "#FFF9E6",
+                        color: "#2C3E1F",
+                        padding: "16px 24px",
+                        borderRadius: "24px",
+                        border: "2px solid #2C3E1F",
+                        display: "inline-block",
+                        marginBottom: "24px",
+                        maxWidth: "80%",
+                        textAlign: "left",
+                        fontFamily: "Poppins, sans-serif",
+                        fontWeight: 500
+                      }}
+                    >
+                      <span>{displayedResponse || "\u00a0"}</span>
+                      {isTyping && (
+                        <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
+                      )}
+                    </div>
+
+                    <p
+                      style={{
+                        color: "#2C3E1F",
+                        fontSize: "16px",
+                        marginBottom: "0",
+                        fontWeight: 600
+                      }}
+                    >
+                      Want to keep chatting?
+                    </p>
+                  </>
+                )}
                 <a
                   href="sms:8663300015?body=Hey%20Kochi!"
                   className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
