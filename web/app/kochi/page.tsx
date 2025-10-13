@@ -1,1055 +1,667 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
+import Script from "next/script";
+import { AnimatePresence, motion } from "framer-motion";
 
-interface Message {
-  user: string;
-  kochi: string;
+type Stage = "initial" | "prompt" | "input" | "thinking" | "response";
+
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
+const GREETING_TEXT = "Hey — I'm Kochi. I send short daily blasts on AI, science, and crypto. Wanna ask me one thing?";
+
+const randomFrom = <T,>(items: T[]): T =>
+  items[Math.floor(Math.random() * items.length)];
+
+interface KochiAnimationProps {
+  onClick?: () => void;
 }
 
-const conversations: Message[] = [
-  {
-    user: "What should I cook tonight?",
-    kochi: "How about pan-seared salmon with lemon butter? Takes 20 minutes and you probably have everything."
-  },
-  {
-    user: "Need a gift idea for my mom",
-    kochi: "A rare herb starter kit! Lemon verbena, chocolate mint, pineapple sage. She'll love growing something unexpected."
-  },
-  {
-    user: "I can't focus today",
-    kochi: "Try this: 25 minutes of work, 5 minute walk outside. No phone. Your brain needs to reset, not push harder."
-  },
-  {
-    user: "What's a good birthday restaurant in Brooklyn?",
-    kochi: "Lilia in Williamsburg. Book 2-3 weeks ahead. Get the mafaldini and sheep's milk ricotta. Trust me."
-  },
-  {
-    user: "How do I tell my boss I need a break?",
-    kochi: '"I\'ve been going hard and need a few days to recharge so I can keep delivering quality work." Frame it as investment, not weakness.'
-  },
-  {
-    user: "Recommend a book for a long flight",
-    kochi: "Tomorrow, and Tomorrow, and Tomorrow by Gabrielle Zevin. About friendship, games, and creativity. You won't want to land."
-  }
-];
-
-const randomFrom = <T,>(items: T[]): T => items[Math.floor(Math.random() * items.length)];
-
-const USER_TYPING_DELAY = 900;
-const USER_TYPING_SPEED = 26;
-const USER_POST_MESSAGE_DELAY = 600;
-const KOCHI_TYPING_DELAY = 1100;
-const KOCHI_TYPING_SPEED = 24;
-const KOCHI_POST_MESSAGE_DELAY = 2200;
-
-function TypingIndicator({ variant }: { variant: "user" | "kochi" }) {
-  const dotColor = variant === "user" ? "#252520" : "#E7D8B2";
-
-  return (
-    <div className="flex items-center gap-[6px]">
-      {[0, 1, 2].map((index) => (
-        <motion.span
-          key={index}
-          className="block rounded-full"
-          style={{ width: 10, height: 10, backgroundColor: dotColor }}
-          animate={{
-            opacity: [0.3, 1, 0.3],
-            y: [0, -4, 0]
-          }}
-          transition={{ duration: 1.1, ease: "easeInOut", repeat: Infinity, delay: index * 0.15 }}
-        />
-      ))}
-    </div>
-  );
+interface KochiAnimationHandle {
+  playRandomAnimation: () => void;
 }
 
-const Caret = ({ tone }: { tone: "user" | "kochi" }) => (
-  <motion.span
-    aria-hidden
-    className="inline-block"
-    style={{
-      marginLeft: 4,
-      width: 10,
-      height: 18,
-      backgroundColor: tone === "user" ? "rgba(37, 37, 32, 0.6)" : "rgba(231, 216, 178, 0.6)",
-      borderRadius: 2
-    }}
-    animate={{ opacity: [0, 1, 0] }}
-    transition={{ duration: 0.9, repeat: Infinity, ease: "easeInOut" }}
-  />
-);
-
-function KochiMascot(): JSX.Element {
-  const containerRef = useRef<SVGSVGElement | null>(null);
+const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
+  ({ onClick }, ref) => {
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);
-  const antennaLRef = useRef<SVGPathElement | null>(null);
-  const antennaRRef = useRef<SVGPathElement | null>(null);
-  const eyeLRef = useRef<SVGPathElement | null>(null);
-  const eyeRRef = useRef<SVGPathElement | null>(null);
+  const [gsapReady, setGsapReady] = useState(false);
+  const animationsRef = useRef<Array<() => any>>([]);
+  const activeTimelineRef = useRef<any>(null);
+  const eyesRef = useRef<{ left: SVGPathElement | null; right: SVGPathElement | null }>({
+    left: null,
+    right: null
+  });
+  const antennasRef = useRef<{ left: SVGPathElement | null; right: SVGPathElement | null }>({
+    left: null,
+    right: null
+  });
 
   useEffect(() => {
-    const container = containerRef.current;
-    const group = groupRef.current;
-    const antennaL = antennaLRef.current;
-    const antennaR = antennaRRef.current;
-    const eyeL = eyeLRef.current;
-    const eyeR = eyeRRef.current;
+    if (typeof window !== "undefined" && (window as any).gsap && !gsapReady) {
+      setGsapReady(true);
+    }
+  }, [gsapReady]);
 
-    if (!container || !group || !antennaL || !antennaR || !eyeL || !eyeR) {
+  useEffect(() => {
+    if (!gsapReady || !svgRef.current) return;
+    const gsap = (window as any).gsap;
+    if (!gsap) return;
+
+    const root = svgRef.current;
+    const antennaL = root.querySelector<SVGPathElement>("#antennaL");
+    const antennaR = root.querySelector<SVGPathElement>("#antennaR");
+    const eyeL = root.querySelector<SVGPathElement>("#eyeL");
+    const eyeR = root.querySelector<SVGPathElement>("#eyeR");
+    const group = root.querySelector<SVGGElement>("#kochi");
+
+    if (!antennaL || !antennaR || !eyeL || !eyeR || !group) return;
+
+    groupRef.current = group;
+    eyesRef.current = { left: eyeL, right: eyeR };
+    antennasRef.current = { left: antennaL, right: antennaR };
+    gsap.set(group, { transformOrigin: "50% 50%" });
+
+    const setHinge = (element: SVGGraphicsElement, offset = 10) => {
+      const bb = element.getBBox();
+      const x = bb.x + bb.width / 2;
+      const y = bb.y + bb.height - offset;
+      gsap.set(element, { svgOrigin: `${x} ${y}` });
+    };
+
+    setHinge(antennaL, 10);
+    setHinge(antennaR, 10);
+    gsap.set([eyeL, eyeR], { transformOrigin: "50% 50%" });
+
+    const animations: Array<() => any> = [
+      () =>
+        gsap
+          .timeline()
+          .to(group, { y: -60, duration: 0.35, ease: "power2.out" })
+          .to(group, { y: 0, duration: 0.6, ease: "bounce.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { rotation: -12, duration: 0.2, ease: "power2.inOut" })
+          .to(group, { rotation: 10, duration: 0.25, ease: "power2.inOut" })
+          .to(group, { rotation: -6, duration: 0.25, ease: "power2.inOut" })
+          .to(group, { rotation: 0, duration: 0.25, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { scaleX: 1.25, scaleY: 0.7, duration: 0.25, ease: "power1.in" })
+          .to(group, { scaleX: 0.85, scaleY: 1.25, duration: 0.3, ease: "power2.out" })
+          .to(group, { scaleX: 1.05, scaleY: 0.95, duration: 0.25 })
+          .to(group, { scaleX: 1, scaleY: 1, duration: 0.3, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { rotation: 360, duration: 0.9, ease: "power2.out" })
+          .to(group, { rotation: 0, duration: 0.1 }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { y: -30, duration: 0.2 })
+          .to(group, { y: 0, duration: 0.2 })
+          .to(group, { y: -20, duration: 0.18 })
+          .to(group, { y: 0, duration: 0.22, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to([eyeL, eyeR], { scale: 1.35, duration: 0.18, ease: "power1.out" })
+          .to([eyeL, eyeR], { scale: 1, duration: 0.25, ease: "power1.inOut" }),
+      () =>
+        gsap
+          .timeline()
+          .to([eyeL, eyeR], { x: 12, duration: 0.22, ease: "power1.inOut" })
+          .to([eyeL, eyeR], { x: -12, duration: 0.22, ease: "power1.inOut" })
+          .to([eyeL, eyeR], { x: 0, duration: 0.2, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { x: -35, duration: 0.25, ease: "power2.out" })
+          .to(group, { x: 35, duration: 0.35, ease: "power2.inOut" })
+          .to(group, { x: 0, duration: 0.3, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { rotation: -8, y: -20, duration: 0.3, ease: "power2.out" })
+          .to(group, { rotation: 8, duration: 0.3, ease: "power2.inOut" })
+          .to(group, { rotation: 0, y: 0, duration: 0.4, ease: "power2.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to([antennaL, antennaR], { rotation: 25, duration: 0.25, ease: "power1.inOut" })
+          .to([antennaL, antennaR], { rotation: -20, duration: 0.35, ease: "power1.inOut" })
+          .to([antennaL, antennaR], { rotation: 0, duration: 0.4, ease: "power1.out" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { scale: 1.25, duration: 0.22, ease: "back.out(2.1)" })
+          .to(group, { scale: 1, duration: 0.3, ease: "power1.inOut" }),
+      () =>
+        gsap
+          .timeline()
+          .to(group, { rotation: 20, y: -40, duration: 0.4, ease: "power2.out" })
+          .to(group, { rotation: -18, duration: 0.3, ease: "power2.inOut" })
+          .to(group, { rotation: 0, y: 0, duration: 0.35, ease: "power2.out" })
+    ];
+
+    animationsRef.current = animations;
+
+    return () => {
+      activeTimelineRef.current?.kill();
+      activeTimelineRef.current = null;
+      animationsRef.current = [];
+    };
+  }, [gsapReady]);
+
+  const playRandomAnimation = () => {
+    if (!gsapReady || animationsRef.current.length === 0) return;
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    if (!gsap || !group) return;
+
+    activeTimelineRef.current?.kill();
+    const animationFactory = randomFrom(animationsRef.current);
+    activeTimelineRef.current = animationFactory();
+
+    activeTimelineRef.current.eventCallback("onComplete", () => {
+      gsap.to(group, {
+        duration: 0.2,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        scaleX: 1,
+        scaleY: 1
+      });
+      const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+      const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+      if (eyes.length) {
+        gsap.to(eyes, { duration: 0.2, x: 0, y: 0, scale: 1 });
+      }
+      if (antennas.length) {
+        gsap.to(antennas, { duration: 0.2, rotation: 0 });
+      }
+    });
+  };
+
+  useImperativeHandle(ref, () => ({
+    playRandomAnimation
+  }));
+
+  return (
+    <>
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
+        strategy="afterInteractive"
+        onLoad={() => setGsapReady(true)}
+      />
+      <svg
+        ref={svgRef}
+        viewBox="0 0 1024 1024"
+        className="max-w-[280px] w-full h-auto cursor-pointer transition-transform duration-100"
+        onClick={onClick}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+      >
+        <defs>
+          <style>{`
+            .cls-1{fill:#ffe148}
+            .cls-2{fill:#2c3e1f}
+          `}</style>
+        </defs>
+        <g id="kochi">
+          <path
+            id="antennaL"
+            className="cls-1"
+            d="M340.3,340.46l.07-85.28c-3.86-1.57-7.22-3.36-10.54-5.9-8.65-6.52-14.33-16.24-15.74-26.98-3.11-23.88,12.76-43.28,36.49-45.98,5.34-.55,11.32.08,16.46,1.6,10.58,3.05,19.49,10.23,24.72,19.92,5.09,9.28,6.15,20.23,2.96,30.32-4.25,13.68-12.21,20.82-24.35,27.24.3,24.83-.61,60.23-.75,85.07h-29.32Z"
+          />
+          <path
+            id="antennaR"
+            className="cls-1"
+            d="M653.82,340.46v-84.79c-3.31-1.74-6.16-3.07-9.19-5.32-13.89-10.31-20.03-27.29-15.34-44.1,2.91-10.52,9.98-19.41,19.57-24.62,9.85-5.44,21.48-6.68,32.26-3.43,10.58,3.21,19.14,9.94,24.26,19.78,5.03,9.73,5.99,21.07,2.68,31.51-4.28,13.19-12.96,20.02-24.78,26.05v84.93h-29.45Z"
+          />
+          <path
+            id="body"
+            className="cls-1"
+            d="M683.45,329.82c18.98,2.8,33.24,6.06,50.76,14.62,35.89,17.46,63.28,48.56,76.07,86.36,4.06,11.82,6.61,24.12,7.58,36.58,1.18,15.89.58,37.02.57,53.36v89.61s0,70.4,0,70.4c.03,39.08,1.37,58.72-16.71,95.43-4.62,8.73-10.05,17-16.22,24.71-24.94,30.6-61.13,49.9-100.44,53.55-8.58.87-17.82.66-26.49.67h-148.13s-113.94.01-113.94.01c-19.64,0-52.79,1.09-70.56-2.09-24.48-4.58-47.42-15.21-66.75-30.91-30.17-24.68-49.28-60.35-53.15-99.13-1.4-14.18-.83-33.97-.82-48.65v-75.18s.01-80.8.01-80.8c-.01-20.88-1.07-48.11,3.04-67.98,5.1-24.54,16.11-47.48,32.08-66.8,24.97-30.39,61.04-49.55,100.2-53.24l30-1.37c31.21.58,63.94.04,95.33.04h188.11s29.45.8,29.45.8Z"
+          />
+          <path
+            id="face"
+            className="cls-2"
+            d="M368.86,396.22c19.97-.76,43.57-.16,63.77-.16h119.92s68.48-.03,68.48-.03c16.43,0,36.81-.77,52.64,2.14,17.9,3.34,34.53,11.54,48.09,23.7,35.34,31.85,29.44,68.67,29.73,111.15.25,35.16,2.89,66.4-23.44,94.25-19.69,20.83-44.77,29.9-72.95,30.95-18.65.85-43.06.12-62.11.12h-121.37s-71.79.03-71.79.03c-15.98,0-32.89.85-48.66-1.67-43.24-6.92-77.21-41.86-78.65-86.3-.51-15.56,0-31.42-.22-46.72-.5-34.94-2.44-68.51,23.8-95.85,19.96-21.63,44.12-30.08,72.76-31.61Z"
+          />
+          <path
+            id="eyeL"
+            className="cls-1"
+            d="M407.97,480.09c24.63-4.05,47.83,12.75,51.68,37.41,3.84,24.66-13.15,47.73-37.85,51.36-24.4,3.59-47.13-13.16-50.93-37.53-3.8-24.37,12.76-47.24,37.1-51.24Z"
+          />
+          <path
+            id="eyeR"
+            className="cls-1"
+            d="M601.19,480.33c24.33-4.14,47.42,12.22,51.57,36.55,4.16,24.33-12.19,47.42-36.52,51.59-24.34,4.17-47.46-12.19-51.62-36.54-4.16-24.35,12.22-47.45,36.56-51.6Z"
+          />
+        </g>
+      </svg>
+    </>
+  );
+});
+KochiAnimation.displayName = "KochiAnimation";
+
+export default function KochiLandingPage() {
+  const [stage, setStage] = useState<Stage>("initial");
+  const [userInput, setUserInput] = useState("");
+  const [lastUserMessage, setLastUserMessage] = useState("");
+  const [history, setHistory] = useState<ChatMessage[]>([]);
+  const [kochiResponse, setKochiResponse] = useState("");
+  const [animationsEnabled, setAnimationsEnabled] = useState(false);
+  const mascotRef = useRef<KochiAnimationHandle | null>(null);
+  const [displayedResponse, setDisplayedResponse] = useState("");
+  const typingIntervalRef = useRef<number | null>(null);
+  const [greetingDisplayed, setGreetingDisplayed] = useState("");
+  const greetingIntervalRef = useRef<number | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (stage === "initial") {
+        setStage("prompt");
+      }
+    }, 3000);
+
+    return () => clearTimeout(timer);
+  }, [stage]);
+
+  const handleMascotClick = () => {
+    if (stage === "initial" || stage === "prompt") {
+      setStage("input");
+      setAnimationsEnabled(true);
+      setTimeout(() => mascotRef.current?.playRandomAnimation(), 60);
+    } else if (animationsEnabled) {
+      mascotRef.current?.playRandomAnimation();
+    }
+  };
+
+  const handleUserSubmit = async () => {
+    const trimmed = userInput.trim();
+    if (!trimmed || isLoading) return;
+
+    setStage("thinking");
+    setKochiResponse("");
+    setDisplayedResponse("");
+    setIsLoading(true);
+    setLastUserMessage(trimmed);
+    setUserInput("");
+
+    const updatedHistory: ChatMessage[] = [...history, { role: "user", content: trimmed }];
+    setHistory(updatedHistory);
+
+    try {
+      const response = await fetch("/api/kochi-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: updatedHistory })
+      });
+
+      if (!response.ok) {
+        throw new Error("Non-200 response");
+      }
+
+      const data = (await response.json()) as { message?: string };
+      const assistantMessage = data.message?.trim() || "i'm having trouble replying right now. mind trying once more?";
+
+      setHistory([...updatedHistory, { role: "assistant", content: assistantMessage }]);
+      setKochiResponse(assistantMessage);
+      setStage("response");
+    } catch (error) {
+      console.error("[Kochi] Failed to generate response", error);
+      const fallback = "i hit a bit of static trying to answer that. want to try again?";
+      setKochiResponse(fallback);
+      setHistory(updatedHistory);
+      setStage("response");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (typingIntervalRef.current) {
+      window.clearInterval(typingIntervalRef.current);
+      typingIntervalRef.current = null;
+    }
+
+    if (stage !== "response" || !kochiResponse) {
+      setDisplayedResponse("");
       return;
     }
 
-    const squishAndBounce = () => {
-      group.animate(
-        [
-          { transform: "scale(1, 1)" },
-          { transform: "scale(1.15, 0.7)", offset: 0.15 },
-          { transform: "scale(1.25, 0.6)", offset: 0.3 },
-          { transform: "scale(0.9, 1.15)", offset: 0.5 },
-          { transform: "scale(1.05, 0.95)", offset: 0.65 },
-          { transform: "scale(0.98, 1.02)", offset: 0.8 },
-          { transform: "scale(1.01, 0.99)", offset: 0.9 },
-          { transform: "scale(1, 1)", offset: 1 }
-        ],
-        {
-          duration: 2000,
-          easing: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-          iterations: 1
-        }
-      );
-    };
-
-    const spinJump = () => {
-      group.animate(
-        [
-          { transform: "rotate(0deg) translateY(0px)" },
-          { transform: "rotate(180deg) translateY(-60px)", offset: 0.4 },
-          { transform: "rotate(360deg) translateY(-80px)", offset: 0.5 },
-          { transform: "rotate(360deg) translateY(0px)", offset: 0.85 },
-          { transform: "rotate(360deg) translateY(-15px)", offset: 0.92 },
-          { transform: "rotate(360deg) translateY(0px)", offset: 1 }
-        ],
-        { duration: 1000, easing: "ease-out", iterations: 1 }
-      );
-    };
-
-    const wiggle = () => {
-      group.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(-15deg)", offset: 0.15 },
-          { transform: "rotate(12deg)", offset: 0.3 },
-          { transform: "rotate(-10deg)", offset: 0.45 },
-          { transform: "rotate(8deg)", offset: 0.6 },
-          { transform: "rotate(-5deg)", offset: 0.75 },
-          { transform: "rotate(3deg)", offset: 0.85 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        { duration: 800, easing: "ease-in-out", iterations: 1 }
-      );
-    };
-
-    const pulse = () => {
-      group.animate(
-        [
-          { transform: "scale(1)" },
-          { transform: "scale(1.2)", offset: 0.2 },
-          { transform: "scale(0.95)", offset: 0.4 },
-          { transform: "scale(1.15)", offset: 0.6 },
-          { transform: "scale(0.98)", offset: 0.8 },
-          { transform: "scale(1)", offset: 1 }
-        ],
-        { duration: 900, easing: "ease-in-out", iterations: 1 }
-      );
-    };
-
-    const antennaSway = () => {
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      const timing = { duration: 2500, easing: "ease-in-out", iterations: 1 };
-
-      antennaL.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(8deg)", offset: 0.25 },
-          { transform: "rotate(0deg)", offset: 0.5 },
-          { transform: "rotate(-8deg)", offset: 0.75 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      antennaR.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(-8deg)", offset: 0.25 },
-          { transform: "rotate(0deg)", offset: 0.5 },
-          { transform: "rotate(8deg)", offset: 0.75 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-    };
-
-    const eyePop = () => {
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const keyframes = [
-        { transform: "scale(1)" },
-        { transform: "scale(1.8)", offset: 0.2 },
-        { transform: "scale(1.6)", offset: 0.35 },
-        { transform: "scale(1.9)", offset: 0.5 },
-        { transform: "scale(0.9)", offset: 0.7 },
-        { transform: "scale(1.1)", offset: 0.85 },
-        { transform: "scale(1)", offset: 1 }
-      ];
-      const timing = { duration: 1000, easing: "ease-out", iterations: 1 };
-      eyeL.animate(keyframes, timing);
-      eyeR.animate(keyframes, timing);
-    };
-
-    const bored = () => {
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      const timing = { duration: 2000, easing: "ease-in-out", iterations: 1 };
-
-      group.animate(
-        [
-          { transform: "translateY(0px) scale(1, 1)" },
-          { transform: "translateY(20px) scale(1.02, 0.95)", offset: 0.3 },
-          { transform: "translateY(20px) scale(1.02, 0.95)", offset: 0.7 },
-          { transform: "translateY(0px) scale(1, 1)", offset: 1 }
-        ],
-        timing
-      );
-
-      const eyeKeyframes = [
-        { transform: "translateY(0px) scale(1, 1)" },
-        { transform: "translateY(8px) scale(1.1, 0.7)", offset: 0.3 },
-        { transform: "translateY(8px) scale(1.1, 0.7)", offset: 0.7 },
-        { transform: "translateY(0px) scale(1, 1)", offset: 1 }
-      ];
-
-      eyeL.animate(eyeKeyframes, timing);
-      eyeR.animate(eyeKeyframes, timing);
-
-      const antennaKeyframes = [
-        { transform: "rotate(0deg)" },
-        { transform: "rotate(-12deg)", offset: 0.3 },
-        { transform: "rotate(-12deg)", offset: 0.7 },
-        { transform: "rotate(0deg)", offset: 1 }
-      ];
-
-      antennaL.animate(antennaKeyframes, timing);
-      antennaR.animate(antennaKeyframes, timing);
-    };
-
-    const playful = () => {
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const timing = { duration: 1400, easing: "ease-in-out", iterations: 1 };
-
-      group.animate(
-        [
-          { transform: "translateY(0px) rotate(0deg)" },
-          { transform: "translateY(-30px) rotate(-5deg)", offset: 0.15 },
-          { transform: "translateY(0px) rotate(0deg)", offset: 0.3 },
-          { transform: "translateY(-25px) rotate(5deg)", offset: 0.45 },
-          { transform: "translateY(0px) rotate(0deg)", offset: 0.6 },
-          { transform: "translateY(-20px) rotate(-3deg)", offset: 0.75 },
-          { transform: "translateY(0px) rotate(0deg)", offset: 0.9 },
-          { transform: "translateY(0px) rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      antennaL.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(15deg)", offset: 0.12 },
-          { transform: "rotate(-10deg)", offset: 0.25 },
-          { transform: "rotate(12deg)", offset: 0.37 },
-          { transform: "rotate(-8deg)", offset: 0.5 },
-          { transform: "rotate(10deg)", offset: 0.62 },
-          { transform: "rotate(-6deg)", offset: 0.75 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      antennaR.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(-15deg)", offset: 0.12 },
-          { transform: "rotate(10deg)", offset: 0.25 },
-          { transform: "rotate(-12deg)", offset: 0.37 },
-          { transform: "rotate(8deg)", offset: 0.5 },
-          { transform: "rotate(-10deg)", offset: 0.62 },
-          { transform: "rotate(6deg)", offset: 0.75 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      const eyeKeyframes = [
-        { transform: "scale(1)" },
-        { transform: "scale(1.15)", offset: 0.15 },
-        { transform: "scale(0.95)", offset: 0.3 },
-        { transform: "scale(1.1)", offset: 0.45 },
-        { transform: "scale(0.98)", offset: 0.6 },
-        { transform: "scale(1.05)", offset: 0.75 },
-        { transform: "scale(1)", offset: 1 }
-      ];
-
-      eyeL.animate(eyeKeyframes, timing);
-      eyeR.animate(eyeKeyframes, timing);
-    };
-
-    const spongeSquish = () => {
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const timing = {
-        duration: 1600,
-        easing: "cubic-bezier(0.68, -0.55, 0.27, 1.55)",
-        iterations: 1
-      };
-
-      group.animate(
-        [
-          { transform: "scale(1, 1) skewX(0deg)" },
-          { transform: "scale(0.6, 1.3) skewX(0deg)", offset: 0.15 },
-          { transform: "scale(0.5, 1.5) skewX(15deg)", offset: 0.25 },
-          { transform: "scale(0.4, 1.6) skewX(-20deg)", offset: 0.35 },
-          { transform: "scale(0.7, 1.2) skewX(10deg)", offset: 0.5 },
-          { transform: "scale(1.3, 0.8) skewX(-5deg)", offset: 0.65 },
-          { transform: "scale(0.95, 1.08) skewX(3deg)", offset: 0.78 },
-          { transform: "scale(1.05, 0.97) skewX(-2deg)", offset: 0.88 },
-          { transform: "scale(1, 1) skewX(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      const eyeKeyframes = [
-        { transform: "scale(1, 1)" },
-        { transform: "scale(0.7, 1.4)", offset: 0.25 },
-        { transform: "scale(0.5, 1.7)", offset: 0.35 },
-        { transform: "scale(1.3, 0.8)", offset: 0.65 },
-        { transform: "scale(1, 1)", offset: 1 }
-      ];
-
-      eyeL.animate(eyeKeyframes, timing);
-      eyeR.animate(eyeKeyframes, timing);
-    };
-
-    const explode = () => {
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const timing = {
-        duration: 2500,
-        easing: "cubic-bezier(0.68, -0.55, 0.27, 1.55)",
-        iterations: 1
-      };
-
-      group.animate(
-        [
-          { transform: "scale(1) rotate(0deg)", opacity: 1 },
-          { transform: "scale(1.5) rotate(0deg)", opacity: 1, offset: 0.1 },
-          { transform: "scale(3) rotate(720deg)", opacity: 0.3, offset: 0.35 },
-          { transform: "scale(0.1) rotate(1080deg)", opacity: 0, offset: 0.5 },
-          { transform: "scale(0.1) rotate(1440deg)", opacity: 0, offset: 0.65 },
-          { transform: "scale(2) rotate(1800deg)", opacity: 0.5, offset: 0.8 },
-          { transform: "scale(0.8) rotate(2160deg)", opacity: 1, offset: 0.92 },
-          { transform: "scale(1) rotate(2160deg)", opacity: 1, offset: 1 }
-        ],
-        timing
-      );
-
-      const antennaExplode = (direction: 1 | -1) => [
-        { transform: "rotate(0deg) translateX(0px) translateY(0px)", opacity: 1 },
-        {
-          transform: `rotate(${180 * direction}deg) translateX(${150 * direction}px) translateY(-200px)`,
-          opacity: 0,
-          offset: 0.35
-        },
-        {
-          transform: `rotate(${180 * direction}deg) translateX(${150 * direction}px) translateY(-200px)`,
-          opacity: 0,
-          offset: 0.65
-        },
-        { transform: "rotate(0deg) translateX(0px) translateY(0px)", opacity: 1, offset: 1 }
-      ];
-
-      antennaL.animate(antennaExplode(-1), timing);
-      antennaR.animate(antennaExplode(1), timing);
-
-      const eyeExplode = (direction: 1 | -1) => [
-        { transform: "scale(1) translateX(0px) translateY(0px)", opacity: 1 },
-        {
-          transform: `scale(3) translateX(${120 * direction}px) translateY(${direction === 1 ? -80 : 100}px) rotate(${360 * -direction}deg)`,
-          opacity: 0,
-          offset: 0.35
-        },
-        {
-          transform: `scale(3) translateX(${120 * direction}px) translateY(${direction === 1 ? -80 : 100}px) rotate(${360 * -direction}deg)`,
-          opacity: 0,
-          offset: 0.65
-        },
-        {
-          transform: `scale(1) translateX(0px) translateY(0px) rotate(${720 * -direction}deg)` ,
-          opacity: 1,
-          offset: 1
-        }
-      ];
-
-      eyeL.animate(eyeExplode(-1), timing);
-      eyeR.animate(eyeExplode(1), timing);
-    };
-
-    const electricBuzz = () => {
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const timing = { duration: 1500, easing: "linear", iterations: 1 };
-
-      const buzzFrames = [
-        { transform: "rotate(0deg)" },
-        { transform: "rotate(4deg)", offset: 0.1 },
-        { transform: "rotate(-3deg)", offset: 0.2 },
-        { transform: "rotate(5deg)", offset: 0.3 },
-        { transform: "rotate(-4deg)", offset: 0.4 },
-        { transform: "rotate(3deg)", offset: 0.5 },
-        { transform: "rotate(-5deg)", offset: 0.6 },
-        { transform: "rotate(4deg)", offset: 0.7 },
-        { transform: "rotate(-3deg)", offset: 0.8 },
-        { transform: "rotate(2deg)", offset: 0.9 },
-        { transform: "rotate(0deg)", offset: 1 }
-      ];
-
-      antennaL.animate(buzzFrames, timing);
-      antennaR.animate(buzzFrames, timing);
-
-      group.animate(
-        [
-          { transform: "translateX(0px)" },
-          { transform: "translateX(3px)", offset: 0.1 },
-          { transform: "translateX(-3px)", offset: 0.2 },
-          { transform: "translateX(3px)", offset: 0.3 },
-          { transform: "translateX(-3px)", offset: 0.4 },
-          { transform: "translateX(3px)", offset: 0.5 },
-          { transform: "translateX(-3px)", offset: 0.6 },
-          { transform: "translateX(3px)", offset: 0.7 },
-          { transform: "translateX(-3px)", offset: 0.8 },
-          { transform: "translateX(2px)", offset: 0.9 },
-          { transform: "translateX(0px)", offset: 1 }
-        ],
-        timing
-      );
-
-      const eyeFlicker = [
-        { opacity: 1 },
-        { opacity: 0.3, offset: 0.15 },
-        { opacity: 1, offset: 0.2 },
-        { opacity: 0.4, offset: 0.35 },
-        { opacity: 1, offset: 0.4 },
-        { opacity: 0.2, offset: 0.55 },
-        { opacity: 1, offset: 0.6 },
-        { opacity: 0.5, offset: 0.75 },
-        { opacity: 1, offset: 0.8 },
-        { opacity: 1, offset: 1 }
-      ];
-
-      eyeL.animate(eyeFlicker, timing);
-      eyeR.animate(eyeFlicker, timing);
-    };
-
-    const thinking = () => {
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      const timing = { duration: 2200, easing: "ease-in-out", iterations: 1 };
-
-      const eyeKeyframes = [
-        { transform: "scale(1, 1) translateX(0px) translateY(0px)" },
-        { transform: "scale(1, 0.4) translateX(0px) translateY(0px)", offset: 0.15 },
-        { transform: "scale(1, 0.4) translateX(15px) translateY(-10px)", offset: 0.35 },
-        { transform: "scale(1, 0.4) translateX(-12px) translateY(-8px)", offset: 0.55 },
-        { transform: "scale(1, 0.4) translateX(-5px) translateY(5px)", offset: 0.7 },
-        { transform: "scale(1, 0.4) translateX(0px) translateY(0px)", offset: 0.85 },
-        { transform: "scale(1, 1) translateX(0px) translateY(0px)", offset: 1 }
-      ];
-
-      eyeL.animate(eyeKeyframes, timing);
-      eyeR.animate(eyeKeyframes, timing);
-
-      group.animate(
-        [
-          { transform: "rotate(0deg)" },
-          { transform: "rotate(5deg)", offset: 0.3 },
-          { transform: "rotate(5deg)", offset: 0.6 },
-          { transform: "rotate(-3deg)", offset: 0.8 },
-          { transform: "rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      const antennaKeyframes = [
-        { transform: "rotate(0deg)" },
-        { transform: "rotate(-8deg)", offset: 0.25 },
-        { transform: "rotate(-8deg)", offset: 0.75 },
-        { transform: "rotate(0deg)", offset: 1 }
-      ];
-
-      antennaL.animate(antennaKeyframes, timing);
-      antennaR.animate(antennaKeyframes, timing);
-    };
-
-    const ballRock = () => {
-      antennaL.style.transformOrigin = "355px 340px";
-      antennaR.style.transformOrigin = "668px 340px";
-      eyeL.style.transformOrigin = "430px 517px";
-      eyeR.style.transformOrigin = "625px 517px";
-      const timing = { duration: 2500, easing: "ease-in-out", iterations: 1 };
-
-      group.animate(
-        [
-          { transform: "scale(1, 1)" },
-          { transform: "scale(1.1, 0.85)", offset: 0.1 },
-          { transform: "scale(1.15, 0.85)", offset: 0.2 },
-          { transform: "scale(1.15, 0.85) rotate(25deg)", offset: 0.35 },
-          { transform: "scale(1.15, 0.85) rotate(-25deg)", offset: 0.5 },
-          { transform: "scale(1.15, 0.85) rotate(20deg)", offset: 0.62 },
-          { transform: "scale(1.15, 0.85) rotate(-20deg)", offset: 0.74 },
-          { transform: "scale(1.15, 0.85) rotate(12deg)", offset: 0.82 },
-          { transform: "scale(1.15, 0.85) rotate(-12deg)", offset: 0.88 },
-          { transform: "scale(1.15, 0.85) rotate(5deg)", offset: 0.93 },
-          { transform: "scale(0.95, 1.05) rotate(0deg)", offset: 0.97 },
-          { transform: "scale(1, 1) rotate(0deg)", offset: 1 }
-        ],
-        timing
-      );
-
-      const antennaRetract = [
-        { transform: "scale(1, 1) rotate(0deg)", opacity: 1 },
-        { transform: "scale(1, 0.3) rotate(0deg)", opacity: 0.3, offset: 0.15 },
-        { transform: "scale(1, 0.1) rotate(0deg)", opacity: 0, offset: 0.2 },
-        { transform: "scale(1, 0.1) rotate(0deg)", opacity: 0, offset: 0.88 },
-        { transform: "scale(1, 0.5) rotate(0deg)", opacity: 0.5, offset: 0.94 },
-        { transform: "scale(1, 1) rotate(0deg)", opacity: 1, offset: 1 }
-      ];
-
-      antennaL.animate(antennaRetract, timing);
-      antennaR.animate(antennaRetract, timing);
-
-      const eyeKeyframes = [
-        { transform: "rotate(0deg)" },
-        { transform: "rotate(0deg)", offset: 0.2 },
-        { transform: "rotate(180deg)", offset: 0.4 },
-        { transform: "rotate(360deg)", offset: 0.6 },
-        { transform: "rotate(540deg)", offset: 0.8 },
-        { transform: "rotate(720deg)", offset: 0.95 },
-        { transform: "rotate(720deg)", offset: 1 }
-      ];
-
-      eyeL.animate(eyeKeyframes, timing);
-      eyeR.animate(eyeKeyframes, timing);
-    };
-
-    const randomAnimations = [
-      spinJump,
-      wiggle,
-      pulse,
-      antennaSway,
-      eyePop,
-      bored,
-      playful,
-      spongeSquish,
-      explode,
-      electricBuzz,
-      thinking,
-      ballRock
-    ];
-
-    const handleClick = () => {
-      randomFrom(randomAnimations)();
-    };
-
-    container.addEventListener("click", handleClick);
-    const timeoutId = window.setTimeout(squishAndBounce, 500);
-    const intervalId = window.setInterval(squishAndBounce, 8000);
-
-    return () => {
-      container.removeEventListener("click", handleClick);
-      window.clearTimeout(timeoutId);
-      window.clearInterval(intervalId);
-    };
-  }, []);
-
-  return (
-    <svg
-      ref={containerRef}
-      width="100%"
-      height="100%"
-      viewBox="0 0 1024 1024"
-      className="w-[240px] h-[240px] md:w-[320px] md:h-[320px] cursor-pointer transition-transform duration-100 hover:scale-105"
-    >
-      <g ref={groupRef} style={{ transformOrigin: "512px 512px" }}>
-        <path
-          ref={antennaLRef}
-          fill="#E7D8B2"
-          d="M340.3,340.46l.07-85.28c-3.86-1.57-7.22-3.36-10.54-5.9-8.65-6.52-14.33-16.24-15.74-26.98-3.11-23.88,12.76-43.28,36.49-45.98,5.34-.55,11.32.08,16.46,1.6,10.58,3.05,19.49,10.23,24.72,19.92,5.09,9.28,6.15,20.23,2.96,30.32-4.25,13.68-12.21,20.82-24.35,27.24.3,24.83-.61,60.23-.75,85.07h-29.32Z"
-        />
-        <path
-          ref={antennaRRef}
-          fill="#E7D8B2"
-          d="M653.82,340.46v-84.79c-3.31-1.74-6.16-3.07-9.19-5.32-13.89-10.31-20.03-27.29-15.34-44.1,2.91-10.52,9.98-19.41,19.57-24.62,9.85-5.44,21.48-6.68,32.26-3.43,10.58,3.21,19.14,9.94,24.26,19.78,5.03,9.73,5.99,21.07,2.68,31.51-4.28,13.19-12.96,20.02-24.78,26.05v84.93h-29.45Z"
-        />
-        <path
-          fill="#E7D8B2"
-          d="M683.45,329.82c18.98,2.8,33.24,6.06,50.76,14.62,35.89,17.46,63.28,48.56,76.07,86.36,4.06,11.82,6.61,24.12,7.58,36.58,1.18,15.89.58,37.02.57,53.36v89.61s0,70.4,0,70.4c.03,39.08,1.37,58.72-16.71,95.43-4.62,8.73-10.05,17-16.22,24.71-24.94,30.6-61.13,49.9-100.44,53.55-8.58.87-17.82.66-26.49.67h-148.13s-113.94.01-113.94.01c-19.64,0-52.79,1.09-70.56-2.09-24.48-4.58-47.42-15.21-66.75-30.91-30.17-24.68-49.28-60.35-53.15-99.13-1.4-14.18-.83-33.97-.82-48.65v-75.18s.01-80.8.01-80.8c-.01-20.88-1.07-48.11,3.04-67.98,5.1-24.54,16.11-47.48,32.08-66.8,24.97-30.39,61.04-49.55,100.2-53.24l30-1.37c31.21.58,63.94.04,95.33.04h188.11s29.45.8,29.45.8Z"
-        />
-        <path
-          fill="#252520"
-          d="M368.86,396.22c19.97-.76,43.57-.16,63.77-.16h119.92s68.48-.03,68.48-.03c16.43,0,36.81-.77,52.64,2.14,17.9,3.34,34.53,11.54,48.09,23.7,35.34,31.85,29.44,68.67,29.73,111.15.25,35.16,2.89,66.4-23.44,94.25-19.69,20.83-44.77,29.9-72.95,30.95-18.65.85-43.06.12-62.11.12h-121.37s-71.79.03-71.79.03c-15.98,0-32.89.85-48.66-1.67-43.24-6.92-77.21-41.86-78.65-86.3-.51-15.56,0-31.42-.22-46.72-.5-34.94-2.44-68.51,23.8-95.85,19.96-21.63,44.12-30.08,72.76-31.61Z"
-        />
-        <path
-          ref={eyeLRef}
-          fill="#E7D8B2"
-          d="M407.97,480.09c24.63-4.05,47.83,12.75,51.68,37.41,3.84,24.66-13.15,47.73-37.85,51.36-24.4,3.59-47.13-13.16-50.93-37.53-3.8-24.37,12.76-47.24,37.1-51.24Z"
-        />
-        <path
-          ref={eyeRRef}
-          fill="#E7D8B2"
-          d="M601.19,480.33c24.33-4.14,47.42,12.22,51.57,36.55,4.16,24.33-12.19,47.42-36.52,51.59-24.34,4.17-47.46-12.19-51.62-36.54-4.16-24.35,12.22-47.45,36.56-51.6Z"
-        />
-      </g>
-    </svg>
-  );
-}
-
-export default function KochiLandingPage() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [sequenceId, setSequenceId] = useState(0);
-  const [userState, setUserState] = useState<"typing" | "message">("typing");
-  const [kochiState, setKochiState] = useState<"hidden" | "typing" | "message">("hidden");
-  const [displayedUserText, setDisplayedUserText] = useState("");
-  const [displayedKochiText, setDisplayedKochiText] = useState("");
-
-  const timeoutsRef = useRef<number[]>([]);
-  const intervalsRef = useRef<number[]>([]);
-
-  const clearTimers = () => {
-    timeoutsRef.current.forEach((id) => window.clearTimeout(id));
-    timeoutsRef.current = [];
-    intervalsRef.current.forEach((id) => window.clearInterval(id));
-    intervalsRef.current = [];
-  };
-
-  const registerTimeout = (handler: () => void, delay: number) => {
-    const id = window.setTimeout(() => {
-      timeoutsRef.current = timeoutsRef.current.filter((stored) => stored !== id);
-      handler();
-    }, delay);
-    timeoutsRef.current.push(id);
-    return id;
-  };
-
-  const registerInterval = (handler: () => void, delay: number) => {
-    const id = window.setInterval(handler, delay);
-    intervalsRef.current.push(id);
-    return id;
-  };
-
-  const typeText = (
-    fullText: string,
-    setter: (value: string) => void,
-    onCompleted: () => void,
-    speed: number
-  ) => {
+    setDisplayedResponse("");
     let index = 0;
-    setter("");
-    const intervalId = registerInterval(() => {
+    const content = kochiResponse;
+    typingIntervalRef.current = window.setInterval(() => {
       index += 1;
-      setter(fullText.slice(0, index));
-      if (index >= fullText.length) {
-        window.clearInterval(intervalId);
-        intervalsRef.current = intervalsRef.current.filter((stored) => stored !== intervalId);
-        onCompleted();
+      setDisplayedResponse(content.slice(0, index));
+      if (index >= content.length && typingIntervalRef.current) {
+        window.clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
       }
-    }, speed);
-  };
-
-  useEffect(() => {
-    return () => {
-      clearTimers();
-    };
-  }, []);
-
-  useEffect(() => {
-    clearTimers();
-    setUserState("typing");
-    setKochiState("hidden");
-    setDisplayedUserText("");
-    setDisplayedKochiText("");
-
-    const conversation = conversations[currentIndex];
-
-    registerTimeout(() => {
-      setUserState("message");
-      typeText(conversation.user, setDisplayedUserText, () => {
-        registerTimeout(() => {
-          setKochiState("typing");
-          registerTimeout(() => {
-            setKochiState("message");
-            typeText(conversation.kochi, setDisplayedKochiText, () => {
-              registerTimeout(() => {
-                setCurrentIndex((prev) => {
-                  const nextIndex = (prev + 1) % conversations.length;
-                  setSequenceId((id) => id + 1);
-                  return nextIndex;
-                });
-              }, KOCHI_POST_MESSAGE_DELAY);
-            }, KOCHI_TYPING_SPEED);
-          }, KOCHI_TYPING_DELAY);
-        }, USER_POST_MESSAGE_DELAY);
-      }, USER_TYPING_SPEED);
-    }, USER_TYPING_DELAY);
+    }, 35);
 
     return () => {
-      clearTimers();
+      if (typingIntervalRef.current) {
+        window.clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
     };
-  }, [currentIndex, sequenceId]);
+  }, [stage, kochiResponse]);
 
-  const conversation = conversations[currentIndex];
-  const userFullText = conversation.user;
-  const kochiFullText = conversation.kochi;
-  const userTextComplete = displayedUserText.length >= userFullText.length && userState === "message";
-  const kochiTextComplete =
-    displayedKochiText.length >= kochiFullText.length && kochiState === "message";
+  const isTyping = stage === "response" && displayedResponse.length < kochiResponse.length;
 
-  let activeProgress = 0.32;
-  if (kochiState === "message") {
-    activeProgress = kochiTextComplete ? 1 : 0.88;
-  } else if (kochiState === "typing") {
-    activeProgress = 0.72;
-  } else if (userState === "message") {
-    activeProgress = userTextComplete ? 0.58 : 0.48;
-  }
+  useEffect(() => {
+    if (greetingIntervalRef.current) {
+      window.clearInterval(greetingIntervalRef.current);
+      greetingIntervalRef.current = null;
+    }
 
-  const clampedProgress = Math.max(0, Math.min(activeProgress, 1));
+    if (stage !== "input") {
+      setGreetingDisplayed("");
+      return;
+    }
 
-  const handleIndicatorClick = (index: number) => {
-    setCurrentIndex(index);
-    setSequenceId((id) => id + 1);
-  };
+    const greeting = GREETING_TEXT;
+    setGreetingDisplayed("");
+    let index = 0;
+    greetingIntervalRef.current = window.setInterval(() => {
+      index += 1;
+      setGreetingDisplayed(greeting.slice(0, index));
+      if (index >= greeting.length && greetingIntervalRef.current) {
+        window.clearInterval(greetingIntervalRef.current);
+        greetingIntervalRef.current = null;
+      }
+    }, 35);
+
+    return () => {
+      if (greetingIntervalRef.current) {
+        window.clearInterval(greetingIntervalRef.current);
+        greetingIntervalRef.current = null;
+      }
+    };
+  }, [stage]);
+
+  useEffect(() => {
+    if (stage === "response" && animationsEnabled) {
+      const timer = window.setTimeout(() => mascotRef.current?.playRandomAnimation(), 80);
+      return () => window.clearTimeout(timer);
+    }
+  }, [stage, animationsEnabled]);
 
   return (
     <div
-      className="min-h-screen relative overflow-hidden"
-      style={{ background: "#252520" }}
+      className="min-h-screen bg-[#fffef7] text-center flex items-center justify-center px-5 py-6"
+      style={{
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+      }}
     >
-      <div className="absolute inset-0 opacity-20">
-        <div
-          className="absolute top-1/4 right-1/4 w-[600px] h-[600px] rounded-full blur-[120px]"
-          style={{ background: "radial-gradient(circle, rgba(255, 155, 113, 0.3), transparent)" }}
-        />
-        <div
-          className="absolute bottom-1/4 left-1/4 w-[500px] h-[500px] rounded-full blur-[100px]"
-          style={{ background: "radial-gradient(circle, rgba(231, 216, 178, 0.2), transparent)" }}
-        />
-      </div>
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
+        * {
+          box-sizing: border-box;
+        }
+      `}</style>
 
-      <div className="relative z-10 min-h-screen flex flex-col">
-        <header className="flex flex-col items-center pt-16 pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="flex flex-col items-center gap-3"
-          >
-            <span
-              className="tracking-[0.05em]"
-              style={{
-                color: "#E7D8B2",
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 800,
-                fontSize: "64px",
-                lineHeight: 1
-              }}
-            >
-              Kochi.to
-            </span>
-            <span
-              className="uppercase tracking-[0.1em]"
-              style={{
-                color: "rgba(231, 216, 178, 0.6)",
-                fontFamily: "Montserrat, sans-serif",
-                fontWeight: 600,
-                fontSize: "12px",
-                lineHeight: 1,
-                letterSpacing: "0.1em"
-              }}
-            >
-              DELIVERED DAILY. WEATHER PERMITTING.
-            </span>
-          </motion.div>
-        </header>
+      <div className="w-full max-w-[520px]">
+        <h1
+          style={{
+            fontFamily: "Poppins, sans-serif",
+            fontWeight: 800,
+            fontSize: "clamp(48px, 10vw, 72px)",
+            color: "#2C3E1F",
+            margin: "0 0 8px 0",
+            lineHeight: 0.9
+          }}
+        >
+          Kochi.to
+        </h1>
 
-        <div className="flex-1 flex items-center justify-center px-6 md:px-10 lg:px-0 py-0 relative">
-          <div className="relative w-full flex justify-center" style={{ zIndex: 1 }}>
-            <div
-              className="w-full max-w-[520px] rounded-[48px] md:rounded-[56px] px-6 sm:px-10 md:px-12 py-12 md:py-16"
-              style={{
-                background: "radial-gradient(circle at 50% 0%, rgba(36, 36, 32, 0.85), rgba(30, 30, 27, 0.75))",
-                boxShadow: "0 48px 120px rgba(0, 0, 0, 0.35)",
-                border: "1px solid rgba(231, 216, 178, 0.05)",
-                backdropFilter: "blur(12px)"
-              }}
-            >
-              <div className="flex flex-col gap-8">
-                <div className="flex justify-end">
-                  <motion.div
-                    layout
-                    className="max-w-full"
-                    initial={false}
-                    animate={{ opacity: 1, x: 0, scale: 1 }}
-                    transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <motion.div
-                      layout
-                      className="relative px-6 py-4 md:px-8 md:py-5 rounded-3xl"
-                      style={{
-                        background: "#FF9B71",
-                        color: "#252520",
-                        fontFamily: "Poppins, sans-serif",
-                        fontSize: "18px",
-                        lineHeight: "1.5",
-                        fontWeight: 400,
-                        borderBottomRightRadius: "12px"
-                      }}
-                      animate={{
-                        boxShadow:
-                          userState === "message"
-                            ? "0 18px 40px rgba(255, 155, 113, 0.45)"
-                            : "0 12px 28px rgba(255, 155, 113, 0.32)",
-                        y: userState === "typing" ? 4 : 0
-                      }}
-                      transition={{ duration: 0.45, ease: "easeOut" }}
-                    >
-                      <motion.span
-                        className="pointer-events-none absolute inset-0 -z-10 rounded-[28px]"
-                        style={{
-                          background:
-                            "radial-gradient(circle at 30% 50%, rgba(255, 155, 113, 0.6), transparent 65%)"
-                        }}
-                        initial={{ opacity: 0.25 }}
-                        animate={{ opacity: userState === "message" ? 0.6 : 0.4 }}
-                        transition={{ duration: 0.6, ease: "easeOut" }}
-                      />
-                      <AnimatePresence mode="wait" initial={false}>
-                        {userState === "typing" ? (
-                          <motion.div
-                            key="user-typing"
-                            className="flex justify-center"
-                            initial={{ opacity: 0, scale: 0.92 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.92 }}
-                            transition={{ duration: 0.3, ease: "easeOut" }}
-                          >
-                            <TypingIndicator variant="user" />
-                          </motion.div>
-                        ) : (
-                          <motion.p
-                            key={`user-text-${sequenceId}`}
-                            initial={{ opacity: 0, y: 16 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -16 }}
-                            transition={{ duration: 0.4, ease: "easeOut" }}
-                            style={{ margin: 0 }}
-                          >
-                            {displayedUserText}
-                            {!userTextComplete && <Caret tone="user" />}
-                          </motion.p>
-                        )}
-                      </AnimatePresence>
-                    </motion.div>
-                  </motion.div>
-                </div>
+        <p
+          style={{
+            color: "#8a8a8a",
+            fontSize: "14px",
+            marginBottom: "48px",
+            fontStyle: "italic"
+          }}
+        >
+          AI blasts delivered daily. Weather permitting.
+        </p>
 
-                <div className="flex justify-start">
-                  <AnimatePresence mode="wait" initial={false}>
-                    {kochiState !== "hidden" && (
-                      <motion.div
-                        key={`kochi-${sequenceId}-${kochiState}`}
-                        layout
-                        className="max-w-full"
-                        initial={{ opacity: 0, x: -36, scale: 0.92 }}
-                        animate={{ opacity: 1, x: 0, scale: 1 }}
-                        exit={{ opacity: 0, x: -36, scale: 0.92 }}
-                        transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
-                      >
-                        <motion.div
-                          layout
-                          className="relative px-6 py-4 md:px-8 md:py-5 rounded-3xl"
-                          style={{
-                            background: "rgba(231, 216, 178, 0.12)",
-                            color: "#E7D8B2",
-                            fontFamily: "Poppins, sans-serif",
-                            fontSize: "18px",
-                            lineHeight: "1.5",
-                            fontWeight: 400,
-                            borderBottomLeftRadius: "12px",
-                            border: "1px solid rgba(231, 216, 178, 0.22)"
-                          }}
-                          animate={{
-                            boxShadow:
-                              kochiState === "message"
-                                ? "0 18px 40px rgba(231, 216, 178, 0.35)"
-                                : "0 12px 28px rgba(231, 216, 178, 0.2)",
-                            y: kochiState === "typing" ? 4 : 0
-                          }}
-                          transition={{ duration: 0.45, ease: "easeOut" }}
-                        >
-                          <motion.span
-                            className="pointer-events-none absolute inset-0 -z-10 rounded-[28px]"
-                            style={{
-                              background:
-                                "radial-gradient(circle at 70% 40%, rgba(231, 216, 178, 0.45), transparent 70%)"
-                            }}
-                            initial={{ opacity: 0.2 }}
-                            animate={{ opacity: kochiState === "message" ? 0.5 : 0.3 }}
-                            transition={{ duration: 0.6, ease: "easeOut" }}
-                          />
-                          <AnimatePresence mode="wait" initial={false}>
-                            {kochiState === "typing" ? (
-                              <motion.div
-                                key="kochi-typing"
-                                className="flex justify-center"
-                                initial={{ opacity: 0, scale: 0.92 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.92 }}
-                                transition={{ duration: 0.3, ease: "easeOut" }}
-                              >
-                                <TypingIndicator variant="kochi" />
-                              </motion.div>
-                            ) : (
-                              <motion.p
-                                key={`kochi-text-${sequenceId}`}
-                                initial={{ opacity: 0, y: 16 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -16 }}
-                                transition={{ duration: 0.4, ease: "easeOut" }}
-                                style={{ margin: 0 }}
-                              >
-                                {displayedKochiText}
-                                {!kochiTextComplete && <Caret tone="kochi" />}
-                              </motion.p>
-                            )}
-                          </AnimatePresence>
-                        </motion.div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-center mb-6">
+          <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
         </div>
 
-        <motion.footer
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1, duration: 0.8 }}
-          className="pb-16 flex flex-col items-center gap-6"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2, duration: 0.6, ease: "easeOut" }}
-            className="flex justify-center"
-          >
-            <KochiMascot />
-          </motion.div>
+        <div className="h-10 mb-6 flex justify-center items-center">
+          <AnimatePresence mode="wait">
+            {stage === "prompt" && (
+              <motion.button
+                key="prompt-text"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.7 }}
+                transition={{ type: "spring", stiffness: 420, damping: 14 }}
+                onClick={handleMascotClick}
+                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-base font-medium"
+              >
+                Tap Kochi to get started
+              </motion.button>
+            )}
+          </AnimatePresence>
+        </div>
 
-          <div className="flex justify-center gap-2">
-            {conversations.map((_, index) => {
-              const isActive = currentIndex === index;
-              const width = isActive ? 12 + clampedProgress * 32 : 8;
-
-              return (
-                <motion.button
-                  key={index}
-                  type="button"
-                  onClick={() => handleIndicatorClick(index)}
-                  className="rounded-full"
-                  style={{ height: 8 }}
-                  initial={false}
-                  animate={{
-                    width,
-                    backgroundColor: isActive ? "#FF9B71" : "rgba(231, 216, 178, 0.25)",
-                    opacity: isActive ? 1 : 0.4,
-                    boxShadow: isActive
-                      ? "0 8px 24px rgba(255, 155, 113, 0.35)"
-                      : "0 0 0 rgba(0, 0, 0, 0)"
-                  }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                  aria-label={`Go to conversation ${index + 1}`}
-                />
-              );
-            })}
-          </div>
-
-          <a
-            href="sms:8663300015?body=Howdy,%20what%20can%20you%20do?"
-            className="px-10 py-5 rounded-full transition-all duration-300 hover:scale-105"
-            style={{
-              background: "#FF9B71",
-              boxShadow: "0 8px 32px rgba(255, 155, 113, 0.4)"
-            }}
-          >
-            <span
-              style={{
-                color: "#252520",
-                fontFamily: "Poppins, sans-serif",
-                fontWeight: 600,
-                fontSize: "16px",
-                letterSpacing: "0.02em"
-              }}
+        <AnimatePresence mode="wait">
+          {stage === "input" && (
+            <motion.div
+              key="input"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.4 }}
+              className="mb-8"
             >
-              Try it now
-            </span>
-          </a>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                className="inline-block mb-5"
+              >
+                <div
+                  style={{
+                    background: "#FFF9E6",
+                    color: "#2C3E1F",
+                    padding: "16px 24px",
+                    borderRadius: "24px",
+                    fontSize: "16px",
+                    border: "2px solid #2C3E1F",
+                    display: "inline-block",
+                    maxWidth: "80%",
+                    textAlign: "left",
+                    fontFamily: "Poppins, sans-serif",
+                    fontWeight: 500
+                  }}
+                >
+                  <span>{greetingDisplayed || "\u00a0"}</span>
+                  {greetingDisplayed.length < GREETING_TEXT.length && (
+                    <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
+                  )}
+                </div>
+              </motion.div>
 
-          <p
-            style={{
-              color: "rgba(231, 216, 178, 0.6)",
-              fontFamily: "Poppins, sans-serif",
-              fontSize: "13px"
-            }}
-          >
-            +1-866-330-0015 (SMS/WhatsApp)
-          </p>
+              <div className="flex flex-col sm:flex-row justify-center items-stretch gap-3 sm:gap-3 w-full px-2 sm:px-0">
+                <input
+                  type="text"
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handleUserSubmit();
+                    }
+                  }}
+                  placeholder="Try: “what were the best AI papers yesterday?”"
+                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-base outline-none w-full sm:min-w-[360px]"
+                  autoFocus
+                />
+                <button
+                  onClick={handleUserSubmit}
+                  disabled={!userInput.trim() || isLoading}
+                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-base font-semibold transition-all duration-200 sm:w-auto w-full"
+                  style={{
+                    background: userInput.trim() && !isLoading ? "#FFE148" : "#e8e8e8",
+                    color: userInput.trim() && !isLoading ? "#2C3E1F" : "#999",
+                    cursor: userInput.trim() && !isLoading ? "pointer" : "not-allowed"
+                  }}
+                >
+                  {isLoading ? "Sending…" : "Send"}
+                </button>
+              </div>
+            </motion.div>
+          )}
 
-          <p
-            style={{
-              color: "rgba(231, 216, 178, 0.4)",
-              fontFamily: "Poppins, sans-serif",
-              fontSize: "12px"
-            }}
-          >
-            © 2025 Kochito Labs. All rights reserved.
-          </p>
-        </motion.footer>
+          {stage === "thinking" && (
+            <motion.div
+              key="thinking"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.4 }}
+              className="mb-8"
+            >
+              <div
+                style={{
+                  background: "#ffffff",
+                  color: "#2C3E1F",
+                  padding: "16px 24px",
+                  borderRadius: "24px",
+                  fontSize: "16px",
+                  border: "2px solid #e8e8e8",
+                  display: "inline-block",
+                  marginBottom: "16px",
+                  maxWidth: "80%",
+                  textAlign: "left"
+                }}
+              >
+                {lastUserMessage || userInput}
+              </div>
+              <div
+                style={{
+                  color: "#8a8a8a",
+                  fontSize: "14px",
+                  fontStyle: "italic"
+                }}
+              >
+                Kochi is thinking...
+              </div>
+            </motion.div>
+          )}
+
+          {stage === "response" && (
+            <motion.div
+              key="response"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -16 }}
+              transition={{ duration: 0.4 }}
+              className="mb-10"
+            >
+              <div
+                style={{
+                  background: "#ffffff",
+                  color: "#2C3E1F",
+                  padding: "16px 24px",
+                  borderRadius: "24px",
+                  fontSize: "16px",
+                  border: "2px solid #e8e8e8",
+                  display: "inline-block",
+                  marginBottom: "16px",
+                  maxWidth: "80%",
+                  textAlign: "left"
+                }}
+              >
+                {lastUserMessage || userInput}
+              </div>
+
+              <div style={{ height: "12px" }} />
+
+              <div
+                style={{
+                  background: "#FFF9E6",
+                  color: "#2C3E1F",
+                  padding: "16px 24px",
+                  borderRadius: "24px",
+                  fontSize: "16px",
+                  border: "2px solid #2C3E1F",
+                  display: "inline-block",
+                  marginBottom: "32px",
+                  maxWidth: "80%",
+                  textAlign: "left",
+                  fontFamily: "Poppins, sans-serif",
+                  fontWeight: 500
+                }}
+              >
+                <span>{displayedResponse || "\u00a0"}</span>
+                {isTyping && (
+                  <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
+                )}
+              </div>
+
+              <div className="flex flex-col items-center gap-4">
+                <p
+                  style={{
+                    color: "#2C3E1F",
+                    fontSize: "16px",
+                    marginBottom: "0",
+                    fontWeight: 600
+                  }}
+                >
+                  Want to keep chatting?
+                </p>
+                <a
+                  href="sms:8663300015?body=Hey%20Kochi!"
+                  className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
+                  style={{
+                    background: "#FFE148",
+                    color: "#2C3E1F"
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow =
+                      "0 12px 32px rgba(255, 225, 72, 0.5)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = "translateY(0)";
+                    e.currentTarget.style.boxShadow =
+                      "0 8px 24px rgba(255, 225, 72, 0.4)";
+                  }}
+                >
+                  Text me →
+                </a>
+                <p
+                  style={{
+                    color: "#8a8a8a",
+                    fontSize: "14px"
+                  }}
+                >
+                  +1-866-330-0015
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
