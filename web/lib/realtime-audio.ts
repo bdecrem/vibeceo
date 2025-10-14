@@ -144,7 +144,7 @@ export class RealtimeAudioClient {
       session: {
         modalities: ['text', 'audio'],
         instructions: this.currentInstructions,
-        voice: 'alloy',
+        voice: 'theo',
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
         turn_detection: {
