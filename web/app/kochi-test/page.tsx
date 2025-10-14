@@ -727,6 +727,189 @@ export default function KochiTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const funkySquishSpringV2 = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Sponge gets grabbed and squeezed - asymmetric pressure from one side
+    tl.to(group, {
+      scaleX: 0.55,
+      scaleY: 1.35,
+      x: -25,
+      y: 15,
+      rotation: -12,
+      duration: 0.35,
+      ease: 'power3.in'
+    })
+    // Maximum squeeze - completely deformed, rounded bulge on one side
+    .to(group, {
+      scaleX: 0.4,
+      scaleY: 1.6,
+      x: -35,
+      y: 20,
+      rotation: -18,
+      duration: 0.25,
+      ease: 'power4.in'
+    })
+    // Release and SPRING! Big elastic bounce back
+    .to(group, {
+      scaleX: 1.3,
+      scaleY: 0.75,
+      x: 15,
+      y: -10,
+      rotation: 8,
+      duration: 0.35,
+      ease: 'back.out(4)'
+    })
+    // Wobble back the other way
+    .to(group, {
+      scaleX: 0.88,
+      scaleY: 1.12,
+      x: -5,
+      y: 5,
+      rotation: -3,
+      duration: 0.25,
+      ease: 'sine.inOut'
+    })
+    // Smaller wobble
+    .to(group, {
+      scaleX: 1.08,
+      scaleY: 0.94,
+      x: 3,
+      y: -2,
+      rotation: 1,
+      duration: 0.18,
+      ease: 'sine.inOut'
+    })
+    // Settle back to normal
+    .to(group, {
+      scaleX: 1,
+      scaleY: 1,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      duration: 0.2,
+      ease: 'sine.out'
+    });
+
+    // Eyes bulge out on the side being squeezed
+    if (eyes.length) {
+      tl.to(eyes, {
+        scaleX: 0.7,
+        scaleY: 1.5,
+        x: -8,
+        y: 5,
+        duration: 0.35,
+        ease: 'power3.in'
+      }, 0)
+      .to(eyes, {
+        scaleX: 0.5,
+        scaleY: 1.8,
+        x: -12,
+        y: 8,
+        duration: 0.25,
+        ease: 'power4.in'
+      })
+      // Pop back with overshoot
+      .to(eyes, {
+        scaleX: 1.25,
+        scaleY: 0.8,
+        x: 5,
+        y: -3,
+        duration: 0.35,
+        ease: 'back.out(4)'
+      })
+      .to(eyes, {
+        scaleX: 0.92,
+        scaleY: 1.08,
+        x: -2,
+        y: 2,
+        duration: 0.25,
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1.05,
+        scaleY: 0.97,
+        x: 1,
+        y: -1,
+        duration: 0.18,
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1,
+        scaleY: 1,
+        x: 0,
+        y: 0,
+        duration: 0.2,
+        ease: 'sine.out'
+      });
+    }
+
+    // Antennas bend with the squeeze
+    if (antennas.length === 2) {
+      const [antennaL, antennaR] = antennas;
+
+      tl.to(antennaL, {
+        rotation: -25,
+        duration: 0.6,
+        ease: 'power3.in'
+      }, 0)
+      .to(antennaL, {
+        rotation: 15,
+        duration: 0.35,
+        ease: 'back.out(4)'
+      })
+      .to(antennaL, {
+        rotation: -6,
+        duration: 0.25,
+        ease: 'sine.inOut'
+      })
+      .to(antennaL, {
+        rotation: 3,
+        duration: 0.18,
+        ease: 'sine.inOut'
+      })
+      .to(antennaL, {
+        rotation: 0,
+        duration: 0.2,
+        ease: 'sine.out'
+      });
+
+      tl.to(antennaR, {
+        rotation: -20,
+        duration: 0.6,
+        ease: 'power3.in'
+      }, 0)
+      .to(antennaR, {
+        rotation: 12,
+        duration: 0.35,
+        ease: 'back.out(4)'
+      }, 0.6)
+      .to(antennaR, {
+        rotation: -5,
+        duration: 0.25,
+        ease: 'sine.inOut'
+      })
+      .to(antennaR, {
+        rotation: 2,
+        duration: 0.18,
+        ease: 'sine.inOut'
+      })
+      .to(antennaR, {
+        rotation: 0,
+        duration: 0.2,
+        ease: 'sine.out'
+      });
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
   return (
     <>
       <Script
@@ -936,6 +1119,13 @@ export default function KochiTestPage() {
                     className="w-full bg-[#FF9B71] hover:bg-[#ff8a5c] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     🌟 Funky Squish Spring
+                  </button>
+                  <button
+                    onClick={() => playAnimation(funkySquishSpringV2)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FF9B71] hover:bg-[#ff8a5c] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ✨ Funky Squish Spring v2
                   </button>
                 </div>
               </div>
