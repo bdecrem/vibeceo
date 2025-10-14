@@ -2568,6 +2568,7 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     // Check for commands that should end the conversation
     const commandsThatEndConversation = [
       "COMMANDS",
+      "WTAF COMMANDS",
       "HELP",
       "INFO",
       "STOP",
@@ -2647,13 +2648,13 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(`🔍 COMMANDS: isAdmin = ${isAdmin}`);
 
       let helpText =
-        'Available commands:\n• START - Subscribe to The Foundry\n• STOP - Unsubscribe\n• COMMANDS - Show this help\n\nOr chat with our coaches (Alex, Donte, Rohan, Venus, Eljas and Kailey) by saying "Hey [coach name]"';
+        "📻 AI DAILY:\n• AI DAILY - Get today's episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes";
 
       helpText +=
-        "\n\n📻 AI DAILY:\n• AI DAILY - Get today's episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes";
+        "\n\n🥊 PEER REVIEW FIGHT CLUB:\n• PEER REVIEW\n• PEER REVIEW SUBSCRIBE\n• PEER REVIEW STOP";
 
       helpText +=
-        "\n\n💰 CRYPTO RESEARCH:\n• CRYPTO - Get BTC/ETH prices & market summary";
+        "\n\n💰 CRYPTO RESEARCH:\n• CRYPTO - Get BTC/ETH prices & market summary\n• CRYPTO SUBSCRIBE\n• CRYPTO STOP";
 
       // Check if user has coder role to show WTAF command
       const hasCoder =
@@ -2668,70 +2669,75 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
 
       if (hasCoder) {
         helpText +=
-          "\n\n💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page (yah, overlaps w Forget)\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default";
+          "\n\n💻 APP BUILDER COMMANDS:\n• WTAF COMMANDS";
+        console.log(`🔍 COMMANDS: Added WTAF COMMANDS reference`);
       }
 
-      // Check if user has degen role to show EDIT command (degen gets all coder privileges plus edit)
-      const hasDegen =
-        subscriber &&
-        (subscriber.role === "degen" ||
-          subscriber.role === "operator" ||
-          subscriber.role === "admin");
-      console.log(
-        `🔍 COMMANDS: hasDegen = ${hasDegen} (role: ${subscriber?.role})`
-      );
-
-      if (hasDegen) {
-        helpText +=
-          "\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n• UPLOADS - Get secure link to your image gallery";
-
-        helpText +=
-          "\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackpublic [public-app-slug] [request] - Create app sharing data with PUBLIC app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation";
-        console.log(`🔍 COMMANDS: Added stack commands to response`);
-      } else {
-        console.log(
-          `🔍 COMMANDS: Skipping stack commands (user role: ${subscriber?.role})`
-        );
-      }
-
-      // Check if user has operator role to show PUBLIC command (operator gets all degen privileges plus public)
-      const hasOperator =
-        subscriber &&
-        (subscriber.role === "operator" || subscriber.role === "admin");
-      console.log(
-        `🔍 COMMANDS: hasOperator = ${hasOperator} (role: ${subscriber?.role})`
-      );
-
-      if (hasOperator) {
-        helpText +=
-          "\n\n🌐 OPERATOR COMMANDS:\n• PUBLIC [description] - Create a new public ZAD app";
-        console.log(`🔍 COMMANDS: Added operator commands to response`);
-      } else {
-        console.log(
-          `🔍 COMMANDS: Skipping operator commands (user role: ${subscriber?.role})`
-        );
-      }
-
-      // Check if user has admin role to show --make-public command
-      const hasAdmin = subscriber && subscriber.role === "admin";
-      console.log(
-        `🔍 COMMANDS: hasAdmin = ${hasAdmin} (role: ${subscriber?.role})`
-      );
-
-      if (hasAdmin) {
-        helpText +=
-          "\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible";
-        console.log(`🔍 COMMANDS: Added admin commands to response`);
-      } else {
-        console.log(
-          `🔍 COMMANDS: Skipping admin commands (user role: ${subscriber?.role})`
-        );
-      }
+      helpText +=
+        "\n\nGeneral commands:\n• STOP - Unsubscribe. We won't be able to message you again after that, so use with care.\n• COMMANDS - Show this help";
 
       console.log(
         `🔍 COMMANDS: Final helpText length: ${helpText.length} characters`
       );
       await sendSmsResponse(from, helpText, twilioClient);
+      return;
+    }
+
+    // Handle WTAF COMMANDS - show detailed app builder commands
+    if (messageUpper === "WTAF COMMANDS") {
+      console.log(`Sending WTAF COMMANDS response to ${from}`);
+
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
+      const hasCoder =
+        subscriber &&
+        (subscriber.role === "coder" ||
+          subscriber.role === "degen" ||
+          subscriber.role === "operator" ||
+          subscriber.role === "admin");
+
+      if (!hasCoder) {
+        await sendSmsResponse(
+          from,
+          "❌ App builder commands are not available for your account. Text COMMANDS to see what's available.",
+          twilioClient
+        );
+        return;
+      }
+
+      let builderHelp =
+        "💻 CODER COMMANDS:\n• WTAF [text] - Save code snippet to file\n• SLUG [name] - Change your custom URL slug\n• INDEX - List pages, set index page (or INDEX CREATIONS)\n• FAVE [number/slug] - Mark/unmark page as favorite\n• FORGET [number/slug] - Hide page (yours or any if admin)\n• HIDE [app-slug] - Hide specific page (yah, overlaps w Forget)\n• UNHIDE [app-slug] - Unhide specific page\n• HIDE-DEFAULT ON/OFF - Toggle hiding new pages by default";
+
+      const hasDegen =
+        subscriber &&
+        (subscriber.role === "degen" ||
+          subscriber.role === "operator" ||
+          subscriber.role === "admin");
+
+      if (hasDegen) {
+        builderHelp +=
+          "\n\n🎨 DEGEN COMMANDS:\n• EDIT [page_number] [instructions] - Edit existing web pages\n• MEME [idea] - Generate memes with images and text\n• UPLOADS - Get secure link to your image gallery";
+
+        builderHelp +=
+          "\n\n🧱 STACK COMMANDS:\n• --stack [app-slug] [request] - Use app as HTML template\n• --stackdata [app-slug] [request] - Use app submission data\n• --stackdb [app-slug] [request] - Create live-updating app\n• --stackzad [zad-app-slug] [request] - Create ZAD app sharing data with existing ZAD\n• --stackpublic [public-app-slug] [request] - Create app sharing data with PUBLIC app\n• --stackemail [app-slug] [message] - Email app submitters\n• --admin - Force admin page generation";
+      }
+
+      const hasOperator =
+        subscriber &&
+        (subscriber.role === "operator" || subscriber.role === "admin");
+
+      if (hasOperator) {
+        builderHelp +=
+          "\n\n🌐 OPERATOR COMMANDS:\n• PUBLIC [description] - Create a new public ZAD app";
+      }
+
+      const hasAdmin = subscriber && subscriber.role === "admin";
+
+      if (hasAdmin) {
+        builderHelp +=
+          "\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible";
+      }
+
+      await sendSmsResponse(from, builderHelp, twilioClient);
       return;
     }
 

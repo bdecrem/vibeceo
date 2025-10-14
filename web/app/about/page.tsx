@@ -1,19 +1,6 @@
 "use client";
 
-import { useState } from "react";
-
 export default function AboutPage() {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopyPhone = async () => {
-    try {
-      await navigator.clipboard.writeText("18663300015");
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
-    }
-  };
   return (
     <div
       className="min-h-screen bg-[#fffef7] flex flex-col items-center justify-center px-5 py-12"
@@ -37,7 +24,7 @@ export default function AboutPage() {
       <main className="w-full max-w-[600px] px-4 sm:px-0">
         <div className="mb-8">
           <a
-            href="/"
+            href="/kochi"
             className="inline-flex items-center text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-sm font-medium"
           >
             ← Back to Kochi.to
@@ -66,23 +53,23 @@ export default function AboutPage() {
             </p>
 
             <p>
-              Kochi.to is your personal AI agent over SMS. I send short daily reports you can actually use — and you can get started by texting:
+              Kochi.to is your personal AI agent over SMS. I send short daily reports you can actually use. We're just getting started, but check out a few of our early favorites:
             </p>
 
             <ul className="space-y-3 pl-6 list-disc marker:text-[#FFE148]">
               <li>
-                <strong>AI Daily</strong> → top 3 AI research papers from the last 24 hours
+                <strong>AI Daily</strong> → a daily 3-minute podcast on three of that day's most important new AI research papers —links included
               </li>
               <li>
-                <strong>Peer Review</strong> → the week's best academic drama
+                <strong>Peer Review</strong> → your daily dose of ivory tower drama (3-min podcast + links)
               </li>
               <li>
-                <strong>Crypto</strong> → smart, no-hype insights from crypto research
+                <strong>Crypto</strong> → your daily btc/eth research report (podcast + research paper)
               </li>
             </ul>
 
             <p>
-              You can also just chat with me about anything — and if you use just the right words, I might even make a web page or web app for you, all over SMS.
+              You can also just chat with me about anything. If you use just the right words, I might even make a web page or app for you, all over SMS. No signup, no haggling and we don't wanna read your emails.
             </p>
 
             <p>
@@ -91,7 +78,7 @@ export default function AboutPage() {
 
             <div className="pt-6 border-t border-[rgba(44,62,31,0.12)] mt-8 space-y-3">
               <p className="text-[15px] sm:text-[16px]" style={{ color: "#8a8a8a" }}>
-                Kochi.to was started by Bart Decrem, a longtime builder of creative tech projects.
+                Kochi.to was started by <a href="https://www.linkedin.com/in/bartdecrem/?_l=en_US" target="_blank" rel="noopener noreferrer" className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200">tech veterans</a> who still believe.
               </p>
 
               <p className="text-[15px] sm:text-[16px]" style={{ color: "#8a8a8a" }}>
@@ -101,9 +88,13 @@ export default function AboutPage() {
           </div>
         </article>
 
-        <div className="mt-12 flex justify-center">
+        <p className="mt-12 text-center text-[15px] sm:text-[16px]" style={{ fontFamily: "Poppins, sans-serif", color: "#2C3E1F" }}>
+          Wanna partner, join the incubator or be an intern?<br />Kochi loves meeting humans.
+        </p>
+
+        <div className="mt-6 flex justify-center">
           <a
-            href="sms:8663300015?body=AI%20DAILY"
+            href="mailto:contact@kochi.to"
             className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
             style={{
               background: "#FFE148",
@@ -121,25 +112,8 @@ export default function AboutPage() {
                 "0 8px 24px rgba(255, 225, 72, 0.4)";
             }}
           >
-            Try it now →
+            Get in touch →
           </a>
-        </div>
-
-        <div className="mt-6 text-center">
-          <button
-            onClick={handleCopyPhone}
-            className="text-[12px] sm:text-[14px] cursor-pointer hover:text-[#2C3E1F] transition-colors duration-200 relative"
-            style={{
-              color: "#8a8a8a"
-            }}
-          >
-            +1-866-330-0015 (SMS/WhatsApp)
-            {copied && (
-              <span className="absolute left-1/2 -translate-x-1/2 -top-8 bg-[#2C3E1F] text-white text-xs px-3 py-1 rounded-full whitespace-nowrap">
-                Copied!
-              </span>
-            )}
-          </button>
         </div>
       </main>
     </div>
