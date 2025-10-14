@@ -66,7 +66,7 @@ export default function KochiRiggedTestPage() {
   };
 
   const playOnce = (frames: Frame[]) => {
-    const fps = 12;
+    const fps = 4; // Slowed down 3x from 12fps
     const step = 1000 / fps;
     let i = 0;
 
@@ -139,7 +139,7 @@ export default function KochiRiggedTestPage() {
   };
 
   const startIdle = () => {
-    const fps = 12;
+    const fps = 4; // Slowed down 3x from 12fps
     const step = 1000 / fps;
     let t = 0;
 
@@ -161,7 +161,7 @@ export default function KochiRiggedTestPage() {
           Kochi Rigged Character Test
         </h1>
         <p className="text-gray-600 mb-8">
-          12fps cel-style animation with rigged character controls
+          4fps cel-style animation with rigged character controls (slowed 3x)
         </p>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -277,7 +277,7 @@ export default function KochiRiggedTestPage() {
             <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
               <h3 className="font-bold text-blue-900 mb-2">💡 Rigged Animation Features:</h3>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• 12fps cel-style stepped animation</li>
+                <li>• 4fps cel-style stepped animation (250ms per frame)</li>
                 <li>• Clip-path based eye lids for blink/squint</li>
                 <li>• Transform-origin pivots for natural motion</li>
                 <li>• Idle breathing loop runs continuously</li>
