@@ -4,14 +4,9 @@ import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "re
 import Script from "next/script";
 import { AnimatePresence, motion } from "framer-motion";
 
-type Stage = "initial" | "prompt" | "input" | "thinking" | "response";
+type Stage = "initial" | "prompt" | "cta";
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
-const GREETING_TEXT = "Hey — I'm Kochi. I send short daily blasts on AI, science, and finance. Wanna ask me one thing?";
+const GREETING_TEXT = "Hey — I'm Kochi. I send quick daily blasts on AI, science, and finance.\nTry AI Daily first — it's your snapshot of the 3 most discussed AI papers from the past day.";
 
 const randomFrom = <T,>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
@@ -479,19 +474,10 @@ KochiAnimation.displayName = "KochiAnimation";
 
 export default function KochiLandingPage() {
   const [stage, setStage] = useState<Stage>("initial");
-  const [userInput, setUserInput] = useState("");
-  const [lastUserMessage, setLastUserMessage] = useState("");
-  const [history, setHistory] = useState<ChatMessage[]>([]);
-  const [kochiResponse, setKochiResponse] = useState("");
   const [animationsEnabled, setAnimationsEnabled] = useState(false);
   const mascotRef = useRef<KochiAnimationHandle | null>(null);
-  const [displayedResponse, setDisplayedResponse] = useState("");
-  const typingIntervalRef = useRef<number | null>(null);
   const [greetingDisplayed, setGreetingDisplayed] = useState("");
   const greetingIntervalRef = useRef<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [showConversation, setShowConversation] = useState(true);
-  const hideTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -504,17 +490,8 @@ export default function KochiLandingPage() {
   }, [stage]);
 
   const handleMascotClick = () => {
-    if (stage === "response" && showConversation) {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
-        hideTimerRef.current = null;
-      }
-      setShowConversation(false);
-      return;
-    }
-
     if (stage === "initial" || stage === "prompt") {
-      setStage("input");
+      setStage("cta");
       setAnimationsEnabled(true);
       setTimeout(() => mascotRef.current?.playRandomAnimation(), 60);
     } else if (animationsEnabled) {
@@ -522,88 +499,13 @@ export default function KochiLandingPage() {
     }
   };
 
-  const handleUserSubmit = async () => {
-    const trimmed = userInput.trim();
-    if (!trimmed || isLoading) return;
-
-    setStage("thinking");
-    setKochiResponse("");
-    setDisplayedResponse("");
-    setIsLoading(true);
-    setLastUserMessage(trimmed);
-    setUserInput("");
-
-    const updatedHistory: ChatMessage[] = [...history, { role: "user", content: trimmed }];
-    setHistory(updatedHistory);
-
-    try {
-      const response = await fetch("/api/kochi-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedHistory })
-      });
-
-      if (!response.ok) {
-        throw new Error("Non-200 response");
-      }
-
-      const data = (await response.json()) as { message?: string };
-      const assistantMessage = data.message?.trim() || "i'm having trouble replying right now. mind trying once more?";
-
-      setHistory([...updatedHistory, { role: "assistant", content: assistantMessage }]);
-      setKochiResponse(assistantMessage);
-      setStage("response");
-    } catch (error) {
-      console.error("[Kochi] Failed to generate response", error);
-      const fallback = "i hit a bit of static trying to answer that. want to try again?";
-      setKochiResponse(fallback);
-      setHistory(updatedHistory);
-      setStage("response");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (typingIntervalRef.current) {
-      window.clearInterval(typingIntervalRef.current);
-      typingIntervalRef.current = null;
-    }
-
-    if (stage !== "response" || !kochiResponse) {
-      setDisplayedResponse("");
-      return;
-    }
-
-    setDisplayedResponse("");
-    let index = 0;
-    const content = kochiResponse;
-    typingIntervalRef.current = window.setInterval(() => {
-      index += 1;
-      setDisplayedResponse(content.slice(0, index));
-      if (index >= content.length && typingIntervalRef.current) {
-        window.clearInterval(typingIntervalRef.current);
-        typingIntervalRef.current = null;
-      }
-    }, 35);
-
-    return () => {
-      if (typingIntervalRef.current) {
-        window.clearInterval(typingIntervalRef.current);
-        typingIntervalRef.current = null;
-      }
-    };
-  }, [stage, kochiResponse]);
-
-  const isTyping = stage === "response" && displayedResponse.length < kochiResponse.length;
-
   useEffect(() => {
     if (greetingIntervalRef.current) {
       window.clearInterval(greetingIntervalRef.current);
       greetingIntervalRef.current = null;
     }
 
-    if (stage !== "input") {
+    if (stage !== "cta") {
       setGreetingDisplayed("");
       return;
     }
@@ -627,42 +529,6 @@ export default function KochiLandingPage() {
       }
     };
   }, [stage]);
-
-  useEffect(() => {
-    if (stage === "response" && animationsEnabled) {
-      const timer = window.setTimeout(() => mascotRef.current?.playRandomAnimation(), 80);
-      return () => window.clearTimeout(timer);
-    }
-  }, [stage, animationsEnabled]);
-
-  useEffect(() => {
-    if (stage !== "response" && !showConversation) {
-      setShowConversation(true);
-    }
-  }, [stage, showConversation]);
-
-  useEffect(() => {
-    if (stage === "response" && showConversation) {
-      if (hideTimerRef.current) {
-        window.clearTimeout(hideTimerRef.current);
-      }
-      hideTimerRef.current = window.setTimeout(() => {
-        setShowConversation(false);
-        hideTimerRef.current = null;
-      }, 40000);
-      return () => {
-        if (hideTimerRef.current) {
-          window.clearTimeout(hideTimerRef.current);
-          hideTimerRef.current = null;
-        }
-      };
-    }
-
-    if (hideTimerRef.current) {
-      window.clearTimeout(hideTimerRef.current);
-      hideTimerRef.current = null;
-    }
-  }, [stage, showConversation]);
 
   return (
     <div
@@ -729,9 +595,9 @@ export default function KochiLandingPage() {
         </div>
 
         <AnimatePresence mode="wait">
-          {showConversation && stage === "input" && (
+          {stage === "cta" && (
             <motion.div
-              key="input"
+              key="cta"
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -16 }}
@@ -742,7 +608,7 @@ export default function KochiLandingPage() {
                 initial={{ opacity: 0, scale: 0.8 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                className="inline-block mb-5"
+                className="inline-block mb-8"
               >
                 <div
                   className="text-[14px] sm:text-[16px]"
@@ -753,10 +619,11 @@ export default function KochiLandingPage() {
                     borderRadius: "24px",
                     border: "2px solid #2C3E1F",
                     display: "inline-block",
-                    maxWidth: "80%",
+                    maxWidth: "90%",
                     textAlign: "left",
                     fontFamily: "Poppins, sans-serif",
-                    fontWeight: 500
+                    fontWeight: 500,
+                    whiteSpace: "pre-wrap"
                   }}
                 >
                   <span>{greetingDisplayed || "\u00a0"}</span>
@@ -766,140 +633,9 @@ export default function KochiLandingPage() {
                 </div>
               </motion.div>
 
-              <div className="flex flex-col sm:flex-row justify-center items-stretch gap-3 sm:gap-3 w-full px-2 sm:px-0">
-                <input
-                  type="text"
-                  value={userInput}
-                  onChange={(e) => setUserInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleUserSubmit();
-                    }
-                  }}
-                  placeholder="Try: “what were the best AI papers yesterday?”"
-                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-[14px] sm:text-base outline-none w-full sm:min-w-[360px]"
-                  autoFocus
-                />
-                <button
-                  onClick={handleUserSubmit}
-                  disabled={!userInput.trim() || isLoading}
-                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-[14px] sm:text-base font-semibold transition-all duration-200 sm:w-auto w-full"
-                  style={{
-                    background: userInput.trim() && !isLoading ? "#FFE148" : "#e8e8e8",
-                    color: userInput.trim() && !isLoading ? "#2C3E1F" : "#999",
-                    cursor: userInput.trim() && !isLoading ? "pointer" : "not-allowed"
-                  }}
-                >
-                  {isLoading ? "Sending…" : "Send"}
-                </button>
-              </div>
-            </motion.div>
-          )}
-
-          {showConversation && stage === "thinking" && (
-            <motion.div
-              key="thinking"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.4 }}
-              className="mb-8"
-            >
-              <div
-                className="text-[14px] sm:text-[16px]"
-                style={{
-                  background: "#ffffff",
-                  color: "#2C3E1F",
-                  padding: "16px 24px",
-                  borderRadius: "24px",
-                  border: "2px solid #e8e8e8",
-                  display: "inline-block",
-                  marginBottom: "16px",
-                  maxWidth: "80%",
-                  textAlign: "left"
-                }}
-              >
-                {lastUserMessage || userInput}
-              </div>
-              <div
-                style={{
-                  color: "#8a8a8a",
-                  fontSize: "14px",
-                  fontStyle: "italic"
-                }}
-              >
-                Kochi is thinking...
-              </div>
-            </motion.div>
-          )}
-
-          {stage === "response" && (
-            <motion.div
-              key="response"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.4 }}
-              className={showConversation ? "mb-10" : "mb-6"}
-            >
               <div className="flex flex-col items-center gap-4">
-                {showConversation && (
-                  <>
-                    <div
-                      className="text-[14px] sm:text-[16px]"
-                      style={{
-                        background: "#ffffff",
-                        color: "#2C3E1F",
-                        padding: "16px 24px",
-                        borderRadius: "24px",
-                        border: "2px solid #e8e8e8",
-                        display: "inline-block",
-                        marginBottom: "16px",
-                        maxWidth: "80%",
-                        textAlign: "left"
-                      }}
-                    >
-                      {lastUserMessage || userInput}
-                    </div>
-
-                    <div style={{ height: "12px" }} />
-
-                    <div
-                      className="text-[14px] sm:text-[16px]"
-                      style={{
-                        background: "#FFF9E6",
-                        color: "#2C3E1F",
-                        padding: "16px 24px",
-                        borderRadius: "24px",
-                        border: "2px solid #2C3E1F",
-                        display: "inline-block",
-                        marginBottom: "24px",
-                        maxWidth: "80%",
-                        textAlign: "left",
-                        fontFamily: "Poppins, sans-serif",
-                        fontWeight: 500
-                      }}
-                    >
-                      <span>{displayedResponse || "\u00a0"}</span>
-                      {isTyping && (
-                        <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
-                      )}
-                    </div>
-
-                    <p
-                      style={{
-                        color: "#2C3E1F",
-                        fontSize: "16px",
-                        marginBottom: "0",
-                        fontWeight: 600
-                      }}
-                    >
-                      Want to keep chatting?
-                    </p>
-                  </>
-                )}
                 <a
-                  href="sms:8663300015?body=Hey%20Kochi!"
+                  href="sms:8663300015?body=AI%20DAILY"
                   className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
                   style={{
                     background: "#FFE148",
@@ -916,7 +652,7 @@ export default function KochiLandingPage() {
                       "0 8px 24px rgba(255, 225, 72, 0.4)";
                   }}
                 >
-                  Text me →
+                  Try it now →
                 </a>
                 <p
                   style={{
