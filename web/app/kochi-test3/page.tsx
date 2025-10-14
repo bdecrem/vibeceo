@@ -182,6 +182,72 @@ export default function KochiGSAPTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const squishySpring = () => {
+    if (!gsapReady || !rigRef.current) return;
+    const gsap = (window as any).gsap;
+
+    activeTimelineRef.current?.kill();
+    const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
+
+    // Anticipation squeeze
+    tl.to(rigRef.current, { scaleX: 1.12, scaleY: 0.92, y: 10, duration: 0.18, ease: "power3.in" })
+      .to([antLRef.current, antRRef.current], { rotation: -12, duration: 0.18, ease: "power3.in" }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current + 18, duration: 0.18 }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current + 18, duration: 0.18 }, "<")
+      .to(faceRef.current, { scaleX: 0.92, scaleY: 1.08, duration: 0.18 }, "<");
+
+    // Extreme squash—cartoon squeeze
+    tl.to(rigRef.current, {
+      scaleX: 1.65,
+      scaleY: 0.42,
+      skewX: -12,
+      skewY: 9,
+      y: 32,
+      duration: 0.22,
+      ease: "back.in(1.4)",
+    })
+      .to(faceRef.current, { scaleX: 0.82, scaleY: 1.18, duration: 0.22, ease: "back.in(1.4)" }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current + 62, duration: 0.22, ease: "power3.in" }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current + 58, duration: 0.22, ease: "power3.in" }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: 20, duration: 0.22, ease: "power2.out" }, "<");
+
+    // Snap back past neutral with elastic lift
+    tl.to(rigRef.current, {
+      scaleX: 0.62,
+      scaleY: 1.45,
+      skewX: 18,
+      skewY: -14,
+      y: -46,
+      duration: 0.28,
+      ease: "elastic.out(1.05, 0.32)",
+    })
+      .to(faceRef.current, { scaleX: 1.18, scaleY: 0.82, duration: 0.28, ease: "elastic.out(1.05, 0.32)" }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: -26, duration: 0.28, ease: "elastic.out(1.05, 0.32)" }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current + 8, duration: 0.24, ease: "power2.out" }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current + 8, duration: 0.24, ease: "power2.out" }, "<");
+
+    // Settling bounce
+    tl.to(rigRef.current, { scaleX: 1.22, scaleY: 0.88, skewX: -6, skewY: 4, y: 12, duration: 0.22, ease: "back.inOut(2.2)" })
+      .to(faceRef.current, { scaleX: 0.96, scaleY: 1.06, duration: 0.22, ease: "back.inOut(2.2)" }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: 12, duration: 0.22 }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current + 20, duration: 0.18 }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current + 20, duration: 0.18 }, "<")
+      .to(rigRef.current, { scaleX: 0.94, scaleY: 1.06, skewX: 3, skewY: -2, y: -8, duration: 0.18, ease: "power2.out" })
+      .to(faceRef.current, { scaleX: 1.05, scaleY: 0.95, duration: 0.18, ease: "power2.out" }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: -8, duration: 0.18 }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current + 6, duration: 0.18 }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current + 6, duration: 0.18 }, "<");
+
+    // Final ease back to neutral
+    tl.to(rigRef.current, { scaleX: 1, scaleY: 1, skewX: 0, skewY: 0, y: 0, duration: 0.16 })
+      .to(faceRef.current, { scaleX: 1, scaleY: 1, duration: 0.16 }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: 0, duration: 0.16 }, "<")
+      .to(lidLRef.current, { y: yBaseLRef.current, duration: 0.16 }, "<")
+      .to(lidRRef.current, { y: yBaseRRef.current, duration: 0.16 }, "<");
+
+    activeTimelineRef.current = tl;
+  };
+
   const napTime = () => {
     if (!gsapReady || !rigRef.current) return;
     const gsap = (window as any).gsap;
@@ -200,8 +266,8 @@ export default function KochiGSAPTestPage() {
       .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 15, duration: 0.6, ease: 'power1.inOut' }, '+=0.2')
       .to([antLRef.current, antRRef.current], { rotation: -12, duration: 0.6, ease: 'power1.inOut' }, '<')
 
-    // 3. Curl up into a cozy ball
-      .to(rigRef.current, { scaleX: 0.92, scaleY: 0.92, y: 8, duration: 0.8, ease: 'sine.inOut' })
+    // 3. Curl up - start flattening
+      .to(rigRef.current, { scaleX: 1.05, scaleY: 0.7, y: 15, duration: 0.8, ease: 'sine.inOut' })
       .to([antLRef.current, antRRef.current], { rotation: -18, duration: 0.8, ease: 'sine.inOut' }, '<')
       .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 28, duration: 0.8, ease: 'sine.inOut' }, '<')
 
@@ -209,16 +275,16 @@ export default function KochiGSAPTestPage() {
       .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 50, duration: 1.2, ease: 'sine.in' })
       .to([antLRef.current, antRRef.current], { rotation: -22, duration: 1.2, ease: 'sine.inOut' }, '<')
 
-    // 5. Settle into sleep position
-      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, y: 12, duration: 0.6, ease: 'sine.out' })
+    // 5. Settle into sleep position - FLATTEN to half height!
+      .to(rigRef.current, { scaleX: 1.15, scaleY: 0.5, y: 25, duration: 0.6, ease: 'sine.out' })
 
-    // 6. Gentle breathing loop (3 cycles)
-      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
-      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
-      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
-      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
-      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
-      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
+    // 6. Gentle breathing loop (3 cycles) - stay flat
+      .to(rigRef.current, { scaleX: 1.18, scaleY: 0.48, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 1.15, scaleY: 0.5, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 1.18, scaleY: 0.48, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 1.15, scaleY: 0.5, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 1.18, scaleY: 0.48, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 1.15, scaleY: 0.5, duration: 1.2, ease: 'sine.inOut' })
 
     // 7. Wake up! Eyes flutter open
       .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 35, duration: 0.15, ease: 'power1.out' }, '+=0.3')
@@ -409,6 +475,10 @@ export default function KochiGSAPTestPage() {
                 </defs>
 
                 <g id="rig">
+                  {/* ANTENNAE - Lowest layer so they stay behind eyes */}
+                  <path id="antennaL" className="cls-1" d="M340.3,340.46l.07-85.28c-3.86-1.57-7.22-3.36-10.54-5.9-8.65-6.52-14.33-16.24-15.74-26.98-3.11-23.88,12.76-43.28,36.49-45.98,5.34-.55,11.32.08,16.46,1.6,10.58,3.05,19.49,10.23,24.72,19.92,5.09,9.28,6.15,20.23,2.96,30.32-4.25,13.68-12.21,20.82-24.35,27.24.3,24.83-.61,60.23-.75,85.07h-29.32Z"/>
+                  <path id="antennaR" className="cls-1" d="M653.82,340.46v-84.79c-3.31-1.74-6.16-3.07-9.19-5.32-13.89-10.31-20.03-27.29-15.34-44.1,2.91-10.52,9.98-19.41,19.57-24.62,9.85-5.44,21.48-6.68,32.26-3.43,10.58,3.21,19.14,9.94,24.26,19.78,5.03,9.73,5.99,21.07,2.68,31.51-4.28,13.19-12.96,20.02-24.78,26.05v84.93h-29.46Z"/>
+
                   {/* BODY */}
                   <path id="body" className="cls-1" d="M683.45,329.82c18.98,2.8,33.24,6.06,50.76,14.62,35.89,17.46,63.28,48.56,76.07,86.36,4.06,11.82,6.61,24.12,7.58,36.58,1.18,15.89.58,37.02.57,53.36v160.01c.03,39.08,1.37,58.72-16.71,95.43-4.62,8.73-10.05,17-16.22,24.71-24.94,30.6-61.13,49.9-100.44,53.55-8.58.87-17.82.66-26.49.67h-262.07c-19.64.01-52.79,1.1-70.56-2.08-24.48-4.58-47.42-15.21-66.75-30.91-30.17-24.68-49.28-60.35-53.15-99.13-1.4-14.18-.83-33.97-.82-48.65v-155.98c0-20.88-1.06-48.11,3.05-67.98,5.1-24.54,16.11-47.48,32.08-66.8,24.97-30.39,61.04-49.55,100.2-53.24l30-1.37c31.21.58,63.94.04,95.33.04h188.11l29.45.8Z"/>
 
@@ -426,10 +496,6 @@ export default function KochiGSAPTestPage() {
                     <path className="cls-1" d="M601.19,480.33c24.33-4.14,47.42,12.22,51.57,36.55,4.16,24.33-12.19,47.42-36.52,51.59-24.34,4.17-47.46-12.19-51.62-36.54-4.16-24.35,12.22-47.45,36.56-51.6Z"/>
                     <rect id="lidR" className="cls-2" x="563.76" y="370.47" width="89.86" height="103.25" rx="3.37" ry="3.37"/>
                   </g>
-
-                  {/* ANTENNAE */}
-                  <path id="antennaL" className="cls-1" d="M340.3,340.46l.07-85.28c-3.86-1.57-7.22-3.36-10.54-5.9-8.65-6.52-14.33-16.24-15.74-26.98-3.11-23.88,12.76-43.28,36.49-45.98,5.34-.55,11.32.08,16.46,1.6,10.58,3.05,19.49,10.23,24.72,19.92,5.09,9.28,6.15,20.23,2.96,30.32-4.25,13.68-12.21,20.82-24.35,27.24.3,24.83-.61,60.23-.75,85.07h-29.32Z"/>
-                  <path id="antennaR" className="cls-1" d="M653.82,340.46v-84.79c-3.31-1.74-6.16-3.07-9.19-5.32-13.89-10.31-20.03-27.29-15.34-44.1,2.91-10.52,9.98-19.41,19.57-24.62,9.85-5.44,21.48-6.68,32.26-3.43,10.58,3.21,19.14,9.94,24.26,19.78,5.03,9.73,5.99,21.07,2.68,31.51-4.28,13.19-12.96,20.02-24.78,26.05v84.93h-29.46Z"/>
                 </g>
               </svg>
             </div>
@@ -445,6 +511,13 @@ export default function KochiGSAPTestPage() {
                     className="w-full bg-[#FFE148] hover:bg-[#ffd700] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     🎾 Bounce
+                  </button>
+                  <button
+                    onClick={squishySpring}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FF9DE2] hover:bg-[#ff80d8] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🌀 Squishy Spring
                   </button>
                   <button
                     onClick={blink}
