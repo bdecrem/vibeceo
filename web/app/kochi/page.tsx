@@ -561,10 +561,10 @@ export default function KochiLandingPage() {
         }
       `}</style>
 
-      <main className="w-full max-w-[520px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-between sm:justify-center gap-4 sm:gap-12 pt-6 pb-6 sm:pt-0 sm:pb-0">
+      <main className="w-full max-w-[520px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-between gap-4 sm:gap-8 pt-6 pb-4 sm:pt-8 sm:pb-4">
         <div className="flex flex-col items-center gap-1 sm:gap-2">
           <h1
-            className="text-[36px] sm:text-[60px] md:text-[72px] leading-[0.9] font-[800]"
+            className="text-[36px] sm:text-[52px] md:text-[60px] leading-[0.9] font-[800]"
             style={{
               fontFamily: "Poppins, sans-serif",
               color: "#2C3E1F",
@@ -589,7 +589,7 @@ export default function KochiLandingPage() {
           <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
         </div>
 
-        <div className="w-full flex flex-col items-center gap-3 sm:gap-6">
+        <div className="w-full flex flex-col items-center gap-3 sm:gap-4">
           <div className="h-8 sm:h-10 flex justify-center items-center">
             <AnimatePresence mode="wait">
               {stage === "prompt" && (
@@ -616,7 +616,7 @@ export default function KochiLandingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -16 }}
                 transition={{ duration: 0.4 }}
-                className="w-full flex flex-col items-center gap-3 sm:gap-6"
+                className="w-full flex flex-col items-center gap-3 sm:gap-4"
               >
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -697,7 +697,7 @@ export default function KochiLandingPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-[520px] px-4 sm:px-0 pt-4 sm:pt-6 mt-6 sm:mt-12"
+            className="w-full max-w-[520px] px-4 sm:px-0 pt-4 sm:pt-4 mt-0 sm:mt-0"
           >
             <div
               className="flex justify-center"
