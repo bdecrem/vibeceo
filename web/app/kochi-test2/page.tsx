@@ -138,6 +138,21 @@ export default function KochiRiggedTestPage() {
     ]);
   };
 
+  const ballMorph = () => {
+    playOnce([
+      { sx: 0.9, sy: 0.9, aL: -5, aR: 5, lids: 10 }, // start compress
+      { sx: 0.75, sy: 0.75, aL: -8, aR: 8, lids: 20 }, // more round
+      { sx: 0.65, sy: 0.65, aL: 0, aR: 0, lids: 30 }, // perfect ball
+      { sx: 0.6, sy: 0.6, aL: 0, aR: 0, lids: 35 }, // hold ball shape
+      { sx: 0.65, sy: 0.65, aL: 0, aR: 0, lids: 30 }, // start release
+      { sx: 1.15, sy: 1.15, aL: 10, aR: -10, lids: 0 }, // spring overshoot
+      { sx: 0.92, sy: 0.92, aL: -3, aR: 3, lids: 5 }, // bounce back
+      { sx: 1.05, sy: 1.05, aL: 2, aR: -2, lids: 0 }, // small bounce
+      { sx: 0.98, sy: 0.98, aL: -1, aR: 1, lids: 0 }, // settle
+      { sx: 1.00, sy: 1.00, aL: 0, aR: 0, lids: 0 }, // rest
+    ]);
+  };
+
   const startIdle = () => {
     const fps = 4; // Slowed down 3x from 12fps
     const step = 1000 / fps;
@@ -270,6 +285,13 @@ export default function KochiRiggedTestPage() {
                   className="w-full bg-[#FFE148] hover:bg-[#ffd700] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🦘 Hop
+                </button>
+                <button
+                  onClick={ballMorph}
+                  disabled={!isReady}
+                  className="w-full bg-[#FFE148] hover:bg-[#ffd700] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ⚪ Ball Morph
                 </button>
               </div>
             </div>
