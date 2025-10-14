@@ -919,263 +919,882 @@ export default function KochiTestPage() {
 
     const tl = gsap.timeline();
 
-    // Initial compression - start to squeeze
+    // Compress into ball - uniform scale reduction
     tl.to(group, {
-      scaleX: 0.75,
-      scaleY: 1.2,
-      skewX: -8,
-      rotation: -5,
-      x: -10,
-      y: 5,
-      duration: 0.2,
+      scale: 0.7,
+      duration: 0.4,
       ease: 'power2.in'
     })
-    // HEAVY SQUEEZE - completely asymmetric and wrong looking
+    // Hold the ball shape briefly
+    .to(group, { duration: 0.15 })
+    // SNAP back to normal
     .to(group, {
-      scaleX: 0.45,
-      scaleY: 1.65,
-      skewX: 25,
-      skewY: -12,
-      rotation: -22,
-      x: -28,
-      y: 18,
-      duration: 0.25,
-      ease: 'power3.in'
-    })
-    // Maximum deformation - hold for a beat to emphasize the wrongness
-    .to(group, {
-      scaleX: 0.38,
-      scaleY: 1.75,
-      skewX: 30,
-      skewY: -18,
-      rotation: -28,
-      x: -35,
-      y: 25,
-      duration: 0.15,
-      ease: 'power4.in'
-    })
-    // Hold the awful shape
-    .to(group, { duration: 0.12 })
-    // RELEASE! Spring box action - explosive recovery
-    .to(group, {
-      scaleX: 1.25,
-      scaleY: 0.7,
-      skewX: -15,
-      skewY: 8,
-      rotation: 12,
-      x: 20,
-      y: -12,
-      duration: 0.18,
-      ease: 'back.out(5)'
-    })
-    // Overshoot the other way
-    .to(group, {
-      scaleX: 0.82,
-      scaleY: 1.18,
-      skewX: 10,
-      skewY: -5,
-      rotation: -8,
-      x: -8,
-      y: 8,
-      duration: 0.2,
-      ease: 'power2.out'
-    })
-    // Another bounce
-    .to(group, {
-      scaleX: 1.12,
-      scaleY: 0.88,
-      skewX: -6,
-      skewY: 3,
-      rotation: 5,
-      x: 5,
-      y: -5,
-      duration: 0.18,
-      ease: 'power2.inOut'
-    })
-    // Smaller wobble
-    .to(group, {
-      scaleX: 0.95,
-      scaleY: 1.05,
-      skewX: 3,
-      skewY: -2,
-      rotation: -2,
-      x: -2,
-      y: 2,
-      duration: 0.15,
-      ease: 'power2.inOut'
-    })
-    // Final settle
-    .to(group, {
-      scaleX: 1,
-      scaleY: 1,
-      skewX: 0,
-      skewY: 0,
-      rotation: 0,
-      x: 0,
-      y: 0,
-      duration: 0.2,
+      scale: 1,
+      duration: 0.35,
       ease: 'elastic.out(1, 0.5)'
     });
 
-    // Eyes get completely distorted during squeeze
+    // Eyes compress with body
     if (eyes.length) {
       tl.to(eyes, {
-        scaleX: 0.6,
-        scaleY: 1.5,
-        rotation: -15,
-        x: -10,
-        y: 8,
-        duration: 0.2,
+        scale: 0.7,
+        duration: 0.4,
         ease: 'power2.in'
       }, 0)
+      .to(eyes, { duration: 0.15 })
       .to(eyes, {
-        scaleX: 0.4,
-        scaleY: 1.9,
-        rotation: 35,
-        x: -15,
-        y: 12,
-        duration: 0.25,
-        ease: 'power3.in'
-      })
-      .to(eyes, {
-        scaleX: 0.32,
-        scaleY: 2.1,
-        rotation: 45,
-        x: -18,
-        y: 15,
-        duration: 0.15,
-        ease: 'power4.in'
-      })
-      .to(eyes, { duration: 0.12 })
-      // Eyes spring back
-      .to(eyes, {
-        scaleX: 1.3,
-        scaleY: 0.7,
-        rotation: -20,
-        x: 8,
-        y: -6,
-        duration: 0.18,
-        ease: 'back.out(5)'
-      })
-      .to(eyes, {
-        scaleX: 0.85,
-        scaleY: 1.15,
-        rotation: 10,
-        x: -3,
-        y: 4,
-        duration: 0.2,
-        ease: 'power2.out'
-      })
-      .to(eyes, {
-        scaleX: 1.1,
-        scaleY: 0.9,
-        rotation: -5,
-        x: 2,
-        y: -2,
-        duration: 0.18,
-        ease: 'power2.inOut'
-      })
-      .to(eyes, {
-        scaleX: 0.98,
-        scaleY: 1.02,
-        rotation: 2,
-        x: -1,
-        y: 1,
-        duration: 0.15,
-        ease: 'power2.inOut'
-      })
-      .to(eyes, {
-        scaleX: 1,
-        scaleY: 1,
-        rotation: 0,
-        x: 0,
-        y: 0,
-        duration: 0.2,
+        scale: 1,
+        duration: 0.35,
         ease: 'elastic.out(1, 0.5)'
       });
     }
 
-    // Antennas get bent dramatically
-    if (antennas.length === 2) {
-      const [antennaL, antennaR] = antennas;
-
-      // Left antenna bends way over
-      tl.to(antennaL, {
-        rotation: -35,
-        scaleY: 1.2,
-        duration: 0.45,
-        ease: 'power3.in'
+    // Antennas compress with body
+    if (antennas.length) {
+      tl.to(antennas, {
+        scaleY: 0.7,
+        duration: 0.4,
+        ease: 'power2.in'
       }, 0)
-      .to(antennaL, {
-        rotation: -42,
-        scaleY: 1.3,
-        duration: 0.15,
-        ease: 'power4.in'
-      })
-      .to(antennaL, { duration: 0.12 })
-      .to(antennaL, {
-        rotation: 18,
-        scaleY: 0.85,
-        duration: 0.18,
-        ease: 'back.out(5)'
-      })
-      .to(antennaL, {
-        rotation: -8,
-        scaleY: 1.08,
-        duration: 0.2,
-        ease: 'power2.out'
-      })
-      .to(antennaL, {
-        rotation: 4,
-        scaleY: 0.96,
-        duration: 0.18,
-        ease: 'power2.inOut'
-      })
-      .to(antennaL, {
-        rotation: 0,
+      .to(antennas, { duration: 0.15 })
+      .to(antennas, {
         scaleY: 1,
         duration: 0.35,
         ease: 'elastic.out(1, 0.5)'
       });
+    }
 
-      // Right antenna bends differently
-      tl.to(antennaR, {
-        rotation: 28,
-        scaleY: 1.25,
+    activeTimelineRef.current = tl;
+  };
+
+  const cosmicWaveCelebration = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    tl.to(group, {
+      scaleX: 1.12,
+      scaleY: 0.88,
+      duration: 0.18,
+      ease: "power2.in"
+    })
+      .to(group, {
+        y: -120,
+        scaleX: 0.9,
+        scaleY: 1.1,
+        duration: 0.3,
+        ease: "power2.out"
+      })
+      .to(group, {
+        rotation: 12,
+        x: -28,
+        duration: 0.18,
+        ease: "sine.inOut",
+        yoyo: true,
+        repeat: 3
+      })
+      .to(group, { rotation: 0, x: 0, duration: 0.22, ease: "sine.out" })
+      .to(group, { y: 0, scaleX: 1, scaleY: 1, duration: 0.4, ease: "bounce.out" });
+
+    if (antennas.length) {
+      tl.to(
+        antennas,
+        {
+          rotation: "+=360",
+          duration: 0.6,
+          ease: "power2.inOut"
+        },
+        0.2
+      );
+    }
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          scale: 1.35,
+          fill: "#FFF4A3",
+          duration: 0.2,
+          ease: "power2.out"
+        },
+        0.12
+      )
+        .to(eyes, { scale: 0.95, duration: 0.15, ease: "power2.inOut" })
+        .to(
+          eyes,
+          {
+            scale: 1.25,
+            fill: "#FFE148",
+            duration: 0.2,
+            ease: "back.out(2.4)"
+          },
+          "-=0.05"
+        )
+        .to(
+          eyes,
+          {
+            scale: 1,
+            duration: 0.35,
+            ease: "elastic.out(1, 0.5)"
+          },
+          "-=0.05"
+        );
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
+  const gentlePlasticSquish = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Breathing anticipation before the squeeze
+    tl.to(group, {
+      scaleX: 0.96,
+      scaleY: 1.05,
+      y: -10,
+      rotation: -2,
+      duration: 0.28,
+      ease: "sine.out"
+    })
+      // Slow plastic squeeze - feels like a gentle press
+      .to(group, {
+        scaleX: 1.28,
+        scaleY: 0.48,
+        y: 26,
+        rotation: -4,
+        duration: 0.55,
+        ease: "power3.in"
+      })
+      .to(group, { duration: 0.18 })
+      // Release with a soft elastic pop
+      .to(group, {
+        scaleX: 0.82,
+        scaleY: 1.16,
+        y: -24,
+        rotation: 5,
+        duration: 0.42,
+        ease: "power4.out"
+      })
+      // Damped follow-through wiggles
+      .to(group, {
+        scaleX: 1.09,
+        scaleY: 0.92,
+        y: 10,
+        rotation: -3,
+        duration: 0.32,
+        ease: "sine.inOut"
+      })
+      .to(group, {
+        scaleX: 0.96,
+        scaleY: 1.04,
+        y: -6,
+        rotation: 2,
+        duration: 0.28,
+        ease: "sine.inOut"
+      })
+      .to(group, {
+        scaleX: 1.02,
+        scaleY: 0.98,
+        y: 3,
+        rotation: -1,
+        duration: 0.24,
+        ease: "sine.inOut"
+      })
+      .to(group, {
+        scaleX: 1,
+        scaleY: 1,
+        y: 0,
+        rotation: 0,
+        duration: 0.6,
+        ease: "elastic.out(1, 0.55)"
+      });
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          y: -6,
+          scaleY: 1.1,
+          duration: 0.28,
+          ease: "sine.out"
+        },
+        0
+      )
+        .to(
+          eyes,
+          {
+            scaleX: 0.78,
+            scaleY: 1.45,
+            y: 10,
+            duration: 0.55,
+            ease: "power3.in"
+          },
+          "<"
+        )
+        .to(eyes, { duration: 0.18 }, "<")
+        .to(
+          eyes,
+          {
+            scaleX: 1.26,
+            scaleY: 0.74,
+            y: -18,
+            duration: 0.42,
+            ease: "power4.out"
+          },
+          "-=0.02"
+        )
+        .to(
+          eyes,
+          {
+            scaleX: 0.95,
+            scaleY: 1.08,
+            y: 6,
+            duration: 0.3,
+            ease: "sine.inOut"
+          },
+          "-=0.1"
+        )
+        .to(
+          eyes,
+          {
+            scaleX: 1.05,
+            scaleY: 0.94,
+            duration: 0.26,
+            ease: "sine.inOut"
+          },
+          "-=0.05"
+        )
+        .to(
+          eyes,
+          {
+            scaleX: 1,
+            scaleY: 1,
+            y: 0,
+            duration: 0.38,
+            ease: "elastic.out(1, 0.6)"
+          },
+          "-=0.08"
+        )
+        .to(
+          eyes,
+          {
+            scaleY: 0.3,
+            duration: 0.08,
+            ease: "sine.in"
+          },
+          "-=0.22"
+        )
+        .to(
+          eyes,
+          {
+            scaleY: 1,
+            duration: 0.14,
+            ease: "sine.out"
+          },
+          ">-0.01"
+        );
+    }
+
+    if (antennas.length) {
+      tl.to(
+        antennas,
+        {
+          rotation: -18,
+          duration: 0.55,
+          ease: "power3.in"
+        },
+        0.05
+      )
+        .to(antennas, { duration: 0.18 })
+        .to(
+          antennas,
+          {
+            rotation: 20,
+            duration: 0.42,
+            ease: "power4.out"
+          },
+          "-=0.04"
+        )
+        .to(
+          antennas,
+          {
+            rotation: -8,
+            duration: 0.32,
+            ease: "sine.inOut"
+          },
+          "-=0.1"
+        )
+        .to(
+          antennas,
+          {
+            rotation: 4,
+            duration: 0.28,
+            ease: "sine.inOut"
+          },
+          "-=0.06"
+        )
+        .to(
+          antennas,
+          {
+            rotation: 0,
+            duration: 0.6,
+            ease: "elastic.out(1, 0.55)"
+          },
+          "-=0.06"
+        );
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
+  const bikiniBottomBounce = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    tl.to(group, {
+      scaleX: 1.08,
+      scaleY: 0.92,
+      duration: 0.15,
+      ease: "power2.inOut"
+    })
+      .to(group, {
+        scaleX: 0.55,
+        scaleY: 1.35,
+        skewX: 10,
+        y: 24,
+        duration: 0.25,
+        ease: "power2.in"
+      });
+
+    if (antennas.length) {
+      tl.to(
+        antennas,
+        {
+          rotation: -28,
+          scaleY: 0.75,
+          duration: 0.25,
+          ease: "power2.in"
+        },
+        "<"
+      );
+    }
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          scaleX: 0.65,
+          scaleY: 1.5,
+          rotation: -12,
+          duration: 0.25,
+          ease: "power2.in"
+        },
+        "<+0.02"
+      );
+    }
+
+    tl.to(group, {
+      scaleX: 1.45,
+      scaleY: 0.55,
+      skewX: -12,
+      y: 42,
+      duration: 0.22,
+      ease: "power2.in"
+    });
+
+    if (antennas.length) {
+      tl.to(
+        antennas,
+        {
+          rotation: 32,
+          scaleY: 1.25,
+          duration: 0.22,
+          ease: "back.out(3)"
+        },
+        "<"
+      );
+    }
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          scaleX: 1.4,
+          scaleY: 0.6,
+          rotation: 18,
+          duration: 0.2,
+          ease: "back.out(3)"
+        },
+        "<"
+      );
+    }
+
+    tl.to(group, {
+      scaleX: 0.6,
+      scaleY: 1.3,
+      skewX: 8,
+      y: 18,
+      duration: 0.2,
+      ease: "power2.out",
+      yoyo: true,
+      repeat: 1
+    });
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          scaleX: 0.75,
+          scaleY: 1.45,
+          rotation: -10,
+          duration: 0.2,
+          ease: "power2.inOut",
+          yoyo: true,
+          repeat: 1
+        },
+        "<"
+      );
+    }
+
+    tl.to(group, {
+      y: -140,
+      scaleX: 0.85,
+      scaleY: 1.15,
+      skewX: -5,
+      duration: 0.45,
+      ease: "elastic.out(1.1, 0.4)"
+    });
+
+    if (antennas.length) {
+      tl.to(
+        antennas,
+        {
+          rotation: "+=360",
+          scaleY: 1,
+          duration: 0.6,
+          ease: "elastic.out(1, 0.5)"
+        },
+        "<"
+      );
+    }
+
+    if (eyes.length) {
+      tl.to(
+        eyes,
+        {
+          scaleX: 1.3,
+          scaleY: 0.85,
+          rotation: 12,
+          fill: "#FFF4A3",
+          duration: 0.3,
+          ease: "back.out(3)"
+        },
+        "<+0.05"
+      )
+        .to(
+          eyes,
+          {
+            scaleX: 0.95,
+            scaleY: 1.05,
+            rotation: -6,
+            duration: 0.2,
+            ease: "power2.inOut"
+          },
+          ">"
+        )
+        .to(
+          eyes,
+          {
+            scaleX: 1,
+            scaleY: 1,
+            rotation: 0,
+            fill: "#FFE148",
+            duration: 0.45,
+            ease: "elastic.out(1, 0.5)"
+          },
+          ">"
+        );
+    }
+
+    tl.to(group, {
+      y: -40,
+      scaleX: 1.08,
+      scaleY: 0.92,
+      skewX: 3,
+      duration: 0.22,
+      ease: "power2.inOut"
+    })
+      .to(group, {
+        y: 0,
+        scaleX: 0.95,
+        scaleY: 1.05,
+        skewX: -2,
+        duration: 0.18,
+        ease: "power2.in"
+      })
+      .to(group, {
+        scaleX: 1.04,
+        scaleY: 0.96,
+        skewX: 1,
+        duration: 0.15,
+        ease: "power2.out"
+      })
+      .to(group, {
+        scaleX: 1,
+        scaleY: 1,
+        skewX: 0,
+        duration: 0.5,
+        ease: "elastic.out(1, 0.5)"
+      });
+
+    activeTimelineRef.current = tl;
+  };
+
+  const looneyTunes = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Slow, smooth squeeze - like putty being pressed
+    tl.to(group, {
+      scaleX: 0.6,
+      scaleY: 1.4,
+      x: -20,
+      y: 10,
+      rotation: -8,
+      duration: 0.6,
+      ease: 'sine.inOut'
+    })
+    // Maximum squish - hold it there, rounded and soft
+    .to(group, {
+      scaleX: 0.5,
+      scaleY: 1.5,
+      x: -25,
+      y: 12,
+      rotation: -10,
+      duration: 0.4,
+      ease: 'sine.inOut'
+    })
+    // Release - smooth cartoon bounce back
+    .to(group, {
+      scaleX: 1.15,
+      scaleY: 0.85,
+      x: 8,
+      y: -5,
+      rotation: 3,
+      duration: 0.5,
+      ease: 'sine.out'
+    })
+    // Gentle wobble back
+    .to(group, {
+      scaleX: 0.92,
+      scaleY: 1.08,
+      x: -3,
+      y: 2,
+      rotation: -1,
+      duration: 0.45,
+      ease: 'sine.inOut'
+    })
+    // One more soft wobble
+    .to(group, {
+      scaleX: 1.04,
+      scaleY: 0.96,
+      x: 1,
+      y: -1,
+      rotation: 0,
+      duration: 0.4,
+      ease: 'sine.inOut'
+    })
+    // Settle back nice and easy
+    .to(group, {
+      scaleX: 1,
+      scaleY: 1,
+      x: 0,
+      y: 0,
+      rotation: 0,
+      duration: 0.45,
+      ease: 'sine.out'
+    });
+
+    // Eyes squish gently with the body
+    if (eyes.length) {
+      tl.to(eyes, {
+        scaleX: 0.75,
+        scaleY: 1.35,
+        x: -6,
+        y: 3,
+        duration: 0.6,
+        ease: 'sine.inOut'
+      }, 0)
+      .to(eyes, {
+        scaleX: 0.65,
+        scaleY: 1.45,
+        x: -8,
+        y: 4,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
+      // Pop back softly
+      .to(eyes, {
+        scaleX: 1.12,
+        scaleY: 0.88,
+        x: 3,
+        y: -2,
+        duration: 0.5,
+        ease: 'sine.out'
+      })
+      .to(eyes, {
+        scaleX: 0.94,
+        scaleY: 1.06,
+        x: -1,
+        y: 1,
         duration: 0.45,
-        ease: 'power3.in'
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1.03,
+        scaleY: 0.97,
+        x: 0,
+        y: 0,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1,
+        scaleY: 1,
+        x: 0,
+        y: 0,
+        duration: 0.45,
+        ease: 'sine.out'
+      });
+    }
+
+    // Antennas sway lazily with the squish
+    if (antennas.length === 2) {
+      const [antennaL, antennaR] = antennas;
+
+      tl.to(antennaL, {
+        rotation: -18,
+        duration: 1.0,
+        ease: 'sine.inOut'
+      }, 0)
+      .to(antennaL, {
+        rotation: 8,
+        duration: 0.5,
+        ease: 'sine.out'
+      })
+      .to(antennaL, {
+        rotation: -3,
+        duration: 0.45,
+        ease: 'sine.inOut'
+      })
+      .to(antennaL, {
+        rotation: 1,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
+      .to(antennaL, {
+        rotation: 0,
+        duration: 0.45,
+        ease: 'sine.out'
+      });
+
+      tl.to(antennaR, {
+        rotation: -15,
+        duration: 1.0,
+        ease: 'sine.inOut'
       }, 0)
       .to(antennaR, {
-        rotation: 38,
-        scaleY: 1.35,
-        duration: 0.15,
-        ease: 'power4.in'
-      }, 0.45)
-      .to(antennaR, { duration: 0.12 }, 0.6)
-      .to(antennaR, {
-        rotation: -15,
-        scaleY: 0.88,
-        duration: 0.18,
-        ease: 'back.out(5)'
-      }, 0.72)
-      .to(antennaR, {
         rotation: 6,
-        scaleY: 1.06,
-        duration: 0.2,
-        ease: 'power2.out'
-      }, 0.9)
+        duration: 0.5,
+        ease: 'sine.out'
+      }, 1.0)
       .to(antennaR, {
-        rotation: -3,
-        scaleY: 0.98,
-        duration: 0.18,
-        ease: 'power2.inOut'
-      }, 1.1)
+        rotation: -2,
+        duration: 0.45,
+        ease: 'sine.inOut'
+      })
+      .to(antennaR, {
+        rotation: 1,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
       .to(antennaR, {
         rotation: 0,
-        scaleY: 1,
+        duration: 0.45,
+        ease: 'sine.out'
+      });
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
+  const morphToBall = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Compress into circular shape - compensating for tall body by squishing height more
+    tl.to(group, {
+      scaleX: 0.9,
+      scaleY: 0.75,
+      rotation: 0,
+      duration: 0.5,
+      ease: 'sine.inOut'
+    })
+    // Continue compressing - making width and height more equal (circular)
+    .to(group, {
+      scaleX: 0.8,
+      scaleY: 0.6,
+      duration: 0.45,
+      ease: 'sine.inOut'
+    })
+    // Maximum compression - as circular as possible
+    .to(group, {
+      scaleX: 0.75,
+      scaleY: 0.5,
+      duration: 0.4,
+      ease: 'sine.in'
+    })
+    // Hold the ball shape
+    .to(group, { duration: 0.2 })
+    // Release - spring back out maintaining circular-ish proportions
+    .to(group, {
+      scaleX: 1.05,
+      scaleY: 1.12,
+      duration: 0.5,
+      ease: 'sine.out'
+    })
+    // Small bounce - slightly taller again
+    .to(group, {
+      scaleX: 0.98,
+      scaleY: 0.94,
+      duration: 0.4,
+      ease: 'sine.inOut'
+    })
+    // Tiny bounce up
+    .to(group, {
+      scaleX: 1.01,
+      scaleY: 1.03,
+      duration: 0.35,
+      ease: 'sine.inOut'
+    })
+    // Settle perfectly back to normal
+    .to(group, {
+      scaleX: 1,
+      scaleY: 1,
+      duration: 0.4,
+      ease: 'sine.out'
+    });
+
+    // Eyes compress into the ball and expand back
+    if (eyes.length) {
+      tl.to(eyes, {
+        scale: 0.85,
+        duration: 0.5,
+        ease: 'sine.inOut'
+      }, 0)
+      .to(eyes, {
+        scale: 0.7,
+        duration: 0.45,
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scale: 0.6,
+        opacity: 0.7,
+        duration: 0.4,
+        ease: 'sine.in'
+      })
+      .to(eyes, { duration: 0.2 })
+      .to(eyes, {
+        scale: 1.08,
+        opacity: 1,
+        duration: 0.5,
+        ease: 'sine.out'
+      })
+      .to(eyes, {
+        scale: 0.96,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scale: 1.02,
         duration: 0.35,
-        ease: 'elastic.out(1, 0.5)'
-      }, 1.28);
+        ease: 'sine.inOut'
+      })
+      .to(eyes, {
+        scale: 1,
+        duration: 0.4,
+        ease: 'sine.out'
+      });
+    }
+
+    // Antennas retract into the ball like they're being sucked in
+    if (antennas.length) {
+      tl.to(antennas, {
+        scaleY: 0.7,
+        opacity: 0.8,
+        duration: 0.5,
+        ease: 'sine.inOut'
+      }, 0)
+      .to(antennas, {
+        scaleY: 0.4,
+        opacity: 0.5,
+        duration: 0.45,
+        ease: 'sine.inOut'
+      })
+      .to(antennas, {
+        scaleY: 0.2,
+        opacity: 0.2,
+        duration: 0.4,
+        ease: 'sine.in'
+      })
+      .to(antennas, { duration: 0.2 })
+      .to(antennas, {
+        scaleY: 0.8,
+        opacity: 0.9,
+        duration: 0.5,
+        ease: 'sine.out'
+      })
+      .to(antennas, {
+        scaleY: 0.95,
+        opacity: 1,
+        duration: 0.4,
+        ease: 'sine.inOut'
+      })
+      .to(antennas, {
+        scaleY: 1.02,
+        duration: 0.35,
+        ease: 'sine.inOut'
+      })
+      .to(antennas, {
+        scaleY: 1,
+        duration: 0.4,
+        ease: 'sine.out'
+      });
     }
 
     activeTimelineRef.current = tl;
@@ -1410,6 +2029,41 @@ export default function KochiTestPage() {
                     className="w-full bg-[#A78BFA] hover:bg-[#9c7ef5] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     🧽 Sponge Squeeze (Spring Box)
+                  </button>
+                  <button
+                    onClick={() => playAnimation(cosmicWaveCelebration)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FDE68A] hover:bg-[#fcd34d] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🚀 Cosmic Wave Celebration
+                  </button>
+                  <button
+                    onClick={() => playAnimation(bikiniBottomBounce)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FBCFE8] hover:bg-[#f9a8d4] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🍍 Bikini Bottom Bounce
+                  </button>
+                  <button
+                    onClick={() => playAnimation(gentlePlasticSquish)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#C4B5FD] hover:bg-[#a78bfa] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🫧 Gentle Plastic Squish
+                  </button>
+                  <button
+                    onClick={() => playAnimation(looneyTunes)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FCD34D] hover:bg-[#fbbf24] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🎬 Looney Tunes Squish
+                  </button>
+                  <button
+                    onClick={() => playAnimation(morphToBall)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#E0E7FF] hover:bg-[#c7d2fe] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ⚪ Morph to Ball
                   </button>
                 </div>
               </div>
