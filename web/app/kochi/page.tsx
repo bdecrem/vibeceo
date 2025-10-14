@@ -666,15 +666,20 @@ export default function KochiLandingPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#fffef7] text-center flex items-center justify-center px-5 py-6"
+      className="min-h-screen bg-[#fffef7] text-center flex items-center justify-center px-5 py-6 overflow-x-hidden"
       style={{
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+        maxWidth: "100vw"
       }}
     >
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
         * {
           box-sizing: border-box;
+        }
+        body {
+          overflow-x: hidden;
+          max-width: 100vw;
         }
       `}</style>
 
@@ -715,7 +720,7 @@ export default function KochiLandingPage() {
                 exit={{ opacity: 0, scale: 0.7 }}
                 transition={{ type: "spring", stiffness: 420, damping: 14 }}
                 onClick={handleMascotClick}
-                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[15px] sm:text-base font-medium"
+                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[14px] sm:text-base font-medium"
               >
                 Tap Kochi to get started
               </motion.button>
@@ -740,7 +745,7 @@ export default function KochiLandingPage() {
                 className="inline-block mb-5"
               >
                 <div
-                  className="text-[15px] sm:text-[16px]"
+                  className="text-[14px] sm:text-[16px]"
                   style={{
                     background: "#FFF9E6",
                     color: "#2C3E1F",
@@ -772,13 +777,13 @@ export default function KochiLandingPage() {
                     }
                   }}
                   placeholder="Try: “what were the best AI papers yesterday?”"
-                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-[15px] sm:text-base outline-none w-full sm:min-w-[360px]"
+                  className="rounded-full border-2 border-[#e8e8e8] px-5 py-3 text-[14px] sm:text-base outline-none w-full sm:min-w-[360px]"
                   autoFocus
                 />
                 <button
                   onClick={handleUserSubmit}
                   disabled={!userInput.trim() || isLoading}
-                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-[15px] sm:text-base font-semibold transition-all duration-200 sm:w-auto w-full"
+                  className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 text-[14px] sm:text-base font-semibold transition-all duration-200 sm:w-auto w-full"
                   style={{
                     background: userInput.trim() && !isLoading ? "#FFE148" : "#e8e8e8",
                     color: userInput.trim() && !isLoading ? "#2C3E1F" : "#999",
@@ -801,7 +806,7 @@ export default function KochiLandingPage() {
               className="mb-8"
             >
               <div
-                className="text-[15px] sm:text-[16px]"
+                className="text-[14px] sm:text-[16px]"
                 style={{
                   background: "#ffffff",
                   color: "#2C3E1F",
@@ -841,7 +846,7 @@ export default function KochiLandingPage() {
                 {showConversation && (
                   <>
                     <div
-                      className="text-[15px] sm:text-[16px]"
+                      className="text-[14px] sm:text-[16px]"
                       style={{
                         background: "#ffffff",
                         color: "#2C3E1F",
@@ -860,7 +865,7 @@ export default function KochiLandingPage() {
                     <div style={{ height: "12px" }} />
 
                     <div
-                      className="text-[15px] sm:text-[16px]"
+                      className="text-[14px] sm:text-[16px]"
                       style={{
                         background: "#FFF9E6",
                         color: "#2C3E1F",

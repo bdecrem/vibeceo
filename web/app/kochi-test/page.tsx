@@ -527,6 +527,206 @@ export default function KochiTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const funkySquishSpring = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Get squished into increasingly bizarre shapes
+    tl.to(group, {
+      scaleX: 0.7,
+      scaleY: 1.4,
+      skewX: 10,
+      rotation: -15,
+      duration: 0.3,
+      ease: 'power2.in'
+    })
+    .to(group, {
+      scaleX: 0.4,
+      scaleY: 1.8,
+      skewX: 25,
+      skewY: -15,
+      rotation: -25,
+      duration: 0.25,
+      ease: 'power2.in'
+    })
+    .to(group, {
+      scaleX: 0.3,
+      scaleY: 2.1,
+      skewX: -30,
+      skewY: 20,
+      rotation: 15,
+      duration: 0.2,
+      ease: 'power2.in'
+    })
+    // Hold the funky shape for a beat
+    .to(group, { duration: 0.15 })
+    // SPRING BACK with massive overshoot and bounce
+    .to(group, {
+      scaleX: 1.4,
+      scaleY: 0.6,
+      skewX: 15,
+      skewY: -10,
+      rotation: -10,
+      duration: 0.25,
+      ease: 'back.out(3)'
+    })
+    .to(group, {
+      scaleX: 0.85,
+      scaleY: 1.2,
+      skewX: -8,
+      skewY: 5,
+      rotation: 8,
+      duration: 0.2,
+      ease: 'power2.inOut'
+    })
+    .to(group, {
+      scaleX: 1.1,
+      scaleY: 0.9,
+      skewX: 4,
+      skewY: -3,
+      rotation: -4,
+      duration: 0.15,
+      ease: 'power2.inOut'
+    })
+    .to(group, {
+      scaleX: 0.98,
+      scaleY: 1.03,
+      skewX: -2,
+      skewY: 1,
+      rotation: 2,
+      duration: 0.12,
+      ease: 'power2.inOut'
+    })
+    .to(group, {
+      scaleX: 1,
+      scaleY: 1,
+      skewX: 0,
+      skewY: 0,
+      rotation: 0,
+      duration: 0.15,
+      ease: 'elastic.out(1, 0.3)'
+    });
+
+    // Eyes get completely warped during squish
+    if (eyes.length) {
+      tl.to(eyes, {
+        scaleX: 0.6,
+        scaleY: 1.6,
+        rotation: -20,
+        duration: 0.3,
+        ease: 'power2.in'
+      }, 0)
+      .to(eyes, {
+        scaleX: 0.4,
+        scaleY: 2,
+        rotation: 30,
+        duration: 0.25,
+        ease: 'power2.in'
+      })
+      .to(eyes, {
+        scaleX: 0.3,
+        scaleY: 2.3,
+        rotation: -40,
+        duration: 0.2,
+        ease: 'power2.in'
+      })
+      .to(eyes, { duration: 0.15 })
+      // Eyes spring back with the body
+      .to(eyes, {
+        scaleX: 1.3,
+        scaleY: 0.7,
+        rotation: 15,
+        duration: 0.25,
+        ease: 'back.out(3)'
+      })
+      .to(eyes, {
+        scaleX: 0.9,
+        scaleY: 1.1,
+        rotation: -8,
+        duration: 0.2,
+        ease: 'power2.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1.05,
+        scaleY: 0.95,
+        rotation: 3,
+        duration: 0.15,
+        ease: 'power2.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        duration: 0.27,
+        ease: 'elastic.out(1, 0.3)'
+      });
+    }
+
+    // Antennas go crazy
+    if (antennas.length === 2) {
+      const [antennaL, antennaR] = antennas;
+
+      tl.to(antennaL, {
+        rotation: -45,
+        scaleY: 1.3,
+        duration: 0.55,
+        ease: 'power2.in'
+      }, 0)
+      .to(antennaL, { duration: 0.15 })
+      .to(antennaL, {
+        rotation: 20,
+        scaleY: 0.8,
+        duration: 0.25,
+        ease: 'back.out(3)'
+      })
+      .to(antennaL, {
+        rotation: -10,
+        scaleY: 1.1,
+        duration: 0.2,
+        ease: 'power2.inOut'
+      })
+      .to(antennaL, {
+        rotation: 0,
+        scaleY: 1,
+        duration: 0.27,
+        ease: 'elastic.out(1, 0.3)'
+      });
+
+      tl.to(antennaR, {
+        rotation: 45,
+        scaleY: 1.3,
+        duration: 0.55,
+        ease: 'power2.in'
+      }, 0)
+      .to(antennaR, { duration: 0.15 }, 0.55)
+      .to(antennaR, {
+        rotation: -20,
+        scaleY: 0.8,
+        duration: 0.25,
+        ease: 'back.out(3)'
+      }, 0.7)
+      .to(antennaR, {
+        rotation: 10,
+        scaleY: 1.1,
+        duration: 0.2,
+        ease: 'power2.inOut'
+      }, 0.95)
+      .to(antennaR, {
+        rotation: 0,
+        scaleY: 1,
+        duration: 0.27,
+        ease: 'elastic.out(1, 0.3)'
+      }, 1.15);
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
   return (
     <>
       <Script
@@ -729,6 +929,13 @@ export default function KochiTestPage() {
                     className="w-full bg-[#98D8C8] hover:bg-[#7cc4b1] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Ball Rock
+                  </button>
+                  <button
+                    onClick={() => playAnimation(funkySquishSpring)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FF9B71] hover:bg-[#ff8a5c] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🌟 Funky Squish Spring
                   </button>
                 </div>
               </div>
