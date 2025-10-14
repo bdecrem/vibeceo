@@ -910,6 +910,277 @@ export default function KochiTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const spongeSqueeze = () => {
+    const gsap = (window as any).gsap;
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+    if (!group) return;
+
+    const tl = gsap.timeline();
+
+    // Initial compression - start to squeeze
+    tl.to(group, {
+      scaleX: 0.75,
+      scaleY: 1.2,
+      skewX: -8,
+      rotation: -5,
+      x: -10,
+      y: 5,
+      duration: 0.2,
+      ease: 'power2.in'
+    })
+    // HEAVY SQUEEZE - completely asymmetric and wrong looking
+    .to(group, {
+      scaleX: 0.45,
+      scaleY: 1.65,
+      skewX: 25,
+      skewY: -12,
+      rotation: -22,
+      x: -28,
+      y: 18,
+      duration: 0.25,
+      ease: 'power3.in'
+    })
+    // Maximum deformation - hold for a beat to emphasize the wrongness
+    .to(group, {
+      scaleX: 0.38,
+      scaleY: 1.75,
+      skewX: 30,
+      skewY: -18,
+      rotation: -28,
+      x: -35,
+      y: 25,
+      duration: 0.15,
+      ease: 'power4.in'
+    })
+    // Hold the awful shape
+    .to(group, { duration: 0.12 })
+    // RELEASE! Spring box action - explosive recovery
+    .to(group, {
+      scaleX: 1.25,
+      scaleY: 0.7,
+      skewX: -15,
+      skewY: 8,
+      rotation: 12,
+      x: 20,
+      y: -12,
+      duration: 0.18,
+      ease: 'back.out(5)'
+    })
+    // Overshoot the other way
+    .to(group, {
+      scaleX: 0.82,
+      scaleY: 1.18,
+      skewX: 10,
+      skewY: -5,
+      rotation: -8,
+      x: -8,
+      y: 8,
+      duration: 0.2,
+      ease: 'power2.out'
+    })
+    // Another bounce
+    .to(group, {
+      scaleX: 1.12,
+      scaleY: 0.88,
+      skewX: -6,
+      skewY: 3,
+      rotation: 5,
+      x: 5,
+      y: -5,
+      duration: 0.18,
+      ease: 'power2.inOut'
+    })
+    // Smaller wobble
+    .to(group, {
+      scaleX: 0.95,
+      scaleY: 1.05,
+      skewX: 3,
+      skewY: -2,
+      rotation: -2,
+      x: -2,
+      y: 2,
+      duration: 0.15,
+      ease: 'power2.inOut'
+    })
+    // Final settle
+    .to(group, {
+      scaleX: 1,
+      scaleY: 1,
+      skewX: 0,
+      skewY: 0,
+      rotation: 0,
+      x: 0,
+      y: 0,
+      duration: 0.2,
+      ease: 'elastic.out(1, 0.5)'
+    });
+
+    // Eyes get completely distorted during squeeze
+    if (eyes.length) {
+      tl.to(eyes, {
+        scaleX: 0.6,
+        scaleY: 1.5,
+        rotation: -15,
+        x: -10,
+        y: 8,
+        duration: 0.2,
+        ease: 'power2.in'
+      }, 0)
+      .to(eyes, {
+        scaleX: 0.4,
+        scaleY: 1.9,
+        rotation: 35,
+        x: -15,
+        y: 12,
+        duration: 0.25,
+        ease: 'power3.in'
+      })
+      .to(eyes, {
+        scaleX: 0.32,
+        scaleY: 2.1,
+        rotation: 45,
+        x: -18,
+        y: 15,
+        duration: 0.15,
+        ease: 'power4.in'
+      })
+      .to(eyes, { duration: 0.12 })
+      // Eyes spring back
+      .to(eyes, {
+        scaleX: 1.3,
+        scaleY: 0.7,
+        rotation: -20,
+        x: 8,
+        y: -6,
+        duration: 0.18,
+        ease: 'back.out(5)'
+      })
+      .to(eyes, {
+        scaleX: 0.85,
+        scaleY: 1.15,
+        rotation: 10,
+        x: -3,
+        y: 4,
+        duration: 0.2,
+        ease: 'power2.out'
+      })
+      .to(eyes, {
+        scaleX: 1.1,
+        scaleY: 0.9,
+        rotation: -5,
+        x: 2,
+        y: -2,
+        duration: 0.18,
+        ease: 'power2.inOut'
+      })
+      .to(eyes, {
+        scaleX: 0.98,
+        scaleY: 1.02,
+        rotation: 2,
+        x: -1,
+        y: 1,
+        duration: 0.15,
+        ease: 'power2.inOut'
+      })
+      .to(eyes, {
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        x: 0,
+        y: 0,
+        duration: 0.2,
+        ease: 'elastic.out(1, 0.5)'
+      });
+    }
+
+    // Antennas get bent dramatically
+    if (antennas.length === 2) {
+      const [antennaL, antennaR] = antennas;
+
+      // Left antenna bends way over
+      tl.to(antennaL, {
+        rotation: -35,
+        scaleY: 1.2,
+        duration: 0.45,
+        ease: 'power3.in'
+      }, 0)
+      .to(antennaL, {
+        rotation: -42,
+        scaleY: 1.3,
+        duration: 0.15,
+        ease: 'power4.in'
+      })
+      .to(antennaL, { duration: 0.12 })
+      .to(antennaL, {
+        rotation: 18,
+        scaleY: 0.85,
+        duration: 0.18,
+        ease: 'back.out(5)'
+      })
+      .to(antennaL, {
+        rotation: -8,
+        scaleY: 1.08,
+        duration: 0.2,
+        ease: 'power2.out'
+      })
+      .to(antennaL, {
+        rotation: 4,
+        scaleY: 0.96,
+        duration: 0.18,
+        ease: 'power2.inOut'
+      })
+      .to(antennaL, {
+        rotation: 0,
+        scaleY: 1,
+        duration: 0.35,
+        ease: 'elastic.out(1, 0.5)'
+      });
+
+      // Right antenna bends differently
+      tl.to(antennaR, {
+        rotation: 28,
+        scaleY: 1.25,
+        duration: 0.45,
+        ease: 'power3.in'
+      }, 0)
+      .to(antennaR, {
+        rotation: 38,
+        scaleY: 1.35,
+        duration: 0.15,
+        ease: 'power4.in'
+      }, 0.45)
+      .to(antennaR, { duration: 0.12 }, 0.6)
+      .to(antennaR, {
+        rotation: -15,
+        scaleY: 0.88,
+        duration: 0.18,
+        ease: 'back.out(5)'
+      }, 0.72)
+      .to(antennaR, {
+        rotation: 6,
+        scaleY: 1.06,
+        duration: 0.2,
+        ease: 'power2.out'
+      }, 0.9)
+      .to(antennaR, {
+        rotation: -3,
+        scaleY: 0.98,
+        duration: 0.18,
+        ease: 'power2.inOut'
+      }, 1.1)
+      .to(antennaR, {
+        rotation: 0,
+        scaleY: 1,
+        duration: 0.35,
+        ease: 'elastic.out(1, 0.5)'
+      }, 1.28);
+    }
+
+    activeTimelineRef.current = tl;
+  };
+
   return (
     <>
       <Script
@@ -1126,6 +1397,19 @@ export default function KochiTestPage() {
                     className="w-full bg-[#FF9B71] hover:bg-[#ff8a5c] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ✨ Funky Squish Spring v2
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-lg shadow-lg p-6">
+                <h2 className="text-xl font-bold text-[#2C3E1F] mb-4">🧪 Experimental</h2>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => playAnimation(spongeSqueeze)}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#A78BFA] hover:bg-[#9c7ef5] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🧽 Sponge Squeeze (Spring Box)
                   </button>
                 </div>
               </div>
