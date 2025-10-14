@@ -3,6 +3,7 @@
 import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
+import PlayInCrashAppBanner from '@/components/PlayInCrashAppBanner';
 
 interface TrackPaper {
   id: string;
@@ -19,6 +20,9 @@ interface TrackItem {
   showName?: string;
   order?: number;
   papers?: TrackPaper[];
+  topicId?: string | null;
+  episodeNumber?: number | null;
+  isDated?: boolean;
 }
 
 const FALLBACK_PLAYLIST: TrackItem[] = [
@@ -29,6 +33,8 @@ const FALLBACK_PLAYLIST: TrackItem[] = [
     src: 'https://samplelib.com/lib/preview/mp3/sample-3s.mp3',
     showName: 'AI Daily',
     order: 0,
+    topicId: '770a27b8-28a8-40bd-ad82-d9c0952924ce',
+    isDated: true,
   },
   {
     id: 'peer-review-demo',
@@ -126,6 +132,7 @@ function MusicPlayerContent(): JSX.Element {
   const [duration, setDuration] = useState(0);
   const [loadedPlaylist, setLoadedPlaylist] = useState<TrackItem[]>(FALLBACK_PLAYLIST);
   const [showInfo, setShowInfo] = useState(false);
+  const [isAppBannerDismissed, setIsAppBannerDismissed] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
   const preGainNodeRef = useRef<GainNode | null>(null);
@@ -273,6 +280,29 @@ function MusicPlayerContent(): JSX.Element {
   }, [aiDailyContext]);
 
   const canUseMic = Boolean(aiDailyInstructions && aiDailyContext);
+
+  useEffect(() => {
+    setIsAppBannerDismissed(false);
+  }, [currentTrack?.id]);
+
+  const bannerInfo = useMemo(() => {
+    const topicId = currentTrack?.topicId ?? aiDailyTrackData?.topicId ?? null;
+    const episodeNumber = currentTrack?.episodeNumber ?? aiDailyTrackData?.episodeNumber ?? null;
+    const hasEpisodeNumber = typeof episodeNumber === 'number' && !Number.isNaN(episodeNumber);
+    const rawIsDated = currentTrack?.isDated ?? aiDailyTrackData?.isDated ?? false;
+
+    return {
+      topicId,
+      episodeNumber: hasEpisodeNumber ? episodeNumber : null,
+      isDated: hasEpisodeNumber ? false : Boolean(rawIsDated),
+    };
+  }, [aiDailyTrackData, currentTrack]);
+
+  const shouldShowCrashAppBanner = Boolean(
+    isAiDailyTrack && bannerInfo.topicId && !isAppBannerDismissed
+  );
+
+  const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber, isDated: bannerIsDated } = bannerInfo;
 
   // Shorten title for display
   const displayTitle = useMemo(() => {
@@ -779,6 +809,15 @@ function MusicPlayerContent(): JSX.Element {
         </header>
 
         <section className="space-y-6">
+          {shouldShowCrashAppBanner && bannerTopicId ? (
+            <PlayInCrashAppBanner
+              topicId={bannerTopicId}
+              episodeNumber={bannerEpisodeNumber ?? undefined}
+              isDated={bannerIsDated}
+              className="border border-white/10"
+              onClose={() => setIsAppBannerDismissed(true)}
+            />
+          ) : null}
           <div className="relative rounded-2xl bg-gradient-to-r from-yellow-400 to-orange-500 p-6 shadow-lg">
             <div className="absolute right-4 top-4 flex gap-2">
               <button

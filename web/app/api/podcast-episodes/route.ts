@@ -130,6 +130,9 @@ export async function GET() {
             showName: showInfo.name,
             order: showInfo.order,
             papers,
+            topicId: topic.id,
+            episodeNumber: episode.episode_number,
+            isDated: showInfo.name === 'AI Daily',
           });
         }
       } catch (err) {
