@@ -419,7 +419,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
       <svg
         ref={svgRef}
         viewBox="0 0 1024 1024"
-        className="max-w-[280px] w-full h-auto cursor-pointer transition-transform duration-100"
+        className="max-w-[200px] sm:max-w-[280px] w-full h-auto cursor-pointer transition-transform duration-100"
         onClick={onClick}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "scale(1.05)";
@@ -478,6 +478,17 @@ export default function KochiLandingPage() {
   const mascotRef = useRef<KochiAnimationHandle | null>(null);
   const [greetingDisplayed, setGreetingDisplayed] = useState("");
   const greetingIntervalRef = useRef<number | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyPhone = async () => {
+    try {
+      await navigator.clipboard.writeText("18663300015");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -532,10 +543,11 @@ export default function KochiLandingPage() {
 
   return (
     <div
-      className="min-h-screen bg-[#fffef7] text-center flex items-center justify-center px-5 py-6 overflow-x-hidden"
+      className="min-h-screen bg-[#fffef7] text-center flex flex-col items-center justify-center px-5 py-4 sm:py-6 overflow-x-hidden"
       style={{
         fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
-        maxWidth: "100vw"
+        maxWidth: "100vw",
+        minHeight: "100dvh"
       }}
     >
       <style jsx global>{`
@@ -549,124 +561,161 @@ export default function KochiLandingPage() {
         }
       `}</style>
 
-      <div className="w-full max-w-[520px] px-4 sm:px-0">
-        <h1
-          className="text-[38px] sm:text-[60px] md:text-[72px] leading-[0.9] font-[800]"
-          style={{
-            fontFamily: "Poppins, sans-serif",
-            color: "#2C3E1F",
-            margin: "0 0 8px 0"
-          }}
-        >
-          Kochi.to
-        </h1>
+      <main className="w-full max-w-[520px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-between sm:justify-center gap-4 sm:gap-12 pt-6 pb-6 sm:pt-0 sm:pb-0">
+        <div className="flex flex-col items-center gap-1 sm:gap-2">
+          <h1
+            className="text-[36px] sm:text-[60px] md:text-[72px] leading-[0.9] font-[800]"
+            style={{
+              fontFamily: "Poppins, sans-serif",
+              color: "#2C3E1F",
+              margin: "0"
+            }}
+          >
+            Kochi.to
+          </h1>
 
-        <p
-          className="text-[13px] sm:text-[14px]"
-          style={{
-            color: "#8a8a8a",
-            marginBottom: "48px",
-            fontStyle: "italic"
-          }}
-        >
-          AI blasts delivered daily. Weather permitting.
-        </p>
+          <p
+            className="text-[12px] sm:text-[14px]"
+            style={{
+              color: "#8a8a8a",
+              fontStyle: "italic"
+            }}
+          >
+            AI blasts delivered daily. Weather permitting.
+          </p>
+        </div>
 
-        <div className="flex justify-center mb-6">
+        <div className="flex justify-center">
           <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
         </div>
 
-        <div className="h-10 mb-6 flex justify-center items-center">
+        <div className="w-full flex flex-col items-center gap-3 sm:gap-6">
+          <div className="h-8 sm:h-10 flex justify-center items-center">
+            <AnimatePresence mode="wait">
+              {stage === "prompt" && (
+                <motion.button
+                  key="prompt-text"
+                  initial={{ opacity: 0, scale: 0.7 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.7 }}
+                  transition={{ type: "spring", stiffness: 420, damping: 14 }}
+                  onClick={handleMascotClick}
+                  className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[13px] sm:text-base font-medium"
+                >
+                  Tap Kochi to get started
+                </motion.button>
+              )}
+            </AnimatePresence>
+          </div>
+
           <AnimatePresence mode="wait">
-            {stage === "prompt" && (
-              <motion.button
-                key="prompt-text"
-                initial={{ opacity: 0, scale: 0.7 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.7 }}
-                transition={{ type: "spring", stiffness: 420, damping: 14 }}
-                onClick={handleMascotClick}
-                className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[14px] sm:text-base font-medium"
+            {stage === "cta" && (
+              <motion.div
+                key="cta"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -16 }}
+                transition={{ duration: 0.4 }}
+                className="w-full flex flex-col items-center gap-3 sm:gap-6"
               >
-                Tap Kochi to get started
-              </motion.button>
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                  className="inline-block"
+                >
+                  <div
+                    className="text-[13px] leading-[1.4] sm:text-[16px] sm:leading-normal"
+                    style={{
+                      background: "#FFF9E6",
+                      color: "#2C3E1F",
+                      padding: "12px 18px",
+                      borderRadius: "20px",
+                      border: "2px solid #2C3E1F",
+                      display: "inline-block",
+                      maxWidth: "90%",
+                      textAlign: "left",
+                      fontFamily: "Poppins, sans-serif",
+                      fontWeight: 500,
+                      whiteSpace: "pre-wrap"
+                    }}
+                  >
+                    <span>{greetingDisplayed || "\u00a0"}</span>
+                    {greetingDisplayed.length < GREETING_TEXT.length && (
+                      <span className="inline-block w-1 h-4 sm:h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
+                    )}
+                  </div>
+                </motion.div>
+
+                <div className="flex flex-col items-center gap-2 sm:gap-4">
+                  <a
+                    href="sms:8663300015?body=AI%20DAILY"
+                    className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
+                    style={{
+                      background: "#FFE148",
+                      color: "#2C3E1F"
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.transform = "translateY(-2px)";
+                      e.currentTarget.style.boxShadow =
+                        "0 12px 32px rgba(255, 225, 72, 0.5)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.transform = "translateY(0)";
+                      e.currentTarget.style.boxShadow =
+                        "0 8px 24px rgba(255, 225, 72, 0.4)";
+                    }}
+                  >
+                    Try it now →
+                  </a>
+                  <button
+                    onClick={handleCopyPhone}
+                    className="text-[12px] sm:text-[14px] cursor-pointer hover:text-[#2C3E1F] transition-colors duration-200 relative"
+                    style={{
+                      color: "#8a8a8a"
+                    }}
+                  >
+                    +1-866-330-0015 (SMS/WhatsApp)
+                    {copied && (
+                      <span className="absolute left-1/2 -translate-x-1/2 -top-8 bg-[#2C3E1F] text-white text-xs px-3 py-1 rounded-full whitespace-nowrap">
+                        Copied!
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
+      </main>
 
-        <AnimatePresence mode="wait">
-          {stage === "cta" && (
-            <motion.div
-              key="cta"
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -16 }}
-              transition={{ duration: 0.4 }}
-              className="mb-8"
+      <AnimatePresence>
+        {stage === "cta" && (
+          <motion.footer
+            key="cta-footer"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.3 }}
+            className="w-full max-w-[520px] px-4 sm:px-0 pt-4 sm:pt-6 mt-6 sm:mt-12"
+          >
+            <div
+              className="flex justify-center"
+              style={{ fontFamily: "Poppins, sans-serif" }}
             >
-              <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ type: "spring", stiffness: 260, damping: 18 }}
-                className="inline-block mb-8"
-              >
-                <div
-                  className="text-[14px] sm:text-[16px]"
-                  style={{
-                    background: "#FFF9E6",
-                    color: "#2C3E1F",
-                    padding: "16px 24px",
-                    borderRadius: "24px",
-                    border: "2px solid #2C3E1F",
-                    display: "inline-block",
-                    maxWidth: "90%",
-                    textAlign: "left",
-                    fontFamily: "Poppins, sans-serif",
-                    fontWeight: 500,
-                    whiteSpace: "pre-wrap"
-                  }}
-                >
-                  <span>{greetingDisplayed || "\u00a0"}</span>
-                  {greetingDisplayed.length < GREETING_TEXT.length && (
-                    <span className="inline-block w-1 h-5 bg-[#2C3E1F] ml-1 animate-pulse align-middle" />
-                  )}
-                </div>
-              </motion.div>
-
-              <div className="flex flex-col items-center gap-4">
+              <span className="text-[12px] sm:text-[13px] text-[#8a8a8a]">
+                © 2025{" "}
                 <a
-                  href="sms:8663300015?body=AI%20DAILY"
-                  className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
-                  style={{
-                    background: "#FFE148",
-                    color: "#2C3E1F"
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow =
-                      "0 12px 32px rgba(255, 225, 72, 0.5)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow =
-                      "0 8px 24px rgba(255, 225, 72, 0.4)";
-                  }}
+                  href="/about"
+                  className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
                 >
-                  Try it now →
+                  Kochito Labs
                 </a>
-                <p
-                  style={{
-                    color: "#8a8a8a",
-                    fontSize: "14px"
-                  }}
-                >
-                  +1-866-330-0015
-                </p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              </span>
+            </div>
+          </motion.footer>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

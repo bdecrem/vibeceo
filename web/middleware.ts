@@ -92,6 +92,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/recents') ||
       pathname.startsWith('/featured') ||
       pathname.startsWith('/kochi') ||
+      pathname.startsWith('/about') ||
       pathname.startsWith('/test-auth') ||
       pathname.startsWith('/test-subscriber') ||
       pathname.startsWith('/console') ||
