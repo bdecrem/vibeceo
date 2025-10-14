@@ -9,6 +9,8 @@ type Frame = {
   aL?: number;
   aR?: number;
   lids?: number;
+  lidL?: number;
+  lidR?: number;
 };
 
 export default function KochiRiggedTestPage() {
@@ -60,9 +62,12 @@ export default function KochiRiggedTestPage() {
     if (el) el.setAttribute('transform', t);
   };
 
-  const moveLids = (y: number) => {
-    if (lidLRef.current) lidLRef.current.setAttribute('y', String(yBaseLRef.current + y));
-    if (lidRRef.current) lidRRef.current.setAttribute('y', String(yBaseRRef.current + y));
+  const moveLids = (yL: number, yR?: number) => {
+    if (lidLRef.current) lidLRef.current.setAttribute('y', String(yBaseLRef.current + yL));
+    if (lidRRef.current) {
+      const offset = typeof yR === "number" ? yR : yL;
+      lidRRef.current.setAttribute('y', String(yBaseRRef.current + offset));
+    }
   };
 
   const playOnce = (frames: Frame[]) => {
@@ -90,7 +95,11 @@ export default function KochiRiggedTestPage() {
       T(antRRef.current, `rotate(${f.aR || 0})`);
 
       // Lids
-      if (typeof f.lids === 'number') moveLids(f.lids);
+      const leftOffset = typeof f.lidL === 'number' ? f.lidL : typeof f.lids === 'number' ? f.lids : undefined;
+      const rightOffset = typeof f.lidR === 'number' ? f.lidR : typeof f.lids === 'number' ? f.lids : undefined;
+      if (leftOffset !== undefined || rightOffset !== undefined) {
+        moveLids(leftOffset ?? 0, rightOffset);
+      }
     }, step);
   };
 
@@ -150,6 +159,35 @@ export default function KochiRiggedTestPage() {
       { sx: 1.05, sy: 1.05, aL: 2, aR: -2, lids: 0 }, // small bounce
       { sx: 0.98, sy: 0.98, aL: -1, aR: 1, lids: 0 }, // settle
       { sx: 1.00, sy: 1.00, aL: 0, aR: 0, lids: 0 }, // rest
+    ]);
+  };
+
+  const celebrate = () => {
+    playOnce([
+      { sx: 1.12, sy: 0.9, ty: 4, aL: -10, aR: 10, lids: 8 }, // wind-up
+      { sx: 0.82, sy: 1.28, ty: -36, aL: 18, aR: -18, lids: 0 }, // launch
+      { sx: 0.88, sy: 1.18, ty: -32, aL: -14, aR: 14, lids: 24 }, // airborne squint
+      { sx: 1.18, sy: 0.84, ty: 6, aL: 10, aR: -10, lids: 0 }, // land overshoot
+      { sx: 0.96, sy: 1.08, ty: -8, aL: -6, aR: 6, lidL: 58, lidR: 4 }, // big wink
+      { sx: 1.08, sy: 0.92, ty: 3, aL: 12, aR: -12, lidL: 18, lidR: 0 }, // sparkle reset
+      { sx: 0.9, sy: 1.15, ty: -18, aL: -20, aR: 20, lids: 12 }, // mini hop
+      { sx: 1.2, sy: 0.8, ty: 10, aL: 15, aR: -15, lids: 0 }, // squashy landing
+      { sx: 0.95, sy: 1.05, ty: -6, aL: -8, aR: 8, lidL: 40, lidR: 0 }, // cheeky half wink
+      { sx: 1.05, sy: 0.97, ty: 2, aL: 6, aR: -6, lids: 0 }, // settle bounce
+      { sx: 1.0, sy: 1.0, ty: 0, aL: 0, aR: 0, lids: 0 }, // rest
+    ]);
+  };
+
+  const lineEyesGlow = () => {
+    playOnce([
+      { sx: 1.02, sy: 0.98, ty: 2, aL: -4, aR: 4, lids: 10 }, // cheeky grin start
+      { sx: 0.88, sy: 1.18, ty: -20, aL: 12, aR: -12, lids: 58 }, // eyes slide down
+      { sx: 0.95, sy: 1.12, ty: -18, aL: -16, aR: 16, lids: 92 }, // almost closed
+      { sx: 1.15, sy: 0.85, ty: 8, aL: 18, aR: -18, lids: 103 }, // perfect line eyes burst
+      { sx: 1.12, sy: 0.88, ty: 6, aL: -12, aR: 12, lids: 103 }, // hold line eyes with bounce
+      { sx: 0.9, sy: 1.2, ty: -12, aL: 20, aR: -20, lids: 60 }, // reopening giggle
+      { sx: 1.05, sy: 0.96, ty: 2, aL: -6, aR: 6, lids: 20 }, // cooling down
+      { sx: 1.0, sy: 1.0, ty: 0, aL: 0, aR: 0, lids: 0 }, // rest
     ]);
   };
 
@@ -250,6 +288,20 @@ export default function KochiRiggedTestPage() {
                   className="w-full bg-[#FFE148] hover:bg-[#ffd700] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   🎾 Bounce (squash + stretch)
+                </button>
+                <button
+                  onClick={celebrate}
+                  disabled={!isReady}
+                  className="w-full bg-[#FF84C5] hover:bg-[#ff65b5] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  🎉 Celebrate Kochi!
+                </button>
+                <button
+                  onClick={lineEyesGlow}
+                  disabled={!isReady}
+                  className="w-full bg-[#7C8BFF] hover:bg-[#6675ff] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  ✨ Glowy Line Eyes
                 </button>
                 <button
                   onClick={blink}
