@@ -39,6 +39,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
     left: null,
     right: null
   });
+  const introAnimationPlayedRef = useRef(false);
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).gsap && !gsapReady) {
@@ -157,6 +158,204 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
       activeTimelineRef.current = null;
       animationsRef.current = [];
     };
+  }, [gsapReady]);
+
+  // One-time intro animation: EXTREME BALLOON CHAOS!!!
+  useEffect(() => {
+    if (!gsapReady || introAnimationPlayedRef.current || !groupRef.current) return;
+
+    const gsap = (window as any).gsap;
+    if (!gsap) return;
+
+    const group = groupRef.current;
+    const eyes = [eyesRef.current.left, eyesRef.current.right].filter(Boolean);
+    const antennas = [antennasRef.current.left, antennasRef.current.right].filter(Boolean);
+
+    const timer = setTimeout(() => {
+      introAnimationPlayedRef.current = true;
+
+      const tl = gsap.timeline();
+
+      // 1. DEEP ANTICIPATION - Crouch down LOW
+      tl.to(group, {
+        scaleY: 0.5,
+        scaleX: 1.4,
+        y: 15,
+        duration: 0.35,
+        ease: "power2.in"
+      });
+
+      // Antennas bend backward from force
+      if (antennas.length) {
+        tl.to(antennas, {
+          rotation: -35,
+          duration: 0.35,
+          ease: "power2.in"
+        }, 0);
+      }
+
+      // Eyes SQUEEZE
+      if (eyes.length) {
+        tl.to(eyes, {
+          scaleY: 0.4,
+          scaleX: 1.3,
+          duration: 0.35,
+          ease: "power2.in"
+        }, 0);
+      }
+
+      // 2. MASSIVE INHALE + EXPLOSION UP
+      tl.to(group, {
+        scale: 1.7,
+        y: -20,
+        duration: 0.5,
+        ease: "back.out(3)"
+      });
+
+      // Antennas SPRING UP
+      if (antennas.length) {
+        tl.to(antennas, {
+          rotation: 15,
+          duration: 0.5,
+          ease: "back.out(4)"
+        }, "-=0.5");
+      }
+
+      // Eyes POP HUGE
+      if (eyes.length) {
+        tl.to(eyes, {
+          scale: 1.6,
+          duration: 0.5,
+          ease: "back.out(3)"
+        }, "-=0.5");
+      }
+
+      // 3. MAXIMUM PRESSURE - Vibrate!
+      tl.to(group, {
+        scale: 1.75,
+        duration: 0.1
+      });
+
+      // Shake shake shake (building tension)
+      for (let i = 0; i < 4; i++) {
+        tl.to(group, {
+          rotation: i % 2 === 0 ? 3 : -3,
+          duration: 0.08
+        });
+      }
+
+      // 4. THE EXPLOSION - PFFFFFFFFFTTTTT!!!
+      // First deflation - WHIP LEFT
+      tl.to(group, {
+        scaleX: 0.4,
+        scaleY: 1.6,
+        rotation: -45,
+        x: -30,
+        y: -10,
+        duration: 0.15,
+        ease: "power4.in"
+      });
+
+      if (eyes.length) {
+        tl.to(eyes, {
+          scaleX: 0.5,
+          scaleY: 1.8,
+          rotation: 20,
+          duration: 0.15
+        }, "-=0.15");
+      }
+
+      // Second deflation - WHIP RIGHT
+      tl.to(group, {
+        scaleX: 1.5,
+        scaleY: 0.5,
+        rotation: 60,
+        x: 25,
+        y: 10,
+        duration: 0.18,
+        ease: "power2.out"
+      });
+
+      if (eyes.length) {
+        tl.to(eyes, {
+          scaleX: 1.6,
+          scaleY: 0.4,
+          rotation: -30,
+          duration: 0.18
+        }, "-=0.18");
+      }
+
+      // Third deflation - SPIN CRAZY
+      tl.to(group, {
+        scaleX: 0.7,
+        scaleY: 1.3,
+        rotation: -180,
+        x: -15,
+        y: 20,
+        duration: 0.2,
+        ease: "power1.inOut"
+      });
+
+      if (eyes.length) {
+        tl.to(eyes, {
+          scaleX: 0.8,
+          scaleY: 1.2,
+          rotation: 45,
+          duration: 0.2
+        }, "-=0.2");
+      }
+
+      // Antennas go WILD
+      if (antennas.length) {
+        tl.to(antennas, {
+          rotation: -60,
+          duration: 0.3,
+          ease: "power2.inOut"
+        }, "-=0.4");
+      }
+
+      // 5. RECOVERY - BIG ELASTIC BOUNCE
+      tl.to(group, {
+        scale: 1,
+        rotation: 360,
+        x: 0,
+        y: 0,
+        duration: 0.8,
+        ease: "elastic.out(1, 0.3)"
+      });
+
+      if (eyes.length) {
+        tl.to(eyes, {
+          scale: 1,
+          rotation: 0,
+          duration: 0.8,
+          ease: "elastic.out(1, 0.3)"
+        }, "-=0.8");
+      }
+
+      if (antennas.length) {
+        tl.to(antennas, {
+          rotation: 0,
+          duration: 0.8,
+          ease: "elastic.out(1, 0.5)"
+        }, "-=0.8");
+      }
+
+      // Final settle - tiny dazed shake
+      tl.to(group, {
+        rotation: 365,
+        duration: 0.3,
+        ease: "power1.out"
+      });
+
+      tl.to(group, {
+        rotation: 360,
+        duration: 0.2,
+        ease: "power1.inOut"
+      });
+    }, 3000);
+
+    return () => clearTimeout(timer);
   }, [gsapReady]);
 
   const playRandomAnimation = () => {
