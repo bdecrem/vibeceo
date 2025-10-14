@@ -238,6 +238,125 @@ export default function KochiGSAPTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const megaSneeze = () => {
+    if (!gsapReady || !rigRef.current) return;
+    const gsap = (window as any).gsap;
+
+    activeTimelineRef.current?.kill();
+    const tl = gsap.timeline();
+
+    // 1. Pre-tickle - something is bothering his antenna!
+    tl.to(antLRef.current, { rotation: -5, duration: 0.15 })
+      .to(antLRef.current, { rotation: 5, duration: 0.12 })
+      .to(antLRef.current, { rotation: -4, duration: 0.1 })
+      .to(antLRef.current, { rotation: 3, duration: 0.08 })
+      .to(antLRef.current, { rotation: 0, duration: 0.1 })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 12, duration: 0.15 }, '<')
+
+    // 2. First build-up - deep inhale, eyes go WIDE
+      .to(rigRef.current, { scaleX: 1.15, scaleY: 1.08, y: -3, duration: 0.5, ease: 'power2.in' }, '+=0.2')
+      .to([antLRef.current, antRRef.current], { rotation: -25, duration: 0.5, ease: 'power2.in' }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 15, duration: 0.5, ease: 'power2.in' }, '<')
+
+    // 3. FAKE OUT - almost... almost... nope!
+      .to(rigRef.current, { scaleX: 1.08, scaleY: 1.04, y: -1, duration: 0.3, ease: 'power1.out' })
+      .to([antLRef.current, antRRef.current], { rotation: -15, duration: 0.3 }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 5, duration: 0.3 }, '<')
+
+    // 4. Second build-up - EVEN BIGGER, eyes MASSIVE
+      .to(rigRef.current, { scaleX: 1.25, scaleY: 1.15, y: -5, duration: 0.6, ease: 'power2.in' }, '+=0.15')
+      .to([antLRef.current, antRRef.current], { rotation: -35, duration: 0.6, ease: 'power2.in' }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 25, duration: 0.6, ease: 'power2.in' }, '<')
+
+    // Hold the tension...
+      .to(rigRef.current, { scaleX: 1.28, scaleY: 1.18, duration: 0.2 })
+
+    // 5. THE SNEEZE!!! - Ultra-fast squash forward
+      .to(rigRef.current, { scaleX: 0.7, scaleY: 1.25, y: 5, duration: 0.08, ease: 'power4.in' })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 55, duration: 0.08, ease: 'power4.in' }, '<')
+      .to([antLRef.current, antRRef.current], { rotation: 20, duration: 0.08 }, '<')
+
+    // 6. RECOIL - shoots backward with rotation!
+      .to(rigRef.current, {
+        scaleX: 0.85,
+        scaleY: 1.15,
+        y: -8,
+        x: -60,
+        rotation: -180,
+        duration: 0.7,
+        ease: 'power2.out'
+      })
+      .to([antLRef.current, antRRef.current], { rotation: 45, duration: 0.3, ease: 'power2.out' }, '<')
+      .to([antLRef.current, antRRef.current], { rotation: -30, duration: 0.2 }, '-=0.3')
+      .to([antLRef.current, antRRef.current], { rotation: 25, duration: 0.2 })
+
+    // 7. Crash landing - bounces
+      .to(rigRef.current, {
+        scaleX: 1.2,
+        scaleY: 0.75,
+        y: 8,
+        x: -70,
+        rotation: -180,
+        duration: 0.25,
+        ease: 'power2.in'
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -15, duration: 0.25 }, '<')
+      .to(rigRef.current, {
+        scaleX: 0.95,
+        scaleY: 1.05,
+        y: 3,
+        rotation: -170,
+        duration: 0.2,
+        ease: 'power1.out'
+      })
+      .to([antLRef.current, antRRef.current], { rotation: 8, duration: 0.2 }, '<')
+
+    // 8. Dizzy spin - eyes squinted, wobbling
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 25, duration: 0.3 })
+      .to(rigRef.current, {
+        rotation: -90,
+        scaleX: 0.98,
+        scaleY: 0.98,
+        duration: 0.6,
+        ease: 'sine.inOut'
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -3, duration: 0.6, ease: 'sine.inOut' }, '<')
+      .to(rigRef.current, { rotation: 0, duration: 0.6, ease: 'sine.inOut' })
+      .to([antLRef.current, antRRef.current], { rotation: 2, duration: 0.6 }, '<')
+
+    // 9. Recovery - shake head, snap back to position
+      .to(rigRef.current, {
+        scaleX: 0.92,
+        scaleY: 1.08,
+        rotation: -8,
+        duration: 0.2,
+        ease: 'power2.in'
+      })
+      .to(rigRef.current, {
+        scaleX: 1.08,
+        scaleY: 0.92,
+        rotation: 8,
+        duration: 0.2
+      })
+      .to(rigRef.current, {
+        scaleX: 1,
+        scaleY: 1,
+        x: 0,
+        y: 0,
+        rotation: 0,
+        duration: 0.5,
+        ease: 'elastic.out(1, 0.4)'
+      })
+      .to([antLRef.current, antRRef.current], { rotation: 0, duration: 0.5, ease: 'elastic.out(1, 0.4)' }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current, duration: 0.3, ease: 'power1.out' }, '<')
+
+    // Satisfied blink
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 50, duration: 0.12 }, '+=0.2')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current, duration: 0.15 });
+
+    activeTimelineRef.current = tl;
+  };
+
   return (
     <>
       <Script
@@ -375,6 +494,13 @@ export default function KochiGSAPTestPage() {
                     className="w-full bg-[#C4B5FD] hover:bg-[#a78bfa] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     😴 Nap Time (adorable!)
+                  </button>
+                  <button
+                    onClick={megaSneeze}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#FF6B6B] hover:bg-[#ee5a52] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🤧 MEGA SNEEZE (hilarious!)
                   </button>
                 </div>
               </div>
