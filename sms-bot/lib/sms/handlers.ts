@@ -1737,6 +1737,7 @@ export async function processIncomingSms(
   try {
     const message = body.trim();
     const messageUpper = message.toUpperCase();
+    const isExactUppercaseAiDaily = message === "AI DAILY";
 
     // ========================================
     // HANDLE SIGNUP/SUBSCRIPTION COMMANDS FIRST
@@ -2036,7 +2037,7 @@ export async function processIncomingSms(
 
       // Check if user is already subscribed
       const subscriber = await getSubscriber(normalizedPhoneNumber);
-      if (subscriber && !subscriber.ai_daily_subscribed) {
+      if (isExactUppercaseAiDaily && subscriber && !subscriber.ai_daily_subscribed) {
         // Schedule follow-up message 30 seconds later
         setTimeout(async () => {
           try {

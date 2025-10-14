@@ -32,11 +32,11 @@ const PlayInCrashAppBanner: FC<PlayInCrashAppBannerProps> = ({
       <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
         <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#2C3E1F] to-[#3A4D2A] shadow-[0_2px_8px_rgba(44,62,31,0.15)]">
           <img
-            src="/crash-icon.svg"
-            alt="Crash app"
-            width={24}
-            height={24}
-            className="h-6 w-6"
+            src="/images/kochito-music-banner.png"
+            alt="Kochito mascot"
+            width={40}
+            height={44}
+            className="h-8 w-8 object-contain"
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">

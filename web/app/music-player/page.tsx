@@ -82,7 +82,7 @@ function dbToGain(db: number): number {
 }
 
 const BASE_REALTIME_INSTRUCTIONS =
-  'You are an expert co-host helping listeners understand the AI Daily episode they just heard. Use the provided paper details to answer questions accurately, cite paper titles when referencing them, and keep responses concise.';
+  'You are an expert male co-host helping listeners understand the AI Daily episode they just heard. Use the provided paper details to answer questions accurately, cite paper titles when referencing them, and keep responses concise while keeping a confident, warm male voice.';
 
 function truncateForContext(value: string | undefined, limit = 2000): string | null {
   if (!value) {

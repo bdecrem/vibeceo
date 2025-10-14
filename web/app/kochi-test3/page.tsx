@@ -9,12 +9,14 @@ export default function KochiGSAPTestPage() {
   const faceRef = useRef<SVGPathElement | null>(null);
   const antLRef = useRef<SVGPathElement | null>(null);
   const antRRef = useRef<SVGPathElement | null>(null);
+  const bodyRef = useRef<SVGPathElement | null>(null);
   const lidLRef = useRef<SVGRectElement | null>(null);
   const lidRRef = useRef<SVGRectElement | null>(null);
   const [gsapReady, setGsapReady] = useState(false);
   const yBaseLRef = useRef(369.53);
   const yBaseRRef = useRef(370.47);
   const activeTimelineRef = useRef<any>(null);
+  const baseBodyPathRef = useRef<string>("");
 
   useEffect(() => {
     if (typeof window !== "undefined" && (window as any).gsap && !gsapReady) {
@@ -33,17 +35,20 @@ export default function KochiGSAPTestPage() {
     const antR = svgRef.current.querySelector('#antennaR') as SVGPathElement;
     const lidL = svgRef.current.querySelector('#lidL') as SVGRectElement;
     const lidR = svgRef.current.querySelector('#lidR') as SVGRectElement;
+    const body = svgRef.current.querySelector('#body') as SVGPathElement;
 
-    if (rig && face && antL && antR && lidL && lidR) {
+    if (rig && face && antL && antR && lidL && lidR && body) {
       rigRef.current = rig;
       faceRef.current = face;
       antLRef.current = antL;
       antRRef.current = antR;
+      bodyRef.current = body;
       lidLRef.current = lidL;
       lidRRef.current = lidR;
 
       yBaseLRef.current = parseFloat(lidL.getAttribute('y') || '369.53');
       yBaseRRef.current = parseFloat(lidR.getAttribute('y') || '370.47');
+      baseBodyPathRef.current = body.getAttribute('d') || "";
 
       // Set transform origins with GSAP
       gsap.set(rig, { transformOrigin: "50% 100%" });
@@ -52,11 +57,79 @@ export default function KochiGSAPTestPage() {
     }
   }, [gsapReady]);
 
-  const bounce = () => {
-    if (!gsapReady || !rigRef.current) return;
+  const resetRigState = () => {
+    if (!gsapReady) return;
     const gsap = (window as any).gsap;
 
     activeTimelineRef.current?.kill();
+    activeTimelineRef.current = null;
+
+    if (bodyRef.current && baseBodyPathRef.current) {
+      bodyRef.current.setAttribute("d", baseBodyPathRef.current);
+    }
+
+    gsap.set(rigRef.current, {
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      skewX: 0,
+      skewY: 0,
+      rotation: 0,
+      transformOrigin: "50% 100%",
+    });
+
+    gsap.set(faceRef.current, {
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      skewX: 0,
+      skewY: 0,
+      rotation: 0,
+      transformOrigin: "50% 50%",
+    });
+
+    gsap.set([antLRef.current, antRRef.current], {
+      x: 0,
+      y: 0,
+      scaleX: 1,
+      scaleY: 1,
+      skewX: 0,
+      skewY: 0,
+      rotation: 0,
+      transformOrigin: "50% 100%",
+    });
+
+    if (lidLRef.current) {
+      gsap.set(lidLRef.current, {
+        x: 0,
+        y: yBaseLRef.current,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        skewX: 0,
+        skewY: 0,
+      });
+    }
+    if (lidRRef.current) {
+      gsap.set(lidRRef.current, {
+        x: 0,
+        y: yBaseRRef.current,
+        scaleX: 1,
+        scaleY: 1,
+        rotation: 0,
+        skewX: 0,
+        skewY: 0,
+      });
+    }
+  };
+
+  const bounce = () => {
+    if (!gsapReady || !rigRef.current) return;
+    resetRigState();
+    const gsap = (window as any).gsap;
+
     const tl = gsap.timeline();
 
     tl.to(rigRef.current, { scaleX: 1.05, scaleY: 0.96, y: 0, duration: 0.2, ease: 'power2.in' })
@@ -80,9 +153,9 @@ export default function KochiGSAPTestPage() {
 
   const blink = () => {
     if (!gsapReady || !lidLRef.current || !lidRRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     tl.to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 60, duration: 0.1 })
@@ -93,6 +166,7 @@ export default function KochiGSAPTestPage() {
 
   const squint = () => {
     if (!gsapReady || !lidLRef.current || !lidRRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
     gsap.to(lidLRef.current, { y: yBaseLRef.current + 28, duration: 0.2 });
@@ -101,6 +175,7 @@ export default function KochiGSAPTestPage() {
 
   const resetSquint = () => {
     if (!gsapReady || !lidLRef.current || !lidRRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
     gsap.to(lidLRef.current, { y: yBaseLRef.current, duration: 0.2 });
@@ -109,9 +184,9 @@ export default function KochiGSAPTestPage() {
 
   const wiggle = () => {
     if (!gsapReady || !antLRef.current || !antRRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     tl.to([antLRef.current, antRRef.current], { rotation: -15, duration: 0.15 })
@@ -125,9 +200,9 @@ export default function KochiGSAPTestPage() {
 
   const hop = () => {
     if (!gsapReady || !rigRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     tl.to(rigRef.current, { scaleX: 1.1, scaleY: 0.9, y: 2, duration: 0.2, ease: 'power2.in' })
@@ -147,9 +222,9 @@ export default function KochiGSAPTestPage() {
 
   const ballMorph = () => {
     if (!gsapReady || !rigRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     tl.to(rigRef.current, { scale: 0.9, duration: 0.2, ease: 'power2.in' })
@@ -182,11 +257,139 @@ export default function KochiGSAPTestPage() {
     activeTimelineRef.current = tl;
   };
 
-  const squishySpring = () => {
+  const balloonPop = () => {
     if (!gsapReady || !rigRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
+    const inflatedBodyPath = [
+      "M720 360",
+      "C 840 380 928 462 944 560",
+      "C 968 708 884 836 760 904",
+      "C 620 980 432 980 292 912",
+      "C 178 858 116 742 128 616",
+      "C 140 498 220 394 340 340",
+      "C 448 292 592 296 676 312",
+      "C 706 318 716 326 720 360",
+      "Z",
+    ].join(" ");
+
+    const neutralBodyPath = baseBodyPathRef.current;
+
+    const tl = gsap.timeline({ defaults: { ease: "power1.inOut" } });
+
+    tl.to(rigRef.current, { scaleX: 0.96, scaleY: 1.04, duration: 0.12 })
+      .to([antLRef.current, antRRef.current], { rotation: -6, duration: 0.12 }, "<")
+      .to(faceRef.current, { scaleX: 1.02, scaleY: 0.98, duration: 0.12 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.88,
+        scaleY: 1.12,
+        y: -6,
+        duration: 0.18,
+        ease: "power2.inOut",
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -16, duration: 0.18 }, "<")
+      .to(faceRef.current, { scaleX: 1.1, scaleY: 0.9, duration: 0.18 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 14, duration: 0.18 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.78,
+        scaleY: 1.22,
+        y: -18,
+        duration: 0.24,
+        ease: "power2.in",
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -26, duration: 0.24 }, "<")
+      .to(faceRef.current, { scaleX: 1.18, scaleY: 0.84, duration: 0.24 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 28, duration: 0.24 }, "<")
+      .to(bodyRef.current, { attr: { d: inflatedBodyPath }, duration: 0.3, ease: "sine.inOut" }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.72,
+        scaleY: 1.28,
+        y: -28,
+        duration: 0.26,
+        ease: "sine.inOut",
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -32, duration: 0.26 }, "<")
+      .to(faceRef.current, { scaleX: 1.2, scaleY: 0.82, duration: 0.26 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 36, duration: 0.26 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.76,
+        scaleY: 1.24,
+        y: -24,
+        duration: 0.24,
+        ease: "sine.inOut",
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -18, duration: 0.24 }, "<")
+      .to(faceRef.current, { scaleX: 1.16, scaleY: 0.86, duration: 0.24 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 12, duration: 0.24 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.82,
+        scaleY: 1.18,
+        y: -12,
+        duration: 0.18,
+        ease: "power1.inOut",
+      })
+      .to([antLRef.current, antRRef.current], { rotation: -4, duration: 0.18 }, "<")
+      .to(faceRef.current, { scaleX: 1.08, scaleY: 0.92, duration: 0.18 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current - 4, duration: 0.18 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.9,
+        scaleY: 1.1,
+        y: -6,
+        duration: 0.18,
+      })
+      .to([antLRef.current, antRRef.current], { rotation: 4, duration: 0.18 }, "<")
+      .to(faceRef.current, { scaleX: 1.02, scaleY: 0.98, duration: 0.18 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 8, duration: 0.18 }, "<")
+
+      .to(rigRef.current, {
+        scaleX: 0.96,
+        scaleY: 1.04,
+        y: -2,
+        duration: 0.18,
+      })
+      .to([antLRef.current, antRRef.current], { rotation: 10, duration: 0.18 }, "<")
+      .to(faceRef.current, { scaleX: 0.98, scaleY: 1.02, duration: 0.18 }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 16, duration: 0.18 }, "<")
+
+      .to(bodyRef.current, { attr: { d: neutralBodyPath }, duration: 0.22, ease: "sine.inOut" })
+      .to(rigRef.current, {
+        scaleX: 1,
+        scaleY: 1,
+        y: 0,
+        duration: 0.22,
+        ease: "back.out(1.6)",
+      }, "<")
+      .to([antLRef.current, antRRef.current], { rotation: 0, duration: 0.22, ease: "back.out(1.4)" }, "<")
+      .to(faceRef.current, { scaleX: 1, scaleY: 1, duration: 0.22, ease: "back.out(1.4)" }, "<")
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current, duration: 0.22, ease: "sine.inOut" }, "<")
+      .to(rigRef.current, {
+        scaleX: 1.02,
+        scaleY: 0.98,
+        duration: 0.12,
+        ease: "power1.out",
+      })
+      .to(rigRef.current, {
+        scaleX: 1,
+        scaleY: 1,
+        duration: 0.12,
+        ease: "power1.in",
+      });
+
+    activeTimelineRef.current = tl;
+  };
+
+  const squishySpring = () => {
+    if (!gsapReady || !rigRef.current) return;
+    resetRigState();
+    const gsap = (window as any).gsap;
+
     const tl = gsap.timeline({ defaults: { ease: "power2.inOut" } });
 
     // Anticipation squeeze
@@ -250,9 +453,9 @@ export default function KochiGSAPTestPage() {
 
   const napTime = () => {
     if (!gsapReady || !rigRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     // 1. Big yawn
@@ -271,8 +474,8 @@ export default function KochiGSAPTestPage() {
       .to([antLRef.current, antRRef.current], { rotation: -18, duration: 0.8, ease: 'sine.inOut' }, '<')
       .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 28, duration: 0.8, ease: 'sine.inOut' }, '<')
 
-    // 4. Eyes slowly close all the way
-      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 50, duration: 1.2, ease: 'sine.in' })
+    // 4. Eyes slowly close all the way - FULLY CLOSED
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 70, duration: 1.2, ease: 'sine.in' })
       .to([antLRef.current, antRRef.current], { rotation: -22, duration: 1.2, ease: 'sine.inOut' }, '<')
 
     // 5. Settle into sleep position - FLATTEN to half height!
@@ -306,9 +509,9 @@ export default function KochiGSAPTestPage() {
 
   const megaSneeze = () => {
     if (!gsapReady || !rigRef.current) return;
+    resetRigState();
     const gsap = (window as any).gsap;
 
-    activeTimelineRef.current?.kill();
     const tl = gsap.timeline();
 
     // 1. Pre-tickle - something is bothering his antenna!
@@ -423,6 +626,79 @@ export default function KochiGSAPTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const freezeSquishPose = () => {
+    if (!gsapReady || !rigRef.current) return;
+    resetRigState();
+    const gsap = (window as any).gsap;
+
+    const squishBodyPath = [
+      "M720 310",
+      "C 840 360 912 450 930 560",
+      "C 952 684 930 780 882 856",
+      "C 828 940 744 996 612 1010",
+      "C 468 1026 338 996 262 948",
+      "C 184 898 142 824 132 748",
+      "C 122 666 138 558 186 476",
+      "C 236 390 320 332 426 310",
+      "C 510 292 602 300 668 304",
+      "C 704 306 696 288 720 310",
+      "Z",
+    ].join(" ");
+
+    if (bodyRef.current) {
+      gsap.set(bodyRef.current, { attr: { d: squishBodyPath } });
+    }
+
+    gsap.set(rigRef.current, {
+      transformOrigin: "32% 112%",
+      scaleX: 1.68,
+      scaleY: 0.42,
+      skewX: -34,
+      skewY: 16,
+      rotation: -12,
+      x: -52,
+      y: 58,
+    });
+
+    gsap.set(faceRef.current, {
+      transformOrigin: "18% 44%",
+      scaleX: 1.42,
+      scaleY: 0.48,
+      skewX: 20,
+      skewY: -14,
+      rotation: 9,
+      x: 104,
+      y: -42,
+    });
+
+    gsap.set(antLRef.current, {
+      transformOrigin: "20% 100%",
+      rotation: -46,
+      x: -24,
+      y: -16,
+      scaleX: 0.9,
+      scaleY: 1.15,
+    });
+
+    gsap.set(antRRef.current, {
+      transformOrigin: "80% 100%",
+      rotation: 34,
+      x: 18,
+      y: -28,
+      scaleX: 1.1,
+      scaleY: 0.82,
+      skewX: -12,
+    });
+
+    if (lidLRef.current) {
+      gsap.set(lidLRef.current, { y: yBaseLRef.current + 92, scaleY: 0.2, x: -12 });
+    }
+
+    if (lidRRef.current) {
+      gsap.set(lidRRef.current, { y: yBaseRRef.current + 24, scaleY: 1.3, x: 18 });
+    }
+  };
+
   return (
     <>
       <Script
@@ -518,6 +794,20 @@ export default function KochiGSAPTestPage() {
                     className="w-full bg-[#FF9DE2] hover:bg-[#ff80d8] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     🌀 Squishy Spring
+                  </button>
+                  <button
+                    onClick={freezeSquishPose}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#F87171] hover:bg-[#ef4444] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🖼️ Freeze Cartoon Squish
+                  </button>
+                  <button
+                    onClick={balloonPop}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#60A5FA] hover:bg-[#3b82f6] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    🎈 Balloon Inflate
                   </button>
                   <button
                     onClick={blink}
