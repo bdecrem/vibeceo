@@ -40,8 +40,8 @@ const PlayInCrashAppBanner: FC<PlayInCrashAppBannerProps> = ({
           />
         </div>
         <div className="flex min-w-0 flex-1 flex-col">
-          <span className="text-sm font-semibold tracking-tight text-[#1A1A1A]">Open in the Crash app</span>
-          <span className="truncate text-xs font-medium text-[#666666]">Listen offline and keep your progress synced across devices.</span>
+          <span className="text-sm font-semibold tracking-tight text-[#1A1A1A]">Open in the Kochi app</span>
+          <span className="truncate text-xs font-medium text-[#666666]">Background listening and much more!</span>
         </div>
         <Link
           href={href}
