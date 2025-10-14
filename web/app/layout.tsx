@@ -1,5 +1,5 @@
 import React from "react"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import "./globals.css"
 import { Inter } from 'next/font/google'
 import { ViewportProvider } from '@/lib/contexts/viewport-context'
@@ -7,6 +7,13 @@ import { CEOProvider } from '@/lib/contexts/ceo-context'
 import AuthHandler from '@/components/AuthHandler'
 
 const inter = Inter({ subsets: ['latin'] })
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+}
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.advisorsfoundry.ai'),
