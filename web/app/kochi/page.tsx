@@ -160,7 +160,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
     };
   }, [gsapReady]);
 
-  // One-time intro animation: EXTREME BALLOON CHAOS!!!
+  // One-time intro animation: SPONGE SQUISH + EXTREME BALLOON CHAOS!!!
   useEffect(() => {
     if (!gsapReady || introAnimationPlayedRef.current || !groupRef.current) return;
 
@@ -175,6 +175,28 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
       introAnimationPlayedRef.current = true;
 
       const tl = gsap.timeline();
+
+      // PART 1: SPONGE SQUISH
+      tl.to(group, { scaleX: 0.6, scaleY: 1.3, skewX: 0, duration: 0.24, ease: 'power2.in' })
+        .to(group, { scaleX: 0.5, scaleY: 1.5, skewX: 15, duration: 0.16, ease: 'power2.in' })
+        .to(group, { scaleX: 0.4, scaleY: 1.6, skewX: -20, duration: 0.16, ease: 'power2.in' })
+        .to(group, { scaleX: 0.7, scaleY: 1.2, skewX: 10, duration: 0.24, ease: 'power2.out' })
+        .to(group, { scaleX: 1.3, scaleY: 0.8, skewX: -5, duration: 0.24, ease: 'elastic.out(1, 0.5)' })
+        .to(group, { scaleX: 0.95, scaleY: 1.08, skewX: 3, duration: 0.208, ease: 'power2.inOut' })
+        .to(group, { scaleX: 1.05, scaleY: 0.97, skewX: -2, duration: 0.16, ease: 'power2.inOut' })
+        .to(group, { scaleX: 1, scaleY: 1, skewX: 0, duration: 0.192, ease: 'power2.out' });
+
+      if (eyes.length) {
+        tl.to(eyes, { scaleX: 0.7, scaleY: 1.4, duration: 0.4, ease: 'power2.in' }, 0)
+          .to(eyes, { scaleX: 0.5, scaleY: 1.7, duration: 0.16, ease: 'power2.in' })
+          .to(eyes, { scaleX: 1.3, scaleY: 0.8, duration: 0.48, ease: 'elastic.out(1, 0.5)' })
+          .to(eyes, { scaleX: 1, scaleY: 1, duration: 0.56, ease: 'power2.out' });
+      }
+
+      // 2 SECONDS OF STILLNESS
+      tl.to({}, { duration: 2 });
+
+      // PART 2: EXTREME BALLOON CHAOS!!!
 
       // 1. DEEP ANTICIPATION - Crouch down LOW
       tl.to(group, {
@@ -353,7 +375,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         duration: 0.2,
         ease: "power1.inOut"
       });
-    }, 3000);
+    }, 2000);
 
     return () => clearTimeout(timer);
   }, [gsapReady]);
