@@ -79,90 +79,90 @@ const enhanceMarkdown = (content: string): string => {
 };
 
 const markdownComponents: Components = {
-  h1: ({ node, className, ...props }) => (
+  h1: ({ className, ...props }) => (
     <h1
       {...props}
       className={mergeClassNames(
-        'mb-6 text-4xl font-black tracking-tight text-slate-900',
+        'mb-6 text-3xl font-semibold tracking-tight text-[#1A1A1A]',
         className
       )}
     />
   ),
-  h2: ({ node, className, ...props }) => (
+  h2: ({ className, ...props }) => (
     <h2
       {...props}
       className={mergeClassNames(
-        'mt-10 border-l-4 border-orange-300 pl-4 text-2xl font-bold text-slate-900',
+        'mt-10 text-2xl font-semibold tracking-tight text-[#2C3E1F]',
         className
       )}
     />
   ),
-  h3: ({ node, className, ...props }) => (
+  h3: ({ className, ...props }) => (
     <h3
       {...props}
       className={mergeClassNames(
-        'mt-6 text-xl font-semibold text-slate-800',
+        'mt-8 text-xl font-semibold text-[#3A3D2F]',
         className
       )}
     />
   ),
-  h4: ({ node, className, ...props }) => (
+  h4: ({ className, ...props }) => (
     <h4
       {...props}
       className={mergeClassNames(
-        'mt-5 text-lg font-semibold uppercase tracking-wide text-slate-700',
+        'mt-6 text-sm font-semibold uppercase tracking-[0.2em] text-[#7C836F]',
         className
       )}
     />
   ),
-  p: ({ node, className, ...props }) => (
+  p: ({ className, ...props }) => (
     <p
       {...props}
       className={mergeClassNames(
-        'my-4 text-base leading-relaxed text-slate-700',
+        'my-4 text-base leading-relaxed text-[#3A3D2F]',
         className
       )}
     />
   ),
-  a: ({ node, className, ...props }) => (
+  a: ({ className, ...props }) => (
     <a
       {...props}
       className={mergeClassNames(
-        'break-words text-blue-600 underline decoration-2 underline-offset-4 transition-colors hover:text-blue-700',
+        'break-words font-semibold text-[#2C3E1F] underline decoration-[#C9D2B8] decoration-2 underline-offset-4 transition-colors hover:text-[#1F2E16]',
         className
       )}
       target="_blank"
       rel="noopener noreferrer"
     />
   ),
-  hr: ({ node, className, ...props }) => (
+  hr: ({ className, ...props }) => (
     <hr
       {...props}
-      className={mergeClassNames('my-10 border-t border-dashed border-slate-200', className)}
+      className={mergeClassNames('my-10 border-t border-dashed border-[#E5E5E0]', className)}
     />
   ),
-  ul: ({ node, className, ...props }) => (
+  ul: ({ className, ...props }) => (
     <ul
       {...props}
-      className={mergeClassNames('my-4 list-disc space-y-2 pl-6 text-slate-700', className)}
+      className={mergeClassNames('my-4 list-disc space-y-2 pl-6 text-[#3A3D2F]', className)}
     />
   ),
-  ol: ({ node, className, ...props }) => (
+  ol: ({ className, ...props }) => (
     <ol
       {...props}
-      className={mergeClassNames('my-4 list-decimal space-y-2 pl-6 text-slate-700', className)}
+      className={mergeClassNames('my-4 list-decimal space-y-2 pl-6 text-[#3A3D2F]', className)}
     />
   ),
-  li: ({ node, className, ...props }) => (
+  li: ({ className, ...props }) => (
     <li
       {...props}
-      className={mergeClassNames('leading-relaxed text-slate-700', className)}
+      className={mergeClassNames('leading-relaxed text-[#3A3D2F]', className)}
     />
   ),
-  strong: ({ node, className, ...props }) => (
+  strong: ({ className, ...props }) => (
     <strong
       {...props}
-      className={mergeClassNames('font-semibold text-slate-900', className)}
+      className={mergeClassNames('font-semibold text-[#1A1A1A]', className)}
     />
   ),
 };
@@ -213,25 +213,48 @@ function ReportViewerContent(): JSX.Element {
     return names[slug] || slug;
   };
 
-  const formatDate = (dateStr: string): string => {
-    try {
-      const date = new Date(dateStr);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateStr;
+  const formatDateLabel = (dateStr: string): string | null => {
+    if (!dateStr) {
+      return null;
     }
+
+    const parsed = new Date(dateStr);
+    if (Number.isNaN(parsed.getTime())) {
+      return null;
+    }
+
+    return parsed
+      .toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'numeric',
+        day: 'numeric',
+        year: 'numeric',
+      })
+      .replace(',', '');
   };
+
+  const secondaryLabel = report
+    ? (() => {
+        const dateLabel = formatDateLabel(report.metadata.date);
+        if (dateLabel) {
+          return dateLabel;
+        }
+
+        const path = report.metadata.path?.split('/')?.pop();
+        if (path) {
+          return path.replace(/[-_]/g, ' ');
+        }
+
+        return null;
+      })()
+    : null;
 
   if (loading) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50">
-        <div className="text-center">
-          <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
-          <p className="text-lg font-semibold text-gray-700">Loading report...</p>
+      <main className="relative flex min-h-screen w-full items-center justify-center bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 py-24 sm:px-6">
+        <div className="w-full max-w-xs rounded-[20px] border border-[#E0E4D7] bg-white/95 p-8 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-[3px] border-[#D8DECC] border-t-[#2C3E1F]" />
+          <p className="text-sm font-semibold tracking-tight text-[#3A3D2F]">Preparing report…</p>
         </div>
       </main>
     );
@@ -239,51 +262,46 @@ function ReportViewerContent(): JSX.Element {
 
   if (error || !report) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-6">
-        <div className="max-w-md text-center">
-          <div className="mb-4 text-6xl">📄</div>
-          <h1 className="mb-2 text-2xl font-bold text-gray-900">Report Not Found</h1>
-          <p className="text-gray-600">{error || 'Unable to load the requested report.'}</p>
+      <main className="relative flex min-h-screen w-full items-center justify-center bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 py-24 sm:px-6">
+        <div className="w-full max-w-sm rounded-[20px] border border-[#E0E4D7] bg-white/95 p-8 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] backdrop-blur">
+          <div className="mb-4 text-4xl">📄</div>
+          <h1 className="text-lg font-semibold tracking-tight text-[#1A1A1A]">Report unavailable</h1>
+          <p className="mt-2 text-sm text-[#4A4F3C]">{error || 'Unable to load the requested report.'}</p>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50 px-4 py-8 sm:px-6 lg:px-8">
-      <article className="mx-auto max-w-4xl">
-        {/* Header */}
-        <header className="mb-8 rounded-3xl bg-gradient-to-r from-yellow-400 to-orange-500 p-6 shadow-xl sm:p-8">
-          <div className="mb-2 text-center">
-            <p className="text-sm font-bold uppercase tracking-wider text-orange-900/70">
-              B52S.ME
+    <main className="relative min-h-screen w-full bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 pb-16 pt-24 sm:px-6">
+      <div className="mx-auto flex w-full max-w-3xl flex-col items-center">
+        <article className="w-full rounded-[20px] border border-[#E0E4D7] bg-white/95 p-8 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] backdrop-blur-sm sm:p-10">
+          <header className="mb-8 text-center">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[#7C836F]">
+              Daily Report
             </p>
-          </div>
-          <h1 className="mb-2 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
-            {getAgentDisplayName(report.metadata.agentSlug)}
-          </h1>
-          <p className="text-center text-sm font-semibold text-gray-800">
-            {formatDate(report.metadata.date)}
-          </p>
-        </header>
+            <h1 className="mt-3 text-2xl font-semibold tracking-tight text-[#1A1A1A]">
+              {getAgentDisplayName(report.metadata.agentSlug)}
+            </h1>
+            {secondaryLabel ? (
+              <p className="mt-1.5 text-sm font-semibold tracking-tight text-[#4A4F3C]">{secondaryLabel}</p>
+            ) : null}
+          </header>
 
-        {/* Markdown Content */}
-        <div className="rounded-3xl bg-white p-6 shadow-2xl sm:p-10">
-          <div className="prose prose-lg prose-slate max-w-none">
+          <section className="prose max-w-none">
             <ReactMarkdown
               remarkPlugins={[remarkGfm, remarkBreaks]}
               components={markdownComponents}
             >
               {report.markdown}
             </ReactMarkdown>
-          </div>
-        </div>
+          </section>
 
-        {/* Footer */}
-        <footer className="mt-8 text-center text-sm text-gray-600">
-          <p>Powered by B52s.me</p>
-        </footer>
-      </article>
+          <footer className="mt-10 border-t border-[#ECEFE3] pt-4 text-center text-xs font-medium uppercase tracking-[0.18em] text-[#8F947D]">
+            Powered by B52s.me
+          </footer>
+        </article>
+      </div>
     </main>
   );
 }
@@ -292,10 +310,10 @@ export default function ReportViewerPage(): JSX.Element {
   return (
     <Suspense
       fallback={
-        <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-amber-50 via-orange-50 to-blue-50">
-          <div className="text-center">
-            <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
-            <p className="text-lg font-semibold text-gray-700">Loading...</p>
+        <main className="relative flex min-h-screen w-full items-center justify-center bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 py-24 sm:px-6">
+          <div className="w-full max-w-xs rounded-[20px] border border-[#E0E4D7] bg-white/95 p-8 text-center shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.06)] backdrop-blur">
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-[3px] border-[#D8DECC] border-t-[#2C3E1F]" />
+            <p className="text-sm font-semibold tracking-tight text-[#3A3D2F]">Loading report…</p>
           </div>
         </main>
       }

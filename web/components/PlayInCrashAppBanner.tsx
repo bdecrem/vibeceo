@@ -20,42 +20,53 @@ const PlayInCrashAppBanner: FC<PlayInCrashAppBannerProps> = ({
     ? `https://listen.crashcourse.cc/topics/${topicId}/latest`
     : `https://listen.crashcourse.cc/topics/${topicId}${episodeNumber ? `/episodes/${episodeNumber}` : ''}`;
 
+  const containerClassName = [
+    'fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#2c3e1f14] px-4 py-3 transition-transform duration-300',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
-    <div
-      className={`relative flex items-start gap-3 rounded-xl bg-[#1c1f2b] p-4 text-white shadow-lg ${className}`}
-      role="complementary"
-    >
-      <img
-        src="/crash-icon.svg"
-        alt="Crash app"
-        width={32}
-        height={32}
-        className="shrink-0"
-      />
-      <div className="flex flex-col">
-        <span className="text-xs font-semibold uppercase tracking-wide text-[#7ac7ff]">
-          Play in the Crash app
-        </span>
-        <span className="text-sm">
-          Jump to this episode inside Crash for offline playback and progress tracking.
-        </span>
-      </div>
-      <Link
-        href={href}
-        className="ml-auto inline-flex items-center rounded-lg bg-[#4c7dff] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#3b62d6]"
-      >
-        Open Crash
-      </Link>
-      {onClose ? (
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-2 top-2 rounded-full bg-white/10 px-1 text-sm font-semibold text-white transition hover:bg-white/20"
-          aria-label="Dismiss banner"
+    <div className={containerClassName} role="complementary">
+      <div className="mx-auto flex w-full max-w-2xl items-center gap-3">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#2C3E1F] to-[#3A4D2A] shadow-[0_2px_8px_rgba(44,62,31,0.15)]">
+          <img
+            src="/crash-icon.svg"
+            alt="Crash app"
+            width={24}
+            height={24}
+            className="h-6 w-6"
+          />
+        </div>
+        <div className="flex min-w-0 flex-1 flex-col">
+          <span className="text-sm font-semibold tracking-tight text-[#1A1A1A]">Open in the Crash app</span>
+          <span className="truncate text-xs font-medium text-[#666666]">Listen offline and keep your progress synced across devices.</span>
+        </div>
+        <Link
+          href={href}
+          className="inline-flex shrink-0 items-center rounded-full bg-[#2C3E1F] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#1F2E16]"
         >
-          X
-        </button>
-      ) : null}
+          Open app
+        </Link>
+        {onClose ? (
+          <button
+            type="button"
+            onClick={onClose}
+            className="ml-1 inline-flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-[#2C3E1F14]"
+            aria-label="Dismiss banner"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-4 w-4 text-[#999999]"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path d="M6.225 4.811 4.811 6.225 10.586 12l-5.775 5.775 1.414 1.414L12 13.414l5.775 5.775 1.414-1.414L13.414 12l5.775-5.775-1.414-1.414L12 10.586 6.225 4.81Z" />
+            </svg>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 };
