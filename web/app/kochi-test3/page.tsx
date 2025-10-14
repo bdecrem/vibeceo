@@ -182,6 +182,62 @@ export default function KochiGSAPTestPage() {
     activeTimelineRef.current = tl;
   };
 
+  const napTime = () => {
+    if (!gsapReady || !rigRef.current) return;
+    const gsap = (window as any).gsap;
+
+    activeTimelineRef.current?.kill();
+    const tl = gsap.timeline();
+
+    // 1. Big yawn
+    tl.to(rigRef.current, { scaleX: 0.95, scaleY: 1.08, duration: 0.4, ease: 'power1.in' })
+      .to([antLRef.current, antRRef.current], { rotation: -8, duration: 0.4 }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 45, duration: 0.3, ease: 'power2.in' }, '<')
+      .to(rigRef.current, { scaleX: 1.05, scaleY: 0.95, duration: 0.2, ease: 'power1.out' })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current, duration: 0.25, ease: 'power1.out' })
+
+    // 2. Sleepy eyes start to droop
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 15, duration: 0.6, ease: 'power1.inOut' }, '+=0.2')
+      .to([antLRef.current, antRRef.current], { rotation: -12, duration: 0.6, ease: 'power1.inOut' }, '<')
+
+    // 3. Curl up into a cozy ball
+      .to(rigRef.current, { scaleX: 0.92, scaleY: 0.92, y: 8, duration: 0.8, ease: 'sine.inOut' })
+      .to([antLRef.current, antRRef.current], { rotation: -18, duration: 0.8, ease: 'sine.inOut' }, '<')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 28, duration: 0.8, ease: 'sine.inOut' }, '<')
+
+    // 4. Eyes slowly close all the way
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 50, duration: 1.2, ease: 'sine.in' })
+      .to([antLRef.current, antRRef.current], { rotation: -22, duration: 1.2, ease: 'sine.inOut' }, '<')
+
+    // 5. Settle into sleep position
+      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, y: 12, duration: 0.6, ease: 'sine.out' })
+
+    // 6. Gentle breathing loop (3 cycles)
+      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 0.9, scaleY: 0.86, duration: 1.2, ease: 'sine.inOut' })
+      .to(rigRef.current, { scaleX: 0.88, scaleY: 0.88, duration: 1.2, ease: 'sine.inOut' })
+
+    // 7. Wake up! Eyes flutter open
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 35, duration: 0.15, ease: 'power1.out' }, '+=0.3')
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 45, duration: 0.12 })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 20, duration: 0.15 })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current + 30, duration: 0.12 })
+      .to([lidLRef.current, lidRRef.current], { y: yBaseLRef.current, duration: 0.3, ease: 'power1.out' })
+
+    // 8. Stretch and return to normal
+      .to(rigRef.current, { scaleX: 0.85, scaleY: 1.15, y: -5, duration: 0.4, ease: 'power2.out' })
+      .to([antLRef.current, antRRef.current], { rotation: 10, duration: 0.4, ease: 'power2.out' }, '<')
+      .to(rigRef.current, { scaleX: 1.08, scaleY: 0.92, y: 2, duration: 0.3, ease: 'power1.inOut' })
+      .to([antLRef.current, antRRef.current], { rotation: -5, duration: 0.3 }, '<')
+      .to(rigRef.current, { scaleX: 1, scaleY: 1, y: 0, duration: 0.4, ease: 'elastic.out(1, 0.3)' })
+      .to([antLRef.current, antRRef.current], { rotation: 0, duration: 0.4, ease: 'elastic.out(1, 0.3)' }, '<');
+
+    activeTimelineRef.current = tl;
+  };
+
   return (
     <>
       <Script
@@ -312,6 +368,13 @@ export default function KochiGSAPTestPage() {
                     className="w-full bg-[#FFE148] hover:bg-[#ffd700] text-[#2C3E1F] font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ⚪ Ball Morph
+                  </button>
+                  <button
+                    onClick={napTime}
+                    disabled={!gsapReady}
+                    className="w-full bg-[#C4B5FD] hover:bg-[#a78bfa] text-white font-semibold py-3 px-4 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    😴 Nap Time (adorable!)
                   </button>
                 </div>
               </div>
