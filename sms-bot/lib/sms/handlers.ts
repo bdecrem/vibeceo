@@ -2033,6 +2033,24 @@ export async function processIncomingSms(
       });
 
       await updateLastMessageDate(normalizedPhoneNumber);
+
+      // Check if user is already subscribed
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
+      if (subscriber && !subscriber.ai_daily_subscribed) {
+        // Schedule follow-up message 30 seconds later
+        setTimeout(async () => {
+          try {
+            await sendSmsResponse(
+              from,
+              "👋 Want this every day?\nJust reply AI Daily subscribe.",
+              twilioClient
+            );
+          } catch (error) {
+            console.error("Error sending AI DAILY follow-up:", error);
+          }
+        }, 30000); // 30 seconds
+      }
+
       return;
     }
 
