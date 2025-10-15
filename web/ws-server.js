@@ -6,7 +6,11 @@ const path = require('path');
 // Load environment variables from .env.local
 config({ path: path.resolve(__dirname, '.env.local') });
 
-const PORT = process.env.WS_PORT || 3001;
+// Port selection priority:
+// 1. PORT (Railway's public port when running as dedicated service)
+// 2. WS_PORT (explicit WebSocket port for multi-process setup)
+// 3. 3001 (default for local development)
+const PORT = process.env.PORT || process.env.WS_PORT || 3001;
 
 // Create standalone WebSocket server
 const wss = new WebSocketServer({ port: PORT });

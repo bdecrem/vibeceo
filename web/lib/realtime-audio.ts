@@ -36,13 +36,17 @@ export class RealtimeAudioClient {
   private pendingContext: string | null = null;
 
   constructor(config: RealtimeAudioConfig = {}) {
-    // Default to port 3001 for WebSocket server
+    // Use environment variable for WebSocket URL, or default to port 3001
+    const envWsUrl = typeof window !== 'undefined'
+      ? process.env.NEXT_PUBLIC_WS_URL
+      : undefined;
+
     const defaultWsUrl = typeof window !== 'undefined'
       ? `ws://${window.location.hostname}:3001`
       : 'ws://localhost:3001';
 
     this.config = {
-      wsUrl: config.wsUrl || defaultWsUrl,
+      wsUrl: config.wsUrl || envWsUrl || defaultWsUrl,
       ...config,
     };
     this.currentInstructions =

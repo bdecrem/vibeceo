@@ -24,6 +24,17 @@ buildCommand = "cd .. && npm ci --workspace=web && cd web && npm run build"
 startCommand = "npm start"
 healthcheckPath = "/api/health"
 
+[[services]]
+[services.vibeceo-websocket]
+source = "web/"
+[services.vibeceo-websocket.build]
+builder = "NIXPACKS"
+buildCommand = "cd .. && npm ci --workspace=web"
+[services.vibeceo-websocket.deploy]
+startCommand = "npm run start:ws"
+# Note: WebSocket server doesn't have an HTTP healthcheck endpoint
+# Railway will monitor the process instead
+
 [services.smsbot]
 source = "sms-bot/"
 [services.smsbot.build]
