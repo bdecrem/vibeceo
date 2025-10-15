@@ -10,7 +10,7 @@ import fetch from "node-fetch";
 
 const TICKETMASTER_API_KEY = process.env.TICKETMASTER_API_KEY;
 
-export async function fetchEvents(city: string, keyword?: string) {
+async function fetchEvents(city: string, keyword?: string) {
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
   const ticketmasterQueryUrl = `https://app.ticketmaster.com/discovery/v2/events.json?apikey=${TICKETMASTER_API_KEY}&city=${encodeURIComponent(
@@ -82,7 +82,10 @@ export async function handleEventSearch(chatMessage: string) {
   }
 
   try {
-    const response = await query({ prompt: chatMessage, options: agentOptions });
+    const response = await query({
+      prompt: chatMessage,
+      options: agentOptions,
+    });
     let lastResult: string | undefined;
 
     for await (const message of response) {
@@ -106,7 +109,6 @@ export async function handleEventSearch(chatMessage: string) {
 
     console.error("[Ticketmaster Agent] No result found in agent response");
     return "❌ Could not find events. Please try with: EVENTS [city] [optional: keyword]\nExample: EVENTS Oakland\nExample: EVENTS San Francisco concert";
-
   } catch (error) {
     console.error("[Ticketmaster Agent] Query failed:", error);
     return "❌ Event search failed. Please try again with: EVENTS [city] [keyword]";
