@@ -369,14 +369,14 @@ function MusicPlayerContent(): JSX.Element {
       const match = source.match(isoDateRegex);
       if (match) {
         const isoDate = match[0];
-        const parsed = new Date(`${isoDate}T00:00:00Z`);
-        if (!Number.isNaN(parsed.getTime())) {
-          const formatted = parsed
-            .toLocaleDateString('en-US', { weekday: 'short', month: 'numeric', day: 'numeric' })
-            .replace(',', '');
-          return formatted;
-        }
-        return isoDate;
+        // Format date string directly to ensure consistent display globally (not affected by timezone)
+        const [year, month, day] = isoDate.split('-').map(Number);
+
+        // Create Date in UTC to get the correct weekday
+        const utcDate = new Date(Date.UTC(year, month - 1, day));
+        const weekday = utcDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
+
+        return `${weekday} ${month}/${day}`;
       }
     }
 
