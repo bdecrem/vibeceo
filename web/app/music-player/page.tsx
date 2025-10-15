@@ -4,6 +4,7 @@ import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, us
 import { useSearchParams } from 'next/navigation';
 import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
 import PlayInCrashAppBanner from '@/components/PlayInCrashAppBanner';
+import { X } from 'lucide-react';
 
 const PLAYBACK_SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;
 const DEFAULT_PLAYBACK_SPEED_INDEX = PLAYBACK_SPEEDS.indexOf(1);
@@ -82,7 +83,7 @@ function dbToGain(db: number): number {
 }
 
 const BASE_REALTIME_INSTRUCTIONS =
-  "You are an upbeat male co-host with quick, high-energy delivery. Speak in short, punchy sentences, use contractions and casual language, toss in upbeat asides or rhetorical questions, and keep the vibe lively. Answer accurately using the provided paper details, cite paper titles when you reference them, and stay concise and conversational.";
+  "You're a casual, enthusiastic co-host chatting with a friend about cool AI research. Keep it conversational and natural - use phrases like 'check this out', 'here's the thing', or 'so get this'. Speak in short, punchy sentences with contractions and casual language. When referencing the papers, mention their titles naturally but don't be too formal about it. Keep the energy high and the vibe friendly - like you're excited to share what you just learned.";
 
 function truncateForContext(value: string | undefined, limit = 2000): string | null {
   if (!value) {
@@ -157,6 +158,7 @@ function MusicPlayerContent(): JSX.Element {
   const [aiStatus, setAiStatus] = useState('');
   const [isMicAvailable, setIsMicAvailable] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [isMicModalOpen, setIsMicModalOpen] = useState(false);
 
   const customTrack = useMemo((): TrackItem | null => {
     if (!searchParams) {
@@ -405,14 +407,34 @@ function MusicPlayerContent(): JSX.Element {
   }, [currentTime, duration]);
 
   const progressPercent = Math.min(100, Math.max(0, duration > 0 ? (currentTime / duration) * 100 : 0));
-  const micDisabled = !canUseMic || isConnecting || (!isMicAvailable && !isMicActive);
+  const micDisabled = !canUseMic || isConnecting;
+  const micNotYetAvailable = !isMicAvailable && !isMicActive && !isConnecting;
   const micTooltip = !canUseMic
     ? 'Microphone is only available for AI Daily episodes with research context.'
     : isMicActive
       ? 'Stop recording'
-      : micDisabled
-        ? 'Mic unlocks after the episode finishes'
+      : !isMicAvailable
+        ? 'Click to learn about Interactive Mode'
         : 'Ask a question about this episode';
+
+  const micModalActionDisabled = (!isMicActive && !isMicAvailable) || (isConnecting && !isMicActive);
+  const micModalStateLabel = isMicActive
+    ? 'Listening... tap to finish'
+    : isConnecting
+      ? 'Connecting to microphone...'
+      : isMicAvailable
+        ? 'Tap to start speaking'
+        : 'Available after playback';
+  const micCircleClassName = [
+    'flex h-24 w-24 items-center justify-center rounded-full border-4 text-[#2C3E1F] transition-all duration-200 sm:h-32 sm:w-32',
+    isMicActive
+      ? 'border-[#2C3E1F] bg-[#2C3E1F] text-white shadow-[0_0_0_16px_rgba(44,62,31,0.18)] animate-pulse'
+      : isConnecting
+        ? 'border-[#E2B74A] bg-[#FFF4D6] text-[#8A6200] animate-pulse'
+        : 'border-[#D7DCC8] bg-[#F7F8F2]',
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   const controlButtonFocus =
     'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C3E1F] focus-visible:ring-offset-2 focus-visible:ring-offset-white';
@@ -436,7 +458,9 @@ function MusicPlayerContent(): JSX.Element {
     'group flex w-full items-center justify-center gap-2 rounded-[14px] border border-[#E5E5E0] bg-gradient-to-br from-[#FAFAF8] to-[#F5F5F0] px-4 py-3 text-sm font-semibold tracking-tight text-[#2C3E1F] transition-all duration-200',
     micDisabled
       ? 'cursor-not-allowed opacity-60 hover:translate-y-0 hover:shadow-none hover:border-[#E5E5E0]'
-      : 'hover:-translate-y-0.5 hover:border-[#2C3E1F] hover:shadow-[0_12px_24px_rgba(44,62,31,0.12)]',
+      : micNotYetAvailable
+        ? 'opacity-60'
+        : 'hover:-translate-y-0.5 hover:border-[#2C3E1F] hover:shadow-[0_12px_24px_rgba(44,62,31,0.12)]',
     isMicActive
       ? 'border-[#2C3E1F] bg-[#2C3E1F] text-white shadow-[0_0_0_12px_rgba(44,62,31,0.08)] mic-active'
       : '',
@@ -556,9 +580,68 @@ function MusicPlayerContent(): JSX.Element {
     setIsPlaying(true);
   }, [isMicActive, playlist.length]);
 
-  const handleMic = useCallback(async () => {
+  const handleOpenMicModal = useCallback(() => {
+    setIsMicModalOpen(true);
+  }, []);
+
+  const handleCloseMicModal = useCallback(() => {
+    console.log('🔌 Closing modal - stopping Realtime interaction...');
+
+    // Stop recording if active
+    if (isMicActive && realtimeClientRef.current) {
+      realtimeClientRef.current.stopRecording();
+      console.log('🎤 Stopped recording');
+    }
+
+    // Disconnect realtime client
+    if (realtimeClientRef.current) {
+      realtimeClientRef.current.disconnect();
+      realtimeClientRef.current = null;
+      console.log('🔌 Disconnected Realtime client');
+    }
+
+    // Stop audio player
+    if (audioPlayerRef.current) {
+      audioPlayerRef.current.stop();
+      console.log('🔇 Stopped audio player');
+    }
+
+    // Reset all state
+    setIsMicActive(false);
+    setIsConnecting(false);
+    setAiStatus('');
+    setAiResponse('');
+    setIsMicAvailable(true);  // Keep available since episode already finished
+
+    // Close the modal
+    setIsMicModalOpen(false);
+
+    console.log('✅ Modal closed - ready for normal mode');
+  }, [isMicActive]);
+
+  const handleInteractiveButtonClick = useCallback(() => {
+    if (!canUseMic) {
+      return;
+    }
+
+    // If mic is active, open the modal
+    if (isMicActive) {
+      setIsMicModalOpen(true);
+      return;
+    }
+
+    // If mic is available, open the modal to start interaction
+    if (isMicAvailable) {
+      handleOpenMicModal();
+      return;
+    }
+
+    // If mic is not available yet (episode still playing), show info message
+    setAiStatus('Interactive Mode lets you discuss this episode once it\'s finished playing.');
+  }, [canUseMic, handleOpenMicModal, isMicActive, isMicAvailable]);
+
+  const handleMicModalToggle = useCallback(async () => {
     if (!canUseMic || !aiDailyInstructions || !aiDailyContext) {
-      setAiStatus('Microphone is only available once the AI Daily papers finish loading.');
       return;
     }
     const instructionsForSession = aiDailyInstructions;
@@ -566,7 +649,6 @@ function MusicPlayerContent(): JSX.Element {
 
     try {
       if (!isMicActive && !isMicAvailable) {
-        setAiStatus('Mic will unlock once this episode finishes.');
         return;
       }
 
@@ -574,8 +656,6 @@ function MusicPlayerContent(): JSX.Element {
         // Stop recording
         realtimeClientRef.current?.stopRecording();
         setIsMicActive(false);
-        setAiResponse('');
-        setAiStatus('Processing response...');
         setIsMicAvailable(false);
         console.log('🎤 Stopped mic');
       } else {
@@ -602,10 +682,8 @@ function MusicPlayerContent(): JSX.Element {
           console.log('🔧 Creating new RealtimeAudioClient...');
           const client = new RealtimeAudioClient({
             initialInstructions: instructionsForSession,
-            onTranscriptDelta: (text) => {
-              console.log('📝 [CALLBACK] Transcript delta received:', text);
-              setAiStatus('Responding...');
-              setAiResponse((prev) => prev + text);
+            onTranscriptDelta: () => {
+              // Audio only - no text display when modal is used
             },
             onAudioDelta: (audioData) => {
               console.log('🔊 [CALLBACK] Audio delta received, size:', audioData.byteLength);
@@ -707,6 +785,32 @@ function MusicPlayerContent(): JSX.Element {
       realtimeClientRef.current = null;
     }
   }, [aiDailyContext, aiDailyInstructions, canUseMic, isMicActive, isMicAvailable]);
+
+  useEffect(() => {
+    if (!isMicModalOpen) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleCloseMicModal();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    let originalOverflow = '';
+    if (typeof document !== 'undefined') {
+      originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = originalOverflow;
+      }
+    };
+  }, [handleCloseMicModal, isMicModalOpen]);
 
   useEffect(() => {
     const audio = audioRef.current;
@@ -1026,24 +1130,85 @@ function MusicPlayerContent(): JSX.Element {
                 </div>
 
                 {canUseMic ? (
-                  <button
-                    type="button"
-                    onClick={handleMic}
-                    disabled={micDisabled}
-                    className={micButtonClassName}
-                    aria-label="Microphone"
-                    title={micTooltip}
-                  >
-                    <svg
-                      className={`h-4 w-4 transition-colors duration-200 ${isMicActive ? 'text-white' : 'text-[#2C3E1F]'}`}
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                      aria-hidden="true"
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleInteractiveButtonClick}
+                      disabled={micDisabled}
+                      className={micButtonClassName}
+                      aria-label="Open interactive mode"
+                      title={micTooltip}
                     >
-                      <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3c0 3.074-2.29 5.315-5 5.482V19h2v2h-6v-2h2v-2.518C9.29 16.315 7 14.074 7 11H5c0 3.623 2.559 6.642 6 7.323V21h2v-2.677c3.441-.681 6-3.7 6-7.323h-2Z" />
-                    </svg>
-                    <span>{isMicActive ? 'Listening...' : 'Interactive mode'}</span>
-                  </button>
+                      <svg
+                        className={`h-4 w-4 transition-colors duration-200 ${isMicActive ? 'text-white' : 'text-[#2C3E1F]'}`}
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                        aria-hidden="true"
+                      >
+                        <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3c0 3.074-2.29 5.315-5 5.482V19h2v2h-6v-2h2v-2.518C9.29 16.315 7 14.074 7 11H5c0 3.623 2.559 6.642 6 7.323V21h2v-2.677c3.441-.681 6-3.7 6-7.323h-2Z" />
+                      </svg>
+                      <span>{isMicActive ? 'Listening...' : 'Interactive mode'}</span>
+                    </button>
+
+                    {isMicModalOpen ? (
+                      <div
+                        className="fixed inset-0 z-50 flex items-center justify-center px-4 py-6 sm:py-10"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Interactive microphone"
+                        onClick={handleCloseMicModal}
+                      >
+                        <div className="absolute inset-0 bg-black/45 backdrop-blur-sm" />
+                        <div
+                          className="relative z-10 w-full max-w-sm rounded-[26px] bg-white p-6 text-center shadow-[0_30px_80px_rgba(26,30,18,0.28)] sm:p-8"
+                          onClick={(event) => event.stopPropagation()}
+                        >
+                          <div className="flex justify-end">
+                            <button
+                              type="button"
+                              onClick={handleCloseMicModal}
+                              className="rounded-full p-2 text-[#4A4F3C] transition-colors duration-150 hover:bg-[#F4F5EE] hover:text-[#1F2E16] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2C3E1F] focus-visible:ring-offset-2"
+                              aria-label="Close interactive mode"
+                            >
+                              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <path d="M18 6L6 18M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="mt-2 flex flex-col items-center gap-6 sm:gap-8">
+                            <div className="space-y-2">
+                              <h2 className="text-lg font-semibold tracking-tight text-[#1A1A1A] sm:text-xl">
+                                Interactive mode
+                              </h2>
+                              <p className="text-sm text-[#4A4F3C] sm:text-base">
+                                {micModalStateLabel}
+                              </p>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleMicModalToggle}
+                              disabled={micModalActionDisabled}
+                              className={`relative flex items-center justify-center rounded-full transition-all duration-200 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#2C3E1F]/30 ${
+                                micModalActionDisabled && !isMicActive ? 'cursor-not-allowed opacity-60' : 'hover:scale-105 active:scale-95'
+                              }`}
+                              aria-pressed={isMicActive}
+                              aria-label={isMicActive ? 'Stop recording' : 'Start recording'}
+                            >
+                              <span className={micCircleClassName}>
+                                <svg className="h-10 w-10 sm:h-14 sm:w-14" viewBox="0 0 24 24" fill="currentColor" strokeWidth={2.2}>
+                                  <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 1 0-6 0v6a3 3 0 0 0 3 3Zm5-3c0 3.074-2.29 5.315-5 5.482V19h2v2h-6v-2h2v-2.518C9.29 16.315 7 14.074 7 11H5c0 3.623 2.559 6.642 6 7.323V21h2v-2.677c3.441-.681 6-3.7 6-7.323h-2Z" />
+                                </svg>
+                              </span>
+                            </button>
+                            <p className="text-xs font-medium uppercase tracking-[0.22em] text-[#888888] sm:text-sm">
+                              Tap once to speak · Tap again to send
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </>
                 ) : (
                   <p className="text-center text-xs font-medium text-[#8F947D]">
                     Finish the episode to unlock interactive mode.
@@ -1051,7 +1216,7 @@ function MusicPlayerContent(): JSX.Element {
                 )}
               </div>
 
-              {(aiStatus || aiResponse) && (
+              {!isMicModalOpen && (aiStatus || aiResponse) && (
                 <div className="rounded-2xl border border-[#E5E5E0] bg-white/90 p-4 text-sm text-[#1A1A1A] shadow-[0_8px_20px_rgba(0,0,0,0.04)]">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#7C836F]">AI Assistant</p>
                   {aiStatus ? <p className="mt-2 font-semibold text-[#2C3E1F]">{aiStatus}</p> : null}
