@@ -8,12 +8,14 @@ export interface StockNews {
   Link: string;
 }
 
+// Headers to simulate an actual user
 const headers = {
   "User-Agent":
     "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) \
             AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36",
 };
 
+// Scrape HTML from Finviz (can be substituted for other sites, but element selectors will need to be changed)
 export async function scrape_finviz(url: string): Promise<CheerioAPI> {
   const response = await axios.get(url, {
     headers: headers,
@@ -21,6 +23,7 @@ export async function scrape_finviz(url: string): Promise<CheerioAPI> {
   return load(response.data);
 }
 
+// Get news from HTML
 export function get_news_from_table($: CheerioAPI): StockNews[] {
   const news_table = $("#news").find("table");
 
@@ -49,6 +52,7 @@ export function get_news_from_table($: CheerioAPI): StockNews[] {
         }
       }
 
+      // Return date, title, source, and link to article
       const info: StockNews = {
         Date: date,
         Title: title,
@@ -57,7 +61,9 @@ export function get_news_from_table($: CheerioAPI): StockNews[] {
       };
 
       items.push(info);
-    } catch {}
+    } catch {
+      // Skip article if it fails
+    }
   });
 
   return items;

@@ -1,6 +1,7 @@
 import { handleStockNewsSearch } from "../agents/stock-news/agent.js";
 import { CommandContext, CommandHandler } from "./types.js";
 
+// Prefix definition
 const STOCK_PREFIX = "STOCKNEWS";
 
 async function handleSearch(context: CommandContext): Promise<boolean> {

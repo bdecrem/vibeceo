@@ -5,7 +5,9 @@ import {
   tool,
 } from "@anthropic-ai/claude-agent-sdk";
 import { get_news_from_table, scrape_finviz, StockNews } from "./util.js";
-import { z } from "zod";
+
+// Return top 50 results
+const NUM_ARTICLES = 50;
 
 async function fetch_news() {
   const $ = await scrape_finviz("https://finviz.com/news.ashx?v=3");
@@ -14,7 +16,7 @@ async function fetch_news() {
     return "No current stock news.";
   }
 
-  const news: StockNews[] = get_news_from_table($).slice(0, 50);
+  const news: StockNews[] = get_news_from_table($).slice(0, NUM_ARTICLES);
 
   return news.map((n) => `[${n.Date}, ${n.Title}, ${n.Source}]`).join(", ");
 }
