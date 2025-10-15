@@ -36,10 +36,8 @@ export class RealtimeAudioClient {
   private pendingContext: string | null = null;
 
   constructor(config: RealtimeAudioConfig = {}) {
-    // Use environment variable for WebSocket URL, or default to port 3001
-    const envWsUrl = typeof window !== 'undefined'
-      ? process.env.NEXT_PUBLIC_WS_URL
-      : undefined;
+    // NEXT_PUBLIC_ env vars are replaced at build time by Next.js
+    const envWsUrl = process.env.NEXT_PUBLIC_WS_URL;
 
     const defaultWsUrl = typeof window !== 'undefined'
       ? `ws://${window.location.hostname}:3001`
