@@ -8,10 +8,10 @@ const http = require('http');
 config({ path: path.resolve(__dirname, '.env.local') });
 
 // Port selection priority:
-// 1. PORT (Railway's public port when running as dedicated service)
-// 2. WS_PORT (explicit WebSocket port for multi-process setup)
-// 3. 3001 (default for local development)
-const PORT = process.env.PORT || process.env.WS_PORT || 3001;
+// 1. WS_PORT (explicit override for dedicated WebSocket services like Railway)
+// 2. PORT (default port injected by hosting platforms)
+// 3. 3001 (fallback for local development)
+const PORT = process.env.WS_PORT || process.env.PORT || 3001;
 
 // Create HTTP server for Railway's proxy compatibility
 const server = http.createServer((req, res) => {
@@ -28,6 +28,8 @@ console.log('║        🎤 Realtime Audio WebSocket Server      ║');
 console.log('╚════════════════════════════════════════════════╝');
 console.log('');
 console.log(`📍 Port: ${PORT}`);
+console.log(`🔧 process.env.WS_PORT: ${process.env.WS_PORT || '(unset)'}`);
+console.log(`🔧 process.env.PORT: ${process.env.PORT || '(unset)'}`);
 console.log(`🎤 WebSocket: ws://localhost:${PORT}`);
 console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✓ Configured' : '✗ Missing'}`);
 console.log('');
