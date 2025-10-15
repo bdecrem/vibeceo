@@ -22,7 +22,7 @@ export async function scrape_finviz(url: string): Promise<CheerioAPI> {
 }
 
 export function get_news_from_table($: CheerioAPI): StockNews[] {
-  const news_table = $("news").find("table");
+  const news_table = $("#news").find("table");
 
   const items: StockNews[] = [];
 
