@@ -21,7 +21,7 @@ source = "web/"
 builder = "NIXPACKS"
 buildCommand = "cd .. && npm ci --workspace=web && cd web && npm run build"
 [services.vibeceo.deploy]
-startCommand = "npm start"
+startCommand = "npm run start:web"
 healthcheckPath = "/api/health"
 
 [[services]]
