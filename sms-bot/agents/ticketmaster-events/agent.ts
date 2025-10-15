@@ -38,7 +38,7 @@ async function fetchEvents(city: string, keyword?: string) {
   return eventList.join(", ");
 }
 
-export const eventMcpServer = createSdkMcpServer({
+const eventMcpServer = createSdkMcpServer({
   name: "event_mcp_tool",
   version: "1.0.0",
   tools: [
