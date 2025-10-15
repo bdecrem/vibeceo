@@ -34,6 +34,7 @@ export class RealtimeAudioClient {
   private recordedAudioData: Float32Array[] = [];
   private currentInstructions: string;
   private pendingContext: string | null = null;
+  private hasCapturedSpeech = false;
 
   constructor(config: RealtimeAudioConfig = {}) {
     // NEXT_PUBLIC_ env vars are replaced at build time by Next.js
@@ -146,15 +147,10 @@ export class RealtimeAudioClient {
       session: {
         modalities: ['text', 'audio'],
         instructions: this.currentInstructions,
-        voice: 'theo',
+        voice: 'echo',  // Male narrator voice
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
-        turn_detection: {
-          type: 'server_vad',
-          threshold: 0.5,
-          prefix_padding_ms: 300,
-          silence_duration_ms: 500
-        }
+        turn_detection: null  // Disable server VAD - use manual tap-to-talk only
       }
     };
 
@@ -178,6 +174,7 @@ export class RealtimeAudioClient {
         type: 'session.update',
         session: {
           instructions: this.currentInstructions,
+          turn_detection: null  // Ensure VAD stays disabled when updating instructions
         },
       });
       this.flushPendingContext();
@@ -278,12 +275,16 @@ export class RealtimeAudioClient {
           type: 'input_audio_buffer.append',
           audio: base64Audio
         });
+
+        // Track that we've captured speech
+        this.hasCapturedSpeech = true;
       };
 
       source.connect(processor);
       processor.connect(this.audioContext.destination);
 
       this.isRecording = true;
+      this.hasCapturedSpeech = false;  // Reset speech tracking
       console.log('🎤 Started recording - speak now!');
     } catch (error) {
       console.error('❌ Failed to start recording:', error);
@@ -302,24 +303,12 @@ export class RealtimeAudioClient {
     }
 
     console.log('🛑 Stopping recording...');
+
+    // IMMEDIATELY stop recording flag to prevent any more chunks
     this.isRecording = false;
+    const capturedSpeech = this.hasCapturedSpeech;
 
-    // Commit audio buffer - this triggers AI response
-    console.log('📤 Committing audio buffer to trigger AI response...');
-    this.send({ type: 'input_audio_buffer.commit' });
-
-    // Also explicitly request a response
-    console.log('📤 Requesting response from AI...');
-    this.send({
-      type: 'response.create',
-      response: {
-        modalities: ['text', 'audio'],
-        voice: 'alloy',
-        output_audio_format: 'pcm16'
-      }
-    });
-
-    // Clean up audio context
+    // IMMEDIATELY disconnect audio nodes to stop hardware stream
     if (this.processorNode) {
       try {
         this.processorNode.disconnect();
@@ -339,6 +328,13 @@ export class RealtimeAudioClient {
       this.sourceNode = null;
     }
 
+    // IMMEDIATELY stop media stream
+    if (this.mediaStream) {
+      this.mediaStream.getTracks().forEach(track => track.stop());
+      this.mediaStream = null;
+    }
+
+    // Close audio context
     if (this.audioContext) {
       void this.audioContext.close().catch((error) => {
         console.warn('⚠️ Error closing AudioContext:', error);
@@ -346,13 +342,25 @@ export class RealtimeAudioClient {
       this.audioContext = null;
     }
 
-    // Stop media stream
-    if (this.mediaStream) {
-      this.mediaStream.getTracks().forEach(track => track.stop());
-      this.mediaStream = null;
-    }
+    // NOW send API calls after hardware is fully stopped - ONLY if we captured speech
+    if (capturedSpeech) {
+      console.log('📤 Committing audio buffer to trigger AI response...');
+      this.send({ type: 'input_audio_buffer.commit' });
 
-    console.log('✅ Stopped recording and requested AI response');
+      console.log('📤 Requesting response from AI...');
+      this.send({
+        type: 'response.create',
+        response: {
+          modalities: ['text', 'audio'],
+          voice: 'echo',  // Male narrator voice
+          output_audio_format: 'pcm16'
+        }
+      });
+
+      console.log('✅ Stopped recording and requested AI response');
+    } else {
+      console.warn('⚠️ No audio captured, skipping commit and response request');
+    }
   }
 
   /**
