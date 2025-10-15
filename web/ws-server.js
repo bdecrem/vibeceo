@@ -13,7 +13,11 @@ config({ path: path.resolve(__dirname, '.env.local') });
 const PORT = process.env.PORT || process.env.WS_PORT || 3001;
 
 // Create standalone WebSocket server
-const wss = new WebSocketServer({ port: PORT });
+// Bind to 0.0.0.0 for Railway (required for Railway's networking)
+const wss = new WebSocketServer({
+  port: PORT,
+  host: '0.0.0.0'
+});
 
 console.log('');
 console.log('╔════════════════════════════════════════════════╗');
