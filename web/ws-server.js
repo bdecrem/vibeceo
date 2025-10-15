@@ -2,6 +2,7 @@ const { WebSocketServer } = require('ws');
 const WebSocket = require('ws');
 const { config } = require('dotenv');
 const path = require('path');
+const http = require('http');
 
 // Load environment variables from .env.local
 config({ path: path.resolve(__dirname, '.env.local') });
@@ -12,12 +13,14 @@ config({ path: path.resolve(__dirname, '.env.local') });
 // 3. 3001 (default for local development)
 const PORT = process.env.PORT || process.env.WS_PORT || 3001;
 
-// Create standalone WebSocket server
-// Bind to 0.0.0.0 for Railway (required for Railway's networking)
-const wss = new WebSocketServer({
-  port: PORT,
-  host: '0.0.0.0'
+// Create HTTP server for Railway's proxy compatibility
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WebSocket server is running\n');
 });
+
+// Attach WebSocket server to HTTP server (no server option)
+const wss = new WebSocketServer({ server });
 
 console.log('');
 console.log('╔════════════════════════════════════════════════╗');
@@ -144,5 +147,8 @@ wss.on('error', (error) => {
   console.error('❌ WebSocket Server error:', error);
 });
 
-console.log('✅ WebSocket server ready and waiting for connections...');
-console.log('');
+// Start HTTP server (which handles WebSocket upgrades)
+server.listen(PORT, '0.0.0.0', () => {
+  console.log('✅ WebSocket server ready and waiting for connections...');
+  console.log('');
+});
