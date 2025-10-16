@@ -697,7 +697,7 @@ export default function KochiLandingPage() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.3 }}
-            className="w-full max-w-[520px] px-4 sm:px-0 pt-4 sm:pt-4 mt-0 sm:mt-0"
+            className="w-full max-w-[520px] px-4 sm:px-0 pt-1 sm:pt-2 mt-0 sm:mt-0"
           >
             <div
               className="flex justify-center"
