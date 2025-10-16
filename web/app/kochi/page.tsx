@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 type Stage = "initial" | "prompt" | "cta";
 
-const GREETING_TEXT = "Hey — I'm Kochi. I send quick daily blasts on AI, science, and finance.\nTry AI Daily first — it's your snapshot of the 3 most discussed AI papers from the past day.";
+const GREETING_TEXT = "Hey, I'm Kochi. I send daily SMS blasts on AI, science & finance.\nTry AI Daily: your snapshot of today's most discussed AI papers.";
 
 const randomFrom = <T,>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
@@ -704,12 +704,11 @@ export default function KochiLandingPage() {
               style={{ fontFamily: "Poppins, sans-serif" }}
             >
               <span className="text-[12px] sm:text-[13px] text-[#8a8a8a]">
-                © 2025{" "}
                 <a
-                  href="/about"
+                  href="/about/"
                   className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
                 >
-                  Kochito Labs
+                  About us
                 </a>
               </span>
             </div>

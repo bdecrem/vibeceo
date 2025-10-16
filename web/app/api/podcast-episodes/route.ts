@@ -22,7 +22,7 @@ const SHOWS = [
     order: 1,
   },
   {
-    name: 'Crypto Daily',
+    name: 'Crypto Daily Research',
     topicId: process.env.CRYPTO_PODCAST_TOPIC_ID || null,
     title: 'Crypto Market Daily Brief',
     order: 2,
@@ -132,7 +132,7 @@ export async function GET() {
             papers,
             topicId: topic.id,
             episodeNumber: episode.episode_number,
-            isDated: showInfo.name === 'AI Daily',
+            isDated: true, // All shows display dates
           });
         }
       } catch (err) {

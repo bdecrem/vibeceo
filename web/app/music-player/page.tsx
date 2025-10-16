@@ -15,6 +15,10 @@ const WAVEFORM_BAR_HEIGHTS = [
   46, 34, 40, 42, 28, 48, 36, 44, 32, 38,
 ] as const;
 const MAX_WAVEFORM_HEIGHT = Math.max(...WAVEFORM_BAR_HEIGHTS);
+const SUMMARY_TRUNCATION_LIMIT = 4000;
+const FULL_TEXT_TRUNCATION_LIMIT = 15000;
+const HUMAN_DATE_REGEX =
+  /\b(January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{1,2},\s*\d{4}\b/;
 
 interface TrackPaper {
   id: string;
@@ -57,10 +61,10 @@ const FALLBACK_PLAYLIST: TrackItem[] = [
   },
   {
     id: 'crypto-demo',
-    title: 'Crypto Daily — Sample',
+    title: 'Crypto Daily Research — Sample',
     description: 'Final sample track to round out the playlist.',
     src: 'https://samplelib.com/lib/preview/mp3/sample-9s.mp3',
-    showName: 'Crypto Daily',
+    showName: 'Crypto Daily Research',
     order: 2,
   },
 ];
@@ -99,6 +103,56 @@ function truncateForContext(value: string | undefined, limit = 2000): string | n
   return `${trimmed.slice(0, limit - 1).trim()}…`;
 }
 
+function formatIsoDateToLongLabel(isoDate: string): string | null {
+  const [yearStr, monthStr, dayStr] = isoDate.split('-');
+  const year = Number(yearStr);
+  const monthIndex = Number(monthStr) - 1;
+  const day = Number(dayStr);
+  if (!Number.isFinite(year) || !Number.isFinite(monthIndex) || !Number.isFinite(day)) {
+    return null;
+  }
+
+  const utcDate = new Date(Date.UTC(year, monthIndex, day));
+  if (Number.isNaN(utcDate.getTime())) {
+    return null;
+  }
+
+  return utcDate.toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+function extractDateLabelFromSources(sources: Array<string | undefined>): string | null {
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+    const humanMatch = source.match(HUMAN_DATE_REGEX);
+    if (humanMatch && humanMatch[0]) {
+      return humanMatch[0].replace(/\s+,/g, ',').replace(/\s+/g, ' ');
+    }
+  }
+
+  const isoDateRegex = /\b\d{4}-\d{2}-\d{2}\b/;
+  for (const source of sources) {
+    if (!source) {
+      continue;
+    }
+    const match = source.match(isoDateRegex);
+    if (match && match[0]) {
+      const formatted = formatIsoDateToLongLabel(match[0]);
+      if (formatted) {
+        return formatted;
+      }
+    }
+  }
+
+  return null;
+}
+
 function buildRealtimeContext(
   episodeTitle: string,
   episodeDescription: string | undefined,
@@ -117,11 +171,11 @@ function buildRealtimeContext(
     const lines: string[] = [];
     const paperIndex = index + 1;
     lines.push(`Paper ${paperIndex}: ${paper.title}`);
-    const summaryText = truncateForContext(paper.summary, 800);
+    const summaryText = truncateForContext(paper.summary, SUMMARY_TRUNCATION_LIMIT);
     if (summaryText) {
       lines.push(`Summary: ${summaryText}`);
     }
-    const fullText = truncateForContext(paper.fullText, 3200);
+    const fullText = truncateForContext(paper.fullText, FULL_TEXT_TRUNCATION_LIMIT);
     if (fullText) {
       lines.push(`Full Text:\n${fullText}`);
     }
@@ -298,22 +352,27 @@ function MusicPlayerContent(): JSX.Element {
     setPlaybackRateIndex(DEFAULT_PLAYBACK_SPEED_INDEX);
   }, [currentTrack?.id]);
 
-  const bannerInfo = useMemo(() => {
-    const topicId = currentTrack?.topicId ?? aiDailyTrackData?.topicId ?? null;
-    const episodeNumber = currentTrack?.episodeNumber ?? aiDailyTrackData?.episodeNumber ?? null;
-    const hasEpisodeNumber = typeof episodeNumber === 'number' && !Number.isNaN(episodeNumber);
-    const rawIsDated = currentTrack?.isDated ?? aiDailyTrackData?.isDated ?? false;
+  const bannerInfo = useMemo((): { topicId: string | null; episodeNumber: number | null; isDated: boolean } => {
+    if (!currentTrack?.topicId) {
+      return {
+        topicId: null,
+        episodeNumber: null,
+        isDated: false,
+      };
+    }
+
+    const hasEpisodeNumber =
+      typeof currentTrack.episodeNumber === 'number' && !Number.isNaN(currentTrack.episodeNumber);
+    const rawIsDated = currentTrack.isDated ?? false;
 
     return {
-      topicId,
-      episodeNumber: hasEpisodeNumber ? episodeNumber : null,
+      topicId: currentTrack.topicId,
+      episodeNumber: hasEpisodeNumber ? currentTrack.episodeNumber : null,
       isDated: hasEpisodeNumber ? false : Boolean(rawIsDated),
     };
-  }, [aiDailyTrackData, currentTrack]);
+  }, [currentTrack]);
 
-  const shouldShowCrashAppBanner = Boolean(
-    isAiDailyTrack && bannerInfo.topicId && !isAppBannerDismissed
-  );
+  const shouldShowCrashAppBanner = Boolean(bannerInfo.topicId && !isAppBannerDismissed);
 
   const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber, isDated: bannerIsDated } = bannerInfo;
   const mainClassName = [
@@ -344,40 +403,49 @@ function MusicPlayerContent(): JSX.Element {
     return track.title;
   }, [currentTrack]);
 
+  const showTitle = useMemo(() => {
+    if (!currentTrack) {
+      return 'Now Playing';
+    }
+
+    const rawTitle = currentTrack.title || '';
+    const parts = rawTitle.split(' — ');
+    if (parts.length > 1) {
+      const candidate = parts[0].trim();
+      if (candidate) {
+        return candidate;
+      }
+    }
+
+    if (currentTrack.showName?.trim()) {
+      return currentTrack.showName.trim();
+    }
+
+    const trimmedTitle = rawTitle.trim();
+    if (trimmedTitle) {
+      return trimmedTitle;
+    }
+
+    return 'Now Playing';
+  }, [currentTrack]);
+
   const playbackSpeed = PLAYBACK_SPEEDS[playbackRateIndex];
   const playbackSpeedLabel = Number.isInteger(playbackSpeed)
     ? `${playbackSpeed}×`
     : `${playbackSpeed.toFixed(2).replace(/0+$/, '').replace(/\.$/, '')}×`;
-  const showTitle = currentTrack?.showName || 'Now Playing';
 
   const secondaryLabel = useMemo(() => {
     if (!currentTrack) {
       return '';
     }
 
-    if (currentTrack.episodeNumber) {
-      return `Episode ${currentTrack.episodeNumber}`;
+    const dateLabel = extractDateLabelFromSources([currentTrack.description, currentTrack.title]);
+    if (dateLabel) {
+      return dateLabel;
     }
 
-    const sources = [currentTrack.description, currentTrack.title];
-    const isoDateRegex = /\b\d{4}-\d{2}-\d{2}\b/;
-
-    for (const source of sources) {
-      if (!source) {
-        continue;
-      }
-      const match = source.match(isoDateRegex);
-      if (match) {
-        const isoDate = match[0];
-        // Format date string directly to ensure consistent display globally (not affected by timezone)
-        const [year, month, day] = isoDate.split('-').map(Number);
-
-        // Create Date in UTC to get the correct weekday
-        const utcDate = new Date(Date.UTC(year, month - 1, day));
-        const weekday = utcDate.toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
-
-        return `${weekday} ${month}/${day}`;
-      }
+    if (currentTrack.episodeNumber) {
+      return `Episode ${currentTrack.episodeNumber}`;
     }
 
     if (displayTitle) {
