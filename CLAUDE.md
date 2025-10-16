@@ -1,8 +1,8 @@
-# Claude Code Rules for B52s.me
+# Claude Code Rules for kochi.to
 
-## 🎯 Current Focus (As of October 2, 2025)
+## 🎯 Current Focus (As of October 16, 2025)
 
-**B52s.me** is our new brand/product - a personal agent assistant over SMS. It builds on our Webtoys and sms-bot infrastructure:
+**kochi.to** (formerly b52s.me) is our personal agent assistant over SMS. It builds on our Webtoys and sms-bot infrastructure:
 
 - **What it is**: SMS-based AI agent/assistant platform
 - **Landing page**: `web/app/b52s-landing` or similar in `web/app/`
@@ -12,14 +12,14 @@
 
 ### Products in This Codebase
 
-1. **B52s.me** (Current focus) - Personal SMS agent assistant
+1. **kochi.to** (formerly b52s.me) (Current focus) - Personal SMS agent assistant
 2. **WEBTOYS** (formerly WTAF.me) - "Vibecoding over SMS" for creating web content
 
 ## Project Context
 
 ### What We Build
 
-**B52s.me capabilities:**
+**kochi.to capabilities:**
 - **AI Agents**: Crypto research, YouTube search, stock tracking, daily insights
 - **Personal Assistant**: Information retrieval, task automation over SMS
 - **Conversational AI**: Multi-turn conversations with specialized coach personalities
@@ -49,7 +49,7 @@ Our CRUD/social apps feature:
 
 ### Website Structure
 - **Main Site**: AdvisorsFoundry (parent directory)
-- **B52s.me Landing**: `/web/app/` (simple landing page for the B52s brand)
+- **kochi.to Landing**: `/web/app/` (simple landing page for the kochi.to brand)
 - **WEBTOYS.ai Website**:
   - **Important**: "The website" refers to the Webtoys.ai website specifically, NOT everything in the web/ folder
   - **Homepage**: `/web/wtaf-landing`
@@ -72,7 +72,7 @@ The SMS bot follows a microservices architecture with strict separation of conce
 - **Engine/Routing**: `sms-bot/engine/CLAUDE.md`
 - **Agent Pipeline**: `sms-bot/documentation/AGENT-PIPELINE.md` (READ THIS for all agent work)
 
-### Agent Architecture (B52s.me Focus)
+### Agent Architecture (kochi.to Focus)
 
 **Two types of agents:**
 
