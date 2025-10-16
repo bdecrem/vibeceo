@@ -198,6 +198,34 @@ class NativeAudioEngine: ObservableObject {
             currentTime += duration
         }
     }
+
+    // MARK: - Audio session interruption handling
+
+    func handleSessionInterruptionBegan() {
+        DispatchQueue.main.async {
+            if self.audioEngine.isRunning {
+                self.audioEngine.pause()
+                print("🎧 Audio engine paused for interruption")
+            }
+        }
+    }
+
+    func handleSessionInterruptionEnded() {
+        DispatchQueue.main.async {
+            self.resumeIfNeeded()
+        }
+    }
+
+    func resumeIfNeeded() {
+        if !audioEngine.isRunning {
+            do {
+                try audioEngine.start()
+                print("🎧 Audio engine restarted after interruption")
+            } catch {
+                print("Failed to restart audio engine: \(error)")
+            }
+        }
+    }
     
     // MARK: - Musical Scale Helpers
     

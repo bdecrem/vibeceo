@@ -5,6 +5,7 @@ import AVFoundation
 struct WebtoysApp: App {
     init() {
         configureAudioSession()
+        AudioInterruptionManager.shared.startObserving()
     }
     
     var body: some Scene {
@@ -21,12 +22,22 @@ struct WebtoysApp: App {
             try audioSession.setCategory(
                 .playback,
                 mode: .default,
-                options: [.mixWithOthers, .allowAirPlay, .allowBluetooth]
+                options: [
+                    .duckOthers,
+                    .allowBluetooth,
+                    .allowBluetoothA2DP,
+                    .allowAirPlay
+                ]
             )
             
             // Set preferred sample rate and buffer duration for smooth playback
             try audioSession.setPreferredSampleRate(44100.0)
-            try audioSession.setPreferredIOBufferDuration(0.005)  // 5ms buffer for low latency
+            // Provide a larger buffer so CarPlay and other route changes have time to recover
+            try audioSession.setPreferredIOBufferDuration(0.05)  // 50ms buffer for resilience
+
+            if audioSession.responds(to: #selector(AVAudioSession.setPrefersNoInterruptionsFromSystemAlerts(_:))) {
+                try audioSession.setPrefersNoInterruptionsFromSystemAlerts(true)
+            }
             
             try audioSession.setActive(true)
             

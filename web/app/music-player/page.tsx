@@ -361,14 +361,13 @@ function MusicPlayerContent(): JSX.Element {
       };
     }
 
-    const hasEpisodeNumber =
-      typeof currentTrack.episodeNumber === 'number' && !Number.isNaN(currentTrack.episodeNumber);
-    const rawIsDated = currentTrack.isDated ?? false;
-
     return {
       topicId: currentTrack.topicId,
-      episodeNumber: hasEpisodeNumber ? currentTrack.episodeNumber : null,
-      isDated: hasEpisodeNumber ? false : Boolean(rawIsDated),
+      episodeNumber:
+        typeof currentTrack.episodeNumber === 'number' && !Number.isNaN(currentTrack.episodeNumber)
+          ? currentTrack.episodeNumber
+          : null,
+      isDated: Boolean(currentTrack.isDated),
     };
   }, [currentTrack]);
 
