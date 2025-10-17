@@ -1,11 +1,41 @@
 import { createHash } from "node:crypto";
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import path from "node:path";
 
-const PYTHON_BIN =
-  process.env.EXPLORE_AGENT_PYTHON_BIN ||
-  process.env.PYTHON_BIN ||
-  "python3.11";
+const DEFAULT_PYTHON_CANDIDATES =
+  process.platform === "win32"
+    ? ["python", "python3.11", "python3"]
+    : ["python3.11", "python3", "python"];
+
+const PYTHON_BIN = resolvePythonBin();
+
+function resolvePythonBin(): string {
+  const candidates = [
+    process.env.EXPLORE_AGENT_PYTHON_BIN,
+    process.env.PYTHON_BIN,
+    ...DEFAULT_PYTHON_CANDIDATES,
+  ]
+    .filter((value): value is string => Boolean(value))
+    .filter((value, index, array) => array.indexOf(value) === index);
+
+  for (const candidate of candidates) {
+    try {
+      const check = spawnSync(candidate, ["--version"], {
+        cwd: process.cwd(),
+        env: process.env,
+        stdio: "ignore",
+      });
+
+      if (!check.error && check.status === 0) {
+        return candidate;
+      }
+    } catch (error) {
+      // Ignore and continue checking other candidates
+    }
+  }
+
+  return candidates[0] ?? DEFAULT_PYTHON_CANDIDATES[DEFAULT_PYTHON_CANDIDATES.length - 1];
+}
 const RUNNER_PATH = path.join(process.cwd(), "agents", "explore", "runner.py");
 const STATE_ROOT =
   process.env.EXPLORE_AGENT_STATE_DIR ||
@@ -147,4 +177,6 @@ export async function runExploreAgent(
     });
   });
 }
+
+
 

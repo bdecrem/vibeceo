@@ -7,7 +7,14 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from .explore_agent import build_agent, session_from_dict, session_to_dict
+CURRENT_DIR = Path(__file__).resolve().parent
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+
+try:
+    from explore_agent import build_agent, session_from_dict, session_to_dict
+except ImportError as exc:
+    raise ImportError('Failed to import explore_agent module') from exc
 
 
 def _load_state(path: Optional[str]) -> Optional[Dict[str, Any]]:
@@ -38,7 +45,7 @@ def _save_state(path: Optional[str], state: Dict[str, Any]) -> None:
 
 def _emit(payload: Dict[str, Any]) -> None:
     json.dump(payload, sys.stdout, ensure_ascii=False)
-    sys.stdout.write("\\n")
+    sys.stdout.write("\n")
     sys.stdout.flush()
 
 
@@ -78,5 +85,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
 
