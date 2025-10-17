@@ -2,11 +2,19 @@
 
 import { useState, useEffect, useRef, useImperativeHandle, forwardRef } from "react";
 import Script from "next/script";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
+import { Poppins } from "next/font/google";
 
 type Stage = "initial" | "prompt" | "cta";
 
-const GREETING_TEXT = "Hey — I'm Kochi. I send quick daily blasts on AI, science, and finance.\nTry AI Daily first — it's your snapshot of the 3 most discussed AI papers from the past day.";
+const GREETING_TEXT = "Hey, I'm Kochi. I send daily SMS blasts on AI, science & finance.\nTry AI Daily: your snapshot of today's most discussed AI papers.";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
 
 const randomFrom = <T,>(items: T[]): T =>
   items[Math.floor(Math.random() * items.length)];
@@ -551,7 +559,6 @@ export default function KochiLandingPage() {
       }}
     >
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@600;700;800&display=swap');
         * {
           box-sizing: border-box;
         }
@@ -561,12 +568,11 @@ export default function KochiLandingPage() {
         }
       `}</style>
 
-      <main className="w-full max-w-[520px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-between gap-4 sm:gap-8 pt-6 pb-4 sm:pt-8 sm:pb-4">
-        <div className="flex flex-col items-center gap-1 sm:gap-2">
+      <main className="w-full max-w-[480px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-center gap-5 sm:gap-6 md:gap-7 pt-10 pb-6 sm:pt-8 sm:pb-4">
+        <div className="flex flex-col items-center gap-1 sm:gap-2 mb-2 sm:mb-0">
           <h1
-            className="text-[36px] sm:text-[52px] md:text-[60px] leading-[0.9] font-[800]"
+            className={`${poppins.className} text-[32px] sm:text-[40px] md:text-[44px] leading-[0.95] font-[800]`}
             style={{
-              fontFamily: "Poppins, sans-serif",
               color: "#2C3E1F",
               margin: "0"
             }}
@@ -575,7 +581,7 @@ export default function KochiLandingPage() {
           </h1>
 
           <p
-            className="text-[12px] sm:text-[14px]"
+            className="text-[12px] sm:text-[13px]"
             style={{
               color: "#8a8a8a",
               fontStyle: "italic"
@@ -585,11 +591,13 @@ export default function KochiLandingPage() {
           </p>
         </div>
 
-        <div className="flex justify-center">
-          <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
-        </div>
+        {/* Group Kochi character with chat bubble for visual connection */}
+        <div className="flex flex-col items-center gap-2 sm:gap-4">
+          <div className="flex justify-center">
+            <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
+          </div>
 
-        <div className="w-full flex flex-col items-center gap-3 sm:gap-4">
+          <div className="w-full flex flex-col items-center gap-3 sm:gap-4">
           <div className="h-8 sm:h-10 flex justify-center items-center">
             <AnimatePresence mode="wait">
               {stage === "prompt" && (
@@ -600,7 +608,7 @@ export default function KochiLandingPage() {
                   exit={{ opacity: 0, scale: 0.7 }}
                   transition={{ type: "spring", stiffness: 420, damping: 14 }}
                   onClick={handleMascotClick}
-                  className="text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[13px] sm:text-base font-medium"
+                  className={`${poppins.className} text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[12px] sm:text-[15px] font-medium`}
                 >
                   Tap Kochi to get started
                 </motion.button>
@@ -625,7 +633,7 @@ export default function KochiLandingPage() {
                   className="inline-block"
                 >
                   <div
-                    className="text-[13px] leading-[1.4] sm:text-[16px] sm:leading-normal"
+                    className={`${poppins.className} text-[12px] leading-[1.45] sm:text-[15px] sm:leading-snug`}
                     style={{
                       background: "#FFF9E6",
                       color: "#2C3E1F",
@@ -635,7 +643,6 @@ export default function KochiLandingPage() {
                       display: "inline-block",
                       maxWidth: "90%",
                       textAlign: "left",
-                      fontFamily: "Poppins, sans-serif",
                       fontWeight: 500,
                       whiteSpace: "pre-wrap"
                     }}
@@ -650,7 +657,7 @@ export default function KochiLandingPage() {
                 <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <a
                     href="sms:8663300015?body=AI%20DAILY"
-                    className="rounded-full border-2 border-[#2C3E1F] px-6 py-3 sm:px-8 sm:py-4 text-base sm:text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
+                    className={`${poppins.className} rounded-full border-2 border-[#2C3E1F] px-5 py-3 sm:px-7 sm:py-4 text-[15px] sm:text-[17px] font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.32)]`}
                     style={{
                       background: "#FFE148",
                       color: "#2C3E1F"
@@ -670,7 +677,7 @@ export default function KochiLandingPage() {
                   </a>
                   <button
                     onClick={handleCopyPhone}
-                    className="text-[12px] sm:text-[14px] cursor-pointer hover:text-[#2C3E1F] transition-colors duration-200 relative"
+                    className={`${poppins.className} text-[11px] sm:text-[13px] cursor-pointer hover:text-[#2C3E1F] transition-colors duration-200 relative`}
                     style={{
                       color: "#8a8a8a"
                     }}
@@ -682,40 +689,23 @@ export default function KochiLandingPage() {
                       </span>
                     )}
                   </button>
+                  <div className={`${poppins.className} flex justify-center mt-2`}>
+                    <span className="text-[11px] sm:text-[12px] text-[#8a8a8a]">
+                      <Link
+                        href="/about"
+                        className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
+                      >
+                        About us
+                      </Link>
+                    </span>
+                  </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
+          </div>
         </div>
       </main>
-
-      <AnimatePresence>
-        {stage === "cta" && (
-          <motion.footer
-            key="cta-footer"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
-            transition={{ duration: 0.3 }}
-            className="w-full max-w-[520px] px-4 sm:px-0 pt-4 sm:pt-4 mt-0 sm:mt-0"
-          >
-            <div
-              className="flex justify-center"
-              style={{ fontFamily: "Poppins, sans-serif" }}
-            >
-              <span className="text-[12px] sm:text-[13px] text-[#8a8a8a]">
-                © 2025{" "}
-                <a
-                  href="/about"
-                  className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
-                >
-                  Kochito Labs
-                </a>
-              </span>
-            </div>
-          </motion.footer>
-        )}
-      </AnimatePresence>
     </div>
   );
 }

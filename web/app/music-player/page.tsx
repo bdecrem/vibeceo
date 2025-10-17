@@ -312,7 +312,7 @@ function MusicPlayerContent(): JSX.Element {
   }, [aiDailyTrackData, currentTrack]);
 
   const shouldShowCrashAppBanner = Boolean(
-    isAiDailyTrack && bannerInfo.topicId && !isAppBannerDismissed
+    bannerInfo.topicId && !isAppBannerDismissed
   );
 
   const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber, isDated: bannerIsDated } = bannerInfo;
