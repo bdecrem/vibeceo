@@ -1,17 +1,23 @@
 "use client";
 
+import { Poppins } from "next/font/google";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800"],
+  display: "swap",
+});
+
 export default function AboutPage() {
   return (
     <div
-      className="min-h-screen bg-[#fffef7] flex flex-col items-center justify-center px-5 py-12"
+      className={`${poppins.className} min-h-screen bg-[#fffef7] flex flex-col items-center justify-center px-5 py-12`}
       style={{
-        fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
         maxWidth: "100vw",
         minHeight: "100dvh"
       }}
     >
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap');
         * {
           box-sizing: border-box;
         }
@@ -33,14 +39,12 @@ export default function AboutPage() {
 
         <article
           style={{
-            fontFamily: "Poppins, sans-serif",
             color: "#2C3E1F"
           }}
         >
           <h1
             className="text-[36px] sm:text-[48px] leading-[1.1] font-[800] mb-8"
             style={{
-              fontFamily: "Poppins, sans-serif",
               color: "#2C3E1F"
             }}
           >
@@ -88,7 +92,7 @@ export default function AboutPage() {
           </div>
         </article>
 
-        <p className="mt-12 text-center text-[15px] sm:text-[16px]" style={{ fontFamily: "Poppins, sans-serif", color: "#2C3E1F" }}>
+        <p className="mt-12 text-center text-[15px] sm:text-[16px]" style={{ color: "#2C3E1F" }}>
           Wanna partner, join the incubator or be an intern?<br />Kochi loves meeting humans.
         </p>
 
@@ -98,8 +102,7 @@ export default function AboutPage() {
             className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
             style={{
               background: "#FFE148",
-              color: "#2C3E1F",
-              fontFamily: "Poppins, sans-serif"
+              color: "#2C3E1F"
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = "translateY(-2px)";
