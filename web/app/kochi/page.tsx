@@ -568,7 +568,7 @@ export default function KochiLandingPage() {
         }
       `}</style>
 
-      <main className="w-full max-w-[480px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-center gap-5 sm:gap-6 md:gap-7 pt-10 pb-6 sm:pt-8 sm:pb-4">
+      <main className="w-full max-w-[480px] px-4 sm:px-0 flex-1 flex flex-col items-center justify-center gap-5 sm:gap-6 md:gap-7 pt-6 pb-6 sm:pt-8 sm:pb-4">
         <div className="flex flex-col items-center gap-1 sm:gap-2 mb-2 sm:mb-0">
           <h1
             className={`${poppins.className} text-[32px] sm:text-[40px] md:text-[44px] leading-[0.95] font-[800]`}
