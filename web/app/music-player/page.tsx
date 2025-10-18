@@ -315,13 +315,25 @@ function MusicPlayerContent(): JSX.Element {
   }, [currentTrack?.id]);
 
   const bannerInfo = useMemo(() => {
-    const topicId = currentTrack?.topicId ?? aiDailyTrackData?.topicId ?? null;
-    const episodeNumber = currentTrack?.episodeNumber ?? aiDailyTrackData?.episodeNumber ?? null;
+    const track = currentTrack;
+    if (!track) {
+      return { topicId: null as string | null, episodeNumber: null as number | null };
+    }
 
-    return {
-      topicId,
-      episodeNumber: typeof episodeNumber === 'number' && !Number.isNaN(episodeNumber) ? episodeNumber : null,
-    };
+    let topicId: string | null = track.topicId ?? null;
+    let episodeNumber: number | null =
+      typeof track.episodeNumber === 'number' && !Number.isNaN(track.episodeNumber)
+        ? track.episodeNumber
+        : null;
+
+    if (track.showName === 'AI Daily' && aiDailyTrackData) {
+      topicId = topicId ?? aiDailyTrackData.topicId ?? null;
+      if (episodeNumber == null && typeof aiDailyTrackData.episodeNumber === 'number' && !Number.isNaN(aiDailyTrackData.episodeNumber)) {
+        episodeNumber = aiDailyTrackData.episodeNumber;
+      }
+    }
+
+    return { topicId, episodeNumber };
   }, [aiDailyTrackData, currentTrack]);
 
   const shouldShowCrashAppBanner = Boolean(
