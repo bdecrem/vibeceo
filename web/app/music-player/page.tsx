@@ -4,7 +4,6 @@ import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, us
 import { useSearchParams } from 'next/navigation';
 import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
 import PlayInCrashAppBanner from '@/components/PlayInCrashAppBanner';
-import { X } from 'lucide-react';
 
 const PLAYBACK_SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;
 const DEFAULT_PLAYBACK_SPEED_INDEX = PLAYBACK_SPEEDS.indexOf(1);
@@ -33,6 +32,7 @@ interface TrackItem {
   papers?: TrackPaper[];
   topicId?: string | null;
   episodeNumber?: number | null;
+  episodeId?: string | null;
   isDated?: boolean;
 }
 
@@ -64,6 +64,15 @@ const FALLBACK_PLAYLIST: TrackItem[] = [
     order: 2,
   },
 ];
+
+const KOCHI_APP_HOME = 'https://listen.crashcourse.cc/';
+const SHOW_TOPIC_IDS: Record<string, string> = {
+  'ai daily': '770a27b8-28a8-40bd-ad82-d9c0952924ce',
+  'peer review fight club': '5c6c2fd7-fcec-417b-ab48-27db253443b8',
+  'crypto research daily': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+  'crypto market daily brief': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+  'crypto daily': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+};
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) {
@@ -142,7 +151,7 @@ function MusicPlayerContent(): JSX.Element {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [loadedPlaylist, setLoadedPlaylist] = useState<TrackItem[]>(FALLBACK_PLAYLIST);
-  const [isAppBannerDismissed, setIsAppBannerDismissed] = useState(false);
+  const [isBannerDismissed, setIsBannerDismissed] = useState(false);
   const [playbackRateIndex, setPlaybackRateIndex] = useState(DEFAULT_PLAYBACK_SPEED_INDEX);
   const audioContextRef = useRef<AudioContext | null>(null);
   const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
@@ -310,40 +319,33 @@ function MusicPlayerContent(): JSX.Element {
   const canUseMic = Boolean(aiDailyInstructions && aiDailyContext);
 
   useEffect(() => {
-    setIsAppBannerDismissed(false);
+    setIsBannerDismissed(false);
     setPlaybackRateIndex(DEFAULT_PLAYBACK_SPEED_INDEX);
   }, [currentTrack?.id]);
 
-  const bannerInfo = useMemo(() => {
+  const bannerHref = useMemo(() => {
     const track = currentTrack;
     if (!track) {
-      return { topicId: null as string | null, episodeNumber: null as number | null };
+      return KOCHI_APP_HOME;
     }
 
-    let topicId: string | null = track.topicId ?? null;
-    let episodeNumber: number | null =
-      typeof track.episodeNumber === 'number' && !Number.isNaN(track.episodeNumber)
-        ? track.episodeNumber
-        : null;
+    const normalizedShowName = track.showName?.trim().toLowerCase() ?? '';
+    const topicId = SHOW_TOPIC_IDS[normalizedShowName];
 
-    if (track.showName === 'AI Daily' && aiDailyTrackData) {
-      topicId = topicId ?? aiDailyTrackData.topicId ?? null;
-      if (episodeNumber == null && typeof aiDailyTrackData.episodeNumber === 'number' && !Number.isNaN(aiDailyTrackData.episodeNumber)) {
-        episodeNumber = aiDailyTrackData.episodeNumber;
-      }
+    if (!topicId) {
+      return KOCHI_APP_HOME;
     }
 
-    return { topicId, episodeNumber };
-  }, [aiDailyTrackData, currentTrack]);
+    if (track.episodeId) {
+      return `https://listen.crashcourse.cc/topics/${topicId}/episodes/${track.episodeId}`;
+    }
 
-  const shouldShowCrashAppBanner = Boolean(
-    bannerInfo.topicId && !isAppBannerDismissed
-  );
+    return `https://listen.crashcourse.cc/topics/${topicId}`;
+  }, [currentTrack]);
 
-  const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber } = bannerInfo;
   const mainClassName = [
     'relative min-h-screen w-full bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 pb-12 sm:px-6',
-    shouldShowCrashAppBanner ? 'pt-32 sm:pt-28' : 'pt-16 sm:pt-20',
+    isBannerDismissed ? 'pt-16 sm:pt-20' : 'pt-32 sm:pt-28',
   ].join(' ');
 
   useEffect(() => {
@@ -1013,12 +1015,8 @@ function MusicPlayerContent(): JSX.Element {
   return (
     <>
       <main className={mainClassName}>
-        {shouldShowCrashAppBanner && bannerTopicId ? (
-          <PlayInCrashAppBanner
-            topicId={bannerTopicId}
-            episodeNumber={bannerEpisodeNumber ?? undefined}
-            onClose={() => setIsAppBannerDismissed(true)}
-          />
+        {!isBannerDismissed ? (
+          <PlayInCrashAppBanner href={bannerHref} onClose={() => setIsBannerDismissed(true)} />
         ) : null}
 
         <div className="mx-auto flex w-full max-w-2xl flex-col items-center">

@@ -2,22 +2,16 @@ import Link from 'next/link';
 import { FC } from 'react';
 
 type PlayInCrashAppBannerProps = {
-  topicId: string;
-  episodeNumber?: number;
+  href: string;
   className?: string;
   onClose?: () => void;
 };
 
 const PlayInCrashAppBanner: FC<PlayInCrashAppBannerProps> = ({
-  topicId,
-  episodeNumber,
+  href,
   className = '',
   onClose,
 }) => {
-  const href = episodeNumber != null
-    ? `https://listen.crashcourse.cc/topics/${topicId}/episodes/${episodeNumber}`
-    : `https://listen.crashcourse.cc/topics/${topicId}/latest`;
-
   const containerClassName = [
     'fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#2c3e1f14] px-4 py-3 transition-transform duration-300',
     className,

@@ -22,9 +22,9 @@ const SHOWS = [
     order: 1,
   },
   {
-    name: 'Crypto Market Daily Brief',
-    topicId: '151e2d10-46ff-50d9-9071-223702b75ddd',
-    title: 'Crypto Market Daily Brief',
+    name: 'Crypto Research Daily',
+    topicId: '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+    title: null,
     order: 2,
   },
 ] as const;
@@ -132,6 +132,7 @@ export async function GET() {
             papers,
             topicId: topic.id,
             episodeNumber: episode.episode_number,
+            episodeId: episode.id != null ? String(episode.id) : undefined,
             isDated: showInfo.name === 'AI Daily',
           });
         }
