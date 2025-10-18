@@ -4,7 +4,6 @@ import { FC } from 'react';
 type PlayInCrashAppBannerProps = {
   topicId: string;
   episodeNumber?: number;
-  isDated?: boolean;
   className?: string;
   onClose?: () => void;
 };
@@ -12,13 +11,12 @@ type PlayInCrashAppBannerProps = {
 const PlayInCrashAppBanner: FC<PlayInCrashAppBannerProps> = ({
   topicId,
   episodeNumber,
-  isDated = false,
   className = '',
   onClose,
 }) => {
-  const href = isDated
-    ? `https://listen.crashcourse.cc/topics/${topicId}/latest`
-    : `https://listen.crashcourse.cc/topics/${topicId}${episodeNumber ? `/episodes/${episodeNumber}` : ''}`;
+  const href = episodeNumber != null
+    ? `https://listen.crashcourse.cc/topics/${topicId}/episodes/${episodeNumber}`
+    : `https://listen.crashcourse.cc/topics/${topicId}/latest`;
 
   const containerClassName = [
     'fixed inset-x-0 top-0 z-50 bg-white/95 backdrop-blur-xl border-b border-[#2c3e1f14] px-4 py-3 transition-transform duration-300',

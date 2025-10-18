@@ -317,13 +317,10 @@ function MusicPlayerContent(): JSX.Element {
   const bannerInfo = useMemo(() => {
     const topicId = currentTrack?.topicId ?? aiDailyTrackData?.topicId ?? null;
     const episodeNumber = currentTrack?.episodeNumber ?? aiDailyTrackData?.episodeNumber ?? null;
-    const hasEpisodeNumber = typeof episodeNumber === 'number' && !Number.isNaN(episodeNumber);
-    const rawIsDated = currentTrack?.isDated ?? aiDailyTrackData?.isDated ?? false;
 
     return {
       topicId,
-      episodeNumber: hasEpisodeNumber ? episodeNumber : null,
-      isDated: hasEpisodeNumber ? false : Boolean(rawIsDated),
+      episodeNumber: typeof episodeNumber === 'number' && !Number.isNaN(episodeNumber) ? episodeNumber : null,
     };
   }, [aiDailyTrackData, currentTrack]);
 
@@ -331,7 +328,7 @@ function MusicPlayerContent(): JSX.Element {
     bannerInfo.topicId && !isAppBannerDismissed
   );
 
-  const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber, isDated: bannerIsDated } = bannerInfo;
+  const { topicId: bannerTopicId, episodeNumber: bannerEpisodeNumber } = bannerInfo;
   const mainClassName = [
     'relative min-h-screen w-full bg-gradient-to-b from-[#FAFAF8] to-[#F5F5F0] px-4 pb-12 sm:px-6',
     shouldShowCrashAppBanner ? 'pt-32 sm:pt-28' : 'pt-16 sm:pt-20',
@@ -1008,7 +1005,6 @@ function MusicPlayerContent(): JSX.Element {
           <PlayInCrashAppBanner
             topicId={bannerTopicId}
             episodeNumber={bannerEpisodeNumber ?? undefined}
-            isDated={bannerIsDated}
             onClose={() => setIsAppBannerDismissed(true)}
           />
         ) : null}
@@ -1081,9 +1077,6 @@ function MusicPlayerContent(): JSX.Element {
                   >
                     <svg className="h-4 w-4 text-current" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M12 6V3L6 9l6 6v-3c3.314 0 6 2.686 6 6h2c0-4.418-3.582-8-8-8Z" />
-                      <text x="12" y="16" textAnchor="middle" fontSize="8" fontWeight="700" fill="currentColor">
-                        15
-                      </text>
                     </svg>
                   </button>
                   <button
@@ -1118,9 +1111,6 @@ function MusicPlayerContent(): JSX.Element {
                   >
                     <svg className="h-4 w-4 text-current" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                       <path d="M12 6V3l6 6-6 6v-3c-3.314 0-6 2.686-6 6H4c0-4.418 3.582-8 8-8Z" />
-                      <text x="12" y="16" textAnchor="middle" fontSize="8" fontWeight="700" fill="currentColor">
-                        15
-                      </text>
                     </svg>
                   </button>
                   <button
