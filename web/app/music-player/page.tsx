@@ -130,7 +130,7 @@ function buildRealtimeContext(
     if (summaryText) {
       lines.push(`Summary: ${summaryText}`);
     }
-    const fullText = truncateForContext(paper.fullText, 3200);
+    const fullText = truncateForContext(paper.fullText, 15000);
     if (fullText) {
       lines.push(`Full Text:\n${fullText}`);
     }
