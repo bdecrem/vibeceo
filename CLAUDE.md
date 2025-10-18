@@ -2,7 +2,7 @@
 
 ## 🎯 Current Focus (As of October 2, 2025)
 
-**B52s.me** is our new brand/product - a personal agent assistant over SMS. It builds on our Webtoys and sms-bot infrastructure:
+**kochi.to** is our new brand/product - a personal agent assistant over SMS. Formerly known as b52s.me, kochi.to builds on our Webtoys and sms-bot infrastructure:
 
 - **What it is**: SMS-based AI agent/assistant platform
 - **Landing page**: `web/app/b52s-landing` or similar in `web/app/`
@@ -12,14 +12,14 @@
 
 ### Products in This Codebase
 
-1. **B52s.me** (Current focus) - Personal SMS agent assistant
+1. **kochi.to** (Current focus) - Personal SMS agent assistant
 2. **WEBTOYS** (formerly WTAF.me) - "Vibecoding over SMS" for creating web content
 
 ## Project Context
 
 ### What We Build
 
-**B52s.me capabilities:**
+**kochi.to capabilities:**
 - **AI Agents**: Crypto research, YouTube search, stock tracking, daily insights
 - **Personal Assistant**: Information retrieval, task automation over SMS
 - **Conversational AI**: Multi-turn conversations with specialized coach personalities

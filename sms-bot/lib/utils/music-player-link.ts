@@ -62,7 +62,8 @@ function buildEpisodeTitle(episode: AiDailyEpisode): string {
   const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : new Date();
   const validDate = Number.isNaN(publishedDate.getTime()) ? new Date() : publishedDate;
   const formattedDate = PACIFIC_LABEL_FORMATTER.format(validDate);
-  return episode.title?.trim() || `AI Daily ${formattedDate}`;
+  const episodeInfo = episode.title?.trim() || formattedDate;
+  return `AI Daily — ${episodeInfo}`;
 }
 
 function buildEpisodeDescription(episode: AiDailyEpisode): string | null {

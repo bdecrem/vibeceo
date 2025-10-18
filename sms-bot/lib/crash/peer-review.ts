@@ -164,15 +164,22 @@ function ensureTrailingPeriod(text: string): string {
 
 function buildPeerReviewPlayerTitle(episode: PeerReviewEpisode): string {
   const candidate = episode.title?.trim();
+
+  // Extract episode-specific info (remove show name prefix if present)
+  let episodeInfo: string;
   if (candidate) {
-    return candidate;
+    // Remove "Peer Review Fight Club" prefix if present
+    const stripped = stripBrandPrefix(candidate);
+    episodeInfo = stripped || candidate;
+  } else {
+    // Fallback to date
+    const fallbackDate = new Date();
+    const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : fallbackDate;
+    const validDate = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
+    episodeInfo = PLAYER_TITLE_FORMATTER.format(validDate);
   }
 
-  const fallbackDate = new Date();
-  const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : fallbackDate;
-  const validDate = Number.isNaN(publishedDate.getTime()) ? fallbackDate : publishedDate;
-  const formattedDate = PLAYER_TITLE_FORMATTER.format(validDate);
-  return `${PEER_REVIEW_DEFAULT_TITLE} ${formattedDate}`;
+  return `${PEER_REVIEW_DEFAULT_TITLE} — ${episodeInfo}`;
 }
 
 function buildPeerReviewPlayerDescription(episode: PeerReviewEpisode): string | null {

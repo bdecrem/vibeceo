@@ -22,8 +22,8 @@ const SHOWS = [
     order: 1,
   },
   {
-    name: 'Crypto Daily',
-    topicId: process.env.CRYPTO_PODCAST_TOPIC_ID || null,
+    name: 'Crypto Market Daily Brief',
+    topicId: '151e2d10-46ff-50d9-9071-223702b75ddd',
     title: 'Crypto Market Daily Brief',
     order: 2,
   },
