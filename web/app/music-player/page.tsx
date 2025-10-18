@@ -69,9 +69,9 @@ const KOCHI_APP_HOME = 'https://listen.crashcourse.cc/';
 const SHOW_TOPIC_IDS: Record<string, string> = {
   'ai daily': '770a27b8-28a8-40bd-ad82-d9c0952924ce',
   'peer review fight club': '5c6c2fd7-fcec-417b-ab48-27db253443b8',
-  'crypto research daily': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
-  'crypto market daily brief': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
-  'crypto daily': '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+  'crypto research daily': '151e2d10-46ff-50d9-9071-223702b75ddd',
+  'crypto market daily brief': '151e2d10-46ff-50d9-9071-223702b75ddd',
+  'crypto daily': '151e2d10-46ff-50d9-9071-223702b75ddd',
 };
 
 function formatTime(seconds: number): string {
