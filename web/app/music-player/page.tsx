@@ -183,12 +183,28 @@ function MusicPlayerContent(): JSX.Element {
     const titleParam = searchParams.get('title');
     const descriptionParam = searchParams.get('description');
 
+    // Extract show name from title (everything before " — " or " - ")
+    const fullTitle = titleParam?.trim() || 'AI Daily — Latest Episode';
+    let showName = 'AI Daily'; // default
+
+    // Try to split on " — " first (em dash)
+    const emDashParts = fullTitle.split(' — ');
+    if (emDashParts.length > 1) {
+      showName = emDashParts[0];
+    } else {
+      // Try to split on " - " (hyphen)
+      const hyphenParts = fullTitle.split(' - ');
+      if (hyphenParts.length > 1) {
+        showName = hyphenParts[0];
+      }
+    }
+
     return {
       id: 'ai-daily-latest',
-      title: titleParam?.trim() || 'AI Daily — Latest Episode',
+      title: fullTitle,
       description: descriptionParam?.trim() || undefined,
       src,
-      showName: 'AI Daily',
+      showName,
     };
   }, [searchParams]);
 
@@ -355,10 +371,7 @@ function MusicPlayerContent(): JSX.Element {
       return '';
     }
 
-    if (currentTrack.episodeNumber) {
-      return `Episode ${currentTrack.episodeNumber}`;
-    }
-
+    // Priority 1: Try to find a date in description or title
     const sources = [currentTrack.description, currentTrack.title];
     const isoDateRegex = /\b\d{4}-\d{2}-\d{2}\b/;
 
@@ -380,13 +393,14 @@ function MusicPlayerContent(): JSX.Element {
       }
     }
 
-    if (displayTitle) {
-      const normalized = displayTitle.trim();
-      return normalized.length > 42 ? `${normalized.slice(0, 39).trimEnd()}…` : normalized;
+    // Priority 2: If no date found, show episode number
+    if (currentTrack.episodeNumber) {
+      return `Episode ${currentTrack.episodeNumber}`;
     }
 
-    return currentTrack.title || '';
-  }, [currentTrack, displayTitle]);
+    // Priority 3: If neither date nor episode number, return empty
+    return '';
+  }, [currentTrack]);
 
   const waveformBars = useMemo(() => {
     const barCount = WAVEFORM_BAR_HEIGHTS.length;
