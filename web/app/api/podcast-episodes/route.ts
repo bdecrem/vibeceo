@@ -23,7 +23,7 @@ const SHOWS = [
   },
   {
     name: 'Crypto Research Daily',
-    topicId: '61cb70e6-c5e6-41f9-8187-f1e28c1eafe7',
+    topicId: '151e2d10-46ff-50d9-9071-223702b75ddd',
     title: null,
     order: 2,
   },
