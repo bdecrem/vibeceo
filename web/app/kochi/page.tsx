@@ -25,15 +25,19 @@ interface KochiAnimationProps {
 
 interface KochiAnimationHandle {
   playRandomAnimation: () => void;
+  playDisco: () => void;
 }
 
 const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
   ({ onClick }, ref) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [gsapReady, setGsapReady] = useState(false);
   const animationsRef = useRef<Array<() => any>>([]);
   const activeTimelineRef = useRef<any>(null);
+  const discoIntervalRef = useRef<number | null>(null);
+  const discoTimeoutsRef = useRef<number[]>([]);
   const eyesRef = useRef<{ left: SVGPathElement | null; right: SVGPathElement | null }>({
     left: null,
     right: null
@@ -163,7 +167,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
     };
   }, [gsapReady]);
 
-  // One-time intro animation: SPONGE SQUISH + EXTREME BALLOON CHAOS!!!
+  // One-time intro animation
   useEffect(() => {
     if (!gsapReady || introAnimationPlayedRef.current || !groupRef.current) return;
 
@@ -196,12 +200,9 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
           .to(eyes, { scaleX: 1, scaleY: 1, duration: 0.56, ease: 'power2.out' });
       }
 
-      // 2 SECONDS OF STILLNESS
       tl.to({}, { duration: 2 });
 
-      // PART 2: EXTREME BALLOON CHAOS!!!
-
-      // 1. DEEP ANTICIPATION - Crouch down LOW
+      // PART 2: EXTREME BALLOON CHAOS
       tl.to(group, {
         scaleY: 0.5,
         scaleX: 1.4,
@@ -210,7 +211,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         ease: "power2.in"
       });
 
-      // Antennas bend backward from force
       if (antennas.length) {
         tl.to(antennas, {
           rotation: -35,
@@ -219,7 +219,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, 0);
       }
 
-      // Eyes SQUEEZE
       if (eyes.length) {
         tl.to(eyes, {
           scaleY: 0.4,
@@ -229,7 +228,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, 0);
       }
 
-      // 2. MASSIVE INHALE + EXPLOSION UP
       tl.to(group, {
         scale: 1.7,
         y: -20,
@@ -237,7 +235,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         ease: "back.out(3)"
       });
 
-      // Antennas SPRING UP
       if (antennas.length) {
         tl.to(antennas, {
           rotation: 15,
@@ -246,7 +243,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.5");
       }
 
-      // Eyes POP HUGE
       if (eyes.length) {
         tl.to(eyes, {
           scale: 1.6,
@@ -255,13 +251,11 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.5");
       }
 
-      // 3. MAXIMUM PRESSURE - Vibrate!
       tl.to(group, {
         scale: 1.75,
         duration: 0.1
       });
 
-      // Shake shake shake (building tension)
       for (let i = 0; i < 4; i++) {
         tl.to(group, {
           rotation: i % 2 === 0 ? 3 : -3,
@@ -269,8 +263,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         });
       }
 
-      // 4. THE EXPLOSION - PFFFFFFFFFTTTTT!!!
-      // First deflation - WHIP LEFT
       tl.to(group, {
         scaleX: 0.4,
         scaleY: 1.6,
@@ -290,7 +282,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.15");
       }
 
-      // Second deflation - WHIP RIGHT
       tl.to(group, {
         scaleX: 1.5,
         scaleY: 0.5,
@@ -310,7 +301,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.18");
       }
 
-      // Third deflation - SPIN CRAZY
       tl.to(group, {
         scaleX: 0.7,
         scaleY: 1.3,
@@ -330,7 +320,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.2");
       }
 
-      // Antennas go WILD
       if (antennas.length) {
         tl.to(antennas, {
           rotation: -60,
@@ -339,7 +328,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.4");
       }
 
-      // 5. RECOVERY - BIG ELASTIC BOUNCE
       tl.to(group, {
         scale: 1,
         rotation: 360,
@@ -366,7 +354,6 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         }, "-=0.8");
       }
 
-      // Final settle - tiny dazed shake
       tl.to(group, {
         rotation: 365,
         duration: 0.3,
@@ -413,12 +400,123 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
     });
   };
 
+  // DISCO ANIMATION - EXACT code from disco.html with color changes!
+  const playDisco = () => {
+    if (!svgRef.current || !groupRef.current) return;
+
+    // Kill any active GSAP animation
+    activeTimelineRef.current?.kill();
+    activeTimelineRef.current = null;
+
+    // Clear any existing disco timers
+    if (discoIntervalRef.current) {
+      window.clearInterval(discoIntervalRef.current);
+      discoIntervalRef.current = null;
+    }
+    discoTimeoutsRef.current.forEach(id => window.clearTimeout(id));
+    discoTimeoutsRef.current = [];
+
+    const kochi = groupRef.current;
+    const svg = svgRef.current;
+    const body = svg.querySelector<SVGPathElement>("#body");
+    const face = svg.querySelector<SVGPathElement>("#face");
+    const antennaL = svg.querySelector<SVGPathElement>("#antennaL");
+    const antennaR = svg.querySelector<SVGPathElement>("#antennaR");
+
+    if (!body || !face || !antennaL || !antennaR) return;
+
+    // Allow Kochi to render outside SVG bounds during disco!
+    svg.style.overflow = 'visible';
+
+    // Store original STYLE fills (inline styles override CSS classes)
+    const originalBodyFill = body.style.fill || '#ffe148';
+    const originalFaceFill = face.style.fill || '#2c3e1f';
+    const originalAntennaFill = antennaL.style.fill || '#ffe148';
+
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF'];
+    let count = 0;
+
+    // Create disco balls (exact code from disco.html)
+    for (let i = 0; i < 30; i++) {
+      const timeoutId = window.setTimeout(() => {
+        const ball = document.createElement('div');
+        ball.style.position = 'absolute';
+        ball.style.width = '10px';
+        ball.style.height = '10px';
+        ball.style.background = 'white';
+        ball.style.borderRadius = '50%';
+        ball.style.left = Math.random() * 100 + '%';
+        ball.style.top = Math.random() * 100 + '%';
+        ball.style.opacity = '1';
+        ball.style.pointerEvents = 'none';
+        ball.style.zIndex = '1000';
+
+        if (containerRef.current) {
+          containerRef.current.appendChild(ball);
+        }
+
+        const fadeTimeout = window.setTimeout(() => {
+          ball.style.transition = 'opacity 0.5s';
+          ball.style.opacity = '0';
+          const removeTimeout = window.setTimeout(() => ball.remove(), 500);
+          discoTimeoutsRef.current.push(removeTimeout);
+        }, 2000);
+
+        discoTimeoutsRef.current.push(fadeTimeout);
+      }, i * 100);
+
+      discoTimeoutsRef.current.push(timeoutId);
+    }
+
+    // Disco animation loop - USE INLINE STYLES to override CSS classes!
+    discoIntervalRef.current = window.setInterval(() => {
+      // Set inline styles (these override CSS classes)
+      body.style.fill = colors[count % colors.length];
+      face.style.fill = colors[(count + 1) % colors.length];
+      antennaL.style.fill = colors[(count + 2) % colors.length];
+      antennaR.style.fill = colors[(count + 3) % colors.length];
+
+      const rotation = Math.sin(count * 0.3) * 30;
+      const scale = 1 + Math.sin(count * 0.5) * 0.2;
+      kochi.style.transform = `rotate(${rotation}deg) scale(${scale})`;
+
+      count++;
+      if (count > 40) {
+        if (discoIntervalRef.current) {
+          window.clearInterval(discoIntervalRef.current);
+          discoIntervalRef.current = null;
+        }
+
+        // Reset to original colors and transform
+        body.style.fill = originalBodyFill;
+        face.style.fill = originalFaceFill;
+        antennaL.style.fill = originalAntennaFill;
+        antennaR.style.fill = originalAntennaFill;
+        kochi.style.transform = '';
+
+        // Reset overflow back to default
+        svg.style.overflow = '';
+      }
+    }, 100);
+  };
+
   useImperativeHandle(ref, () => ({
-    playRandomAnimation
+    playRandomAnimation,
+    playDisco
   }));
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (discoIntervalRef.current) {
+        window.clearInterval(discoIntervalRef.current);
+      }
+      discoTimeoutsRef.current.forEach(id => window.clearTimeout(id));
+    };
+  }, []);
+
   return (
-    <>
+    <div ref={containerRef} style={{ position: 'relative' }}>
       <Script
         src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"
         strategy="afterInteractive"
@@ -475,7 +573,7 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
           />
         </g>
       </svg>
-    </>
+    </div>
   );
 });
 KochiAnimation.displayName = "KochiAnimation";
@@ -512,9 +610,21 @@ export default function KochiLandingPage() {
     if (stage === "initial" || stage === "prompt") {
       setStage("cta");
       setAnimationsEnabled(true);
-      setTimeout(() => mascotRef.current?.playRandomAnimation(), 60);
+      setTimeout(() => {
+        // 15% chance of disco, 85% chance of GSAP
+        if (Math.random() < 0.15) {
+          mascotRef.current?.playDisco();
+        } else {
+          mascotRef.current?.playRandomAnimation();
+        }
+      }, 60);
     } else if (animationsEnabled) {
-      mascotRef.current?.playRandomAnimation();
+      // 15% chance of disco, 85% chance of GSAP
+      if (Math.random() < 0.15) {
+        mascotRef.current?.playDisco();
+      } else {
+        mascotRef.current?.playRandomAnimation();
+      }
     }
   };
 
@@ -591,7 +701,6 @@ export default function KochiLandingPage() {
           </p>
         </div>
 
-        {/* Group Kochi character with chat bubble for visual connection */}
         <div className="flex flex-col items-center gap-2 sm:gap-4">
           <div className="flex justify-center">
             <KochiAnimation ref={mascotRef} onClick={handleMascotClick} />
