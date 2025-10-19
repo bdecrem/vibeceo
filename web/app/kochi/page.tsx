@@ -26,14 +26,18 @@ interface KochiAnimationProps {
 interface KochiAnimationHandle {
   playRandomAnimation: () => void;
   playDisco: () => void;
+  playMorph: () => void;
 }
 
 const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
   ({ onClick }, ref) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const morphSvgRef = useRef<SVGSVGElement | null>(null);
   const groupRef = useRef<SVGGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [gsapReady, setGsapReady] = useState(false);
+  const [morphPluginReady, setMorphPluginReady] = useState(false);
+  const [activeSVG, setActiveSVG] = useState<'normal' | 'morph'>('normal');
   const animationsRef = useRef<Array<() => any>>([]);
   const activeTimelineRef = useRef<any>(null);
   const discoIntervalRef = useRef<number | null>(null);
@@ -53,6 +57,30 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
       setGsapReady(true);
     }
   }, [gsapReady]);
+
+  // Load MorphSVGPlugin
+  useEffect(() => {
+    if (!gsapReady || morphPluginReady) return;
+
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/gsap@3/dist/MorphSVGPlugin.min.js';
+    script.onload = () => {
+      const gsap = (window as any).gsap;
+      const MorphSVGPlugin = (window as any).MorphSVGPlugin;
+      if (gsap && MorphSVGPlugin) {
+        gsap.registerPlugin(MorphSVGPlugin);
+        setMorphPluginReady(true);
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup: remove script on unmount
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, [gsapReady, morphPluginReady]);
 
   useEffect(() => {
     if (!gsapReady || !svgRef.current) return;
@@ -500,9 +528,179 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
     }, 100);
   };
 
+  // MORPH ANIMATION - Exact code from kochi-morph-demo.html
+  const playMorph = () => {
+    if (!morphPluginReady || !morphSvgRef.current) return;
+
+    const gsap = (window as any).gsap;
+    const MorphSVGPlugin = (window as any).MorphSVGPlugin;
+    if (!gsap || !MorphSVGPlugin) return;
+
+    // Kill any active animations
+    activeTimelineRef.current?.kill();
+    activeTimelineRef.current = null;
+    if (discoIntervalRef.current) {
+      window.clearInterval(discoIntervalRef.current);
+      discoIntervalRef.current = null;
+    }
+
+    // Switch to morph SVG
+    setActiveSVG('morph');
+
+    // Wait for DOM update, then run morph animation
+    setTimeout(() => {
+      const morphSvg = morphSvgRef.current;
+      if (!morphSvg) return;
+
+      const kochiGroup = morphSvg.querySelector("#kochi");
+      const eyeL = morphSvg.querySelector("#eyeL");
+      const eyeR = morphSvg.querySelector("#eyeR");
+      const bodyShape = morphSvg.querySelector("#bodyShape");
+      const face = morphSvg.querySelector("#face");
+
+      if (!kochiGroup || !eyeL || !eyeR || !bodyShape || !face) return;
+
+      // Set transform origins
+      gsap.set(kochiGroup, { transformOrigin: "50% 50%" });
+      gsap.set([eyeL, eyeR], { transformOrigin: "50% 50%" });
+
+      // Create morph timeline
+      const tl = gsap.timeline({
+        onComplete: () => {
+          // Switch back to normal SVG after animation
+          setTimeout(() => setActiveSVG('normal'), 100);
+        }
+      });
+
+      tl
+        // WIGGLE - "Waking up and shaking it off"
+        .to(kochiGroup, {
+          rotation: -3,
+          duration: 0.15,
+          ease: "power2.inOut"
+        }, 0)
+        .to(kochiGroup, {
+          rotation: 4,
+          duration: 0.15,
+          ease: "power2.inOut"
+        }, 0.15)
+        .to(kochiGroup, {
+          rotation: -4,
+          duration: 0.15,
+          ease: "power2.inOut"
+        }, 0.3)
+        .to(kochiGroup, {
+          rotation: 3,
+          duration: 0.15,
+          ease: "power2.inOut"
+        }, 0.45)
+        .to(kochiGroup, {
+          rotation: -2,
+          duration: 0.15,
+          ease: "power2.inOut"
+        }, 0.6)
+        .to(kochiGroup, {
+          rotation: 0,
+          duration: 0.2,
+          ease: "back.out(2)"
+        }, 0.75)
+
+        // Eye blink during wiggle
+        .to([eyeL, eyeR], {
+          scaleY: 0.1,
+          duration: 0.08,
+          ease: "power2.in",
+          repeat: 1,
+          yoyo: true
+        }, 0.3)
+
+        // Small bounce/settle after wiggle
+        .to(kochiGroup, {
+          y: -10,
+          duration: 0.2,
+          ease: "power2.out"
+        }, 0.75)
+        .to(kochiGroup, {
+          y: 0,
+          duration: 0.3,
+          ease: "bounce.out"
+        }, 0.95)
+
+        // MAIN MORPH - Squished → Normal
+        .to(bodyShape, {
+          morphSVG: "#targetBodyNormal",
+          duration: 3.5,
+          ease: "elastic.out(1, 0.3)"
+        }, 1.3)
+
+        // Morph face too
+        .to(face, {
+          morphSVG: "#targetFaceNormal",
+          duration: 3.5,
+          ease: "elastic.out(1, 0.3)"
+        }, 1.3)
+
+        // Squash down before stretching up
+        .to(kochiGroup, {
+          scaleY: 0.85,
+          scaleX: 1.15,
+          duration: 0.4,
+          ease: "power2.in"
+        }, 1.3)
+
+        // Big stretch with overshoot
+        .to(kochiGroup, {
+          scaleY: 1.15,
+          scaleX: 0.9,
+          duration: 1.2,
+          ease: "power2.out"
+        }, 1.7)
+
+        // Settle back to normal
+        .to(kochiGroup, {
+          scaleY: 1,
+          scaleX: 1,
+          duration: 2.3,
+          ease: "elastic.out(1, 0.4)"
+        }, 2.9)
+
+        // Eyes react during morph - squash and stretch
+        .to([eyeL, eyeR], {
+          scaleY: 0.7,
+          scaleX: 1.3,
+          duration: 0.5,
+          ease: "power2.out"
+        }, 1.7)
+        .to([eyeL, eyeR], {
+          scaleY: 1.2,
+          scaleX: 0.85,
+          duration: 0.8,
+          ease: "power2.inOut"
+        }, 2.2)
+        .to([eyeL, eyeR], {
+          scaleY: 1,
+          scaleX: 1,
+          duration: 1.2,
+          ease: "elastic.out(1, 0.4)"
+        }, 3.0)
+
+        // Final blink at the end
+        .to([eyeL, eyeR], {
+          scaleY: 0.1,
+          duration: 0.08,
+          ease: "power2.in",
+          repeat: 1,
+          yoyo: true
+        }, 4.5);
+
+      activeTimelineRef.current = tl;
+    }, 50);
+  };
+
   useImperativeHandle(ref, () => ({
     playRandomAnimation,
-    playDisco
+    playDisco,
+    playMorph
   }));
 
   // Cleanup on unmount
@@ -522,11 +720,14 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
         strategy="afterInteractive"
         onLoad={() => setGsapReady(true)}
       />
+
+      {/* NORMAL SVG - for GSAP animations and disco */}
       <svg
         ref={svgRef}
         viewBox="0 0 1024 1024"
         className="max-w-[200px] sm:max-w-[280px] w-full h-auto cursor-pointer transition-transform duration-100"
         onClick={onClick}
+        style={{ display: activeSVG === 'normal' ? 'block' : 'none' }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "scale(1.05)";
         }}
@@ -573,12 +774,49 @@ const KochiAnimation = forwardRef<KochiAnimationHandle, KochiAnimationProps>(
           />
         </g>
       </svg>
+
+      {/* MORPH SVG - squished blob version for morph animation */}
+      <svg
+        ref={morphSvgRef}
+        viewBox="0 0 1024 1024"
+        className="max-w-[200px] sm:max-w-[280px] w-full h-auto cursor-pointer transition-transform duration-100"
+        onClick={onClick}
+        style={{ display: activeSVG === 'morph' ? 'block' : 'none' }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "scale(1.05)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "scale(1)";
+        }}
+      >
+        <defs>
+          <style>{`
+            .st0 { fill: #ffe148; }
+            .st1 { fill: #2c3e1f; }
+          `}</style>
+        </defs>
+        <g id="kochi">
+          {/* Squished blob body */}
+          <path id="bodyShape" className="st0" d="M940.1,616.9c11.5-32.7,19.6-65.5,24.3-98.3,2.7-17.9,5.4-41.4,3.9-58.6-1.2-13.5-5.3-26.3-12.2-37.6-21.7-36.8-69.4-53.6-124.2-50.4-26.8,1.3-47.7,5.6-75,11.6,0,0,0,0,0,0,0,0-.2,0-.2,0-4.7-18.2-10.6-36.3-17.9-54.3,13.7-11.2,22.8-22.2,23.2-35.6.3-10.5-5.8-18.9-16-22.5-10.4-3.6-23.4-1.8-37,3.8-13.9,5.7-26.7,14.7-36.4,24.2-9.5,9.3-15.4,18.6-16.2,26.6-1.4,12.6,9.8,20.2,30.4,20.4,4.5,0,8.5-.5,13.3-1,6.1,16.3,11,32.8,14.9,49.4-88.1,22.8-175.5,33.5-262.4,32.1-43.5-.7-88.8-4.3-131.8-11.4-.4,0-.8-.1-1.1-.2,2.8-13.5,7.8-29.8,11.2-41.9,16.8,0,28.1-2,35.6-8.2,5.6-4.6,6-10.6,1.7-17-4.5-6.6-13.3-13.3-24.8-19.3-5.6-2.9-12.3-5.8-18.7-7.9-28-9.7-53.9-7.3-57.4,10-1.5,7.6,3.1,16.6,12.7,24.2,3.7,3,7.6,5.4,12.2,7.8-5.5,15.1-9.8,30.3-13.1,45.7-54-8.6-107.2-10.9-145.8,4.8-24.6,9.8-41.9,26.3-48.8,47-5.8,16.8-2.2,41.6,1.1,60.3,4,24.2,10.3,48.5,18.9,72.9,8,22.6,17.9,45.3,29.8,68.1,6.9,13.3,16.7,31.5,26.5,43.8,26.8,34,72.8,55.4,116.5,59.4,28.2,2.7,54.2-.7,77.2-7.1,16.6-5.2,43.8-16.2,60.4-20,31.9-8,63.8-10.3,95.8-6.9,41.5,4.4,83,18.5,124.5,42.1,7.3,4.1,14.9,9.1,22.7,13.1,34.7,18.7,80.1,28.5,129.5,14.8,12.2-3.5,24.3-8.3,35.9-14.4,47.4-26.9,61.1-50.5,83.4-92.8,13.2-25.6,24.4-51.3,33.4-77Z"/>
+          {/* Squished blob face */}
+          <path id="face" className="st1" d="M345.7,447.9c23.7,4.9,50.6,9.9,74.2,12.2,46.4,4.8,92.8,4,139.3-2.3,26.5-3.6,53-9,79.5-16.2,19.2-5,41.9-13.5,63.2-18,24.1-5,53.2-6,82.7,0,78.5,16.5,96,63.6,79.7,108.9-11.4,38-48.5,75.1-119,95.4-52.6,14.9-88.1,13.1-112.5,6-16.7-4.7-36.3-11-52.5-14.4-34.1-7.3-68.2-10.6-102.2-9.7-20.2.5-40.3,2.5-60.4,5.8-13.6,2.2-26.6,6-42.9,7.6-21.8,2.1-53.6-.6-87.3-10.2-33.2-9.4-68.3-25.7-85.9-45.9-12.5-14-19.8-28.4-24-42.1-10.5-30.9,2-63.6,56.3-77.2,41.8-10.8,78.1-6.6,111.8,0h0Z"/>
+          {/* Eyes */}
+          <path id="eyeL" className="st0" d="M408,480.1c24.6-4,47.8,12.8,51.7,37.4,3.8,24.7-13.1,47.7-37.9,51.4-24.4,3.6-47.1-13.2-50.9-37.5-3.8-24.4,12.8-47.2,37.1-51.2h0Z"/>
+          <path id="eyeR" className="st0" d="M601.2,480.3c24.3-4.1,47.4,12.2,51.6,36.6,4.2,24.3-12.2,47.4-36.5,51.6-24.3,4.2-47.5-12.2-51.6-36.5-4.2-24.4,12.2-47.5,36.6-51.6h0Z"/>
+        </g>
+      </svg>
+
+      {/* Hidden target shapes for morph */}
+      <svg style={{ display: 'none' }}>
+        <path id="targetBodyNormal" d="M818.4,610.3v-89.6c0-16.3.6-37.5-.6-53.4-1-12.5-3.5-24.8-7.6-36.6-12.8-37.8-40.2-68.9-76.1-86.4-17.5-8.6-31.8-11.8-50.8-14.6h0s-.2,0-.2,0v-74.3c11.8-6,20.5-12.9,24.8-26,3.3-10.4,2.4-21.8-2.7-31.5-5.1-9.8-13.7-16.6-24.3-19.8-10.8-3.2-22.4-2-32.3,3.4-9.6,5.2-16.7,14.1-19.6,24.6-4.7,16.8,1.5,33.8,15.3,44.1,3,2.2,5.9,3.6,9.2,5.3v73.3h-187.9c-31.4,0-64.1.5-95.3,0h-.8c.3-23.4.9-52.4.6-73.6,12.1-6.4,20.1-13.6,24.3-27.2,3.2-10.1,2.1-21-3-30.3-5.2-9.7-14.1-16.9-24.7-19.9-5.1-1.5-11.1-2.2-16.5-1.6-23.7,2.7-39.6,22.1-36.5,46,1.4,10.7,7.1,20.5,15.7,27,3.3,2.5,6.7,4.3,10.5,5.9v75.2c-39.1,3.7-75.1,22.9-100,53.2-16,19.3-27,42.3-32.1,66.8-4.1,19.9-3,47.1-3,68v80.8s0,75.2,0,75.2c0,14.7-.6,34.5.8,48.7,3.9,38.8,23,74.5,53.1,99.1,19.3,15.7,42.3,26.3,66.8,30.9,17.8,3.2,50.9,2.1,70.6,2.1h113.9s148.1,0,148.1,0c8.7,0,17.9.2,26.5-.7,39.3-3.6,75.5-23,100.4-53.5,6.2-7.7,11.6-16,16.2-24.7,18.1-36.7,16.7-56.3,16.7-95.4v-70.4Z"/>
+        <path id="targetFaceNormal" d="M368.9,396.2c20-.8,43.6-.2,63.8-.2h188.4c16.4,0,36.8-.8,52.6,2.1,17.9,3.3,34.5,11.5,48.1,23.7,35.3,31.9,29.4,68.7,29.7,111.1.2,35.2,2.9,66.4-23.4,94.2-19.7,20.8-44.8,29.9-73,31-18.7.8-43.1.1-62.1.1h-193.2c-16,0-32.9.9-48.7-1.6-43.2-6.9-77.2-41.9-78.6-86.3-.5-15.6,0-31.4-.2-46.7-.5-34.9-2.4-68.5,23.8-95.9,20-21.6,44.1-30.1,72.8-31.6h0Z"/>
+      </svg>
     </div>
   );
 });
 KochiAnimation.displayName = "KochiAnimation";
 
-export default function KochiLandingPage() {
+export default function KochiDiscoTestPage() {
   const [stage, setStage] = useState<Stage>("initial");
   const [animationsEnabled, setAnimationsEnabled] = useState(false);
   const mascotRef = useRef<KochiAnimationHandle | null>(null);
@@ -611,17 +849,23 @@ export default function KochiLandingPage() {
       setStage("cta");
       setAnimationsEnabled(true);
       setTimeout(() => {
-        // 15% chance of disco, 85% chance of GSAP
-        if (Math.random() < 0.15) {
+        // 75% GSAP, 10% disco, 15% morph
+        const rand = Math.random();
+        if (rand < 0.10) {
           mascotRef.current?.playDisco();
+        } else if (rand < 0.25) { // 10% + 15% = 25%
+          mascotRef.current?.playMorph();
         } else {
           mascotRef.current?.playRandomAnimation();
         }
       }, 60);
     } else if (animationsEnabled) {
-      // 15% chance of disco, 85% chance of GSAP
-      if (Math.random() < 0.15) {
+      // 75% GSAP, 10% disco, 15% morph
+      const rand = Math.random();
+      if (rand < 0.10) {
         mascotRef.current?.playDisco();
+      } else if (rand < 0.25) { // 10% + 15% = 25%
+        mascotRef.current?.playMorph();
       } else {
         mascotRef.current?.playRandomAnimation();
       }
@@ -748,7 +992,7 @@ export default function KochiLandingPage() {
                       color: "#2C3E1F",
                       padding: "12px 18px",
                       borderRadius: "20px",
-                      border: "2px solid #2C3E1F",
+                      border: "1px solid #2C3E1F",
                       display: "inline-block",
                       maxWidth: "90%",
                       textAlign: "left",
@@ -766,7 +1010,7 @@ export default function KochiLandingPage() {
                 <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <a
                     href="sms:8663300015?body=AI%20DAILY"
-                    className={`${poppins.className} rounded-full border-2 border-[#2C3E1F] px-5 py-3 sm:px-7 sm:py-4 text-[15px] sm:text-[17px] font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.32)]`}
+                    className={`${poppins.className} rounded-full border border-[#2C3E1F] px-5 py-3 sm:px-7 sm:py-4 text-[15px] sm:text-[17px] font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.32)]`}
                     style={{
                       background: "#FFE148",
                       color: "#2C3E1F"

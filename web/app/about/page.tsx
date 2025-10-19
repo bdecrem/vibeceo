@@ -51,8 +51,8 @@ export default function AboutPage() {
             About Kochi.to
           </h1>
 
-          <div className="space-y-6 text-[16px] sm:text-[18px] leading-[1.7]">
-            <p className="font-medium">
+          <div className="space-y-6 text-[13px] sm:text-[15px] leading-[1.6] font-medium">
+            <p className="font-semibold">
               Hey — I'm Kochi 👋
             </p>
 
@@ -81,25 +81,25 @@ export default function AboutPage() {
             </p>
 
             <div className="pt-6 border-t border-[rgba(44,62,31,0.12)] mt-8 space-y-3">
-              <p className="text-[15px] sm:text-[16px]" style={{ color: "#8a8a8a" }}>
+              <p className="text-[12px] sm:text-[13px]" style={{ color: "#8a8a8a" }}>
                 Kochi.to was started by <a href="https://www.linkedin.com/in/bartdecrem/?_l=en_US" target="_blank" rel="noopener noreferrer" className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200">tech veterans</a> who still believe.
               </p>
 
-              <p className="text-[15px] sm:text-[16px]" style={{ color: "#8a8a8a" }}>
+              <p className="text-[12px] sm:text-[13px]" style={{ color: "#8a8a8a" }}>
                 Kochi.to is a production of Kochito Labs, a Wyoming Corporation.
               </p>
             </div>
           </div>
         </article>
 
-        <p className="mt-12 text-center text-[15px] sm:text-[16px]" style={{ color: "#2C3E1F" }}>
+        <p className="mt-12 text-center text-[13px] sm:text-[15px] font-medium" style={{ color: "#2C3E1F" }}>
           Wanna partner, join the incubator or be an intern?<br />Kochi loves meeting humans.
         </p>
 
         <div className="mt-6 flex justify-center">
           <a
             href="mailto:contact@kochi.to"
-            className="rounded-full border-2 border-[#2C3E1F] px-8 py-4 text-lg font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.4)]"
+            className="rounded-full border border-[#2C3E1F] px-5 py-3 sm:px-7 sm:py-4 text-[15px] sm:text-[17px] font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.32)]"
             style={{
               background: "#FFE148",
               color: "#2C3E1F"
