@@ -1,21 +1,21 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kochi.to - Your personal AI companion over SMS",
-  description: "Your AI companion delivering daily blasts on tech, science, and finance. Weather permitting.",
+  title: "Kochi.to - Disco Test",
+  description: "Test version with disco animation integration",
   openGraph: {
-    title: "Kochi.to",
-    description: "Your AI companion delivering daily blasts on tech, science, and finance. Weather permitting.",
+    title: "Kochi.to - Disco Test",
+    description: "Test version with disco animation integration",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kochi.to",
-    description: "Your AI companion delivering daily blasts on tech, science, and finance. Weather permitting.",
+    title: "Kochi.to - Disco Test",
+    description: "Test version with disco animation integration",
   },
 };
 
-export default function KochiLayout({
+export default function KochiDiscoLayout({
   children,
 }: {
   children: React.ReactNode;
