@@ -118,6 +118,38 @@ export default function AboutPage() {
             Get in touch →
           </a>
         </div>
+
+        <footer className="mt-12 pt-8 border-t border-[rgba(44,62,31,0.12)]">
+          <div className="flex justify-center gap-6 text-[12px] sm:text-[13px]">
+            <a
+              href="/privacy"
+              className="transition-colors duration-200"
+              style={{ color: "#8a8a8a" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#2C3E1F";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#8a8a8a";
+              }}
+            >
+              Privacy Policy
+            </a>
+            <span style={{ color: "#8a8a8a" }}>•</span>
+            <a
+              href="/terms"
+              className="transition-colors duration-200"
+              style={{ color: "#8a8a8a" }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = "#2C3E1F";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = "#8a8a8a";
+              }}
+            >
+              Terms of Service
+            </a>
+          </div>
+        </footer>
       </main>
     </div>
   );
