@@ -398,7 +398,14 @@ async function markFeaturedPapersAndUpdateScores(
 export async function runAndStoreArxivReport(options?: {
   date?: string;
 }): Promise<ArxivReportMetadata> {
-  const reportDate = options?.date || new Date().toISOString().split('T')[0];
+  // Use Pacific Time for date (same as other agents)
+  const reportDate = options?.date || new Date().toLocaleDateString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).split('/').reverse().join('-'); // Convert MM/DD/YYYY to YYYY-MM-DD
+
   const startTime = Date.now();
 
   console.log(`\n=== arXiv Research Agent - ${reportDate} ===\n`);
