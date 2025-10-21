@@ -184,7 +184,7 @@ async function runPythonScript(
 ): Promise<string> {
   console.log(`Running ${description}...`);
 
-  const subprocess = spawn(PYTHON_BIN, [scriptPath, ...args], {
+  const subprocess = spawn(PYTHON_BIN, ['-u', scriptPath, ...args], {  // -u for unbuffered output
     cwd: process.cwd(),
     env: {
       ...process.env,
@@ -198,11 +198,16 @@ async function runPythonScript(
   let stderr = '';
 
   subprocess.stdout.on('data', (data) => {
-    stdout += data.toString();
+    const text = data.toString();
+    stdout += text;
+    // Echo Python output to console for debugging
+    process.stdout.write(text);
   });
 
   subprocess.stderr.on('data', (data) => {
-    stderr += data.toString();
+    const text = data.toString();
+    stderr += text;
+    process.stderr.write(text);
   });
 
   const exitCode: number = await new Promise((resolve, reject) => {
