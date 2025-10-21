@@ -39,3 +39,8 @@ test-scripts/*-generated.html
 # Crontab backups (contain tokens)
 crontab-backup-*.txt
 **/crontab-backup-*.txt
+
+# arXiv data files (large, regenerated daily)
+data/arxiv-reports/*.json
+data/arxiv-reports/analyze_papers.py
+data/arxiv-reports/scored_papers.json

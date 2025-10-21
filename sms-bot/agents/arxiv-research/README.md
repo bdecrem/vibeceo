@@ -137,7 +137,28 @@ Dependencies:
 - `arxiv>=2.1.0` - Official arXiv API client
 - `claude-agent-sdk>=0.1.0` - Autonomous agent framework
 
-### 3. Environment Variables
+### 3. Claude Code CLI
+
+The Claude Agent SDK requires the `claude-code` CLI tool to be available in PATH.
+
+**If you have `claude` installed but not `claude-code`:**
+
+```bash
+# Create symlink (one-time setup)
+ln -s ~/.npm-global/bin/claude ~/.npm-global/bin/claude-code
+
+# Verify it works
+which claude-code
+claude-code --version
+```
+
+**If you don't have Claude Code CLI installed:**
+
+```bash
+npm install -g @anthropic-ai/claude-code
+```
+
+### 4. Environment Variables
 
 Add to `.env` or production environment:
 
@@ -157,7 +178,7 @@ TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...
 ```
 
-### 4. Build & Restart
+### 5. Build & Restart
 
 ```bash
 cd sms-bot
@@ -167,7 +188,7 @@ npm run build
 # (if running as service, restart the service)
 ```
 
-### 5. Test Manually
+### 6. Test Manually
 
 ```bash
 # Stage 1: Fetch papers
@@ -334,6 +355,25 @@ sms-bot/migrations/
 ```bash
 pip install claude-agent-sdk
 ```
+
+### "Fatal error in message reader" / "Command failed with exit code 1"
+This means the Claude Agent SDK cannot find the `claude-code` CLI tool. Solutions:
+
+1. Create symlink if you have `claude` but not `claude-code`:
+   ```bash
+   ln -s ~/.npm-global/bin/claude ~/.npm-global/bin/claude-code
+   ```
+
+2. Or install Claude Code CLI:
+   ```bash
+   npm install -g @anthropic-ai/claude-code
+   ```
+
+3. Verify it works:
+   ```bash
+   which claude-code  # Should show path to executable
+   claude-code --version  # Should show version number
+   ```
 
 ### "arXiv API rate limit exceeded"
 Check that `delay_seconds=3` in client configuration. Wait 3 seconds between requests.
