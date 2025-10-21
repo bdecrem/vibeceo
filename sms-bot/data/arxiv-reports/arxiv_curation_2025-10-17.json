@@ -1,0 +1,130 @@
+{
+  "date": "2025-10-17",
+  "total_papers": 259,
+  "featured_count": 10,
+  "featured_papers": [
+    {
+      "arxiv_id": "2510.15870v1",
+      "title": "OmniVinci: Enhancing Architecture and Data for Omni-Modal Understanding LLM",
+      "featured_rank": 1,
+      "curation_reason": "This paper represents a major advancement in multimodal AI by addressing true omni-modal understanding (vision + audio + temporal alignment). The 6x reduction in training tokens while achieving superior performance demonstrates breakthrough efficiency. The novel architectural contributions (OmniAlignNet, Temporal Embedding Grouping, Constrained Rotary Time Embedding) are significant technical innovations that will influence future multimodal research.",
+      "star_rating": 5
+    },
+    {
+      "arxiv_id": "2510.15821v1",
+      "title": "Chronos-2: From Univariate to Universal Forecasting",
+      "featured_rank": 2,
+      "curation_reason": "Chronos-2 achieves a significant milestone in time series forecasting by extending pretrained models from univariate to truly universal forecasting (multivariate + covariates) with zero-shot capabilities. The group attention mechanism for in-context learning is a novel architecture that enables practical deployment without task-specific training, addressing a major bottleneck in time series applications across energy, retail, and other industries.",
+      "star_rating": 5
+    },
+    {
+      "arxiv_id": "2510.15700v1",
+      "title": "ProofOptimizer: Training Language Models to Simplify Proofs without Human Demonstrations",
+      "featured_rank": 3,
+      "curation_reason": "This work addresses a critical bottleneck in automated theorem proving - the comprehensibility gap between machine-generated and human-readable proofs. The 87% compression rate on miniF2F while maintaining correctness is remarkable, and the self-training approach without human demonstrations represents a scalable solution. This directly impacts the usability of AI-assisted mathematical research and formal verification.",
+      "star_rating": 5
+    },
+    {
+      "arxiv_id": "2510.15857v1",
+      "title": "BLIP3o-NEXT: Next Frontier of Native Image Generation",
+      "featured_rank": 4,
+      "curation_reason": "BLIP3o-NEXT represents a significant architectural innovation by unifying text-to-image generation and image editing in a single open-source model. The hybrid Autoregressive + Diffusion architecture that combines reasoning capabilities with fine-detail rendering is novel and addresses key limitations of existing approaches. The incorporation of RL for native image generation and the data engine approach for editing consistency are important contributions that advance the state-of-the-art.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15830v1",
+      "title": "SNOO: Step-K Nesterov Outer Optimizer - The Surprising Effectiveness of Nesterov Momentum Applied to Pseudo-Gradients",
+      "featured_rank": 5,
+      "curation_reason": "SNOO provides a practical and theoretically-grounded optimization improvement that achieves 1.5-2.5x compute gains for LLM training with minimal overhead. The insight that Nesterov momentum applied to pseudo-gradients is the key ingredient (rather than distributed setup) is important for practitioners. The scalability to 1e23 FLOPs and compatibility with existing optimizers makes this immediately deployable and impactful for reducing training costs.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15839v1",
+      "title": "Learning Correlated Reward Models: Statistical Barriers and Opportunities",
+      "featured_rank": 6,
+      "curation_reason": "This paper addresses a fundamental limitation in RLHF by proving that pairwise comparisons are insufficient for learning correlational preferences and that best-of-three data provably solves this. The theoretical rigor combined with practical implications for improving personalization in RLHF makes this highly significant for the future of AI alignment and preference learning.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15863v1",
+      "title": "PolySkill: Learning Generalizable Skills Through Polymorphic Abstraction",
+      "featured_rank": 7,
+      "curation_reason": "PolySkill addresses a critical limitation in LLM agents - the inability to generalize learned skills across domains. The polymorphism-inspired decoupling of goals from implementations is conceptually elegant and practically effective (1.7x skill reuse, 9-14% accuracy gains). This work advances autonomous agents toward true continual learning and transfer, which is essential for practical deployment.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15862v1",
+      "title": "PokeeResearch: Effective Deep Research via Reinforcement Learning from AI Feedback and Robust Reasoning Scaffold",
+      "featured_rank": 8,
+      "curation_reason": "PokeeResearch demonstrates that smaller models (7B parameters) can achieve state-of-the-art research agent performance through careful RL design and reasoning scaffolds. The annotation-free RLAIF framework with multi-faceted rewards (accuracy, citation faithfulness, instruction adherence) and adaptive tool-failure recovery represents a significant advancement in building robust research agents. The open-source release will democratize access to research-grade AI agents.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15710v1",
+      "title": "Unimedvl: Unifying Medical Multimodal Understanding And Generation Through Observation-Knowledge-Analysis",
+      "featured_rank": 9,
+      "curation_reason": "UniMedVL is the first model to unify medical image understanding AND generation in a single architecture, addressing a critical gap in medical AI. The OKA paradigm-inspired framework with Progressive Curriculum Learning and the 5.6M sample UniMed-5M dataset represent substantial contributions. The bidirectional knowledge sharing between understanding and generation tasks is novel and shows that unified medical frameworks can outperform specialized models.",
+      "star_rating": 4
+    },
+    {
+      "arxiv_id": "2510.15869v1",
+      "title": "Skyfall-GS: Synthesizing Immersive 3D Urban Scenes from Satellite Imagery",
+      "featured_rank": 10,
+      "curation_reason": "Skyfall-GS solves a challenging problem of creating city-block scale 3D scenes without expensive 3D annotations by cleverly combining satellite imagery with diffusion models. The curriculum-driven iterative refinement for geometric and texture enhancement is novel. This work has significant applications in urban planning, virtual reality, autonomous driving simulation, and metaverse applications.",
+      "star_rating": 4
+    }
+  ],
+  "notable_authors": [
+    {
+      "name": "Song Han",
+      "paper_count_today": 1,
+      "featured_papers": ["2510.15870v1"],
+      "research_areas": ["Efficient Deep Learning", "Multimodal AI"]
+    },
+    {
+      "name": "Yu-Lun Liu",
+      "paper_count_today": 2,
+      "featured_papers": ["2510.15869v1"],
+      "research_areas": ["3D Scene Generation", "Computer Graphics"]
+    },
+    {
+      "name": "Martin Jaggi",
+      "paper_count_today": 2,
+      "featured_papers": [],
+      "research_areas": ["Optimization", "Stochastic Methods"]
+    },
+    {
+      "name": "El Mahdi Chayti",
+      "paper_count_today": 2,
+      "featured_papers": [],
+      "research_areas": ["Optimization", "Second-Order Methods"]
+    }
+  ],
+  "category_breakdown": {
+    "cs.CV": {
+      "total": 89,
+      "featured": 5,
+      "percentage": "34.4%"
+    },
+    "cs.LG": {
+      "total": 67,
+      "featured": 5,
+      "percentage": "25.9%"
+    },
+    "cs.CL": {
+      "total": 48,
+      "featured": 2,
+      "percentage": "18.5%"
+    },
+    "cs.AI": {
+      "total": 43,
+      "featured": 3,
+      "percentage": "16.6%"
+    },
+    "stat.ML": {
+      "total": 12,
+      "featured": 1,
+      "percentage": "4.6%"
+    }
+  }
+}
