@@ -27,6 +27,7 @@ import {
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import * as db from './database.js';
+import { generateArxivPodcast, type PodcastGenerationResult } from './podcast.js';
 
 // ============================================================================
 // Configuration
@@ -108,6 +109,7 @@ export interface ArxivReportMetadata extends StoredReportMetadata {
   totalPapers: number;
   featuredCount: number;
   notableAuthorsCount: number;
+  podcast?: PodcastGenerationResult;
 }
 
 // ============================================================================
@@ -139,6 +141,8 @@ function parseJsonOutput(stdout: string): FetchResult | CurationResult {
 }
 
 function extractExecutiveSummary(markdown: string): string {
+  const MAX_SMS_SUMMARY_LENGTH = 200; // Keep it short to fit in single SMS with links
+
   const lines = markdown.split(/\r?\n/);
   const headerIndex = lines.findIndex((line) =>
     line.trim().toLowerCase().startsWith('## executive summary')
@@ -147,7 +151,10 @@ function extractExecutiveSummary(markdown: string): string {
   if (headerIndex === -1) {
     // Fallback: take first few non-empty lines
     const firstParagraph = lines.slice(0, 10).join('\n').trim();
-    return firstParagraph.length > 0 ? firstParagraph : markdown.slice(0, 320);
+    const fallback = firstParagraph.length > 0 ? firstParagraph : markdown.slice(0, 320);
+    return fallback.length > MAX_SMS_SUMMARY_LENGTH
+      ? fallback.slice(0, MAX_SMS_SUMMARY_LENGTH - 3) + '...'
+      : fallback;
   }
 
   const summaryLines: string[] = [];
@@ -160,7 +167,14 @@ function extractExecutiveSummary(markdown: string): string {
   }
 
   const summary = summaryLines.join('\n').trim();
-  return summary.length > 0 ? summary : 'Executive summary not found in report.';
+  if (summary.length === 0) {
+    return 'Executive summary not found in report.';
+  }
+
+  // Truncate if too long to keep SMS as single message
+  return summary.length > MAX_SMS_SUMMARY_LENGTH
+    ? summary.slice(0, MAX_SMS_SUMMARY_LENGTH - 3) + '...'
+    : summary;
 }
 
 async function runPythonScript(
@@ -393,6 +407,13 @@ export async function runAndStoreArxivReport(options?: {
     // Stage 1: Fetch all papers
     const { jsonPath, papers } = await fetchPapersStage(options?.date);
 
+    // Check if we got any papers (we fetch last 3 days, so this is rare)
+    if (papers.length === 0) {
+      throw new Error(
+        `No papers found in the last 3 days ending ${reportDate}. This is unusual - the arXiv API may be down or the date range may be too far in the future.`
+      );
+    }
+
     // Store all papers and authors to database
     await storeAllPapersAndAuthors(papers, reportDate);
 
@@ -412,6 +433,38 @@ export async function runAndStoreArxivReport(options?: {
       markdown,
       summary,
     });
+
+    // Generate podcast (if ELEVENLABS_API_KEY is available)
+    let podcast: PodcastGenerationResult | undefined;
+    try {
+      console.log('🎙️ Generating podcast...');
+      const viewerUrl = buildReportViewerUrl({
+        path: stored.reportPath,
+        agentSlug: ARXIV_AGENT_SLUG,
+      });
+      let reportShortLink: string | null = null;
+
+      try {
+        reportShortLink = await createShortLink(viewerUrl, {
+          context: 'arxiv-report',
+          createdBy: 'sms-bot',
+          createdFor: 'arxiv-agent',
+        });
+      } catch (err) {
+        console.warn('Failed to create report short link:', err);
+      }
+
+      podcast = await generateArxivPodcast({
+        date: reportDate,
+        markdown,
+        summary,
+        reportUrl: viewerUrl,
+        reportShortLink,
+      });
+      console.log('✓ Podcast generated:', podcast.shortLink);
+    } catch (podcastError) {
+      console.warn('⚠️ Podcast generation failed (non-fatal):', podcastError);
+    }
 
     // Store daily report metadata
     const durationSeconds = Math.floor((Date.now() - startTime) / 1000);
@@ -434,6 +487,7 @@ export async function runAndStoreArxivReport(options?: {
       totalPapers: curation.total_papers,
       featuredCount: curation.featured_count,
       notableAuthorsCount: curation.notable_authors?.length || 0,
+      podcast,
     };
   } catch (error) {
     console.error('arXiv report generation failed:', error);
@@ -478,7 +532,8 @@ export async function buildArxivReportMessage(
   summary: string,
   date: string,
   reportPath: string,
-  recipient: string
+  recipient: string,
+  podcastLink?: string
 ): Promise<string> {
   // Build viewer URL
   const viewerUrl = buildReportViewerUrl({ path: reportPath });
@@ -496,13 +551,16 @@ export async function buildArxivReportMessage(
   const featuredCount = dbReport?.featured_papers_count || 0;
   const totalCount = dbReport?.total_papers_fetched || 0;
 
-  return `📚 AI Research Papers - ${date}
+  // Build message in Medical Daily format to prevent SMS splitting
+  const lines: string[] = [`📚 arXiv Today - ${date}`, '', summary];
 
-${summary}
+  if (podcastLink) {
+    lines.push(`🎧 Listen: ${podcastLink}`);
+  }
 
-✨ ${featuredCount} featured papers from ${totalCount} total submissions
+  lines.push(`📄 Full report: ${shortLink}`);
 
-📖 Read: ${shortLink}`;
+  return lines.join('\n');
 }
 
 // ============================================================================
@@ -531,12 +589,13 @@ export function registerArxivDailyJob(twilioClient: TwilioClient): void {
 
         console.log(`Broadcasting to ${subscribers.length} arXiv subscribers...`);
 
-        // Build message
+        // Build message with podcast link (if available)
         const message = await buildArxivReportMessage(
           metadata.summary,
           metadata.date,
           metadata.reportPath,
-          'arxiv-daily'
+          'arxiv-daily',
+          metadata.podcast?.shortLink || undefined
         );
 
         // Send to all subscribers with delay

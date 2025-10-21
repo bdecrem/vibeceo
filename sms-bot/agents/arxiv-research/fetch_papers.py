@@ -29,15 +29,18 @@ AI_CATEGORIES = [
 ]
 
 
-def build_arxiv_query(target_date: datetime) -> str:
+def build_arxiv_query(target_date: datetime, lookback_days: int = 3) -> str:
     """
-    Build arXiv API query for AI/ML papers submitted on target_date.
+    Build arXiv API query for AI/ML papers submitted in last N days.
 
     Format: (cat:cs.AI OR cat:cs.LG ...) AND submittedDate:[start TO end]
+
+    We fetch the last 3 days to ensure we get papers even if today's batch
+    hasn't been published yet. Papers are deduped by arxiv_id.
     """
-    # Query papers submitted on the target date (24-hour window)
-    start_date = target_date.strftime("%Y%m%d0000")
+    # Query papers from last N days
     end_date = target_date.strftime("%Y%m%d2359")
+    start_date = (target_date - timedelta(days=lookback_days)).strftime("%Y%m%d0000")
 
     category_query = " OR ".join([f"cat:{cat}" for cat in AI_CATEGORIES])
     date_query = f"submittedDate:[{start_date} TO {end_date}]"
@@ -90,9 +93,10 @@ def fetch_papers(target_date: datetime, max_results: int = 1000) -> list[dict[st
     Respects arXiv rate limit: 1 request per 3 seconds.
     """
     query = build_arxiv_query(target_date)
+    lookback_start = target_date - timedelta(days=3)
 
     print(f"Fetching papers with query: {query}")
-    print(f"Target date: {target_date.strftime('%Y-%m-%d')}")
+    print(f"Date range: {lookback_start.strftime('%Y-%m-%d')} to {target_date.strftime('%Y-%m-%d')} (last 3 days)")
 
     # Configure arXiv client with rate limiting
     client = arxiv.Client(
@@ -110,6 +114,7 @@ def fetch_papers(target_date: datetime, max_results: int = 1000) -> list[dict[st
     )
 
     papers = []
+    seen_ids = set()  # Track arxiv_ids to deduplicate
     count = 0
 
     print("Starting to fetch papers (respecting 3-second rate limit)...")
@@ -117,13 +122,20 @@ def fetch_papers(target_date: datetime, max_results: int = 1000) -> list[dict[st
     # Iterate through results (automatically handles pagination and rate limiting)
     for result in client.results(search):
         paper = extract_paper_metadata(result)
+
+        # Deduplicate by arxiv_id (papers can have multiple versions)
+        arxiv_id = paper["arxiv_id"]
+        if arxiv_id in seen_ids:
+            continue
+
+        seen_ids.add(arxiv_id)
         papers.append(paper)
         count += 1
 
         if count % 10 == 0:
             print(f"Fetched {count} papers...")
 
-    print(f"\nTotal papers fetched: {len(papers)}")
+    print(f"\nTotal papers fetched: {len(papers)} (after deduplication)")
     return papers
 
 

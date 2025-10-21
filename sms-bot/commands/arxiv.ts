@@ -70,7 +70,8 @@ async function handleReport(context: CommandContext): Promise<boolean> {
       latest.summary,
       latest.date,
       latest.reportPath,
-      context.normalizedFrom
+      context.normalizedFrom,
+      latest.podcast?.shortLink || undefined
     );
 
     await sendSmsResponse(from, message, twilioClient);
@@ -115,7 +116,8 @@ async function handleRun(context: CommandContext): Promise<boolean> {
       metadata.summary,
       metadata.date,
       metadata.reportPath,
-      context.normalizedFrom
+      context.normalizedFrom,
+      metadata.podcast?.shortLink || undefined
     );
 
     await sendSmsResponse(from, message, twilioClient);
