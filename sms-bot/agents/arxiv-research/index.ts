@@ -399,12 +399,14 @@ export async function runAndStoreArxivReport(options?: {
   date?: string;
 }): Promise<ArxivReportMetadata> {
   // Use Pacific Time for date (same as other agents)
-  const reportDate = options?.date || new Date().toLocaleDateString('en-US', {
-    timeZone: 'America/Los_Angeles',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit'
-  }).split('/').reverse().join('-'); // Convert MM/DD/YYYY to YYYY-MM-DD
+  const reportDate = options?.date || (() => {
+    const now = new Date();
+    const pacificDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    const year = pacificDate.getFullYear();
+    const month = String(pacificDate.getMonth() + 1).padStart(2, '0');
+    const day = String(pacificDate.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  })();
 
   const startTime = Date.now();
 
