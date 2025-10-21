@@ -421,10 +421,10 @@ export async function runAndStoreArxivReport(options?: {
     // Stage 1: Fetch all papers
     const { jsonPath, papers } = await fetchPapersStage(options?.date);
 
-    // Check if we got any papers (we fetch last 3 days, so this is rare)
+    // Check if we got any papers
     if (papers.length === 0) {
       throw new Error(
-        `No papers found in the last 3 days ending ${reportDate}. This is unusual - the arXiv API may be down or the date range may be too far in the future.`
+        `No papers found for ${reportDate}. The arXiv API may be down, or papers for this date haven't been published yet. Try running with an earlier date.`
       );
     }
 
