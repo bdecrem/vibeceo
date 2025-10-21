@@ -36,7 +36,8 @@ import { generateArxivPodcast, type PodcastGenerationResult } from './podcast.js
 const DEFAULT_DATA_DIR = path.join(process.cwd(), 'data', 'arxiv-reports');
 const FETCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'fetch_papers.py');
 const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'agent.py');
-const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
+// Use system python3 by default (works on any Mac). Override with PYTHON_BIN env var if needed.
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 
 const ARXIV_JOB_HOUR = Number(process.env.ARXIV_REPORT_HOUR || 6);
 const ARXIV_JOB_MINUTE = Number(process.env.ARXIV_REPORT_MINUTE || 0);
@@ -177,6 +178,20 @@ function extractExecutiveSummary(markdown: string): string {
     : summary;
 }
 
+/**
+ * Deduplicate papers by arxiv_id, keeping the first occurrence
+ */
+function deduplicatePapers(papers: PaperData[]): PaperData[] {
+  const seen = new Set<string>();
+  return papers.filter((paper) => {
+    if (seen.has(paper.arxiv_id)) {
+      return false;
+    }
+    seen.add(paper.arxiv_id);
+    return true;
+  });
+}
+
 async function runPythonScript(
   scriptPath: string,
   args: string[],
@@ -184,14 +199,15 @@ async function runPythonScript(
 ): Promise<string> {
   console.log(`Running ${description}...`);
 
+  // Build clean environment - spread process.env but exclude CLAUDE_CODE_OAUTH_TOKEN
+  const { CLAUDE_CODE_OAUTH_TOKEN, ...cleanEnv } = process.env;
+
   const subprocess = spawn(PYTHON_BIN, ['-u', scriptPath, ...args], {  // -u for unbuffered output
     cwd: process.cwd(),
     env: {
-      // Only pass specific vars - don't spread process.env to avoid Claude Code pollution
-      PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',  // Include homebrew for claude CLI
-      HOME: process.env.HOME,
+      ...cleanEnv,  // Include full environment (pyenv, PATH, etc)
       ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
-      // Explicitly exclude Claude Code OAuth token
+      // CLAUDE_CODE_OAUTH_TOKEN is explicitly excluded above
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -326,12 +342,14 @@ async function storeAllPapersAndAuthors(papers: PaperData[], reportDate: string)
 
   await db.storePapers(paperRecords);
 
-  // Extract all unique authors
+  // Extract all unique authors AND build author → most recent paper date map
   const allAuthors: db.ArxivAuthor[] = [];
   const seenAuthors = new Set<string>();
+  const authorDates = new Map<string, string>();
 
   for (const paper of papers) {
     for (const author of paper.authors) {
+      // Track unique authors
       if (!seenAuthors.has(author.name)) {
         allAuthors.push({
           name: author.name,
@@ -339,11 +357,17 @@ async function storeAllPapersAndAuthors(papers: PaperData[], reportDate: string)
         });
         seenAuthors.add(author.name);
       }
+
+      // Track most recent paper date for each author
+      const currentDate = authorDates.get(author.name);
+      if (!currentDate || paper.published_date > currentDate) {
+        authorDates.set(author.name, paper.published_date);
+      }
     }
   }
 
-  console.log(`Upserting ${allAuthors.length} unique authors...`);
-  await db.upsertAuthors(allAuthors, reportDate);
+  console.log(`Upserting ${allAuthors.length} unique authors with individual paper dates...`);
+  await db.upsertAuthors(allAuthors, authorDates);
 
   // Link papers to authors
   const links: db.PaperAuthorLink[] = [];
@@ -423,21 +447,78 @@ export async function runAndStoreArxivReport(options?: {
   console.log(`\n=== arXiv Research Agent - ${reportDate} ===\n`);
 
   try {
-    // Stage 1: Fetch all papers
-    const { jsonPath, papers } = await fetchPapersStage(options?.date);
+    // Stage 1: Fetch papers from last 3 days (handles arXiv indexing delays)
+    const datesToFetch: string[] = [];
+
+    if (options?.date) {
+      // If explicit date provided, fetch that date plus 2 days before
+      const baseDate = new Date(options.date);
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(baseDate);
+        d.setDate(d.getDate() - i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        datesToFetch.push(`${year}-${month}-${day}`);
+      }
+    } else {
+      // Default: fetch yesterday, 2 days ago, 3 days ago
+      const now = new Date();
+      const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+      for (let i = 1; i <= 3; i++) {
+        const d = new Date(pacificNow);
+        d.setDate(d.getDate() - i);
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        datesToFetch.push(`${year}-${month}-${day}`);
+      }
+    }
+
+    console.log(`Fetching papers from ${datesToFetch.length} days: ${datesToFetch.join(', ')}`);
+
+    // Fetch papers for each date
+    const allPapers: PaperData[] = [];
+    let lastJsonPath = '';
+
+    for (const date of datesToFetch) {
+      const { jsonPath, papers } = await fetchPapersStage(date);
+      allPapers.push(...papers);
+      lastJsonPath = jsonPath; // Keep last path for curation stage
+      console.log(`  ${date}: ${papers.length} papers`);
+    }
+
+    // Deduplicate papers by arxiv_id
+    const papers = deduplicatePapers(allPapers);
+    console.log(`Total papers after deduplication: ${papers.length} (from ${allPapers.length} fetched)`);
 
     // Check if we got any papers
     if (papers.length === 0) {
       throw new Error(
-        `No papers found for ${reportDate}. The arXiv API may be down, or papers for this date haven't been published yet. Try running with an earlier date.`
+        `No papers found for dates ${datesToFetch.join(', ')}. The arXiv API may be down.`
       );
     }
+
+    // Write combined deduplicated papers to JSON for curation stage
+    const dataDir = await ensureDataDirExists();
+    const combinedJsonPath = path.join(dataDir, `arxiv_papers_combined_${reportDate}.json`);
+    const combinedData = {
+      fetch_date: new Date().toISOString(),
+      target_date: reportDate,
+      total_papers: papers.length,
+      categories: ['cs.AI', 'cs.LG', 'cs.CV', 'cs.CL', 'stat.ML'],
+      papers,
+    };
+    await import('node:fs/promises').then(({ writeFile }) =>
+      writeFile(combinedJsonPath, JSON.stringify(combinedData, null, 2))
+    );
+    console.log(`Wrote combined papers to: ${combinedJsonPath}`);
 
     // Store all papers and authors to database
     await storeAllPapersAndAuthors(papers, reportDate);
 
     // Stage 2: Curate top papers and generate report
-    const { markdown, curation } = await curatePapersStage(jsonPath, options?.date);
+    const { markdown, curation } = await curatePapersStage(combinedJsonPath, options?.date);
 
     // Mark featured papers and update notability scores
     await markFeaturedPapersAndUpdateScores(curation, reportDate);
