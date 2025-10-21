@@ -119,26 +119,6 @@ export default function AboutPage() {
           </a>
         </div>
 
-        <footer className="mt-16 pt-8 border-t border-[rgba(44,62,31,0.12)]">
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 text-[12px] sm:text-[13px]" style={{ color: "#8a8a8a" }}>
-            <a
-              href="/privacy"
-              className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
-            >
-              Privacy Policy
-            </a>
-            <span className="hidden sm:inline">•</span>
-            <a
-              href="/terms"
-              className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200"
-            >
-              Terms of Service
-            </a>
-          </div>
-          <p className="mt-4 text-center text-[11px] sm:text-[12px]" style={{ color: "#8a8a8a" }}>
-            © {new Date().getFullYear()} Kochito Labs. All rights reserved.
-          </p>
-        </footer>
       </main>
     </div>
   );
