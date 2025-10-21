@@ -1,0 +1,1791 @@
+{
+  "fetch_date": "2025-10-21 10:50:55 UTC",
+  "target_date": "2024-10-17",
+  "total_papers": 50,
+  "categories": [
+    "cs.AI",
+    "cs.LG",
+    "cs.CV",
+    "cs.CL",
+    "stat.ML"
+  ],
+  "papers": [
+    {
+      "arxiv_id": "2410.19816v5",
+      "title": "DivShift: Exploring Domain-Specific Distribution Shifts in Large-Scale, Volunteer-Collected Biodiversity Datasets",
+      "abstract": "Large-scale, volunteer-collected datasets of community-identified natural\nworld imagery like iNaturalist have enabled marked performance gains for\nfine-grained visual classification of species using machine learning methods.\nHowever, such data -- sometimes referred to as citizen science data -- are\nopportunistic and lack a structured sampling strategy. This volunteer-collected\nbiodiversity data contains geographic, temporal, taxonomic, observers, and\nsociopolitical biases that can have significant effects on biodiversity model\nperformance, but whose impacts are unclear for fine-grained species recognition\nperformance. Here we introduce Diversity Shift (DivShift), a framework for\nquantifying the effects of domain-specific distribution shifts on machine\nlearning model performance. To diagnose the performance effects of biases\nspecific to volunteer-collected biodiversity data, we also introduce DivShift -\nNorth American West Coast (DivShift-NAWC), a curated dataset of almost 7.5\nmillion iNaturalist images across the western coast of North America\npartitioned across five types of expert-verified bias. We compare species\nrecognition performance across these bias partitions using a diverse variety of\nspecies- and ecosystem-focused accuracy metrics. We observe that these biases\nconfound model performance less than expected from the underlying label\ndistribution shift, and that more data leads to better model performance but\nthe magnitude of these improvements are bias-specific. These findings imply\nthat while the structure within natural world images provides generalization\nimprovements for biodiversity monitoring tasks, the biases present in\nvolunteer-collected biodiversity data can also affect model performance; thus\nthese models should be used with caution in downstream biodiversity monitoring\ntasks.",
+      "authors": [
+        {
+          "name": "Elena Sierra",
+          "affiliation": null
+        },
+        {
+          "name": "Lauren E. Gillespie",
+          "affiliation": null
+        },
+        {
+          "name": "Salim Soltani",
+          "affiliation": null
+        },
+        {
+          "name": "Moises Exposito-Alonso",
+          "affiliation": null
+        },
+        {
+          "name": "Teja Kattenborn",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.19816v5",
+      "pdf_url": "http://arxiv.org/pdf/2410.19816v5",
+      "primary_category": "cs.CV",
+      "updated_date": "2025-05-01"
+    },
+    {
+      "arxiv_id": "2410.14089v1",
+      "title": "MMAD-Purify: A Precision-Optimized Framework for Efficient and Scalable Multi-Modal Attacks",
+      "abstract": "Neural networks have achieved remarkable performance across a wide range of\ntasks, yet they remain susceptible to adversarial perturbations, which pose\nsignificant risks in safety-critical applications. With the rise of\nmultimodality, diffusion models have emerged as powerful tools not only for\ngenerative tasks but also for various applications such as image editing,\ninpainting, and super-resolution. However, these models still lack robustness\ndue to limited research on attacking them to enhance their resilience.\nTraditional attack techniques, such as gradient-based adversarial attacks and\ndiffusion model-based methods, are hindered by computational inefficiencies and\nscalability issues due to their iterative nature. To address these challenges,\nwe introduce an innovative framework that leverages the distilled backbone of\ndiffusion models and incorporates a precision-optimized noise predictor to\nenhance the effectiveness of our attack framework. This approach not only\nenhances the attack's potency but also significantly reduces computational\ncosts. Our framework provides a cutting-edge solution for multi-modal\nadversarial attacks, ensuring reduced latency and the generation of\nhigh-fidelity adversarial examples with superior success rates. Furthermore, we\ndemonstrate that our framework achieves outstanding transferability and\nrobustness against purification defenses, outperforming existing gradient-based\nattack models in both effectiveness and efficiency.",
+      "authors": [
+        {
+          "name": "Xinxin Liu",
+          "affiliation": null
+        },
+        {
+          "name": "Zhongliang Guo",
+          "affiliation": null
+        },
+        {
+          "name": "Siyuan Huang",
+          "affiliation": null
+        },
+        {
+          "name": "Chun Pong Lau",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14089v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14089v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14087v1",
+      "title": "Your Interest, Your Summaries: Query-Focused Long Video Summarization",
+      "abstract": "Generating a concise and informative video summary from a long video is\nimportant, yet subjective due to varying scene importance. Users' ability to\nspecify scene importance through text queries enhances the relevance of such\nsummaries. This paper introduces an approach for query-focused video\nsummarization, aiming to align video summaries closely with user queries. To\nthis end, we propose the Fully Convolutional Sequence Network with Attention\n(FCSNA-QFVS), a novel approach designed for this task. Leveraging temporal\nconvolutional and attention mechanisms, our model effectively extracts and\nhighlights relevant content based on user-specified queries. Experimental\nvalidation on a benchmark dataset for query-focused video summarization\ndemonstrates the effectiveness of our approach.",
+      "authors": [
+        {
+          "name": "Nirav Patel",
+          "affiliation": null
+        },
+        {
+          "name": "Payal Prajapati",
+          "affiliation": null
+        },
+        {
+          "name": "Maitrik Shah",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14087v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14087v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14086v4",
+      "title": "In-context learning and Occam's razor",
+      "abstract": "A central goal of machine learning is generalization. While the No Free Lunch\nTheorem states that we cannot obtain theoretical guarantees for generalization\nwithout further assumptions, in practice we observe that simple models which\nexplain the training data generalize best: a principle called Occam's razor.\nDespite the need for simple models, most current approaches in machine learning\nonly minimize the training error, and at best indirectly promote simplicity\nthrough regularization or architecture design. Here, we draw a connection\nbetween Occam's razor and in-context learning: an emergent ability of certain\nsequence models like Transformers to learn at inference time from past\nobservations in a sequence. In particular, we show that the next-token\nprediction loss used to train in-context learners is directly equivalent to a\ndata compression technique called prequential coding, and that minimizing this\nloss amounts to jointly minimizing both the training error and the complexity\nof the model that was implicitly learned from context. Our theory and the\nempirical experiments we use to support it not only provide a normative account\nof in-context learning, but also elucidate the shortcomings of current\nin-context learning methods, suggesting ways in which they can be improved. We\nmake our code available at https://github.com/3rdCore/PrequentialCode.",
+      "authors": [
+        {
+          "name": "Eric Elmoznino",
+          "affiliation": null
+        },
+        {
+          "name": "Tom Marty",
+          "affiliation": null
+        },
+        {
+          "name": "Tejas Kasetty",
+          "affiliation": null
+        },
+        {
+          "name": "Leo Gagnon",
+          "affiliation": null
+        },
+        {
+          "name": "Sarthak Mittal",
+          "affiliation": null
+        },
+        {
+          "name": "Mahan Fathi",
+          "affiliation": null
+        },
+        {
+          "name": "Dhanya Sridhar",
+          "affiliation": null
+        },
+        {
+          "name": "Guillaume Lajoie",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14086v4",
+      "pdf_url": "http://arxiv.org/pdf/2410.14086v4",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-06-02"
+    },
+    {
+      "arxiv_id": "2410.14084v1",
+      "title": "Self Supervised Deep Learning for Robot Grasping",
+      "abstract": "Learning Based Robot Grasping currently involves the use of labeled data.\nThis approach has two major disadvantages. Firstly, labeling data for grasp\npoints and angles is a strenuous process, so the dataset remains limited.\nSecondly, human labeling is prone to bias due to semantics.\n  In order to solve these problems we propose a simpler self-supervised robotic\nsetup, that will train a Convolutional Neural Network (CNN). The robot will\nlabel and collect the data during the training process. The idea is to make a\nrobot that is less costly, small and easily maintainable in a lab setup. The\nrobot will be trained on a large data set for several hundred hours and then\nthe trained Neural Network can be mapped onto a larger grasping robot.",
+      "authors": [
+        {
+          "name": "Danyal Saqib",
+          "affiliation": null
+        },
+        {
+          "name": "Wajahat Hussain",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.RO",
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14084v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14084v1",
+      "primary_category": "cs.RO",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14083v1",
+      "title": "SAMReg: SAM-enabled Image Registration with ROI-based Correspondence",
+      "abstract": "This paper describes a new spatial correspondence representation based on\npaired regions-of-interest (ROIs), for medical image registration. The distinct\nproperties of the proposed ROI-based correspondence are discussed, in the\ncontext of potential benefits in clinical applications following image\nregistration, compared with alternative correspondence-representing approaches,\nsuch as those based on sampled displacements and spatial transformation\nfunctions. These benefits include a clear connection between learning-based\nimage registration and segmentation, which in turn motivates two cases of image\nregistration approaches using (pre-)trained segmentation networks. Based on the\nsegment anything model (SAM), a vision foundation model for segmentation, we\ndevelop a new registration algorithm SAMReg, which does not require any\ntraining (or training data), gradient-based fine-tuning or prompt engineering.\nThe proposed SAMReg models are evaluated across five real-world applications,\nincluding intra-subject registration tasks with cardiac MR and lung CT,\nchallenging inter-subject registration scenarios with prostate MR and retinal\nimaging, and an additional evaluation with a non-clinical example with aerial\nimage registration. The proposed methods outperform both intensity-based\niterative algorithms and DDF-predicting learning-based networks across tested\nmetrics including Dice and target registration errors on anatomical structures,\nand further demonstrates competitive performance compared to weakly-supervised\nregistration approaches that rely on fully-segmented training data. Open source\ncode and examples are available at: https://github.com/sqhuang0103/SAMReg.git.",
+      "authors": [
+        {
+          "name": "Shiqi Huang",
+          "affiliation": null
+        },
+        {
+          "name": "Tingfa Xu",
+          "affiliation": null
+        },
+        {
+          "name": "Ziyi Shen",
+          "affiliation": null
+        },
+        {
+          "name": "Shaheer Ullah Saeed",
+          "affiliation": null
+        },
+        {
+          "name": "Wen Yan",
+          "affiliation": null
+        },
+        {
+          "name": "Dean Barratt",
+          "affiliation": null
+        },
+        {
+          "name": "Yipeng Hu",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14083v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14083v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14082v1",
+      "title": "Interpreting Inflammation Prediction Model via Tag-based Cohort Explanation",
+      "abstract": "Machine learning is revolutionizing nutrition science by enabling systems to\nlearn from data and make intelligent decisions. However, the complexity of\nthese models often leads to challenges in understanding their decision-making\nprocesses, necessitating the development of explainability techniques to foster\ntrust and increase model transparency. An under-explored type of explanation is\ncohort explanation, which provides explanations to groups of instances with\nsimilar characteristics. Unlike traditional methods that focus on individual\nexplanations or global model behavior, cohort explainability bridges the gap by\nproviding unique insights at an intermediate granularity. We propose a novel\nframework for identifying cohorts within a dataset based on local feature\nimportance scores, aiming to generate concise descriptions of the clusters via\ntags. We evaluate our framework on a food-based inflammation prediction model\nand demonstrated that the framework can generate reliable explanations that\nmatch domain knowledge.",
+      "authors": [
+        {
+          "name": "Fanyu Meng",
+          "affiliation": null
+        },
+        {
+          "name": "Jules Larke",
+          "affiliation": null
+        },
+        {
+          "name": "Xin Liu",
+          "affiliation": null
+        },
+        {
+          "name": "Zhaodan Kong",
+          "affiliation": null
+        },
+        {
+          "name": "Xin Chen",
+          "affiliation": null
+        },
+        {
+          "name": "Danielle Lemay",
+          "affiliation": null
+        },
+        {
+          "name": "Ilias Tagkopoulos",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14082v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14082v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14081v5",
+      "title": "Reward-free World Models for Online Imitation Learning",
+      "abstract": "Imitation learning (IL) enables agents to acquire skills directly from expert\ndemonstrations, providing a compelling alternative to reinforcement learning.\nHowever, prior online IL approaches struggle with complex tasks characterized\nby high-dimensional inputs and complex dynamics. In this work, we propose a\nnovel approach to online imitation learning that leverages reward-free world\nmodels. Our method learns environmental dynamics entirely in latent spaces\nwithout reconstruction, enabling efficient and accurate modeling. We adopt the\ninverse soft-Q learning objective, reformulating the optimization process in\nthe Q-policy space to mitigate the instability associated with traditional\noptimization in the reward-policy space. By employing a learned latent dynamics\nmodel and planning for control, our approach consistently achieves stable,\nexpert-level performance in tasks with high-dimensional observation or action\nspaces and intricate dynamics. We evaluate our method on a diverse set of\nbenchmarks, including DMControl, MyoSuite, and ManiSkill2, demonstrating\nsuperior empirical performance compared to existing approaches.",
+      "authors": [
+        {
+          "name": "Shangzhe Li",
+          "affiliation": null
+        },
+        {
+          "name": "Zhiao Huang",
+          "affiliation": null
+        },
+        {
+          "name": "Hao Su",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14081v5",
+      "pdf_url": "http://arxiv.org/pdf/2410.14081v5",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-05-11"
+    },
+    {
+      "arxiv_id": "2411.02402v1",
+      "title": "Optimal Transport Maps are Good Voice Converters",
+      "abstract": "Recently, neural network-based methods for computing optimal transport maps\nhave been effectively applied to style transfer problems. However, the\napplication of these methods to voice conversion is underexplored. In our\npaper, we fill this gap by investigating optimal transport as a framework for\nvoice conversion. We present a variety of optimal transport algorithms designed\nfor different data representations, such as mel-spectrograms and latent\nrepresentation of self-supervised speech models. For the mel-spectogram data\nrepresentation, we achieve strong results in terms of Frechet Audio Distance\n(FAD). This performance is consistent with our theoretical analysis, which\nsuggests that our method provides an upper bound on the FAD between the target\nand generated distributions. Within the latent space of the WavLM encoder, we\nachived state-of-the-art results and outperformed existing methods even with\nlimited reference speaker data.",
+      "authors": [
+        {
+          "name": "Arip Asadulaev",
+          "affiliation": null
+        },
+        {
+          "name": "Rostislav Korst",
+          "affiliation": null
+        },
+        {
+          "name": "Vitalii Shutov",
+          "affiliation": null
+        },
+        {
+          "name": "Alexander Korotin",
+          "affiliation": null
+        },
+        {
+          "name": "Yaroslav Grebnyak",
+          "affiliation": null
+        },
+        {
+          "name": "Vahe Egiazarian",
+          "affiliation": null
+        },
+        {
+          "name": "Evgeny Burnaev",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.SD",
+        "cs.LG",
+        "eess.AS"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2411.02402v1",
+      "pdf_url": "http://arxiv.org/pdf/2411.02402v1",
+      "primary_category": "cs.SD",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14075v1",
+      "title": "FedPAE: Peer-Adaptive Ensemble Learning for Asynchronous and Model-Heterogeneous Federated Learning",
+      "abstract": "Federated learning (FL) enables multiple clients with distributed data\nsources to collaboratively train a shared model without compromising data\nprivacy. However, existing FL paradigms face challenges due to heterogeneity in\nclient data distributions and system capabilities. Personalized federated\nlearning (pFL) has been proposed to mitigate these problems, but often requires\na shared model architecture and a central entity for parameter aggregation,\nresulting in scalability and communication issues. More recently,\nmodel-heterogeneous FL has gained attention due to its ability to support\ndiverse client models, but existing methods are limited by their dependence on\na centralized framework, synchronized training, and publicly available\ndatasets. To address these limitations, we introduce Federated Peer-Adaptive\nEnsemble Learning (FedPAE), a fully decentralized pFL algorithm that supports\nmodel heterogeneity and asynchronous learning. Our approach utilizes a\npeer-to-peer model sharing mechanism and ensemble selection to achieve a more\nrefined balance between local and global information. Experimental results show\nthat FedPAE outperforms existing state-of-the-art pFL algorithms, effectively\nmanaging diverse client capabilities and demonstrating robustness against\nstatistical heterogeneity.",
+      "authors": [
+        {
+          "name": "Brianna Mueller",
+          "affiliation": null
+        },
+        {
+          "name": "W. Nick Street",
+          "affiliation": null
+        },
+        {
+          "name": "Stephen Baek",
+          "affiliation": null
+        },
+        {
+          "name": "Qihang Lin",
+          "affiliation": null
+        },
+        {
+          "name": "Jingyi Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Yankun Huang",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14075v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14075v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14074v1",
+      "title": "Be My Donor. Transfer the NLP Datasets Between the Languages Using LLM",
+      "abstract": "In this work, we investigated how one can use the LLM to transfer the dataset\nand its annotation from one language to another. This is crucial since sharing\nthe knowledge between different languages could boost certain underresourced\ndirections in the target language, saving lots of efforts in data annotation or\nquick prototyping. We experiment with English and Russian pairs translating the\nDEFT corpus. This corpus contains three layers of annotation dedicated to\nterm-definition pair mining, which is a rare annotation type for Russian. We\nprovide a pipeline for the annotation transferring using ChatGPT3.5-turbo and\nLlama-3.1-8b as core LLMs. In the end, we train the BERT-based models on the\ntranslated dataset to establish a baseline.",
+      "authors": [
+        {
+          "name": "Dmitrii Popov",
+          "affiliation": null
+        },
+        {
+          "name": "Egor Terentev",
+          "affiliation": null
+        },
+        {
+          "name": "Igor Buyanov",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14074v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14074v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14072v1",
+      "title": "Efficient Vision-Language Models by Summarizing Visual Tokens into Compact Registers",
+      "abstract": "Recent advancements in vision-language models (VLMs) have expanded their\npotential for real-world applications, enabling these models to perform complex\nreasoning on images. In the widely used fully autoregressive transformer-based\nmodels like LLaVA, projected visual tokens are prepended to textual tokens.\nOftentimes, visual tokens are significantly more than prompt tokens, resulting\nin increased computational overhead during both training and inference. In this\npaper, we propose Visual Compact Token Registers (Victor), a method that\nreduces the number of visual tokens by summarizing them into a smaller set of\nregister tokens. Victor adds a few learnable register tokens after the visual\ntokens and summarizes the visual information into these registers using the\nfirst few layers in the language tower of VLMs. After these few layers, all\nvisual tokens are discarded, significantly improving computational efficiency\nfor both training and inference. Notably, our method is easy to implement and\nrequires a small number of new trainable parameters with minimal impact on\nmodel performance. In our experiment, with merely 8 visual registers--about 1%\nof the original tokens--Victor shows less than a 4% accuracy drop while\nreducing the total training time by 43% and boosting the inference throughput\nby 3.3X.",
+      "authors": [
+        {
+          "name": "Yuxin Wen",
+          "affiliation": null
+        },
+        {
+          "name": "Qingqing Cao",
+          "affiliation": null
+        },
+        {
+          "name": "Qichen Fu",
+          "affiliation": null
+        },
+        {
+          "name": "Sachin Mehta",
+          "affiliation": null
+        },
+        {
+          "name": "Mahyar Najibi",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14072v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14072v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14070v1",
+      "title": "FaceSaliencyAug: Mitigating Geographic, Gender and Stereotypical Biases via Saliency-Based Data Augmentation",
+      "abstract": "Geographical, gender and stereotypical biases in computer vision models pose\nsignificant challenges to their performance and fairness. {In this study, we\npresent an approach named FaceSaliencyAug aimed at addressing the gender bias\nin} {Convolutional Neural Networks (CNNs) and Vision Transformers (ViTs).\nLeveraging the salient regions} { of faces detected by saliency, the propose\napproach mitigates geographical and stereotypical biases } {in the datasets.\nFaceSaliencyAug} randomly selects masks from a predefined search space and\napplies them to the salient region of face images, subsequently restoring the\noriginal image with masked salient region. {The proposed} augmentation strategy\nenhances data diversity, thereby improving model performance and debiasing\neffects. We quantify dataset diversity using Image Similarity Score (ISS)\nacross five datasets, including Flickr Faces HQ (FFHQ), WIKI, IMDB, Labelled\nFaces in the Wild (LFW), UTK Faces, and Diverse Dataset. The proposed approach\ndemonstrates superior diversity metrics, as evaluated by ISS-intra and\nISS-inter algorithms. Furthermore, we evaluate the effectiveness of our\napproach in mitigating gender bias on CEO, Engineer, Nurse, and School Teacher\ndatasets. We use the Image-Image Association Score (IIAS) to measure gender\nbias in these occupations. Our experiments reveal a reduction in gender bias\nfor both CNNs and ViTs, indicating the efficacy of our method in promoting\nfairness and inclusivity in computer vision models.",
+      "authors": [
+        {
+          "name": "Teerath Kumar",
+          "affiliation": null
+        },
+        {
+          "name": "Alessandra Mileo",
+          "affiliation": null
+        },
+        {
+          "name": "Malika Bendechache",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14070v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14070v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14069v1",
+      "title": "Rethinking Optimal Transport in Offline Reinforcement Learning",
+      "abstract": "We propose a novel algorithm for offline reinforcement learning using optimal\ntransport. Typically, in offline reinforcement learning, the data is provided\nby various experts and some of them can be sub-optimal. To extract an efficient\npolicy, it is necessary to \\emph{stitch} the best behaviors from the dataset.\nTo address this problem, we rethink offline reinforcement learning as an\noptimal transportation problem. And based on this, we present an algorithm that\naims to find a policy that maps states to a \\emph{partial} distribution of the\nbest expert actions for each given state. We evaluate the performance of our\nalgorithm on continuous control problems from the D4RL suite and demonstrate\nimprovements over existing methods.",
+      "authors": [
+        {
+          "name": "Arip Asadulaev",
+          "affiliation": null
+        },
+        {
+          "name": "Rostislav Korst",
+          "affiliation": null
+        },
+        {
+          "name": "Alexander Korotin",
+          "affiliation": null
+        },
+        {
+          "name": "Vage Egiazarian",
+          "affiliation": null
+        },
+        {
+          "name": "Andrey Filchenkov",
+          "affiliation": null
+        },
+        {
+          "name": "Evgeny Burnaev",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14069v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14069v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14067v2",
+      "title": "Provable Benefits of Complex Parameterizations for Structured State Space Models",
+      "abstract": "Structured state space models (SSMs), the core engine behind prominent neural\nnetworks such as S4 and Mamba, are linear dynamical systems adhering to a\nspecified structure, most notably diagonal. In contrast to typical neural\nnetwork modules, whose parameterizations are real, SSMs often use complex\nparameterizations. Theoretically explaining the benefits of complex\nparameterizations for SSMs is an open problem. The current paper takes a step\ntowards its resolution, by establishing formal gaps between real and complex\ndiagonal SSMs. Firstly, we prove that while a moderate dimension suffices in\norder for a complex SSM to express all mappings of a real SSM, a much higher\ndimension is needed for a real SSM to express mappings of a complex SSM.\nSecondly, we prove that even if the dimension of a real SSM is high enough to\nexpress a given mapping, typically, doing so requires the parameters of the\nreal SSM to hold exponentially large values, which cannot be learned in\npractice. In contrast, a complex SSM can express any given mapping with\nmoderate parameter values. Experiments corroborate our theory, and suggest a\npotential extension of the theory that accounts for selectivity, a new\narchitectural feature yielding state of the art performance.",
+      "authors": [
+        {
+          "name": "Yuval Ran-Milo",
+          "affiliation": null
+        },
+        {
+          "name": "Eden Lumbroso",
+          "affiliation": null
+        },
+        {
+          "name": "Edo Cohen-Karlik",
+          "affiliation": null
+        },
+        {
+          "name": "Raja Giryes",
+          "affiliation": null
+        },
+        {
+          "name": "Amir Globerson",
+          "affiliation": null
+        },
+        {
+          "name": "Nadav Cohen",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.NE"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14067v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.14067v2",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-31"
+    },
+    {
+      "arxiv_id": "2410.14066v3",
+      "title": "Lightweight Correlation-Aware Table Compression",
+      "abstract": "The growing adoption of data lakes for managing relational data necessitates\nefficient, open storage formats that provide high scan performance and\ncompetitive compression ratios. While existing formats achieve fast scans\nthrough lightweight encoding techniques, they have reached a plateau in terms\nof minimizing storage footprint. Recently, correlation-aware compression\nschemes have been shown to reduce file sizes further. Yet, current approaches\neither incur significant scan overheads or require manual specification of\ncorrelations, limiting their practicability. We present $\\texttt{Virtual}$, a\nframework that integrates seamlessly with existing open formats to\nautomatically leverage data correlations, achieving substantial compression\ngains while having minimal scan performance overhead. Experiments on data-gov\ndatasets show that $\\texttt{Virtual}$ reduces file sizes by up to 40% compared\nto Apache Parquet.",
+      "authors": [
+        {
+          "name": "Mihail Stoian",
+          "affiliation": null
+        },
+        {
+          "name": "Alexander van Renen",
+          "affiliation": null
+        },
+        {
+          "name": "Jan Kobiolka",
+          "affiliation": null
+        },
+        {
+          "name": "Ping-Lin Kuo",
+          "affiliation": null
+        },
+        {
+          "name": "Josif Grabocka",
+          "affiliation": null
+        },
+        {
+          "name": "Andreas Kipf",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.DB",
+        "cs.IR",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14066v3",
+      "pdf_url": "http://arxiv.org/pdf/2410.14066v3",
+      "primary_category": "cs.DB",
+      "updated_date": "2024-10-24"
+    },
+    {
+      "arxiv_id": "2410.14062v3",
+      "title": "Data-driven rainfall prediction at a regional scale: a case study with Ghana",
+      "abstract": "With a warming planet, tropical regions are expected to experience the brunt\nof climate change, with more intense and more volatile rainfall events.\nCurrently, state-of-the-art numerical weather prediction (NWP) models are known\nto struggle to produce skillful rainfall forecasts in tropical regions of\nAfrica. There is thus a pressing need for improved rainfall forecasting in\nthese regions. Over the last decade or so, the increased availability of\nlarge-scale meteorological datasets and the development of powerful machine\nlearning models have opened up new opportunities for data-driven weather\nforecasting. Focusing on Ghana in this study, we use these tools to develop two\nU-Net convolutional neural network (CNN) models, to predict 24h rainfall at 12h\nand 30h lead-time. The models were trained using data from the ERA5 reanalysis\ndataset, and the GPM-IMERG dataset. A special attention was paid to\ninterpretability. We developed a novel statistical methodology that allowed us\nto probe the relative importance of the meteorological variables input in our\nmodel, offering useful insights into the factors that drive precipitation in\nthe Ghana region. Empirically, we found that our 12h lead-time model has\nperformances that match, and in some accounts are better than the 18h lead-time\nforecasts produced by the ECMWF (as available in the TIGGE dataset). We also\nfound that combining our data-driven model with classical NWP further improves\nforecast accuracy.",
+      "authors": [
+        {
+          "name": "Indrajit Kalita",
+          "affiliation": null
+        },
+        {
+          "name": "Lucia Vilallonga",
+          "affiliation": null
+        },
+        {
+          "name": "Yves Atchade",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14062v3",
+      "pdf_url": "http://arxiv.org/pdf/2410.14062v3",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-07-16"
+    },
+    {
+      "arxiv_id": "2410.14061v1",
+      "title": "Gradual Domain Adaptation via Manifold-Constrained Distributionally Robust Optimization",
+      "abstract": "The aim of this paper is to address the challenge of gradual domain\nadaptation within a class of manifold-constrained data distributions. In\nparticular, we consider a sequence of $T\\ge2$ data distributions\n$P_1,\\ldots,P_T$ undergoing a gradual shift, where each pair of consecutive\nmeasures $P_i,P_{i+1}$ are close to each other in Wasserstein distance. We have\na supervised dataset of size $n$ sampled from $P_0$, while for the subsequent\ndistributions in the sequence, only unlabeled i.i.d. samples are available.\nMoreover, we assume that all distributions exhibit a known favorable attribute,\nsuch as (but not limited to) having intra-class soft/hard margins. In this\ncontext, we propose a methodology rooted in Distributionally Robust\nOptimization (DRO) with an adaptive Wasserstein radius. We theoretically show\nthat this method guarantees the classification error across all $P_i$s can be\nsuitably bounded. Our bounds rely on a newly introduced {\\it {compatibility}}\nmeasure, which fully characterizes the error propagation dynamics along the\nsequence. Specifically, for inadequately constrained distributions, the error\ncan exponentially escalate as we progress through the gradual shifts.\nConversely, for appropriately constrained distributions, the error can be\ndemonstrated to be linear or even entirely eradicated. We have substantiated\nour theoretical findings through several experimental results.",
+      "authors": [
+        {
+          "name": "Amir Hossein Saberi",
+          "affiliation": null
+        },
+        {
+          "name": "Amir Najafi",
+          "affiliation": null
+        },
+        {
+          "name": "Ala Emrani",
+          "affiliation": null
+        },
+        {
+          "name": "Amin Behjati",
+          "affiliation": null
+        },
+        {
+          "name": "Yasaman Zolfimoselo",
+          "affiliation": null
+        },
+        {
+          "name": "Mahdi Shadrooy",
+          "affiliation": null
+        },
+        {
+          "name": "Abolfazl Motahari",
+          "affiliation": null
+        },
+        {
+          "name": "Babak H. Khalaj",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14061v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14061v1",
+      "primary_category": "stat.ML",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14060v1",
+      "title": "On Partial Prototype Collapse in the DINO Family of Self-Supervised Methods",
+      "abstract": "A prominent self-supervised learning paradigm is to model the representations\nas clusters, or more generally as a mixture model. Learning to map the data\nsamples to compact representations and fitting the mixture model simultaneously\nleads to the representation collapse problem. Regularizing the distribution of\ndata points over the clusters is the prevalent strategy to avoid this issue.\nWhile this is sufficient to prevent full representation collapse, we show that\na partial prototype collapse problem still exists in the DINO family of\nmethods, that leads to significant redundancies in the prototypes. Such\nprototype redundancies serve as shortcuts for the method to achieve a marginal\nlatent class distribution that matches the prescribed prior. We show that by\nencouraging the model to use diverse prototypes, the partial prototype collapse\ncan be mitigated. Effective utilization of the prototypes enables the methods\nto learn more fine-grained clusters, encouraging more informative\nrepresentations. We demonstrate that this is especially beneficial when\npre-training on a long-tailed fine-grained dataset.",
+      "authors": [
+        {
+          "name": "Hariprasath Govindarajan",
+          "affiliation": null
+        },
+        {
+          "name": "Per Sid\u00e9n",
+          "affiliation": null
+        },
+        {
+          "name": "Jacob Roll",
+          "affiliation": null
+        },
+        {
+          "name": "Fredrik Lindsten",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14060v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14060v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.16322v2",
+      "title": "SouLLMate: An Application Enhancing Diverse Mental Health Support with Adaptive LLMs, Prompt Engineering, and RAG Techniques",
+      "abstract": "Mental health issues significantly impact individuals' daily lives, yet many\ndo not receive the help they need even with available online resources. This\nstudy aims to provide diverse, accessible, stigma-free, personalized, and\nreal-time mental health support through cutting-edge AI technologies. It makes\nthe following contributions: (1) Conducting an extensive survey of recent\nmental health support methods to identify prevalent functionalities and unmet\nneeds. (2) Introducing SouLLMate, an adaptive LLM-driven system that integrates\nLLM technologies, Chain, Retrieval-Augmented Generation (RAG), prompt\nengineering, and domain knowledge. This system offers advanced features such as\nRisk Detection and Proactive Guidance Dialogue, and utilizes RAG for\npersonalized profile uploads and Conversational Information Extraction. (3)\nDeveloping novel evaluation approaches for preliminary assessments and risk\ndetection via professionally annotated interview data and real-life suicide\ntendency data. (4) Proposing the Key Indicator Summarization (KIS), Proactive\nQuestioning Strategy (PQS), and Stacked Multi-Model Reasoning (SMMR) methods to\nenhance model performance and usability through context-sensitive response\nadjustments, semantic coherence evaluations, and enhanced accuracy of\nlong-context reasoning in language models. This study contributes to advancing\nmental health support technologies, potentially improving the accessibility and\neffectiveness of mental health care globally.",
+      "authors": [
+        {
+          "name": "Qiming Guo",
+          "affiliation": null
+        },
+        {
+          "name": "Jinwen Tang",
+          "affiliation": null
+        },
+        {
+          "name": "Wenbo Sun",
+          "affiliation": null
+        },
+        {
+          "name": "Haoteng Tang",
+          "affiliation": null
+        },
+        {
+          "name": "Yi Shang",
+          "affiliation": null
+        },
+        {
+          "name": "Wenlu Wang",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.HC"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.16322v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.16322v2",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-09-19"
+    },
+    {
+      "arxiv_id": "2410.14059v3",
+      "title": "UCFE: A User-Centric Financial Expertise Benchmark for Large Language Models",
+      "abstract": "This paper introduces the UCFE: User-Centric Financial Expertise benchmark,\nan innovative framework designed to evaluate the ability of large language\nmodels (LLMs) to handle complex real-world financial tasks. UCFE benchmark\nadopts a hybrid approach that combines human expert evaluations with dynamic,\ntask-specific interactions to simulate the complexities of evolving financial\nscenarios. Firstly, we conducted a user study involving 804 participants,\ncollecting their feedback on financial tasks. Secondly, based on this feedback,\nwe created our dataset that encompasses a wide range of user intents and\ninteractions. This dataset serves as the foundation for benchmarking 11 LLMs\nservices using the LLM-as-Judge methodology. Our results show a significant\nalignment between benchmark scores and human preferences, with a Pearson\ncorrelation coefficient of 0.78, confirming the effectiveness of the UCFE\ndataset and our evaluation approach. UCFE benchmark not only reveals the\npotential of LLMs in the financial domain but also provides a robust framework\nfor assessing their performance and user satisfaction.",
+      "authors": [
+        {
+          "name": "Yuzhe Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Yifei Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Yan Hu",
+          "affiliation": null
+        },
+        {
+          "name": "Yilin Guo",
+          "affiliation": null
+        },
+        {
+          "name": "Ruoli Gan",
+          "affiliation": null
+        },
+        {
+          "name": "Yueru He",
+          "affiliation": null
+        },
+        {
+          "name": "Mingcong Lei",
+          "affiliation": null
+        },
+        {
+          "name": "Xiao Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Haining Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Qianqian Xie",
+          "affiliation": null
+        },
+        {
+          "name": "Jimin Huang",
+          "affiliation": null
+        },
+        {
+          "name": "Honghai Yu",
+          "affiliation": null
+        },
+        {
+          "name": "Benyou Wang",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "q-fin.CP",
+        "cs.CE",
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14059v3",
+      "pdf_url": "http://arxiv.org/pdf/2410.14059v3",
+      "primary_category": "q-fin.CP",
+      "updated_date": "2025-02-07"
+    },
+    {
+      "arxiv_id": "2410.20718v1",
+      "title": "Lecture II: Communicative Justice and the Distribution of Attention",
+      "abstract": "Algorithmic intermediaries govern the digital public sphere through their\narchitectures, amplification algorithms, and moderation practices. In doing so,\nthey shape public communication and distribute attention in ways that were\npreviously infeasible with such subtlety, speed and scale. From misinformation\nand affective polarisation to hate speech and radicalisation, the many\npathologies of the digital public sphere attest that they could do so better.\nBut what ideals should they aim at? Political philosophy should be able to\nhelp, but existing theories typically assume that a healthy public sphere will\nspontaneously emerge if only we get the boundaries of free expression right.\nThey offer little guidance on how to intentionally constitute the digital\npublic sphere. In addition to these theories focused on expression, we need a\nfurther theory of communicative justice, targeted specifically at the\nalgorithmic intermediaries that shape communication and distribute attention.\nThis lecture argues that political philosophy urgently owes an account of how\nto govern communication in the digital public sphere, and introduces and\ndefends a democratic egalitarian theory of communicative justice.",
+      "authors": [
+        {
+          "name": "Seth Lazar",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CY",
+        "cs.AI",
+        "K.4"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.20718v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.20718v1",
+      "primary_category": "cs.CY",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.20720v1",
+      "title": "Lecture I: Governing the Algorithmic City",
+      "abstract": "A century ago, John Dewey observed that '[s]team and electricity have done\nmore to alter the conditions under which men associate together than all the\nagencies which affected human relationships before our time'. In the last few\ndecades, computing technologies have had a similar effect. Political\nphilosophy's central task is to help us decide how to live together, by\nanalysing our social relations, diagnosing their failings, and articulating\nideals to guide their revision. But these profound social changes have left\nscarcely a dent in the model of social relations that (analytical) political\nphilosophers assume. This essay aims to reverse that trend. It first builds a\nmodel of our novel social relations as they are now, and as they are likely to\nevolved, and then explores how those differences affect our theories of how to\nlive together. I introduce the 'Algorithmic City', the network of\nalgorithmically-mediated social relations, then characterise the intermediary\npower by which it is governed. I show how algorithmic governance raises new\nchallenges for political philosophy concerning the justification of authority,\nthe foundations of procedural legitimacy, and the possibility of justificatory\nneutrality.",
+      "authors": [
+        {
+          "name": "Seth Lazar",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CY",
+        "cs.AI",
+        "K.4"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.20720v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.20720v1",
+      "primary_category": "cs.CY",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14057v1",
+      "title": "Towards Cross-Cultural Machine Translation with Retrieval-Augmented Generation from Multilingual Knowledge Graphs",
+      "abstract": "Translating text that contains entity names is a challenging task, as\ncultural-related references can vary significantly across languages. These\nvariations may also be caused by transcreation, an adaptation process that\nentails more than transliteration and word-for-word translation. In this paper,\nwe address the problem of cross-cultural translation on two fronts: (i) we\nintroduce XC-Translate, the first large-scale, manually-created benchmark for\nmachine translation that focuses on text that contains potentially\nculturally-nuanced entity names, and (ii) we propose KG-MT, a novel end-to-end\nmethod to integrate information from a multilingual knowledge graph into a\nneural machine translation model by leveraging a dense retrieval mechanism. Our\nexperiments and analyses show that current machine translation systems and\nlarge language models still struggle to translate texts containing entity\nnames, whereas KG-MT outperforms state-of-the-art approaches by a large margin,\nobtaining a 129% and 62% relative improvement compared to NLLB-200 and GPT-4,\nrespectively.",
+      "authors": [
+        {
+          "name": "Simone Conia",
+          "affiliation": null
+        },
+        {
+          "name": "Daniel Lee",
+          "affiliation": null
+        },
+        {
+          "name": "Min Li",
+          "affiliation": null
+        },
+        {
+          "name": "Umar Farooq Minhas",
+          "affiliation": null
+        },
+        {
+          "name": "Saloni Potdar",
+          "affiliation": null
+        },
+        {
+          "name": "Yunyao Li",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14057v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14057v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14055v3",
+      "title": "Feedback Schr\u00f6dinger Bridge Matching",
+      "abstract": "Recent advancements in diffusion bridges for distribution transport problems\nhave heavily relied on matching frameworks, yet existing methods often face a\ntrade-off between scalability and access to optimal pairings during training.\nFully unsupervised methods make minimal assumptions but incur high\ncomputational costs, limiting their practicality. On the other hand, imposing\nfull supervision of the matching process with optimal pairings improves\nscalability, however, it can be infeasible in many applications. To strike a\nbalance between scalability and minimal supervision, we introduce Feedback\nSchr\\\"odinger Bridge Matching (FSBM), a novel semi-supervised matching\nframework that incorporates a small portion (less than 8% of the entire\ndataset) of pre-aligned pairs as state feedback to guide the transport map of\nnon coupled samples, thereby significantly improving efficiency. This is\nachieved by formulating a static Entropic Optimal Transport (EOT) problem with\nan additional term capturing the semi-supervised guidance. The generalized EOT\nobjective is then recast into a dynamic formulation to leverage the scalability\nof matching frameworks. Extensive experiments demonstrate that FSBM accelerates\ntraining and enhances generalization by leveraging coupled pairs guidance,\nopening new avenues for training matching frameworks with partially aligned\ndatasets.",
+      "authors": [
+        {
+          "name": "Panagiotis Theodoropoulos",
+          "affiliation": null
+        },
+        {
+          "name": "Nikolaos Komianos",
+          "affiliation": null
+        },
+        {
+          "name": "Vincent Pacelli",
+          "affiliation": null
+        },
+        {
+          "name": "Guan-Horng Liu",
+          "affiliation": null
+        },
+        {
+          "name": "Evangelos A. Theodorou",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14055v3",
+      "pdf_url": "http://arxiv.org/pdf/2410.14055v3",
+      "primary_category": "stat.ML",
+      "updated_date": "2025-02-20"
+    },
+    {
+      "arxiv_id": "2410.14054v4",
+      "title": "Adaptive Gradient Normalization and Independent Sampling for (Stochastic) Generalized-Smooth Optimization",
+      "abstract": "Recent studies have shown that many nonconvex machine learning problems\nsatisfy a generalized-smooth condition that extends beyond traditional smooth\nnonconvex optimization. However, the existing algorithms are not fully adapted\nto such generalized-smooth nonconvex geometry and encounter significant\ntechnical limitations on their convergence analysis. In this work, we first\nanalyze the convergence of adaptively normalized gradient descent under\nfunction geometries characterized by generalized-smoothness and generalized\nP{\\L} condition, revealing the advantage of adaptive gradient normalization.\nOur results provide theoretical insights into adaptive normalization across\nvarious scenarios.For stochastic generalized-smooth nonconvex optimization, we\npropose \\textbf{I}ndependent-\\textbf{A}daptively \\textbf{N}ormalized\n\\textbf{S}tochastic \\textbf{G}radient \\textbf{D}escent algorithm, which\nleverages adaptive gradient normalization, independent sampling, and gradient\nclipping to achieve an $\\mathcal{O}(\\epsilon^{-4})$ sample complexity under\nrelaxed noise assumptions. Experiments on large-scale nonconvex\ngeneralized-smooth problems demonstrate the fast convergence of our algorithm.",
+      "authors": [
+        {
+          "name": "Yufeng Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Erin Tripp",
+          "affiliation": null
+        },
+        {
+          "name": "Yifan Sun",
+          "affiliation": null
+        },
+        {
+          "name": "Shaofeng Zou",
+          "affiliation": null
+        },
+        {
+          "name": "Yi Zhou",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "math.OC",
+        "stat.ML"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14054v4",
+      "pdf_url": "http://arxiv.org/pdf/2410.14054v4",
+      "primary_category": "math.OC",
+      "updated_date": "2025-10-01"
+    },
+    {
+      "arxiv_id": "2410.14052v3",
+      "title": "From Isolated Conversations to Hierarchical Schemas: Dynamic Tree Memory Representation for LLMs",
+      "abstract": "Recent advancements in large language models have significantly improved\ntheir context windows, yet challenges in effective long-term memory management\nremain. We introduce MemTree, an algorithm that leverages a dynamic,\ntree-structured memory representation to optimize the organization, retrieval,\nand integration of information, akin to human cognitive schemas. MemTree\norganizes memory hierarchically, with each node encapsulating aggregated\ntextual content, corresponding semantic embeddings, and varying abstraction\nlevels across the tree's depths. Our algorithm dynamically adapts this memory\nstructure by computing and comparing semantic embeddings of new and existing\ninformation to enrich the model's context-awareness. This approach allows\nMemTree to handle complex reasoning and extended interactions more effectively\nthan traditional memory augmentation methods, which often rely on flat lookup\ntables. Evaluations on benchmarks for multi-turn dialogue understanding and\ndocument question answering show that MemTree significantly enhances\nperformance in scenarios that demand structured memory management.",
+      "authors": [
+        {
+          "name": "Alireza Rezazadeh",
+          "affiliation": null
+        },
+        {
+          "name": "Zichao Li",
+          "affiliation": null
+        },
+        {
+          "name": "Wei Wei",
+          "affiliation": null
+        },
+        {
+          "name": "Yujia Bao",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14052v3",
+      "pdf_url": "http://arxiv.org/pdf/2410.14052v3",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-03-19"
+    },
+    {
+      "arxiv_id": "2410.14050v1",
+      "title": "Learning Multimodal Cues of Children's Uncertainty",
+      "abstract": "Understanding uncertainty plays a critical role in achieving common ground\n(Clark et al.,1983). This is especially important for multimodal AI systems\nthat collaborate with users to solve a problem or guide the user through a\nchallenging concept. In this work, for the first time, we present a dataset\nannotated in collaboration with developmental and cognitive psychologists for\nthe purpose of studying nonverbal cues of uncertainty. We then present an\nanalysis of the data, studying different roles of uncertainty and its\nrelationship with task difficulty and performance. Lastly, we present a\nmultimodal machine learning model that can predict uncertainty given a\nreal-time video clip of a participant, which we find improves upon a baseline\nmultimodal transformer model. This work informs research on cognitive\ncoordination between human-human and human-AI and has broad implications for\ngesture understanding and generation. The anonymized version of our data and\ncode will be publicly available upon the completion of the required consent\nforms and data sheets.",
+      "authors": [
+        {
+          "name": "Qi Cheng",
+          "affiliation": null
+        },
+        {
+          "name": "Mert \u0130nan",
+          "affiliation": null
+        },
+        {
+          "name": "Rahma Mbarki",
+          "affiliation": null
+        },
+        {
+          "name": "Grace Grmek",
+          "affiliation": null
+        },
+        {
+          "name": "Theresa Choi",
+          "affiliation": null
+        },
+        {
+          "name": "Yiming Sun",
+          "affiliation": null
+        },
+        {
+          "name": "Kimele Persaud",
+          "affiliation": null
+        },
+        {
+          "name": "Jenny Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Malihe Alikhani",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.CV",
+        "cs.CY",
+        "cs.HC"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14050v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14050v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14049v1",
+      "title": "Learning Metadata-Agnostic Representations for Text-to-SQL In-Context Example Selection",
+      "abstract": "In-context learning (ICL) is a powerful paradigm where large language models\n(LLMs) benefit from task demonstrations added to the prompt. Yet, selecting\noptimal demonstrations is not trivial, especially for complex or multi-modal\ntasks where input and output distributions differ. We hypothesize that forming\ntask-specific representations of the input is key. In this paper, we propose a\nmethod to align representations of natural language questions and those of SQL\nqueries in a shared embedding space. Our technique, dubbed MARLO -\nMetadata-Agnostic Representation Learning for Text-tO-SQL - uses query\nstructure to model querying intent without over-indexing on underlying database\nmetadata (i.e. tables, columns, or domain-specific entities of a database\nreferenced in the question or query). This allows MARLO to select examples that\nare structurally and semantically relevant for the task rather than examples\nthat are spuriously related to a certain domain or question phrasing. When used\nto retrieve examples based on question similarity, MARLO shows superior\nperformance compared to generic embedding models (on average +2.9\\%pt. in\nexecution accuracy) on the Spider benchmark. It also outperforms the next best\nmethod that masks metadata information by +0.8\\%pt. in execution accuracy on\naverage, while imposing a significantly lower inference latency.",
+      "authors": [
+        {
+          "name": "Chuhong Mai",
+          "affiliation": null
+        },
+        {
+          "name": "Ro-ee Tal",
+          "affiliation": null
+        },
+        {
+          "name": "Thahir Mohamed",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14049v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14049v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14046v2",
+      "title": "Tensor Decomposition with Unaligned Observations",
+      "abstract": "This paper presents a canonical polyadic (CP) tensor decomposition that\naddresses unaligned observations. The mode with unaligned observations is\nrepresented using functions in a reproducing kernel Hilbert space (RKHS). We\nintroduce a versatile loss function that effectively accounts for various types\nof data, including binary, integer-valued, and positive-valued types.\nAdditionally, we propose an optimization algorithm for computing tensor\ndecompositions with unaligned observations, along with a stochastic gradient\nmethod to enhance computational efficiency. A sketching algorithm is also\nintroduced to further improve efficiency when using the $\\ell_2$ loss function.\nTo demonstrate the efficacy of our methods, we provide illustrative examples\nusing both synthetic data and an early childhood human microbiome dataset.",
+      "authors": [
+        {
+          "name": "Runshi Tang",
+          "affiliation": null
+        },
+        {
+          "name": "Tamara Kolda",
+          "affiliation": null
+        },
+        {
+          "name": "Anru R. Zhang",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "stat.ML",
+        "cs.LG",
+        "cs.NA",
+        "math.NA",
+        "stat.CO",
+        "stat.ME"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14046v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.14046v2",
+      "primary_category": "stat.ML",
+      "updated_date": "2025-08-09"
+    },
+    {
+      "arxiv_id": "2410.14045v1",
+      "title": "Human Action Anticipation: A Survey",
+      "abstract": "Predicting future human behavior is an increasingly popular topic in computer\nvision, driven by the interest in applications such as autonomous vehicles,\ndigital assistants and human-robot interactions. The literature on behavior\nprediction spans various tasks, including action anticipation, activity\nforecasting, intent prediction, goal prediction, and so on. Our survey aims to\ntie together this fragmented literature, covering recent technical innovations\nas well as the development of new large-scale datasets for model training and\nevaluation. We also summarize the widely-used metrics for different tasks and\nprovide a comprehensive performance comparison of existing approaches on eleven\naction anticipation datasets. This survey serves as not only a reference for\ncontemporary methodologies in action anticipation, but also a guideline for\nfuture research direction of this evolving landscape.",
+      "authors": [
+        {
+          "name": "Bolin Lai",
+          "affiliation": null
+        },
+        {
+          "name": "Sam Toyer",
+          "affiliation": null
+        },
+        {
+          "name": "Tushar Nagarajan",
+          "affiliation": null
+        },
+        {
+          "name": "Rohit Girdhar",
+          "affiliation": null
+        },
+        {
+          "name": "Shengxin Zha",
+          "affiliation": null
+        },
+        {
+          "name": "James M. Rehg",
+          "affiliation": null
+        },
+        {
+          "name": "Kris Kitani",
+          "affiliation": null
+        },
+        {
+          "name": "Kristen Grauman",
+          "affiliation": null
+        },
+        {
+          "name": "Ruta Desai",
+          "affiliation": null
+        },
+        {
+          "name": "Miao Liu",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14045v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14045v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14044v1",
+      "title": "Best in Tau@LLMJudge: Criteria-Based Relevance Evaluation with Llama3",
+      "abstract": "Traditional evaluation of information retrieval (IR) systems relies on\nhuman-annotated relevance labels, which can be both biased and costly at scale.\nIn this context, large language models (LLMs) offer an alternative by allowing\nus to directly prompt them to assign relevance labels for passages associated\nwith each query. In this study, we explore alternative methods to directly\nprompt LLMs for assigned relevance labels, by exploring two hypotheses:\n  Hypothesis 1 assumes that it is helpful to break down \"relevance\" into\nspecific criteria - exactness, coverage, topicality, and contextual fit. We\nexplore different approaches that prompt large language models (LLMs) to obtain\ncriteria-level grades for all passages, and we consider various ways to\naggregate criteria-level grades into a relevance label. Hypothesis 2 assumes\nthat differences in linguistic style between queries and passages may\nnegatively impact the automatic relevance label prediction. We explore whether\nimprovements can be achieved by first synthesizing a summary of the passage in\nthe linguistic style of a query, and then using this summary in place of the\npassage to assess its relevance.\n  We include an empirical evaluation of our approaches based on data from the\nLLMJudge challenge run in Summer 2024, where our \"Four Prompts\" approach\nobtained the highest scores in Kendall's tau.",
+      "authors": [
+        {
+          "name": "Naghmeh Farzi",
+          "affiliation": null
+        },
+        {
+          "name": "Laura Dietz",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.IR",
+        "cs.AI",
+        "H.3.3"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14044v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14044v1",
+      "primary_category": "cs.IR",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14043v2",
+      "title": "Retrieval of Temporal Event Sequences from Textual Descriptions",
+      "abstract": "Retrieving temporal event sequences from textual descriptions is crucial for\napplications such as analyzing e-commerce behavior, monitoring social media\nactivities, and tracking criminal incidents. To advance this task, we introduce\nTESRBench, a comprehensive benchmark for temporal event sequence retrieval\n(TESR) from textual descriptions. TESRBench includes diverse real-world\ndatasets with synthesized and reviewed textual descriptions, providing a strong\nfoundation for evaluating retrieval performance and addressing challenges in\nthis domain. Building on this benchmark, we propose TPP-Embedding, a novel\nmodel for embedding and retrieving event sequences. The model leverages the\nTPP-LLM framework, integrating large language models (LLMs) with temporal point\nprocesses (TPPs) to encode both event texts and times. By pooling\nrepresentations and applying a contrastive loss, it unifies temporal dynamics\nand event semantics in a shared embedding space, aligning sequence-level\nembeddings of event sequences and their descriptions. TPP-Embedding\ndemonstrates superior performance over baseline models across TESRBench\ndatasets, establishing it as a powerful solution for the temporal event\nsequence retrieval task.",
+      "authors": [
+        {
+          "name": "Zefang Liu",
+          "affiliation": null
+        },
+        {
+          "name": "Yinzhu Quan",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.IR"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14043v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.14043v2",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-02-03"
+    },
+    {
+      "arxiv_id": "2410.14042v1",
+      "title": "Style-Compress: An LLM-Based Prompt Compression Framework Considering Task-Specific Styles",
+      "abstract": "Prompt compression condenses contexts while maintaining their informativeness\nfor different usage scenarios. It not only shortens the inference time and\nreduces computational costs during the usage of large language models, but also\nlowers expenses when using closed-source models. In a preliminary study, we\ndiscover that when instructing language models to compress prompts, different\ncompression styles (e.g., extractive or abstractive) impact performance of\ncompressed prompts on downstream tasks. Building on this insight, we propose\nStyle-Compress, a lightweight framework that adapts a smaller language model to\ncompress prompts for a larger model on a new task without additional training.\nOur approach iteratively generates and selects effective compressed prompts as\ntask-specific demonstrations through style variation and in-context learning,\nenabling smaller models to act as efficient compressors with task-specific\nexamples. Style-Compress outperforms two baseline compression models in four\ntasks: original prompt reconstruction, text summarization, multi-hop QA, and\nCoT reasoning. In addition, with only 10 samples and 100 queries for\nadaptation, prompts compressed by Style-Compress achieve performance on par\nwith or better than original prompts at a compression ratio of 0.25 or 0.5.",
+      "authors": [
+        {
+          "name": "Xiao Pu",
+          "affiliation": null
+        },
+        {
+          "name": "Tianxing He",
+          "affiliation": null
+        },
+        {
+          "name": "Xiaojun Wan",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14042v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14042v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14041v1",
+      "title": "From Barriers to Tactics: A Behavioral Science-Informed Agentic Workflow for Personalized Nutrition Coaching",
+      "abstract": "Effective management of cardiometabolic conditions requires sustained\npositive nutrition habits, often hindered by complex and individualized\nbarriers. Direct human management is simply not scalable, while previous\nattempts aimed at automating nutrition coaching lack the personalization needed\nto address these diverse challenges. This paper introduces a novel LLM-powered\nagentic workflow designed to provide personalized nutrition coaching by\ndirectly targeting and mitigating patient-specific barriers. Grounded in\nbehavioral science principles, the workflow leverages a comprehensive mapping\nof nutrition-related barriers to corresponding evidence-based strategies. A\nspecialized LLM agent intentionally probes for and identifies the root cause of\na patient's dietary struggles. Subsequently, a separate LLM agent delivers\ntailored tactics designed to overcome those specific barriers with patient\ncontext. We designed and validated our approach through a user study with\nindividuals with cardiometabolic conditions, demonstrating the system's ability\nto accurately identify barriers and provide personalized guidance. Furthermore,\nwe conducted a large-scale simulation study, grounding on real patient\nvignettes and expert-validated metrics, to evaluate the system's performance\nacross a wide range of scenarios. Our findings demonstrate the potential of\nthis LLM-powered agentic workflow to improve nutrition coaching by providing\npersonalized, scalable, and behaviorally-informed interventions.",
+      "authors": [
+        {
+          "name": "Eric Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Tomas Garcia",
+          "affiliation": null
+        },
+        {
+          "name": "Hannah Williams",
+          "affiliation": null
+        },
+        {
+          "name": "Bhawesh Kumar",
+          "affiliation": null
+        },
+        {
+          "name": "Martin Ram\u00e9",
+          "affiliation": null
+        },
+        {
+          "name": "Eileen Rivera",
+          "affiliation": null
+        },
+        {
+          "name": "Yiran Ma",
+          "affiliation": null
+        },
+        {
+          "name": "Jonathan Amar",
+          "affiliation": null
+        },
+        {
+          "name": "Caricia Catalani",
+          "affiliation": null
+        },
+        {
+          "name": "Yugang Jia",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14041v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14041v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14040v2",
+      "title": "Latent Weight Diffusion: Generating reactive policies instead of trajectories",
+      "abstract": "With the increasing availability of open-source robotic data, imitation\nlearning has emerged as a viable approach for both robot manipulation and\nlocomotion. Currently, large generalized policies are trained to predict\ncontrols or trajectories using diffusion models, which have the desirable\nproperty of learning multimodal action distributions. However, generalizability\ncomes with a cost, namely, larger model size and slower inference. This is\nespecially an issue for robotic tasks that require high control frequency.\nFurther, there is a known trade-off between performance and action horizon for\nDiffusion Policy (DP), a popular model for generating trajectories: fewer\ndiffusion queries accumulate greater trajectory tracking errors. For these\nreasons, it is common practice to run these models at high inference frequency,\nsubject to robot computational constraints. To address these limitations, we\npropose Latent Weight Diffusion (LWD), a method that uses diffusion to generate\nclosed-loop policies (weights for neural policies) for robotic tasks, rather\nthan generating trajectories. Learning the behavior distribution through\nparameter space over trajectory space offers two key advantages: longer action\nhorizons (fewer diffusion queries) & robustness to perturbations while\nretaining high performance; and a lower inference compute cost. To this end, we\nshow that LWD has higher success rates than DP when the action horizon is\nlonger and when stochastic perturbations exist in the environment. Furthermore,\nLWD achieves multitask performance comparable to DP while requiring just\n~1/45th of the inference-time FLOPS",
+      "authors": [
+        {
+          "name": "Shashank Hegde",
+          "affiliation": null
+        },
+        {
+          "name": "Satyajeet Das",
+          "affiliation": null
+        },
+        {
+          "name": "Gautam Salhotra",
+          "affiliation": null
+        },
+        {
+          "name": "Gaurav S. Sukhatme",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.RO"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14040v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.14040v2",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-05-28"
+    },
+    {
+      "arxiv_id": "2410.14038v5",
+      "title": "Sliding Puzzles Gym: A Scalable Benchmark for State Representation in Visual Reinforcement Learning",
+      "abstract": "Effective visual representation learning is crucial for reinforcement\nlearning (RL) agents to extract task-relevant information from raw sensory\ninputs and generalize across diverse environments. However, existing RL\nbenchmarks lack the ability to systematically evaluate representation learning\ncapabilities in isolation from other learning challenges. To address this gap,\nwe introduce the Sliding Puzzles Gym (SPGym), a novel benchmark that transforms\nthe classic 8-tile puzzle into a visual RL task with images drawn from\narbitrarily large datasets. SPGym's key innovation lies in its ability to\nprecisely control representation learning complexity through adjustable grid\nsizes and image pools, while maintaining fixed environment dynamics,\nobservation, and action spaces. This design enables researchers to isolate and\nscale the visual representation challenge independently of other learning\ncomponents. Through extensive experiments with model-free and model-based RL\nalgorithms, we uncover fundamental limitations in current methods' ability to\nhandle visual diversity. As we increase the pool of possible images, all\nalgorithms exhibit in- and out-of-distribution performance degradation, with\nsophisticated representation learning techniques often underperforming simpler\napproaches like data augmentation. These findings highlight critical gaps in\nvisual representation learning for RL and establish SPGym as a valuable tool\nfor driving progress in robust, generalizable decision-making systems.",
+      "authors": [
+        {
+          "name": "Bryan L. M. de Oliveira",
+          "affiliation": null
+        },
+        {
+          "name": "Luana G. B. Martins",
+          "affiliation": null
+        },
+        {
+          "name": "Bruno Brand\u00e3o",
+          "affiliation": null
+        },
+        {
+          "name": "Murilo L. da Luz",
+          "affiliation": null
+        },
+        {
+          "name": "Telma W. de L. Soares",
+          "affiliation": null
+        },
+        {
+          "name": "Luckeciano C. Melo",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14038v5",
+      "pdf_url": "http://arxiv.org/pdf/2410.14038v5",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-08-16"
+    },
+    {
+      "arxiv_id": "2410.19815v1",
+      "title": "BUNDL: Bayesian Uncertainty-aware Deep Learning with Noisy training Labels for Seizure Detection in EEG",
+      "abstract": "Deep learning methods are at the forefront of automated epileptic seizure\ndetection and onset zone localization using scalp-EEG. However, the performance\nof deep learning methods rely heavily on the quality of annotated training\ndatasets. Scalp EEG is susceptible to high noise levels, which in turn leads to\nimprecise annotations of the seizure timing and characteristics. This label\nnoise presents a significant challenge in model training and generalization. In\nthis paper, we introduce a novel statistical framework that informs a deep\nlearning model of label ambiguity, thereby enhancing the overall seizure\ndetection performance. Our Bayesian UncertaiNty-aware Deep Learning, BUNDL,\nstrategy offers a straightforward and model-agnostic method for training deep\nneural networks with noisy training labels that does not add any parameters to\nexisting architectures. By integrating domain knowledge into the statistical\nframework, we derive a novel KL-divergence-based loss function that capitalizes\non uncertainty to better learn seizure characteristics from scalp EEG.\nAdditionally, we explore the impact of improved seizure detection on the task\nof automated onset zone localization. We validate BUNDL using a comprehensive\nsimulated EEG dataset and two publicly available datasets, TUH and CHB-MIT.\nBUNDL consistently improves the performance of three base models on simulated\ndata under seven types of label noise and three EEG signal-to-noise ratios.\nSimilar improvements were observed in the real-world TUH and CHB-MIT datasets.\nFinally, we demonstrate that BUNDL improves the accuracy of seizure onset zone\nlocalization. BUNDL is specifically designed to address label ambiguities,\nenabling the training of reliable and trustworthy models for epilepsy\nevaluation.",
+      "authors": [
+        {
+          "name": "Deeksha M Shama",
+          "affiliation": null
+        },
+        {
+          "name": "Archana Venkataraman",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "eess.SP",
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.19815v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.19815v1",
+      "primary_category": "eess.SP",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14031v5",
+      "title": "Modeling the Human Visual System: Comparative Insights from Response-Optimized and Task-Optimized Vision Models, Language Models, and different Readout Mechanisms",
+      "abstract": "Over the past decade, predictive modeling of neural responses in the primate\nvisual system has advanced significantly, largely driven by various DNN\napproaches. These include models optimized directly for visual recognition,\ncross-modal alignment through contrastive objectives, neural response\nprediction from scratch, and large language model embeddings.Likewise,\ndifferent readout mechanisms, ranging from fully linear to spatial-feature\nfactorized methods have been explored for mapping network activations to neural\nresponses. Despite the diversity of these approaches, it remains unclear which\nmethod performs best across different visual regions. In this study, we\nsystematically compare these approaches for modeling the human visual system\nand investigate alternative strategies to improve response predictions. Our\nfindings reveal that for early to mid-level visual areas, response-optimized\nmodels with visual inputs offer superior prediction accuracy, while for higher\nvisual regions, embeddings from LLMs based on detailed contextual descriptions\nof images and task-optimized models pretrained on large vision datasets provide\nthe best fit. Through comparative analysis of these modeling approaches, we\nidentified three distinct regions in the visual cortex: one sensitive primarily\nto perceptual features of the input that are not captured by linguistic\ndescriptions, another attuned to fine-grained visual details representing\nsemantic information, and a third responsive to abstract, global meanings\naligned with linguistic content. We also highlight the critical role of readout\nmechanisms, proposing a novel scheme that modulates receptive fields and\nfeature maps based on semantic content, resulting in an accuracy boost of 3-23%\nover existing SOTAs for all models and brain regions. Together, these findings\noffer key insights into building more precise models of the visual system.",
+      "authors": [
+        {
+          "name": "Shreya Saha",
+          "affiliation": null
+        },
+        {
+          "name": "Ishaan Chadha",
+          "affiliation": null
+        },
+        {
+          "name": "Meenakshi Khosla",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.NE",
+        "cs.LG"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14031v5",
+      "pdf_url": "http://arxiv.org/pdf/2410.14031v5",
+      "primary_category": "cs.NE",
+      "updated_date": "2025-09-19"
+    },
+    {
+      "arxiv_id": "2410.14030v2",
+      "title": "Graph Neural Flows for Unveiling Systemic Interactions Among Irregularly Sampled Time Series",
+      "abstract": "Interacting systems are prevalent in nature. It is challenging to accurately\npredict the dynamics of the system if its constituent components are analyzed\nindependently. We develop a graph-based model that unveils the systemic\ninteractions of time series observed at irregular time points, by using a\ndirected acyclic graph to model the conditional dependencies (a form of causal\nnotation) of the system components and learning this graph in tandem with a\ncontinuous-time model that parameterizes the solution curves of ordinary\ndifferential equations (ODEs). Our technique, a graph neural flow, leads to\nsubstantial enhancements over non-graph-based methods, as well as graph-based\nmethods without the modeling of conditional dependencies. We validate our\napproach on several tasks, including time series classification and\nforecasting, to demonstrate its efficacy.",
+      "authors": [
+        {
+          "name": "Giangiacomo Mercatali",
+          "affiliation": null
+        },
+        {
+          "name": "Andre Freitas",
+          "affiliation": null
+        },
+        {
+          "name": "Jie Chen",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14030v2",
+      "pdf_url": "http://arxiv.org/pdf/2410.14030v2",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-30"
+    },
+    {
+      "arxiv_id": "2410.19814v1",
+      "title": "Stochastic Flow Matching for Resolving Small-Scale Physics",
+      "abstract": "Conditioning diffusion and flow models have proven effective for\nsuper-resolving small-scale details in natural images.However, in physical\nsciences such as weather, super-resolving small-scale details poses significant\nchallenges due to: (i) misalignment between input and output distributions\n(i.e., solutions to distinct partial differential equations (PDEs) follow\ndifferent trajectories), (ii) multi-scale dynamics, deterministic dynamics at\nlarge scales vs. stochastic at small scales, and (iii) limited data, increasing\nthe risk of overfitting. To address these challenges, we propose encoding the\ninputs to a latent base distribution that is closer to the target distribution,\nfollowed by flow matching to generate small-scale physics. The encoder captures\nthe deterministic components, while flow matching adds stochastic small-scale\ndetails. To account for uncertainty in the deterministic part, we inject noise\ninto the encoder output using an adaptive noise scaling mechanism, which is\ndynamically adjusted based on maximum-likelihood estimates of the encoder\npredictions. We conduct extensive experiments on both the real-world CWA\nweather dataset and the PDE-based Kolmogorov dataset, with the CWA task\ninvolving super-resolving the weather variables for the region of Taiwan from\n25 km to 2 km scales. Our results show that the proposed stochastic flow\nmatching (SFM) framework significantly outperforms existing methods such as\nconditional diffusion and flows.",
+      "authors": [
+        {
+          "name": "Stathi Fotiadis",
+          "affiliation": null
+        },
+        {
+          "name": "Noah Brenowitz",
+          "affiliation": null
+        },
+        {
+          "name": "Tomas Geffner",
+          "affiliation": null
+        },
+        {
+          "name": "Yair Cohen",
+          "affiliation": null
+        },
+        {
+          "name": "Michael Pritchard",
+          "affiliation": null
+        },
+        {
+          "name": "Arash Vahdat",
+          "affiliation": null
+        },
+        {
+          "name": "Morteza Mardani",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "physics.ao-ph",
+        "stat.ML"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.19814v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.19814v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14029v1",
+      "title": "Auditing and Enforcing Conditional Fairness via Optimal Transport",
+      "abstract": "Conditional demographic parity (CDP) is a measure of the demographic parity\nof a predictive model or decision process when conditioning on an additional\nfeature or set of features. Many algorithmic fairness techniques exist to\ntarget demographic parity, but CDP is much harder to achieve, particularly when\nthe conditioning variable has many levels and/or when the model outputs are\ncontinuous. The problem of auditing and enforcing CDP is understudied in the\nliterature. In light of this, we propose novel measures of {conditional\ndemographic disparity (CDD)} which rely on statistical distances borrowed from\nthe optimal transport literature. We further design and evaluate\nregularization-based approaches based on these CDD measures. Our methods,\n\\fairbit{} and \\fairlp{}, allow us to target CDP even when the conditioning\nvariable has many levels. When model outputs are continuous, our methods target\nfull equality of the conditional distributions, unlike other methods that only\nconsider first moments or related proxy quantities. We validate the efficacy of\nour approaches on real-world datasets.",
+      "authors": [
+        {
+          "name": "Mohsen Ghassemi",
+          "affiliation": null
+        },
+        {
+          "name": "Alan Mishler",
+          "affiliation": null
+        },
+        {
+          "name": "Niccolo Dalmasso",
+          "affiliation": null
+        },
+        {
+          "name": "Luhao Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Vamsi K. Potluru",
+          "affiliation": null
+        },
+        {
+          "name": "Tucker Balch",
+          "affiliation": null
+        },
+        {
+          "name": "Manuela Veloso",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "stat.ML"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14029v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14029v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14028v1",
+      "title": "Measuring and Modifying the Readability of English Texts with GPT-4",
+      "abstract": "The success of Large Language Models (LLMs) in other domains has raised the\nquestion of whether LLMs can reliably assess and manipulate the readability of\ntext. We approach this question empirically. First, using a published corpus of\n4,724 English text excerpts, we find that readability estimates produced\n``zero-shot'' from GPT-4 Turbo and GPT-4o mini exhibit relatively high\ncorrelation with human judgments (r = 0.76 and r = 0.74, respectively),\nout-performing estimates derived from traditional readability formulas and\nvarious psycholinguistic indices. Then, in a pre-registered human experiment (N\n= 59), we ask whether Turbo can reliably make text easier or harder to read. We\nfind evidence to support this hypothesis, though considerable variance in human\njudgments remains unexplained. We conclude by discussing the limitations of\nthis approach, including limited scope, as well as the validity of the\n``readability'' construct and its dependence on context, audience, and goal.",
+      "authors": [
+        {
+          "name": "Sean Trott",
+          "affiliation": null
+        },
+        {
+          "name": "Pamela D. Rivi\u00e8re",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14028v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14028v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14026v1",
+      "title": "Generating Signed Language Instructions in Large-Scale Dialogue Systems",
+      "abstract": "We introduce a goal-oriented conversational AI system enhanced with American\nSign Language (ASL) instructions, presenting the first implementation of such a\nsystem on a worldwide multimodal conversational AI platform. Accessible through\na touch-based interface, our system receives input from users and seamlessly\ngenerates ASL instructions by leveraging retrieval methods and cognitively\nbased gloss translations. Central to our design is a sign translation module\npowered by Large Language Models, alongside a token-based video retrieval\nsystem for delivering instructional content from recipes and wikiHow guides.\nOur development process is deeply rooted in a commitment to community\nengagement, incorporating insights from the Deaf and Hard-of-Hearing community,\nas well as experts in cognitive and ASL learning sciences. The effectiveness of\nour signing instructions is validated by user feedback, achieving ratings on\npar with those of the system in its non-signing variant. Additionally, our\nsystem demonstrates exceptional performance in retrieval accuracy and\ntext-generation quality, measured by metrics such as BERTScore. We have made\nour codebase and datasets publicly accessible at\nhttps://github.com/Merterm/signed-dialogue, and a demo of our signed\ninstruction video retrieval system is available at\nhttps://huggingface.co/spaces/merterm/signed-instructions.",
+      "authors": [
+        {
+          "name": "Mert \u0130nan",
+          "affiliation": null
+        },
+        {
+          "name": "Katherine Atwell",
+          "affiliation": null
+        },
+        {
+          "name": "Anthony Sicilia",
+          "affiliation": null
+        },
+        {
+          "name": "Lorna Quandt",
+          "affiliation": null
+        },
+        {
+          "name": "Malihe Alikhani",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.CY",
+        "cs.HC"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14026v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14026v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14024v1",
+      "title": "Ensemble-based, large-eddy reconstruction of wind turbine inflow in a near-stationary atmospheric boundary layer through generative artificial intelligence",
+      "abstract": "To validate the second-by-second dynamics of turbines in field experiments,\nit is necessary to accurately reconstruct the winds going into the turbine.\nCurrent time-resolved inflow reconstruction techniques estimate wind behavior\nin unobserved regions using relatively simple spectral-based models of the\natmosphere. Here, we develop a technique for time-resolved inflow\nreconstruction that is rooted in a large-eddy simulation model of the\natmosphere. Our \"large-eddy reconstruction\" technique blends observations and\natmospheric model information through a diffusion model machine learning\nalgorithm, allowing us to generate probabilistic ensembles of reconstructions\nfor a single 10-min observational period. Our generated inflows can be used\ndirectly by aeroelastic codes or as inflow boundary conditions in a large-eddy\nsimulation. We verify the second-by-second reconstruction capability of our\ntechnique in three synthetic field campaigns, finding positive Pearson\ncorrelation coefficient values (0.20>r>0.85) between ground-truth and\nreconstructed streamwise velocity, as well as smaller positive correlation\ncoefficient values for unobserved fields (spanwise velocity, vertical velocity,\nand temperature). We validate our technique in three real-world case studies by\ndriving large-eddy simulations with reconstructed inflows and comparing to\nindependent inflow measurements. The reconstructions are visually similar to\nmeasurements, follow desired power spectra properties, and track\nsecond-by-second behavior (0.25 > r > 0.75).",
+      "authors": [
+        {
+          "name": "Alex Rybchuk",
+          "affiliation": null
+        },
+        {
+          "name": "Luis A. Mart\u00ednez-Tossas",
+          "affiliation": null
+        },
+        {
+          "name": "Stefano Letizia",
+          "affiliation": null
+        },
+        {
+          "name": "Nicholas Hamilton",
+          "affiliation": null
+        },
+        {
+          "name": "Andy Scholbrock",
+          "affiliation": null
+        },
+        {
+          "name": "Emina Maric",
+          "affiliation": null
+        },
+        {
+          "name": "Daniel R. Houck",
+          "affiliation": null
+        },
+        {
+          "name": "Thomas G. Herges",
+          "affiliation": null
+        },
+        {
+          "name": "Nathaniel B. de Velder",
+          "affiliation": null
+        },
+        {
+          "name": "Paula Doubrawa",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "physics.ao-ph",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14024v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14024v1",
+      "primary_category": "physics.ao-ph",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14023v1",
+      "title": "Identifying Privacy Personas",
+      "abstract": "Privacy personas capture the differences in user segments with respect to\none's knowledge, behavioural patterns, level of self-efficacy, and perception\nof the importance of privacy protection. Modelling these differences is\nessential for appropriately choosing personalised communication about privacy\n(e.g. to increase literacy) and for defining suitable choices for privacy\nenhancing technologies (PETs). While various privacy personas have been derived\nin the literature, they group together people who differ from each other in\nterms of important attributes such as perceived or desired level of control,\nand motivation to use PET. To address this lack of granularity and\ncomprehensiveness in describing personas, we propose eight personas that we\nderive by combining qualitative and quantitative analysis of the responses to\nan interactive educational questionnaire. We design an analysis pipeline that\nuses divisive hierarchical clustering and Boschloo's statistical test of\nhomogeneity of proportions to ensure that the elicited clusters differ from\neach other based on a statistical measure. Additionally, we propose a new\nmeasure for calculating distances between questionnaire responses, that\naccounts for the type of the question (closed- vs open-ended) used to derive\ntraits. We show that the proposed privacy personas statistically differ from\neach other. We statistically validate the proposed personas and also compare\nthem with personas in the literature, showing that they provide a more granular\nand comprehensive understanding of user segments, which will allow to better\nassist users with their privacy needs.",
+      "authors": [
+        {
+          "name": "Olena Hrynenko",
+          "affiliation": null
+        },
+        {
+          "name": "Andrea Cavallaro",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.CY"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14023v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14023v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14022v1",
+      "title": "Vision-Language-Action Model and Diffusion Policy Switching Enables Dexterous Control of an Anthropomorphic Hand",
+      "abstract": "To advance autonomous dexterous manipulation, we propose a hybrid control\nmethod that combines the relative advantages of a fine-tuned\nVision-Language-Action (VLA) model and diffusion models. The VLA model provides\nlanguage commanded high-level planning, which is highly generalizable, while\nthe diffusion model handles low-level interactions which offers the precision\nand robustness required for specific objects and environments. By incorporating\na switching signal into the training-data, we enable event based transitions\nbetween these two models for a pick-and-place task where the target object and\nplacement location is commanded through language. This approach is deployed on\nour anthropomorphic ADAPT Hand 2, a 13DoF robotic hand, which incorporates\ncompliance through series elastic actuation allowing for resilience for any\ninteractions: showing the first use of a multi-fingered hand controlled with a\nVLA model. We demonstrate this model switching approach results in a over 80\\%\nsuccess rate compared to under 40\\% when only using a VLA model, enabled by\naccurate near-object arm motion by the VLA model and a multi-modal grasping\nmotion with error recovery abilities from the diffusion model.",
+      "authors": [
+        {
+          "name": "Cheng Pan",
+          "affiliation": null
+        },
+        {
+          "name": "Kai Junge",
+          "affiliation": null
+        },
+        {
+          "name": "Josie Hughes",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.RO",
+        "cs.AI"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14022v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14022v1",
+      "primary_category": "cs.RO",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14749v1",
+      "title": "CFTS-GAN: Continual Few-Shot Teacher Student for Generative Adversarial Networks",
+      "abstract": "Few-shot and continual learning face two well-known challenges in GANs:\noverfitting and catastrophic forgetting. Learning new tasks results in\ncatastrophic forgetting in deep learning models. In the case of a few-shot\nsetting, the model learns from a very limited number of samples (e.g. 10\nsamples), which can lead to overfitting and mode collapse. So, this paper\nproposes a Continual Few-shot Teacher-Student technique for the generative\nadversarial network (CFTS-GAN) that considers both challenges together. Our\nCFTS-GAN uses an adapter module as a student to learn a new task without\naffecting the previous knowledge. To make the student model efficient in\nlearning new tasks, the knowledge from a teacher model is distilled to the\nstudent. In addition, the Cross-Domain Correspondence (CDC) loss is used by\nboth teacher and student to promote diversity and to avoid mode collapse.\nMoreover, an effective strategy of freezing the discriminator is also utilized\nfor enhancing performance. Qualitative and quantitative results demonstrate\nmore diverse image synthesis and produce qualitative samples comparatively good\nto very stronger state-of-the-art models.",
+      "authors": [
+        {
+          "name": "Munsif Ali",
+          "affiliation": null
+        },
+        {
+          "name": "Leonardo Rossi",
+          "affiliation": null
+        },
+        {
+          "name": "Massimo Bertozzi",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14749v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14749v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14020v1",
+      "title": "Segmentation of Pediatric Brain Tumors using a Radiologically informed, Deep Learning Cascade",
+      "abstract": "Monitoring of Diffuse Intrinsic Pontine Glioma (DIPG) and Diffuse Midline\nGlioma (DMG) brain tumors in pediatric patients is key for assessment of\ntreatment response. Response Assessment in Pediatric Neuro-Oncology (RAPNO)\nguidelines recommend the volumetric measurement of these tumors using MRI.\nSegmentation challenges, such as the Brain Tumor Segmentation (BraTS)\nChallenge, promote development of automated approaches which are replicable,\ngeneralizable and accurate, to aid in these tasks. The current study presents a\nnovel adaptation of existing nnU-Net approaches for pediatric brain tumor\nsegmentation, submitted to the BraTS-PEDs 2024 challenge. We apply an adapted\nnnU-Net with hierarchical cascades to the segmentation task of the BraTS-PEDs\n2024 challenge. The residual encoder variant of nnU-Net, used as our baseline\nmodel, already provides high quality segmentations. We incorporate multiple\nchanges to the implementation of nnU-Net and devise a novel two-stage cascaded\nnnU-Net to segment the substructures of brain tumors from coarse to fine. Using\noutputs from the nnU-Net Residual Encoder (trained to segment CC, ED, ET and\nNET tumor labels from T1w, T1w-CE, T2w and T2-FLAIR MRI), these are passed to\ntwo additional models one classifying ET versus NET and a second classifying CC\nvs ED using cascade learning. We use radiological guidelines to steer which\nmulti parametric MRI (mpMRI) to use in these cascading models. Compared to a\ndefault nnU-Net and an ensembled nnU-net as baseline approaches, our novel\nmethod provides robust segmentations for the BraTS-PEDs 2024 challenge,\nachieving mean Dice scores of 0.657, 0.904, 0.703, and 0.967, and HD95 of 76.2,\n10.1, 111.0, and 12.3 for the ET, NET, CC and ED, respectively.",
+      "authors": [
+        {
+          "name": "Timothy Mulvany",
+          "affiliation": null
+        },
+        {
+          "name": "Daniel Griffiths-King",
+          "affiliation": null
+        },
+        {
+          "name": "Jan Novak",
+          "affiliation": null
+        },
+        {
+          "name": "Heather Rose",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "eess.IV",
+        "cs.CV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14020v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14020v1",
+      "primary_category": "eess.IV",
+      "updated_date": "2024-10-17"
+    },
+    {
+      "arxiv_id": "2410.14017v1",
+      "title": "Probabilistic U-Net with Kendall Shape Spaces for Geometry-Aware Segmentations of Images",
+      "abstract": "One of the fundamental problems in computer vision is image segmentation, the\ntask of detecting distinct regions or objects in given images. Deep Neural\nNetworks (DNN) have been shown to be very effective in segmenting challenging\nimages, producing convincing segmentations. There is further need for\nprobabilistic DNNs that can reflect the uncertainties from the input images and\nthe models into the computed segmentations, in other words, new DNNs that can\ngenerate multiple plausible segmentations and their distributions depending on\nthe input or the model uncertainties. While there are existing probabilistic\nsegmentation models, many of them do not take into account the geometry or\nshape underlying the segmented regions. In this paper, we propose a\nprobabilistic image segmentation model that can incorporate the geometry of a\nsegmentation. Our proposed model builds on the Probabilistic U-Net of\n\\cite{kohl2018probabilistic} to generate probabilistic segmentations, i.e.\\!\nmultiple likely segmentations for an input image. Our model also adopts the\nKendall Shape Variational Auto-Encoder of \\cite{vadgama2023kendall} to encode a\nKendall shape space in the latent variable layers of the prior and posterior\nnetworks of the Probabilistic U-Net. Incorporating the shape space in this\nmanner leads to a more robust segmentation with spatially coherent regions,\nrespecting the underlying geometry in the input images.",
+      "authors": [
+        {
+          "name": "Jiyoung Park",
+          "affiliation": null
+        },
+        {
+          "name": "G\u00fcnay Do\u011fan",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "eess.IV"
+      ],
+      "published_date": "2024-10-17",
+      "arxiv_url": "http://arxiv.org/abs/2410.14017v1",
+      "pdf_url": "http://arxiv.org/pdf/2410.14017v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2024-10-17"
+    }
+  ]
+}

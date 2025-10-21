@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kochi Robot - Squish Animation</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: #1a1a1a;
+    }
+    
+    #kochi-container {
+      cursor: pointer;
+      transition: transform 0.1s ease;
+    }
+    
+    #kochi-container:hover {
+      transform: scale(1.05);
+    }
+    
+    .cls-1 { fill: #e7d8b2; }
+    .cls-2 { fill: #252520; }
+  </style>
+</head>
+<body>
+  <svg id="kochi-container" width="320" height="320" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+    <g id="kochi" transform-origin="512 512">
+      <!-- Left Antenna -->
+      <path
+        id="antennaL"
+        class="cls-1"
+        d="M340.3,340.46l.07-85.28c-3.86-1.57-7.22-3.36-10.54-5.9-8.65-6.52-14.33-16.24-15.74-26.98-3.11-23.88,12.76-43.28,36.49-45.98,5.34-.55,11.32.08,16.46,1.6,10.58,3.05,19.49,10.23,24.72,19.92,5.09,9.28,6.15,20.23,2.96,30.32-4.25,13.68-12.21,20.82-24.35,27.24.3,24.83-.61,60.23-.75,85.07h-29.32Z"
+      />
+      
+      <!-- Right Antenna -->
+      <path
+        id="antennaR"
+        class="cls-1"
+        d="M653.82,340.46v-84.79c-3.31-1.74-6.16-3.07-9.19-5.32-13.89-10.31-20.03-27.29-15.34-44.1,2.91-10.52,9.98-19.41,19.57-24.62,9.85-5.44,21.48-6.68,32.26-3.43,10.58,3.21,19.14,9.94,24.26,19.78,5.03,9.73,5.99,21.07,2.68,31.51-4.28,13.19-12.96,20.02-24.78,26.05v84.93h-29.45Z"
+      />
+      
+      <!-- Body Shell -->
+      <path
+        id="body"
+        class="cls-1"
+        d="M683.45,329.82c18.98,2.8,33.24,6.06,50.76,14.62,35.89,17.46,63.28,48.56,76.07,86.36,4.06,11.82,6.61,24.12,7.58,36.58,1.18,15.89.58,37.02.57,53.36v89.61s0,70.4,0,70.4c.03,39.08,1.37,58.72-16.71,95.43-4.62,8.73-10.05,17-16.22,24.71-24.94,30.6-61.13,49.9-100.44,53.55-8.58.87-17.82.66-26.49.67h-148.13s-113.94.01-113.94.01c-19.64,0-52.79,1.09-70.56-2.09-24.48-4.58-47.42-15.21-66.75-30.91-30.17-24.68-49.28-60.35-53.15-99.13-1.4-14.18-.83-33.97-.82-48.65v-75.18s.01-80.8.01-80.8c-.01-20.88-1.07-48.11,3.04-67.98,5.1-24.54,16.11-47.48,32.08-66.8,24.97-30.39,61.04-49.55,100.2-53.24l30-1.37c31.21.58,63.94.04,95.33.04h188.11s29.45.8,29.45.8Z"
+      />
+      
+      <!-- Face Background -->
+      <path
+        id="face"
+        class="cls-2"
+        d="M368.86,396.22c19.97-.76,43.57-.16,63.77-.16h119.92s68.48-.03,68.48-.03c16.43,0,36.81-.77,52.64,2.14,17.9,3.34,34.53,11.54,48.09,23.7,35.34,31.85,29.44,68.67,29.73,111.15.25,35.16,2.89,66.4-23.44,94.25-19.69,20.83-44.77,29.9-72.95,30.95-18.65.85-43.06.12-62.11.12h-121.37s-71.79.03-71.79.03c-15.98,0-32.89.85-48.66-1.67-43.24-6.92-77.21-41.86-78.65-86.3-.51-15.56,0-31.42-.22-46.72-.5-34.94-2.44-68.51,23.8-95.85,19.96-21.63,44.12-30.08,72.76-31.61Z"
+      />
+      
+      <!-- Left Eye -->
+      <path
+        id="eyeL"
+        class="cls-1"
+        d="M407.97,480.09c24.63-4.05,47.83,12.75,51.68,37.41,3.84,24.66-13.15,47.73-37.85,51.36-24.4,3.59-47.13-13.16-50.93-37.53-3.8-24.37,12.76-47.24,37.1-51.24Z"
+      />
+      
+      <!-- Right Eye -->
+      <path
+        id="eyeR"
+        class="cls-1"
+        d="M601.19,480.33c24.33-4.14,47.42,12.22,51.57,36.55,4.16,24.33-12.19,47.42-36.52,51.59-24.34,4.17-47.46-12.19-51.62-36.54-4.16-24.35,12.22-47.45,36.56-51.6Z"
+      />
+    </g>
+  </svg>
+
+  <script>
+    const kochiGroup = document.getElementById('kochi');
+    const container = document.getElementById('kochi-container');
+    const antennaL = document.getElementById('antennaL');
+    const antennaR = document.getElementById('antennaR');
+    const eyeL = document.getElementById('eyeL');
+    const eyeR = document.getElementById('eyeR');
+    
+    function squishAndBounce() {
+      // Squish phase - compress vertically, expand horizontally
+      const squishKeyframes = [
+        { transform: 'scale(1, 1)' },
+        { transform: 'scale(1.15, 0.7)', offset: 0.15 },
+        { transform: 'scale(1.25, 0.6)', offset: 0.3 },
+        
+        // Bounce back with overshoot
+        { transform: 'scale(0.9, 1.15)', offset: 0.5 },
+        { transform: 'scale(1.05, 0.95)', offset: 0.65 },
+        
+        // Settle with damping oscillations
+        { transform: 'scale(0.98, 1.02)', offset: 0.8 },
+        { transform: 'scale(1.01, 0.99)', offset: 0.9 },
+        { transform: 'scale(1, 1)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2000,
+        easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(squishKeyframes, timing);
+    }
+    
+    function spinJump() {
+      const spinKeyframes = [
+        { transform: 'rotate(0deg) translateY(0px)' },
+        { transform: 'rotate(180deg) translateY(-60px)', offset: 0.4 },
+        { transform: 'rotate(360deg) translateY(-80px)', offset: 0.5 },
+        { transform: 'rotate(360deg) translateY(0px)', offset: 0.85 },
+        { transform: 'rotate(360deg) translateY(-15px)', offset: 0.92 },
+        { transform: 'rotate(360deg) translateY(0px)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 1000,
+        easing: 'ease-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(spinKeyframes, timing);
+    }
+    
+    function wiggle() {
+      const wiggleKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-15deg)', offset: 0.15 },
+        { transform: 'rotate(12deg)', offset: 0.3 },
+        { transform: 'rotate(-10deg)', offset: 0.45 },
+        { transform: 'rotate(8deg)', offset: 0.6 },
+        { transform: 'rotate(-5deg)', offset: 0.75 },
+        { transform: 'rotate(3deg)', offset: 0.85 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 800,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(wiggleKeyframes, timing);
+    }
+    
+    function pulse() {
+      const pulseKeyframes = [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.2)', offset: 0.2 },
+        { transform: 'scale(0.95)', offset: 0.4 },
+        { transform: 'scale(1.15)', offset: 0.6 },
+        { transform: 'scale(0.98)', offset: 0.8 },
+        { transform: 'scale(1)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 900,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(pulseKeyframes, timing);
+    }
+    
+    function antennaSway() {
+      // Set transform origin to bottom of antennas (where they connect to body)
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const swayKeyframesL = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(8deg)', offset: 0.25 },
+        { transform: 'rotate(0deg)', offset: 0.5 },
+        { transform: 'rotate(-8deg)', offset: 0.75 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const swayKeyframesR = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-8deg)', offset: 0.25 },
+        { transform: 'rotate(0deg)', offset: 0.5 },
+        { transform: 'rotate(8deg)', offset: 0.75 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2500,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      antennaL.animate(swayKeyframesL, timing);
+      antennaR.animate(swayKeyframesR, timing);
+    }
+    
+    function eyePop() {
+      // Set transform origin to center of each eye
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const popKeyframes = [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.8)', offset: 0.2 },
+        { transform: 'scale(1.6)', offset: 0.35 },
+        { transform: 'scale(1.9)', offset: 0.5 },
+        { transform: 'scale(0.9)', offset: 0.7 },
+        { transform: 'scale(1.1)', offset: 0.85 },
+        { transform: 'scale(1)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 1000,
+        easing: 'ease-out',
+        iterations: 1
+      };
+      
+      eyeL.animate(popKeyframes, timing);
+      eyeR.animate(popKeyframes, timing);
+    }
+    
+    function bored() {
+      // Whole body slumps down slightly
+      const slumpKeyframes = [
+        { transform: 'translateY(0px) scale(1, 1)' },
+        { transform: 'translateY(20px) scale(1.02, 0.95)', offset: 0.3 },
+        { transform: 'translateY(20px) scale(1.02, 0.95)', offset: 0.7 },
+        { transform: 'translateY(0px) scale(1, 1)', offset: 1 }
+      ];
+      
+      // Eyes droop and move down
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeDroopKeyframes = [
+        { transform: 'translateY(0px) scale(1, 1)' },
+        { transform: 'translateY(8px) scale(1.1, 0.7)', offset: 0.3 },
+        { transform: 'translateY(8px) scale(1.1, 0.7)', offset: 0.7 },
+        { transform: 'translateY(0px) scale(1, 1)', offset: 1 }
+      ];
+      
+      // Antennas droop slightly
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const antennaDropKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-12deg)', offset: 0.3 },
+        { transform: 'rotate(-12deg)', offset: 0.7 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2000,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(slumpKeyframes, timing);
+      eyeL.animate(eyeDroopKeyframes, timing);
+      eyeR.animate(eyeDroopKeyframes, timing);
+      antennaL.animate(antennaDropKeyframes, timing);
+      antennaR.animate(antennaDropKeyframes, timing);
+    }
+    
+    function playful() {
+      // Quick bouncy hops
+      const hopKeyframes = [
+        { transform: 'translateY(0px) rotate(0deg)' },
+        { transform: 'translateY(-30px) rotate(-5deg)', offset: 0.15 },
+        { transform: 'translateY(0px) rotate(0deg)', offset: 0.3 },
+        { transform: 'translateY(-25px) rotate(5deg)', offset: 0.45 },
+        { transform: 'translateY(0px) rotate(0deg)', offset: 0.6 },
+        { transform: 'translateY(-20px) rotate(-3deg)', offset: 0.75 },
+        { transform: 'translateY(0px) rotate(0deg)', offset: 0.9 },
+        { transform: 'translateY(0px) rotate(0deg)', offset: 1 }
+      ];
+      
+      // Antennas perk up and wiggle energetically
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const antennaWiggleL = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(15deg)', offset: 0.12 },
+        { transform: 'rotate(-10deg)', offset: 0.25 },
+        { transform: 'rotate(12deg)', offset: 0.37 },
+        { transform: 'rotate(-8deg)', offset: 0.5 },
+        { transform: 'rotate(10deg)', offset: 0.62 },
+        { transform: 'rotate(-6deg)', offset: 0.75 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const antennaWiggleR = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-15deg)', offset: 0.12 },
+        { transform: 'rotate(10deg)', offset: 0.25 },
+        { transform: 'rotate(-12deg)', offset: 0.37 },
+        { transform: 'rotate(8deg)', offset: 0.5 },
+        { transform: 'rotate(-10deg)', offset: 0.62 },
+        { transform: 'rotate(6deg)', offset: 0.75 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      // Eyes bounce around excitedly
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeBounceKeyframes = [
+        { transform: 'scale(1)' },
+        { transform: 'scale(1.15)', offset: 0.15 },
+        { transform: 'scale(0.95)', offset: 0.3 },
+        { transform: 'scale(1.1)', offset: 0.45 },
+        { transform: 'scale(0.98)', offset: 0.6 },
+        { transform: 'scale(1.05)', offset: 0.75 },
+        { transform: 'scale(1)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 1400,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(hopKeyframes, timing);
+      antennaL.animate(antennaWiggleL, timing);
+      antennaR.animate(antennaWiggleR, timing);
+      eyeL.animate(eyeBounceKeyframes, timing);
+      eyeR.animate(eyeBounceKeyframes, timing);
+    }
+    
+    function spongeSquish() {
+      // Extreme compression and deformation like squeezing a sponge
+      const squishKeyframes = [
+        { transform: 'scale(1, 1) skewX(0deg)' },
+        // Initial squeeze from sides
+        { transform: 'scale(0.6, 1.3) skewX(0deg)', offset: 0.15 },
+        // Deform and twist
+        { transform: 'scale(0.5, 1.5) skewX(15deg)', offset: 0.25 },
+        // Maximum compression - completely warped
+        { transform: 'scale(0.4, 1.6) skewX(-20deg)', offset: 0.35 },
+        // Start releasing with wobble
+        { transform: 'scale(0.7, 1.2) skewX(10deg)', offset: 0.5 },
+        // Spring back with overshoot
+        { transform: 'scale(1.3, 0.8) skewX(-5deg)', offset: 0.65 },
+        // Oscillate
+        { transform: 'scale(0.95, 1.08) skewX(3deg)', offset: 0.78 },
+        { transform: 'scale(1.05, 0.97) skewX(-2deg)', offset: 0.88 },
+        // Settle back to normal
+        { transform: 'scale(1, 1) skewX(0deg)', offset: 1 }
+      ];
+      
+      // Eyes get squeezed too
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeSquishKeyframes = [
+        { transform: 'scale(1, 1)' },
+        { transform: 'scale(0.7, 1.4)', offset: 0.25 },
+        { transform: 'scale(0.5, 1.7)', offset: 0.35 },
+        { transform: 'scale(1.3, 0.8)', offset: 0.65 },
+        { transform: 'scale(1, 1)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 1600,
+        easing: 'cubic-bezier(0.68, -0.55, 0.27, 1.55)',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(squishKeyframes, timing);
+      eyeL.animate(eyeSquishKeyframes, timing);
+      eyeR.animate(eyeSquishKeyframes, timing);
+    }
+    
+    function explode() {
+      // Kochi literally explodes into pieces and reassembles
+      const bodyExplodeKeyframes = [
+        { transform: 'scale(1) rotate(0deg)', opacity: 1 },
+        // Sudden expansion
+        { transform: 'scale(1.5) rotate(0deg)', opacity: 1, offset: 0.1 },
+        // EXPLODE - everything flies apart
+        { transform: 'scale(3) rotate(720deg)', opacity: 0.3, offset: 0.35 },
+        // Pieces scattered
+        { transform: 'scale(0.1) rotate(1080deg)', opacity: 0, offset: 0.5 },
+        // Start reassembling from nothing
+        { transform: 'scale(0.1) rotate(1440deg)', opacity: 0, offset: 0.65 },
+        // Pieces flying back together
+        { transform: 'scale(2) rotate(1800deg)', opacity: 0.5, offset: 0.8 },
+        // Rapid reformation with spin
+        { transform: 'scale(0.8) rotate(2160deg)', opacity: 1, offset: 0.92 },
+        // Final pop back to normal
+        { transform: 'scale(1) rotate(2160deg)', opacity: 1, offset: 1 }
+      ];
+      
+      // Antennas fly off wildly in opposite directions
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const antennaExplodeL = [
+        { transform: 'rotate(0deg) translateX(0px) translateY(0px)', opacity: 1 },
+        { transform: 'rotate(-180deg) translateX(-150px) translateY(-200px)', opacity: 0, offset: 0.35 },
+        { transform: 'rotate(-180deg) translateX(-150px) translateY(-200px)', opacity: 0, offset: 0.65 },
+        { transform: 'rotate(0deg) translateX(0px) translateY(0px)', opacity: 1, offset: 1 }
+      ];
+      
+      const antennaExplodeR = [
+        { transform: 'rotate(0deg) translateX(0px) translateY(0px)', opacity: 1 },
+        { transform: 'rotate(180deg) translateX(150px) translateY(-200px)', opacity: 0, offset: 0.35 },
+        { transform: 'rotate(180deg) translateX(150px) translateY(-200px)', opacity: 0, offset: 0.65 },
+        { transform: 'rotate(0deg) translateX(0px) translateY(0px)', opacity: 1, offset: 1 }
+      ];
+      
+      // Eyes shoot out in different directions
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeExplodeL = [
+        { transform: 'scale(1) translateX(0px) translateY(0px)', opacity: 1 },
+        { transform: 'scale(3) translateX(-120px) translateY(100px) rotate(360deg)', opacity: 0, offset: 0.35 },
+        { transform: 'scale(3) translateX(-120px) translateY(100px) rotate(360deg)', opacity: 0, offset: 0.65 },
+        { transform: 'scale(1) translateX(0px) translateY(0px) rotate(720deg)', opacity: 1, offset: 1 }
+      ];
+      
+      const eyeExplodeR = [
+        { transform: 'scale(1) translateX(0px) translateY(0px)', opacity: 1 },
+        { transform: 'scale(3) translateX(120px) translateY(-80px) rotate(-360deg)', opacity: 0, offset: 0.35 },
+        { transform: 'scale(3) translateX(120px) translateY(-80px) rotate(-360deg)', opacity: 0, offset: 0.65 },
+        { transform: 'scale(1) translateX(0px) translateY(0px) rotate(-720deg)', opacity: 1, offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2500,
+        easing: 'cubic-bezier(0.68, -0.55, 0.27, 1.55)',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(bodyExplodeKeyframes, timing);
+      antennaL.animate(antennaExplodeL, timing);
+      antennaR.animate(antennaExplodeR, timing);
+      eyeL.animate(eyeExplodeL, timing);
+      eyeR.animate(eyeExplodeR, timing);
+    }
+    
+    function electricBuzz() {
+      // Antennas vibrate rapidly with small movements
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const buzzKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(4deg)', offset: 0.1 },
+        { transform: 'rotate(-3deg)', offset: 0.2 },
+        { transform: 'rotate(5deg)', offset: 0.3 },
+        { transform: 'rotate(-4deg)', offset: 0.4 },
+        { transform: 'rotate(3deg)', offset: 0.5 },
+        { transform: 'rotate(-5deg)', offset: 0.6 },
+        { transform: 'rotate(4deg)', offset: 0.7 },
+        { transform: 'rotate(-3deg)', offset: 0.8 },
+        { transform: 'rotate(2deg)', offset: 0.9 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      // Body shakes from the electricity
+      const bodyShakeKeyframes = [
+        { transform: 'translateX(0px)' },
+        { transform: 'translateX(3px)', offset: 0.1 },
+        { transform: 'translateX(-3px)', offset: 0.2 },
+        { transform: 'translateX(3px)', offset: 0.3 },
+        { transform: 'translateX(-3px)', offset: 0.4 },
+        { transform: 'translateX(3px)', offset: 0.5 },
+        { transform: 'translateX(-3px)', offset: 0.6 },
+        { transform: 'translateX(3px)', offset: 0.7 },
+        { transform: 'translateX(-3px)', offset: 0.8 },
+        { transform: 'translateX(2px)', offset: 0.9 },
+        { transform: 'translateX(0px)', offset: 1 }
+      ];
+      
+      // Eyes flicker and shake
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeFlickerKeyframes = [
+        { opacity: 1 },
+        { opacity: 0.3, offset: 0.15 },
+        { opacity: 1, offset: 0.2 },
+        { opacity: 0.4, offset: 0.35 },
+        { opacity: 1, offset: 0.4 },
+        { opacity: 0.2, offset: 0.55 },
+        { opacity: 1, offset: 0.6 },
+        { opacity: 0.5, offset: 0.75 },
+        { opacity: 1, offset: 0.8 },
+        { opacity: 1, offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 1500,
+        easing: 'linear',
+        iterations: 1
+      };
+      
+      antennaL.animate(buzzKeyframes, timing);
+      antennaR.animate(buzzKeyframes, timing);
+      kochiGroup.animate(bodyShakeKeyframes, timing);
+      eyeL.animate(eyeFlickerKeyframes, timing);
+      eyeR.animate(eyeFlickerKeyframes, timing);
+    }
+    
+    function thinking() {
+      // Eyes squint (get thinner vertically)
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeSquintKeyframes = [
+        { transform: 'scale(1, 1) translateX(0px) translateY(0px)' },
+        // Squint down
+        { transform: 'scale(1, 0.4) translateX(0px) translateY(0px)', offset: 0.15 },
+        // Look up and to the right while squinting
+        { transform: 'scale(1, 0.4) translateX(15px) translateY(-10px)', offset: 0.35 },
+        // Hold squint, look left
+        { transform: 'scale(1, 0.4) translateX(-12px) translateY(-8px)', offset: 0.55 },
+        // Still squinting, look down slightly
+        { transform: 'scale(1, 0.4) translateX(-5px) translateY(5px)', offset: 0.7 },
+        // Look back center, still squinting
+        { transform: 'scale(1, 0.4) translateX(0px) translateY(0px)', offset: 0.85 },
+        // Open eyes back to normal
+        { transform: 'scale(1, 1) translateX(0px) translateY(0px)', offset: 1 }
+      ];
+      
+      // Head tilts slightly while thinking
+      const headTiltKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(5deg)', offset: 0.3 },
+        { transform: 'rotate(5deg)', offset: 0.6 },
+        { transform: 'rotate(-3deg)', offset: 0.8 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      // Antennas droop slightly from concentration
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const antennaThinkKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(-8deg)', offset: 0.25 },
+        { transform: 'rotate(-8deg)', offset: 0.75 },
+        { transform: 'rotate(0deg)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2200,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      eyeL.animate(eyeSquintKeyframes, timing);
+      eyeR.animate(eyeSquintKeyframes, timing);
+      kochiGroup.animate(headTiltKeyframes, timing);
+      antennaL.animate(antennaThinkKeyframes, timing);
+      antennaR.animate(antennaThinkKeyframes, timing);
+    }
+    
+    function ballRock() {
+      // Transform into a round ball shape
+      const ballTransformKeyframes = [
+        { transform: 'scale(1, 1)' },
+        // Squish into ball - equal proportions, almost perfectly round
+        { transform: 'scale(1.1, 0.85)', offset: 0.1 },
+        { transform: 'scale(1.15, 0.85)', offset: 0.2 },
+        // Rock to the right
+        { transform: 'scale(1.15, 0.85) rotate(25deg)', offset: 0.35 },
+        // Rock to the left
+        { transform: 'scale(1.15, 0.85) rotate(-25deg)', offset: 0.5 },
+        // Rock right again
+        { transform: 'scale(1.15, 0.85) rotate(20deg)', offset: 0.62 },
+        // Rock left again
+        { transform: 'scale(1.15, 0.85) rotate(-20deg)', offset: 0.74 },
+        // Smaller rocks - shake it off
+        { transform: 'scale(1.15, 0.85) rotate(12deg)', offset: 0.82 },
+        { transform: 'scale(1.15, 0.85) rotate(-12deg)', offset: 0.88 },
+        { transform: 'scale(1.15, 0.85) rotate(5deg)', offset: 0.93 },
+        // Pop back to normal with slight overshoot
+        { transform: 'scale(0.95, 1.05) rotate(0deg)', offset: 0.97 },
+        { transform: 'scale(1, 1) rotate(0deg)', offset: 1 }
+      ];
+      
+      // Antennas get absorbed into the ball shape
+      antennaL.style.transformOrigin = '355px 340px';
+      antennaR.style.transformOrigin = '668px 340px';
+      
+      const antennaRetractKeyframes = [
+        { transform: 'scale(1, 1) rotate(0deg)', opacity: 1 },
+        { transform: 'scale(1, 0.3) rotate(0deg)', opacity: 0.3, offset: 0.15 },
+        { transform: 'scale(1, 0.1) rotate(0deg)', opacity: 0, offset: 0.2 },
+        { transform: 'scale(1, 0.1) rotate(0deg)', opacity: 0, offset: 0.88 },
+        { transform: 'scale(1, 0.5) rotate(0deg)', opacity: 0.5, offset: 0.94 },
+        { transform: 'scale(1, 1) rotate(0deg)', opacity: 1, offset: 1 }
+      ];
+      
+      // Eyes get dizzy from all the rocking
+      eyeL.style.transformOrigin = '430px 517px';
+      eyeR.style.transformOrigin = '625px 517px';
+      
+      const eyeDizzyKeyframes = [
+        { transform: 'rotate(0deg)' },
+        { transform: 'rotate(0deg)', offset: 0.2 },
+        { transform: 'rotate(180deg)', offset: 0.4 },
+        { transform: 'rotate(360deg)', offset: 0.6 },
+        { transform: 'rotate(540deg)', offset: 0.8 },
+        { transform: 'rotate(720deg)', offset: 0.95 },
+        { transform: 'rotate(720deg)', offset: 1 }
+      ];
+      
+      const timing = {
+        duration: 2500,
+        easing: 'ease-in-out',
+        iterations: 1
+      };
+      
+      kochiGroup.animate(ballTransformKeyframes, timing);
+      antennaL.animate(antennaRetractKeyframes, timing);
+      antennaR.animate(antennaRetractKeyframes, timing);
+      eyeL.animate(eyeDizzyKeyframes, timing);
+      eyeR.animate(eyeDizzyKeyframes, timing);
+    }
+    
+    // Click to trigger random animation
+    const animations = [spinJump, wiggle, pulse, antennaSway, eyePop, bored, playful, spongeSquish, explode, electricBuzz, thinking, ballRock];
+    
+    container.addEventListener('click', () => {
+      const randomAnimation = animations[Math.floor(Math.random() * animations.length)];
+      randomAnimation();
+    });
+    
+    // Auto-play squish on load
+    window.addEventListener('load', () => {
+      setTimeout(squishAndBounce, 500);
+    });
+    
+    // Repeat squish animation every 8 seconds
+    setInterval(squishAndBounce, 8000);
+  </script>
+</body>
+</html>

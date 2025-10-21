@@ -1,0 +1,750 @@
+{
+  "fetch_date": "2025-10-21 10:55:32 UTC",
+  "target_date": "2025-10-14",
+  "total_papers": 20,
+  "categories": [
+    "cs.AI",
+    "cs.LG",
+    "cs.CV",
+    "cs.CL",
+    "stat.ML"
+  ],
+  "papers": [
+    {
+      "arxiv_id": "2510.13908v1",
+      "title": "Interpreting the Latent Structure of Operator Precedence in Language Models",
+      "abstract": "Large Language Models (LLMs) have demonstrated impressive reasoning\ncapabilities but continue to struggle with arithmetic tasks. Prior works\nlargely focus on outputs or prompting strategies, leaving the open question of\nthe internal structure through which models do arithmetic computation. In this\nwork, we investigate whether LLMs encode operator precedence in their internal\nrepresentations via the open-source instruction-tuned LLaMA 3.2-3B model. We\nconstructed a dataset of arithmetic expressions with three operands and two\noperators, varying the order and placement of parentheses. Using this dataset,\nwe trace whether intermediate results appear in the residual stream of the\ninstruction-tuned LLaMA 3.2-3B model. We apply interpretability techniques such\nas logit lens, linear classification probes, and UMAP geometric visualization.\nOur results show that intermediate computations are present in the residual\nstream, particularly after MLP blocks. We also find that the model linearly\nencodes precedence in each operator's embeddings post attention layer. We\nintroduce partial embedding swap, a technique that modifies operator precedence\nby exchanging high-impact embedding dimensions between operators.",
+      "authors": [
+        {
+          "name": "Dharunish Yugeswardeenoo",
+          "affiliation": null
+        },
+        {
+          "name": "Harshil Nukala",
+          "affiliation": null
+        },
+        {
+          "name": "Cole Blondin",
+          "affiliation": null
+        },
+        {
+          "name": "Sean O Brien",
+          "affiliation": null
+        },
+        {
+          "name": "Vasu Sharma",
+          "affiliation": null
+        },
+        {
+          "name": "Kevin Zhu",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13908v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13908v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13046v1",
+      "title": "One Dimensional CNN ECG Mamba for Multilabel Abnormality Classification in 12 Lead ECG",
+      "abstract": "Accurate detection of cardiac abnormalities from electrocardiogram recordings\nis regarded as essential for clinical diagnostics and decision support.\nTraditional deep learning models such as residual networks and transformer\narchitectures have been applied successfully to this task, but their\nperformance has been limited when long sequential signals are processed.\nRecently, state space models have been introduced as an efficient alternative.\nIn this study, a hybrid framework named One Dimensional Convolutional Neural\nNetwork Electrocardiogram Mamba is introduced, in which convolutional feature\nextraction is combined with Mamba, a selective state space model designed for\neffective sequence modeling. The model is built upon Vision Mamba, a\nbidirectional variant through which the representation of temporal dependencies\nin electrocardiogram data is enhanced. Comprehensive experiments on the\nPhysioNet Computing in Cardiology Challenges of 2020 and 2021 were conducted,\nand superior performance compared with existing methods was achieved.\nSpecifically, the proposed model achieved substantially higher AUPRC and AUROC\nscores than those reported by the best previously published algorithms on\ntwelve lead electrocardiograms. These results demonstrate the potential of\nMamba-based architectures to advance reliable ECG classification. This\ncapability supports early diagnosis and personalized treatment, while enhancing\naccessibility in telemedicine and resource-constrained healthcare systems.",
+      "authors": [
+        {
+          "name": "Huawei Jiang",
+          "affiliation": null
+        },
+        {
+          "name": "Husna Mutahira",
+          "affiliation": null
+        },
+        {
+          "name": "Gan Huang",
+          "affiliation": null
+        },
+        {
+          "name": "Mannan Saeed Muhammad",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13046v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13046v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13044v1",
+      "title": "SceneAdapt: Scene-aware Adaptation of Human Motion Diffusion",
+      "abstract": "Human motion is inherently diverse and semantically rich, while also shaped\nby the surrounding scene. However, existing motion generation approaches\naddress either motion semantics or scene-awareness in isolation, since\nconstructing large-scale datasets with both rich text--motion coverage and\nprecise scene interactions is extremely challenging. In this work, we introduce\nSceneAdapt, a framework that injects scene awareness into text-conditioned\nmotion models by leveraging disjoint scene--motion and text--motion datasets\nthrough two adaptation stages: inbetweening and scene-aware inbetweening. The\nkey idea is to use motion inbetweening, learnable without text, as a proxy task\nto bridge two distinct datasets and thereby inject scene-awareness to\ntext-to-motion models. In the first stage, we introduce keyframing layers that\nmodulate motion latents for inbetweening while preserving the latent manifold.\nIn the second stage, we add a scene-conditioning layer that injects scene\ngeometry by adaptively querying local context through cross-attention.\nExperimental results show that SceneAdapt effectively injects scene awareness\ninto text-to-motion models, and we further analyze the mechanisms through which\nthis awareness emerges. Code and models will be released.",
+      "authors": [
+        {
+          "name": "Jungbin Cho",
+          "affiliation": null
+        },
+        {
+          "name": "Minsu Kim",
+          "affiliation": null
+        },
+        {
+          "name": "Jisoo Kim",
+          "affiliation": null
+        },
+        {
+          "name": "Ce Zheng",
+          "affiliation": null
+        },
+        {
+          "name": "Laszlo A. Jeni",
+          "affiliation": null
+        },
+        {
+          "name": "Ming-Hsuan Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Youngjae Yu",
+          "affiliation": null
+        },
+        {
+          "name": "Seonjoo Kim",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13044v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13044v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13042v1",
+      "title": "SeqBench: Benchmarking Sequential Narrative Generation in Text-to-Video Models",
+      "abstract": "Text-to-video (T2V) generation models have made significant progress in\ncreating visually appealing videos. However, they struggle with generating\ncoherent sequential narratives that require logical progression through\nmultiple events. Existing T2V benchmarks primarily focus on visual quality\nmetrics but fail to evaluate narrative coherence over extended sequences. To\nbridge this gap, we present SeqBench, a comprehensive benchmark for evaluating\nsequential narrative coherence in T2V generation. SeqBench includes a carefully\ndesigned dataset of 320 prompts spanning various narrative complexities, with\n2,560 human-annotated videos generated from 8 state-of-the-art T2V models.\nAdditionally, we design a Dynamic Temporal Graphs (DTG)-based automatic\nevaluation metric, which can efficiently capture long-range dependencies and\ntemporal ordering while maintaining computational efficiency. Our DTG-based\nmetric demonstrates a strong correlation with human annotations. Through\nsystematic evaluation using SeqBench, we reveal critical limitations in current\nT2V models: failure to maintain consistent object states across multi-action\nsequences, physically implausible results in multi-object scenarios, and\ndifficulties in preserving realistic timing and ordering relationships between\nsequential actions. SeqBench provides the first systematic framework for\nevaluating narrative coherence in T2V generation and offers concrete insights\nfor improving sequential reasoning capabilities in future models. Please refer\nto https://videobench.github.io/SeqBench.github.io/ for more details.",
+      "authors": [
+        {
+          "name": "Zhengxu Tang",
+          "affiliation": null
+        },
+        {
+          "name": "Zizheng Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Luning Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Zitao Shuai",
+          "affiliation": null
+        },
+        {
+          "name": "Chenhao Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Siyu Qian",
+          "affiliation": null
+        },
+        {
+          "name": "Yirui Wu",
+          "affiliation": null
+        },
+        {
+          "name": "Bohao Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Haosong Rao",
+          "affiliation": null
+        },
+        {
+          "name": "Zhenyu Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Chenwei Wu",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13042v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13042v1",
+      "primary_category": "cs.CV",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13040v1",
+      "title": "Randomness and Interpolation Improve Gradient Descent",
+      "abstract": "Based on Stochastic Gradient Descent (SGD), the paper introduces two\noptimizers, named Interpolational Accelerating Gradient Descent (IAGD) as well\nas Noise-Regularized Stochastic Gradient Descent (NRSGD). IAGD leverages\nsecond-order Newton Interpolation to expedite the convergence process during\ntraining, assuming relevancy in gradients between iterations. To avoid\nover-fitting, NRSGD incorporates a noise regularization technique that\nintroduces controlled noise to the gradients during the optimization process.\nComparative experiments of this research are conducted on the CIFAR-10, and\nCIFAR-100 datasets, benchmarking different CNNs(Convolutional Neural Networks)\nwith IAGD and NRSGD against classical optimizers in Keras Package. Results\ndemonstrate the potential of those two viable improvement methods in SGD,\nimplicating the effectiveness of the advancements.",
+      "authors": [
+        {
+          "name": "Jiawen Li",
+          "affiliation": null
+        },
+        {
+          "name": "Pascal Lefevre",
+          "affiliation": null
+        },
+        {
+          "name": "Anwar Pp Abdul Majeed",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13040v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13040v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13037v1",
+      "title": "Conformal Inference for Open-Set and Imbalanced Classification",
+      "abstract": "This paper presents a conformal prediction method for classification in\nhighly imbalanced and open-set settings, where there are many possible classes\nand not all may be represented in the data. Existing approaches require a\nfinite, known label space and typically involve random sample splitting, which\nworks well when there is a sufficient number of observations from each class.\nConsequently, they have two limitations: (i) they fail to provide adequate\ncoverage when encountering new labels at test time, and (ii) they may become\noverly conservative when predicting previously seen labels. To obtain valid\nprediction sets in the presence of unseen labels, we compute and integrate into\nour predictions a new family of conformal p-values that can test whether a new\ndata point belongs to a previously unseen class. We study these p-values\ntheoretically, establishing their optimality, and uncover an intriguing\nconnection with the classical Good--Turing estimator for the probability of\nobserving a new species. To make more efficient use of imbalanced data, we also\ndevelop a selective sample splitting algorithm that partitions training and\ncalibration data based on label frequency, leading to more informative\npredictions. Despite breaking exchangeability, this allows maintaining\nfinite-sample guarantees through suitable re-weighting. With both simulated and\nreal data, we demonstrate our method leads to prediction sets with valid\ncoverage even in challenging open-set scenarios with infinite numbers of\npossible labels, and produces more informative predictions under extreme class\nimbalance.",
+      "authors": [
+        {
+          "name": "Tianmin Xie",
+          "affiliation": null
+        },
+        {
+          "name": "Yanfei Zhou",
+          "affiliation": null
+        },
+        {
+          "name": "Ziyi Liang",
+          "affiliation": null
+        },
+        {
+          "name": "Stefano Favaro",
+          "affiliation": null
+        },
+        {
+          "name": "Matteo Sesia",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "stat.ML",
+        "cs.LG"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13037v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13037v1",
+      "primary_category": "stat.ML",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13036v1",
+      "title": "Repairing Reward Functions with Human Feedback to Mitigate Reward Hacking",
+      "abstract": "Human-designed reward functions for reinforcement learning (RL) agents are\nfrequently misaligned with the humans' true, unobservable objectives, and thus\nact only as proxies. Optimizing for a misspecified proxy reward function often\ninduces reward hacking, resulting in a policy misaligned with the human's true\nobjectives. An alternative is to perform RL from human feedback, which involves\nlearning a reward function from scratch by collecting human preferences over\npairs of trajectories. However, building such datasets is costly. To address\nthe limitations of both approaches, we propose Preference-Based Reward Repair\n(PBRR): an automated iterative framework that repairs a human-specified proxy\nreward function by learning an additive, transition-dependent correction term\nfrom preferences. A manually specified reward function can yield policies that\nare highly suboptimal under the ground-truth objective, yet corrections on only\na few transitions may suffice to recover optimal performance. To identify and\ncorrect for those transitions, PBRR uses a targeted exploration strategy and a\nnew preference-learning objective. We prove in tabular domains PBRR has a\ncumulative regret that matches, up to constants, that of prior preference-based\nRL methods. In addition, on a suite of reward-hacking benchmarks, PBRR\nconsistently outperforms baselines that learn a reward function from scratch\nfrom preferences or modify the proxy reward function using other approaches,\nrequiring substantially fewer preferences to learn high performing policies.",
+      "authors": [
+        {
+          "name": "Stephane Hatgis-Kessell",
+          "affiliation": null
+        },
+        {
+          "name": "Logan Mondal Bhamidipaty",
+          "affiliation": null
+        },
+        {
+          "name": "Emma Brunskill",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13036v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13036v1",
+      "primary_category": "cs.AI",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13030v1",
+      "title": "Bridging Idealized and Operational Models: An Explainable AI Framework for Earth System Emulators",
+      "abstract": "Computer models are indispensable tools for understanding the Earth system.\nWhile high-resolution operational models have achieved many successes, they\nexhibit persistent biases, particularly in simulating extreme events and\nstatistical distributions. In contrast, coarse-grained idealized models isolate\nfundamental processes and can be precisely calibrated to excel in\ncharacterizing specific dynamical and statistical features. However, different\nmodels remain siloed by disciplinary boundaries. By leveraging the\ncomplementary strengths of models of varying complexity, we develop an\nexplainable AI framework for Earth system emulators. It bridges the model\nhierarchy through a reconfigured latent data assimilation technique, uniquely\nsuited to exploit the sparse output from the idealized models. The resulting\nbridging model inherits the high resolution and comprehensive variables of\noperational models while achieving global accuracy enhancements through\ntargeted improvements from idealized models. Crucially, the mechanism of AI\nprovides a clear rationale for these advancements, moving beyond black-box\ncorrection to physically insightful understanding in a computationally\nefficient framework that enables effective physics-assisted digital twins and\nuncertainty quantification. We demonstrate its power by significantly\ncorrecting biases in CMIP6 simulations of El Ni\\~no spatiotemporal patterns,\nleveraging statistically accurate idealized models. This work also highlights\nthe importance of pushing idealized model development and advancing\ncommunication between modeling communities.",
+      "authors": [
+        {
+          "name": "Pouria Behnoudfar",
+          "affiliation": null
+        },
+        {
+          "name": "Charlotte Moser",
+          "affiliation": null
+        },
+        {
+          "name": "Marc Bocquet",
+          "affiliation": null
+        },
+        {
+          "name": "Sibo Cheng",
+          "affiliation": null
+        },
+        {
+          "name": "Nan Chen",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13030v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13030v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13029v1",
+      "title": "Toward Reasoning-Centric Time-Series Analysis",
+      "abstract": "Traditional time series analysis has long relied on pattern recognition,\ntrained on static and well-established benchmarks. However, in real-world\nsettings -- where policies shift, human behavior adapts, and unexpected events\nunfold -- effective analysis must go beyond surface-level trends to uncover the\nactual forces driving them. The recent rise of Large Language Models (LLMs)\npresents new opportunities for rethinking time series analysis by integrating\nmultimodal inputs. However, as the use of LLMs becomes popular, we must remain\ncautious, asking why we use LLMs and how to exploit them effectively. Most\nexisting LLM-based methods still employ their numerical regression ability and\nignore their deeper reasoning potential. This paper argues for rethinking time\nseries with LLMs as a reasoning task that prioritizes causal structure and\nexplainability. This shift brings time series analysis closer to human-aligned\nunderstanding, enabling transparent and context-aware insights in complex\nreal-world environments.",
+      "authors": [
+        {
+          "name": "Xinlei Wang",
+          "affiliation": null
+        },
+        {
+          "name": "Mingtian Tan",
+          "affiliation": null
+        },
+        {
+          "name": "Jing Qiu",
+          "affiliation": null
+        },
+        {
+          "name": "Junhua Zhao",
+          "affiliation": null
+        },
+        {
+          "name": "Jinjin Gu",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13029v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13029v1",
+      "primary_category": "cs.AI",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13025v1",
+      "title": "Information Shapes Koopman Representation",
+      "abstract": "The Koopman operator provides a powerful framework for modeling dynamical\nsystems and has attracted growing interest from the machine learning community.\nHowever, its infinite-dimensional nature makes identifying suitable\nfinite-dimensional subspaces challenging, especially for deep architectures. We\nargue that these difficulties come from suboptimal representation learning,\nwhere latent variables fail to balance expressivity and simplicity. This\ntension is closely related to the information bottleneck (IB) dilemma:\nconstructing compressed representations that are both compact and predictive.\nRethinking Koopman learning through this lens, we demonstrate that latent\nmutual information promotes simplicity, yet an overemphasis on simplicity may\ncause latent space to collapse onto a few dominant modes. In contrast,\nexpressiveness is sustained by the von Neumann entropy, which prevents such\ncollapse and encourages mode diversity. This insight leads us to propose an\ninformation-theoretic Lagrangian formulation that explicitly balances this\ntradeoff. Furthermore, we propose a new algorithm based on the Lagrangian\nformulation that encourages both simplicity and expressiveness, leading to a\nstable and interpretable Koopman representation. Beyond quantitative\nevaluations, we further visualize the learned manifolds under our\nrepresentations, observing empirical results consistent with our theoretical\npredictions. Finally, we validate our approach across a diverse range of\ndynamical systems, demonstrating improved performance over existing Koopman\nlearning methods. The implementation is publicly available at\nhttps://github.com/Wenxuan52/InformationKoopman.",
+      "authors": [
+        {
+          "name": "Xiaoyuan Cheng",
+          "affiliation": null
+        },
+        {
+          "name": "Wenxuan Yuan",
+          "affiliation": null
+        },
+        {
+          "name": "Yiming Yang",
+          "affiliation": null
+        },
+        {
+          "name": "Yuanzhao Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Sibo Cheng",
+          "affiliation": null
+        },
+        {
+          "name": "Yi He",
+          "affiliation": null
+        },
+        {
+          "name": "Zhuo Sun",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "cs.SY",
+        "eess.SY"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13025v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13025v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13023v2",
+      "title": "Machine Learning-Based Ultrasonic Weld Characterization Using Hierarchical Wave Modeling and Diffusion-Driven Distribution Alignment",
+      "abstract": "Automated ultrasonic weld inspection remains a significant challenge in the\nnondestructive evaluation (NDE) community to factors such as limited training\ndata (due to the complexity of curating experimental specimens or high-fidelity\nsimulations) and environmental volatility of many industrial settings\n(resulting in the corruption of on-the-fly measurements). Thus, an end-to-end\nmachine learning (ML) workflow for acoustic weld inspection in realistic (i.e.,\nindustrial) settings has remained an elusive goal. This work addresses the\nchallenges of data curation and signal corruption by proposing workflow\nconsisting of a reduced-order modeling scheme, diffusion based distribution\nalignment, and U-Net-based segmentation and inversion. A reduced-order\nHelmholtz model based on Lamb wave theory is used to generate a comprehensive\ndataset over varying weld heterogeneity and crack defects. The relatively\ninexpensive low-order solutions provide a robust training dateset for inversion\nmodels which are refined through a transfer learning stage using a limited set\nof full 3D elastodynamic simulations. To handle out-of-distribution (OOD)\nreal-world measurements with varying and unpredictable noise distributions,\ni.e., Laser Doppler Vibrometry scans, guided diffusion produces in-distribution\nrepresentations of OOD experimental LDV scans which are subsequently processed\nby the inversion models. This integrated framework provides an end-to-end\nsolution for automated weld inspection on real data.",
+      "authors": [
+        {
+          "name": "Joshua R. Tempelman",
+          "affiliation": null
+        },
+        {
+          "name": "Adam J. Wachtor",
+          "affiliation": null
+        },
+        {
+          "name": "Eric B. Flynn",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "physics.comp-ph"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13023v2",
+      "pdf_url": "http://arxiv.org/pdf/2510.13023v2",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-10-16"
+    },
+    {
+      "arxiv_id": "2510.13022v1",
+      "title": "On the Role of Preference Variance in Preference Optimization",
+      "abstract": "Direct Preference Optimization (DPO) has emerged as an important approach for\nlearning from human preferences in aligning large language models (LLMs).\nHowever, collecting human preference data is costly and inefficient, motivating\nmethods to reduce the required annotations. In this work, we investigate the\nimpact of \\emph{preference variance} (PVar), which measures the variance in\nmodel preferences when comparing pairs of responses, on the effectiveness of\nDPO training. We provide a theoretical insight by establishing an upper bound\non the DPO gradient norm for any given prompt, showing it is controlled by the\nPVar of that prompt. This implies that prompts with low PVar can only produce\nsmall gradient updates, making them less valuable for learning. We validate\nthis finding by fine-tuning LLMs with preferences generated by a reward model,\nevaluating on two benchmarks (AlpacaEval 2.0 and Arena-Hard). Experimental\nresults demonstrate that prompts with higher PVar outperform randomly selected\nprompts or those with lower PVar. We also show that our PVar-based selection\nmethod is robust, when using smaller reward models (1B, 3B) for selection.\nNotably, in a separate experiment using the original human annotations from the\nUltraFeedback dataset, we found that training on only the top 10\\% of prompts\nwith the highest PVar yields better evaluation performance than training on the\nfull dataset, highlighting the importance of preference variance in identifying\ninformative examples for efficient LLM alignment.",
+      "authors": [
+        {
+          "name": "Jiacheng Guo",
+          "affiliation": null
+        },
+        {
+          "name": "Zihao Li",
+          "affiliation": null
+        },
+        {
+          "name": "Jiahao Qiu",
+          "affiliation": null
+        },
+        {
+          "name": "Yue Wu",
+          "affiliation": null
+        },
+        {
+          "name": "Mengdi Wang",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13022v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13022v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.16009v1",
+      "title": "Data for Inclusion: The Redistributive Power of Data Economics",
+      "abstract": "This paper evaluates the redistributive and efficiency impacts of expanding\naccess to positive credit information in a financially excluded economy. Using\nmicrodata from Uruguay's 2021 household survey, we simulate three data regimes\nnegative only, partial positive (Score+), and synthetic full visibility and\nassess their effects on access to credit, interest burden, and inequality. Our\nfindings reveal that enabling broader data sharing substantially reduces\nfinancial costs, compresses interest rate dispersion, and lowers the Gini\ncoefficient of credit burden. While partial visibility benefits a subset of the\npopulation, full synthetic access delivers the most equitable and efficient\noutcomes. The analysis positions credit data as a non-rival public asset with\ntransformative implications for financial inclusion and poverty reduction.",
+      "authors": [
+        {
+          "name": "Diego Vallarino",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "econ.GN",
+        "cs.LG",
+        "q-fin.EC",
+        "91B05"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.16009v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.16009v1",
+      "primary_category": "econ.GN",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13907v1",
+      "title": "LLM Prompt Duel Optimizer: Efficient Label-Free Prompt Optimization",
+      "abstract": "Large language models (LLMs) are highly sensitive to their input prompts,\nmaking prompt design a central challenge. While automatic prompt optimization\n(APO) reduces manual engineering, most approaches assume access to ground-truth\nreferences such as labeled validation data. In practice, however, collecting\nhigh-quality labels is costly and slow. We propose the Prompt Duel Optimizer\n(PDO), a sample-efficient framework for label-free prompt optimization. PDO\nformulates the problem as a dueling-bandit setting, where supervision signal\ncomes from pairwise preference feedback provided by an LLM judge. The framework\ncombines Double Thompson Sampling (D-TS), which prioritizes informative prompt\ncomparisons, with Top-Performer Guided Mutation, which expands the candidate\npool by mutating high-performing prompts. PDO naturally operates in label-free\nsettings and can also incorporate partial labels to mitigate judge noise.\nExperiments on BIG-bench Hard (BBH) and MS MARCO show that PDO consistently\noutperforms baseline methods. Ablation studies further demonstrate the\neffectiveness of both D-TS and prompt mutation.",
+      "authors": [
+        {
+          "name": "Yuanchen Wu",
+          "affiliation": null
+        },
+        {
+          "name": "Saurabh Verma",
+          "affiliation": null
+        },
+        {
+          "name": "Justin Lee",
+          "affiliation": null
+        },
+        {
+          "name": "Fangzhou Xiong",
+          "affiliation": null
+        },
+        {
+          "name": "Poppy Zhang",
+          "affiliation": null
+        },
+        {
+          "name": "Amel Awadelkarim",
+          "affiliation": null
+        },
+        {
+          "name": "Xu Chen",
+          "affiliation": null
+        },
+        {
+          "name": "Yubai Yuan",
+          "affiliation": null
+        },
+        {
+          "name": "Shawndra Hill",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "stat.ML"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13907v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13907v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13018v1",
+      "title": "Escaping Local Optima in the Waddington Landscape: A Multi-Stage TRPO-PPO Approach for Single-Cell Perturbation Analysis",
+      "abstract": "Modeling cellular responses to genetic and chemical perturbations remains a\ncentral challenge in single-cell biology. Existing data-driven framework have\nadvanced perturbation prediction through variational autoencoders, chemically\nconditioned autoencoders, and large-scale transformer pretraining. However,\nthese models are prone to local optima in the nonconvex Waddington landscape of\ncell fate decisions, where poor initialization can trap trajectories in\nspurious lineages or implausible differentiation outcomes. While executable\ngene regulatory networks complement these approaches, automated design\nframeworks incorporate biological priors through multi-agent optimization. Yet,\nan approach that is completely data-driven with well-designed initialization to\nescape local optima and converge to a proper lineage remains elusive. In this\nwork, we introduce a multistage reinforcement learning algorithm tailored for\nsingle-cell perturbation modeling. We first compute an explicit natural\ngradient update using Fisher-vector products and a conjugate gradient solver,\nscaled by a KL trust-region constraint to provide a safe, curvature-aware the\nfirst step for the policy. Starting with these preconditioned parameters, we\nthen apply a second phase of proximal policy optimization (PPO) with clipped\nsurrogates, exploiting minibatch efficiency to refine the policy. We\ndemonstrate that this initialization substantially improves generalization on\nSingle-cell RNA sequencing (scRNA-seq) and Single-cell ATAC sequencing\n(scATAC-seq) pertubation analysis.",
+      "authors": [
+        {
+          "name": "Francis Boabang",
+          "affiliation": null
+        },
+        {
+          "name": "Samuel Asante Gyamerah",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.LG",
+        "q-bio.QM"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13018v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13018v1",
+      "primary_category": "cs.LG",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13016v2",
+      "title": "SVAG-Bench: A Large-Scale Benchmark for Multi-Instance Spatio-temporal Video Action Grounding",
+      "abstract": "Understanding fine-grained actions and accurately localizing their\ncorresponding actors in space and time are fundamental capabilities for\nadvancing next-generation AI systems, including embodied agents, autonomous\nplatforms, and human-AI interaction frameworks. Despite recent progress in\nvideo understanding, existing methods predominantly address either\ncoarse-grained action recognition or generic object tracking, thereby\noverlooking the challenge of jointly detecting and tracking multiple objects\naccording to their actions while grounding them temporally. To address this\ngap, we introduce Spatio-temporal Video Action Grounding (SVAG), a novel task\nthat requires models to simultaneously detect, track, and temporally localize\nall referent objects in videos based on natural language descriptions of their\nactions. To support this task, we construct SVAG-Bench, a large-scale benchmark\ncomprising 688 videos, 19,590 annotated records, and 903 unique verbs, covering\na diverse range of objects, actions, and real-world scenes. We further propose\nSVAGFormer, a baseline framework that adapts state of the art vision language\nmodels for joint spatial and temporal grounding, and introduce SVAGEval, a\nstandardized evaluation toolkit for fair and reproducible benchmarking.\nEmpirical results show that existing models perform poorly on SVAG,\nparticularly in dense or complex scenes, underscoring the need for more\nadvanced reasoning over fine-grained object-action interactions in long videos.",
+      "authors": [
+        {
+          "name": "Tanveer Hannan",
+          "affiliation": null
+        },
+        {
+          "name": "Shuaicong Wu",
+          "affiliation": null
+        },
+        {
+          "name": "Mark Weber",
+          "affiliation": null
+        },
+        {
+          "name": "Suprosanna Shit",
+          "affiliation": null
+        },
+        {
+          "name": "Jindong Gu",
+          "affiliation": null
+        },
+        {
+          "name": "Rajat Koner",
+          "affiliation": null
+        },
+        {
+          "name": "Aljo\u0161a O\u0161ep",
+          "affiliation": null
+        },
+        {
+          "name": "Laura Leal-Taix\u00e9",
+          "affiliation": null
+        },
+        {
+          "name": "Thomas Seidl",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CV"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13016v2",
+      "pdf_url": "http://arxiv.org/pdf/2510.13016v2",
+      "primary_category": "cs.CV",
+      "updated_date": "2025-10-16"
+    },
+    {
+      "arxiv_id": "2510.13011v1",
+      "title": "Deliberate Lab: A Platform for Real-Time Human-AI Social Experiments",
+      "abstract": "Social and behavioral scientists increasingly aim to study how humans\ninteract, collaborate, and make decisions alongside artificial intelligence.\nHowever, the experimental infrastructure for such work remains underdeveloped:\n(1) few platforms support real-time, multi-party studies at scale; (2) most\ndeployments require bespoke engineering, limiting replicability and\naccessibility, and (3) existing tools do not treat AI agents as first-class\nparticipants. We present Deliberate Lab, an open-source platform for\nlarge-scale, real-time behavioral experiments that supports both human\nparticipants and large language model (LLM)-based agents. We report on a\n12-month public deployment of the platform (N=88 experimenters, N=9195\nexperiment participants), analyzing usage patterns and workflows. Case studies\nand usage scenarios are aggregated from platform users, complemented by\nin-depth interviews with select experimenters. By lowering technical barriers\nand standardizing support for hybrid human-AI experimentation, Deliberate Lab\nexpands the methodological repertoire for studying collective decision-making\nand human-centered AI.",
+      "authors": [
+        {
+          "name": "Crystal Qian",
+          "affiliation": null
+        },
+        {
+          "name": "Vivian Tsai",
+          "affiliation": null
+        },
+        {
+          "name": "Michael Behr",
+          "affiliation": null
+        },
+        {
+          "name": "Nada Hussein",
+          "affiliation": null
+        },
+        {
+          "name": "L\u00e9o Laugier",
+          "affiliation": null
+        },
+        {
+          "name": "Nithum Thain",
+          "affiliation": null
+        },
+        {
+          "name": "Lucas Dixon",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.HC",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13011v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13011v1",
+      "primary_category": "cs.HC",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13009v1",
+      "title": "Developing and Validating the Arabic Version of the Attitudes Toward Large Language Models Scale",
+      "abstract": "As the use of large language models (LLMs) becomes increasingly global,\nunderstanding public attitudes toward these systems requires tools that are\nadapted to local contexts and languages. In the Arab world, LLM adoption has\ngrown rapidly with both globally dominant platforms and regional ones like\nFanar and Jais offering Arabic-specific solutions. This highlights the need for\nculturally and linguistically relevant scales to accurately measure attitudes\ntoward LLMs in the region. Tools assessing attitudes toward artificial\nintelligence (AI) can provide a base for measuring attitudes specific to LLMs.\nThe 5-item Attitudes Toward Artificial Intelligence (ATAI) scale, which\nmeasures two dimensions, the AI Fear and the AI Acceptance, has been recently\nadopted and adapted to develop new instruments in English using a sample from\nthe UK: the Attitudes Toward General LLMs (AT-GLLM) and Attitudes Toward\nPrimary LLM (AT-PLLM) scales. In this paper, we translate the two scales,\nAT-GLLM and AT-PLLM, and validate them using a sample of 249 Arabic-speaking\nadults. The results show that the scale, translated into Arabic, is a reliable\nand valid tool that can be used for the Arab population and language.\nPsychometric analyses confirmed a two-factor structure, strong measurement\ninvariance across genders, and good internal reliability. The scales also\ndemonstrated strong convergent and discriminant validity. Our scales will\nsupport research in a non-Western context, a much-needed effort to help draw a\nglobal picture of LLM perceptions, and will also facilitate localized research\nand policy-making in the Arab region.",
+      "authors": [
+        {
+          "name": "Basad Barajeeh",
+          "affiliation": null
+        },
+        {
+          "name": "Ala Yankouskaya",
+          "affiliation": null
+        },
+        {
+          "name": "Sameha AlShakhsi",
+          "affiliation": null
+        },
+        {
+          "name": "Chun Sing Maxwell Ho",
+          "affiliation": null
+        },
+        {
+          "name": "Guandong Xu",
+          "affiliation": null
+        },
+        {
+          "name": "Raian Ali",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.HC",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13009v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13009v1",
+      "primary_category": "cs.HC",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13008v1",
+      "title": "CurLL: A Developmental Framework to Evaluate Continual Learning in Language Models",
+      "abstract": "We introduce a comprehensive continual learning dataset and benchmark (CurlL)\ngrounded in human developmental trajectories from ages 5-10, enabling\nsystematic and fine-grained assessment of models' ability to progressively\nacquire new skills. CurlL spans five developmental stages (0-4) covering ages\n5-10, supported by a skill graph that breaks down broad skills into smaller\nabilities, concrete goals, and measurable indicators, while also capturing\nwhich abilities build on others. We generate a 23.4B-token synthetic dataset\nwith controlled skill progression, vocabulary complexity, and format diversity,\ncomprising paragraphs, comprehension-based QA (CQA), skill-testing QA (CSQA),\nand instruction-response (IR) pairs. Stage-wise token counts range from 2.12B\nto 6.78B tokens, supporting precise analysis of forgetting, forward transfer,\nand backward transfer. Using a 135M-parameter transformer trained under\nindependent, joint, and sequential (continual) setups, we show trade-offs in\nskill retention and transfer efficiency. By mirroring human learning patterns\nand providing fine-grained control over skill dependencies, this work advances\ncontinual learning evaluations for language models.",
+      "authors": [
+        {
+          "name": "Pavan Kalyan",
+          "affiliation": null
+        },
+        {
+          "name": "Shubhra Mishra",
+          "affiliation": null
+        },
+        {
+          "name": "Satya Lokam",
+          "affiliation": null
+        },
+        {
+          "name": "Navin Goyal",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL",
+        "cs.AI"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13008v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13008v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-10-14"
+    },
+    {
+      "arxiv_id": "2510.13003v1",
+      "title": "OPLoRA: Orthogonal Projection LoRA Prevents Catastrophic Forgetting during Parameter-Efficient Fine-Tuning",
+      "abstract": "Low-Rank Adaptation (LoRA) enables efficient fine-tuning of large language\nmodels but suffers from catastrophic forgetting when learned updates interfere\nwith the dominant singular directions that encode essential pre-trained\nknowledge. We propose Orthogonal Projection LoRA (OPLoRA), a theoretically\ngrounded approach that prevents this interference through double-sided\northogonal projections. By decomposing frozen weights via SVD, OPLoRA\nconstrains LoRA updates to lie entirely within the orthogonal complement of the\ntop-$k$ singular subspace using projections $P_L = I - U_k U_k^\\top$ and $P_R =\nI - V_k V_k^\\top$. We prove that this construction exactly preserves the\ntop-$k$ singular triples, providing mathematical guarantees for knowledge\nretention. To quantify subspace interference, we introduce $\\rho_k$, a metric\nmeasuring update alignment with dominant directions. Extensive experiments\nacross commonsense reasoning, mathematics, and code generation demonstrate that\nOPLoRA significantly reduces forgetting while maintaining competitive\ntask-specific performance on LLaMA-2 7B and Qwen2.5 7B, establishing orthogonal\nprojection as an effective mechanism for knowledge preservation in\nparameter-efficient fine-tuning.",
+      "authors": [
+        {
+          "name": "Yifeng Xiong",
+          "affiliation": null
+        },
+        {
+          "name": "Xiaohui Xie",
+          "affiliation": null
+        }
+      ],
+      "categories": [
+        "cs.CL"
+      ],
+      "published_date": "2025-10-14",
+      "arxiv_url": "http://arxiv.org/abs/2510.13003v1",
+      "pdf_url": "http://arxiv.org/pdf/2510.13003v1",
+      "primary_category": "cs.CL",
+      "updated_date": "2025-10-14"
+    }
+  ]
+}

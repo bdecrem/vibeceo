@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kochi Audio Player</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(180deg, #FAFAF8 0%, #F5F5F0 100%);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            padding-top: 80px; /* Space for banner */
+        }
+        
+        /* App Banner */
+        .app-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(44, 62, 31, 0.08);
+            padding: 12px 16px;
+            z-index: 1000;
+            transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .app-banner.hidden {
+            transform: translateY(-100%);
+        }
+        
+        .app-banner-content {
+            max-width: 600px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .app-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #2C3E1F 0%, #3A4D2A 100%);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 8px rgba(44, 62, 31, 0.15);
+        }
+        
+        .app-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: #FFE148;
+        }
+        
+        .app-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .app-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1A1A1A;
+            letter-spacing: -0.02em;
+            margin-bottom: 2px;
+        }
+        
+        .app-subtitle {
+            font-size: 12px;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .app-cta {
+            background: #2C3E1F;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            letter-spacing: -0.01em;
+        }
+        
+        .app-cta:hover {
+            background: #1F2E16;
+            transform: scale(1.05);
+        }
+        
+        .app-cta:active {
+            transform: scale(0.98);
+        }
+        
+        .app-close {
+            background: transparent;
+            border: none;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 200ms ease;
+            margin-left: 4px;
+        }
+        
+        .app-close:hover {
+            background: rgba(44, 62, 31, 0.08);
+        }
+        
+        .app-close svg {
+            width: 16px;
+            height: 16px;
+            fill: #999;
+        }
+        
+        @media (max-width: 480px) {
+            body {
+                padding-top: 72px;
+            }
+            
+            .app-banner {
+                padding: 10px 12px;
+            }
+            
+            .app-banner-content {
+                gap: 10px;
+            }
+            
+            .app-icon {
+                width: 36px;
+                height: 36px;
+                border-radius: 8px;
+            }
+            
+            .app-icon svg {
+                width: 20px;
+                height: 20px;
+            }
+            
+            .app-title {
+                font-size: 13px;
+            }
+            
+            .app-subtitle {
+                font-size: 11px;
+            }
+            
+            .app-cta {
+                padding: 7px 14px;
+                font-size: 12px;
+                border-radius: 18px;
+            }
+            
+            .app-close {
+                width: 24px;
+                height: 24px;
+                margin-left: 2px;
+            }
+            
+            .app-close svg {
+                width: 14px;
+                height: 14px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            .app-subtitle {
+                display: none;
+            }
+            
+            .app-cta {
+                padding: 6px 12px;
+            }
+        }
+        
+        .player {
+            background: white;
+            border: 1px solid rgba(44, 62, 31, 0.12);
+            border-radius: 20px;
+            padding: 36px;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 
+                0 1px 2px rgba(0, 0, 0, 0.04),
+                0 4px 8px rgba(0, 0, 0, 0.03),
+                0 16px 24px rgba(0, 0, 0, 0.02);
+        }
+        
+        .show-title {
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            font-size: 20px;
+            color: #1A1A1A;
+            text-align: center;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+        }
+        
+        .episode-info {
+            font-size: 13px;
+            color: #888;
+            text-align: center;
+            margin-bottom: 32px;
+            font-weight: 500;
+            letter-spacing: 0.02em;
+        }
+        
+        .waveform-container {
+            height: 48px;
+            margin-bottom: 12px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 0 4px;
+        }
+        
+        .waveform-bar {
+            flex: 1;
+            background: #F0F0ED;
+            border-radius: 2px;
+            position: relative;
+            transition: background 200ms ease;
+        }
+        
+        .waveform-bar::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #E8D96F;
+            border-radius: 2px;
+            transition: background 200ms ease;
+        }
+        
+        .waveform-bar.played::after {
+            background: #2C3E1F;
+        }
+        
+        .progress-container {
+            background: #F0F0ED;
+            height: 4px;
+            border-radius: 100px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: height 200ms ease;
+        }
+        
+        .progress-container:hover {
+            height: 6px;
+        }
+        
+        .progress-bar {
+            background: #2C3E1F;
+            height: 100%;
+            width: 35%;
+            border-radius: 100px;
+            position: relative;
+        }
+        
+        .progress-bar::after {
+            content: '';
+            position: absolute;
+            right: -4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 12px;
+            height: 12px;
+            background: white;
+            border: 3px solid #2C3E1F;
+            border-radius: 50%;
+            opacity: 0;
+            transition: opacity 200ms ease;
+        }
+        
+        .progress-container:hover .progress-bar::after {
+            opacity: 1;
+        }
+        
+        .time-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 28px;
+            font-size: 12px;
+            color: #888;
+            font-weight: 600;
+            letter-spacing: 0.03em;
+        }
+        
+        .controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 28px;
+        }
+        
+        .btn {
+            background: white;
+            border: 1.5px solid #E5E5E0;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+            border-color: #2C3E1F;
+            background: #FAFAF8;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+        }
+        
+        .btn.small {
+            width: 40px;
+            height: 40px;
+        }
+        
+        .btn.large {
+            width: 56px;
+            height: 56px;
+            background: #2C3E1F;
+            border-color: #2C3E1F;
+        }
+        
+        .btn.large:hover {
+            background: #1F2E16;
+            border-color: #1F2E16;
+            box-shadow: 0 0 0 6px rgba(44, 62, 31, 0.08);
+        }
+        
+        .mic-button {
+            width: 100%;
+            background: linear-gradient(135deg, #FAFAF8 0%, #F5F5F0 100%);
+            border: 1.5px solid #E5E5E0;
+            border-radius: 14px;
+            padding: 13px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            cursor: pointer;
+            transition: all 200ms cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            font-size: 14px;
+            color: #2C3E1F;
+            letter-spacing: -0.01em;
+        }
+        
+        .mic-button:hover {
+            background: white;
+            border-color: #2C3E1F;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(44, 62, 31, 0.08);
+        }
+        
+        .mic-button:active {
+            transform: translateY(0);
+        }
+        
+        .mic-button.active {
+            background: #2C3E1F;
+            color: white;
+            border-color: #2C3E1F;
+            animation: pulse 2s infinite;
+        }
+        
+        .mic-button.active .icon {
+            fill: white;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { 
+                box-shadow: 0 0 0 0 rgba(44, 62, 31, 0.2);
+            }
+            50% { 
+                box-shadow: 0 0 0 10px rgba(44, 62, 31, 0);
+            }
+        }
+        
+        @keyframes waveGlow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        
+        @keyframes gentleWave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(var(--wave-scale, 1.2)); }
+        }
+        
+        .waveform-bar {
+            animation: gentleWave var(--wave-duration, 3s) ease-in-out infinite;
+            animation-delay: var(--wave-delay, 0s);
+            transform-origin: center bottom;
+        }
+        
+        .waveform-bar.active {
+            animation: gentleWave var(--wave-duration, 0.8s) ease-in-out infinite;
+        }
+        
+        .waveform-bar::after {
+            animation: waveGlow 2s ease-in-out infinite;
+            animation-delay: var(--wave-delay, 0s);
+        }
+        
+        /* SVG Icons */
+        .icon {
+            fill: #2C3E1F;
+            opacity: 0.9;
+        }
+        
+        .btn.large .icon {
+            fill: white;
+        }
+        
+        .btn.small:hover .icon {
+            opacity: 1;
+        }
+        
+        /* Speed indicator */
+        .speed-badge {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #2C3E1F;
+            color: white;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 8px;
+            border: 2px solid white;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 540px) {
+            .player {
+                padding: 28px 24px;
+            }
+            
+            .show-title {
+                font-size: 18px;
+            }
+            
+            .episode-info {
+                font-size: 12px;
+            }
+            
+            .waveform-container {
+                height: 40px;
+            }
+            
+            .controls {
+                gap: 10px;
+            }
+            
+            .btn.small {
+                width: 44px;
+                height: 44px;
+            }
+            
+            .btn.large {
+                width: 60px;
+                height: 60px;
+            }
+        }
+        
+        @media (max-width: 420px) {
+            .player {
+                padding: 24px 20px;
+            }
+            
+            .show-title {
+                font-size: 17px;
+            }
+            
+            .waveform-container {
+                height: 36px;
+                gap: 2px;
+            }
+            
+            /* Hide every 3rd bar on mobile */
+            .waveform-bar:nth-child(3n) {
+                display: none;
+            }
+            
+            .time-display {
+                font-size: 11px;
+            }
+            
+            .controls {
+                gap: 8px;
+            }
+            
+            .mic-button {
+                font-size: 13px;
+                padding: 12px;
+            }
+        }
+        
+        @media (max-width: 360px) {
+            body {
+                padding: 16px;
+            }
+            
+            .player {
+                padding: 20px 16px;
+                border-radius: 16px;
+            }
+            
+            .show-title {
+                font-size: 16px;
+                margin-bottom: 6px;
+            }
+            
+            .episode-info {
+                font-size: 11px;
+                margin-bottom: 24px;
+            }
+            
+            .waveform-container {
+                height: 32px;
+                margin-bottom: 10px;
+            }
+            
+            /* Hide every other bar on very small screens */
+            .waveform-bar:nth-child(even) {
+                display: none;
+            }
+            
+            .btn.small {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .btn.large {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .btn.small svg {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .btn.large svg {
+                width: 22px;
+                height: 22px;
+            }
+            
+            .mic-button {
+                border-radius: 12px;
+            }
+        }
+        
+        /* Landscape orientation adjustments */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body {
+                padding: 12px;
+            }
+            
+            .player {
+                padding: 20px 24px;
+            }
+            
+            .show-title {
+                font-size: 16px;
+                margin-bottom: 4px;
+            }
+            
+            .episode-info {
+                margin-bottom: 20px;
+            }
+            
+            .waveform-container {
+                height: 28px;
+            }
+            
+            .controls {
+                margin-bottom: 20px;
+            }
+        }
+        
+        /* Touch device improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .btn {
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            .progress-container {
+                height: 8px;
+                margin-bottom: 16px;
+            }
+            
+            .progress-container:hover {
+                height: 8px; /* Keep consistent on touch */
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- App Download Banner -->
+    <div class="app-banner" id="appBanner">
+        <div class="app-banner-content">
+            <div class="app-icon">
+                <!-- Simplified Kochi mascot icon -->
+                <svg viewBox="0 0 24 24">
+                    <circle cx="8" cy="10" r="2"/>
+                    <circle cx="16" cy="10" r="2"/>
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                    <path d="M7 14c0 2.76 2.24 5 5 5s5-2.24 5-5H7z"/>
+                </svg>
+            </div>
+            
+            <div class="app-info">
+                <div class="app-title">Kochi for iOS & Android</div>
+                <div class="app-subtitle">Get the full experience</div>
+            </div>
+            
+            <button class="app-cta" onclick="openApp()">Open app</button>
+            
+            <button class="app-close" onclick="closeBanner()">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+    
+    <div class="player">
+        <div class="show-title">Daily Kochi Blast</div>
+        <div class="episode-info">EPISODE 42 · OCT 14, 2025</div>
+        
+        <div class="waveform-container" id="waveform">
+            <!-- Waveform bars will be generated by JS -->
+        </div>
+        
+        <div class="progress-container" onclick="seekAudio(event)">
+            <div class="progress-bar" id="progressBar"></div>
+        </div>
+        
+        <div class="time-display">
+            <span id="currentTime">1:24</span>
+            <span id="duration">3:45</span>
+        </div>
+        
+        <div class="controls">
+            <!-- Rewind 15s -->
+            <button class="btn small" onclick="rewind()">
+                <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
+                    <path d="M11.99 5V1l-5 5 5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6h-2c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/>
+                    <text x="12" y="16" font-size="8" font-weight="700" text-anchor="middle" fill="currentColor">15</text>
+                </svg>
+            </button>
+            
+            <!-- Play/Pause -->
+            <button class="btn large" onclick="togglePlay()" id="playBtn">
+                <svg width="24" height="24" viewBox="0 0 24 24" class="icon" id="playIcon">
+                    <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg width="24" height="24" viewBox="0 0 24 24" class="icon" id="pauseIcon" style="display: none;">
+                    <path d="M6 6h4v12H6zm8 0h4v12h-4z"/>
+                </svg>
+            </button>
+            
+            <!-- Forward 15s -->
+            <button class="btn small" onclick="forward()">
+                <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
+                    <path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/>
+                    <text x="12" y="16" font-size="8" font-weight="700" text-anchor="middle" fill="currentColor">15</text>
+                </svg>
+            </button>
+            
+            <!-- Next -->
+            <button class="btn small" onclick="nextEpisode()">
+                <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
+                    <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/>
+                </svg>
+            </button>
+            
+            <!-- Speed -->
+            <button class="btn small" onclick="changeSpeed()" id="speedBtn" style="position: relative;">
+                <span style="font-size: 11px; font-weight: 700; color: #2C3E1F;">1×</span>
+            </button>
+        </div>
+        
+        <button class="mic-button" onclick="toggleMic()" id="micBtn">
+            <svg width="18" height="18" viewBox="0 0 24 24" class="icon">
+                <path d="M12 14c1.66 0 2.99-1.34 2.99-3L15 5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/>
+            </svg>
+            <span id="micText">Interactive Mode</span>
+        </button>
+    </div>
+    
+    <script>
+        let isPlaying = false;
+        let isMicActive = false;
+        let currentTimeSeconds = 84; // 1:24
+        let durationSeconds = 225; // 3:45
+        let animationId;
+        let currentSpeed = 1;
+        const speeds = [0.5, 0.75, 1, 1.25, 1.5, 2];
+        
+        // Generate waveform bars
+        function generateWaveform() {
+            const container = document.getElementById('waveform');
+            container.innerHTML = ''; // Clear existing bars
+            
+            // Determine bar count based on screen width
+            const screenWidth = window.innerWidth;
+            let barCount = 50; // Default for desktop
+            
+            if (screenWidth <= 360) {
+                barCount = 25; // Every other bar on very small screens
+            } else if (screenWidth <= 420) {
+                barCount = 34; // Reduced for mobile
+            } else if (screenWidth <= 540) {
+                barCount = 40; // Slightly reduced for tablets
+            }
+            
+            for (let i = 0; i < barCount; i++) {
+                const bar = document.createElement('div');
+                bar.className = 'waveform-bar';
+                
+                // Random height for visual variety
+                const maxHeight = screenWidth <= 420 ? 24 : 30;
+                const minHeight = screenWidth <= 420 ? 8 : 10;
+                const height = Math.random() * maxHeight + minHeight;
+                bar.style.height = `${height}px`;
+                
+                // Create wave animation variations
+                const delay = (i * 0.05) % 2; // Creates a wave effect across bars
+                const duration = 2.5 + Math.random() * 1.5; // Vary animation speed
+                const scaleAmount = 1.1 + Math.random() * 0.3; // Vary how much each bar scales
+                
+                bar.style.setProperty('--wave-delay', `${delay}s`);
+                bar.style.setProperty('--wave-duration', `${duration}s`);
+                bar.style.setProperty('--wave-scale', scaleAmount);
+                
+                // Set the colored portion height
+                const progressHeight = Math.random() * (maxHeight * 0.7) + 5;
+                
+                const afterEl = document.createElement('style');
+                afterEl.textContent = `.waveform-bar:nth-child(${i + 1})::after { height: ${progressHeight}px; }`;
+                document.head.appendChild(afterEl);
+                
+                container.appendChild(bar);
+            }
+        }
+        
+        function updateWaveformProgress() {
+            const bars = document.querySelectorAll('.waveform-bar');
+            const progress = currentTimeSeconds / durationSeconds;
+            const playedBars = Math.floor(progress * bars.length);
+            
+            bars.forEach((bar, index) => {
+                if (index < playedBars) {
+                    bar.classList.add('played');
+                } else {
+                    bar.classList.remove('played');
+                }
+                
+                // Add "active" class to bars near the playhead for more movement
+                if (isPlaying && Math.abs(index - playedBars) < 3) {
+                    bar.classList.add('active');
+                } else {
+                    bar.classList.remove('active');
+                }
+            });
+        }
+        
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            const playIcon = document.getElementById('playIcon');
+            const pauseIcon = document.getElementById('pauseIcon');
+            
+            if (isPlaying) {
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+                startProgress();
+            } else {
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+                stopProgress();
+            }
+        }
+        
+        function startProgress() {
+            const progressBar = document.getElementById('progressBar');
+            const currentTimeEl = document.getElementById('currentTime');
+            
+            function animate() {
+                if (!isPlaying || currentTimeSeconds >= durationSeconds) {
+                    if (currentTimeSeconds >= durationSeconds) {
+                        currentTimeSeconds = 0;
+                        isPlaying = false;
+                        document.getElementById('playIcon').style.display = 'block';
+                        document.getElementById('pauseIcon').style.display = 'none';
+                    }
+                    return;
+                }
+                
+                currentTimeSeconds += 0.1 * currentSpeed;
+                const progress = (currentTimeSeconds / durationSeconds) * 100;
+                progressBar.style.width = progress + '%';
+                currentTimeEl.textContent = formatTime(currentTimeSeconds);
+                updateWaveformProgress();
+                
+                animationId = requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        function stopProgress() {
+            cancelAnimationFrame(animationId);
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function rewind() {
+            currentTimeSeconds = Math.max(0, currentTimeSeconds - 15);
+            updateProgress();
+        }
+        
+        function forward() {
+            currentTimeSeconds = Math.min(durationSeconds, currentTimeSeconds + 15);
+            updateProgress();
+        }
+        
+        function updateProgress() {
+            const progress = (currentTimeSeconds / durationSeconds) * 100;
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('currentTime').textContent = formatTime(currentTimeSeconds);
+            updateWaveformProgress();
+        }
+        
+        function seekAudio(event) {
+            const progressContainer = event.currentTarget;
+            const clickX = event.offsetX;
+            const width = progressContainer.offsetWidth;
+            const percentage = clickX / width;
+            currentTimeSeconds = percentage * durationSeconds;
+            updateProgress();
+        }
+        
+        function changeSpeed() {
+            const speedBtn = document.getElementById('speedBtn');
+            const currentIndex = speeds.indexOf(currentSpeed);
+            currentSpeed = speeds[(currentIndex + 1) % speeds.length];
+            
+            speedBtn.innerHTML = `<span style="font-size: 11px; font-weight: 700; color: #2C3E1F;">${currentSpeed}×</span>`;
+        }
+        
+        function nextEpisode() {
+            // Simulate loading next episode
+            currentTimeSeconds = 0;
+            document.getElementById('progressBar').style.width = '0%';
+            document.getElementById('currentTime').textContent = '0:00';
+            updateWaveformProgress();
+            
+            // Update episode number
+            const episodeInfo = document.querySelector('.episode-info');
+            const currentNum = parseInt(episodeInfo.textContent.match(/EPISODE (\d+)/)[1]);
+            const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).toUpperCase();
+            episodeInfo.textContent = `EPISODE ${currentNum + 1} · ${today}`;
+            
+            // Reset play state
+            if (isPlaying) {
+                isPlaying = false;
+                document.getElementById('playIcon').style.display = 'block';
+                document.getElementById('pauseIcon').style.display = 'none';
+                stopProgress();
+            }
+        }
+        
+        function toggleMic() {
+            isMicActive = !isMicActive;
+            const micBtn = document.getElementById('micBtn');
+            const micText = document.getElementById('micText');
+            
+            if (isMicActive) {
+                micBtn.classList.add('active');
+                micText.textContent = 'Listening...';
+                
+                // Stop playback when mic is active
+                if (isPlaying) {
+                    togglePlay();
+                }
+            } else {
+                micBtn.classList.remove('active');
+                micText.textContent = 'Interactive Mode';
+            }
+        }
+        
+        // Initialize waveform on load
+        generateWaveform();
+        updateWaveformProgress();
+        
+        // Regenerate waveform on resize for responsive bar count
+        let resizeTimer;
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(() => {
+                generateWaveform();
+                updateWaveformProgress();
+            }, 250);
+        });
+        
+        // App banner functions
+        function closeBanner() {
+            const banner = document.getElementById('appBanner');
+            banner.classList.add('hidden');
+            document.body.style.paddingTop = '20px';
+            
+            // Remember dismissal for session
+            sessionStorage.setItem('bannerDismissed', 'true');
+        }
+        
+        function openApp() {
+            // Detect platform and attempt deep link
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            const isAndroid = /Android/.test(navigator.userAgent);
+            
+            if (isIOS) {
+                // Try to open iOS app, fallback to App Store
+                window.location.href = 'kochi://';
+                setTimeout(() => {
+                    window.location.href = 'https://apps.apple.com/app/kochi';
+                }, 250);
+            } else if (isAndroid) {
+                // Try to open Android app, fallback to Play Store
+                window.location.href = 'intent://kochi#Intent;scheme=kochi;package=com.kochi.app;end';
+                setTimeout(() => {
+                    window.location.href = 'https://play.google.com/store/apps/details?id=com.kochi.app';
+                }, 250);
+            } else {
+                // Desktop - show QR code or choice modal
+                alert('Download Kochi on your mobile device for the best experience!');
+            }
+        }
+        
+        // Check if banner was already dismissed
+        if (sessionStorage.getItem('bannerDismissed') === 'true') {
+            document.getElementById('appBanner').classList.add('hidden');
+            document.body.style.paddingTop = '20px';
+        }
+    </script>
+</body>
+</html>
