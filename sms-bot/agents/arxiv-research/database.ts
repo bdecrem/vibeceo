@@ -200,10 +200,13 @@ export async function checkDuplicatePaper(arxivId: string): Promise<boolean> {
 /**
  * Upsert authors (insert new, update existing)
  * Returns map of author name to author ID
+ *
+ * @param authors - Array of authors to upsert
+ * @param authorDates - Map of author name to their most recent paper date
  */
 export async function upsertAuthors(
   authors: ArxivAuthor[],
-  paperDate: string
+  authorDates: Map<string, string>
 ): Promise<Map<string, string>> {
   if (authors.length === 0) {
     return new Map();
@@ -212,10 +215,17 @@ export async function upsertAuthors(
   const authorMap = new Map<string, string>();
 
   for (const author of authors) {
+    // Get this author's most recent paper date
+    const paperDate = authorDates.get(author.name);
+    if (!paperDate) {
+      console.warn(`No date found for author ${author.name}, skipping`);
+      continue;
+    }
+
     // Check if author exists
     const { data: existing, error: selectError } = await supabase
       .from('arxiv_authors')
-      .select('id, first_seen_date, affiliations')
+      .select('id, first_seen_date, last_paper_date, affiliations')
       .eq('name', author.name)
       .single();
 
@@ -224,16 +234,19 @@ export async function upsertAuthors(
     }
 
     if (existing) {
-      // Author exists - update last_paper_date and maybe add affiliation
+      // Author exists - update last_paper_date only if this paper is newer
       const updatedAffiliations = existing.affiliations || [];
       if (author.affiliation && !updatedAffiliations.includes(author.affiliation)) {
         updatedAffiliations.push(author.affiliation);
       }
 
+      // Only update last_paper_date if this paper is newer than existing
+      const shouldUpdateDate = !existing.last_paper_date || paperDate > existing.last_paper_date;
+
       const { error: updateError } = await supabase
         .from('arxiv_authors')
         .update({
-          last_paper_date: paperDate,
+          last_paper_date: shouldUpdateDate ? paperDate : existing.last_paper_date,
           affiliations: updatedAffiliations,
         })
         .eq('name', author.name);
