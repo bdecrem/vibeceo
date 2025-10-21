@@ -195,19 +195,26 @@ function deduplicatePapers(papers: PaperData[]): PaperData[] {
 async function runPythonScript(
   scriptPath: string,
   args: string[],
-  description: string
+  description: string,
+  options?: { needsClaudeCodeAuth?: boolean }
 ): Promise<string> {
   console.log(`Running ${description}...`);
 
-  // Build clean environment - spread process.env but exclude CLAUDE_CODE_OAUTH_TOKEN
-  const { CLAUDE_CODE_OAUTH_TOKEN, ...cleanEnv } = process.env;
+  // Build environment
+  // - For fetch_papers.py: Exclude CLAUDE_CODE_OAUTH_TOKEN (doesn't need Claude SDK)
+  // - For agent.py: Include CLAUDE_CODE_OAUTH_TOKEN (needs Claude Agent SDK)
+  const baseEnv = options?.needsClaudeCodeAuth
+    ? process.env  // Keep all env vars including CLAUDE_CODE_OAUTH_TOKEN
+    : (() => {
+        const { CLAUDE_CODE_OAUTH_TOKEN, ...cleanEnv } = process.env;
+        return cleanEnv;
+      })();
 
   const subprocess = spawn(PYTHON_BIN, ['-u', scriptPath, ...args], {  // -u for unbuffered output
     cwd: process.cwd(),
     env: {
-      ...cleanEnv,  // Include full environment (pyenv, PATH, etc)
+      ...baseEnv,
       ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
-      // CLAUDE_CODE_OAUTH_TOKEN is explicitly excluded above
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -296,7 +303,9 @@ async function curatePapersStage(
 
   args.push('--verbose');
 
-  const stdout = await runPythonScript(AGENT_SCRIPT, args, 'Stage 2: Curate Papers');
+  const stdout = await runPythonScript(AGENT_SCRIPT, args, 'Stage 2: Curate Papers', {
+    needsClaudeCodeAuth: true,  // agent.py needs CLAUDE_CODE_OAUTH_TOKEN for Claude Agent SDK
+  });
   const result = parseJsonOutput(stdout) as CurationResult;
 
   if (result.status === 'error') {
