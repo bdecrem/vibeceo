@@ -187,9 +187,11 @@ async function runPythonScript(
   const subprocess = spawn(PYTHON_BIN, ['-u', scriptPath, ...args], {  // -u for unbuffered output
     cwd: process.cwd(),
     env: {
-      ...process.env,
+      // Only pass specific vars - don't spread process.env to avoid Claude Code pollution
+      PATH: '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin',  // Include homebrew for claude CLI
+      HOME: process.env.HOME,
       ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
-      CLAUDE_CODE_OAUTH_TOKEN: undefined, // Force API key usage
+      // Explicitly exclude Claude Code OAuth token
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -403,13 +405,16 @@ async function markFeaturedPapersAndUpdateScores(
 export async function runAndStoreArxivReport(options?: {
   date?: string;
 }): Promise<ArxivReportMetadata> {
-  // Use Pacific Time for date (same as other agents)
+  // Use YESTERDAY in Pacific Time (arXiv publishes daily around midnight UTC = 5pm PT previous day)
+  // So at 6am PT we fetch yesterday's papers which are already published
   const reportDate = options?.date || (() => {
     const now = new Date();
-    const pacificDate = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    const year = pacificDate.getFullYear();
-    const month = String(pacificDate.getMonth() + 1).padStart(2, '0');
-    const day = String(pacificDate.getDate()).padStart(2, '0');
+    const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    // Subtract 1 day
+    pacificNow.setDate(pacificNow.getDate() - 1);
+    const year = pacificNow.getFullYear();
+    const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
+    const day = String(pacificNow.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   })();
 
