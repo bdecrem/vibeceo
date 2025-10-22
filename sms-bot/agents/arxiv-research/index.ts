@@ -27,7 +27,12 @@ import {
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import * as db from './database.js';
-import { generateArxivPodcast, type PodcastGenerationResult } from './podcast.js';
+import {
+  buildEpisodeTitle,
+  generateArxivPodcast,
+  getPodcastTopicId,
+  type PodcastGenerationResult,
+} from './podcast.js';
 import { supabase } from '../../lib/supabase.js';
 
 // ============================================================================
@@ -626,39 +631,23 @@ export async function getLatestStoredArxivReport(): Promise<ArxivReportMetadata 
   // Get podcast metadata from episodes table
   let podcast: PodcastGenerationResult | undefined;
   try {
+    const episodeTitle = buildEpisodeTitle(stored.date);
+    const topicId = getPodcastTopicId();
+
     const { data: episode } = await supabase
       .from('episodes')
-      .select('id, topic_id, short_link, audio_url, show_notes_json')
-      .eq('date', stored.date)
-      .single();
+      .select('id, topic_id, title, audio_url, show_notes_json')
+      .eq('topic_id', topicId)
+      .eq('title', episodeTitle)
+      .limit(1)
+      .maybeSingle();
 
     if (episode) {
-      let shortLink: string | null =
-        typeof episode.short_link === 'string' && episode.short_link.trim().length
-          ? episode.short_link.trim()
-          : null;
-
-      if (!shortLink && episode.show_notes_json && typeof episode.show_notes_json === 'object') {
-        const notes = episode.show_notes_json as Record<string, unknown>;
-        const audioNotes = notes.audio;
-        if (audioNotes && typeof audioNotes === 'object') {
-          const candidate = (audioNotes as Record<string, unknown>).shortLink;
-          if (typeof candidate === 'string' && candidate.trim().length) {
-            shortLink = candidate.trim();
-          }
-        }
-
-        if (!shortLink) {
-          const legacy = (notes as Record<string, unknown>).shortLink;
-          if (typeof legacy === 'string' && legacy.trim().length) {
-            shortLink = legacy.trim();
-          }
-        }
-      }
-
-      if (!shortLink && typeof episode.audio_url === 'string' && episode.audio_url.trim().length) {
-        shortLink = episode.audio_url.trim();
-      }
+      const shortLink =
+        extractAudioShortLink(episode.show_notes_json) ||
+        (typeof episode.audio_url === 'string' && episode.audio_url.trim().length
+          ? episode.audio_url.trim()
+          : null);
 
       if (shortLink) {
         podcast = {
@@ -683,6 +672,46 @@ export async function getLatestStoredArxivReport(): Promise<ArxivReportMetadata 
     notableAuthorsCount: dbReport.notable_authors_count || 0,
     podcast,
   };
+}
+
+function extractAudioShortLink(value: unknown): string | null {
+  if (!value) {
+    return null;
+  }
+
+  let notes: Record<string, unknown> | null = null;
+
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object') {
+        notes = parsed as Record<string, unknown>;
+      }
+    } catch {
+      return null;
+    }
+  } else if (typeof value === 'object') {
+    notes = value as Record<string, unknown>;
+  }
+
+  if (!notes) {
+    return null;
+  }
+
+  const audio = notes.audio;
+  if (audio && typeof audio === 'object') {
+    const candidate = (audio as Record<string, unknown>).shortLink;
+    if (typeof candidate === 'string' && candidate.trim().length) {
+      return candidate.trim();
+    }
+  }
+
+  const legacy = notes.shortLink;
+  if (typeof legacy === 'string' && legacy.trim().length) {
+    return legacy.trim();
+  }
+
+  return null;
 }
 
 /**

@@ -11,6 +11,10 @@ const DEFAULT_TOPIC_SEED = 'arxiv-daily-topic';
 const DEFAULT_TOPIC_ID = process.env.ARXIV_PODCAST_TOPIC_ID
   || uuidv5(DEFAULT_TOPIC_SEED, DEFAULT_TOPIC_NAMESPACE);
 
+export function getPodcastTopicId(): string {
+  return DEFAULT_TOPIC_ID;
+}
+
 const PODCAST_TITLE = process.env.ARXIV_PODCAST_TITLE
   || 'arXiv Today';
 
@@ -331,7 +335,7 @@ function parseIsoDateForPacificMidday(isoDate: string): Date | null {
   return new Date(Date.UTC(year, month - 1, day, 12));
 }
 
-function buildEpisodeTitle(isoDate: string): string {
+export function buildEpisodeTitle(isoDate: string): string {
   const parsed = parseIsoDateForPacificMidday(isoDate) ?? new Date(isoDate);
 
   const formatted = new Intl.DateTimeFormat('en-US', {
