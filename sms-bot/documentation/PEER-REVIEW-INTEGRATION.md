@@ -22,7 +22,7 @@ Peer Review Fight Club now mirrors the AI Daily experience while sourcing data d
 
 ## Audio Player & Short Links
 - The SMS bot now deep-links to the shared `/music-player` page (same experience as AI Daily).
-- `getPeerReviewShortLink` builds the player URL (`https://b52s.me/music-player?...`) with title, description snippet, autoplay, and then shortens it via `SHORTLINK_SERVICE_URL` + `SHORTLINK_SERVICE_TOKEN`.
+- `getPeerReviewShortLink` builds the player URL (`https://kochi.to/music-player?...`) with title, description snippet, autoplay, and then shortens it via `SHORTLINK_SERVICE_URL` + `SHORTLINK_SERVICE_TOKEN`.
 - If the short link service is unavailable, the raw player URL is sent (never the legacy `audio_url`).
 - The player metadata mirrors the SMS headline (title fallback + summary snippet) so Crash and SMS stay in lockstep.
 
