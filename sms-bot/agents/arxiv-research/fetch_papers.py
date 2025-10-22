@@ -115,13 +115,30 @@ def fetch_papers(target_date: datetime, max_results: int = 1000) -> list[dict[st
     print("Starting to fetch papers (respecting 3-second rate limit)...")
 
     # Iterate through results (automatically handles pagination and rate limiting)
-    for result in client.results(search):
-        paper = extract_paper_metadata(result)
-        papers.append(paper)
-        count += 1
+    try:
+        for result in client.results(search):
+            paper = extract_paper_metadata(result)
+            papers.append(paper)
+            count += 1
 
-        if count % 10 == 0:
-            print(f"Fetched {count} papers...")
+            if count % 10 == 0:
+                print(f"Fetched {count} papers...")
+    except Exception as exc:
+        # Handle the arxiv.UnexpectedEmptyPage exception gracefully so we still
+        # return everything collected before the empty page.
+        UnexpectedEmptyPage = getattr(arxiv, "UnexpectedEmptyPage", None)
+        handled_empty_page = (
+            UnexpectedEmptyPage
+            and isinstance(exc, UnexpectedEmptyPage)
+        ) or ("unexpectedly empty" in str(exc).lower())
+
+        if handled_empty_page:
+            print(
+                "Warning: Received an empty page from arXiv pagination; "
+                "treating this as the end of available results."
+            )
+        else:
+            raise
 
     print(f"\nTotal papers fetched: {len(papers)}")
     return papers
