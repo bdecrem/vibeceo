@@ -12,6 +12,7 @@
 import { spawn } from 'node:child_process';
 import { mkdir, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import OpenAI from 'openai';
 import {
   storeAgentReport,
   type StoredReportMetadata,
@@ -196,6 +197,180 @@ function deduplicatePapers(papers: PaperData[]): PaperData[] {
     seen.add(paper.arxiv_id);
     return true;
   });
+}
+
+const SMS_SUMMARY_MODEL = process.env.ARXIV_SMS_SUMMARY_MODEL || 'gpt-4o-mini';
+const SMS_SUMMARY_MAX_CHARS = Number(process.env.ARXIV_SMS_SUMMARY_MAX_CHARS || 320);
+
+let cachedOpenAIClient: OpenAI | null = null;
+
+function getOpenAIClient(): OpenAI {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY is required to generate SMS summaries');
+  }
+
+  if (!cachedOpenAIClient) {
+    cachedOpenAIClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  }
+
+  return cachedOpenAIClient;
+}
+
+interface SmsDigestParams {
+  date: string;
+  executiveSummary: string;
+  reportLink: string;
+  audioLink?: string | null;
+}
+
+async function generateArxivSmsDigest(
+  params: SmsDigestParams
+): Promise<string> {
+  const openai = getOpenAIClient();
+
+  const audioLine = params.audioLink
+    ? `🎧 Listen: ${params.audioLink}`
+    : null;
+  const reportLine = `📄 Full: ${params.reportLink}`;
+  const closingLines = audioLine ? [audioLine, reportLine] : [reportLine];
+  const header = `📚 arXiv Today - ${params.date}`;
+
+  const promptLines = [
+    "Summarize today's AI research trends from the following executive summary in a short SMS body (max 230 characters).",
+    'Style guide:',
+    '• Sound like a smart, energetic human highlighting the day’s breakthroughs—no numbered lists or markdown formatting.',
+    '• Keep it conversational and flowing, not academic.',
+    '• Highlight up to three ideas using short phrases separated by commas or em dashes.',
+    '• Add one or two fitting emojis for tone, but keep it sleek (no emoji before every phrase).',
+    '• Do NOT include the intro header or the final link lines; those will be added later.',
+    '',
+    'Executive Summary:',
+    params.executiveSummary.trim(),
+  ];
+
+  const response = await openai.chat.completions.create({
+    model: SMS_SUMMARY_MODEL,
+    temperature: 0.6,
+    max_tokens: 220,
+    messages: [
+      {
+        role: 'system',
+        content:
+          'You are an energetic editor who distills arXiv AI research reports into lively SMS briefings. Keep the body under 230 characters, flowing, and free of links or markdown. The system will add the intro header and closing links.',
+      },
+      {
+        role: 'user',
+        content: promptLines.join('\n'),
+      },
+    ],
+  });
+
+  const raw = response.choices[0]?.message?.content?.trim();
+
+  if (!raw) {
+    throw new Error('OpenAI returned an empty SMS summary');
+  }
+
+  const sanitizedBody = sanitizeGeneratedBody(raw, header, closingLines);
+  const message = composeSmsMessage(header, sanitizedBody, closingLines);
+
+  if (!message) {
+    throw new Error('Failed to compose SMS message from generated body');
+  }
+
+  return message;
+}
+
+function sanitizeGeneratedBody(
+  rawBody: string,
+  header: string,
+  closingLines: string[]
+): string {
+  const disallowedPrefixes = ['🎧 listen:', '📄 full:'];
+
+  const lines = rawBody
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+    .filter((line) => {
+      const normalized = line.toLowerCase();
+      if (normalized === header.toLowerCase()) {
+        return false;
+      }
+      return !disallowedPrefixes.some((prefix) => normalized.startsWith(prefix));
+    });
+
+  let body = lines.join(' ');
+  body = body.replace(/\s+/g, ' ').trim();
+
+  // Remove trailing duplicates of closing lines
+  for (const closing of closingLines) {
+    const lowerClosing = closing.toLowerCase();
+    if (body.toLowerCase().endsWith(lowerClosing)) {
+      body = body.slice(0, -closing.length).trim();
+    }
+  }
+
+  return body;
+}
+
+function composeSmsMessage(
+  header: string,
+  body: string,
+  closingLines: string[]
+): string {
+  const normalizedBody = body.replace(/\s+/g, ' ').trim();
+  const closings = closingLines.filter((line) => line && line.trim().length > 0);
+  const ellipsis = '…';
+
+  const buildMessage = (bodyContent: string): string => {
+    const parts: string[] = [header];
+    if (bodyContent.trim().length > 0) {
+      parts.push(bodyContent.trim());
+    }
+    parts.push(...closings);
+    return parts.join('\n').trim();
+  };
+
+  let candidateBody = normalizedBody;
+  let message = buildMessage(candidateBody);
+
+  if (message.length <= SMS_SUMMARY_MAX_CHARS) {
+    return message;
+  }
+
+  if (candidateBody.length === 0) {
+    return buildMessage('');
+  }
+
+  candidateBody = `${candidateBody}${ellipsis}`;
+  message = buildMessage(candidateBody);
+  if (message.length <= SMS_SUMMARY_MAX_CHARS) {
+    return message;
+  }
+
+  const originalBody = normalizedBody;
+  for (let length = originalBody.length - 1; length > 0; length -= 1) {
+    const shortened = `${originalBody.slice(0, length).trimEnd()}${ellipsis}`;
+    message = buildMessage(shortened);
+    if (message.length <= SMS_SUMMARY_MAX_CHARS) {
+      return message;
+    }
+  }
+
+  return buildMessage('');
+}
+
+function buildFallbackSmsDigest(params: SmsDigestParams): string {
+  const audioLine = params.audioLink
+    ? `🎧 Listen: ${params.audioLink}`
+    : null;
+  const reportLine = `📄 Full: ${params.reportLink}`;
+  const closingLines = audioLine ? [audioLine, reportLine] : [reportLine];
+  const header = `📚 arXiv Today - ${params.date}`;
+  const body = params.executiveSummary.replace(/\s+/g, ' ').trim();
+
+  return composeSmsMessage(header, body, closingLines);
 }
 
 async function runPythonScript(
@@ -735,21 +910,32 @@ export async function buildArxivReportMessage(
   });
 
   // Get report metadata
-  const dbReport = await db.getDailyReportByDate(date);
+  const reportLink = shortLink ?? viewerUrl;
+  const audioLink = podcastLink ?? null;
 
-  const featuredCount = dbReport?.featured_papers_count || 0;
-  const totalCount = dbReport?.total_papers_fetched || 0;
+  let smsMessage: string | null = null;
 
-  // Build message in Medical Daily format to prevent SMS splitting
-  const lines: string[] = [`📚 arXiv Today - ${date}`, '', summary];
-
-  if (podcastLink) {
-    lines.push(`🎧 Listen: ${podcastLink}`);
+  try {
+    smsMessage = await generateArxivSmsDigest({
+      date,
+      executiveSummary: summary,
+      reportLink,
+      audioLink,
+    });
+  } catch (error) {
+    console.warn('Failed to generate AI SMS digest via OpenAI:', error);
   }
 
-  lines.push(`📄 Full report: ${shortLink}`);
+  if (!smsMessage) {
+    smsMessage = buildFallbackSmsDigest({
+      date,
+      executiveSummary: summary,
+      reportLink,
+      audioLink,
+    });
+  }
 
-  return lines.join('\n');
+  return smsMessage;
 }
 
 // ============================================================================
