@@ -628,20 +628,49 @@ export async function getLatestStoredArxivReport(): Promise<ArxivReportMetadata 
   try {
     const { data: episode } = await supabase
       .from('episodes')
-      .select('id, topic_id, short_link')
+      .select('id, topic_id, short_link, audio_url, show_notes_json')
       .eq('date', stored.date)
       .single();
 
-    if (episode && episode.short_link) {
-      podcast = {
-        episodeId: episode.id,
-        topicId: episode.topic_id,
-        shortLink: episode.short_link,
-        reportLink: null, // Not needed for SMS
-        audioUrl: '', // Not needed for SMS
-        title: '', // Not needed for SMS
-        durationSeconds: 0, // Not needed for SMS
-      };
+    if (episode) {
+      let shortLink: string | null =
+        typeof episode.short_link === 'string' && episode.short_link.trim().length
+          ? episode.short_link.trim()
+          : null;
+
+      if (!shortLink && episode.show_notes_json && typeof episode.show_notes_json === 'object') {
+        const notes = episode.show_notes_json as Record<string, unknown>;
+        const audioNotes = notes.audio;
+        if (audioNotes && typeof audioNotes === 'object') {
+          const candidate = (audioNotes as Record<string, unknown>).shortLink;
+          if (typeof candidate === 'string' && candidate.trim().length) {
+            shortLink = candidate.trim();
+          }
+        }
+
+        if (!shortLink) {
+          const legacy = (notes as Record<string, unknown>).shortLink;
+          if (typeof legacy === 'string' && legacy.trim().length) {
+            shortLink = legacy.trim();
+          }
+        }
+      }
+
+      if (!shortLink && typeof episode.audio_url === 'string' && episode.audio_url.trim().length) {
+        shortLink = episode.audio_url.trim();
+      }
+
+      if (shortLink) {
+        podcast = {
+          episodeId: episode.id,
+          topicId: episode.topic_id,
+          shortLink,
+          reportLink: null, // Not needed for SMS
+          audioUrl: episode.audio_url ?? '',
+          title: '', // Not needed for SMS
+          durationSeconds: 0, // Not needed for SMS
+        };
+      }
     }
   } catch (err) {
     // Podcast not found or error - non-fatal
