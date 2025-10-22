@@ -28,6 +28,7 @@ import {
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import * as db from './database.js';
 import { generateArxivPodcast, type PodcastGenerationResult } from './podcast.js';
+import { supabase } from '../../lib/supabase.js';
 
 // ============================================================================
 // Configuration
@@ -200,21 +201,17 @@ async function runPythonScript(
 ): Promise<string> {
   console.log(`Running ${description}...`);
 
-  // Build environment
-  // - For fetch_papers.py: Exclude CLAUDE_CODE_OAUTH_TOKEN (doesn't need Claude SDK)
-  // - For agent.py: Include CLAUDE_CODE_OAUTH_TOKEN (needs Claude Agent SDK)
-  const baseEnv = options?.needsClaudeCodeAuth
-    ? process.env  // Keep all env vars including CLAUDE_CODE_OAUTH_TOKEN
-    : (() => {
-        const { CLAUDE_CODE_OAUTH_TOKEN, ...cleanEnv } = process.env;
-        return cleanEnv;
-      })();
-
+  // CRITICAL: Do NOT spread process.env - it includes CLAUDE_CODE_OAUTH_TOKEN from Claude Code session
+  // which causes auth to use wrong account. Follow pattern from CLAUDE-AGENT-SDK-SETUP.md:
+  // Only pass specific vars, explicitly exclude CLAUDE_CODE_OAUTH_TOKEN
   const subprocess = spawn(PYTHON_BIN, ['-u', scriptPath, ...args], {  // -u for unbuffered output
     cwd: process.cwd(),
     env: {
-      ...baseEnv,
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
       ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
+      // Explicitly exclude CLAUDE_CODE_OAUTH_TOKEN to force API key usage
+      CLAUDE_CODE_OAUTH_TOKEN: undefined,
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
@@ -626,11 +623,36 @@ export async function getLatestStoredArxivReport(): Promise<ArxivReportMetadata 
     };
   }
 
+  // Get podcast metadata from episodes table
+  let podcast: PodcastGenerationResult | undefined;
+  try {
+    const { data: episode } = await supabase
+      .from('episodes')
+      .select('id, topic_id, short_link')
+      .eq('date', stored.date)
+      .single();
+
+    if (episode && episode.short_link) {
+      podcast = {
+        episodeId: episode.id,
+        topicId: episode.topic_id,
+        shortLink: episode.short_link,
+        reportLink: null, // Not needed for SMS
+        audioUrl: '', // Not needed for SMS
+        title: '', // Not needed for SMS
+        durationSeconds: 0, // Not needed for SMS
+      };
+    }
+  } catch (err) {
+    // Podcast not found or error - non-fatal
+  }
+
   return {
     ...stored,
     totalPapers: dbReport.total_papers_fetched,
     featuredCount: dbReport.featured_papers_count,
     notableAuthorsCount: dbReport.notable_authors_count || 0,
+    podcast,
   };
 }
 
