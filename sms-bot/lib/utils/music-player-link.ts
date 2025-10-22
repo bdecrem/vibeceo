@@ -1,6 +1,6 @@
 import type { AiDailyEpisode } from '../sms/ai-daily.js';
 
-const PLAYER_BASE_FALLBACK = 'https://b52s.me';
+const PLAYER_BASE_FALLBACK = 'https://kochi.to';
 
 const PACIFIC_LABEL_FORMATTER = new Intl.DateTimeFormat('en-US', {
   timeZone: 'America/Los_Angeles',

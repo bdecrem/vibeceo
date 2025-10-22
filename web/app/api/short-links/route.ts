@@ -58,7 +58,7 @@ function getConfiguredToken(): string {
 }
 
 function getBaseUrl(): string {
-  const configured = process.env.SHORTLINK_BASE_URL || 'https://b52s.me';
+  const configured = process.env.SHORTLINK_BASE_URL || 'https://kochi.to';
   return configured.replace(/\/$/, '');
 }
 
