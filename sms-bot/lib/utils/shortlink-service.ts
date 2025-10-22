@@ -8,6 +8,26 @@ export interface ShortLinkOptions {
   createdBy?: string;
 }
 
+const LEGACY_SHORTLINK_HOSTS = new Set(['b52s.me', 'www.b52s.me']);
+const CURRENT_SHORTLINK_HOST = 'kochi.to';
+
+export function normalizeShortLinkDomain(shortUrl: string): string {
+  try {
+    const parsed = new URL(shortUrl);
+
+    if (LEGACY_SHORTLINK_HOSTS.has(parsed.hostname)) {
+      parsed.hostname = CURRENT_SHORTLINK_HOST;
+      parsed.protocol = 'https:';
+      parsed.port = '';
+      return parsed.toString();
+    }
+
+    return shortUrl;
+  } catch {
+    return shortUrl;
+  }
+}
+
 function normalizeUrlCandidate(candidate: unknown): string | null {
   if (typeof candidate !== 'string') {
     return null;
@@ -51,7 +71,7 @@ export async function createShortLink(
 
     const shortUrl = normalizeUrlCandidate(response.data?.shortUrl);
     if (shortUrl) {
-      return shortUrl;
+      return normalizeShortLinkDomain(shortUrl);
     }
   } catch (error: unknown) {
     const axiosError = error as AxiosError;

@@ -1,5 +1,5 @@
 import { supabase } from '../../lib/supabase.js';
-import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/shortlink-service.js';
 import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
 import OpenAI from 'openai';
 import { v5 as uuidv5 } from 'uuid';
@@ -152,7 +152,7 @@ export async function generateArxivPodcast(
       console.warn('Failed to create player short link for arXiv podcast:', error);
     }
 
-    const resolvedShortLink = shortLink ?? playerUrl;
+    const resolvedShortLink = normalizeShortLinkDomain(shortLink ?? playerUrl);
     console.log('✓ Short link prepared:', resolvedShortLink);
 
     console.log('💾 Upserting episode to database...');
@@ -381,14 +381,14 @@ async function findExistingEpisode(
     if (audioInfo && typeof audioInfo === 'object') {
       const candidate = (audioInfo as Record<string, unknown>).shortLink;
       if (typeof candidate === 'string' && candidate.length > 0) {
-        shortLink = candidate;
+        shortLink = normalizeShortLinkDomain(candidate);
       }
     }
 
     if (!shortLink) {
       const legacy = notes.shortLink;
       if (typeof legacy === 'string' && legacy.length > 0) {
-        shortLink = legacy;
+        shortLink = normalizeShortLinkDomain(legacy);
       }
     }
 
@@ -426,18 +426,20 @@ async function findExistingEpisode(
         return null;
       })();
 
-      shortLink = buildMusicPlayerUrl({
+      shortLink = normalizeShortLinkDomain(buildMusicPlayerUrl({
         src: data.audio_url,
         title: episodeTitle,
         description,
         autoplay: true,
-      });
+      }));
     }
   }
 
+  const normalizedShortLink = shortLink ? normalizeShortLinkDomain(shortLink) : null;
+
   return {
     audioUrl: data.audio_url,
-    shortLink,
+    shortLink: normalizedShortLink,
     reportLink,
     topicId,
     episodeId: data.id,
@@ -591,6 +593,7 @@ async function upsertEpisode(input: EpisodeUpsertInput): Promise<number> {
   const estimatedDurationMinutes = Number((input.durationSeconds / 60).toFixed(2));
   const wordCount = input.script.split(/\s+/).filter(Boolean).length;
 
+  const normalizedShortLink = input.shortLink ? normalizeShortLinkDomain(input.shortLink) : null;
   const reportLink = input.reportShortLink ?? input.reportUrl ?? null;
 
   const payload = {
@@ -608,11 +611,11 @@ async function upsertEpisode(input: EpisodeUpsertInput): Promise<number> {
       summary: input.summary,
       publishedDate: input.publishedDate,
       audioUrl: input.audioUrl,
-      audioShortLink: input.shortLink ?? input.audioUrl,
+      audioShortLink: normalizedShortLink ?? input.audioUrl,
       reportLink,
       reportUrl: input.reportUrl,
     }),
-    short_link: input.shortLink ?? null,
+    short_link: normalizedShortLink ?? null,
     status: 'ready',
   } as Record<string, unknown>;
 
