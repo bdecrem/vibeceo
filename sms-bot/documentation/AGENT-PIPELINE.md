@@ -13,7 +13,7 @@ This document captures the patterns introduced with the **crypto research agent*
    - Upload path: `agent-reports/<agent-slug>/reports/YYYY-MM-DD.md` (bucket defaults to `agent-reports`).
    - Metadata stored alongside each report (`metadata/YYYY-MM-DD.json`) includes summary, created timestamp, public URL, etc.
    - Helper: `sms-bot/agents/report-storage.ts` handles storage bucket creation + metadata JSON.
-   - Links are shared via Supabase’s public bucket URL, optionally shortened through `createShortLink()` (backed by the `SHORTLINK_SERVICE_URL` / `SHORTLINK_SERVICE_TOKEN` endpoint at b52s.me).
+   - Links are shared via Supabase’s public bucket URL, optionally shortened through `createShortLink()` (backed by the `SHORTLINK_SERVICE_URL` / `SHORTLINK_SERVICE_TOKEN` endpoint at kochi.to).
 
 3. **Podcast + Crash App integration**
    - Module: `sms-bot/agents/crypto-research/podcast.ts`.
@@ -67,8 +67,8 @@ This document captures the patterns introduced with the **crypto research agent*
      - `sms-bot/lib/utils/report-viewer-link.ts` - Creates URLs to `/report-viewer` page
      - `sms-bot/lib/utils/music-player-link.ts` - Creates URLs to `/music-player` page
    - Web routes (Next.js):
-     - `web/app/report-viewer/page.tsx` - Markdown viewer with B52s branding
-     - `web/app/music-player/page.tsx` - Audio player with B52s branding and controls
+     - `web/app/report-viewer/page.tsx` - Markdown viewer with Kochi branding
+     - `web/app/music-player/page.tsx` - Audio player with Kochi branding and controls
      - `web/app/api/report/route.ts` - API endpoint to fetch markdown from Supabase Storage
 
    ### Pattern for Markdown Reports:
@@ -202,14 +202,14 @@ This document captures the patterns introduced with the **crypto research agent*
    ```
 
    ### Why Use Viewer/Player Pages?
-   - **Branded experience**: B52s design, not raw markdown/audio
+   - **Branded experience**: Kochi design, not raw markdown/audio
    - **Better UX**: Formatted markdown with clickable links, audio controls with scrubbing
    - **Mobile-optimized**: Works on all devices, iOS Safari audio issues handled
    - **Consistent**: All agents use same UI/UX
    - **Tracking**: Can add analytics to viewer/player pages
 
 8. **Environment variables to set in production**
-   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `SHORTLINK_BASE_URL` (defaults to `https://b52s.me` - used by viewer/player link builders).
+   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `SHORTLINK_BASE_URL` (defaults to `https://kochi.to` - used by viewer/player link builders).
    - Optional overrides:
      - `CRYPTO_REPORT_HOUR` / `CRYPTO_REPORT_MINUTE` (default 7:05 PT)
      - `CRYPTO_BROADCAST_DELAY_MS` (default 150 ms between SMS to avoid throttling)

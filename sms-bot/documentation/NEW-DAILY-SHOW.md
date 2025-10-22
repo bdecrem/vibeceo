@@ -82,8 +82,8 @@ This guide walks through the exact steps we now follow for daily shows like Cryp
 Both the SMS bot and the web server need to agree on the short-link configuration:
 
 - **SMS bot** (`sms-bot/.env.local`):
-  - `SHORTLINK_SERVICE_URL` → `https://b52s.me/api/short-links` (prod) or your local Next server when testing
-  - `SHORTLINK_BASE_URL` → `https://b52s.me` (prod) or `http://localhost:3000`
+  - `SHORTLINK_SERVICE_URL` → `https://kochi.to/api/short-links` (prod) or your local Next server when testing
+  - `SHORTLINK_BASE_URL` → `https://kochi.to` (prod) or `http://localhost:3000`
   - `SHORTLINK_SERVICE_TOKEN` → matches `SHORTLINK_API_TOKEN` on the web app
 - **Web app** (`web/.env.local`):
   - `SHORTLINK_BASE_URL` → same as the environment serving the player
