@@ -8,7 +8,7 @@ import {
   type StoredReportMetadata,
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
-import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/shortlink-service.js';
 import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import {
   getAgentSubscribers,
@@ -244,6 +244,12 @@ export async function runAndStoreCryptoReport(
       reportShortLink,
       forceRegenerate: options.forcePodcast,
     });
+    if (podcast?.shortLink) {
+      podcast = {
+        ...podcast,
+        shortLink: normalizeShortLinkDomain(podcast.shortLink),
+      };
+    }
   } catch (error) {
     console.error('Crypto podcast generation failed:', error);
   }
@@ -272,6 +278,12 @@ export async function getLatestStoredCryptoReport(): Promise<
   let reportShortLink: string | null = null;
   try {
     podcast = await lookupCryptoPodcastEpisode(metadata.date);
+    if (podcast?.shortLink) {
+      podcast = {
+        ...podcast,
+        shortLink: normalizeShortLinkDomain(podcast.shortLink),
+      };
+    }
   } catch (error) {
     console.error('Failed to load existing crypto podcast episode:', error);
   }
@@ -324,7 +336,9 @@ export async function buildCryptoReportMessage(
   const headline = formatHeadline(isoDate);
   const summaryLine = formatSummary(summary);
   const link = await resolveLink(reportPathOrUrl, recipient);
-  const podcastLink = options.podcastLink ?? null;
+  const podcastLink = options.podcastLink
+    ? normalizeShortLinkDomain(options.podcastLink)
+    : null;
 
   const lines = [`${headline} — ${summaryLine}`];
 

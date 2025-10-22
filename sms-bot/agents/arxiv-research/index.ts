@@ -19,7 +19,7 @@ import {
   getLatestReportMetadata,
 } from '../report-storage.js';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
-import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/shortlink-service.js';
 import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import {
   getAgentSubscribers,
@@ -907,13 +907,13 @@ function extractAudioShortLink(value: unknown): string | null {
   if (audio && typeof audio === 'object') {
     const candidate = (audio as Record<string, unknown>).shortLink;
     if (typeof candidate === 'string' && candidate.trim().length) {
-      return candidate.trim();
+      return normalizeShortLinkDomain(candidate.trim());
     }
   }
 
   const legacy = notes.shortLink;
   if (typeof legacy === 'string' && legacy.trim().length) {
-    return legacy.trim();
+    return normalizeShortLinkDomain(legacy.trim());
   }
 
   return null;
