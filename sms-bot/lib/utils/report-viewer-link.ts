@@ -1,4 +1,4 @@
-const VIEWER_BASE_FALLBACK = 'https://b52s.me';
+const VIEWER_BASE_FALLBACK = 'https://kochi.to';
 
 export type ReportViewerParams = {
   path: string; // e.g., "crypto-research/reports/2025-10-06.md"
@@ -24,7 +24,7 @@ function getViewerBaseUrl(): string {
  *   title: 'Crypto Market Daily',
  *   agentSlug: 'crypto-research'
  * })
- * // Returns: https://b52s.me/report-viewer?path=crypto-research%2Freports%2F2025-10-06.md
+ * // Returns: https://kochi.to/report-viewer?path=crypto-research%2Freports%2F2025-10-06.md
  */
 export function buildReportViewerUrl(params: ReportViewerParams): string {
   const { path } = params;
