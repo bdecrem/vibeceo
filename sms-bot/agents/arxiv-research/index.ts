@@ -321,7 +321,6 @@ function composeSmsMessage(
 ): string {
   const normalizedBody = body.replace(/\s+/g, ' ').trim();
   const closings = closingLines.filter((line) => line && line.trim().length > 0);
-  const ellipsis = '…';
 
   const buildMessage = (bodyContent: string): string => {
     const parts: string[] = [header];
@@ -343,19 +342,21 @@ function composeSmsMessage(
     return buildMessage('');
   }
 
-  candidateBody = `${candidateBody}${ellipsis}`;
-  message = buildMessage(candidateBody);
-  if (message.length <= SMS_SUMMARY_MAX_CHARS) {
-    return message;
-  }
-
-  const originalBody = normalizedBody;
-  for (let length = originalBody.length - 1; length > 0; length -= 1) {
-    const shortened = `${originalBody.slice(0, length).trimEnd()}${ellipsis}`;
-    message = buildMessage(shortened);
+  const sentences = splitIntoSentences(candidateBody);
+  for (let length = sentences.length; length > 0; length -= 1) {
+    const sentenceBody = sentences.slice(0, length).join(' ').trim();
+    if (!sentenceBody.length) {
+      continue;
+    }
+    message = buildMessage(sentenceBody);
     if (message.length <= SMS_SUMMARY_MAX_CHARS) {
       return message;
     }
+  }
+
+  const truncatedByWords = truncateBodyByWords(candidateBody, buildMessage);
+  if (truncatedByWords) {
+    return buildMessage(truncatedByWords);
   }
 
   return buildMessage('');
@@ -371,6 +372,35 @@ function buildFallbackSmsDigest(params: SmsDigestParams): string {
   const body = params.executiveSummary.replace(/\s+/g, ' ').trim();
 
   return composeSmsMessage(header, body, closingLines);
+}
+
+function splitIntoSentences(text: string): string[] {
+  const matches = text.match(/[^.!?]+[.!?]+|[^.!?]+$/g);
+  if (!matches) {
+    return [text];
+  }
+
+  return matches.map((sentence) => sentence.trim()).filter((sentence) => sentence.length > 0);
+}
+
+function truncateBodyByWords(
+  body: string,
+  buildMessage: (bodyText: string) => string
+): string | null {
+  const words = body.split(/\s+/).filter((word) => word.length > 0);
+  if (words.length === 0) {
+    return null;
+  }
+
+  for (let count = words.length; count > 0; count -= 1) {
+    const truncatedBody = `${words.slice(0, count).join(' ')}…`;
+    const message = buildMessage(truncatedBody);
+    if (message.length <= SMS_SUMMARY_MAX_CHARS) {
+      return truncatedBody;
+    }
+  }
+
+  return null;
 }
 
 async function runPythonScript(
