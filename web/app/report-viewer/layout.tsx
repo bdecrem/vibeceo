@@ -1,34 +1,34 @@
 import type { Metadata } from 'next';
 
-const description = 'Little blasts of AI. Text us for AI Daily, research papers, and web apps.';
+const description = 'AI blasts delivered daily. Weather permitting.';
 
 export const metadata: Metadata = {
-  title: 'B52s - AI Report Viewer',
+  title: 'Kochi - AI Report Viewer',
   description,
   icons: {
-    icon: '/b52s-favicon.png',
-    shortcut: '/b52s-favicon.png',
-    apple: '/b52s-favicon.png',
+    icon: '/kochi/icon.png',
+    shortcut: '/kochi/icon.png',
+    apple: '/kochi/icon.png',
   },
   openGraph: {
-    title: 'B52s - AI Report Viewer',
+    title: 'Kochi - AI Report Viewer',
     description,
     type: 'website',
-    siteName: 'B52s.me',
+    siteName: 'Kochi.to',
     images: [
       {
-        url: '/b52s-og-modern.png',
+        url: '/kochi-icon.png',
         width: 1200,
-        height: 630,
-        alt: 'B52s - Little Blasts of AI',
+        height: 1200,
+        alt: 'Kochi - AI blasts delivered daily',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'B52s - AI Report Viewer',
+    title: 'Kochi - AI Report Viewer',
     description,
-    images: ['/b52s-og-modern.png'],
+    images: ['/kochi-icon.png'],
   },
 };
 
