@@ -607,17 +607,16 @@ async function upsertEpisode(input: EpisodeUpsertInput): Promise<number> {
     audio_generated: true,
     audio_url: input.audioUrl,
     show_notes: input.summary,
-    show_notes_json: buildShowNotesJson({
-      summary: input.summary,
-      publishedDate: input.publishedDate,
-      audioUrl: input.audioUrl,
-      audioShortLink: normalizedShortLink ?? input.audioUrl,
-      reportLink,
-      reportUrl: input.reportUrl,
-    }),
-    short_link: normalizedShortLink ?? null,
-    status: 'ready',
-  } as Record<string, unknown>;
+  show_notes_json: buildShowNotesJson({
+    summary: input.summary,
+    publishedDate: input.publishedDate,
+    audioUrl: input.audioUrl,
+    audioShortLink: normalizedShortLink ?? input.audioUrl,
+    reportLink,
+    reportUrl: input.reportUrl,
+  }),
+  status: 'ready',
+} as Record<string, unknown>;
 
   let episodeId: number;
 
