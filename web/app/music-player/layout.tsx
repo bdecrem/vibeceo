@@ -15,20 +15,11 @@ export const metadata: Metadata = {
     description,
     type: 'website',
     siteName: 'Kochi.to',
-    images: [
-      {
-        url: '/kochi-icon.png',
-        width: 1200,
-        height: 1200,
-        alt: 'Kochi - AI blasts delivered daily',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Kochi - Podcast Player',
     description,
-    images: ['/kochi-icon.png'],
   },
 };
 
