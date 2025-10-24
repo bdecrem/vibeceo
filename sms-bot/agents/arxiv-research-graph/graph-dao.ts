@@ -64,6 +64,10 @@ export interface GraphAuthorStats {
   citationCount: number | null;
   githubStars: number | null;
   affiliation: string | null;
+  openalexMatchedName?: string | null;
+  openalexMatchType?: string | null;
+  openalexMatchConfidence?: string | null;
+  openalexRelevanceScore?: number | null;
   firstSeen?: string | null;
   lastSeen?: string | null;
 }
@@ -332,6 +336,10 @@ export async function getAuthorStatsByNames(
              a.citation_count AS citationCount,
              a.github_stars AS githubStars,
              a.affiliation AS affiliation,
+             a.openalex_matched_name AS openalexMatchedName,
+             a.openalex_match_type AS openalexMatchType,
+             a.openalex_match_confidence AS openalexMatchConfidence,
+             a.openalex_relevance_score AS openalexRelevanceScore,
              a.first_seen AS firstSeen,
              a.last_seen AS lastSeen
       `,
@@ -354,6 +362,10 @@ export async function getAuthorStatsByNames(
       citationCount: toNumber(record.get('citationCount')),
       githubStars: toNumber(record.get('githubStars')),
       affiliation: record.get('affiliation') as string | null,
+      openalexMatchedName: record.get('openalexMatchedName') as string | null,
+      openalexMatchType: record.get('openalexMatchType') as string | null,
+      openalexMatchConfidence: record.get('openalexMatchConfidence') as string | null,
+      openalexRelevanceScore: toNumber(record.get('openalexRelevanceScore')),
       firstSeen: record.get('firstSeen')
         ? toDateString(record.get('firstSeen'))
         : null,

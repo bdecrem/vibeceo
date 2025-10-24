@@ -168,12 +168,13 @@ def search_openalex_author_by_name(author_name: str) -> Optional[Dict]:
     """Search OpenAlex for an author by display name.
 
     Returns the best match (highest relevance score) or None.
+    Includes relevance_score for confidence tracking.
     """
     url = f"{OPENALEX_API_BASE}/authors"
     params = {
         "search": author_name,
         "per-page": 1,  # Only get top result
-        "select": "id,display_name,works_count,cited_by_count,summary_stats,last_known_institutions",
+        "select": "id,display_name,relevance_score,works_count,cited_by_count,summary_stats,last_known_institutions",
         "mailto": OPENALEX_EMAIL,
     }
 
@@ -308,6 +309,7 @@ def enrich_from_openalex(driver, arxiv_ids: List[str]) -> Dict[str, Dict]:
         if author:
             found_count += 1
             openalex_name = author.get("display_name")
+            relevance_score = author.get("relevance_score", 0)
 
             # h_index is in summary_stats
             summary_stats = author.get("summary_stats", {})
@@ -322,10 +324,23 @@ def enrich_from_openalex(driver, arxiv_ids: List[str]) -> Dict[str, Dict]:
                 inst = institutions[0]
                 affiliation_str = inst.get("display_name")
 
+            # Determine match type and confidence
+            is_exact_match = (openalex_name.lower() == author_name.lower())
+            match_type = "exact" if is_exact_match else "fuzzy"
+
+            # Normalize relevance score to 0-1 range (OpenAlex scores vary widely)
+            # High relevance (>10000) = high confidence, low relevance (<1000) = low confidence
+            if relevance_score > 10000:
+                confidence = "high"
+            elif relevance_score > 5000:
+                confidence = "medium"
+            else:
+                confidence = "low"
+
             if h_index or citation_count or affiliation_str:
                 print(f"  {idx}/{len(author_names)} 👤 {author_name}")
-                if openalex_name != author_name:
-                    print(f"     → Matched to: {openalex_name}")
+                if not is_exact_match:
+                    print(f"     → Matched to: {openalex_name} [confidence: {confidence}, score: {relevance_score:.0f}]")
                 if affiliation_str:
                     print(f"     🏛️  {affiliation_str}")
                 if h_index:
@@ -337,6 +352,10 @@ def enrich_from_openalex(driver, arxiv_ids: List[str]) -> Dict[str, Dict]:
                 normalized_name = normalize_author_name(author_name)
                 author_data[normalized_name] = {
                     "original_name": author_name,
+                    "matched_name": openalex_name,  # NEW: Store who we matched to
+                    "match_type": match_type,       # NEW: exact or fuzzy
+                    "match_confidence": confidence,  # NEW: high, medium, low
+                    "relevance_score": relevance_score,  # NEW: Raw OpenAlex score
                     "affiliation": affiliation_str,
                     "h_index": h_index,
                     "citation_count": citation_count,
@@ -380,14 +399,22 @@ def update_neo4j_authors(driver, github_stars: Dict[str, int], openalex_data: Di
                 SET a.h_index = coalesce($h_index, a.h_index),
                     a.citation_count = coalesce($citation_count, a.citation_count),
                     a.affiliation = coalesce($affiliation, a.affiliation),
-                    a.institution_tier = $institution_tier
+                    a.institution_tier = $institution_tier,
+                    a.openalex_matched_name = $matched_name,
+                    a.openalex_match_type = $match_type,
+                    a.openalex_match_confidence = $match_confidence,
+                    a.openalex_relevance_score = $relevance_score
                 RETURN count(a) AS updated
             """,
                 normalized_name=normalized_name,
                 h_index=data["h_index"],
                 citation_count=data["citation_count"],
                 affiliation=data["affiliation"],
-                institution_tier=data["institution_tier"]
+                institution_tier=data["institution_tier"],
+                matched_name=data["matched_name"],
+                match_type=data["match_type"],
+                match_confidence=data["match_confidence"],
+                relevance_score=data["relevance_score"]
             )
 
             record = result.single()
