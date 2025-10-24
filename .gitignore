@@ -140,3 +140,6 @@ __pycache__/
 # Agent-generated data files
 /sms-bot/data/crypto-reports/
 /sms-bot/data/medical-daily/
+/sms-bot/data/arxiv-reports/*.json
+/sms-bot/data/arxiv-reports/*.md
+/sms-bot/data/arxiv-reports/*.py
