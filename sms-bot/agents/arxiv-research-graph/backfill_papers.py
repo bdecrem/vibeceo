@@ -2,10 +2,10 @@
 """
 Batch backfill arXiv AI/ML papers into Neo4j over a multi-month window.
 
-Each run ingests up to a fixed number of papers (default 5000), marching
+Each run ingests up to a fixed number of papers (default 10000), marching
 backward in time. The script records its progress in a state file so
 subsequent executions resume from the previous stopping point until the
-target lookback window (default 6 months) is fully covered.
+target lookback window (default 12 months) is fully covered.
 """
 
 from __future__ import annotations
@@ -28,8 +28,8 @@ from load_recent_papers import (  # local import
     read_config_from_env,
 )
 
-DEFAULT_LIMIT = 5000
-DEFAULT_LOOKBACK_DAYS = 182  # ≈ 6 months
+DEFAULT_LIMIT = 10000
+DEFAULT_LOOKBACK_DAYS = 365  # ≈ 12 months
 STATE_FILENAME = "backfill_state.json"
 
 
@@ -333,9 +333,16 @@ def main() -> None:
     next_last_end = oldest_date - timedelta(days=1)
     state.last_end_date = next_last_end
 
-    if hit_target or next_last_end < target_date:
+    reached_target = (
+        (oldest_date is not None and oldest_date <= target_date)
+        or next_last_end < target_date
+    )
+
+    if reached_target:
         state.completed = True
         logging.info("Reached target lookback window ending %s.", target_date.isoformat())
+    else:
+        state.completed = False
 
     state.save(state_path)
     logging.info(
