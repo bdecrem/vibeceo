@@ -120,6 +120,8 @@ def make_request_with_backoff(url: str, params: Dict, headers: Dict, context: st
                 continue
             else:
                 print(f"  ⚠️  API error {response.status_code} for {context}")
+                print(f"       URL: {response.url}")
+                print(f"       Response: {response.text[:200]}")
                 return None
 
         except Exception as e:
@@ -162,27 +164,24 @@ def get_openalex_works_batch(arxiv_ids: List[str]) -> List[Dict]:
     return []
 
 
-def get_openalex_authors_batch(author_ids: List[str]) -> List[Dict]:
-    """Fetch multiple authors from OpenAlex in a single batch request."""
-    if not author_ids:
-        return []
+def search_openalex_author_by_name(author_name: str) -> Optional[Dict]:
+    """Search OpenAlex for an author by display name.
 
-    # Join with pipe for batch query
-    filter_str = "|".join(author_ids)
-
+    Returns the best match (highest relevance score) or None.
+    """
     url = f"{OPENALEX_API_BASE}/authors"
     params = {
-        "filter": f"openalex:{filter_str}",
-        "per-page": 200,
-        "select": "id,display_name,works_count,cited_by_count,h_index,last_known_institutions",
+        "search": author_name,
+        "per-page": 1,  # Only get top result
+        "select": "id,display_name,works_count,cited_by_count,summary_stats,last_known_institutions",
         "mailto": OPENALEX_EMAIL,
     }
 
-    result = make_request_with_backoff(url, params, {}, f"batch of {len(author_ids)} authors")
+    result = make_request_with_backoff(url, params, {}, f"author search: {author_name}")
 
-    if result and "results" in result:
-        return result["results"]
-    return []
+    if result and "results" in result and len(result["results"]) > 0:
+        return result["results"][0]
+    return None
 
 
 def get_institution_tier(affiliation: str) -> int:
@@ -274,101 +273,84 @@ def enrich_from_github(driver, arxiv_ids: List[str]) -> Dict[str, int]:
 
 
 def enrich_from_openalex(driver, arxiv_ids: List[str]) -> Dict[str, Dict]:
-    """Enrich authors with OpenAlex data (h-index, citations, affiliations)."""
+    """Enrich authors with OpenAlex data (h-index, citations, affiliations).
+
+    This queries OpenAlex by AUTHOR NAME (not paper ID), so it works even for
+    brand new papers that aren't indexed yet - we get the author's existing profile.
+    """
     print("\n=== OpenAlex Enrichment ===\n")
 
-    print(f"Processing {len(arxiv_ids)} papers from OpenAlex...\n")
+    # Get author names from Neo4j for these papers
+    with driver.session(database=NEO4J_DATABASE) as session:
+        query = """
+        MATCH (p:Paper)-[:AUTHORED]-(a:Author)
+        WHERE p.arxiv_id IN $arxiv_ids
+        RETURN DISTINCT a.name AS author_name
+        """
+        result = session.run(query, arxiv_ids=arxiv_ids)
+        author_names = [record["author_name"] for record in result]
 
-    # Batch fetch papers (up to 50 at a time)
-    all_works = []
-    for i in range(0, len(arxiv_ids), BATCH_SIZE):
-        batch = arxiv_ids[i:i + BATCH_SIZE]
-        print(f"📦 Fetching batch {i//BATCH_SIZE + 1} ({len(batch)} papers)...")
-        works = get_openalex_works_batch(batch)
-        all_works.extend(works)
-        time.sleep(REQUEST_DELAY)
+    if not author_names:
+        print("No authors found in Neo4j for these papers")
+        return {}
 
-    print(f"✓ Fetched {len(all_works)} papers from OpenAlex\n")
+    print(f"Found {len(author_names)} unique authors from {len(arxiv_ids)} papers\n")
 
-    if len(all_works) == 0:
-        print("⚠️  Warning: No papers found in OpenAlex")
-        print("   This is expected for very recent arXiv papers (indexing delay: days to weeks)")
-        print("   GitHub enrichment will still work for these papers.\n")
-
-    # Extract unique author IDs from all papers
-    author_id_to_paper = defaultdict(list)
-    author_id_to_name = {}
-
-    for work in all_works:
-        arxiv_id = None
-        if "ids" in work and "arxiv" in work["ids"]:
-            arxiv_id = work["ids"]["arxiv"]
-
-        for authorship in work.get("authorships", []):
-            author = authorship.get("author", {})
-            author_id = author.get("id")
-            author_name = author.get("display_name")
-
-            if author_id and author_name:
-                # Remove OpenAlex URL prefix to get clean ID
-                clean_id = author_id.replace("https://openalex.org/", "")
-                author_id_to_name[clean_id] = author_name
-                if arxiv_id:
-                    author_id_to_paper[clean_id].append(arxiv_id)
-
-    print(f"Found {len(author_id_to_name)} unique authors\n")
-
-    # Batch fetch author profiles (up to 50 at a time)
-    author_ids = list(author_id_to_name.keys())
-    all_authors = []
-
-    for i in range(0, len(author_ids), BATCH_SIZE):
-        batch = author_ids[i:i + BATCH_SIZE]
-        print(f"📦 Fetching author batch {i//BATCH_SIZE + 1} ({len(batch)} authors)...")
-        authors = get_openalex_authors_batch(batch)
-        all_authors.extend(authors)
-        time.sleep(REQUEST_DELAY)
-
-    print(f"✓ Fetched {len(all_authors)} author profiles\n")
-
-    # Process author data
+    # Search OpenAlex for each author by name
+    print(f"Searching OpenAlex for {len(author_names)} authors...\n")
     author_data = {}
+    found_count = 0
 
-    for author in all_authors:
-        author_name = author.get("display_name")
-        if not author_name:
-            continue
+    for idx, author_name in enumerate(author_names, 1):
+        # Search for this author
+        author = search_openalex_author_by_name(author_name)
 
-        normalized_name = normalize_author_name(author_name)
+        if author:
+            found_count += 1
+            openalex_name = author.get("display_name")
 
-        h_index = author.get("h_index")
-        citation_count = author.get("cited_by_count")
+            # h_index is in summary_stats
+            summary_stats = author.get("summary_stats", {})
+            h_index = summary_stats.get("h_index") if summary_stats else None
 
-        # Get institution from last_known_institutions
-        institutions = author.get("last_known_institutions", [])
-        affiliation_str = None
-        if institutions:
-            inst = institutions[0]
-            affiliation_str = inst.get("display_name")
+            citation_count = author.get("cited_by_count")
 
-        if h_index or citation_count or affiliation_str:
-            print(f"  👤 {author_name}")
-            if affiliation_str:
-                print(f"     🏛️  {affiliation_str}")
-            if h_index:
-                print(f"     📊 h-index: {h_index}")
-            if citation_count:
-                print(f"     📚 {citation_count:,} citations")
+            # Get institution from last_known_institutions
+            institutions = author.get("last_known_institutions", [])
+            affiliation_str = None
+            if institutions:
+                inst = institutions[0]
+                affiliation_str = inst.get("display_name")
 
-            author_data[normalized_name] = {
-                "original_name": author_name,
-                "affiliation": affiliation_str,
-                "h_index": h_index,
-                "citation_count": citation_count,
-                "institution_tier": get_institution_tier(affiliation_str)
-            }
+            if h_index or citation_count or affiliation_str:
+                print(f"  {idx}/{len(author_names)} 👤 {author_name}")
+                if openalex_name != author_name:
+                    print(f"     → Matched to: {openalex_name}")
+                if affiliation_str:
+                    print(f"     🏛️  {affiliation_str}")
+                if h_index:
+                    print(f"     📊 h-index: {h_index}")
+                if citation_count:
+                    print(f"     📚 {citation_count:,} citations")
 
-    print(f"\n✓ Enriched {len(author_data)} authors with OpenAlex data")
+                # Use the original Neo4j name as key for matching later
+                normalized_name = normalize_author_name(author_name)
+                author_data[normalized_name] = {
+                    "original_name": author_name,
+                    "affiliation": affiliation_str,
+                    "h_index": h_index,
+                    "citation_count": citation_count,
+                    "institution_tier": get_institution_tier(affiliation_str)
+                }
+        else:
+            if (idx - 1) % 10 == 0:  # Print progress every 10 authors
+                print(f"  Searching... {idx}/{len(author_names)}")
+
+        # Rate limiting
+        time.sleep(REQUEST_DELAY)
+
+    print(f"\n✓ Found {found_count}/{len(author_names)} authors in OpenAlex")
+    print(f"✓ Enriched {len(author_data)} authors with complete data")
     return author_data
 
 
