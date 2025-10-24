@@ -1,0 +1,10 @@
+# Python dependencies for arXiv Research Agent
+
+# arXiv API client (official Python wrapper)
+arxiv>=2.1.0
+
+# Claude Agent SDK for autonomous paper curation
+claude-agent-sdk>=0.1.0
+
+# Neo4j Python driver for graph database connectivity
+neo4j>=5.18.0
