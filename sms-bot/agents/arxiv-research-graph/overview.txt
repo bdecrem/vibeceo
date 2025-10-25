@@ -1,0 +1,151 @@
+arXiv-Graph Agent: Complete System Overview
+
+  The Pipeline (5 Stages)
+
+  Stage 1a: Fetch Papers (Python: fetch_papers.py)
+
+  - Queries arXiv API for papers in AI categories (cs.AI, cs.LG, cs.CV,
+  cs.CL, stat.ML)
+  - Fetches last 1-7 days of papers (configurable)
+  - Gets: title, abstract, authors, categories, dates, URLs
+  - Saves to: data/arxiv-reports/arxiv_papers_combined_YYYY-MM-DD.json
+  - Output: ~300-1000 papers per run
+
+  Stage 1b: Load into Neo4j (Python: load_recent_papers.py)
+
+  - Creates Paper nodes (title, abstract, arXiv ID, dates)
+  - Creates Author nodes (name, tracks first/last seen)
+  - Creates Category nodes (cs.AI, etc.)
+  - Creates relationships: AUTHORED (Author→Paper), IN_CATEGORY
+  (Paper→Category)
+  - Output: Graph database with 17,000+ papers, 62,000+ authors
+
+  Stage 1c: Enrich Authors (Python: enrich_authors.py) ⭐ NEW
+
+  GitHub Enrichment:
+  - Parses paper abstracts for GitHub URLs (finds ~36% have links)
+  - Fetches star counts from GitHub API
+  - Aggregates stars per author across all their papers' repos
+
+  Semantic Scholar Enrichment:
+  - Queries papers by arXiv ID
+  - Gets author profiles: h-index, citation counts, affiliations
+  - Determines institution tier (Stanford/MIT = +50, Harvard/CMU = +30,
+  etc.)
+
+  Updates Neo4j with:
+  - github_stars, h_index, citation_count, affiliation, institution_tier
+
+  Notability Score Formula:
+  score = (papers × 5) + (featured_papers × 50) + (h_index × 10) +
+          (citations ÷ 100) + (github_stars ÷ 10) + institution_tier
+
+  Stage 2: Curate Papers (Python: Claude Agent SDK - agent.py)
+
+  🔥 THE SECRET SAUCE:
+
+  Input Given to Agent:
+  - JSON file with 300-1000 papers
+  - Each paper includes enriched author data:
+    - Author names with h-index, citations, GitHub stars, affiliation
+    - Paper's aggregate author_notability_score
+  - Agent's task: "Select 5-10 most important papers and write research
+  report"
+
+  Agent's Autonomous Tools:
+  - WebSearch: Can search web for context about research trends
+  - Write: Writes markdown report draft
+  - Read: Reads its own drafts to refine
+  - Bash: Can run analysis scripts if needed
+
+  How It Selects Papers:
+  The agent uses multi-pass reasoning:
+
+  1. First Pass - Broad Categorization (~2-3 minutes)
+    - Scans all abstracts looking for breakthrough indicators
+    - Keywords: "state-of-the-art," "outperforms," "novel," "first,"
+  "benchmark"
+    - Groups papers by theme: new architectures, benchmarks, applications,
+  theory
+  2. Author Reputation Weighting (uses enriched data)
+    - Prioritizes papers from authors with:
+        - High h-index (established researchers)
+      - High citations (impactful track record)
+      - Top institutions (Stanford, OpenAI, DeepMind, etc.)
+      - Popular GitHub repos (practical impact)
+    - Example: Paper from Yann LeCun (h-index 180, NYU) vs unknown grad
+  student
+  3. Cross-Reference & Novelty Check
+    - Uses WebSearch to check if paper addresses hot topics
+    - Verifies claims aren't incremental improvements
+    - Looks for papers that might spawn new research directions
+  4. Final Selection Criteria (~5-8 minutes)
+    - Breakthrough potential: Does it change how we think about a problem?
+    - Practical impact: Will people actually use this?
+    - Reproducibility: Is code available? (GitHub link = bonus points)
+    - Diversity: Covers different AI subfields (not all vision or all NLP)
+    - Timeliness: Addresses current challenges or trends
+  5. Report Writing (~2-3 minutes)
+    - Generates executive summary (2-3 paragraphs)
+    - For each featured paper:
+        - Why it matters (1-2 sentences)
+      - Key innovation
+      - Potential applications
+      - Star rating (1-5 stars)
+    - Identifies notable authors section
+    - Adds trend analysis
+
+  Prompt Strategy:
+  You are a senior AI research analyst. Review papers and select 5-10 most
+  significant breakthroughs. Consider:
+  - Technical novelty and impact
+  - Author reputation (h-index, citations, institution)
+  - Reproducibility (code availability)
+  - Potential to influence future research
+  - Practical applications
+
+  Prioritize papers that will matter in 6 months.
+
+  Output:
+  - arxiv_report_YYYY-MM-DD.md (markdown report)
+  - arxiv_curation_YYYY-MM-DD.json (featured papers with rankings)
+
+  Stage 3: Update Graph (TypeScript: graph-dao.ts)
+
+  - Marks featured papers in Neo4j with featured_rank, star_rating
+  - Creates FEATURED_IN relationships (Paper → Report)
+  - Updates author metrics:
+    - Recalculates notability scores
+    - Updates featured_paper_count
+    - Computes aggregate author_notability_score per paper
+
+  Stage 4: Generate Podcast (TypeScript + ElevenLabs)
+
+  - Converts report to conversational podcast script
+  - Generates audio via ElevenLabs TTS
+  - Uploads to Supabase storage
+  - Creates shortlink for audio
+  - Stores in episodes table with metadata
+
+  Stage 5: Distribute (TypeScript)
+
+  - Uploads markdown to Supabase storage
+  - Generates SMS digest using GPT-4o-mini:
+    - 230-character summary of key breakthroughs
+    - Links to full report + podcast
+  - Broadcasts to subscribers
+
+  ---
+  The Key Innovation:
+
+  Before enrichment: Agent saw 1000 papers with just titles/abstracts
+  After enrichment: Agent sees papers with author reputation context
+
+  Example difference:
+  BEFORE: "Paper proposes new transformer architecture..."
+  AFTER:  "Paper by Ashish Vaswani (h-index 45, Google Brain, 12K GitHub
+  stars)
+           proposes new transformer architecture..."
+
+  This lets the agent weight breakthrough potential using real-world signals
+   of research quality, not just abstract analysis.
