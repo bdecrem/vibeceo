@@ -38,6 +38,9 @@ yarn-error.log*
 # Claude Code MCP config (contains credentials)
 .mcp.json
 
+# Neo4j credentials
+**/neo4j.txt
+
 # vercel
 .vercel
 
