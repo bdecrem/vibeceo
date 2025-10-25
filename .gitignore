@@ -35,6 +35,9 @@ yarn-error.log*
 .env.test
 .env.production
 
+# Claude Code MCP config (contains credentials)
+.mcp.json
+
 # vercel
 .vercel
 
