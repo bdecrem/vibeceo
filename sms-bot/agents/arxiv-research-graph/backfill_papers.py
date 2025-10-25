@@ -2,7 +2,7 @@
 """
 Batch backfill arXiv AI/ML papers into Neo4j over a multi-month window.
 
-Each run ingests up to a fixed number of papers (default 10000), marching
+Each run ingests up to a fixed number of papers (default 20000), marching
 backward in time. The script records its progress in a state file so
 subsequent executions resume from the previous stopping point until the
 target lookback window (default 12 months) is fully covered.
@@ -19,6 +19,9 @@ from pathlib import Path
 from typing import Any
 
 import arxiv
+from neo4j import GraphDatabase
+from neo4j.exceptions import Neo4jError
+from neo4j.time import Date as Neo4jDate
 
 from load_recent_papers import (  # local import
     AI_CATEGORIES,
@@ -28,8 +31,8 @@ from load_recent_papers import (  # local import
     read_config_from_env,
 )
 
-DEFAULT_LIMIT = 10000
-DEFAULT_LOOKBACK_DAYS = 365  # ≈ 12 months
+DEFAULT_LIMIT = 20000
+DEFAULT_LOOKBACK_DAYS = 1095  # ≈ 36 months
 STATE_FILENAME = "backfill_state.json"
 
 
@@ -77,6 +80,82 @@ def init_state(path: Path, start_date: date) -> BackfillState:
     )
     state.save(path)
     return state
+
+
+def get_earliest_paper_date(config: Neo4jConfig) -> date | None:
+    """Return the earliest published_date stored in Neo4j, if any."""
+
+    driver = GraphDatabase.driver(config.uri, auth=(config.username, config.password))
+    try:
+        with driver.session(database=config.database) as session:
+            record = session.execute_read(
+                lambda tx: tx.run(
+                    "MATCH (p:Paper) RETURN min(p.published_date) AS earliest"
+                ).single()
+            )
+    except Neo4jError as exc:
+        logging.warning("Unable to inspect Neo4j for existing papers: %s", exc)
+        return None
+    finally:
+        driver.close()
+
+    if not record:
+        return None
+
+    earliest_value = record.get("earliest")
+    if earliest_value is None:
+        return None
+
+    if isinstance(earliest_value, date):
+        return earliest_value
+
+    if isinstance(earliest_value, Neo4jDate):
+        return earliest_value.to_native()
+
+    if hasattr(earliest_value, "to_native"):
+        return earliest_value.to_native()
+
+    if isinstance(earliest_value, str):
+        return datetime.strptime(earliest_value, "%Y-%m-%d").date()
+
+    logging.warning("Unexpected type for earliest published_date: %r", earliest_value)
+    return None
+
+
+def align_state_with_graph(
+    state: BackfillState,
+    config: Neo4jConfig,
+    target_date: date,
+    state_path: Path,
+) -> None:
+    """Adjust state to skip already ingested data in Neo4j."""
+
+    earliest = get_earliest_paper_date(config)
+    if earliest is None:
+        return
+
+    logging.info("Existing Neo4j data goes back to %s.", earliest.isoformat())
+
+    state.earliest_ingested = (
+        earliest
+        if state.earliest_ingested is None
+        else min(state.earliest_ingested, earliest)
+    )
+
+    desired_last_end = earliest - timedelta(days=1)
+    if desired_last_end < state.last_end_date:
+        state.last_end_date = desired_last_end
+
+    if earliest <= target_date:
+        state.completed = True
+        state.save(state_path)
+        logging.info(
+            "Neo4j already contains papers through %s; target window satisfied.",
+            target_date.isoformat(),
+        )
+    else:
+        state.completed = False
+        state.save(state_path)
 
 
 def build_daily_query(target_date: date) -> str:
@@ -264,9 +343,17 @@ def main() -> None:
 
     target_date = state.anchor_date - timedelta(days=args.lookback_days)
 
+    try:
+        neo4j_config: Neo4jConfig = read_config_from_env()
+    except ConfigurationError as exc:
+        logging.error(str(exc))
+        raise SystemExit(1) from exc
+
+    align_state_with_graph(state, neo4j_config, target_date, state_path)
+
     if state.completed:
         logging.info(
-            "Backfill already completed down to %s. Use --reset to start over.",
+            "Backfill already completed down to %s. Use --reset to start over if needed.",
             target_date.isoformat(),
         )
         return
@@ -310,12 +397,6 @@ def main() -> None:
     logging.info("Fetched %s papers (oldest published date: %s).", len(papers), oldest_date)
 
     if not args.dry_run:
-        try:
-            neo4j_config: Neo4jConfig = read_config_from_env()
-        except ConfigurationError as exc:
-            logging.error(str(exc))
-            raise SystemExit(1) from exc
-
         load_papers_into_neo4j(neo4j_config, papers)
     else:
         logging.info("Dry run enabled; skipping Neo4j write.")
