@@ -13,6 +13,7 @@ import asyncio
 import json
 import os
 import sys
+import time
 from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import List, Dict, Any
@@ -406,7 +407,33 @@ async def run_agent_with_graph_context(
     # 4. Run agent - it will generate the report
     await query(prompt, options)
 
-    print("Agent curation complete!", file=sys.stderr)
+    # 5. Wait for agent to finish writing files
+    # Claude Agent SDK may return before files are fully written
+    print("Waiting for agent to complete file writes...", file=sys.stderr)
+
+    max_wait = 60  # seconds
+    start_time = time.time()
+
+    while time.time() - start_time < max_wait:
+        if output_md_path.exists() and output_json_path.exists():
+            # Verify files have reasonable content
+            md_size = output_md_path.stat().st_size
+            json_size = output_json_path.stat().st_size
+
+            # Markdown should have at least 1KB (basic report structure)
+            # JSON should have at least 100 bytes (basic metadata)
+            if md_size > 1000 and json_size > 100:
+                print(f"Files verified: markdown={md_size} bytes, json={json_size} bytes", file=sys.stderr)
+                print("Agent curation complete!", file=sys.stderr)
+                return
+
+        await asyncio.sleep(1)
+
+    # Timeout - files not ready
+    raise TimeoutError(
+        f"Agent did not complete writing files within {max_wait} seconds. "
+        f"MD exists: {output_md_path.exists()}, JSON exists: {output_json_path.exists()}"
+    )
 
 
 def main():
