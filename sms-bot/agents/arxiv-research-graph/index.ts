@@ -1,12 +1,13 @@
 /**
- * arXiv Research Agent - TypeScript Wrapper
+ * arXiv Research Graph Agent - TypeScript Wrapper
  *
- * Orchestrates the two-stage process:
+ * Orchestrates the multi-stage process:
  * 1. Fetch ALL AI/ML papers from arXiv (Python script)
- * 2. Curate top 5-10 papers and generate report (Claude Agent SDK)
- * 3. Store everything in database with author tracking
- * 4. Upload report to Supabase Storage
- * 5. Return metadata for SMS/scheduling
+ * 2. Load papers into Neo4j graph database with authorship tracking
+ * 3. Enrich authors with GitHub/Semantic Scholar data
+ * 4. Curate papers using graph insights (productive authors, rising stars, collaborations, trending topics)
+ * 5. Store report to Supabase Storage
+ * 6. Return metadata for SMS/scheduling
  */
 
 import { spawn } from 'node:child_process';
@@ -45,8 +46,9 @@ import {
 
 const DEFAULT_DATA_DIR = path.join(process.cwd(), 'data', 'arxiv-reports');
 const FETCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'fetch_papers.py');
-const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'agent.py');
+const CURATE_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'curate_with_agent.py');
 const LOAD_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'load_recent_papers.py');
+const FUZZY_MATCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'kochi_fuzzy_match_v2.py');
 const ENRICH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'enrich_authors.py');
 // Use system python3 by default (works on any Mac). Override with PYTHON_BIN env var if needed.
 const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
@@ -581,16 +583,20 @@ async function curatePapersStage(
   date?: string
 ): Promise<{ markdownPath: string; curationJsonPath: string; markdown: string; curation: CurationData }> {
   const dataDir = await ensureDataDirExists();
-  const args = ['--input-json', inputJsonPath, '--output-dir', dataDir];
+  const args = ['--output-dir', dataDir];
 
   if (date) {
     args.push('--date', date);
   }
 
-  args.push('--verbose');
-
-  const stdout = await runPythonScript(AGENT_SCRIPT, args, 'Stage 2: Curate Papers', {
-    needsClaudeCodeAuth: true,  // agent.py needs CLAUDE_CODE_OAUTH_TOKEN for Claude Agent SDK
+  const stdout = await runPythonScript(CURATE_SCRIPT, args, 'Stage 2: AI Curation (Graph-Enhanced)', {
+    needsClaudeCodeAuth: true,  // Claude Agent SDK needs auth
+    extraEnv: {
+      NEO4J_URI: requireEnvVar('NEO4J_URI'),
+      NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
+      NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
+      NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
+    },
   });
   const result = parseJsonOutput(stdout) as CurationResult;
 
@@ -774,14 +780,36 @@ export async function runAndStoreArxivGraphReport(options?: {
     // Load papers into Neo4j graph
     await loadPapersIntoGraphFromJson(combinedJsonPath);
 
-    // Stage 1c: Enrich authors with GitHub and Semantic Scholar data
-    console.log('Running Stage 1c: Enrich Authors...');
+    // Stage 1c: Fuzzy match new authors from today
+    console.log('Running Stage 1c: Fuzzy Match New Authors...');
+    try {
+      await runPythonScript(
+        FUZZY_MATCH_SCRIPT,
+        ['--date', reportDate],
+        'Stage 1c: Fuzzy Match New Authors',
+        {
+          extraEnv: {
+            NEO4J_URI: requireEnvVar('NEO4J_URI'),
+            NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
+            NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
+            NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
+          },
+        }
+      );
+      console.log('✓ Fuzzy matching complete');
+    } catch (error) {
+      // Non-fatal - continue even if fuzzy matching fails
+      console.warn('⚠️ Fuzzy matching failed (non-fatal):', error);
+    }
+
+    // Stage 1d: Enrich authors with GitHub and Semantic Scholar data
+    console.log('Running Stage 1d: Enrich Authors...');
     const arxivIdsForEnrichment = combinedData.papers.map((p: any) => p.arxiv_id).join(',');
     try {
       await runPythonScript(
         ENRICH_SCRIPT,
         ['--arxiv-ids', arxivIdsForEnrichment],
-        'Stage 1c: Enrich Authors',
+        'Stage 1d: Enrich Authors',
         {
           extraEnv: {
             NEO4J_URI: requireEnvVar('NEO4J_URI'),
