@@ -31,6 +31,7 @@ import {
 import { handleStockAgent } from "./stock-agent.js";
 import { commandHandlers } from "../../commands/index.js";
 import type { CommandContext } from "../../commands/types.js";
+import type { KGAgentState } from "../../commands/kg.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1156,12 +1157,16 @@ interface YouTubeAgentState {
 }
 const youtubeAgentStates = new Map<string, YouTubeAgentState>();
 
+// KG (Knowledge Graph) Agent state
+const kgAgentStates = new Map<string, KGAgentState>();
+
 // Clear conversation state
 function endConversation(phoneNumber: string) {
   console.log(`Ending conversation for ${phoneNumber}`);
   activeConversations.delete(phoneNumber);
   youtubeSearchStates.delete(phoneNumber);
   youtubeAgentStates.delete(phoneNumber);
+  kgAgentStates.delete(phoneNumber);
 }
 
 // Check if user is in active conversation
@@ -1919,6 +1924,7 @@ export async function processIncomingSms(
       commandHelpers: {
         youtubeSearchStates,
         youtubeAgentStates,
+        kgAgentStates,
       },
     };
 

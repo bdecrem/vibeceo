@@ -217,31 +217,49 @@ class KochiFuzzyMatcherV2:
             )
 
 
-def get_authors_needing_canonical(driver, limit=None, target_date=None, date_start=None, date_end=None):
+def get_authors_needing_canonical(driver, limit=None, target_date=None, date_start=None, date_end=None,
+                                   paper_date_start=None, paper_date_end=None):
     """Get Author nodes that don't have canonical_kid assigned."""
     with driver.session(database=NEO4J_DATABASE) as session:
-        query = """
-        MATCH (a:Author)
-        WHERE a.canonical_kid IS NULL
-        """
-
         params = {}
 
-        # Add date filtering
-        if target_date:
-            query += " AND date(a.created_at) = date($target_date)"
-            params['target_date'] = target_date
-        elif date_start and date_end:
-            query += " AND date(a.created_at) >= date($date_start) AND date(a.created_at) <= date($date_end)"
-            params['date_start'] = date_start
-            params['date_end'] = date_end
+        # Use paper-based filtering for backlog processing
+        if paper_date_start and paper_date_end:
+            query = """
+            MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+            WHERE a.canonical_kid IS NULL
+              AND p.published_date >= date($paper_date_start)
+              AND p.published_date <= date($paper_date_end)
+            WITH DISTINCT a
+            RETURN a.kochi_author_id as kid,
+                   a.name as name,
+                   a.affiliation as affiliation
+            ORDER BY a.name
+            """
+            params['paper_date_start'] = paper_date_start
+            params['paper_date_end'] = paper_date_end
+        else:
+            # Use author created_at filtering for daily processing
+            query = """
+            MATCH (a:Author)
+            WHERE a.canonical_kid IS NULL
+            """
 
-        query += """
-        RETURN a.kochi_author_id as kid,
-               a.name as name,
-               a.affiliation as affiliation
-        ORDER BY a.created_at
-        """
+            # Add date filtering
+            if target_date:
+                query += " AND date(a.created_at) = date($target_date)"
+                params['target_date'] = target_date
+            elif date_start and date_end:
+                query += " AND date(a.created_at) >= date($date_start) AND date(a.created_at) <= date($date_end)"
+                params['date_start'] = date_start
+                params['date_end'] = date_end
+
+            query += """
+            RETURN a.kochi_author_id as kid,
+                   a.name as name,
+                   a.affiliation as affiliation
+            ORDER BY a.created_at
+            """
 
         if limit:
             query += f" LIMIT {limit}"
@@ -261,6 +279,8 @@ def main():
     parser.add_argument("--date", help="Process authors from specific date (YYYY-MM-DD)")
     parser.add_argument("--date-start", help="Process authors from date range start")
     parser.add_argument("--date-end", help="Process authors from date range end")
+    parser.add_argument("--paper-date-start", help="Process authors by paper published date range start (for backlog)")
+    parser.add_argument("--paper-date-end", help="Process authors by paper published date range end (for backlog)")
 
     args = parser.parse_args()
 
@@ -281,7 +301,9 @@ def main():
             limit=args.limit,
             target_date=args.date,
             date_start=args.date_start,
-            date_end=args.date_end
+            date_end=args.date_end,
+            paper_date_start=args.paper_date_start,
+            paper_date_end=args.paper_date_end
         )
 
         if not authors:

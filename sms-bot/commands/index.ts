@@ -3,6 +3,7 @@ import type { CommandHandler } from "./types.js";
 import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivCommandHandler } from "./arxiv.js";
 import { cryptoCommandHandler } from "./crypto.js";
+import { kgCommandHandler } from "./kg.js";
 import { medicalDailyCommandHandler } from "./medical-daily.js";
 import { peerReviewCommandHandler } from "./peer-review.js";
 import { ticketmasterCommandHandler } from "./ticketmaster.js";
@@ -13,6 +14,7 @@ export const commandHandlers: CommandHandler[] = [
   audioTestCommandHandler,
   arxivCommandHandler,
   cryptoCommandHandler,
+  kgCommandHandler,
   medicalDailyCommandHandler,
   peerReviewCommandHandler,
   ticketmasterCommandHandler,

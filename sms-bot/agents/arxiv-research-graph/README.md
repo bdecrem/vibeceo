@@ -47,36 +47,54 @@ The arXiv Research Agent is an autonomous daily agent that:
 
 ## Database Schema
 
-### Tables Created
+**Database:** Neo4j graph database
 
-#### `arxiv_papers`
-Stores ALL papers fetched from arXiv with significance signals:
-- `arxiv_id` (PK) - e.g., "2501.12345v1"
+### Node Types
+
+#### `Paper`
+Stores ALL papers fetched from arXiv:
+- `arxiv_id` (unique) - e.g., "2501.12345v1"
 - `title`, `abstract`, `categories[]`, `published_date`
 - `arxiv_url`, `pdf_url`
-- `author_notability_score` - Sum of all authors' scores
 - `featured_in_report`, `featured_rank`, `curation_reason`
-- `huggingface_trending`, `citation_count` (for future enrichment)
+- `created_at`, `last_updated`
 
-#### `arxiv_authors`
-Tracks ALL unique authors with notability tracking:
-- `name` (unique) - Normalized author name
-- External profiles: `github_username`, `huggingface_username`, `google_scholar_id`
-- `notability_score` - Composite score based on papers, GitHub stars, h-index
-- `paper_count`, `featured_paper_count`
-- `affiliations[]`, `research_areas[]`
-- `first_seen_date`, `last_paper_date`
+#### `Author`
+Authorship-based model - one node per paper appearance:
+- `kochi_author_id` (KID) - Unique identifier for each authorship
+- `name` - Author name as it appears on the paper
+- `affiliation` - Institution affiliation
+- `canonical_kid` - Points to canonical author identity (for deduplication)
+- `canonical_confidence` - Fuzzy match confidence score (0-100)
+- `needs_review` - Flag for uncertain matches
+- `migrated_from_old_system` - Migration tracking flag
+- `openalex_id`, `orcid`, `google_scholar_id` - External identifiers
+- `first_seen`, `last_seen`, `paper_count`
+- `created_at`, `last_updated`
 
-#### `arxiv_paper_authors`
-Junction table for many-to-many relationship:
-- `paper_id`, `author_id`, `author_position`
-- Tracks authorship order (1=first author, 2=second, etc.)
+#### `Category`
+Research categories (cs.AI, cs.LG, etc.):
+- `name` (unique) - Category identifier
+- `description` - Human-readable description
 
-#### `arxiv_daily_reports`
-Metadata for each day's curated report:
-- `report_date`, `total_papers_fetched`, `featured_papers_count`
-- `report_path`, `report_url`, `summary`
-- `generation_duration_seconds`
+### Relationships
+
+#### `AUTHORED`
+Connects Author nodes to Papers:
+- `position` - Authorship order (1=first author, 2=second, etc.)
+- `created_at`, `last_updated`
+
+#### `IN_CATEGORY`
+Connects Papers to Categories:
+- Tracks which papers belong to which research areas
+
+### Deduplication System
+
+The authorship-based model enables proper author disambiguation:
+1. Each paper appearance creates a NEW Author node with unique KID
+2. Fuzzy matching assigns `canonical_kid` to link duplicate authors
+3. Query by `canonical_kid` to get all papers by the same person
+4. See `kochi_fuzzy_match_v2.py` for matching logic
 
 ## Author Notability Scoring
 
@@ -101,28 +119,40 @@ score = (paper_count × 5)
 
 ## SMS Commands
 
+**Note:** This is the graph-backed version using Neo4j. For the original Supabase version with author search commands, see `arxiv-research` agent which uses `ARXIV` prefix.
+
 ### User Commands
-- `ARXIV` or `ARXIV REPORT` - Get today's curated report
-- `ARXIV SUBSCRIBE` - Get daily digest at 6 AM PT
-- `ARXIV UNSUBSCRIBE` - Stop daily digest
-- `ARXIV AUTHOR <name>` - Search for author and see their papers
-- `ARXIV TOP AUTHORS` - See top 10 researchers by notability
-- `ARXIV STATS` - Database statistics
-- `ARXIV HELP` - Command list
+- `ARXIV-GRAPH` or `ARXIV-GRAPH REPORT` - Get the latest graph-backed arXiv report
+- `ARXIV-GRAPH SUBSCRIBE` - Get daily digest at 6 AM PT
+- `ARXIV-GRAPH UNSUBSCRIBE` (or `ARXIV-GRAPH STOP`) - Stop daily digest
+- `ARXIV-GRAPH HELP` - Show command list
 
 ### Admin Commands (Bart only)
-- `ARXIV RUN` - Regenerate report immediately
+- `ARXIV-GRAPH RUN` - Regenerate report immediately
 
 ## Setup & Deployment
 
-### 1. Database Migration
+### 1. Neo4j Database Setup
+
+**Database:** Neo4j graph database (not Supabase)
 
 ```bash
-# Run the migration SQL file
-psql <connection-string> -f sms-bot/migrations/001_create_arxiv_tables.sql
+# Set up Neo4j schema (constraints and indexes)
+# Run the Cypher script in Neo4j Browser or via CLI
+cat sms-bot/agents/arxiv-research-graph/setup_neo4j_schema.cypher | cypher-shell
+
+# Environment variables required
+NEO4J_URI=neo4j+s://your-instance.databases.neo4j.io
+NEO4J_USERNAME=neo4j
+NEO4J_PASSWORD=your-password
+NEO4J_DATABASE=neo4j
 ```
 
-Or apply via Supabase Dashboard > SQL Editor
+**Migration Process:**
+- Initial data uses name-based Author nodes (old model)
+- Run `migrate_to_authorship_based_authors.py` to convert to authorship-based model
+- Run `kochi_fuzzy_match_v2.py` to assign canonical author IDs
+- See `AUTHORSHIP_BASED_MODEL.md` for detailed documentation
 
 ### 2. Python Dependencies
 
@@ -247,52 +277,72 @@ node dist/agents/arxiv-research/test-runner.js
 
 ## Querying the Database
 
-### Example Queries
+### Neo4j Cypher Queries
 
-```typescript
-// Get all papers by an author
-import * as db from './agents/arxiv-research/database.js';
+```cypher
+// Get all papers by an author (using canonical_kid for deduplication)
+MATCH (a:Author {name: 'Yann LeCun'})-[:AUTHORED]->(p:Paper)
+RETURN p.title, p.published_date, p.arxiv_id
+ORDER BY p.published_date DESC;
 
-const author = await db.getAuthorByName('Yann LeCun');
-const papers = await db.getPapersByAuthor(author.id);
+// Get all papers by canonical author identity
+MATCH (a:Author {canonical_kid: 'KA_12345'})-[:AUTHORED]->(p:Paper)
+RETURN p.title, p.published_date
+ORDER BY p.published_date DESC;
 
-// Search authors
-const results = await db.searchAuthorsByName('Geoffrey Hinton');
-
-// Get top authors
-const top = await db.getTopAuthors(10);
-
-// Get featured papers from a specific date
-const dbReport = await db.getDailyReportByDate('2025-10-20');
-```
-
-### SQL Queries
-
-```sql
--- Papers by author
-SELECT p.*
-FROM arxiv_papers p
-JOIN arxiv_paper_authors pa ON p.id = pa.paper_id
-JOIN arxiv_authors a ON pa.author_id = a.id
-WHERE a.name ILIKE '%LeCun%';
-
--- Top authors
-SELECT name, notability_score, paper_count, featured_paper_count
-FROM arxiv_authors
-ORDER BY notability_score DESC
+// Find co-authors
+MATCH (author:Author {name: 'Yann LeCun'})-[:AUTHORED]->(p:Paper)
+      <-[:AUTHORED]-(coauthor:Author)
+WHERE coauthor.name <> 'Yann LeCun'
+RETURN DISTINCT coauthor.name, count(p) as papers_together
+ORDER BY papers_together DESC
 LIMIT 10;
 
--- Papers with notability > 500
-SELECT title, author_notability_score
-FROM arxiv_papers
-WHERE author_notability_score > 500
-ORDER BY author_notability_score DESC;
+// Papers by category
+MATCH (p:Paper)-[:IN_CATEGORY]->(c:Category {name: 'cs.AI'})
+WHERE p.published_date >= date('2025-10-01')
+RETURN p.title, p.published_date
+ORDER BY p.published_date DESC;
 
--- Authors who published today
-SELECT a.*
-FROM arxiv_authors a
-WHERE a.last_paper_date = CURRENT_DATE
-ORDER BY a.notability_score DESC;
+// Featured papers with authors
+MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+WHERE p.featured_in_report = true
+  AND p.published_date = date('2025-10-20')
+RETURN p.title, p.featured_rank, collect(a.name) as authors
+ORDER BY p.featured_rank;
+
+// Authors needing fuzzy match review
+MATCH (a:Author)
+WHERE a.needs_review = true
+  AND a.canonical_confidence >= 60
+  AND a.canonical_confidence < 80
+RETURN a.name, a.kochi_author_id, a.canonical_kid, a.canonical_confidence
+ORDER BY a.canonical_confidence DESC
+LIMIT 20;
+
+// Count papers by author (with deduplication)
+MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+WHERE a.canonical_kid IS NOT NULL
+WITH a.canonical_kid as canonical, count(DISTINCT p) as paper_count
+MATCH (canonical_author:Author {kochi_author_id: canonical})
+RETURN canonical_author.name, paper_count
+ORDER BY paper_count DESC
+LIMIT 10;
+```
+
+### Using MCP Neo4j Tools (in Claude Code)
+
+```javascript
+// Via MCP tools - available in Claude Code
+mcp__neo4j__read_neo4j_cypher({
+  query: `
+    MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+    WHERE a.name CONTAINS 'LeCun'
+    RETURN a.name, p.title, p.published_date
+    ORDER BY p.published_date DESC
+    LIMIT 10
+  `
+})
 ```
 
 ## Future Enhancements
