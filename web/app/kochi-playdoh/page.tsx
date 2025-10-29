@@ -8,8 +8,8 @@ const cardClasses =
   "w-full max-w-3xl bg-white shadow-xl rounded-3xl px-6 sm:px-10 py-10 flex flex-col items-center gap-8 border border-[#ffe9a3]";
 
 type GsapBundle = {
-  gsap: typeof import("gsap");
-  MorphSVGPlugin: typeof import("gsap/MorphSVGPlugin");
+  gsap: any;
+  MorphSVGPlugin: any;
 };
 
 export default function KochiPlaydohLab() {
@@ -141,7 +141,7 @@ export default function KochiPlaydohLab() {
 
     const createShape = (config: DeformConfig): string =>
       MorphSVGPlugin.rawPathToString(
-        neutralSegments.map((segment) =>
+        neutralSegments.map((segment: Array<[number, number]>) =>
           segment.map(([px, py]) => deformPoint(px, py, config))
         )
       );
