@@ -40,7 +40,7 @@ const stockNewsMcpServer = createSdkMcpServer({
 });
 
 export const agentOptions: Options = {
-  model: "claude-3-5-haiku-latest",
+  model: "claude-haiku-4-5",
   mcpServers: { stock_news_mcp_tool: stockNewsMcpServer },
   allowedTools: ["Read", "Write", "mcp__stock_news_mcp_tool__fetch_news"],
   systemPrompt: `

@@ -111,10 +111,10 @@ export async function generateCompletePrompt(userInput: string): Promise<string>
  * Extracted from monitor.py Claude API call logic
  */
 export async function callClaude(systemPrompt: string, userPrompt: string, maxTokens: number = 8192): Promise<string> {
-    const model = "claude-3-5-sonnet-20241022";
-    const fallbackModel = "claude-3-5-haiku-20241022";
-    
-    logWithTimestamp(`🧠 Using Claude 3.5 Sonnet with ${maxTokens} tokens...`);
+    const model = "claude-sonnet-4-5-20250929";
+    const fallbackModel = "claude-haiku-4-5-20251001";
+
+    logWithTimestamp(`🧠 Using Claude Sonnet 4.5 with ${maxTokens} tokens...`);
     
     try {
         if (!ANTHROPIC_API_KEY) {
@@ -173,10 +173,10 @@ export async function callClaude(systemPrompt: string, userPrompt: string, maxTo
         // Try Claude fallback model first
         try {
             logWithTimestamp(`🔄 Trying Claude fallback: ${fallbackModel}`);
-            
+
             // Adjust max tokens for fallback model if needed
             let fallbackMaxTokens = maxTokens;
-            if (fallbackModel === "claude-3-5-haiku-20241022") {
+            if (fallbackModel === "claude-haiku-4-5-20251001") {
                 fallbackMaxTokens = Math.min(maxTokens, 4000);
             }
             

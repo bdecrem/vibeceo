@@ -13,6 +13,7 @@ import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js";
+import { registerArxivGraphDailyJob } from "../../agents/arxiv-research-graph/index.js";
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -52,6 +53,7 @@ export async function startSmsBot(): Promise<void> {
     registerMedicalDailyJob(twilioClient);
     registerPeerReviewJob(twilioClient);
     registerArxivDailyJob(twilioClient);
+    registerArxivGraphDailyJob(twilioClient);
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."

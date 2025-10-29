@@ -36,22 +36,54 @@ Trigger it from SMS with `ARXIV-GRAPH` or `ARXIV-GRAPH RUN`, or call
 
 ## Graph Schema Snapshot
 
-| Node        | Key Properties                                                                              |
-|-------------|----------------------------------------------------------------------------------------------|
-| `Paper`     | `arxiv_id`, `title`, `abstract`, `categories`, `primary_category`, `published_date`, `arxiv_url`, `pdf_url`, `author_notability_score`, `featured_in_report`, `featured_rank`, `curation_reason`, `featured_date`, `star_rating`, `created_at`, `last_ingested_at` |
-| `Author`    | `name`, `affiliation`, `first_seen`, `last_seen`, `paper_count`, `featured_paper_count`, `notability_score`, optional profile/enrichment fields (`github_username`, `h_index`, etc.) |
-| `Category`  | `name`                                                                                       |
-| `Report`    | `report_date`, `summary`, `total_papers`, `featured_count`, `notable_authors_count`, `report_path`, `report_url`, `viewer_url`, `report_short_link`, `metadata_path`, `created_at`, `duration_seconds`, podcast metadata |
+**Database:** Neo4j graph database
 
-Relationships:
+### Node Types
 
-- `(:Author)-[:AUTHORED {position}]->(:Paper)`
-- `(:Paper)-[:IN_CATEGORY]->(:Category)`
-- `(:Report)-[:FEATURED_IN {rank, curation_reason, star_rating}]->(:Paper)`
+#### `Paper`
+Stores ALL papers fetched from arXiv:
+- `arxiv_id` (unique) - e.g., "2501.12345v1"
+- `title`, `abstract`, `categories[]`, `published_date`
+- `arxiv_url`, `pdf_url`
+- `featured_in_report`, `featured_rank`, `curation_reason`
+- `created_at`, `last_updated`
 
-## Author Notability Formula
+#### `Author`
+Authorship-based model - one node per paper appearance:
+- `kochi_author_id` (KID) - Unique identifier for each authorship
+- `name` - Author name as it appears on the paper
+- `affiliation` - Institution affiliation
+- `canonical_kid` - Points to canonical author identity (for deduplication)
+- `canonical_confidence` - Fuzzy match confidence score (0-100)
+- `needs_review` - Flag for uncertain matches
+- `migrated_from_old_system` - Migration tracking flag
+- `openalex_id`, `orcid`, `google_scholar_id` - External identifiers
+- `first_seen`, `last_seen`, `paper_count`
+- `created_at`, `last_updated`
 
-Same weighting as the relational agent:
+#### `Category`
+Research categories (cs.AI, cs.LG, etc.):
+- `name` (unique) - Category identifier
+- `description` - Human-readable description
+
+### Relationships
+
+#### `AUTHORED`
+Connects Author nodes to Papers:
+- `position` - Authorship order (1=first author, 2=second, etc.)
+- `created_at`, `last_updated`
+
+#### `IN_CATEGORY`
+Connects Papers to Categories:
+- Tracks which papers belong to which research areas
+
+### Deduplication System
+
+The authorship-based model enables proper author disambiguation:
+1. Each paper appearance creates a NEW Author node with unique KID
+2. Fuzzy matching assigns `canonical_kid` to link duplicate authors
+3. Query by `canonical_kid` to get all papers by the same person
+4. See `kochi_fuzzy_match_v2.py` for matching logic
 
 ```
 score = (paper_count × 5)

@@ -60,27 +60,19 @@ FOREACH (category IN paper.categories |
 )
 WITH p, paper
 FOREACH (author_map IN paper.authors |
-  MERGE (a:Author {name: author_map.name})
-  ON CREATE SET
-      a.created_at = datetime(author_map.ingested_at),
-      a.paper_count = 0,
-      a.featured_paper_count = 0,
-      a.notability_score = 0,
-      a.github_username = coalesce(author_map.github_username, a.github_username),
-      a.huggingface_username = coalesce(author_map.huggingface_username, a.huggingface_username),
-      a.google_scholar_id = coalesce(author_map.google_scholar_id, a.google_scholar_id),
-      a.github_stars = coalesce(author_map.github_stars, a.github_stars),
-      a.h_index = coalesce(author_map.h_index, a.h_index)
-  SET a.affiliation =
-        CASE
-          WHEN author_map.affiliation IS NOT NULL THEN author_map.affiliation
-          ELSE a.affiliation
-        END,
-      a.first_seen = coalesce(a.first_seen, date(author_map.first_seen)),
-      a.last_seen = date(author_map.last_seen)
-  MERGE (a)-[r:AUTHORED]->(p)
+  // CREATE new Author node for each authorship (not MERGE)
+  // Each paper appearance gets its own Author node with unique KID
+  CREATE (a:Author)
+  SET a.kochi_author_id = 'KA_' + substring(randomUUID(), 0, 12),
+      a.name = author_map.name,
+      a.affiliation = author_map.affiliation,
+      a.first_seen = date(author_map.first_seen),
+      a.last_seen = date(author_map.last_seen),
+      a.paper_count = 1,
+      a.created_at = datetime(author_map.ingested_at)
+  CREATE (a)-[r:AUTHORED]->(p)
   SET r.position = author_map.position,
-      r.created_at = coalesce(r.created_at, datetime(author_map.ingested_at)),
+      r.created_at = datetime(author_map.ingested_at),
       r.last_updated = datetime(author_map.ingested_at)
 )
 RETURN count(DISTINCT p) AS merged_papers
