@@ -37,6 +37,7 @@ import {
   upsertReport as upsertGraphReport,
   getLatestReport as getLatestGraphReport,
   getAuthorStatsByNames,
+  getDriver,
   type GraphFeaturedPaperInput,
 } from './graph-dao.js';
 
@@ -45,6 +46,33 @@ import {
 // ============================================================================
 
 const DEFAULT_DATA_DIR = path.join(process.cwd(), 'data', 'arxiv-reports');
+
+// ============================================================================
+// Helper Functions
+// ============================================================================
+
+/**
+ * Check if papers already exist in Neo4j for given dates to avoid duplicate loading
+ */
+async function checkIfPapersExist(dates: string[]): Promise<number> {
+  const driver = getDriver();
+  const session = driver.session();
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (p:Paper)
+      WHERE p.published_date IN $dates
+      RETURN count(DISTINCT p) as count
+      `,
+      { dates: dates.map(d => d) }
+    );
+
+    return result.records[0]?.get('count')?.toNumber() || 0;
+  } finally {
+    await session.close();
+  }
+}
 const FETCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'fetch_papers.py');
 const CURATE_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'curate_with_agent.py');
 const LOAD_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'load_recent_papers.py');
@@ -689,6 +717,7 @@ async function applyGraphCuration(
 
 export async function runAndStoreArxivGraphReport(options?: {
   date?: string;
+  forceLoad?: boolean;
 }): Promise<ArxivReportMetadata> {
   // Use YESTERDAY in Pacific Time (arXiv publishes daily around midnight UTC = 5pm PT previous day)
   // So at 6am PT we fetch yesterday's papers which are already published
@@ -723,10 +752,10 @@ export async function runAndStoreArxivGraphReport(options?: {
         datesToFetch.push(`${year}-${month}-${day}`);
       }
     } else {
-      // Default: fetch yesterday, 2 days ago, 3 days ago
+      // Default: fetch today, yesterday, 2 days ago (matching reportDate which is today)
       const now = new Date();
       const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 0; i < 3; i++) {
         const d = new Date(pacificNow);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
@@ -777,8 +806,14 @@ export async function runAndStoreArxivGraphReport(options?: {
     );
     console.log(`Wrote combined papers to: ${combinedJsonPath}`);
 
-    // Load papers into Neo4j graph
-    await loadPapersIntoGraphFromJson(combinedJsonPath);
+    // Check if papers already exist in Neo4j to avoid duplicates
+    const existingPaperCount = await checkIfPapersExist(datesToFetch);
+    if (existingPaperCount > 0 && !options?.forceLoad) {
+      console.log(`✓ Found ${existingPaperCount} existing papers in Neo4j for these dates, skipping load`);
+    } else {
+      // Load papers into Neo4j graph
+      await loadPapersIntoGraphFromJson(combinedJsonPath);
+    }
 
     // Stage 1c: Fuzzy match new authors from today
     console.log('Running Stage 1c: Fuzzy Match New Authors...');

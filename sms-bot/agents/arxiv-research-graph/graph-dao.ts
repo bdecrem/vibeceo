@@ -88,7 +88,7 @@ function ensureEnv(variable: string | undefined, name: string): string {
   return variable;
 }
 
-function getDriver(): Driver {
+export function getDriver(): Driver {
   if (driver) {
     return driver;
   }
