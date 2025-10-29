@@ -126,7 +126,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     # Configure Claude Agent SDK
     # Uses CLAUDE_CODE_OAUTH_TOKEN from environment
     options = ClaudeAgentOptions(
-        model="claude-3-7-sonnet-20250219",  # Latest non-deprecated model
+        model="claude-sonnet-4-5-20250929",  # Claude Sonnet 4.5
     )
 
     # Run query - it returns an async iterator of messages

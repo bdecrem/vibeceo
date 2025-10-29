@@ -65,7 +65,7 @@ const eventMcpServer = createSdkMcpServer({
 });
 
 export const agentOptions: Options = {
-  model: "claude-3-5-haiku-latest",
+  model: "claude-haiku-4-5",
   mcpServers: { event_mcp_tool: eventMcpServer },
   allowedTools: ["Read", "Write", "mcp__event_mcp_tool__fetch_events"],
   systemPrompt: `

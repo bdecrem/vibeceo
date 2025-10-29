@@ -805,15 +805,15 @@ export async function callClaude(systemPrompt: string, userPrompt: string, confi
         // (reuse isZadRequest from above)
         
         let fallbackModels = [
-            { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
-            { model: "claude-3-5-haiku-20241022", maxTokens: 4000 },
+            { model: "claude-sonnet-4-5-20250929", maxTokens: 8192 },
+            { model: "claude-haiku-4-5-20251001", maxTokens: 4000 },
             { model: "gpt-4o", maxTokens: 16000 }
         ];
-        
+
         // For ZAD apps, skip Haiku (4000 tokens insufficient) and go straight to GPT-4o
         if (isZadRequest) {
             fallbackModels = [
-                { model: "claude-3-5-sonnet-20241022", maxTokens: 8192 },
+                { model: "claude-sonnet-4-5-20250929", maxTokens: 8192 },
                 { model: "gpt-4o", maxTokens: 16000 }
             ];
             logWithTimestamp(`🎨 ZAD detected: Using ZAD-optimized fallback chain (skipping Haiku)`);
