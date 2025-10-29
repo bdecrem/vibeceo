@@ -1,414 +1,100 @@
-# arXiv Research Agent
+# arXiv Research Graph Agent
 
-**Daily curated AI research papers from arXiv.org with author intelligence tracking**
+**Daily arXiv AI research briefings backed by a Neo4j knowledge graph**
 
 ## Overview
 
-The arXiv Research Agent is an autonomous daily agent that:
-1. **Fetches ALL** AI/ML papers from arXiv.org (cs.AI, cs.LG, cs.CV, cs.CL, stat.ML)
-2. **Stores ALL** papers with complete author tracking in a relational database
-3. **Curates** the top 5-10 most significant papers using Claude Agent SDK
-4. **Generates** a professional markdown report with curation reasoning
-5. **Broadcasts** the curated digest to SMS subscribers daily at 6 AM PT
-6. **Builds intelligence** over time: author notability scores, publication patterns, research trends
+This variant of the arXiv agent keeps the existing Claude-based curation loop,
+but swaps the relational storage layer for a Neo4j Aura graph. Every run:
+
+1. Fetches 24 hours of cs.AI / cs.LG / cs.CV / cs.CL / stat.ML papers.
+2. Loads Paper, Author, and Category nodes (plus AUTHORED / IN_CATEGORY edges) into Neo4j.
+3. Runs the Claude curation agent to pick the top papers and write the report.
+4. Marks featured papers in the graph, recomputes author notability scores, and stores a Report node with metadata + FEATURED_IN edges.
+5. Uploads the markdown report to Supabase Storage and records the viewer/podcast links in Neo4j.
+
+Trigger it from SMS with `ARXIV-GRAPH` or `ARXIV-GRAPH RUN`, or call
+`runAndStoreArxivGraphReport()` directly from code/tests.
 
 ## Architecture
 
-### Two-Stage Process
+### Stage 1 – Fetch & Load
 
-#### Stage 1: Fetch All Papers (`fetch_papers.py`)
-- Uses official `arxiv` Python library
-- Queries ALL papers submitted in last 24 hours
-- Respects arXiv rate limit: **1 request per 3 seconds**
-- Extracts full metadata: title, abstract, authors, categories, URLs
-- Outputs JSON file with complete paper list
+1. `agents/arxiv-research/fetch_papers.py` pulls the last 24h of submissions (respecting the 3 s rate limit).
+2. The TypeScript orchestrator writes a deduped JSON bundle for the target date.
+3. The orchestrator enriches each paper with live Neo4j author stats (notability score, paper count, featured streak, first/last seen) so Claude has reputation context before ranking breakthroughs.
+4. `agents/arxiv-research-graph/load_recent_papers.py --input-json` ingests the enriched bundle into Neo4j using batched Cypher merges.
 
-#### Stage 2: Curate & Report (`agent.py`)
-- Uses **Claude Agent SDK** for autonomous curation
-- Analyzes papers against 5 criteria:
-  - Novelty (30%)
-  - Impact Potential (25%)
-  - Author Notability (20%)
-  - Research Quality (15%)
-  - Timeliness (10%)
-- Selects top 5-10 papers with reasoning
-- Generates 3-5 page markdown report
-- Outputs featured paper metadata
+### Stage 2 – Curate & Persist
 
-#### TypeScript Orchestrator (`index.ts`)
-- Runs both Python stages
-- Stores ALL papers to database
-- Upserts ALL authors
-- Links papers to authors (many-to-many)
-- Marks featured papers
-- Calculates author notability scores
-- Uploads report to Supabase Storage
-- Returns metadata for SMS broadcasting
+1. `agents/arxiv-research/agent.py` (Claude Agent SDK) generates the markdown report and featured paper metadata, using the enriched author signals already embedded in the JSON.
+2. `graph-dao.ts` updates Neo4j:
+   - `Paper` nodes get `featured_in_report`, `featured_rank`, `curation_reason`, `featured_date`, `star_rating`, and refreshed `author_notability_score`.
+   - `Author` nodes recalc `paper_count`, `featured_paper_count`, and `notability_score` using the existing formula.
+   - A `Report` node (unique per date) stores summary, file paths, public URLs, podcast metadata, and `FEATURED_IN` edges to highlighted papers.
+3. Supabase Storage still hosts the markdown asset; the graph stores the path + viewer link.
 
-## Database Schema
+## Graph Schema Snapshot
 
-### Tables Created
+| Node        | Key Properties                                                                              |
+|-------------|----------------------------------------------------------------------------------------------|
+| `Paper`     | `arxiv_id`, `title`, `abstract`, `categories`, `primary_category`, `published_date`, `arxiv_url`, `pdf_url`, `author_notability_score`, `featured_in_report`, `featured_rank`, `curation_reason`, `featured_date`, `star_rating`, `created_at`, `last_ingested_at` |
+| `Author`    | `name`, `affiliation`, `first_seen`, `last_seen`, `paper_count`, `featured_paper_count`, `notability_score`, optional profile/enrichment fields (`github_username`, `h_index`, etc.) |
+| `Category`  | `name`                                                                                       |
+| `Report`    | `report_date`, `summary`, `total_papers`, `featured_count`, `notable_authors_count`, `report_path`, `report_url`, `viewer_url`, `report_short_link`, `metadata_path`, `created_at`, `duration_seconds`, podcast metadata |
 
-#### `arxiv_papers`
-Stores ALL papers fetched from arXiv with significance signals:
-- `arxiv_id` (PK) - e.g., "2501.12345v1"
-- `title`, `abstract`, `categories[]`, `published_date`
-- `arxiv_url`, `pdf_url`
-- `author_notability_score` - Sum of all authors' scores
-- `featured_in_report`, `featured_rank`, `curation_reason`
-- `huggingface_trending`, `citation_count` (for future enrichment)
+Relationships:
 
-#### `arxiv_authors`
-Tracks ALL unique authors with notability tracking:
-- `name` (unique) - Normalized author name
-- External profiles: `github_username`, `huggingface_username`, `google_scholar_id`
-- `notability_score` - Composite score based on papers, GitHub stars, h-index
-- `paper_count`, `featured_paper_count`
-- `affiliations[]`, `research_areas[]`
-- `first_seen_date`, `last_paper_date`
+- `(:Author)-[:AUTHORED {position}]->(:Paper)`
+- `(:Paper)-[:IN_CATEGORY]->(:Category)`
+- `(:Report)-[:FEATURED_IN {rank, curation_reason, star_rating}]->(:Paper)`
 
-#### `arxiv_paper_authors`
-Junction table for many-to-many relationship:
-- `paper_id`, `author_id`, `author_position`
-- Tracks authorship order (1=first author, 2=second, etc.)
+## Author Notability Formula
 
-#### `arxiv_daily_reports`
-Metadata for each day's curated report:
-- `report_date`, `total_papers_fetched`, `featured_papers_count`
-- `report_path`, `report_url`, `summary`
-- `generation_duration_seconds`
+Same weighting as the relational agent:
 
-## Author Notability Scoring
-
-### Formula (v1)
 ```
 score = (paper_count × 5)
       + (featured_paper_count × 50)
-      + (github_stars ÷ 10)
+      + ⌊github_stars ÷ 10⌋
       + (h_index × 10)
       + profile_bonuses
 ```
 
-### Profile Bonuses
-- GitHub profile: +20
-- HuggingFace profile: +20
-- Google Scholar profile: +30
+Bonuses: GitHub profile (+20), HuggingFace profile (+20), Google Scholar (+30).
+Scores are recomputed for every author with a paper on the target date.
 
-### Updates
-- **Daily**: Increment paper_count, update last_paper_date
-- **Weekly** (Phase 2): Refresh GitHub stars
-- **Monthly** (Phase 3): Update h-index from Google Scholar
+## Setup
 
-## SMS Commands
-
-### User Commands
-- `ARXIV` or `ARXIV REPORT` - Get today's curated report
-- `ARXIV SUBSCRIBE` - Get daily digest at 6 AM PT
-- `ARXIV UNSUBSCRIBE` - Stop daily digest
-- `ARXIV AUTHOR <name>` - Search for author and see their papers
-- `ARXIV TOP AUTHORS` - See top 10 researchers by notability
-- `ARXIV STATS` - Database statistics
-- `ARXIV HELP` - Command list
-
-### Admin Commands (Bart only)
-- `ARXIV RUN` - Regenerate report immediately
-
-## Setup & Deployment
-
-### 1. Database Migration
-
-```bash
-# Run the migration SQL file
-psql <connection-string> -f sms-bot/migrations/001_create_arxiv_tables.sql
-```
-
-Or apply via Supabase Dashboard > SQL Editor
-
-### 2. Python Dependencies
-
-```bash
-# Install in the shared virtual environment
-cd /path/to/vibeceo8
-source .venv/bin/activate
-pip install -r sms-bot/agents/arxiv-research/requirements.txt
-```
-
-Dependencies:
-- `arxiv>=2.1.0` - Official arXiv API client
-- `claude-agent-sdk>=0.1.0` - Autonomous agent framework
-
-### 3. Claude Code CLI
-
-The Claude Agent SDK requires the `claude-code` CLI tool to be available in PATH.
-
-**If you have `claude` installed but not `claude-code`:**
-
-```bash
-# Create symlink (one-time setup)
-ln -s ~/.npm-global/bin/claude ~/.npm-global/bin/claude-code
-
-# Verify it works
-which claude-code
-claude-code --version
-```
-
-**If you don't have Claude Code CLI installed:**
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-### 4. Environment Variables
-
-Add to `.env` or production environment:
-
-```bash
-# arXiv Agent Configuration
-ARXIV_REPORT_HOUR=6           # Default: 6 AM PT
-ARXIV_REPORT_MINUTE=0         # Default: :00
-ARXIV_MAX_PAPERS=1000         # Safety limit for daily fetch
-ARXIV_BROADCAST_DELAY_MS=150  # Delay between SMS sends
-
-# Required (already set)
-ANTHROPIC_API_KEY=sk-ant-...  # For Claude Agent SDK
-SUPABASE_URL=https://...
-SUPABASE_SERVICE_KEY=...
-TWILIO_ACCOUNT_SID=...
-TWILIO_AUTH_TOKEN=...
-TWILIO_PHONE_NUMBER=...
-```
-
-### 5. Build & Restart
-
-```bash
-cd sms-bot
-npm run build
-
-# Restart SMS listener
-# (if running as service, restart the service)
-```
-
-### 6. Test Manually
-
-```bash
-# Stage 1: Fetch papers
-python3 agents/arxiv-research/fetch_papers.py \
-  --output-dir data/arxiv-reports \
-  --date 2025-10-20
-
-# Stage 2: Curate (requires Stage 1 output)
-python3 agents/arxiv-research/agent.py \
-  --input-json data/arxiv-reports/arxiv_papers_2025-10-20.json \
-  --output-dir data/arxiv-reports \
-  --date 2025-10-20 \
-  --verbose
-
-# Full pipeline via TypeScript (recommended)
-node dist/agents/arxiv-research/test-runner.js
-```
-
-## Daily Report Format
-
-### Structure (3-5 pages)
-
-```markdown
-# AI Research Papers - Daily Curated Brief
-**Date:** 2025-10-20
-**Curated:** 7 papers from 127 total submissions
-
-## Executive Summary
-[2-3 sentences on key themes and breakthroughs]
-
-## 🌟 Top Papers Today
-
-### 1. [Paper Title] ⭐⭐⭐⭐⭐
-**Authors:** Jane Smith, John Doe, Alice Chen
-**Categories:** cs.LG, cs.AI
-
-**Why this matters:** [Curation reason - 2-3 sentences]
-**Key Innovation:** [1 sentence]
-**Potential Impact:** [1 sentence]
-
-📄 [arXiv](link) | 📥 [PDF](link)
-
-[Repeat for 5-10 papers]
-
-## 👥 Notable Authors Today
-**Jane Smith** (3 papers today, Score: 850)
-- Research: LLMs, Efficient Training
-- 5 featured papers in last 30 days
-
-## 📊 Daily Statistics
-- Total papers: 127
-- cs.LG: 47 (2 featured)
-- cs.CV: 38 (3 featured)
-[...]
-```
-
-## Querying the Database
-
-### Example Queries
-
-```typescript
-// Get all papers by an author
-import * as db from './agents/arxiv-research/database.js';
-
-const author = await db.getAuthorByName('Yann LeCun');
-const papers = await db.getPapersByAuthor(author.id);
-
-// Search authors
-const results = await db.searchAuthorsByName('Geoffrey Hinton');
-
-// Get top authors
-const top = await db.getTopAuthors(10);
-
-// Get featured papers from a specific date
-const dbReport = await db.getDailyReportByDate('2025-10-20');
-```
-
-### SQL Queries
-
-```sql
--- Papers by author
-SELECT p.*
-FROM arxiv_papers p
-JOIN arxiv_paper_authors pa ON p.id = pa.paper_id
-JOIN arxiv_authors a ON pa.author_id = a.id
-WHERE a.name ILIKE '%LeCun%';
-
--- Top authors
-SELECT name, notability_score, paper_count, featured_paper_count
-FROM arxiv_authors
-ORDER BY notability_score DESC
-LIMIT 10;
-
--- Papers with notability > 500
-SELECT title, author_notability_score
-FROM arxiv_papers
-WHERE author_notability_score > 500
-ORDER BY author_notability_score DESC;
-
--- Authors who published today
-SELECT a.*
-FROM arxiv_authors a
-WHERE a.last_paper_date = CURRENT_DATE
-ORDER BY a.notability_score DESC;
-```
-
-## Future Enhancements
-
-### Phase 2: GitHub Integration
-- Search GitHub profiles by author name
-- Link authors to repositories
-- Track total GitHub stars
-- Update notability scores
-
-### Phase 3: HuggingFace & Citations
-- Check if papers are trending on HuggingFace Papers
-- Track paper upvotes
-- Integrate Semantic Scholar API for citations
-- Google Scholar API for h-index
-
-### Phase 4: Intelligence Features
-- Weekly "Rising Stars" report (new authors with sudden activity)
-- Author collaboration networks
-- Research trend analysis
-- Personalized feeds ("papers by authors you follow")
-- Real-time alerts ("your followed author just published")
-
-## Rate Limiting
-
-**CRITICAL**: arXiv Terms of Service require **1 request per 3 seconds**
-
-Our implementation:
-```python
-client = arxiv.Client(
-    page_size=100,
-    delay_seconds=3,  # Enforced by library
-    num_retries=3
-)
-```
-
-The `arxiv` library handles rate limiting automatically. Do NOT modify this.
-
-## File Structure
-
-```
-sms-bot/agents/arxiv-research/
-├── fetch_papers.py       # Stage 1: Fetch all papers
-├── agent.py              # Stage 2: Curate with Claude
-├── index.ts              # TypeScript orchestrator
-├── database.ts           # All database operations
-├── requirements.txt      # Python dependencies
-└── README.md             # This file
-
-sms-bot/commands/
-└── arxiv.ts              # SMS command handler
-
-sms-bot/migrations/
-└── 001_create_arxiv_tables.sql  # Database schema
-```
-
-## Troubleshooting
-
-### "Missing claude_agent_sdk"
-```bash
-pip install claude-agent-sdk
-```
-
-### "Fatal error in message reader" / "Command failed with exit code 1"
-This means the Claude Agent SDK cannot find the `claude-code` CLI tool. Solutions:
-
-1. Create symlink if you have `claude` but not `claude-code`:
+1. **Install Python deps**
    ```bash
-   ln -s ~/.npm-global/bin/claude ~/.npm-global/bin/claude-code
+   pip install -r sms-bot/agents/arxiv-research/requirements.txt
+   pip install -r sms-bot/agents/arxiv-research-graph/requirements.txt
+   ```
+2. **Apply Neo4j schema**
+   ```bash
+   cat sms-bot/agents/arxiv-research-graph/setup_neo4j_schema.cypher | cypher-shell -a "$NEO4J_URI" -u "$NEO4J_USERNAME" -p "$NEO4J_PASSWORD"
+   ```
+3. **Set environment variables**
+   ```
+   NEO4J_URI=neo4j+s://...          # see neo4j.txt for Aura details
+   NEO4J_USERNAME=...
+   NEO4J_PASSWORD=...
+   NEO4J_DATABASE=neo4j             # optional, defaults to neo4j
+   AGENT_REPORTS_BUCKET=agent-reports
+   ```
+4. **(Optional) Backfill history**
+   ```bash
+   python3 agents/arxiv-research-graph/backfill_papers.py --start-date 2025-10-23 --lookback-days 182
    ```
 
-2. Or install Claude Code CLI:
-   ```bash
-   npm install -g @anthropic-ai/claude-code
-   ```
+## Running the Pipeline
 
-3. Verify it works:
-   ```bash
-   which claude-code  # Should show path to executable
-   claude-code --version  # Should show version number
-   ```
+- **Programmatically**: `await runAndStoreArxivGraphReport()` from `agents/arxiv-research-graph/index.ts`.
+- **SMS commands**:
+  - `ARXIV-GRAPH` – latest graph-backed report.
+  - `ARXIV-GRAPH RUN` – force a regeneration (admin only).
+  - `ARXIV-GRAPH SUBSCRIBE` / `UNSUBSCRIBE` – manage the dedicated subscriber list.
+- **Ingest utility**: reuse the loader directly with `python3 agents/arxiv-research-graph/load_recent_papers.py --input-json path/to/papers.json`.
 
-### "arXiv API rate limit exceeded"
-Check that `delay_seconds=3` in client configuration. Wait 3 seconds between requests.
-
-### "No papers found"
-Normal on some days. AI categories may have < 10 papers on weekends.
-
-### "Curation failed"
-Check ANTHROPIC_API_KEY is set. Agent requires API access.
-
-### "Database permission denied"
-Verify SUPABASE_SERVICE_KEY is correct and has write permissions.
-
-## Performance
-
-Typical execution times:
-- **Stage 1 (Fetch)**: 2-5 minutes (100-150 papers with 3s delays)
-- **Stage 2 (Curate)**: 3-7 minutes (Claude analyzes all papers)
-- **Database Storage**: < 30 seconds
-- **Total**: 5-15 minutes depending on paper volume
-
-## Cost Estimates
-
-Daily operational costs:
-- **arXiv API**: Free (with rate limiting compliance)
-- **Claude API** (curation): ~$0.10-0.30 per day (analyzing 100-150 papers)
-- **Supabase**: Negligible (< 1MB storage per day)
-- **SMS**: $0.0079 per message × subscribers
-
-Monthly cost for 100 subscribers: ~$30-40
-
-## Support
-
-Questions or issues? Check:
-1. `sms-bot/documentation/AGENT-PIPELINE.md` - Agent infrastructure patterns
-2. `sms-bot/documentation/claude-agent-sdk.txt` - SDK usage guide
-3. Database logs for query errors
-4. Python script output for fetch/curation errors
+After the run, check the graph with `node sms-bot/scripts/neo4j-query.cjs` to inspect counts, featured relationships, or specific authors.

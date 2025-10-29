@@ -615,7 +615,6 @@ async function upsertEpisode(input: EpisodeUpsertInput): Promise<number> {
       reportLink,
       reportUrl: input.reportUrl,
     }),
-    short_link: normalizedShortLink ?? null,
     status: 'ready',
   } as Record<string, unknown>;
 

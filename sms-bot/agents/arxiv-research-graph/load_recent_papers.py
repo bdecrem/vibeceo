@@ -10,10 +10,12 @@ window and stores Paper, Author, and Category nodes plus relationships.
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import os
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any, Iterable, List
 
 import arxiv
@@ -35,6 +37,13 @@ BATCH_SIZE = 25
 MERGE_BATCH_QUERY = """
 UNWIND $batch AS paper
 MERGE (p:Paper {arxiv_id: paper.arxiv_id})
+ON CREATE SET
+    p.created_at = datetime(paper.ingested_at),
+    p.featured_in_report = false,
+    p.featured_rank = null,
+    p.curation_reason = null,
+    p.featured_date = null,
+    p.author_notability_score = coalesce(p.author_notability_score, 0)
 SET p.title = paper.title,
     p.abstract = paper.abstract,
     p.categories = paper.categories,
@@ -52,6 +61,16 @@ FOREACH (category IN paper.categories |
 WITH p, paper
 FOREACH (author_map IN paper.authors |
   MERGE (a:Author {name: author_map.name})
+  ON CREATE SET
+      a.created_at = datetime(author_map.ingested_at),
+      a.paper_count = 0,
+      a.featured_paper_count = 0,
+      a.notability_score = 0,
+      a.github_username = coalesce(author_map.github_username, a.github_username),
+      a.huggingface_username = coalesce(author_map.huggingface_username, a.huggingface_username),
+      a.google_scholar_id = coalesce(author_map.google_scholar_id, a.google_scholar_id),
+      a.github_stars = coalesce(author_map.github_stars, a.github_stars),
+      a.h_index = coalesce(author_map.h_index, a.h_index)
   SET a.affiliation =
         CASE
           WHEN author_map.affiliation IS NOT NULL THEN author_map.affiliation
@@ -217,6 +236,66 @@ def chunked(iterable: List[dict[str, Any]], size: int) -> Iterable[List[dict[str
         yield iterable[start:start + size]
 
 
+def normalize_papers_from_json(json_path: Path) -> list[dict[str, Any]]:
+    """Load paper payload from fetch JSON and adapt fields for Neo4j ingest."""
+    raw_text = json_path.read_text()
+    payload = json.loads(raw_text)
+
+    papers_raw = payload.get("papers") or []
+    normalized: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    target_date = payload.get("target_date")
+    ingested_at = datetime.now(tz=timezone.utc).isoformat()
+
+    for entry in papers_raw:
+        arxiv_id = entry.get("arxiv_id")
+        if not arxiv_id or arxiv_id in seen:
+            continue
+
+        seen.add(arxiv_id)
+
+        published = entry.get("published_date") or target_date or datetime.now().strftime("%Y-%m-%d")
+        categories = entry.get("categories") or []
+        primary_category = entry.get("primary_category") or (categories[0] if categories else None)
+
+        authors_payload = entry.get("authors") or []
+        authors: list[dict[str, Any]] = []
+        for idx, author in enumerate(authors_payload, start=1):
+            name = author.get("name")
+            if not name:
+                continue
+            authors.append({
+                "name": name,
+                "affiliation": author.get("affiliation"),
+                "position": idx,
+                "first_seen": published,
+                "last_seen": published,
+                "ingested_at": ingested_at,
+                # Placeholders for optional profile enrichment fields
+                "github_username": author.get("github_username"),
+                "huggingface_username": author.get("huggingface_username"),
+                "google_scholar_id": author.get("google_scholar_id"),
+                "github_stars": author.get("github_stars"),
+                "h_index": author.get("h_index"),
+            })
+
+        normalized.append({
+            "arxiv_id": arxiv_id,
+            "title": (entry.get("title") or "").strip(),
+            "abstract": (entry.get("abstract") or "").strip(),
+            "categories": categories,
+            "primary_category": primary_category,
+            "published_date": published,
+            "arxiv_url": entry.get("arxiv_url"),
+            "pdf_url": entry.get("pdf_url"),
+            "authors": authors,
+            "ingested_at": ingested_at,
+        })
+
+    return normalized
+
+
 def load_papers_into_neo4j(config: Neo4jConfig, papers: list[dict[str, Any]]) -> None:
     """Insert/merge paper data into Neo4j."""
     if not papers:
@@ -274,6 +353,11 @@ def parse_args() -> argparse.Namespace:
         help="Fetch data but do not write to Neo4j. Prints a sample paper instead.",
     )
     parser.add_argument(
+        "--input-json",
+        type=Path,
+        help="Load papers from an existing fetch JSON file instead of calling the arXiv API.",
+    )
+    parser.add_argument(
         "--verbose",
         action="store_true",
         help="Enable verbose logging.",
@@ -295,13 +379,23 @@ def main() -> None:
         logging.error(str(exc))
         raise SystemExit(1) from exc
 
-    limit = args.limit if args.limit and args.limit > 0 else None
+    if args.input_json:
+        papers = normalize_papers_from_json(args.input_json)
+        logging.info(
+            "Loaded %s papers from JSON file %s.",
+            len(papers),
+            args.input_json,
+        )
+        if args.limit and args.limit > 0:
+            papers = papers[: args.limit]
+    else:
+        limit = args.limit if args.limit and args.limit > 0 else None
 
-    papers = fetch_recent_papers(
-        days=args.days,
-        end_date=args.end_date,
-        max_results=limit,
-    )
+        papers = fetch_recent_papers(
+            days=args.days,
+            end_date=args.end_date,
+            max_results=limit,
+        )
 
     if args.dry_run:
         if papers:

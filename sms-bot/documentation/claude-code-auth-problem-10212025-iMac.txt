@@ -1,0 +1,69 @@
+INVESTIGATION REPORT
+
+  THE PROBLEM:
+
+  The agent.py script is failing silently and returning error:
+  "markdown_not_created". This means the Python agent script ran but
+  crashed/failed before creating the markdown file.
+
+  KEY EVIDENCE:
+
+  1. Stage 1 succeeded: Fetched 561 papers from Oct 18-20, stored to
+  database ✅
+  2. Stage 2 started: agent.py was called with the combined JSON ✅
+  3. Stage 2 failed: Returned {"status": "error", "error": 
+  "markdown_not_created"} ❌
+  4. No stderr output: The error message shows STDERR: is empty - meaning
+  Python didn't crash with a traceback
+
+  ROOT CAUSE ANALYSIS:
+
+  Looking at the code flow (index.ts lines 206-217):
+
+  const baseEnv = options?.needsClaudeCodeAuth
+    ? process.env  // Keep all env vars including CLAUDE_CODE_OAUTH_TOKEN
+    : (...cleanEnv);
+
+  When agent.py runs, it's getting ...process.env spread which includes
+  CLAUDE_CODE_OAUTH_TOKEN from your Claude Code session.
+
+  According to your documentation (CLAUDE-AGENT-SDK-SETUP.md line 41-43):
+  // Remove any OAuth tokens to force API key usage
+  CLAUDE_CODE_OAUTH_TOKEN: undefined,
+
+  THE CONFLICT:
+
+  1. Documentation says: Remove CLAUDE_CODE_OAUTH_TOKEN, only pass
+  ANTHROPIC_API_KEY
+  2. Current code does: Spreads entire process.env which includes
+  CLAUDE_CODE_OAUTH_TOKEN from Claude Code session
+  3. What happens: Claude Agent SDK sees CLAUDE_CODE_OAUTH_TOKEN, tries to
+  use it, but it's from Claude Code Max plan not your API key account
+  4. Result: Auth fails silently, agent.py exits with "markdown_not_created"
+
+  WHY IT WORKS ON MACHINE 1 BUT NOT MACHINE 2:
+
+  - Machine 1: You're NOT running inside Claude Code session, so
+  process.env.CLAUDE_CODE_OAUTH_TOKEN doesn't exist
+  - Machine 2 (this iMac): You're running inside Claude Code session, so
+  spreading process.env pollutes the agent environment with the wrong OAuth
+  token
+
+  THE FIX NEEDED:
+
+  The arxiv-research/index.ts code needs to follow the EXACT pattern from
+  crypto-research (per your documentation):
+
+  const agentEnv = {
+    PATH: process.env.PATH,
+    HOME: process.env.HOME,
+    ANTHROPIC_API_KEY: process.env.CLAUDE_AGENT_SDK_TOKEN ||
+  process.env.ANTHROPIC_API_KEY,
+    // Explicitly exclude CLAUDE_CODE_OAUTH_TOKEN
+    CLAUDE_CODE_OAUTH_TOKEN: undefined,
+  };
+
+  DO NOT spread process.env - only pass specific variables needed.
+
+  This is why the agent worked earlier today at 2pm (probably NOT in Claude
+  Code) but fails now (inside Claude Code session).

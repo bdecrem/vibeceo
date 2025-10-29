@@ -417,7 +417,11 @@ Categories: cs.AI, cs.LG, cs.CV, cs.CL, stat.ML`;
 export const arxivCommandHandler: CommandHandler = {
   name: 'arxiv',
   matches(context: CommandContext): boolean {
-    return context.messageUpper.startsWith('ARXIV');
+    const upper = context.messageUpper;
+    if (upper.startsWith('ARXIV-GRAPH')) {
+      return false;
+    }
+    return upper.startsWith('ARXIV');
   },
   async handle(context: CommandContext): Promise<boolean> {
     const messageUpper = context.message.trim().toUpperCase();

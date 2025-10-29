@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kochi Balloon - Normal → Inflate → Normal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #FFE148 0%, #FFA500 100%);
+            font-family: 'Comic Sans MS', 'Chalkboard SE', 'Arial Rounded MT Bold', cursive, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            color: #2C3E1F;
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            text-shadow: 3px 3px 6px rgba(255,255,255,0.3);
+        }
+
+        .stage {
+            background: white;
+            border-radius: 30px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+            display: inline-block;
+        }
+
+        #kochiSVG {
+            width: 600px;
+            height: 600px;
+            filter: drop-shadow(0 10px 30px rgba(0,0,0,0.1));
+        }
+
+        .controls {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: white;
+            border: 2px solid #2C3E1F;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2C3E1F;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+            background: #FFE148;
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .info {
+            color: #2C3E1F;
+            margin-top: 1.5rem;
+            font-size: 1.2rem;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.5);
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎈 Kochi Balloon Game!</h1>
+
+        <div class="stage">
+            <svg id="kochiSVG" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+                <defs>
+                    <style>
+                        .st0 { fill: #ffe148; }
+                        .st1 { fill: #2c3e1f; }
+                    </style>
+                </defs>
+
+                <g id="kochi">
+                    <!-- Body - STARTS AS NORMAL (rectangular with antennae) -->
+                    <path id="bodyShape" class="st0" d="M818.4,610.3v-89.6c0-16.3.6-37.5-.6-53.4-1-12.5-3.5-24.8-7.6-36.6-12.8-37.8-40.2-68.9-76.1-86.4-17.5-8.6-31.8-11.8-50.8-14.6h0s-.2,0-.2,0v-74.3c11.8-6,20.5-12.9,24.8-26,3.3-10.4,2.4-21.8-2.7-31.5-5.1-9.8-13.7-16.6-24.3-19.8-10.8-3.2-22.4-2-32.3,3.4-9.6,5.2-16.7,14.1-19.6,24.6-4.7,16.8,1.5,33.8,15.3,44.1,3,2.2,5.9,3.6,9.2,5.3v73.3h-187.9c-31.4,0-64.1.5-95.3,0h-.8c.3-23.4.9-52.4.6-73.6,12.1-6.4,20.1-13.6,24.3-27.2,3.2-10.1,2.1-21-3-30.3-5.2-9.7-14.1-16.9-24.7-19.9-5.1-1.5-11.1-2.2-16.5-1.6-23.7,2.7-39.6,22.1-36.5,46,1.4,10.7,7.1,20.5,15.7,27,3.3,2.5,6.7,4.3,10.5,5.9v75.2c-39.1,3.7-75.1,22.9-100,53.2-16,19.3-27,42.3-32.1,66.8-4.1,19.9-3,47.1-3,68v80.8s0,75.2,0,75.2c0,14.7-.6,34.5.8,48.7,3.9,38.8,23,74.5,53.1,99.1,19.3,15.7,42.3,26.3,66.8,30.9,17.8,3.2,50.9,2.1,70.6,2.1h113.9s148.1,0,148.1,0c8.7,0,17.9.2,26.5-.7,39.3-3.6,75.5-23,100.4-53.5,6.2-7.7,11.6-16,16.2-24.7,18.1-36.7,16.7-56.3,16.7-95.4v-70.4Z"/>
+
+                    <!-- Face - STARTS AS NORMAL (rectangular) -->
+                    <path id="face" class="st1" d="M368.9,396.2c20-.8,43.6-.2,63.8-.2h188.4c16.4,0,36.8-.8,52.6,2.1,17.9,3.3,34.5,11.5,48.1,23.7,35.3,31.9,29.4,68.7,29.7,111.1.2,35.2,2.9,66.4-23.4,94.2-19.7,20.8-44.8,29.9-73,31-18.7.8-43.1.1-62.1.1h-193.2c-16,0-32.9.9-48.7-1.6-43.2-6.9-77.2-41.9-78.6-86.3-.5-15.6,0-31.4-.2-46.7-.5-34.9-2.4-68.5,23.8-95.9,20-21.6,44.1-30.1,72.8-31.6h0Z"/>
+
+                    <!-- Eyes -->
+                    <path id="eyeL" class="st0" d="M408,480.1c24.6-4,47.8,12.8,51.7,37.4,3.8,24.7-13.1,47.7-37.9,51.4-24.4,3.6-47.1-13.2-50.9-37.5-3.8-24.4,12.8-47.2,37.1-51.2h0Z"/>
+                    <path id="eyeR" class="st0" d="M601.2,480.3c24.3-4.1,47.4,12.2,51.6,36.6,4.2,24.3-12.2,47.4-36.5,51.6-24.3,4.2-47.5-12.2-51.6-36.5-4.2-24.4,12.2-47.5,36.6-51.6h0Z"/>
+                </g>
+            </svg>
+        </div>
+
+        <div class="controls">
+            <button onclick="restartAnimation()">🎈 Play Again</button>
+        </div>
+
+        <div class="info">
+            <p>Kochi blows himself up like a balloon!</p>
+        </div>
+    </div>
+
+    <!-- Hidden target shapes (INFLATED versions - the balloon state) -->
+    <svg style="display: none;">
+        <!-- INFLATED body (big round balloon shape) -->
+        <path id="targetBodyInflate" d="M911.7,623.5c-3.9-32.8-9.5-65.4-16.8-98-4-17.8-9.2-40.9-15.7-58.1-5.1-13.6-12.3-27-21.2-40-28.4-41.6-71.4-78.9-114.4-102.2-21.1-11.4-36.6-16.3-56.6-20.8h0c0,0-.1,0-.2,0-6.9-29.1-14.5-58-22.8-86.7,8.4-5.8,13.4-12.7,11.7-27.2-1.4-11.5-7.2-24.6-15.2-36.4-8.1-11.9-17.3-21-26.2-26-9.1-5-16.8-4.9-22.3.5-5.4,5.2-8.3,15.1-7.9,27.2.6,19.4,9.4,39.6,24.2,52.6,3.2,2.8,6.1,4.6,9.5,6.8,6.8,28.6,13,57.4,18.7,86.4-63.2-3-126.2-2.5-188.9,1.5-31.4,2-64.2,5.6-95.2,8.8-.3,0-.5,0-.8,0,5.2-26.1,12.3-58.4,17.2-81.8,12.1-9.2,20.5-18.6,26.8-34.6,4.8-11.9,6-23.9,4.3-33.3-1.8-9.8-6.5-15.9-13.3-16.6-3.3-.4-7.3.3-11.4,2.4-17.6,9.3-37.4,34.6-43.9,58.8-2.8,10.9-1.5,19.9,3.9,24.9,2,2,4.4,3.2,7.3,4.1-7.5,27.1-14.4,54.3-20.7,81.6-39.7,9.5-82.1,36.1-119.5,68.5-23.8,20.8-44.4,43.1-58.1,65.8-11.2,18.4-17.8,43.1-22.9,62.1-6.7,24.5-12.3,48.9-16.6,73.3-4.1,22.7-7.1,45.3-9.1,67.8-1.2,13.2-3,30.7-1.6,44.1,3.9,36.3,30.7,79.8,71.2,122.4,26,27,56.4,51.9,88,69.5,23,13,65.3,26.6,90.5,33.4,48.6,13.9,97.2,23.4,145.8,28.4,63.2,6.5,126.4,5.3,189.6-3.4,11.1-1.5,22.9-3.2,34-6.3,50.6-13.6,100-51.2,135.9-95.7,8.9-11.2,16.8-22.7,23.6-34.3,26.6-48,25.5-68.6,24.3-111.9-.9-25.9-2.8-51.7-5.9-77.5.2,0,.4-.1.6-.2Z"/>
+
+        <!-- INFLATED face (keeps same proportions) -->
+        <path id="targetFaceInflate" d="M368.9,396.2c20-.8,43.6-.2,63.8-.2h188.4c16.4,0,36.8-.8,52.6,2.1,17.9,3.3,34.5,11.5,48.1,23.7,35.3,31.9,29.4,68.7,29.7,111.1.2,35.2,2.9,66.4-23.4,94.2-19.7,20.8-44.8,29.9-73,31-18.7.8-43.1,0-62.1,0h-193.2c-16,0-32.9.9-48.7-1.6-43.2-6.9-77.2-41.9-78.6-86.3-.5-15.6,0-31.4-.2-46.7-.5-34.9-2.4-68.5,23.8-95.9,20-21.6,44.1-30.1,72.8-31.6h0Z"/>
+    </svg>
+
+    <!-- GSAP -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+
+    <script>
+        // Load MorphSVGPlugin
+        const script = document.createElement('script');
+        script.src = 'https://unpkg.com/gsap@3/dist/MorphSVGPlugin.min.js';
+        script.onload = function() {
+            initAnimation();
+        };
+        document.head.appendChild(script);
+
+        let mainTimeline;
+
+        function initAnimation() {
+            // Register MorphSVG plugin
+            gsap.registerPlugin(MorphSVGPlugin);
+
+            // Set transform origin
+            gsap.set("#kochi", { transformOrigin: "50% 50%" });
+            gsap.set("#eyeL, #eyeR", { transformOrigin: "50% 50%" });
+
+            // Create timeline
+            mainTimeline = gsap.timeline({
+                paused: false  // Auto-play on load
+            });
+
+            mainTimeline
+                // ANTICIPATION - Preparing to inflate
+                // Quick blink as Kochi prepares
+                .to("#eyeL, #eyeR", {
+                    scaleY: 0.1,
+                    duration: 0.08,
+                    ease: "power2.in",
+                    repeat: 1,
+                    yoyo: true
+                }, 0)
+
+                // Small inhale - squash down to build pressure
+                .to("#kochi", {
+                    scaleY: 0.85,
+                    scaleX: 1.12,
+                    y: 12,
+                    duration: 0.6,
+                    ease: "power2.in"
+                }, 0.3)
+
+                // Eyes widen in determination
+                .to("#eyeL, #eyeR", {
+                    scaleX: 1.25,
+                    scaleY: 1.2,
+                    duration: 0.4,
+                    ease: "back.out(2)"
+                }, 0.5)
+
+                // INFLATE - Main balloon transformation (normal → balloon)
+                // Body morphs to inflated balloon shape
+                .to("#bodyShape", {
+                    morphSVG: "#targetBodyInflate",
+                    duration: 2.8,
+                    ease: "elastic.out(0.9, 0.35)"
+                }, 0.9)
+
+                // Face morphs too
+                .to("#face", {
+                    morphSVG: "#targetFaceInflate",
+                    duration: 2.8,
+                    ease: "elastic.out(0.9, 0.35)"
+                }, 0.9)
+
+                // Body scales up dramatically with float
+                .to("#kochi", {
+                    scaleY: 1.3,
+                    scaleX: 1.3,
+                    y: -35,
+                    duration: 2.2,
+                    ease: "power2.out"
+                }, 0.9)
+
+                // Eyes squish from pressure
+                .to("#eyeL, #eyeR", {
+                    scaleX: 0.65,
+                    scaleY: 1.35,
+                    duration: 1.6,
+                    ease: "power2.out"
+                }, 1.2)
+
+                // HOLD - Floating balloon state
+                // Gentle bobbing while inflated
+                .to("#kochi", {
+                    y: -40,
+                    duration: 0.7,
+                    ease: "sine.inOut",
+                    repeat: 2,
+                    yoyo: true
+                }, 3.1)
+
+                // Nervous blink while holding
+                .to("#eyeL, #eyeR", {
+                    scaleY: 0.1,
+                    duration: 0.08,
+                    ease: "power2.in",
+                    repeat: 1,
+                    yoyo: true
+                }, 3.8)
+
+                // DEFLATE PREPARATION - Starting to let air out
+                // Eyes widen as deflation begins
+                .to("#eyeL, #eyeR", {
+                    scaleX: 1.5,
+                    scaleY: 0.35,
+                    duration: 0.18,
+                    ease: "power2.in"
+                }, 5.5)
+
+                // Wobble as air starts escaping
+                .to("#kochi", {
+                    rotation: -6,
+                    scaleX: 1.2,
+                    scaleY: 1.15,
+                    duration: 0.35,
+                    ease: "power2.in"
+                }, 5.5)
+                .to("#kochi", {
+                    rotation: 5,
+                    scaleX: 1.08,
+                    scaleY: 1.0,
+                    y: -25,
+                    duration: 0.3,
+                    ease: "power2.inOut"
+                }, 5.85)
+                .to("#kochi", {
+                    rotation: -4,
+                    scaleX: 0.95,
+                    scaleY: 0.92,
+                    y: -10,
+                    duration: 0.25,
+                    ease: "power2.inOut"
+                }, 6.15)
+
+                // MAIN DEFLATE - Morph back to normal shape
+                .to("#bodyShape", {
+                    morphSVG: {
+                        shape: "M818.4,610.3v-89.6c0-16.3.6-37.5-.6-53.4-1-12.5-3.5-24.8-7.6-36.6-12.8-37.8-40.2-68.9-76.1-86.4-17.5-8.6-31.8-11.8-50.8-14.6h0s-.2,0-.2,0v-74.3c11.8-6,20.5-12.9,24.8-26,3.3-10.4,2.4-21.8-2.7-31.5-5.1-9.8-13.7-16.6-24.3-19.8-10.8-3.2-22.4-2-32.3,3.4-9.6,5.2-16.7,14.1-19.6,24.6-4.7,16.8,1.5,33.8,15.3,44.1,3,2.2,5.9,3.6,9.2,5.3v73.3h-187.9c-31.4,0-64.1.5-95.3,0h-.8c.3-23.4.9-52.4.6-73.6,12.1-6.4,20.1-13.6,24.3-27.2,3.2-10.1,2.1-21-3-30.3-5.2-9.7-14.1-16.9-24.7-19.9-5.1-1.5-11.1-2.2-16.5-1.6-23.7,2.7-39.6,22.1-36.5,46,1.4,10.7,7.1,20.5,15.7,27,3.3,2.5,6.7,4.3,10.5,5.9v75.2c-39.1,3.7-75.1,22.9-100,53.2-16,19.3-27,42.3-32.1,66.8-4.1,19.9-3,47.1-3,68v80.8s0,75.2,0,75.2c0,14.7-.6,34.5.8,48.7,3.9,38.8,23,74.5,53.1,99.1,19.3,15.7,42.3,26.3,66.8,30.9,17.8,3.2,50.9,2.1,70.6,2.1h113.9s148.1,0,148.1,0c8.7,0,17.9.2,26.5-.7,39.3-3.6,75.5-23,100.4-53.5,6.2-7.7,11.6-16,16.2-24.7,18.1-36.7,16.7-56.3,16.7-95.4v-70.4Z"
+                    },
+                    duration: 2.0,
+                    ease: "elastic.out(1, 0.5)"
+                }, 6.0)
+
+                .to("#face", {
+                    morphSVG: {
+                        shape: "M368.9,396.2c20-.8,43.6-.2,63.8-.2h188.4c16.4,0,36.8-.8,52.6,2.1,17.9,3.3,34.5,11.5,48.1,23.7,35.3,31.9,29.4,68.7,29.7,111.1.2,35.2,2.9,66.4-23.4,94.2-19.7,20.8-44.8,29.9-73,31-18.7.8-43.1.1-62.1.1h-193.2c-16,0-32.9.9-48.7-1.6-43.2-6.9-77.2-41.9-78.6-86.3-.5-15.6,0-31.4-.2-46.7-.5-34.9-2.4-68.5,23.8-95.9,20-21.6,44.1-30.1,72.8-31.6h0Z"
+                    },
+                    duration: 2.0,
+                    ease: "elastic.out(1, 0.5)"
+                }, 6.0)
+
+                // Scale and position back to normal with elastic bounce
+                .to("#kochi", {
+                    scaleY: 1,
+                    scaleX: 1,
+                    rotation: 0,
+                    y: 0,
+                    duration: 2.0,
+                    ease: "elastic.out(1, 0.5)"
+                }, 6.0)
+
+                // Eyes return to normal with relief
+                .to("#eyeL, #eyeR", {
+                    scaleX: 1,
+                    scaleY: 1,
+                    duration: 1.7,
+                    ease: "elastic.out(1, 0.45)"
+                }, 6.3)
+
+                // SETTLE - Final landing
+                // Tiny bounce as Kochi settles
+                .to("#kochi", {
+                    y: -10,
+                    duration: 0.18,
+                    ease: "power2.out"
+                }, 8.0)
+                .to("#kochi", {
+                    y: 0,
+                    duration: 0.3,
+                    ease: "bounce.out"
+                }, 8.18)
+
+                // Relieved blink at the end
+                .to("#eyeL, #eyeR", {
+                    scaleY: 0.1,
+                    duration: 0.1,
+                    ease: "power2.in",
+                    repeat: 1,
+                    yoyo: true
+                }, 8.5);
+
+            console.log('Balloon animation initialized! Total duration:', mainTimeline.duration());
+        }
+
+        // Restart function
+        function restartAnimation() {
+            if (mainTimeline) {
+                mainTimeline.restart();
+            }
+        }
+    </script>
+</body>
+</html>
