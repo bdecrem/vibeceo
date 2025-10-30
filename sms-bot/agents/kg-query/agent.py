@@ -94,9 +94,9 @@ NEO4J GRAPH SCHEMA:
                  IN_CATEGORY (Paper → Category)
 
 TOOLS AVAILABLE:
-You have Neo4j tools - USE THEM to answer the query:
-- neo4j__get_neo4j_schema: Get database schema
-- neo4j__read_neo4j_cypher: Execute Cypher queries
+You have Neo4j MCP tools - USE THEM to answer the query:
+- mcp__neo4j__get_neo4j_schema: Get database schema
+- mcp__neo4j__read_neo4j_cypher: Execute Cypher queries
 
 EXAMPLE QUERIES:
 
@@ -152,8 +152,8 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
         permission_mode="acceptEdits",  # Works in non-interactive mode (Railway + local)
         mcp_servers=mcp_servers,
         allowed_tools=[
-            "neo4j__read_neo4j_cypher",
-            "neo4j__get_neo4j_schema",
+            "mcp__neo4j__read_neo4j_cypher",
+            "mcp__neo4j__get_neo4j_schema",
         ],
     )
 
