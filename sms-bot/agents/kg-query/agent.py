@@ -134,16 +134,19 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     mcp_server_script = current_dir / "neo4j_mcp_server.py"
 
     # Configure MCP server
+    server_env = dict(os.environ)
+    server_env.update({
+        "NEO4J_URI": os.getenv("NEO4J_URI", ""),
+        "NEO4J_USERNAME": os.getenv("NEO4J_USERNAME", ""),
+        "NEO4J_PASSWORD": os.getenv("NEO4J_PASSWORD", ""),
+        "NEO4J_DATABASE": os.getenv("NEO4J_DATABASE", "neo4j"),
+    })
+
     mcp_servers = {
         "neo4j": McpStdioServerConfig(
             command="python3",
             args=[str(mcp_server_script)],
-            env={
-                "NEO4J_URI": os.getenv("NEO4J_URI", ""),
-                "NEO4J_USERNAME": os.getenv("NEO4J_USERNAME", ""),
-                "NEO4J_PASSWORD": os.getenv("NEO4J_PASSWORD", ""),
-                "NEO4J_DATABASE": os.getenv("NEO4J_DATABASE", "neo4j"),
-            }
+            env=server_env,
         )
     }
 

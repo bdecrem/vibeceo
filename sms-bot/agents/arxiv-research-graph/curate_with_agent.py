@@ -367,6 +367,9 @@ async def run_agent_with_graph_context(
 ):
     """Run Claude Agent SDK with graph insights pre-loaded."""
 
+    if not input_json_path.exists():
+        raise FileNotFoundError(f"Papers JSON not found: {input_json_path}")
+
     # 1. Query graph for rich context
     print("Querying Neo4j for graph insights...", file=sys.stderr)
     context = build_graph_context(neo4j_driver, report_date)
@@ -440,6 +443,11 @@ def main():
     )
     parser.add_argument("--date", type=str, help="Date to curate (YYYY-MM-DD), default: yesterday")
     parser.add_argument("--output-dir", type=str, required=True, help="Output directory for reports")
+    parser.add_argument(
+        "--input-json",
+        type=str,
+        help="Path to the papers JSON generated in Stage 1 (required for agent context)"
+    )
 
     args = parser.parse_args()
 
@@ -466,9 +474,17 @@ def main():
     output_markdown = output_dir / f"arxiv-graph-{date_str}.md"
     output_json = output_dir / f"arxiv-graph-{date_str}.json"
 
-    # We expect papers to already be in Neo4j (loaded by previous stage)
-    # But we'll create a placeholder JSON path for the agent
-    input_json = output_dir / f"arxiv_papers_combined_{date_str}.json"
+    if args.input_json:
+        input_json = Path(args.input_json).expanduser().resolve()
+    else:
+        input_json = output_dir / f"arxiv_papers_{date_str}.json"
+
+    if not input_json.exists():
+        print(json.dumps({
+            'status': 'error',
+            'error': f"Papers JSON file not found: {input_json}"
+        }))
+        sys.exit(1)
 
     # Connect to Neo4j
     driver = GraphDatabase.driver(

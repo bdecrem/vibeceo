@@ -686,7 +686,7 @@ async function curatePapersStage(
   date?: string
 ): Promise<{ markdownPath: string; curationJsonPath: string; markdown: string; curation: CurationData }> {
   const dataDir = await ensureDataDirExists();
-  const args = ['--output-dir', dataDir];
+  const args = ['--output-dir', dataDir, '--input-json', inputJsonPath];
 
   if (date) {
     args.push('--date', date);
