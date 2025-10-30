@@ -73,7 +73,9 @@ async function checkIfPapersExist(dates: string[]): Promise<number> {
       }
     );
 
-    return result.records[0]?.get('count')?.toNumber() || 0;
+    // Note: disableLosslessIntegers: true in driver config means count is a plain number
+    const count = result.records[0]?.get('count');
+    return typeof count === 'number' ? count : 0;
   } finally {
     await session.close();
   }
