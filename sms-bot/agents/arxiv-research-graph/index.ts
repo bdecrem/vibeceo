@@ -73,6 +73,51 @@ async function checkIfPapersExist(dates: string[]): Promise<number> {
     await session.close();
   }
 }
+
+async function loadPapersFromNeo4j(dates: string[]): Promise<PaperData[]> {
+  const driver = getDriver();
+  const session = driver.session();
+
+  try {
+    const result = await session.run(
+      `
+      MATCH (p:Paper)
+      WHERE p.published_date IN $dates
+      OPTIONAL MATCH (p)<-[:AUTHORED]-(a:Author)
+      WITH p, collect({
+        name: a.name,
+        affiliation: a.affiliation
+      }) as authors
+      RETURN p.arxiv_id as arxiv_id,
+             p.title as title,
+             p.abstract as abstract,
+             p.categories as categories,
+             p.primary_category as primary_category,
+             toString(p.published_date) as published_date,
+             p.arxiv_url as arxiv_url,
+             p.pdf_url as pdf_url,
+             authors
+      ORDER BY p.published_date DESC
+      `,
+      { dates }
+    );
+
+    return result.records.map(record => ({
+      arxiv_id: record.get('arxiv_id'),
+      title: record.get('title'),
+      abstract: record.get('abstract'),
+      authors: record.get('authors').filter((a: any) => a.name), // Filter out null authors
+      categories: record.get('categories'),
+      published_date: record.get('published_date'),
+      arxiv_url: record.get('arxiv_url'),
+      pdf_url: record.get('pdf_url'),
+      primary_category: record.get('primary_category'),
+      updated_date: record.get('published_date'), // Use published as fallback
+    }));
+  } finally {
+    await session.close();
+  }
+}
 const FETCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research', 'fetch_papers.py');
 const CURATE_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'curate_with_agent.py');
 const LOAD_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'load_recent_papers.py');
@@ -719,13 +764,11 @@ export async function runAndStoreArxivGraphReport(options?: {
   date?: string;
   forceLoad?: boolean;
 }): Promise<ArxivReportMetadata> {
-  // Use YESTERDAY in Pacific Time (arXiv publishes daily around midnight UTC = 5pm PT previous day)
-  // So at 6am PT we fetch yesterday's papers which are already published
+  // Report date is TODAY in Pacific Time
+  // Data fetched is from the 3 days BEFORE today
   const reportDate = options?.date || (() => {
     const now = new Date();
     const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    // Subtract 1 day
-    pacificNow.setDate(pacificNow.getDate() - 1);
     const year = pacificNow.getFullYear();
     const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
     const day = String(pacificNow.getDate()).padStart(2, '0');
@@ -741,9 +784,9 @@ export async function runAndStoreArxivGraphReport(options?: {
     const datesToFetch: string[] = [];
 
     if (options?.date) {
-      // If explicit date provided, fetch that date plus 2 days before
+      // If explicit date provided, fetch the 3 days BEFORE that date
       const baseDate = new Date(options.date);
-      for (let i = 0; i < 3; i++) {
+      for (let i = 1; i <= 3; i++) {
         const d = new Date(baseDate);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
@@ -752,10 +795,10 @@ export async function runAndStoreArxivGraphReport(options?: {
         datesToFetch.push(`${year}-${month}-${day}`);
       }
     } else {
-      // Default: fetch today, yesterday, 2 days ago (matching reportDate which is today)
+      // Default: fetch the 3 days BEFORE today (yesterday, 2 days ago, 3 days ago)
       const now = new Date();
       const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      for (let i = 0; i < 3; i++) {
+      for (let i = 1; i <= 3; i++) {
         const d = new Date(pacificNow);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
@@ -767,15 +810,47 @@ export async function runAndStoreArxivGraphReport(options?: {
 
     console.log(`Fetching papers from ${datesToFetch.length} days: ${datesToFetch.join(', ')}`);
 
-    // Fetch papers for each date
+    // Check if papers already exist in Neo4j for these dates
+    const existingPaperCount = await checkIfPapersExist(datesToFetch);
+    if (existingPaperCount > 0 && !options?.forceLoad) {
+      console.log(`ℹ️  Found ${existingPaperCount} existing papers in Neo4j for dates: ${datesToFetch.join(', ')}`);
+      console.log(`   Skipping arXiv API calls to avoid redundant fetching`);
+      console.log(`   (Neo4j loading will also be skipped later)`);
+    }
+
+    // Fetch papers for each date (only if not already loaded)
     const allPapers: PaperData[] = [];
     let lastJsonPath = '';
 
-    for (const date of datesToFetch) {
-      const { jsonPath, papers } = await fetchPapersStage(date);
+    const shouldSkipFetch = existingPaperCount > 0 && !options?.forceLoad;
+
+    if (!shouldSkipFetch) {
+      for (const date of datesToFetch) {
+        const { jsonPath, papers } = await fetchPapersStage(date);
+        allPapers.push(...papers);
+        lastJsonPath = jsonPath; // Keep last path for curation stage
+        console.log(`  ${date}: ${papers.length} papers`);
+      }
+    } else {
+      // Papers already exist - load from Neo4j instead of fetching
+      console.log(`📥 Loading papers from Neo4j instead of arXiv...`);
+      const papers = await loadPapersFromNeo4j(datesToFetch);
       allPapers.push(...papers);
-      lastJsonPath = jsonPath; // Keep last path for curation stage
-      console.log(`  ${date}: ${papers.length} papers`);
+      console.log(`  Loaded ${papers.length} papers from Neo4j`);
+
+      // Create a JSON file for compatibility with curation stage
+      const dataDir = await ensureDataDirExists();
+      lastJsonPath = path.join(dataDir, `arxiv_papers_${datesToFetch[0]}.json`);
+      const fetchedData = {
+        fetch_date: new Date().toISOString(),
+        target_date: datesToFetch[0],
+        total_papers: papers.length,
+        categories: ['cs.AI', 'cs.LG', 'cs.CV', 'cs.CL', 'stat.ML'],
+        papers,
+      };
+      await import('node:fs/promises').then(({ writeFile }) =>
+        writeFile(lastJsonPath, JSON.stringify(fetchedData, null, 2))
+      );
     }
 
     // Deduplicate papers by arxiv_id
@@ -806,13 +881,11 @@ export async function runAndStoreArxivGraphReport(options?: {
     );
     console.log(`Wrote combined papers to: ${combinedJsonPath}`);
 
-    // Check if papers already exist in Neo4j to avoid duplicates
-    const existingPaperCount = await checkIfPapersExist(datesToFetch);
-    if (existingPaperCount > 0 && !options?.forceLoad) {
-      console.log(`✓ Found ${existingPaperCount} existing papers in Neo4j for these dates, skipping load`);
-    } else {
-      // Load papers into Neo4j graph
+    // Load papers into Neo4j graph (skip if already loaded, checked earlier)
+    if (!shouldSkipFetch) {
       await loadPapersIntoGraphFromJson(combinedJsonPath);
+    } else {
+      console.log(`✓ Skipping Neo4j load - papers already exist`);
     }
 
     // Stage 1c: Fuzzy match new authors from today
