@@ -10,9 +10,11 @@ import argparse
 import asyncio
 import json
 import os
+import subprocess
 import sys
+import textwrap
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Tuple
 
 # Import Claude Agent SDK
 try:
@@ -134,6 +136,8 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     mcp_server_script = current_dir / "neo4j_mcp_server.py"
 
     # Configure MCP server
+    python_bin = os.getenv("PYTHON_BIN", "python3")
+
     server_env = dict(os.environ)
     server_env.update({
         "NEO4J_URI": os.getenv("NEO4J_URI", ""),
@@ -144,7 +148,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
 
     mcp_servers = {
         "neo4j": McpStdioServerConfig(
-            command="python3",
+            command=python_bin,
             args=[str(mcp_server_script)],
             env=server_env,
         )
@@ -161,6 +165,131 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     )
 
     debug_enabled = bool(os.getenv("KG_AGENT_DEBUG"))
+
+    def _debug(msg: str) -> None:
+        if debug_enabled:
+            print(f"[KG Agent Debug] {msg}", file=sys.stderr)
+
+    def _read_mcp_message(stream) -> Dict[str, Any]:
+        headers: Dict[str, str] = {}
+        while True:
+            line = stream.readline()
+            if not line:
+                return {}
+            if line in (b"\n", b"\r\n"):
+                break
+            decoded = line.decode("utf-8").strip()
+            if not decoded or ":" not in decoded:
+                continue
+            key, value = decoded.split(":", 1)
+            headers[key.strip().lower()] = value.strip()
+        length = int(headers.get("content-length", "0"))
+        if length <= 0:
+            return {}
+        payload = stream.read(length)
+        if not payload:
+            return {}
+        return json.loads(payload.decode("utf-8"))
+
+    def _write_mcp_message(stream, message: Dict[str, Any]) -> None:
+        body = json.dumps(message).encode("utf-8")
+        header = f"Content-Length: {len(body)}\r\n\r\n".encode("utf-8")
+        stream.write(header)
+        stream.write(body)
+        stream.flush()
+
+    def _verify_mcp_server() -> Tuple[bool, str]:
+        """
+        Launch MCP server once to verify it starts and advertises expected tools.
+        Returns (ok, error_message).
+        """
+        try:
+            proc = subprocess.Popen(
+                [python_bin, str(mcp_server_script)],
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                env=server_env,
+            )
+        except Exception as exc:  # noqa: BLE001
+            return False, f"Failed to launch MCP server: {exc}"
+
+        try:
+            if proc.stdin is None or proc.stdout is None:
+                return False, "MCP server process streams not available"
+
+            init_payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "initialize",
+                "params": {
+                    "clientInfo": {"name": "kg-agent-preflight", "version": "0.1.0"},
+                    "protocolVersion": "2024-11-05",
+                },
+            }
+            _write_mcp_message(proc.stdin, init_payload)
+            init_response = _read_mcp_message(proc.stdout)
+
+            if not init_response or init_response.get("error"):
+                return False, f"Initialize failed: {init_response}"
+
+            _write_mcp_message(
+                proc.stdin,
+                {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
+            )
+            list_response = _read_mcp_message(proc.stdout)
+            tools = (list_response or {}).get("result", {}).get("tools", [])
+            tool_names = [tool.get("name") for tool in tools]
+
+            if "read_neo4j_cypher" not in tool_names or "get_neo4j_schema" not in tool_names:
+                return False, f"Unexpected tool list: {tool_names}"
+
+            # Graceful shutdown
+            _write_mcp_message(
+                proc.stdin,
+                {"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}},
+            )
+            _read_mcp_message(proc.stdout)
+            return True, ""
+        except Exception as exc:  # noqa: BLE001
+            stderr_output = ""
+            try:
+                if proc.stderr:
+                    proc.poll()
+                    stderr_output = proc.stderr.read().decode("utf-8", errors="ignore")
+            except Exception:
+                stderr_output = ""
+            message = f"Preflight error: {exc}"
+            if stderr_output:
+                message += f" | stderr: {stderr_output.strip()}"
+            return False, message
+        finally:
+            try:
+                if proc.stdin:
+                    proc.stdin.close()
+                if proc.stdout:
+                    proc.stdout.close()
+                if proc.stderr:
+                    proc.stderr.close()
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=1)
+                except Exception:
+                    proc.kill()
+
+    ok, preflight_error = _verify_mcp_server()
+    if not ok:
+        error_text = textwrap.dedent(f"""
+            Neo4j MCP server preflight failed.
+            Script: {mcp_server_script}
+            Error: {preflight_error}
+        """).strip()
+        _debug(error_text)
+        return (
+            "Sorry, I couldn't contact the Neo4j graph service just now. "
+            "Please check the KG logs for the MCP server error."
+        )
 
     def _extract_text_segments(message: Any) -> List[str]:
         """Extract text-like segments from SDK messages."""
