@@ -405,8 +405,8 @@ async def run_agent_with_graph_context(
     print("Starting Claude Agent SDK curation...", file=sys.stderr)
 
     # 4. Run agent - it will generate the report
-    # Note: query() API changed to keyword-only arguments
-    async for _message in query(prompt, options):
+    # Note: query() requires keyword-only arguments (signature starts with *)
+    async for _message in query(prompt=prompt, options=options):
         # No-op: streaming updates aren't needed in production logs
         continue
 
