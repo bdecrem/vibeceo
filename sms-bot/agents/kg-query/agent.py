@@ -94,9 +94,9 @@ NEO4J GRAPH SCHEMA:
                  IN_CATEGORY (Paper → Category)
 
 TOOLS AVAILABLE:
-You have the following MCP Neo4j tools - USE THEM to answer the query:
-- mcp__neo4j__get_neo4j_schema: Get database schema
-- mcp__neo4j__read_neo4j_cypher: Execute Cypher queries
+You have Neo4j tools - USE THEM to answer the query:
+- get_neo4j_schema (or mcp__neo4j__get_neo4j_schema): Get database schema
+- read_neo4j_cypher (or mcp__neo4j__read_neo4j_cypher): Execute Cypher queries
 
 EXAMPLE QUERIES:
 
@@ -126,15 +126,30 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
 """
 
     # Configure Claude Agent SDK
-    # Uses CLAUDE_CODE_OAUTH_TOKEN from environment
-    options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",  # Claude Sonnet 4.5
-        permission_mode="bypassPermissions",  # Auto-approve all tool use
-        allowed_tools=[
-            "mcp__neo4j__get_neo4j_schema",
-            "mcp__neo4j__read_neo4j_cypher",
-        ],
-    )
+    # On Railway (production), MCP tools are not available
+    # On local dev with Claude Code, MCP tools work
+    use_mcp = os.getenv("USE_MCP_NEO4J", "").lower() == "true"
+
+    if use_mcp:
+        # Local dev with Claude Code: Use MCP Neo4j tools
+        options = ClaudeAgentOptions(
+            model="claude-sonnet-4-5-20250929",
+            permission_mode="bypassPermissions",
+            allowed_tools=[
+                "mcp__neo4j__get_neo4j_schema",
+                "mcp__neo4j__read_neo4j_cypher",
+            ],
+        )
+    else:
+        # Production (Railway) or fallback: Use custom Neo4j tools (direct driver)
+        from neo4j_custom_tools import get_neo4j_tools_for_agent
+        custom_tools = get_neo4j_tools_for_agent()
+
+        options = ClaudeAgentOptions(
+            model="claude-sonnet-4-5-20250929",
+            permission_mode="bypassPermissions",
+            custom_tools=custom_tools,
+        )
 
     debug_enabled = bool(os.getenv("KG_AGENT_DEBUG"))
 
