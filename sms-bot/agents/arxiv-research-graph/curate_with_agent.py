@@ -405,7 +405,10 @@ async def run_agent_with_graph_context(
     print("Starting Claude Agent SDK curation...", file=sys.stderr)
 
     # 4. Run agent - it will generate the report
-    await query(prompt, options)
+    # Note: claude-agent-sdk 0.1.1+ requires keyword arguments
+    async for message in query(prompt=prompt, options=options):
+        # Process messages as they arrive (agent writes files itself)
+        pass
 
     # 5. Wait for agent to finish writing files
     # Claude Agent SDK may return before files are fully written
