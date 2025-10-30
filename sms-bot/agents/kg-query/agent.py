@@ -94,7 +94,9 @@ NEO4J GRAPH SCHEMA:
                  IN_CATEGORY (Paper → Category)
 
 TOOLS AVAILABLE:
-You have MCP Neo4j tools available. Use them to query the graph.
+You have the following MCP Neo4j tools - USE THEM to answer the query:
+- mcp__neo4j__get_neo4j_schema: Get database schema
+- mcp__neo4j__read_neo4j_cypher: Execute Cypher queries
 
 EXAMPLE QUERIES:
 
@@ -127,20 +129,86 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     # Uses CLAUDE_CODE_OAUTH_TOKEN from environment
     options = ClaudeAgentOptions(
         model="claude-sonnet-4-5-20250929",  # Claude Sonnet 4.5
+        permission_mode="acceptEdits",
+        allowed_tools=[
+            "mcp__neo4j__get_neo4j_schema",
+            "mcp__neo4j__read_neo4j_cypher",
+        ],
     )
+
+    debug_enabled = bool(os.getenv("KG_AGENT_DEBUG"))
+
+    def _extract_text_segments(message: Any) -> List[str]:
+        """Extract text-like segments from SDK messages."""
+        raw_segments: List[str] = []
+
+        # Common direct attributes
+        for attr in ("text", "result_text", "result"):
+            value = getattr(message, attr, None)
+            if isinstance(value, str):
+                raw_segments.append(value)
+
+        # Message content can be a string or list of blocks
+        content = getattr(message, "content", None)
+        if isinstance(content, str):
+            raw_segments.append(content)
+        elif isinstance(content, list):
+            for block in content:
+                if isinstance(block, dict):
+                    for key in ("text", "result_text", "result"):
+                        text_value = block.get(key)
+                        if isinstance(text_value, str):
+                            raw_segments.append(text_value)
+                else:
+                    for attr in ("text", "result_text", "result"):
+                        text_value = getattr(block, attr, None)
+                        if isinstance(text_value, str):
+                            raw_segments.append(text_value)
+
+        # Some messages provide delta payloads
+        delta = getattr(message, "delta", None)
+        if isinstance(delta, dict):
+            for key in ("text", "result_text", "result"):
+                delta_value = delta.get(key)
+                if isinstance(delta_value, str):
+                    raw_segments.append(delta_value)
+
+        # Deduplicate while preserving order
+        segments: List[str] = []
+        seen: set[str] = set()
+        for segment in raw_segments:
+            cleaned = segment.strip()
+            if not cleaned or cleaned in seen:
+                continue
+            seen.add(cleaned)
+            segments.append(cleaned)
+        return segments
 
     # Run query - it returns an async iterator of messages
     try:
         response_text = ""
+        last_text_segment = ""
+        collected_segments: List[str] = []
 
         async for message in query(prompt=prompt, options=options):
-            # Collect assistant messages (the agent's responses)
-            if hasattr(message, 'role') and message.role == 'assistant':
-                # Extract text content from assistant messages
-                if hasattr(message, 'content'):
-                    for block in message.content:
-                        if hasattr(block, 'text'):
-                            response_text += block.text
+            message_type = getattr(message, "type", "")
+            text_segments = _extract_text_segments(message)
+
+            if debug_enabled:
+                print(
+                    f"[KG Agent Debug] message_type={message_type} segments={len(text_segments)}",
+                    file=sys.stderr
+                )
+
+            if not text_segments:
+                continue
+
+            collected_segments.extend(text_segments)
+            last_text_segment = text_segments[-1]
+
+        if collected_segments:
+            # Prefer the last segment (final response), fallback to joined text
+            response_text = last_text_segment or "\n".join(collected_segments)
 
         if not response_text:
             return "Sorry, I couldn't generate a response. Please try again."
