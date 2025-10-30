@@ -397,7 +397,7 @@ async def run_agent_with_graph_context(
     # 3. Configure Claude Agent SDK
     # Give agent access to Read, Write, and optionally Neo4j MCP tools
     options = ClaudeAgentOptions(
-        permission_mode="acceptEdits",
+        permission_mode="bypassPermissions",  # Auto-approve all tool use (required for Railway)
         allowed_tools=["Read", "Write", "mcp__neo4j__read_neo4j_cypher"],
         cwd=str(output_md_path.parent),
     )
