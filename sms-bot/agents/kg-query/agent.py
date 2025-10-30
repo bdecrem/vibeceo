@@ -97,8 +97,8 @@ NEO4J GRAPH SCHEMA:
 
 TOOLS AVAILABLE:
 You have Neo4j MCP tools - USE THEM to answer the query:
-- neo4j__get_neo4j_schema: Get database schema
-- neo4j__read_neo4j_cypher: Execute Cypher queries
+- read_neo4j_cypher: Execute Cypher queries
+- get_neo4j_schema: Get database schema
 
 EXAMPLE QUERIES:
 
