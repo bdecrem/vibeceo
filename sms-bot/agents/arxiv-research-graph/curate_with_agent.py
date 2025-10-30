@@ -203,7 +203,7 @@ Today's date is {date_str}.
 
 You have access to:
 1. **Papers Data**: Read from {input_json_path} - contains all AI/ML papers published on {date_str}
-2. **Neo4j Graph Database**: Available via MCP neo4j tools (optional - for deeper author research)
+2. **Graph Context**: Pre-analyzed Neo4j insights provided below (trending topics, productive authors, rising stars, collaborations)
 
 **GRAPH CONTEXT ALREADY ANALYZED:**
 
@@ -213,16 +213,11 @@ You have access to:
 
 1. **Read the papers JSON file** at {input_json_path} to see all papers published today
 
-2. **OPTIONAL: Query Neo4j for additional author insights** using MCP tools:
-   ```cypher
-   // Get author publication history
-   MATCH (a:Author {{canonical_kid: $kid}})-[:AUTHORED]->(p:Paper)
-   RETURN p.title, p.published_date ORDER BY p.published_date DESC
-
-   // Get author enrichment data (h-index, citations, GitHub)
-   MATCH (a:Author {{canonical_kid: $kid}})
-   RETURN a.name, a.h_index, a.citation_count, a.github_username
-   ```
+2. **Leverage the graph context above** - it contains valuable insights about:
+   - Trending research topics
+   - Productive authors and their publication velocity
+   - Rising stars showing rapid growth
+   - Notable cross-institutional collaborations
 
 3. **Select TOP 5-10 papers** (aim for 7) based on:
    - **Novelty** (30%): Is this genuinely new or incremental?
@@ -397,8 +392,8 @@ async def run_agent_with_graph_context(
     # 3. Configure Claude Agent SDK
     # Give agent access to Read, Write, and optionally Neo4j MCP tools
     options = ClaudeAgentOptions(
-        permission_mode="bypassPermissions",  # Auto-approve all tool use (required for Railway)
-        allowed_tools=["Read", "Write", "mcp__neo4j__read_neo4j_cypher"],
+        permission_mode="acceptEdits",  # Works in non-interactive mode with Read/Write tools
+        allowed_tools=["Read", "Write"],  # Neo4j context already provided in prompt
         cwd=str(output_md_path.parent),
     )
 

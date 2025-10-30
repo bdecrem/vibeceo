@@ -2,7 +2,8 @@
 """
 KG Query Agent - Claude Agent SDK Implementation
 
-Uses claude_agent_sdk.query() for Neo4j graph queries.
+Uses claude_agent_sdk.query() with custom MCP server for Neo4j graph queries.
+Works on Railway and local environments - no external MCP infrastructure needed.
 """
 
 import argparse
@@ -10,17 +11,16 @@ import asyncio
 import json
 import os
 import sys
+from pathlib import Path
 from typing import Dict, List, Any
 
 # Import Claude Agent SDK
 try:
     from claude_agent_sdk import ClaudeAgentOptions, query
+    from claude_agent_sdk.types import McpStdioServerConfig
 except ImportError as e:
     print(f"Error importing claude-agent-sdk: {e}", file=sys.stderr)
     sys.exit(1)
-
-# Import Neo4j tools
-from neo4j_tools import Neo4jTools
 
 
 async def run_kg_query(
@@ -95,8 +95,8 @@ NEO4J GRAPH SCHEMA:
 
 TOOLS AVAILABLE:
 You have Neo4j tools - USE THEM to answer the query:
-- get_neo4j_schema (or mcp__neo4j__get_neo4j_schema): Get database schema
-- read_neo4j_cypher (or mcp__neo4j__read_neo4j_cypher): Execute Cypher queries
+- neo4j__get_neo4j_schema: Get database schema
+- neo4j__read_neo4j_cypher: Execute Cypher queries
 
 EXAMPLE QUERIES:
 
@@ -125,31 +125,37 @@ USER QUERY: {user_query}
 Task: Answer the user's question by querying Neo4j. Keep response concise for SMS (~500 chars).
 """
 
-    # Configure Claude Agent SDK
-    # On Railway (production), MCP tools are not available
-    # On local dev with Claude Code, MCP tools work
-    use_mcp = os.getenv("USE_MCP_NEO4J", "").lower() == "true"
+    # Configure Claude Agent SDK with custom MCP server
+    # This approach works on Railway and local - no external MCP infrastructure needed
+    #
+    # We define a custom MCP server that exposes Neo4j tools via stdio protocol
+    # The SDK launches this server and communicates with it automatically
+    current_dir = Path(__file__).parent
+    mcp_server_script = current_dir / "neo4j_mcp_server.py"
 
-    if use_mcp:
-        # Local dev with Claude Code: Use MCP Neo4j tools
-        options = ClaudeAgentOptions(
-            model="claude-sonnet-4-5-20250929",
-            permission_mode="bypassPermissions",
-            allowed_tools=[
-                "mcp__neo4j__get_neo4j_schema",
-                "mcp__neo4j__read_neo4j_cypher",
-            ],
+    # Configure MCP server
+    mcp_servers = {
+        "neo4j": McpStdioServerConfig(
+            command="python3",
+            args=[str(mcp_server_script)],
+            env={
+                "NEO4J_URI": os.getenv("NEO4J_URI", ""),
+                "NEO4J_USERNAME": os.getenv("NEO4J_USERNAME", ""),
+                "NEO4J_PASSWORD": os.getenv("NEO4J_PASSWORD", ""),
+                "NEO4J_DATABASE": os.getenv("NEO4J_DATABASE", "neo4j"),
+            }
         )
-    else:
-        # Production (Railway) or fallback: Use custom Neo4j tools (direct driver)
-        from neo4j_custom_tools import get_neo4j_tools_for_agent
-        custom_tools = get_neo4j_tools_for_agent()
+    }
 
-        options = ClaudeAgentOptions(
-            model="claude-sonnet-4-5-20250929",
-            permission_mode="bypassPermissions",
-            custom_tools=custom_tools,
-        )
+    options = ClaudeAgentOptions(
+        model="claude-sonnet-4-5-20250929",
+        permission_mode="acceptEdits",  # Works in non-interactive mode (Railway + local)
+        mcp_servers=mcp_servers,
+        allowed_tools=[
+            "neo4j__read_neo4j_cypher",
+            "neo4j__get_neo4j_schema",
+        ],
+    )
 
     debug_enabled = bool(os.getenv("KG_AGENT_DEBUG"))
 
