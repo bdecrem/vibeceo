@@ -129,7 +129,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
     # Uses CLAUDE_CODE_OAUTH_TOKEN from environment
     options = ClaudeAgentOptions(
         model="claude-sonnet-4-5-20250929",  # Claude Sonnet 4.5
-        permission_mode="acceptEdits",
+        permission_mode="bypassPermissions",  # Auto-approve all tool use
         allowed_tools=[
             "mcp__neo4j__get_neo4j_schema",
             "mcp__neo4j__read_neo4j_cypher",
