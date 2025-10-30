@@ -51,46 +51,22 @@ const DEFAULT_DATA_DIR = path.join(process.cwd(), 'data', 'arxiv-reports');
 // Helper Functions
 // ============================================================================
 
-/**
- * Check if papers already exist in Neo4j for given dates to avoid duplicate loading
- */
-async function checkIfPapersExist(dates: string[]): Promise<number> {
-  const driver = getDriver();
-  const session = driver.session();
-
-  try {
-    // Convert string dates to Neo4j date objects in the query
-    const result = await session.run(
-      `
-      MATCH (p:Paper)
-      WHERE p.published_date IN [date($date0), date($date1), date($date2)]
-      RETURN count(DISTINCT p) as count
-      `,
-      {
-        date0: dates[0] || '',
-        date1: dates[1] || '',
-        date2: dates[2] || ''
-      }
-    );
-
-    // Note: disableLosslessIntegers: true in driver config means count is a plain number
-    const count = result.records[0]?.get('count');
-    return typeof count === 'number' ? count : 0;
-  } finally {
-    await session.close();
-  }
-}
-
 async function loadPapersFromNeo4j(dates: string[]): Promise<PaperData[]> {
+  if (dates.length === 0) {
+    return [];
+  }
+
   const driver = getDriver();
   const session = driver.session();
 
   try {
-    // Convert string dates to Neo4j date objects in the query
     const result = await session.run(
       `
+      UNWIND $dates AS dateStr
       MATCH (p:Paper)
-      WHERE p.published_date IN [date($date0), date($date1), date($date2)]
+      WHERE
+        (p.published_date = date(dateStr)) OR
+        (p.published_date = dateStr)
       OPTIONAL MATCH (p)<-[:AUTHORED]-(a:Author)
       WITH p, collect({
         name: a.name,
@@ -100,32 +76,74 @@ async function loadPapersFromNeo4j(dates: string[]): Promise<PaperData[]> {
              p.title as title,
              p.abstract as abstract,
              p.categories as categories,
-             p.primary_category as primary_category,
              toString(p.published_date) as published_date,
              p.arxiv_url as arxiv_url,
              p.pdf_url as pdf_url,
+             p.author_notability_score as author_notability_score,
              authors
       ORDER BY p.published_date DESC
       `,
-      {
-        date0: dates[0] || '',
-        date1: dates[1] || '',
-        date2: dates[2] || ''
-      }
+      { dates }
     );
 
-    return result.records.map(record => ({
-      arxiv_id: record.get('arxiv_id'),
-      title: record.get('title'),
-      abstract: record.get('abstract'),
-      authors: record.get('authors').filter((a: any) => a.name), // Filter out null authors
-      categories: record.get('categories'),
-      published_date: record.get('published_date'),
-      arxiv_url: record.get('arxiv_url'),
-      pdf_url: record.get('pdf_url'),
-      primary_category: record.get('primary_category'),
-      updated_date: record.get('published_date'), // Use published as fallback
-    }));
+    return result.records.map((record) => {
+      const rawAuthors = (record.get('authors') as Array<{ name?: string; affiliation?: string | null }> | null) ?? [];
+      const authors: PaperAuthor[] = rawAuthors
+        .filter((author) => author?.name)
+        .map((author) => ({
+          name: author.name as string,
+          affiliation: author.affiliation ?? null,
+        }));
+
+      const categories = record.get('categories') as string[] | null;
+
+      return {
+        arxiv_id: record.get('arxiv_id') as string,
+        title: (record.get('title') as string) ?? '',
+        abstract: (record.get('abstract') as string) ?? '',
+        authors,
+        categories: Array.isArray(categories) ? categories : [],
+        published_date: record.get('published_date') as string,
+        arxiv_url: (record.get('arxiv_url') as string) ?? '',
+        pdf_url: (record.get('pdf_url') as string) ?? '',
+        author_notability_score: record.get('author_notability_score') as number | undefined,
+      };
+    });
+  } finally {
+    await session.close();
+  }
+}
+
+/**
+ * Return a per-date count of papers already stored in Neo4j
+ */
+async function getPaperCountsByDate(dates: string[]): Promise<Record<string, number>> {
+  if (dates.length === 0) {
+    return {};
+  }
+
+  const driver = getDriver();
+  const session = driver.session();
+
+  try {
+    const result = await session.run(
+      `
+      UNWIND $dates AS dateStr
+      OPTIONAL MATCH (p:Paper)
+      WHERE
+        (p.published_date = date(dateStr)) OR
+        (p.published_date = dateStr)
+      RETURN dateStr AS date, count(DISTINCT p) AS count
+      `,
+      { dates }
+    );
+
+    return result.records.reduce<Record<string, number>>((acc, record) => {
+      const date = record.get('date') as string;
+      const count = record.get('count');
+      acc[date] = typeof count === 'number' ? count : 0;
+      return acc;
+    }, {});
   } finally {
     await session.close();
   }
@@ -776,11 +794,12 @@ export async function runAndStoreArxivGraphReport(options?: {
   date?: string;
   forceLoad?: boolean;
 }): Promise<ArxivReportMetadata> {
-  // Report date is TODAY in Pacific Time
-  // Data fetched is from the 3 days BEFORE today
+  // Use YESTERDAY in Pacific Time (arXiv publishes daily around midnight UTC = 5pm PT previous day)
+  // So at 6am PT we fetch yesterday's papers which are already published
   const reportDate = options?.date || (() => {
     const now = new Date();
     const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+    pacificNow.setDate(pacificNow.getDate() - 1);
     const year = pacificNow.getFullYear();
     const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
     const day = String(pacificNow.getDate()).padStart(2, '0');
@@ -790,15 +809,16 @@ export async function runAndStoreArxivGraphReport(options?: {
   const startTime = Date.now();
 
   console.log(`\n=== arXiv Research Agent - ${reportDate} ===\n`);
+  console.log('### NEW CODE LOADED MARKER ###');
 
   try {
     // Stage 1: Fetch papers from last 3 days (handles arXiv indexing delays)
     const datesToFetch: string[] = [];
 
     if (options?.date) {
-      // If explicit date provided, fetch the 3 days BEFORE that date
+      // If explicit date provided, fetch that date plus 2 days before
       const baseDate = new Date(options.date);
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 0; i < 3; i++) {
         const d = new Date(baseDate);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
@@ -807,10 +827,10 @@ export async function runAndStoreArxivGraphReport(options?: {
         datesToFetch.push(`${year}-${month}-${day}`);
       }
     } else {
-      // Default: fetch the 3 days BEFORE today (yesterday, 2 days ago, 3 days ago)
+      // Default: fetch today, yesterday, and two days ago (captures stragglers)
       const now = new Date();
       const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      for (let i = 1; i <= 3; i++) {
+      for (let i = 0; i < 3; i++) {
         const d = new Date(pacificNow);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
@@ -821,48 +841,57 @@ export async function runAndStoreArxivGraphReport(options?: {
     }
 
     console.log(`Fetching papers from ${datesToFetch.length} days: ${datesToFetch.join(', ')}`);
+    console.log('[DEBUG] Dedup check alive - build includes latest code');
 
-    // Check if papers already exist in Neo4j for these dates
-    const existingPaperCount = await checkIfPapersExist(datesToFetch);
-    if (existingPaperCount > 0 && !options?.forceLoad) {
-      console.log(`ℹ️  Found ${existingPaperCount} existing papers in Neo4j for dates: ${datesToFetch.join(', ')}`);
-      console.log(`   Skipping arXiv API calls to avoid redundant fetching`);
-      console.log(`   (Neo4j loading will also be skipped later)`);
+    const paperCounts = await getPaperCountsByDate(datesToFetch);
+    console.log(
+      'Existing paper counts:',
+      Object.entries(paperCounts)
+        .map(([date, count]) => `${date}:${count}`)
+        .join(', ') || '(none)'
+    );
+    const existingDates: string[] = [];
+    const datesNeedingFetch: string[] = [];
+
+    for (const date of datesToFetch) {
+      const count = paperCounts[date] ?? 0;
+      if (!options?.forceLoad && count > 0) {
+        existingDates.push(date);
+      } else {
+        datesNeedingFetch.push(date);
+      }
     }
 
-    // Fetch papers for each date (only if not already loaded)
-    const allPapers: PaperData[] = [];
-    let lastJsonPath = '';
-
-    const shouldSkipFetch = existingPaperCount > 0 && !options?.forceLoad;
-
-    if (!shouldSkipFetch) {
-      for (const date of datesToFetch) {
-        const { jsonPath, papers } = await fetchPapersStage(date);
-        allPapers.push(...papers);
-        lastJsonPath = jsonPath; // Keep last path for curation stage
-        console.log(`  ${date}: ${papers.length} papers`);
-      }
-    } else {
-      // Papers already exist - load from Neo4j instead of fetching
-      console.log(`📥 Loading papers from Neo4j instead of arXiv...`);
-      const papers = await loadPapersFromNeo4j(datesToFetch);
-      allPapers.push(...papers);
-      console.log(`  Loaded ${papers.length} papers from Neo4j`);
-
-      // Create a JSON file for compatibility with curation stage
-      const dataDir = await ensureDataDirExists();
-      lastJsonPath = path.join(dataDir, `arxiv_papers_${datesToFetch[0]}.json`);
-      const fetchedData = {
-        fetch_date: new Date().toISOString(),
-        target_date: datesToFetch[0],
-        total_papers: papers.length,
-        categories: ['cs.AI', 'cs.LG', 'cs.CV', 'cs.CL', 'stat.ML'],
-        papers,
-      };
-      await import('node:fs/promises').then(({ writeFile }) =>
-        writeFile(lastJsonPath, JSON.stringify(fetchedData, null, 2))
+    if (existingDates.length && !options?.forceLoad) {
+      const totalExisting = existingDates.reduce((sum, date) => sum + (paperCounts[date] ?? 0), 0);
+      console.log(
+        `ℹ️  Found ${totalExisting} existing papers in Neo4j for dates: ${existingDates.join(', ')}`
       );
+      for (const date of existingDates) {
+        console.log(`   • ${date}: ${paperCounts[date] ?? 0} papers already stored`);
+      }
+    }
+
+    if (datesNeedingFetch.length === 0) {
+      console.log('All requested dates already exist in Neo4j; skipping arXiv fetch.');
+    }
+
+    const allPapers: PaperData[] = [];
+    const newlyFetchedPapers: PaperData[] = [];
+
+    if (existingDates.length && !options?.forceLoad) {
+      const neo4jPapers = await loadPapersFromNeo4j(existingDates);
+      allPapers.push(...neo4jPapers);
+      console.log(
+        `📥 Loaded ${neo4jPapers.length} papers from Neo4j for dates: ${existingDates.join(', ')}`
+      );
+    }
+
+    for (const date of datesNeedingFetch) {
+      const { papers } = await fetchPapersStage(date);
+      allPapers.push(...papers);
+      newlyFetchedPapers.push(...papers);
+      console.log(`  ${date}: ${papers.length} papers (fetched from arXiv)`);
     }
 
     // Deduplicate papers by arxiv_id
@@ -893,57 +922,81 @@ export async function runAndStoreArxivGraphReport(options?: {
     );
     console.log(`Wrote combined papers to: ${combinedJsonPath}`);
 
-    // Load papers into Neo4j graph (skip if already loaded, checked earlier)
-    if (!shouldSkipFetch) {
-      await loadPapersIntoGraphFromJson(combinedJsonPath);
+    const hasNewPapers = newlyFetchedPapers.length > 0;
+
+    if (hasNewPapers) {
+      const uniqueNewPapers = deduplicatePapers(newlyFetchedPapers);
+      const newJsonPath = path.join(dataDir, `arxiv_papers_new_${reportDate}.json`);
+      const newData = {
+        fetch_date: new Date().toISOString(),
+        target_date: reportDate,
+        total_papers: uniqueNewPapers.length,
+        categories: ['cs.AI', 'cs.LG', 'cs.CV', 'cs.CL', 'stat.ML'],
+        papers: uniqueNewPapers,
+      };
+      await import('node:fs/promises').then(({ writeFile }) =>
+        writeFile(newJsonPath, JSON.stringify(newData, null, 2))
+      );
+      await loadPapersIntoGraphFromJson(newJsonPath);
     } else {
-      console.log(`✓ Skipping Neo4j load - papers already exist`);
+      console.log('✓ No new papers to load into Neo4j');
     }
 
-    // Stage 1c: Fuzzy match new authors from today
-    console.log('Running Stage 1c: Fuzzy Match New Authors...');
-    try {
-      await runPythonScript(
-        FUZZY_MATCH_SCRIPT,
-        ['--date', reportDate],
-        'Stage 1c: Fuzzy Match New Authors',
-        {
-          extraEnv: {
-            NEO4J_URI: requireEnvVar('NEO4J_URI'),
-            NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
-            NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
-            NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
-          },
-        }
-      );
-      console.log('✓ Fuzzy matching complete');
-    } catch (error) {
-      // Non-fatal - continue even if fuzzy matching fails
-      console.warn('⚠️ Fuzzy matching failed (non-fatal):', error);
-    }
+    if (hasNewPapers) {
+      // Stage 1c: Fuzzy match new authors from today
+      console.log('Running Stage 1c: Fuzzy Match New Authors...');
+      try {
+        await runPythonScript(
+          FUZZY_MATCH_SCRIPT,
+          ['--date', reportDate],
+          'Stage 1c: Fuzzy Match New Authors',
+          {
+            extraEnv: {
+              NEO4J_URI: requireEnvVar('NEO4J_URI'),
+              NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
+              NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
+              NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
+            },
+          }
+        );
+        console.log('✓ Fuzzy matching complete');
+      } catch (error) {
+        // Non-fatal - continue even if fuzzy matching fails
+        console.warn('⚠️ Fuzzy matching failed (non-fatal):', error);
+      }
 
-    // Stage 1d: Enrich authors with GitHub and Semantic Scholar data
-    console.log('Running Stage 1d: Enrich Authors...');
-    const arxivIdsForEnrichment = combinedData.papers.map((p: any) => p.arxiv_id).join(',');
-    try {
-      await runPythonScript(
-        ENRICH_SCRIPT,
-        ['--arxiv-ids', arxivIdsForEnrichment],
-        'Stage 1d: Enrich Authors',
-        {
-          extraEnv: {
-            NEO4J_URI: requireEnvVar('NEO4J_URI'),
-            NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
-            NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
-            NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
-            GITHUB_API_TOKEN: process.env.GITHUB_API_TOKEN,
-          },
-        }
+      // Stage 1d: Enrich authors with GitHub and Semantic Scholar data
+      console.log('Running Stage 1d: Enrich Authors...');
+      const newArxivIds = Array.from(
+        new Set(newlyFetchedPapers.map((paper) => paper.arxiv_id).filter((id): id is string => Boolean(id)))
       );
-      console.log('✓ Author enrichment complete');
-    } catch (error) {
-      // Non-fatal - continue even if enrichment fails
-      console.warn('⚠️ Author enrichment failed (non-fatal):', error);
+
+      if (newArxivIds.length) {
+        try {
+          await runPythonScript(
+            ENRICH_SCRIPT,
+            ['--arxiv-ids', newArxivIds.join(',')],
+            'Stage 1d: Enrich Authors',
+            {
+              extraEnv: {
+                NEO4J_URI: requireEnvVar('NEO4J_URI'),
+                NEO4J_USERNAME: requireEnvVar('NEO4J_USERNAME'),
+                NEO4J_PASSWORD: requireEnvVar('NEO4J_PASSWORD'),
+                NEO4J_DATABASE: process.env.NEO4J_DATABASE || 'neo4j',
+                GITHUB_API_TOKEN: process.env.GITHUB_API_TOKEN,
+              },
+            }
+          );
+          console.log('✓ Author enrichment complete');
+        } catch (error) {
+          // Non-fatal - continue even if enrichment fails
+          console.warn('⚠️ Author enrichment failed (non-fatal):', error);
+        }
+      } else {
+        console.log('No new arXiv IDs to enrich.');
+      }
+    } else {
+      console.log('✓ No new papers detected; skipping fuzzy matching and author enrichment');
     }
 
     // Stage 2: Curate top papers and generate report
