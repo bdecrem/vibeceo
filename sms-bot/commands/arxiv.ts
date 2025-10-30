@@ -418,7 +418,8 @@ export const arxivCommandHandler: CommandHandler = {
   name: 'arxiv',
   matches(context: CommandContext): boolean {
     const upper = context.messageUpper;
-    if (upper.startsWith('ARXIV-GRAPH')) {
+    // Don't handle ARXIV-GRAPH or ARXIV-RESEARCH-GRAPH (handled by arxiv-graph.ts)
+    if (upper.startsWith('ARXIV-GRAPH') || upper.startsWith('ARXIV-RESEARCH-GRAPH')) {
       return false;
     }
     return upper.startsWith('ARXIV');

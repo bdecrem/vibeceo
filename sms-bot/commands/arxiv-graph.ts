@@ -20,15 +20,22 @@ function parseArxivGraphCommand(messageUpper: string): {
 } {
   const trimmed = messageUpper.trim();
 
-  if (!trimmed.startsWith(ARXIV_GRAPH_PREFIX)) {
+  // Support both "ARXIV-GRAPH" and "ARXIV-RESEARCH-GRAPH" prefixes
+  let remainder = '';
+  if (trimmed.startsWith('ARXIV-RESEARCH-GRAPH')) {
+    if (trimmed === 'ARXIV-RESEARCH-GRAPH') {
+      return { subcommand: 'REPORT', args: [] };
+    }
+    remainder = trimmed.slice('ARXIV-RESEARCH-GRAPH'.length).trim();
+  } else if (trimmed.startsWith(ARXIV_GRAPH_PREFIX)) {
+    if (trimmed === ARXIV_GRAPH_PREFIX) {
+      return { subcommand: 'REPORT', args: [] };
+    }
+    remainder = trimmed.slice(ARXIV_GRAPH_PREFIX.length).trim();
+  } else {
     return { subcommand: '', args: [] };
   }
 
-  if (trimmed === ARXIV_GRAPH_PREFIX) {
-    return { subcommand: 'REPORT', args: [] };
-  }
-
-  const remainder = trimmed.slice(ARXIV_GRAPH_PREFIX.length).trim();
   if (!remainder) {
     return { subcommand: 'REPORT', args: [] };
   }
@@ -213,7 +220,9 @@ ARXIV-GRAPH UNSUBSCRIBE
 export const arxivGraphCommandHandler: CommandHandler = {
   name: 'arxiv-graph',
   matches(context: CommandContext): boolean {
-    return context.messageUpper.startsWith(ARXIV_GRAPH_PREFIX);
+    const upper = context.messageUpper;
+    // Match both "ARXIV-GRAPH" and "ARXIV-RESEARCH-GRAPH"
+    return upper.startsWith(ARXIV_GRAPH_PREFIX) || upper.startsWith('ARXIV-RESEARCH-GRAPH');
   },
   async handle(context: CommandContext): Promise<boolean> {
     const messageUpper = context.message.trim().toUpperCase();
