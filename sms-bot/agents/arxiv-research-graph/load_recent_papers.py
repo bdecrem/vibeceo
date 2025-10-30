@@ -117,8 +117,57 @@ def read_config_from_env() -> Neo4jConfig:
     )
 
 
-def fetch_recent_papers(days: int, end_date: date, max_results: int | None) -> list[dict[str, Any]]:
-    """Fetch AI/ML papers from arXiv within a date window."""
+def fetch_existing_paper_ids(config: Neo4jConfig, start_date: date, end_date: date) -> set[str]:
+    """Fetch arxiv_id values for papers already in Neo4j for the given date range."""
+    driver = GraphDatabase.driver(config.uri, auth=(config.username, config.password))
+
+    try:
+        driver.verify_connectivity()
+        logging.info("Querying Neo4j for existing papers between %s and %s...", start_date, end_date)
+    except Neo4jError as exc:
+        logging.warning("Failed to connect to Neo4j for deduplication check: %s", exc)
+        return set()
+
+    existing_ids: set[str] = set()
+
+    with driver.session(database=config.database) as session:
+        result = session.run(
+            """
+            MATCH (p:Paper)
+            WHERE p.published_date >= date($start_date)
+              AND p.published_date <= date($end_date)
+            RETURN p.arxiv_id AS arxiv_id
+            """,
+            start_date=start_date.isoformat(),
+            end_date=end_date.isoformat(),
+        )
+
+        for record in result:
+            arxiv_id = record.get("arxiv_id")
+            if arxiv_id:
+                existing_ids.add(arxiv_id)
+
+    driver.close()
+    logging.info("Found %s existing papers in Neo4j for date range.", len(existing_ids))
+    return existing_ids
+
+
+def fetch_recent_papers(
+    days: int,
+    end_date: date,
+    max_results: int | None,
+    config: Neo4jConfig | None = None,
+    existing_ids: set[str] | None = None
+) -> list[dict[str, Any]]:
+    """Fetch AI/ML papers from arXiv within a date window.
+
+    Args:
+        days: Number of days to fetch
+        end_date: Last date to include
+        max_results: Maximum papers to fetch (None for unlimited)
+        config: Neo4j config for deduplication (optional)
+        existing_ids: Pre-fetched set of existing paper IDs (optional)
+    """
     category_query = " OR ".join(f"cat:{cat}" for cat in AI_CATEGORIES)
     client = arxiv.Client(
         page_size=100,
@@ -126,15 +175,24 @@ def fetch_recent_papers(days: int, end_date: date, max_results: int | None) -> l
         num_retries=3,
     )
 
+    # Fetch existing IDs from Neo4j if config provided and existing_ids not passed
+    if existing_ids is None and config is not None:
+        start_date = end_date - timedelta(days=days - 1)
+        existing_ids = fetch_existing_paper_ids(config, start_date, end_date)
+    elif existing_ids is None:
+        existing_ids = set()
+
     logging.info(
-        "Fetching arXiv papers for the %s-day window ending on %s (limit=%s)...",
+        "Fetching arXiv papers for the %s-day window ending on %s (limit=%s, %s already in Neo4j)...",
         days,
         end_date.isoformat(),
         max_results or "none",
+        len(existing_ids),
     )
 
     seen_ids: set[str] = set()
     papers: list[dict[str, Any]] = []
+    skipped_existing = 0
 
     for offset in range(days):
         current_date = end_date - timedelta(days=offset)
@@ -182,13 +240,24 @@ def fetch_recent_papers(days: int, end_date: date, max_results: int | None) -> l
             paper_dict = serialize_result(result)
             arxiv_id = paper_dict["arxiv_id"]
 
+            # Skip if already in Neo4j
+            if arxiv_id in existing_ids:
+                skipped_existing += 1
+                continue
+
+            # Skip if already fetched in this run
             if arxiv_id in seen_ids:
                 continue
 
             seen_ids.add(arxiv_id)
             papers.append(paper_dict)
 
-    logging.info("Fetched %s unique papers across %s days.", len(papers), days)
+    logging.info(
+        "Fetched %s unique papers across %s days (skipped %s already in Neo4j).",
+        len(papers),
+        days,
+        skipped_existing,
+    )
     return papers
 
 
@@ -387,6 +456,7 @@ def main() -> None:
             days=args.days,
             end_date=args.end_date,
             max_results=limit,
+            config=neo4j_config,  # Enable deduplication
         )
 
     if args.dry_run:
