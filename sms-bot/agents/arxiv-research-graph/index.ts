@@ -794,12 +794,11 @@ export async function runAndStoreArxivGraphReport(options?: {
   date?: string;
   forceLoad?: boolean;
 }): Promise<ArxivReportMetadata> {
-  // Use YESTERDAY in Pacific Time (arXiv publishes daily around midnight UTC = 5pm PT previous day)
-  // So at 6am PT we fetch yesterday's papers which are already published
+  // Use TODAY in Pacific Time as the report date
+  // The report analyzes papers from the prior 3 days (not today's date)
   const reportDate = options?.date || (() => {
     const now = new Date();
     const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-    pacificNow.setDate(pacificNow.getDate() - 1);
     const year = pacificNow.getFullYear();
     const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
     const day = String(pacificNow.getDate()).padStart(2, '0');
@@ -827,10 +826,11 @@ export async function runAndStoreArxivGraphReport(options?: {
         datesToFetch.push(`${year}-${month}-${day}`);
       }
     } else {
-      // Default: fetch today, yesterday, and two days ago (captures stragglers)
+      // Default: fetch prior 3 days (yesterday, 2 days ago, 3 days ago)
+      // Today's papers aren't published yet
       const now = new Date();
       const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-      for (let i = 0; i < 3; i++) {
+      for (let i = 1; i <= 3; i++) {
         const d = new Date(pacificNow);
         d.setDate(d.getDate() - i);
         const year = d.getFullYear();
