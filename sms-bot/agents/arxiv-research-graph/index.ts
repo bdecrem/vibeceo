@@ -156,8 +156,8 @@ const ENRICH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph',
 // Use system python3 by default (works on any Mac). Override with PYTHON_BIN env var if needed.
 const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
 
-const ARXIV_JOB_HOUR = Number(process.env.ARXIV_REPORT_HOUR || 6);
-const ARXIV_JOB_MINUTE = Number(process.env.ARXIV_REPORT_MINUTE || 0);
+const ARXIV_GRAPH_JOB_HOUR = Number(process.env.ARXIV_GRAPH_REPORT_HOUR || 5);
+const ARXIV_GRAPH_JOB_MINUTE = Number(process.env.ARXIV_GRAPH_REPORT_MINUTE || 0);
 const ARXIV_MAX_PAPERS = Number(process.env.ARXIV_MAX_PAPERS || 1000);
 
 const REPORTS_BUCKET = process.env.AGENT_REPORTS_BUCKET || 'agent-reports';
@@ -1191,8 +1191,8 @@ export async function buildArxivReportMessage(
 export function registerArxivGraphDailyJob(twilioClient: TwilioClient): void {
   registerDailyJob({
     name: 'arxiv-graph-daily-report',
-    hour: ARXIV_JOB_HOUR,
-    minute: ARXIV_JOB_MINUTE,
+    hour: ARXIV_GRAPH_JOB_HOUR,
+    minute: ARXIV_GRAPH_JOB_MINUTE,
     run: async () => {
       console.log('Starting arXiv graph daily job...');
 
@@ -1249,6 +1249,6 @@ export function registerArxivGraphDailyJob(twilioClient: TwilioClient): void {
   });
 
   console.log(
-    `arXiv graph daily job registered for ${ARXIV_JOB_HOUR}:${String(ARXIV_JOB_MINUTE).padStart(2, '0')} PT`
+    `arXiv graph daily job registered for ${ARXIV_GRAPH_JOB_HOUR}:${String(ARXIV_GRAPH_JOB_MINUTE).padStart(2, '0')} PT`
   );
 }

@@ -4,4 +4,5 @@ supabase==2.15.3
 Pillow==10.0.0
 openai>=1.0.0
 claude-agent-sdk>=0.1.0
-arxiv>=2.1.0 
+arxiv>=2.1.0
+neo4j>=5.18.0 
