@@ -395,11 +395,11 @@ async function generateArxivSmsDigest(
   const openai = getOpenAIClient();
 
   const audioLine = params.audioLink
-    ? `🎧 Listen: ${params.audioLink}`
+    ? `Hear it here: ${params.audioLink} or text LINKS.`
     : null;
   const reportLine = `📄 Full: ${params.reportLink}`;
   const closingLines = audioLine ? [audioLine, reportLine] : [reportLine];
-  const header = `📚 arXiv Today - ${params.date}`;
+  const header = `arXiv Today - ${params.date} 📚`;
 
   const promptLines = [
     "Summarize today's AI research trends from the following executive summary in a short SMS body (max 230 characters).",
@@ -452,7 +452,7 @@ function sanitizeGeneratedBody(
   header: string,
   closingLines: string[]
 ): string {
-  const disallowedPrefixes = ['🎧 listen:', '📄 full:'];
+  const disallowedPrefixes = ['hear it here:', '📄 full:'];
 
   const lines = rawBody
     .split(/\r?\n/)
@@ -530,11 +530,11 @@ function composeSmsMessage(
 
 function buildFallbackSmsDigest(params: SmsDigestParams): string {
   const audioLine = params.audioLink
-    ? `🎧 Listen: ${params.audioLink}`
+    ? `Hear it here: ${params.audioLink} or text LINKS.`
     : null;
   const reportLine = `📄 Full: ${params.reportLink}`;
   const closingLines = audioLine ? [audioLine, reportLine] : [reportLine];
-  const header = `📚 arXiv Today - ${params.date}`;
+  const header = `arXiv Today - ${params.date} 📚`;
   const body = params.executiveSummary.replace(/\s+/g, ' ').trim();
 
   return composeSmsMessage(header, body, closingLines);
