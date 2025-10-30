@@ -269,7 +269,7 @@ function parseJsonOutput(stdout: string): FetchResult | CurationResult {
 }
 
 function extractExecutiveSummary(markdown: string): string {
-  const MAX_SMS_SUMMARY_LENGTH = 200; // Keep it short to fit in single SMS with links
+  const MAX_SMS_SUMMARY_LENGTH = 320; // Match arxiv-research limit, fits in single SMS with links
 
   const lines = markdown.split(/\r?\n/);
   const headerIndex = lines.findIndex((line) =>

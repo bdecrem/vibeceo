@@ -247,7 +247,14 @@ You have access to:
 
 ## Executive Summary
 
-[Write 2-3 compelling sentences about key themes/breakthroughs across today's papers. Mention trending areas from graph context.]
+[Write 1-2 SPECIFIC, DATA-DRIVEN sentences (MAX 320 chars total for SMS). Focus on CONCRETE findings:
+- Name specific research areas/breakthroughs (e.g., "3 papers on diffusion models," "breakthrough in RL from DeepMind")
+- Use NUMBERS from graph context (e.g., "Computer vision up 40% this week")
+- Mention SPECIFIC authors if notable (e.g., "Yann LeCun published on...")
+- State WHAT CHANGED, not generic excitement
+- AVOID: "buzzing," "exciting," "promising" without specifics
+- GOOD: "Transformer efficiency dominated with 4 papers. MIT team achieved 10x speedup."
+- BAD: "Today's AI scene is buzzing with excitement!"]
 
 ---
 

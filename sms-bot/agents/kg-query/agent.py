@@ -161,6 +161,8 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
         allowed_tools=[
             "neo4j__read_neo4j_cypher",
             "neo4j__get_neo4j_schema",
+            "read_neo4j_cypher",
+            "get_neo4j_schema",
         ],
     )
 
@@ -198,10 +200,10 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
         stream.write(body)
         stream.flush()
 
-    def _verify_mcp_server() -> Tuple[bool, str]:
+    def _verify_mcp_server() -> Tuple[bool, str, List[str]]:
         """
         Launch MCP server once to verify it starts and advertises expected tools.
-        Returns (ok, error_message).
+        Returns (ok, error_message, tool_names).
         """
         try:
             proc = subprocess.Popen(
@@ -212,11 +214,11 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
                 env=server_env,
             )
         except Exception as exc:  # noqa: BLE001
-            return False, f"Failed to launch MCP server: {exc}"
+            return False, f"Failed to launch MCP server: {exc}", []
 
         try:
             if proc.stdin is None or proc.stdout is None:
-                return False, "MCP server process streams not available"
+                return False, "MCP server process streams not available", []
 
             init_payload = {
                 "jsonrpc": "2.0",
@@ -231,7 +233,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
             init_response = _read_mcp_message(proc.stdout)
 
             if not init_response or init_response.get("error"):
-                return False, f"Initialize failed: {init_response}"
+                return False, f"Initialize failed: {init_response}", []
 
             _write_mcp_message(
                 proc.stdin,
@@ -242,7 +244,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
             tool_names = [tool.get("name") for tool in tools]
 
             if "read_neo4j_cypher" not in tool_names or "get_neo4j_schema" not in tool_names:
-                return False, f"Unexpected tool list: {tool_names}"
+                return False, f"Unexpected tool list: {tool_names}", tool_names
 
             # Graceful shutdown
             _write_mcp_message(
@@ -250,7 +252,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
                 {"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}},
             )
             _read_mcp_message(proc.stdout)
-            return True, ""
+            return True, "", tool_names
         except Exception as exc:  # noqa: BLE001
             stderr_output = ""
             try:
@@ -262,7 +264,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
             message = f"Preflight error: {exc}"
             if stderr_output:
                 message += f" | stderr: {stderr_output.strip()}"
-            return False, message
+            return False, message, []
         finally:
             try:
                 if proc.stdin:
@@ -278,7 +280,11 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
                 except Exception:
                     proc.kill()
 
-    ok, preflight_error = _verify_mcp_server()
+    ok, preflight_error, advertised_tools = _verify_mcp_server()
+    print(
+        f"[KG Agent] MCP preflight status: {'ok' if ok else 'failed'}, tools={advertised_tools}",
+        file=sys.stderr
+    )
     if not ok:
         error_text = textwrap.dedent(f"""
             Neo4j MCP server preflight failed.
