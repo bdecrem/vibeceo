@@ -59,13 +59,18 @@ async function checkIfPapersExist(dates: string[]): Promise<number> {
   const session = driver.session();
 
   try {
+    // Convert string dates to Neo4j date objects in the query
     const result = await session.run(
       `
       MATCH (p:Paper)
-      WHERE p.published_date IN $dates
+      WHERE p.published_date IN [date($date0), date($date1), date($date2)]
       RETURN count(DISTINCT p) as count
       `,
-      { dates: dates.map(d => d) }
+      {
+        date0: dates[0] || '',
+        date1: dates[1] || '',
+        date2: dates[2] || ''
+      }
     );
 
     return result.records[0]?.get('count')?.toNumber() || 0;
@@ -79,10 +84,11 @@ async function loadPapersFromNeo4j(dates: string[]): Promise<PaperData[]> {
   const session = driver.session();
 
   try {
+    // Convert string dates to Neo4j date objects in the query
     const result = await session.run(
       `
       MATCH (p:Paper)
-      WHERE p.published_date IN $dates
+      WHERE p.published_date IN [date($date0), date($date1), date($date2)]
       OPTIONAL MATCH (p)<-[:AUTHORED]-(a:Author)
       WITH p, collect({
         name: a.name,
@@ -99,7 +105,11 @@ async function loadPapersFromNeo4j(dates: string[]): Promise<PaperData[]> {
              authors
       ORDER BY p.published_date DESC
       `,
-      { dates }
+      {
+        date0: dates[0] || '',
+        date1: dates[1] || '',
+        date2: dates[2] || ''
+      }
     );
 
     return result.records.map(record => ({
