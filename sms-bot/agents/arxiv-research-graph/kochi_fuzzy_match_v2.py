@@ -391,8 +391,8 @@ def main():
         if args.dry_run:
             print("🔍 DRY RUN MODE - No changes will be made\n")
 
-        # Generate checkpoint ID based on date range
-        checkpoint_id = f"fuzzy_match_{args.date_start or args.date or 'all'}_{args.date_end or ''}"
+        # Generate checkpoint ID based on date range (support both --date-* and --paper-date-* args)
+        checkpoint_id = f"fuzzy_match_{args.paper_date_start or args.date_start or args.date or 'all'}_{args.paper_date_end or args.date_end or ''}"
 
         # Load checkpoint to resume from previous run
         processed_kids, stats = load_checkpoint(checkpoint_id)
