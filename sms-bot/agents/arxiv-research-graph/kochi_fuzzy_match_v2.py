@@ -16,13 +16,17 @@ Usage:
 """
 
 import argparse
+import json
 import os
 import sys
+import time
 from datetime import datetime
+from pathlib import Path
 from typing import List, Dict, Optional, Set
 from dataclasses import dataclass
 
 from neo4j import GraphDatabase
+from neo4j.exceptions import SessionExpired, ServiceUnavailable
 
 # Neo4j configuration
 NEO4J_URI = os.getenv("NEO4J_URI")
@@ -42,6 +46,72 @@ WEIGHT_NAME_AFFILIATION = 30
 WEIGHT_RESEARCH_AREA_2_PLUS = 20
 WEIGHT_RESEARCH_AREA_1 = 10
 
+# Connection management
+RECONNECT_AFTER_AUTHORS = 500  # Refresh connection every N authors
+MAX_RETRIES = 3  # Retry failed operations
+RETRY_DELAY = 2  # Seconds to wait between retries
+
+# Checkpoint file
+CHECKPOINT_DIR = Path(__file__).parent / '.fuzzy_match_checkpoints'
+
+
+def retry_on_connection_error(func):
+    """Decorator to retry Neo4j operations on connection errors."""
+    def wrapper(*args, **kwargs):
+        for attempt in range(MAX_RETRIES):
+            try:
+                return func(*args, **kwargs)
+            except (SessionExpired, ServiceUnavailable) as e:
+                if attempt < MAX_RETRIES - 1:
+                    print(f"⚠️  Connection error (attempt {attempt + 1}/{MAX_RETRIES}): {e}")
+                    print(f"   Retrying in {RETRY_DELAY} seconds...")
+                    time.sleep(RETRY_DELAY)
+                else:
+                    print(f"❌ Connection failed after {MAX_RETRIES} attempts")
+                    raise
+    return wrapper
+
+
+def save_checkpoint(checkpoint_id: str, processed_kids: Set[str], stats: Dict):
+    """Save processing checkpoint to disk."""
+    CHECKPOINT_DIR.mkdir(exist_ok=True)
+    checkpoint_file = CHECKPOINT_DIR / f"{checkpoint_id}.json"
+
+    checkpoint_data = {
+        'processed_kids': list(processed_kids),
+        'stats': stats,
+        'timestamp': datetime.now().isoformat()
+    }
+
+    with open(checkpoint_file, 'w') as f:
+        json.dump(checkpoint_data, f, indent=2)
+
+
+def load_checkpoint(checkpoint_id: str) -> tuple[Set[str], Dict]:
+    """Load processing checkpoint from disk."""
+    checkpoint_file = CHECKPOINT_DIR / f"{checkpoint_id}.json"
+
+    if not checkpoint_file.exists():
+        return set(), {'processed': 0, 'canonical_self': 0, 'matched_to_existing': 0, 'uncertain': 0}
+
+    with open(checkpoint_file, 'r') as f:
+        data = json.load(f)
+
+    processed_kids = set(data['processed_kids'])
+    stats = data['stats']
+
+    print(f"📂 Resuming from checkpoint: {len(processed_kids)} authors already processed")
+    print(f"   Last checkpoint: {data['timestamp']}")
+
+    return processed_kids, stats
+
+
+def delete_checkpoint(checkpoint_id: str):
+    """Delete checkpoint file after successful completion."""
+    checkpoint_file = CHECKPOINT_DIR / f"{checkpoint_id}.json"
+    if checkpoint_file.exists():
+        checkpoint_file.unlink()
+
 
 @dataclass
 class MatchResult:
@@ -60,6 +130,7 @@ class KochiFuzzyMatcherV2:
         self.driver = driver
         self.database = NEO4J_DATABASE
 
+    @retry_on_connection_error
     def find_similar_authors(self, author_name: str, exclude_kid: str) -> List[Dict]:
         """
         Find existing authors with same or similar name.
@@ -79,6 +150,7 @@ class KochiFuzzyMatcherV2:
             result = session.run(query, name=author_name, exclude_kid=exclude_kid)
             return [dict(record) for record in result]
 
+    @retry_on_connection_error
     def get_author_coauthors(self, kid: str) -> Set[str]:
         """Get set of co-author names for an author."""
         with self.driver.session(database=self.database) as session:
@@ -91,6 +163,7 @@ class KochiFuzzyMatcherV2:
             result = session.run(query, kid=kid)
             return {record["name"] for record in result}
 
+    @retry_on_connection_error
     def get_author_categories(self, kid: str) -> Set[str]:
         """Get set of research categories for an author."""
         with self.driver.session(database=self.database) as session:
@@ -171,6 +244,7 @@ class KochiFuzzyMatcherV2:
             reasoning=reasoning
         )
 
+    @retry_on_connection_error
     def assign_canonical_kid(self, author_kid: str, canonical_kid: str, confidence: int):
         """Assign canonical_kid to an author."""
         with self.driver.session(database=self.database) as session:
@@ -187,6 +261,7 @@ class KochiFuzzyMatcherV2:
                 confidence=confidence
             )
 
+    @retry_on_connection_error
     def mark_as_canonical_self(self, author_kid: str):
         """Mark author as its own canonical (no duplicates found)."""
         with self.driver.session(database=self.database) as session:
@@ -199,6 +274,7 @@ class KochiFuzzyMatcherV2:
             """
             session.run(query, kid=author_kid)
 
+    @retry_on_connection_error
     def mark_as_uncertain(self, author_kid: str, possible_canonical_kid: str, confidence: int):
         """Mark author as uncertain - needs human review."""
         with self.driver.session(database=self.database) as session:
@@ -315,20 +391,46 @@ def main():
         if args.dry_run:
             print("🔍 DRY RUN MODE - No changes will be made\n")
 
-        stats = {
-            'processed': 0,
-            'canonical_self': 0,
-            'matched_to_existing': 0,
-            'uncertain': 0
-        }
+        # Generate checkpoint ID based on date range
+        checkpoint_id = f"fuzzy_match_{args.date_start or args.date or 'all'}_{args.date_end or ''}"
 
-        for idx, author in enumerate(authors, 1):
+        # Load checkpoint to resume from previous run
+        processed_kids, stats = load_checkpoint(checkpoint_id)
+
+        # Filter out already processed authors
+        remaining_authors = [a for a in authors if a['kid'] not in processed_kids]
+
+        if remaining_authors:
+            print(f"📝 {len(remaining_authors)} authors remaining to process (of {len(authors)} total)\n")
+        else:
+            print("✅ All authors in this batch have been processed!")
+            delete_checkpoint(checkpoint_id)
+            sys.exit(0)
+
+        # Connection refresh counter
+        authors_since_reconnect = 0
+
+        for idx, author in enumerate(remaining_authors, 1):
             kid = author['kid']
             name = author['name']
             affiliation = author['affiliation']
 
-            if idx % 100 == 0 or idx == len(authors):
-                print(f"  📄 {idx}/{len(authors)} authors processed")
+            # Periodic connection refresh
+            authors_since_reconnect += 1
+            if authors_since_reconnect >= RECONNECT_AFTER_AUTHORS:
+                print(f"  🔄 Refreshing Neo4j connection after {RECONNECT_AFTER_AUTHORS} authors...")
+                driver.close()
+                driver = GraphDatabase.driver(
+                    NEO4J_URI,
+                    auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
+                )
+                matcher = KochiFuzzyMatcherV2(driver)
+                authors_since_reconnect = 0
+                print(f"  ✓ Connection refreshed")
+
+            if idx % 100 == 0 or idx == len(remaining_authors):
+                total_processed = len(processed_kids) + idx
+                print(f"  📄 {total_processed}/{len(authors)} total authors processed ({idx}/{len(remaining_authors)} in this session)")
 
             # Find similar authors (same name)
             similar = matcher.find_similar_authors(name, exclude_kid=kid)
@@ -374,6 +476,14 @@ def main():
                     stats['canonical_self'] += 1
 
             stats['processed'] += 1
+            processed_kids.add(kid)
+
+            # Save checkpoint every 100 authors
+            if idx % 100 == 0:
+                save_checkpoint(checkpoint_id, processed_kids, stats)
+
+        # Final checkpoint save
+        save_checkpoint(checkpoint_id, processed_kids, stats)
 
         # Print summary
         print("\n" + "="*60)
@@ -389,6 +499,10 @@ def main():
             print("ℹ️  This was a dry run. No changes were made.")
         else:
             print("✅ Canonical assignment complete!")
+
+        # Delete checkpoint after successful completion
+        delete_checkpoint(checkpoint_id)
+        print("🗑️  Checkpoint deleted")
 
     finally:
         driver.close()
