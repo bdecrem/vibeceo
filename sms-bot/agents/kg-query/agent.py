@@ -2,27 +2,308 @@
 """
 KG Query Agent - Claude Agent SDK Implementation
 
-Uses claude_agent_sdk.query() with custom MCP server for Neo4j graph queries.
-Works on Railway and local environments - no external MCP infrastructure needed.
+Queries Neo4j directly and injects results into prompt for Claude to process.
+No MCP tools needed - follows working pattern from arxiv-research-graph.
 """
 
 import argparse
 import asyncio
 import json
 import os
-import subprocess
 import sys
-import textwrap
+import re
+from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Any, Tuple
+from typing import Dict, List, Any, Optional
 
 # Import Claude Agent SDK
 try:
     from claude_agent_sdk import ClaudeAgentOptions, query
-    from claude_agent_sdk.types import McpStdioServerConfig
 except ImportError as e:
     print(f"Error importing claude-agent-sdk: {e}", file=sys.stderr)
     sys.exit(1)
+
+# Import Neo4j tools
+try:
+    from neo4j_tools import Neo4jTools
+except ImportError as e:
+    print(f"Error importing neo4j_tools: {e}", file=sys.stderr)
+    sys.exit(1)
+
+
+def classify_query_intent(user_query: str) -> str:
+    """
+    Classify user query into intent categories.
+
+    Returns:
+        - "top_authors" - asking about most productive/prolific authors
+        - "recent_papers" - asking about recent papers
+        - "topic_search" - asking about specific research area/keyword
+        - "author_lookup" - asking about a specific author
+        - "trending" - asking what's hot/trending
+        - "general" - fallback for everything else
+    """
+    query_lower = user_query.lower()
+
+    # Top authors
+    if any(phrase in query_lower for phrase in [
+        "top author", "most author", "prolific author", "who are the",
+        "best researcher", "leading researcher", "most productive"
+    ]):
+        return "top_authors"
+
+    # Recent papers
+    if any(phrase in query_lower for phrase in [
+        "recent paper", "latest paper", "new paper", "this week", "today",
+        "last few days", "yesterday", "past week"
+    ]):
+        return "recent_papers"
+
+    # Trending topics
+    if any(phrase in query_lower for phrase in [
+        "trending", "hot topic", "popular", "what's hot", "heating up",
+        "growing", "buzz", "momentum"
+    ]):
+        return "trending"
+
+    # Author lookup (contains names or mentions specific person)
+    if re.search(r'\b[A-Z][a-z]+ [A-Z][a-z]+\b', user_query):
+        return "author_lookup"
+
+    # Topic search (contains technical terms or "about")
+    if any(phrase in query_lower for phrase in [
+        "about", "related to", "on the topic", "papers on", "research on",
+        "transformer", "diffusion", "reinforcement", "vision", "language model"
+    ]):
+        return "topic_search"
+
+    return "general"
+
+
+def extract_topic_keywords(user_query: str) -> List[str]:
+    """Extract key research terms from user query."""
+    query_lower = user_query.lower()
+
+    # Common research keywords
+    keywords = []
+    terms = [
+        "transformer", "attention", "diffusion", "gan", "vae",
+        "reinforcement learning", "rl", "deep learning",
+        "computer vision", "nlp", "language model", "llm",
+        "neural network", "cnn", "rnn", "lstm", "bert", "gpt",
+        "multimodal", "self-supervised", "few-shot", "zero-shot"
+    ]
+
+    for term in terms:
+        if term in query_lower:
+            keywords.append(term)
+
+    # Also try to extract quoted phrases
+    quoted = re.findall(r'"([^"]+)"', user_query)
+    keywords.extend(quoted)
+
+    return keywords[:3]  # Limit to top 3
+
+
+def get_top_authors_data(neo4j: Neo4jTools, limit: int = 10) -> Dict[str, Any]:
+    """Query top authors by paper count."""
+    query = """
+    MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+    WHERE a.canonical_kid IS NOT NULL
+      AND a.migrated_from_old_system = true
+    WITH a.canonical_kid as canonical,
+         collect(DISTINCT a.name)[0] as name,
+         collect(DISTINCT a.affiliation)[0] as affiliation,
+         count(DISTINCT p) as paper_count
+    RETURN name, affiliation, paper_count
+    ORDER BY paper_count DESC
+    LIMIT $limit
+    """
+
+    try:
+        results = neo4j.execute_cypher(query, {"limit": limit})
+        return {
+            "type": "top_authors",
+            "count": len(results),
+            "authors": results
+        }
+    except Exception as e:
+        print(f"Error querying top authors: {e}", file=sys.stderr)
+        return {"type": "top_authors", "count": 0, "authors": [], "error": str(e)}
+
+
+def get_recent_papers_data(neo4j: Neo4jTools, days: int = 7, limit: int = 15) -> Dict[str, Any]:
+    """Query recent papers from last N days."""
+    cutoff_date = (datetime.now() - timedelta(days=days)).strftime("%Y-%m-%d")
+
+    query = """
+    MATCH (p:Paper)
+    WHERE p.published_date >= date($cutoff_date)
+    OPTIONAL MATCH (p)-[:IN_CATEGORY]->(c:Category)
+    WITH p, collect(DISTINCT c.name) as categories
+    RETURN p.arxiv_id as arxiv_id,
+           p.title as title,
+           p.abstract as abstract,
+           p.published_date as published_date,
+           p.featured_in_report as featured,
+           categories
+    ORDER BY p.published_date DESC
+    LIMIT $limit
+    """
+
+    try:
+        results = neo4j.execute_cypher(query, {"cutoff_date": cutoff_date, "limit": limit})
+        return {
+            "type": "recent_papers",
+            "days": days,
+            "count": len(results),
+            "papers": results
+        }
+    except Exception as e:
+        print(f"Error querying recent papers: {e}", file=sys.stderr)
+        return {"type": "recent_papers", "count": 0, "papers": [], "error": str(e)}
+
+
+def get_topic_papers_data(neo4j: Neo4jTools, keywords: List[str], limit: int = 10) -> Dict[str, Any]:
+    """Query papers matching topic keywords."""
+    if not keywords:
+        return {"type": "topic_search", "keywords": [], "count": 0, "papers": []}
+
+    # Build CONTAINS clauses for each keyword
+    keyword_conditions = " OR ".join([f"toLower(p.title) CONTAINS toLower('{kw}')" for kw in keywords])
+
+    query = f"""
+    MATCH (p:Paper)
+    WHERE {keyword_conditions}
+    OPTIONAL MATCH (p)-[:IN_CATEGORY]->(c:Category)
+    WITH p, collect(DISTINCT c.name) as categories
+    RETURN p.arxiv_id as arxiv_id,
+           p.title as title,
+           p.abstract as abstract,
+           p.published_date as published_date,
+           categories
+    ORDER BY p.published_date DESC
+    LIMIT $limit
+    """
+
+    try:
+        results = neo4j.execute_cypher(query, {"limit": limit})
+        return {
+            "type": "topic_search",
+            "keywords": keywords,
+            "count": len(results),
+            "papers": results
+        }
+    except Exception as e:
+        print(f"Error querying topic papers: {e}", file=sys.stderr)
+        return {"type": "topic_search", "keywords": keywords, "count": 0, "papers": [], "error": str(e)}
+
+
+def get_trending_topics_data(neo4j: Neo4jTools) -> Dict[str, Any]:
+    """Query trending research topics (week-over-week growth)."""
+    query = """
+    MATCH (p:Paper)-[:IN_CATEGORY]->(c:Category)
+    WHERE p.published_date >= date($start_date)
+      AND p.published_date <= date($end_date)
+    WITH c.name as category,
+         count(CASE
+           WHEN p.published_date >= date($recent_start)
+           THEN 1 END) as recent_count,
+         count(CASE
+           WHEN p.published_date < date($recent_start)
+           THEN 1 END) as earlier_count
+    WHERE recent_count >= 10
+    WITH category, recent_count, earlier_count,
+         (recent_count * 1.0 / CASE WHEN earlier_count > 0 THEN earlier_count ELSE 1 END) as growth
+    WHERE growth >= 1.3
+    RETURN category, recent_count, earlier_count, round(growth, 2) as growth
+    ORDER BY growth DESC, recent_count DESC
+    LIMIT 5
+    """
+
+    today = datetime.now()
+    params = {
+        "start_date": (today - timedelta(days=14)).strftime("%Y-%m-%d"),
+        "end_date": today.strftime("%Y-%m-%d"),
+        "recent_start": (today - timedelta(days=7)).strftime("%Y-%m-%d"),
+    }
+
+    try:
+        results = neo4j.execute_cypher(query, params)
+        return {
+            "type": "trending_topics",
+            "count": len(results),
+            "topics": results
+        }
+    except Exception as e:
+        print(f"Error querying trending topics: {e}", file=sys.stderr)
+        return {"type": "trending_topics", "count": 0, "topics": [], "error": str(e)}
+
+
+def format_graph_data_for_prompt(graph_data: Dict[str, Any]) -> str:
+    """Format graph query results as readable text for prompt."""
+    data_type = graph_data.get("type", "unknown")
+
+    if data_type == "top_authors":
+        authors = graph_data.get("authors", [])
+        if not authors:
+            return "No author data available."
+
+        lines = ["TOP AUTHORS (by paper count):"]
+        for i, author in enumerate(authors[:10], 1):
+            name = author.get("name", "Unknown")
+            papers = author.get("paper_count", 0)
+            affiliation = author.get("affiliation", "")
+            aff_text = f" ({affiliation})" if affiliation else ""
+            lines.append(f"{i}. {name}{aff_text}: {papers} papers")
+        return "\n".join(lines)
+
+    elif data_type == "recent_papers":
+        papers = graph_data.get("papers", [])
+        days = graph_data.get("days", 7)
+        if not papers:
+            return f"No papers found in last {days} days."
+
+        lines = [f"RECENT PAPERS (last {days} days, {len(papers)} found):"]
+        for i, paper in enumerate(papers[:15], 1):
+            title = paper.get("title", "Unknown")
+            arxiv_id = paper.get("arxiv_id", "")
+            date = paper.get("published_date", "")
+            featured = "⭐" if paper.get("featured") else ""
+            lines.append(f"{i}. [{arxiv_id}] {title[:80]}... {featured}")
+            lines.append(f"   Date: {date}")
+        return "\n".join(lines)
+
+    elif data_type == "topic_search":
+        papers = graph_data.get("papers", [])
+        keywords = graph_data.get("keywords", [])
+        if not papers:
+            return f"No papers found for keywords: {', '.join(keywords)}"
+
+        lines = [f"PAPERS MATCHING '{', '.join(keywords)}' ({len(papers)} found):"]
+        for i, paper in enumerate(papers[:10], 1):
+            title = paper.get("title", "Unknown")
+            arxiv_id = paper.get("arxiv_id", "")
+            date = paper.get("published_date", "")
+            lines.append(f"{i}. [{arxiv_id}] {title[:80]}...")
+            lines.append(f"   Date: {date}")
+        return "\n".join(lines)
+
+    elif data_type == "trending_topics":
+        topics = graph_data.get("topics", [])
+        if not topics:
+            return "No trending topics detected (distributed activity across categories)."
+
+        lines = ["TRENDING TOPICS (week-over-week growth):"]
+        for i, topic in enumerate(topics, 1):
+            category = topic.get("category", "Unknown")
+            growth = topic.get("growth", 0)
+            recent = topic.get("recent_count", 0)
+            earlier = topic.get("earlier_count", 0)
+            lines.append(f"{i}. {category}: {growth}x growth ({earlier}→{recent} papers)")
+        return "\n".join(lines)
+
+    return f"Graph data: {json.dumps(graph_data, indent=2)}"
 
 
 async def run_kg_query(
@@ -32,7 +313,7 @@ async def run_kg_query(
     clean_data_boundary: Dict[str, Any]
 ) -> str:
     """
-    Run KG query using Claude Agent SDK.
+    Run KG query using direct Neo4j queries + Claude Agent SDK.
 
     Args:
         user_query: User's natural language question
@@ -56,7 +337,55 @@ async def run_kg_query(
             for msg in conversation_history[-5:]  # Last 5 exchanges
         ])
 
-    # Build prompt
+    # Classify query intent
+    intent = classify_query_intent(user_query)
+    print(f"[KG Agent] Query intent: {intent}", file=sys.stderr)
+
+    # Query Neo4j based on intent
+    neo4j = Neo4jTools()
+    try:
+        if intent == "top_authors":
+            graph_data = get_top_authors_data(neo4j, limit=10)
+        elif intent == "recent_papers":
+            # Extract time window if mentioned
+            days = 7
+            if "today" in user_query.lower():
+                days = 1
+            elif "yesterday" in user_query.lower():
+                days = 2
+            elif "this week" in user_query.lower():
+                days = 7
+            graph_data = get_recent_papers_data(neo4j, days=days, limit=15)
+        elif intent == "topic_search":
+            keywords = extract_topic_keywords(user_query)
+            if not keywords:
+                # Fallback: use the query itself
+                keywords = [user_query.lower().strip()]
+            graph_data = get_topic_papers_data(neo4j, keywords=keywords, limit=10)
+        elif intent == "trending":
+            graph_data = get_trending_topics_data(neo4j)
+        else:
+            # General: get recent papers + top authors as context
+            graph_data = {
+                "type": "general",
+                "recent_papers": get_recent_papers_data(neo4j, days=7, limit=10),
+                "top_authors": get_top_authors_data(neo4j, limit=5)
+            }
+    finally:
+        neo4j.close()
+
+    # Format graph data for prompt
+    if graph_data.get("type") == "general":
+        graph_context = f"""
+RECENT PAPERS:
+{format_graph_data_for_prompt(graph_data['recent_papers'])}
+
+{format_graph_data_for_prompt(graph_data['top_authors'])}
+"""
+    else:
+        graph_context = format_graph_data_for_prompt(graph_data)
+
+    # Build prompt with graph data injected
     prompt = f"""You are a Neo4j graph database expert helping users explore arXiv AI research papers.
 
 TODAY'S CONTEXT:
@@ -70,24 +399,6 @@ DATA QUALITY STATUS:
 - Clean author data: {clean_start} to {clean_end} ({clean_pct:.1f}% of papers)
 - Clean = authors with verified identity (migrated + fuzzy matched)
 
-IMPORTANT QUERY RULES:
-
-1. For PAPER queries → Query all papers, full dataset available
-   - Papers exist for all dates, no restrictions
-
-2. For AUTHOR queries → ONLY query authors with clean data
-   - Authors MUST have: canonical_kid IS NOT NULL
-   - Papers MUST be dated >= '{clean_start}'
-   - This ensures verified author identities only
-
-3. For MIXED queries → Explain limitation naturally
-   - "Found papers across all dates, but can verify authorship for {clean_start} onwards"
-
-4. RESPONSE FORMAT:
-   - Be conversational and concise (~400-500 chars for SMS)
-   - Include specific names, numbers, arxiv IDs when relevant
-   - Prioritize last 24 hours when user asks about "today/recent"
-
 NEO4J GRAPH SCHEMA:
 - Nodes: Paper (arxiv_id, title, abstract, published_date, featured_in_report)
          Author (kochi_author_id, name, canonical_kid, affiliation)
@@ -95,207 +406,22 @@ NEO4J GRAPH SCHEMA:
 - Relationships: AUTHORED (Author → Paper, has position property)
                  IN_CATEGORY (Paper → Category)
 
-TOOLS AVAILABLE:
-You have Neo4j MCP tools - USE THEM to answer the query:
-- read_neo4j_cypher: Execute Cypher queries
-- get_neo4j_schema: Get database schema
-
-EXAMPLE QUERIES:
-
-Papers (no restrictions):
-```cypher
-MATCH (p:Paper)
-WHERE p.title CONTAINS 'transformer'
-RETURN p.title, p.published_date
-ORDER BY p.published_date DESC
-LIMIT 10
-```
-
-Authors (clean data only):
-```cypher
-MATCH (a:Author)-[:AUTHORED]->(p:Paper)
-WHERE a.canonical_kid IS NOT NULL
-  AND p.published_date >= date('{clean_start}')
-WITH a.canonical_kid as canonical, collect(DISTINCT a.name)[0] as name, count(DISTINCT p) as papers
-RETURN name, papers
-ORDER BY papers DESC
-LIMIT 10
-```
+GRAPH DATA (pre-queried from Neo4j):
+{graph_context}
 
 USER QUERY: {user_query}
 
-Task: Answer the user's question by querying Neo4j. Keep response concise for SMS (~500 chars).
+Task: Answer the user's question using the graph data above. Be conversational and concise (~400-500 chars for SMS). Include specific names, numbers, arxiv IDs when relevant.
 """
 
-    # Configure Claude Agent SDK with custom MCP server
-    # This approach works on Railway and local - no external MCP infrastructure needed
-    #
-    # We define a custom MCP server that exposes Neo4j tools via stdio protocol
-    # The SDK launches this server and communicates with it automatically
-    current_dir = Path(__file__).parent
-    mcp_server_script = current_dir / "neo4j_mcp_server.py"
-
-    # Configure MCP server
-    python_bin = os.getenv("PYTHON_BIN", "python3")
-
-    server_env = dict(os.environ)
-    server_env.update({
-        "NEO4J_URI": os.getenv("NEO4J_URI", ""),
-        "NEO4J_USERNAME": os.getenv("NEO4J_USERNAME", ""),
-        "NEO4J_PASSWORD": os.getenv("NEO4J_PASSWORD", ""),
-        "NEO4J_DATABASE": os.getenv("NEO4J_DATABASE", "neo4j"),
-    })
-
-    mcp_servers = {
-        "neo4j": McpStdioServerConfig(
-            command=python_bin,
-            args=[str(mcp_server_script)],
-            env=server_env,
-        )
-    }
-
+    # Configure Claude Agent SDK (no MCP tools needed)
     options = ClaudeAgentOptions(
         model="claude-sonnet-4-5-20250929",
         permission_mode="acceptEdits",  # Works in non-interactive mode (Railway + local)
-        mcp_servers=mcp_servers,
-        allowed_tools=[
-            "neo4j__read_neo4j_cypher",
-            "neo4j__get_neo4j_schema",
-            "read_neo4j_cypher",
-            "get_neo4j_schema",
-        ],
+        allowed_tools=[],  # No tools needed - data already in prompt
     )
 
     debug_enabled = bool(os.getenv("KG_AGENT_DEBUG"))
-
-    def _debug(msg: str) -> None:
-        if debug_enabled:
-            print(f"[KG Agent Debug] {msg}", file=sys.stderr)
-
-    def _read_mcp_message(stream) -> Dict[str, Any]:
-        headers: Dict[str, str] = {}
-        while True:
-            line = stream.readline()
-            if not line:
-                return {}
-            if line in (b"\n", b"\r\n"):
-                break
-            decoded = line.decode("utf-8").strip()
-            if not decoded or ":" not in decoded:
-                continue
-            key, value = decoded.split(":", 1)
-            headers[key.strip().lower()] = value.strip()
-        length = int(headers.get("content-length", "0"))
-        if length <= 0:
-            return {}
-        payload = stream.read(length)
-        if not payload:
-            return {}
-        return json.loads(payload.decode("utf-8"))
-
-    def _write_mcp_message(stream, message: Dict[str, Any]) -> None:
-        body = json.dumps(message).encode("utf-8")
-        header = f"Content-Length: {len(body)}\r\n\r\n".encode("utf-8")
-        stream.write(header)
-        stream.write(body)
-        stream.flush()
-
-    def _verify_mcp_server() -> Tuple[bool, str, List[str]]:
-        """
-        Launch MCP server once to verify it starts and advertises expected tools.
-        Returns (ok, error_message, tool_names).
-        """
-        try:
-            proc = subprocess.Popen(
-                [python_bin, str(mcp_server_script)],
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                env=server_env,
-            )
-        except Exception as exc:  # noqa: BLE001
-            return False, f"Failed to launch MCP server: {exc}", []
-
-        try:
-            if proc.stdin is None or proc.stdout is None:
-                return False, "MCP server process streams not available", []
-
-            init_payload = {
-                "jsonrpc": "2.0",
-                "id": 1,
-                "method": "initialize",
-                "params": {
-                    "clientInfo": {"name": "kg-agent-preflight", "version": "0.1.0"},
-                    "protocolVersion": "2024-11-05",
-                },
-            }
-            _write_mcp_message(proc.stdin, init_payload)
-            init_response = _read_mcp_message(proc.stdout)
-
-            if not init_response or init_response.get("error"):
-                return False, f"Initialize failed: {init_response}", []
-
-            _write_mcp_message(
-                proc.stdin,
-                {"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}},
-            )
-            list_response = _read_mcp_message(proc.stdout)
-            tools = (list_response or {}).get("result", {}).get("tools", [])
-            tool_names = [tool.get("name") for tool in tools]
-
-            if "read_neo4j_cypher" not in tool_names or "get_neo4j_schema" not in tool_names:
-                return False, f"Unexpected tool list: {tool_names}", tool_names
-
-            # Graceful shutdown
-            _write_mcp_message(
-                proc.stdin,
-                {"jsonrpc": "2.0", "id": 3, "method": "shutdown", "params": {}},
-            )
-            _read_mcp_message(proc.stdout)
-            return True, "", tool_names
-        except Exception as exc:  # noqa: BLE001
-            stderr_output = ""
-            try:
-                if proc.stderr:
-                    proc.poll()
-                    stderr_output = proc.stderr.read().decode("utf-8", errors="ignore")
-            except Exception:
-                stderr_output = ""
-            message = f"Preflight error: {exc}"
-            if stderr_output:
-                message += f" | stderr: {stderr_output.strip()}"
-            return False, message, []
-        finally:
-            try:
-                if proc.stdin:
-                    proc.stdin.close()
-                if proc.stdout:
-                    proc.stdout.close()
-                if proc.stderr:
-                    proc.stderr.close()
-            finally:
-                proc.terminate()
-                try:
-                    proc.wait(timeout=1)
-                except Exception:
-                    proc.kill()
-
-    ok, preflight_error, advertised_tools = _verify_mcp_server()
-    print(
-        f"[KG Agent] MCP preflight status: {'ok' if ok else 'failed'}, tools={advertised_tools}",
-        file=sys.stderr
-    )
-    if not ok:
-        error_text = textwrap.dedent(f"""
-            Neo4j MCP server preflight failed.
-            Script: {mcp_server_script}
-            Error: {preflight_error}
-        """).strip()
-        _debug(error_text)
-        return (
-            "Sorry, I couldn't contact the Neo4j graph service just now. "
-            "Please check the KG logs for the MCP server error."
-        )
 
     def _extract_text_segments(message: Any) -> List[str]:
         """Extract text-like segments from SDK messages."""
@@ -378,6 +504,7 @@ Task: Answer the user's question by querying Neo4j. Keep response concise for SM
         if len(response_text) > 600:
             response_text = response_text[:597] + "..."
 
+        print(f"[KG Agent] Response generated successfully", file=sys.stderr)
         return response_text
     except Exception as e:
         print(f"Agent error: {e}", file=sys.stderr)
