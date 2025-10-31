@@ -20,7 +20,7 @@ function parseArxivGraphCommand(messageUpper: string): {
 } {
   const trimmed = messageUpper.trim();
 
-  // Support both "ARXIV-GRAPH" and "ARXIV-RESEARCH-GRAPH" prefixes
+  // Support "ARXIV", "ARXIV-GRAPH", and "ARXIV-RESEARCH-GRAPH" prefixes
   let remainder = '';
   if (trimmed.startsWith('ARXIV-RESEARCH-GRAPH')) {
     if (trimmed === 'ARXIV-RESEARCH-GRAPH') {
@@ -32,6 +32,12 @@ function parseArxivGraphCommand(messageUpper: string): {
       return { subcommand: 'REPORT', args: [] };
     }
     remainder = trimmed.slice(ARXIV_GRAPH_PREFIX.length).trim();
+  } else if (trimmed.startsWith('ARXIV')) {
+    // Handle the new short form "ARXIV"
+    if (trimmed === 'ARXIV') {
+      return { subcommand: 'REPORT', args: [] };
+    }
+    remainder = trimmed.slice('ARXIV'.length).trim();
   } else {
     return { subcommand: '', args: [] };
   }
@@ -197,19 +203,23 @@ async function handleGraphUnsubscribe(context: CommandContext): Promise<boolean>
 async function handleGraphHelp(context: CommandContext): Promise<boolean> {
   const { from, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
 
-  const helpMessage = `ARXIV-GRAPH commands:
+  const helpMessage = `ARXIV commands:
 
-ARXIV-GRAPH
+ARXIV
   Get the latest graph-backed arXiv report
 
-ARXIV-GRAPH RUN
+ARXIV RUN
   Regenerate the report now (admin only)
 
-ARXIV-GRAPH SUBSCRIBE
+ARXIV SUBSCRIBE
   Get the daily graph digest at 6 AM PT
 
-ARXIV-GRAPH UNSUBSCRIBE
-  Stop the daily digest`;
+ARXIV UNSUBSCRIBE
+  Stop the daily digest
+
+KG <your question>
+  Query the arXiv knowledge graph
+  Example: "KG give me 2 emerging authors in California"`;
 
   await sendSmsResponse(from, helpMessage, twilioClient);
   await updateLastMessageDate(context.normalizedFrom);
@@ -221,8 +231,18 @@ export const arxivGraphCommandHandler: CommandHandler = {
   name: 'arxiv-graph',
   matches(context: CommandContext): boolean {
     const upper = context.messageUpper;
-    // Match both "ARXIV-GRAPH" and "ARXIV-RESEARCH-GRAPH"
-    return upper.startsWith(ARXIV_GRAPH_PREFIX) || upper.startsWith('ARXIV-RESEARCH-GRAPH');
+    // Match "ARXIV", "ARXIV-GRAPH", and "ARXIV-RESEARCH-GRAPH"
+    // BUT NOT "ARXIV-RESEARCH" (that's the deprecated handler)
+
+    // Check for deprecated "ARXIV-RESEARCH" first and exclude it
+    if (upper.startsWith('ARXIV-RESEARCH') && !upper.startsWith('ARXIV-RESEARCH-GRAPH')) {
+      return false;
+    }
+
+    // Match our supported prefixes
+    return upper.startsWith('ARXIV-RESEARCH-GRAPH') ||
+           upper.startsWith(ARXIV_GRAPH_PREFIX) ||
+           upper.startsWith('ARXIV');
   },
   async handle(context: CommandContext): Promise<boolean> {
     const messageUpper = context.message.trim().toUpperCase();

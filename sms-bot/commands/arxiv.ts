@@ -18,7 +18,7 @@ import {
 import * as db from '../agents/arxiv-research/database.js';
 import type { CommandContext, CommandHandler } from './types.js';
 
-const ARXIV_PREFIX = 'ARXIV';
+const ARXIV_RESEARCH_PREFIX = 'ARXIV-RESEARCH';
 const ADMIN_PHONE = '+16508989508';
 
 // ============================================================================
@@ -31,18 +31,25 @@ function parseArxivCommand(messageUpper: string): {
 } {
   const trimmed = messageUpper.trim();
 
-  if (trimmed === ARXIV_PREFIX) {
+  // Handle "ARXIV-RESEARCH" prefix (deprecated agent)
+  if (trimmed === ARXIV_RESEARCH_PREFIX) {
     return { subcommand: 'REPORT', args: [] };
   }
 
-  const parts = trimmed.split(/\s+/);
+  if (!trimmed.startsWith(ARXIV_RESEARCH_PREFIX)) {
+    return { subcommand: '', args: [] };
+  }
 
-  if (parts.length === 1) {
+  // Strip the prefix
+  const remainder = trimmed.slice(ARXIV_RESEARCH_PREFIX.length).trim();
+
+  if (!remainder) {
     return { subcommand: 'REPORT', args: [] };
   }
 
-  const subcommand = parts[1] ?? 'REPORT';
-  const args = parts.slice(2);
+  const parts = remainder.split(/\s+/);
+  const subcommand = parts[0] ?? 'REPORT';
+  const args = parts.slice(1);
 
   return { subcommand, args };
 }
@@ -379,30 +386,29 @@ async function handleStats(context: CommandContext): Promise<boolean> {
 async function handleHelp(context: CommandContext): Promise<boolean> {
   const { from, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
 
-  const helpMessage = `📚 arXiv Research Agent Commands
+  const helpMessage = `📚 ARXIV-RESEARCH Commands (Deprecated)
 
-ARXIV or ARXIV REPORT
+⚠️ NOTE: Use "ARXIV" commands instead for the latest graph-backed reports!
+
+ARXIV-RESEARCH or ARXIV-RESEARCH REPORT
   Get today's curated AI research papers
 
-ARXIV SUBSCRIBE
+ARXIV-RESEARCH SUBSCRIBE
   Get daily digest at 6 AM PT
 
-ARXIV UNSUBSCRIBE
+ARXIV-RESEARCH UNSUBSCRIBE
   Stop daily digest
 
-ARXIV AUTHOR <name>
+ARXIV-RESEARCH AUTHOR <name>
   Search for author and see their papers
 
-ARXIV TOP AUTHORS
+ARXIV-RESEARCH TOP AUTHORS
   See top 10 researchers by notability
 
-ARXIV STATS
+ARXIV-RESEARCH STATS
   Database statistics
 
-ARXIV HELP
-  Show this help
-
-Categories: cs.AI, cs.LG, cs.CV, cs.CL, stat.ML`;
+💡 Recommended: Use "ARXIV" or "ARXIV HELP" for the improved graph-backed agent`;
 
   await sendSmsResponse(from, helpMessage, twilioClient);
   await updateLastMessageDate(context.normalizedFrom);
@@ -418,11 +424,9 @@ export const arxivCommandHandler: CommandHandler = {
   name: 'arxiv',
   matches(context: CommandContext): boolean {
     const upper = context.messageUpper;
-    // Don't handle ARXIV-GRAPH or ARXIV-RESEARCH-GRAPH (handled by arxiv-graph.ts)
-    if (upper.startsWith('ARXIV-GRAPH') || upper.startsWith('ARXIV-RESEARCH-GRAPH')) {
-      return false;
-    }
-    return upper.startsWith('ARXIV');
+    // DEPRECATED: Only handle explicit "ARXIV-RESEARCH" commands
+    // "ARXIV" now routes to the graph-backed agent (arxiv-graph.ts)
+    return upper.startsWith('ARXIV-RESEARCH');
   },
   async handle(context: CommandContext): Promise<boolean> {
     const messageUpper = context.message.trim().toUpperCase();
