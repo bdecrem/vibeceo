@@ -589,7 +589,7 @@ async function runPythonScript(
     PATH: process.env.PATH,
     HOME: process.env.HOME,
     // Explicitly set PYTHONPATH to Homebrew site-packages so spawned processes can find installed packages
-    PYTHONPATH: '/opt/homebrew/lib/python3.13/site-packages:/Users/bartdecrem/Library/Python/3.13/lib/python/site-packages',
+    PYTHONPATH: `/opt/homebrew/lib/python3.13/site-packages:${process.env.HOME}/Library/Python/3.13/lib/python/site-packages`,
     ANTHROPIC_API_KEY:
       process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
   };
