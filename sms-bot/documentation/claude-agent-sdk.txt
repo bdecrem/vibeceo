@@ -1,3 +1,56 @@
+
+QUESTION: How do I give claude code a full understanding of the capabilities of claude-agent-sdk?
+—
+ANSWER: 
+ To give Claude Code a full understanding of the Claude Agent SDK capabilities, you can provide context through several methods:
+
+**1. Add SDK documentation to your project**[(1)](https://docs.claude.com/en/api/agent-sdk/overview)
+
+Include the key documentation pages in your project directory so Claude Code can read them. The main areas to cover are:
+- Agent SDK overview and installation[(1)](https://docs.claude.com/en/api/agent-sdk/overview)
+- TypeScript or Python SDK reference[(2)](https://docs.claude.com/en/api/agent-sdk/python#types)
+- Custom tools and MCP integration[(1)](https://docs.claude.com/en/api/agent-sdk/overview)
+- Subagents configuration[(3)](https://docs.claude.com/en/api/agent-sdk/subagents#creating-subagents)
+- Session management[(4)](https://docs.claude.com/en/api/agent-sdk/sessions)
+
+**2. Use the system prompt in your options**[(2)](https://docs.claude.com/en/api/agent-sdk/python#types)
+
+When using the SDK programmatically, configure the `system_prompt` parameter in `ClaudeAgentOptions` to explain what the SDK can do[(2)](https://docs.claude.com/en/api/agent-sdk/python#types). This gives Claude explicit instructions about available capabilities.
+
+**3. Create a project-level settings file**[(5)](https://docs.claude.com/en/docs/claude-code/sdk/migration-guide#why-the-rename%3F)
+
+The SDK supports `setting_sources` that can include project-level configuration[(5)](https://docs.claude.com/en/docs/claude-code/sdk/migration-guide#why-the-rename%3F). You can set this to load project-specific instructions:
+
+```python
+ClaudeAgentOptions(
+    setting_sources=["project"]
+)
+```
+[(5)](https://docs.claude.com/en/docs/claude-code/sdk/migration-guide#why-the-rename%3F)
+
+**4. Point Claude to example code**[(6)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)[(7)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)
+
+The SDK includes comprehensive examples showing:
+- MCP calculator servers[(6)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)
+- Custom agents with specific tools and prompts[(7)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)
+- Hook implementations for tool use events[(7)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)
+- Subagent configurations[(7)](https://github.com/anthropics/claude-agent-sdk-python/blob/main/examples)
+
+**5. Explain the core capabilities**[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+
+Make sure Claude understands the SDK provides:
+- Context management with automatic compaction[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+- Rich tool ecosystem including file operations, code execution, and web search[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+- Advanced permissions and fine-grained control[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+- Session management and monitoring[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+- MCP extensibility[(8)](https://www.anthropic.com/engineering/building-agents-with-the-claude-agent-sdk)
+
+By combining documentation files, system prompts, and example code in your project, Claude Code will have comprehensive context about what's possible with the Claude Agent SDK.
+
+——
+
+
+
 # Claude Agent SDK Summary
 
 ## What We Built
