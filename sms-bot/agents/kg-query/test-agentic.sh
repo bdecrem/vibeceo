@@ -9,11 +9,11 @@ source .venv/bin/activate
 # Enable debug mode to see tool calls
 export KG_AGENT_DEBUG=1
 
-# Test query: up and coming California authors
+# Test query: recent papers (to verify links)
 TEST_INPUT='{
-  "query": "Give me 2 up and coming authors based in California, from the last week or so of data",
+  "query": "What are the latest papers on transformers?",
   "conversation_history": [],
-  "todays_report_context": "Testing agentic Neo4j query agent with SDK MCP tools",
+  "todays_report_context": "Testing agentic Neo4j query agent - verifying clickable links",
   "clean_data_boundary": {
     "startDate": "2024-02-14",
     "endDate": "2025-10-23",
@@ -25,12 +25,12 @@ echo "================================"
 echo "Testing KG Agent (Agentic Mode)"
 echo "================================"
 echo ""
-echo "Query: Give me 2 up and coming authors based in California"
+echo "Query: What are the latest papers on transformers?"
 echo ""
 echo "Expected behavior:"
 echo "- Claude should make MULTIPLE tool calls"
-echo "- Should query Neo4j with filters for location + h-index"
-echo "- Should return specific author names with details"
+echo "- Should query for arxiv_id, title, arxiv_url"
+echo "- Should return clickable links in format [Title](https://arxiv.org/abs/ID)"
 echo ""
 echo "================================"
 echo ""
