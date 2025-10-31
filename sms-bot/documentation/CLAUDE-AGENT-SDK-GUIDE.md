@@ -1,8 +1,63 @@
 # Claude Agent SDK Guide - Python
 
+## Overview
+
+Complete guide for using the Python `claude-agent-sdk` to build autonomous AI agents. Covers setup, authentication, implementation patterns, and critical lessons learned from production use.
+
+---
+
+## Quick Start
+
+### Installation
+
+```bash
+# Requires Python 3.10+
+python3 -m venv .venv
+source .venv/bin/activate
+pip install claude-agent-sdk==0.1.6
+```
+
+### Authentication
+
+**Use ANTHROPIC_API_KEY (not OAuth tokens):**
+
+```bash
+# In .env.local
+ANTHROPIC_API_KEY=sk-ant-api03-YOUR_KEY_HERE
+CLAUDE_AGENT_SDK_TOKEN=sk-ant-api03-YOUR_KEY_HERE  # Same key
+```
+
+**Why API key instead of OAuth?**
+- OAuth tokens from `claude setup-token` may link to different accounts
+- API keys from console.anthropic.com ensure correct account/credits
+- Keeps Claude Code on Max plan (don't set tokens in shell)
+
+**Critical**: Only set in .env.local, NOT in ~/.zshrc or shell environment!
+
+### Basic Usage
+
+```python
+from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient
+
+options = ClaudeAgentOptions(
+    model="claude-sonnet-4-5-20250929",
+    permission_mode="acceptEdits",  # Auto-approve for non-interactive
+    allowed_tools=["WebSearch", "Write", "Read"]
+)
+
+async with ClaudeSDKClient(options=options) as client:
+    await client.query("Your high-level task")
+
+    async for message in client.receive_response():
+        # Process messages
+        print(message)
+```
+
+---
+
 ## Critical Lessons Learned
 
-This guide documents important patterns and gotchas when using the Python `claude-agent-sdk` for building agentic systems.
+This section documents important patterns and gotchas discovered from production use.
 
 ---
 
