@@ -16,6 +16,7 @@ import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
 import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,8 +38,12 @@ const supabase = createClient(
 );
 
 const ISSUE_TRACKER_APP_ID = process.env.ISSUE_TRACKER_APP_ID || 'toybox-issue-tracker-v3';
-const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/webtoys-os';
-const CLAUDE_PATH = '/Users/bartdecrem/.local/bin/claude';
+// Dynamically determine project root (agents/edit-agent -> webtoys-os)
+const PROJECT_ROOT = path.join(__dirname, '../..');
+// Try to find Claude CLI in common locations
+const CLAUDE_PATH = fs.existsSync('/opt/homebrew/bin/claude') ? '/opt/homebrew/bin/claude' :
+                    fs.existsSync(path.join(process.env.HOME || os.homedir(), '.local/bin/claude')) ?
+                    path.join(process.env.HOME || os.homedir(), '.local/bin/claude') : 'claude';
 
 // Minimal context templates - only what's absolutely necessary
 const CONTEXT_TEMPLATES = {
@@ -474,7 +479,7 @@ async function executeClaudeWithMonitoring(prompt, issueId) {
         
         // Ensure HOME is definitely set (critical for Claude auth)
         if (!cleanEnv.HOME) {
-            cleanEnv.HOME = '/Users/bartdecrem';
+            cleanEnv.HOME = os.homedir();
         }
         
         // CRITICAL: Do NOT include these as they conflict with Claude CLI:

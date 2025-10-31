@@ -178,7 +178,7 @@ async function executeEdit(prompt, requestId) {
         delete cleanEnv.ANTHROPIC_API_KEY;
 
         // Ensure HOME is set correctly for Claude to find auth files
-        cleanEnv.HOME = process.env.HOME || '/Users/bartdecrem';
+        cleanEnv.HOME = process.env.HOME || os.homedir();
 
         // Spawn Claude process with clean environment
         console.log(`  ⚙️  Starting Claude with --print flag...`);
@@ -298,7 +298,7 @@ async function executeEdit(prompt, requestId) {
         // Create clean environment without ANTHROPIC_API_KEY
         const cleanEnv = { ...process.env };
         delete cleanEnv.ANTHROPIC_API_KEY;
-        cleanEnv.HOME = process.env.HOME || '/Users/bartdecrem';
+        cleanEnv.HOME = process.env.HOME || os.homedir();
 
         // Just use the file directly with Claude
         const { stdout, stderr } = await execAsync(

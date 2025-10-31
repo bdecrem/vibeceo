@@ -6,7 +6,8 @@ import { exec, spawn } from 'child_process';
 import { promisify } from 'util';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
+import os from 'os';
+import { fileURLToPath} from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const execAsync = promisify(exec);
@@ -207,11 +208,15 @@ The project has deployment examples in community-desktop-v2/scripts/ that show h
     
     try {
         // Execute with Claude using proper CLI syntax (following fix-issues.js working pattern)
-        const claudePath = '/Users/bartdecrem/.local/bin/claude';
-        
+        // Try to find Claude CLI in common locations
+        const claudePath = fs.existsSync('/opt/homebrew/bin/claude') ? '/opt/homebrew/bin/claude' :
+                          fs.existsSync(path.join(process.env.HOME || os.homedir(), '.local/bin/claude')) ?
+                          path.join(process.env.HOME || os.homedir(), '.local/bin/claude') : 'claude';
+
         console.log('🚀 Executing Claude...');
-        
-        const PROJECT_ROOT = '/Users/bartdecrem/Documents/code/vibeceo8/sms-bot/community-desktop-v2';
+
+        // Dynamically determine project root (agent-issue-tracker -> sms-bot/community-desktop-v2)
+        const PROJECT_ROOT = path.join(__dirname, '../community-desktop-v2');
         
         // Write prompt to temp file to avoid shell escaping issues (same as fix-issues.js)
         const tempFile = path.join('/tmp', `execute-open-issue-${Date.now()}.txt`);
