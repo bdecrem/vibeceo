@@ -153,8 +153,9 @@ const CURATE_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph',
 const LOAD_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'load_recent_papers.py');
 const FUZZY_MATCH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'kochi_fuzzy_match_v2.py');
 const ENRICH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph', 'enrich_authors.py');
-// Use system python3 by default (works on any Mac). Override with PYTHON_BIN env var if needed.
-const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
+// Force Homebrew Python to ensure consistent version across both machines (iMac and MacBook Air)
+// This avoids pyenv/PATH confusion and ensures packages are found in /opt/homebrew/lib/python3.13/site-packages
+const PYTHON_BIN = process.env.PYTHON_BIN || '/opt/homebrew/bin/python3.13';
 
 const ARXIV_GRAPH_JOB_HOUR = Number(process.env.ARXIV_GRAPH_REPORT_HOUR || 5);
 const ARXIV_GRAPH_JOB_MINUTE = Number(process.env.ARXIV_GRAPH_REPORT_MINUTE || 0);
@@ -590,8 +591,9 @@ async function runPythonScript(
     HOME: process.env.HOME,
     // Explicitly set PYTHONPATH to Homebrew site-packages so spawned processes can find installed packages
     PYTHONPATH: `/opt/homebrew/lib/python3.13/site-packages:${process.env.HOME}/Library/Python/3.13/lib/python/site-packages`,
-    ANTHROPIC_API_KEY:
-      process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY,
+    // MUST be a regular API key (sk-ant-api03-...), NOT an OAuth token (sk-ant-oat01-...)
+    // OAuth tokens don't work with the claude CLI that the SDK spawns
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
   };
 
   env.CLAUDE_CODE_OAUTH_TOKEN = undefined;
