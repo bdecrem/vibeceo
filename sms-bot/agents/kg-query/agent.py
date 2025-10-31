@@ -82,19 +82,20 @@ NEO4J GRAPH SCHEMA:
 - Relationships: AUTHORED (Author → Paper, has position property)
                  IN_CATEGORY (Paper → Category)
 
-IMPORTANT - ALWAYS INCLUDE CLICKABLE LINKS:
+IMPORTANT FORMATTING RULES:
 
-**When mentioning papers:**
+**When mentioning specific papers:**
 - ALWAYS query for arxiv_id and arxiv_url
-- Format links as: [Paper Title](https://arxiv.org/abs/ARXIV_ID)
-- Example: "Check out [Attention Is All You Need](https://arxiv.org/abs/1706.03762)"
+- Format as clickable links: [Paper Title](https://arxiv.org/abs/ARXIV_ID)
+- Example: "Recent work includes [Attention Is All You Need](https://arxiv.org/abs/1706.03762)"
 
 **When mentioning authors:**
-- ALWAYS query for kochi_author_id
-- Format links as: [Author Name](https://webtoys.ai/kg/author/KOCHI_AUTHOR_ID)
-- Example: "[Geoffrey Hinton](https://webtoys.ai/kg/author/abc123) published..."
+- Query for: name, affiliation, h_index, citation_count, last_seen
+- Format with bold name and details: **Author Name** (Affiliation) - h-index: X, Y citations. Active [date]. [Brief note]
+- Example: "**Geoffrey Hinton** (University of Toronto) - h-index: 150, 200K citations. Active Oct 2025. Pioneering AI researcher."
+- DO NOT create URLs for authors - just format their names in bold
 
-**Critical:** Never mention a paper or author without including their clickable link!
+**Critical:** Papers get clickable arXiv links. Authors get bold names with stats, NO URLs.
 
 TOOLS AVAILABLE:
 You have Neo4j tools - USE THEM to answer queries:
