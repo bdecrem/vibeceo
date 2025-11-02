@@ -9,10 +9,18 @@ In the new authorship-based model:
 - Fuzzy matching determines which Author nodes represent the same person
 - Sets canonical_kid field to link related Author nodes
 
+Features:
+- Works backwards in time (newest to oldest papers)
+- Progress updates every 5 minutes with rate and ETA
+- Checkpoint system saves progress every 100 authors
+- Safe to stop at any time (Ctrl+C) - no data loss
+- Automatically resumes from last checkpoint
+
 Usage:
+    python3 kochi_fuzzy_match_v2.py --all                    # Process all authors needing canonical_kid
     python3 kochi_fuzzy_match_v2.py --date 2025-10-12 --dry-run
     python3 kochi_fuzzy_match_v2.py --date-start 2025-10-01 --date-end 2025-10-31
-    python3 kochi_fuzzy_match_v2.py --all
+    python3 kochi_fuzzy_match_v2.py --paper-date-start 2025-09-01 --paper-date-end 2025-10-31
 """
 
 import argparse
@@ -306,18 +314,18 @@ def get_authors_needing_canonical(driver, limit=None, target_date=None, date_sta
             WHERE a.canonical_kid IS NULL
               AND p.published_date >= date($paper_date_start)
               AND p.published_date <= date($paper_date_end)
-            WITH DISTINCT a
             RETURN a.kochi_author_id as kid,
                    a.name as name,
-                   a.affiliation as affiliation
-            ORDER BY a.name
+                   a.affiliation as affiliation,
+                   p.published_date as paper_date
+            ORDER BY p.published_date DESC
             """
             params['paper_date_start'] = paper_date_start
             params['paper_date_end'] = paper_date_end
         else:
             # Use author created_at filtering for daily processing
             query = """
-            MATCH (a:Author)
+            MATCH (a:Author)-[:AUTHORED]->(p:Paper)
             WHERE a.canonical_kid IS NULL
             """
 
@@ -333,8 +341,9 @@ def get_authors_needing_canonical(driver, limit=None, target_date=None, date_sta
             query += """
             RETURN a.kochi_author_id as kid,
                    a.name as name,
-                   a.affiliation as affiliation
-            ORDER BY a.created_at
+                   a.affiliation as affiliation,
+                   p.published_date as paper_date
+            ORDER BY p.published_date DESC
             """
 
         if limit:
@@ -410,10 +419,15 @@ def main():
         # Connection refresh counter
         authors_since_reconnect = 0
 
+        # Time-based progress tracking
+        start_time = time.time()
+        last_update_time = start_time
+
         for idx, author in enumerate(remaining_authors, 1):
             kid = author['kid']
             name = author['name']
             affiliation = author['affiliation']
+            paper_date = author.get('paper_date')
 
             # Periodic connection refresh
             authors_since_reconnect += 1
@@ -428,6 +442,25 @@ def main():
                 authors_since_reconnect = 0
                 print(f"  ✓ Connection refreshed")
 
+            # Time-based progress update (every 5 minutes)
+            current_time = time.time()
+            if current_time - last_update_time >= 300:  # 300 seconds = 5 minutes
+                elapsed = current_time - start_time
+                total_processed = len(processed_kids) + idx
+                rate = idx / elapsed if elapsed > 0 else 0
+                remaining = len(remaining_authors) - idx
+                eta_seconds = remaining / rate if rate > 0 else 0
+
+                print(f"\n⏱️  Progress Update (after {int(elapsed/60)} minutes):")
+                print(f"   Processed: {total_processed}/{len(authors)} ({idx}/{len(remaining_authors)} this session)")
+                if paper_date:
+                    print(f"   Current paper date: {paper_date}")
+                print(f"   Rate: {rate:.1f} authors/sec")
+                print(f"   ETA: {int(eta_seconds/60)} minutes")
+                print(f"   Stats: {stats['canonical_self']} unique, {stats['matched_to_existing']} matched, {stats['uncertain']} uncertain\n")
+                last_update_time = current_time
+
+            # Regular progress update (every 100 authors)
             if idx % 100 == 0 or idx == len(remaining_authors):
                 total_processed = len(processed_kids) + idx
                 print(f"  📄 {total_processed}/{len(authors)} total authors processed ({idx}/{len(remaining_authors)} in this session)")
@@ -485,6 +518,10 @@ def main():
         # Final checkpoint save
         save_checkpoint(checkpoint_id, processed_kids, stats)
 
+        # Calculate timing stats
+        total_time = time.time() - start_time
+        rate = len(remaining_authors) / total_time if total_time > 0 else 0
+
         # Print summary
         print("\n" + "="*60)
         print("📊 Summary")
@@ -493,6 +530,8 @@ def main():
         print(f"Canonical (self): {stats['canonical_self']}")
         print(f"Matched to existing canonical: {stats['matched_to_existing']}")
         print(f"Uncertain (needs review): {stats['uncertain']}")
+        print(f"\nTime elapsed: {int(total_time/60)} minutes")
+        print(f"Processing rate: {rate:.2f} authors/sec")
         print()
 
         if args.dry_run:
