@@ -8,3 +8,6 @@ claude-agent-sdk>=0.1.0
 
 # Neo4j Python driver for graph database connectivity
 neo4j>=5.18.0
+
+# HTTP library for OpenAlex API calls
+requests>=2.31.0
