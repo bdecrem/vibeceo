@@ -1,30 +1,38 @@
 #!/usr/bin/env python3
 """
-OpenAlex Enrichment Backfill - Production Script
+OpenAlex Enrichment Backfill - Continuous Mode
 
 Enriches canonical authors in Neo4j with OpenAlex data using paper-based matching.
 Uses proven approach: match authors via paper DOI + author position (not unreliable name search).
 
 Features:
-- Checkpoint/resume system (saves progress every 100 batches)
-- Connection retry logic (handles Neo4j timeouts)
+- Automatic: Finds all unenriched papers and processes them
+- Continuous: Processes in chunks, moves to next chunk automatically
+- Resumable: Checkpoint system - Ctrl+C anytime, resume later
+- Non-destructive: Only adds openalex_* fields
+- Direction: Oldest to newest (better OpenAlex coverage)
 - Batch processing (50 papers per OpenAlex API call)
-- Duplicate prevention (skips already-enriched authors)
-- Progress tracking and statistics
-- Dry-run mode for testing
+- Connection retry logic (handles Neo4j timeouts)
 
 Usage:
-    # Test with dry-run
-    python3 openalex_enrichment_backfill.py --start-date 2024-02-14 --end-date 2024-02-15 --dry-run
+    # Continuous mode (recommended) - just let it run!
+    python3 openalex_enrichment_backfill.py
 
-    # Run full backfill
+    # With custom chunk size (default: 2 months at a time)
+    python3 openalex_enrichment_backfill.py --month-chunk 3
+
+    # Manual date range override
     python3 openalex_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-06-30
 
-    # Resume from checkpoint
-    python3 openalex_enrichment_backfill.py --resume backfill-2024-02-14
-
     # Force re-enrichment (update old data)
-    python3 openalex_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-06-30 --force
+    python3 openalex_enrichment_backfill.py --force
+
+    # Dry run
+    python3 openalex_enrichment_backfill.py --dry-run
+
+Resume:
+    If interrupted (Ctrl+C or error), just run the same command again.
+    It will automatically resume from the last checkpoint.
 
 Expected Results:
     - Papers processed: ~127,248 (Feb 2024 - June 2025)
@@ -74,19 +82,6 @@ RETRY_DELAY = 2  # Seconds to wait between retries
 # Checkpoint configuration
 CHECKPOINT_DIR = Path(__file__).parent / '.openalex_enrichment_checkpoints'
 CHECKPOINT_SAVE_INTERVAL = 100  # Save checkpoint every N batches
-
-# Statistics
-stats = {
-    'papers_processed': 0,
-    'papers_found_in_openalex': 0,
-    'authors_total': 0,
-    'authors_matched': 0,
-    'authors_enriched': 0,
-    'high_confidence_matches': 0,
-    'medium_confidence_matches': 0,
-    'low_confidence_matches': 0,
-    'batches_processed': 0,
-}
 
 
 def retry_on_connection_error(func):
@@ -246,22 +241,36 @@ def extract_arxiv_id_from_doi(doi: str) -> str:
 def get_neo4j_papers_by_date(driver, start_date: str, end_date: str, limit: int, force: bool = False) -> List[Dict]:
     """Fetch papers from Neo4j with their canonical authors."""
     with driver.session(database=NEO4J_DATABASE) as session:
-        # Build WHERE clause for author filtering
+        # We need to get ALL authors to preserve position-based matching
+        # Filter is applied to determine which papers to process
         if force:
-            author_filter = "a.canonical_kid IS NOT NULL"
+            paper_filter = """
+            MATCH (check:Author)-[:AUTHORED]->(p)
+            WHERE check.canonical_kid IS NOT NULL
+            """
         else:
-            author_filter = "a.canonical_kid IS NOT NULL AND a.openalex_id IS NULL"
+            paper_filter = """
+            MATCH (check:Author)-[:AUTHORED]->(p)
+            WHERE check.canonical_kid IS NOT NULL AND check.openalex_id IS NULL
+            """
 
         query = f"""
         MATCH (p:Paper)
         WHERE p.published_date >= date($start_date)
           AND p.published_date <= date($end_date)
-        WITH p
+
+        // Only include papers that have at least one author needing enrichment
+        {paper_filter}
+        WITH DISTINCT p
         ORDER BY p.published_date DESC
         LIMIT $limit
 
+        // Get ALL authors for position-based matching (no filter!)
         MATCH (a:Author)-[r:AUTHORED]->(p)
-        WHERE {author_filter}
+
+        // CRITICAL: Sort by position in Cypher to guarantee order!
+        WITH p, a, r
+        ORDER BY r.position
 
         RETURN p.arxiv_id as arxiv_id,
                p.title as title,
@@ -294,14 +303,15 @@ def get_neo4j_papers_by_date(driver, start_date: str, end_date: str, limit: int,
         return papers
 
 
-def match_authors(neo4j_authors: List[Dict], openalex_authorships: List[Dict]) -> List[Tuple[Dict, Dict, float]]:
+def match_authors(neo4j_authors: List[Dict], openalex_authorships: List[Dict], verbose: bool = False) -> List[Tuple[Dict, Dict, float]]:
     """Match Neo4j authors to OpenAlex authors.
 
     Returns: List of (neo4j_author, openalex_author, confidence_score)
     """
     matches = []
 
-    # Both lists should be in position order
+    # OpenAlex returns authorships in position order
+    # Match by index (position)
     for i, neo4j_auth in enumerate(neo4j_authors):
         if i >= len(openalex_authorships):
             # More Neo4j authors than OpenAlex (shouldn't happen, but handle it)
@@ -312,6 +322,11 @@ def match_authors(neo4j_authors: List[Dict], openalex_authorships: List[Dict]) -
         # Calculate name similarity
         neo4j_name = neo4j_auth['name']
         oa_raw_name = oa_auth.get('raw_author_name', '')
+
+        # Also try the author display name if raw_author_name is missing
+        if not oa_raw_name and 'author' in oa_auth:
+            oa_raw_name = oa_auth.get('author', {}).get('display_name', '')
+
         oa_display_name = oa_auth.get('author', {}).get('display_name', '')
 
         # Try matching against both raw name and display name
@@ -319,14 +334,21 @@ def match_authors(neo4j_authors: List[Dict], openalex_authorships: List[Dict]) -
         sim_display = name_similarity(neo4j_name, oa_display_name)
         similarity = max(sim_raw, sim_display)
 
+        if verbose:
+            canonical_status = "✓" if neo4j_auth.get('canonical_kid') else "✗"
+            enrich_status = "needs" if not neo4j_auth.get('has_enrichment') else "has"
+            print(f"        [{i}] '{neo4j_name}' vs '{oa_raw_name}' / '{oa_display_name}' → {similarity:.2f} [canonical:{canonical_status}, {enrich_status}]")
+
         if similarity >= NAME_SIMILARITY_THRESHOLD:
             matches.append((neo4j_auth, oa_auth, similarity))
+        elif verbose:
+            print(f"             ❌ Below threshold ({NAME_SIMILARITY_THRESHOLD})")
 
     return matches
 
 
 @retry_on_connection_error
-def update_neo4j_author(driver, kid: str, openalex_data: Dict, confidence: float, dry_run: bool):
+def update_neo4j_author(driver, kid: str, openalex_data: Dict, confidence: float, stats: Dict, dry_run: bool):
     """Update author in Neo4j with OpenAlex data."""
 
     openalex_id = openalex_data['id']
@@ -351,6 +373,7 @@ def update_neo4j_author(driver, kid: str, openalex_data: Dict, confidence: float
             print(f"      citations: {citation_count:,}")
         if institution:
             print(f"      institution: {institution}")
+        stats['authors_enriched'] += 1  # Track even in dry run
         return
 
     with driver.session(database=NEO4J_DATABASE) as session:
@@ -386,7 +409,7 @@ def update_neo4j_author(driver, kid: str, openalex_data: Dict, confidence: float
             stats['authors_enriched'] += 1
 
 
-def process_papers_batch(driver, papers: List[Dict], dry_run: bool):
+def process_papers_batch(driver, papers: List[Dict], stats: Dict, dry_run: bool, verbose: bool = False):
     """Process a batch of papers."""
     if not papers:
         return
@@ -401,6 +424,9 @@ def process_papers_batch(driver, papers: List[Dict], dry_run: bool):
         return
 
     stats['papers_found_in_openalex'] += len(openalex_papers)
+
+    if verbose:
+        print(f"   📄 Fetched {len(openalex_papers)} papers from OpenAlex")
 
     # Create lookup by arXiv ID
     openalex_by_arxiv = {}
@@ -422,12 +448,23 @@ def process_papers_batch(driver, papers: List[Dict], dry_run: bool):
         oa_paper = openalex_by_arxiv[arxiv_id_clean]
         oa_authorships = oa_paper.get('authorships', [])
 
-        stats['authors_total'] += len(paper['authors'])
+        # Count only authors with canonical_kid (eligible for enrichment)
+        authors_with_canonical = [a for a in paper['authors'] if a.get('canonical_kid')]
+        stats['authors_total'] += len(authors_with_canonical)
 
         # Match authors
-        matches = match_authors(paper['authors'], oa_authorships)
+        matches = match_authors(paper['authors'], oa_authorships, verbose=verbose)
+
+        if verbose and matches:
+            print(f"      ✅ {len(matches)} matches for {arxiv_id_clean}")
+        elif verbose and not matches and oa_authorships:
+            print(f"      ❌ 0 matches for {arxiv_id_clean} ({len(paper['authors'])} authors, {len(oa_authorships)} authorships)")
 
         for neo4j_auth, oa_auth, confidence in matches:
+            # Only count matches for authors with canonical_kid (eligible for enrichment)
+            if not neo4j_auth.get('canonical_kid'):
+                continue
+
             stats['authors_matched'] += 1
 
             # Track confidence distribution
@@ -467,6 +504,7 @@ def process_papers_batch(driver, papers: List[Dict], dry_run: bool):
                 match['kid'],
                 profile,
                 match['confidence'],
+                stats,
                 dry_run
             )
 
@@ -479,22 +517,56 @@ def date_range(start_date: date, end_date: date):
         current += timedelta(days=1)
 
 
+@retry_on_connection_error
+def get_date_range_needing_enrichment(driver, force: bool = False, start_after: str = None):
+    """Find the date range of papers with canonical authors that need OpenAlex enrichment.
+
+    Args:
+        driver: Neo4j driver
+        force: If True, re-enrich already enriched authors
+        start_after: Only look for papers published after this date (YYYY-MM-DD)
+    """
+    with driver.session(database=NEO4J_DATABASE) as session:
+        if force:
+            author_filter = "a.canonical_kid IS NOT NULL"
+        else:
+            author_filter = "a.canonical_kid IS NOT NULL AND a.openalex_id IS NULL"
+
+        date_filter = ""
+        if start_after:
+            date_filter = f"AND p.published_date > date('{start_after}')"
+
+        query = f"""
+        MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+        WHERE {author_filter}
+        {date_filter}
+        WITH p.published_date as pub_date
+        RETURN min(pub_date) as oldest, max(pub_date) as newest
+        """
+        result = session.run(query)
+        record = result.single()
+        if record and record['oldest'] and record['newest']:
+            return str(record['oldest']), str(record['newest'])
+        return None, None
+
+
 def main():
-    parser = argparse.ArgumentParser(description="OpenAlex Enrichment Backfill")
+    parser = argparse.ArgumentParser(description="OpenAlex Enrichment Backfill - Continuous Mode")
     parser.add_argument(
         "--start-date",
         type=str,
-        help="Start date (YYYY-MM-DD)"
+        help="Override: Start date (YYYY-MM-DD)"
     )
     parser.add_argument(
         "--end-date",
         type=str,
-        help="End date (YYYY-MM-DD)"
+        help="Override: End date (YYYY-MM-DD)"
     )
     parser.add_argument(
-        "--resume",
-        type=str,
-        help="Resume from checkpoint ID"
+        "--month-chunk",
+        type=int,
+        default=2,
+        help="Process N months at a time (default: 2)"
     )
     parser.add_argument(
         "--force",
@@ -506,6 +578,11 @@ def main():
         action="store_true",
         help="Test without writing to Neo4j"
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print detailed matching information"
+    )
 
     args = parser.parse_args()
 
@@ -514,57 +591,98 @@ def main():
         print("   Set NEO4J_URI, NEO4J_USERNAME, NEO4J_PASSWORD")
         sys.exit(1)
 
-    # Determine date range
-    if args.resume:
-        checkpoint = load_checkpoint(args.resume)
-        if not checkpoint:
-            print(f"❌ Checkpoint not found: {args.resume}")
-            sys.exit(1)
-
-        # Parse dates from checkpoint
-        checkpoint_id = args.resume
-        start_date = date.fromisoformat(checkpoint['current_date'])
-        # Extract end date from checkpoint_id (format: backfill-YYYY-MM-DD)
-        end_date_str = checkpoint_id.split('-', 1)[1] if '-' in checkpoint_id else None
-        if not end_date_str:
-            print("❌ Cannot determine end date from checkpoint")
-            sys.exit(1)
-        end_date = date.fromisoformat(end_date_str)
-
-        # Restore stats
-        stats.update(checkpoint['stats'])
-    else:
-        if not args.start_date or not args.end_date:
-            print("❌ --start-date and --end-date required (or use --resume)")
-            sys.exit(1)
-
-        start_date = date.fromisoformat(args.start_date)
-        end_date = date.fromisoformat(args.end_date)
-        checkpoint_id = f"backfill-{end_date.isoformat()}"
-
-    print("=" * 70)
-    print("OpenAlex Enrichment Backfill - Production Run")
-    print("=" * 70)
-    print()
-    print(f"Mode: {'DRY RUN (no database changes)' if args.dry_run else 'LIVE (will update database)'}")
-    print(f"Date range: {start_date} to {end_date}")
-    print(f"Force re-enrichment: {args.force}")
-    print(f"Checkpoint ID: {checkpoint_id}")
-    print()
-
     # Connect to Neo4j
     driver = GraphDatabase.driver(
         NEO4J_URI,
         auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
     )
 
-    try:
-        # Process papers by date
-        for current_date in date_range(start_date, end_date):
-            print(f"\n📅 Processing {current_date.isoformat()}...")
+    # Initialize stats
+    stats = {
+        'papers_processed': 0,
+        'papers_found_in_openalex': 0,
+        'authors_total': 0,
+        'authors_matched': 0,
+        'authors_enriched': 0,
+        'high_confidence_matches': 0,
+        'medium_confidence_matches': 0,
+        'low_confidence_matches': 0,
+        'batches_processed': 0,
+    }
 
-            # Get papers for this date
-            papers = get_neo4j_papers_by_date(
+    # Determine date range
+    manual_dates = bool(args.start_date and args.end_date)  # Track if user provided dates
+
+    if manual_dates:
+        # Manual override - ignore checkpoint, run ONCE only
+        start_date = date.fromisoformat(args.start_date)
+        end_date = date.fromisoformat(args.end_date)
+        checkpoint_id = "current"
+        print(f"📅 Using manual date range: {start_date} to {end_date}")
+        print(f"   Will process this range ONCE and exit")
+    else:
+        # Try to load checkpoint
+        checkpoint = load_checkpoint("current")
+        if checkpoint:
+            print(f"📍 Resuming from checkpoint: {checkpoint['current_date']}")
+            # Ignore checkpoint, re-detect the date range
+            # (checkpoint might be from before fixing the bugs)
+            oldest, newest = get_date_range_needing_enrichment(driver, args.force)
+            if not oldest:
+                print("✅ All papers already enriched!")
+                driver.close()
+                sys.exit(0)
+
+            start_date = date.fromisoformat(oldest)
+            # Continue from where we left off, or start fresh
+            checkpoint_date = date.fromisoformat(checkpoint['current_date'])
+            if checkpoint_date > start_date:
+                start_date = checkpoint_date
+
+            # Calculate end date for this chunk
+            end_dt = start_date + timedelta(days=args.month_chunk * 30)
+            end_date = min(end_dt, date.fromisoformat(newest))
+            checkpoint_id = "current"
+            # Restore stats from checkpoint
+            stats.update(checkpoint.get('stats', {}))
+        else:
+            # Auto-detect: find oldest unenriched papers
+            print("🔍 Auto-detecting date range...")
+            oldest, newest = get_date_range_needing_enrichment(driver, args.force)
+            if not oldest:
+                print("✅ All papers already enriched!")
+                driver.close()
+                sys.exit(0)
+
+            print(f"📅 Found papers needing enrichment: {oldest} to {newest}")
+
+            # Process in chunks (default: 2 months at a time)
+            start_dt = date.fromisoformat(oldest)
+            end_dt = start_dt + timedelta(days=args.month_chunk * 30)
+
+            start_date = start_dt
+            end_date = min(end_dt, date.fromisoformat(newest))
+            checkpoint_id = "current"
+
+    # Main continuous loop
+    while True:
+        print("=" * 70)
+        print("OpenAlex Enrichment Backfill - Production Run")
+        print("=" * 70)
+        print()
+        print(f"Mode: {'DRY RUN (no database changes)' if args.dry_run else 'LIVE (will update database)'}")
+        print(f"Date range: {start_date} to {end_date}")
+        print(f"Force re-enrichment: {args.force}")
+        print(f"Checkpoint ID: {checkpoint_id}")
+        print()
+
+        try:
+            # Process papers by date
+            for current_date in date_range(start_date, end_date):
+                print(f"\n📅 Processing {current_date.isoformat()}...")
+
+                # Get papers for this date
+                papers = get_neo4j_papers_by_date(
                 driver,
                 start_date=current_date.isoformat(),
                 end_date=current_date.isoformat(),
@@ -581,7 +699,7 @@ def main():
             # Process in batches
             for i in range(0, len(papers), BATCH_SIZE):
                 batch = papers[i:i + BATCH_SIZE]
-                process_papers_batch(driver, batch, args.dry_run)
+                process_papers_batch(driver, batch, stats, args.dry_run, verbose=args.verbose)
 
                 stats['batches_processed'] += 1
 
@@ -602,44 +720,96 @@ def main():
                         auth=(NEO4J_USERNAME, NEO4J_PASSWORD)
                     )
 
-        # Save final checkpoint
-        save_checkpoint(checkpoint_id, end_date, stats)
+            # Save final checkpoint for this chunk
+            save_checkpoint(checkpoint_id, end_date, stats)
 
-        # Print summary
-        print()
-        print("=" * 70)
-        print("RESULTS")
-        print("=" * 70)
-        print()
-        print(f"📄 Papers processed:           {stats['papers_processed']}")
-        print(f"✅ Papers found in OpenAlex:   {stats['papers_found_in_openalex']}")
-        if stats['papers_processed'] > 0:
-            print(f"   Coverage: {stats['papers_found_in_openalex']/stats['papers_processed']*100:.1f}%")
-        print()
-        print(f"👥 Authors total:              {stats['authors_total']}")
-        print(f"✅ Authors matched:            {stats['authors_matched']}")
-        if stats['authors_total'] > 0:
-            print(f"   Match rate: {stats['authors_matched']/stats['authors_total']*100:.1f}%")
-        print()
-        print(f"📊 Match confidence:")
-        print(f"   High (>95%):     {stats['high_confidence_matches']}")
-        print(f"   Medium (85-95%): {stats['medium_confidence_matches']}")
-        print(f"   Low (75-85%):    {stats['low_confidence_matches']}")
-        print()
-        print(f"🎯 Authors enriched:           {stats['authors_enriched']}")
-        if stats['authors_matched'] > 0:
-            print(f"   Enrichment rate: {stats['authors_enriched']/stats['authors_matched']*100:.1f}%")
-        print()
-        print(f"📦 Batches processed:          {stats['batches_processed']}")
-        print()
+            # Print chunk summary
+            print()
+            print("=" * 70)
+            print("CHUNK RESULTS")
+            print("=" * 70)
+            print()
+            print(f"📄 Papers processed:           {stats['papers_processed']}")
+            print(f"✅ Papers found in OpenAlex:   {stats['papers_found_in_openalex']}")
+            if stats['papers_processed'] > 0:
+                print(f"   Coverage: {stats['papers_found_in_openalex']/stats['papers_processed']*100:.1f}%")
+            print()
+            print(f"👥 Authors total:              {stats['authors_total']}")
+            print(f"✅ Authors matched:            {stats['authors_matched']}")
+            if stats['authors_total'] > 0:
+                print(f"   Match rate: {stats['authors_matched']/stats['authors_total']*100:.1f}%")
+            print()
+            print(f"📊 Match confidence:")
+            print(f"   High (>95%):     {stats['high_confidence_matches']}")
+            print(f"   Medium (85-95%): {stats['medium_confidence_matches']}")
+            print(f"   Low (75-85%):    {stats['low_confidence_matches']}")
+            print()
+            print(f"🎯 Authors enriched:           {stats['authors_enriched']}")
+            if stats['authors_matched'] > 0:
+                print(f"   Enrichment rate: {stats['authors_enriched']/stats['authors_matched']*100:.1f}%")
+            print()
+            print(f"📦 Batches processed:          {stats['batches_processed']}")
+            print()
 
-        if args.dry_run:
-            print("💡 This was a DRY RUN. Run without --dry-run to actually update the database.")
-        else:
-            print("✅ Database updated successfully!")
+            if args.dry_run:
+                print("💡 This was a DRY RUN. Run without --dry-run to actually update the database.")
+            else:
+                print(f"✅ Chunk complete: {start_date} to {end_date}")
 
-    finally:
-        driver.close()
+            # If manual dates provided, exit after processing this range ONCE
+            if manual_dates:
+                print("\n✅ Manual date range complete. Exiting.")
+                driver.close()
+                sys.exit(0)
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Interrupted by user. Progress saved in checkpoint.")
+            print("   Run script again to resume from where you left off.")
+            driver.close()
+            sys.exit(0)
+
+        # Move to next chunk sequentially (NEVER go backwards!)
+        # Just advance from where we are now
+        next_start_dt = end_date + timedelta(days=1)
+        next_end_dt = next_start_dt + timedelta(days=args.month_chunk * 30)
+
+        # Check if we've gone past the newest unenriched date
+        print(f"\n🔍 Checking for unenriched papers after {end_date}...")
+        _, newest_unenriched = get_date_range_needing_enrichment(driver, args.force, start_after=str(end_date))
+
+        if not newest_unenriched or next_start_dt > date.fromisoformat(newest_unenriched):
+            # All done!
+            print("\n" + "=" * 70)
+            print("🎉 ALL PAPERS ENRICHED!")
+            print("=" * 70)
+            if not args.dry_run:
+                # Delete checkpoint file
+                checkpoint_path = CHECKPOINT_DIR / f"{checkpoint_id}.json"
+                if checkpoint_path.exists():
+                    checkpoint_path.unlink()
+                    print("🗑️  Checkpoint deleted")
+            break
+
+        start_date = next_start_dt
+        end_date = min(next_end_dt, date.fromisoformat(newest_unenriched))
+        checkpoint = None  # Reset checkpoint for new date range
+        # Reset stats for next chunk
+        stats = {
+            'papers_processed': 0,
+            'papers_found_in_openalex': 0,
+            'authors_total': 0,
+            'authors_matched': 0,
+            'authors_enriched': 0,
+            'high_confidence_matches': 0,
+            'medium_confidence_matches': 0,
+            'low_confidence_matches': 0,
+            'batches_processed': 0,
+        }
+
+        print(f"\n➡️  Moving to next chunk: {start_date} to {end_date}\n")
+
+    # Cleanup
+    driver.close()
 
 
 if __name__ == "__main__":

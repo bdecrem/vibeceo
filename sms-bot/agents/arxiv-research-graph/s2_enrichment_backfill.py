@@ -1,22 +1,33 @@
 #!/usr/bin/env python3
 """
-Semantic Scholar Author ID Backfill Script
+Semantic Scholar Author ID Backfill Script (Continuous Mode)
 
 Enriches Author nodes with S2 author IDs by querying papers from S2 API.
 Uses position-based matching to link our authors to S2 author IDs.
 
-Non-destructive: Only adds s2_author_id field, preserves all existing data.
-Resumable: Checkpoint system allows interruption and continuation.
+Features:
+- Automatic: Finds all unenriched papers and processes them
+- Continuous: Processes in chunks, moves to next chunk automatically
+- Resumable: Checkpoint system - Ctrl+C anytime, resume later
+- Non-destructive: Only adds s2_author_id field
+- Direction: Oldest to newest (better S2 coverage)
 
 Usage:
-    # Test with 100 papers
-    python3 s2_enrichment_backfill.py --start-date 2025-02-14 --end-date 2025-02-20 --batch-size 50
+    # Continuous mode (recommended) - just let it run!
+    python3 s2_enrichment_backfill.py
 
-    # Full backfill
-    python3 s2_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-10-31 --batch-size 50
+    # With custom chunk size (default: 2 months at a time)
+    python3 s2_enrichment_backfill.py --month-chunk 3
 
-    # Resume from checkpoint
-    python3 s2_enrichment_backfill.py --resume
+    # Manual date range override
+    python3 s2_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-10-31
+
+    # Dry run
+    python3 s2_enrichment_backfill.py --dry-run
+
+Resume:
+    If interrupted (Ctrl+C or error), just run the same command again.
+    It will automatically resume from the last checkpoint.
 """
 
 import argparse
@@ -24,7 +35,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Optional
 from neo4j import GraphDatabase
@@ -56,8 +67,10 @@ NEO4J_DATABASE = os.getenv("NEO4J_DATABASE", "neo4j")
 # Semantic Scholar configuration
 S2_API_KEY = os.getenv("SEMANTIC_SCHOLAR_API_TOKEN")
 S2_API_BASE = "https://api.semanticscholar.org/graph/v1"
-S2_BASE_RATE_LIMIT = 2.0  # Base seconds between requests
-S2_MIN_RATE_LIMIT = 2.0   # Minimum delay (never go faster)
+# Note: New API keys (as of May 2024) have 1 RPS limit on ALL endpoints
+# We use 3 seconds (0.33 RPS) to handle sliding window/burst restrictions
+S2_BASE_RATE_LIMIT = 3.0  # Base seconds between requests
+S2_MIN_RATE_LIMIT = 3.0   # Minimum delay (never go faster)
 S2_MAX_RATE_LIMIT = 60.0  # Maximum delay (cap exponential backoff)
 
 # Checkpoint configuration
@@ -74,6 +87,7 @@ class SemanticScholarClient:
         self.current_delay = S2_BASE_RATE_LIMIT
         self.session = requests.Session()
         self.session.headers.update({'x-api-key': api_key})
+        self.last_rate_limit_info = None  # Track rate limit headers
 
     def _rate_limit(self):
         """Enforce adaptive rate limit with exponential backoff/decay."""
@@ -115,6 +129,21 @@ class SemanticScholarClient:
 
         try:
             response = self.session.get(url, params=params, timeout=30)
+
+            # Capture rate limit headers for debugging
+            rate_limit_headers = {
+                'limit': response.headers.get('x-ratelimit-limit'),
+                'remaining': response.headers.get('x-ratelimit-remaining'),
+                'reset': response.headers.get('x-ratelimit-reset')
+            }
+
+            # Log rate limit info on first request or when rate limited
+            if self.last_rate_limit_info is None or response.status_code == 429:
+                if any(rate_limit_headers.values()):
+                    self.last_rate_limit_info = rate_limit_headers
+                    print(f"📊 Rate limit info - Limit: {rate_limit_headers['limit']}, "
+                          f"Remaining: {rate_limit_headers['remaining']}, "
+                          f"Reset: {rate_limit_headers['reset']}")
 
             if response.status_code == 200:
                 # Success - apply exponential decay to recover rate
@@ -239,18 +268,34 @@ def load_checkpoint() -> Optional[Dict]:
     return None
 
 
+def get_date_range_needing_enrichment(driver):
+    """Find the date range of papers that need S2 enrichment."""
+    with driver.session(database=NEO4J_DATABASE) as session:
+        query = """
+        MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+        WHERE a.s2_author_id IS NULL
+        WITH p.published_date as pub_date
+        RETURN min(pub_date) as oldest, max(pub_date) as newest
+        """
+        result = session.run(query)
+        record = result.single()
+        if record and record['oldest'] and record['newest']:
+            return str(record['oldest']), str(record['newest'])
+        return None, None
+
+
 def main():
     parser = argparse.ArgumentParser(
-        description="Backfill S2 author IDs for papers in date range"
+        description="Backfill S2 author IDs - runs continuously until all papers enriched"
     )
-    parser.add_argument("--start-date", help="Start date (YYYY-MM-DD)")
-    parser.add_argument("--end-date", help="End date (YYYY-MM-DD)")
+    parser.add_argument("--start-date", help="Override: Start date (YYYY-MM-DD)")
+    parser.add_argument("--end-date", help="Override: End date (YYYY-MM-DD)")
     parser.add_argument("--batch-size", type=int, default=50,
                        help="Papers per batch (default: 50)")
-    parser.add_argument("--resume", action="store_true",
-                       help="Resume from last checkpoint")
     parser.add_argument("--dry-run", action="store_true",
                        help="Preview without making changes")
+    parser.add_argument("--month-chunk", type=int, default=2,
+                       help="Process N months at a time (default: 2)")
 
     args = parser.parse_args()
 
@@ -263,138 +308,190 @@ def main():
         print("❌ Missing SEMANTIC_SCHOLAR_API_TOKEN environment variable")
         sys.exit(1)
 
-    # Handle resume
-    checkpoint = None
-    if args.resume:
-        checkpoint = load_checkpoint()
-        if not checkpoint:
-            print("❌ No checkpoint found to resume from")
-            sys.exit(1)
+    # Connect to Neo4j
+    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+
+    # Handle resume or auto-detect date range
+    checkpoint = load_checkpoint()
+    if checkpoint:
         print(f"📍 Resuming from checkpoint: {checkpoint['last_processed_date']}")
         start_date = checkpoint['start_date']
         end_date = checkpoint['end_date']
         offset = checkpoint['offset']
-    else:
-        if not args.start_date or not args.end_date:
-            print("❌ --start-date and --end-date required (or use --resume)")
-            sys.exit(1)
+    elif args.start_date and args.end_date:
+        # Manual override
         start_date = args.start_date
         end_date = args.end_date
         offset = 0
+    else:
+        # Auto-detect: find oldest unenriched papers
+        print("🔍 Auto-detecting date range...")
+        oldest, newest = get_date_range_needing_enrichment(driver)
+        if not oldest:
+            print("✅ All papers already enriched!")
+            driver.close()
+            sys.exit(0)
 
-    print("=" * 60)
-    print("SEMANTIC SCHOLAR ENRICHMENT BACKFILL")
-    print("=" * 60)
-    print(f"Date range: {start_date} to {end_date}")
-    print(f"Batch size: {args.batch_size}")
-    if args.dry_run:
-        print("⚠️  DRY RUN MODE - No changes will be made")
-    print()
+        print(f"📅 Found papers needing enrichment: {oldest} to {newest}")
 
-    # Connect to Neo4j
-    driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USERNAME, NEO4J_PASSWORD))
+        # Process in chunks (default: 2 months at a time)
+        start_dt = datetime.strptime(oldest, '%Y-%m-%d')
+        end_dt = start_dt + timedelta(days=args.month_chunk * 30)
+
+        start_date = oldest
+        end_date = min(end_dt.strftime('%Y-%m-%d'), newest)
+        offset = 0
 
     # Initialize S2 client
     s2_client = SemanticScholarClient(S2_API_KEY) if not args.dry_run else None
 
-    # Overall stats
-    total_stats = {
-        'papers_processed': checkpoint['papers_processed'] if checkpoint else 0,
-        'papers_in_s2': checkpoint['papers_in_s2'] if checkpoint else 0,
-        'papers_not_in_s2': checkpoint['papers_not_in_s2'] if checkpoint else 0,
-        'authors_enriched': checkpoint['authors_enriched'] if checkpoint else 0,
-        'authors_already_had_s2': checkpoint['authors_already_had_s2'] if checkpoint else 0,
-        'start_time': time.time()
-    }
-
-    try:
-        batch_num = 0
-        current_offset = offset
-
-        while True:
-            batch_num += 1
-
-            # Get batch of papers
-            papers = get_papers_in_date_range(driver, start_date, end_date,
-                                             current_offset, args.batch_size)
-
-            if not papers:
-                print("\n✅ All papers processed!")
-                break
-
-            print(f"\n📦 Batch {batch_num} ({len(papers)} papers, offset={current_offset})")
-            print(f"   Date range: {papers[0]['published_date']} to {papers[-1]['published_date']}")
-
-            # Process each paper in batch
-            for paper in papers:
-                arxiv_id = paper['arxiv_id']
-                total_stats['papers_processed'] += 1
-
-                # Get our authors
-                our_authors = get_paper_authors(driver, arxiv_id)
-
-                if args.dry_run:
-                    print(f"   [DRY RUN] Would enrich {arxiv_id} ({len(our_authors)} authors)")
-                    continue
-
-                # Query S2
-                s2_paper = s2_client.get_paper_by_arxiv_id(arxiv_id)
-
-                if s2_paper:
-                    total_stats['papers_in_s2'] += 1
-
-                    # Enrich authors
-                    s2_authors = s2_paper.get('authors', [])
-                    enrich_stats = enrich_authors_with_s2(driver, arxiv_id,
-                                                         s2_authors, our_authors)
-
-                    total_stats['authors_enriched'] += enrich_stats['authors_enriched']
-                    total_stats['authors_already_had_s2'] += enrich_stats['authors_already_had_s2']
-                else:
-                    total_stats['papers_not_in_s2'] += 1
-
-            # Update offset for next batch
-            current_offset += len(papers)
-
-            # Save checkpoint every batch
-            if not args.dry_run:
-                checkpoint_data = {
-                    'start_date': start_date,
-                    'end_date': end_date,
-                    'offset': current_offset,
-                    'last_processed_date': str(papers[-1]['published_date']),
-                    'papers_processed': total_stats['papers_processed'],
-                    'papers_in_s2': total_stats['papers_in_s2'],
-                    'papers_not_in_s2': total_stats['papers_not_in_s2'],
-                    'authors_enriched': total_stats['authors_enriched'],
-                    'authors_already_had_s2': total_stats['authors_already_had_s2'],
-                    'timestamp': datetime.now().isoformat()
-                }
-                save_checkpoint(checkpoint_data)
-
-            # Progress update
-            elapsed = time.time() - total_stats['start_time']
-            rate = total_stats['papers_processed'] / elapsed if elapsed > 0 else 0
-            print(f"\n   Progress: {total_stats['papers_processed']} papers ({rate:.1f} papers/sec)")
-            print(f"   S2 coverage: {total_stats['papers_in_s2']}/{total_stats['papers_processed']} " +
-                  f"({100*total_stats['papers_in_s2']/max(1,total_stats['papers_processed']):.1f}%)")
-            print(f"   Authors enriched: {total_stats['authors_enriched']}")
-
-        # Final summary
-        elapsed = time.time() - total_stats['start_time']
-        print("\n" + "=" * 60)
-        print("📊 FINAL SUMMARY")
+    # Main continuous loop
+    while True:
         print("=" * 60)
-        print(f"Total time: {int(elapsed/60)} minutes")
-        print(f"Papers processed: {total_stats['papers_processed']}")
-        print(f"Papers in S2: {total_stats['papers_in_s2']} " +
-              f"({100*total_stats['papers_in_s2']/max(1,total_stats['papers_processed']):.1f}%)")
-        print(f"Papers not in S2: {total_stats['papers_not_in_s2']}")
-        print(f"Authors enriched: {total_stats['authors_enriched']}")
-        print(f"Authors already had S2 ID: {total_stats['authors_already_had_s2']}")
+        print("SEMANTIC SCHOLAR ENRICHMENT BACKFILL")
+        print("=" * 60)
+        print(f"Date range: {start_date} to {end_date}")
+        print(f"Batch size: {args.batch_size}")
+        if args.dry_run:
+            print("⚠️  DRY RUN MODE - No changes will be made")
+        print()
 
-    finally:
-        driver.close()
+        # Overall stats for this chunk
+        total_stats = {
+            'papers_processed': checkpoint['papers_processed'] if checkpoint else 0,
+            'papers_in_s2': checkpoint['papers_in_s2'] if checkpoint else 0,
+            'papers_not_in_s2': checkpoint['papers_not_in_s2'] if checkpoint else 0,
+            'authors_enriched': checkpoint['authors_enriched'] if checkpoint else 0,
+            'authors_already_had_s2': checkpoint['authors_already_had_s2'] if checkpoint else 0,
+            'start_time': time.time(),
+            'papers_in_current_run': 0  # Track papers processed in THIS run for accurate rate
+        }
+
+        try:
+            batch_num = 0
+            current_offset = offset
+
+            # Process all papers in current date range
+            while True:
+                batch_num += 1
+
+                # Get batch of papers
+                papers = get_papers_in_date_range(driver, start_date, end_date,
+                                                 current_offset, args.batch_size)
+
+                if not papers:
+                    print(f"\n✅ Completed date range: {start_date} to {end_date}")
+                    break
+
+                print(f"\n📦 Batch {batch_num} ({len(papers)} papers, offset={current_offset})")
+                print(f"   Date range: {papers[0]['published_date']} to {papers[-1]['published_date']}")
+
+                # Process each paper in batch
+                for paper in papers:
+                    arxiv_id = paper['arxiv_id']
+                    total_stats['papers_processed'] += 1
+                    total_stats['papers_in_current_run'] += 1
+
+                    # Get our authors
+                    our_authors = get_paper_authors(driver, arxiv_id)
+
+                    if args.dry_run:
+                        print(f"   [DRY RUN] Would enrich {arxiv_id} ({len(our_authors)} authors)")
+                        continue
+
+                    # Query S2
+                    s2_paper = s2_client.get_paper_by_arxiv_id(arxiv_id)
+
+                    if s2_paper:
+                        total_stats['papers_in_s2'] += 1
+
+                        # Enrich authors
+                        s2_authors = s2_paper.get('authors', [])
+                        enrich_stats = enrich_authors_with_s2(driver, arxiv_id,
+                                                             s2_authors, our_authors)
+
+                        total_stats['authors_enriched'] += enrich_stats['authors_enriched']
+                        total_stats['authors_already_had_s2'] += enrich_stats['authors_already_had_s2']
+                    else:
+                        total_stats['papers_not_in_s2'] += 1
+
+                # Update offset for next batch
+                current_offset += len(papers)
+
+                # Save checkpoint every batch
+                if not args.dry_run:
+                    checkpoint_data = {
+                        'start_date': start_date,
+                        'end_date': end_date,
+                        'offset': current_offset,
+                        'last_processed_date': str(papers[-1]['published_date']),
+                        'papers_processed': total_stats['papers_processed'],
+                        'papers_in_s2': total_stats['papers_in_s2'],
+                        'papers_not_in_s2': total_stats['papers_not_in_s2'],
+                        'authors_enriched': total_stats['authors_enriched'],
+                        'authors_already_had_s2': total_stats['authors_already_had_s2'],
+                        'timestamp': datetime.now().isoformat()
+                    }
+                    save_checkpoint(checkpoint_data)
+
+                # Progress update
+                elapsed = time.time() - total_stats['start_time']
+                # Use papers_in_current_run for accurate rate calculation
+                current_rate = total_stats['papers_in_current_run'] / elapsed if elapsed > 0 else 0
+                print(f"\n   Progress: {total_stats['papers_processed']} papers total "
+                      f"({total_stats['papers_in_current_run']} in current run, {current_rate:.2f} papers/sec)")
+                print(f"   S2 coverage: {total_stats['papers_in_s2']}/{total_stats['papers_processed']} " +
+                      f"({100*total_stats['papers_in_s2']/max(1,total_stats['papers_processed']):.1f}%)")
+                print(f"   Authors enriched: {total_stats['authors_enriched']}")
+
+            # Chunk complete - print summary
+            elapsed = time.time() - total_stats['start_time']
+            print("\n" + "=" * 60)
+            print("📊 CHUNK SUMMARY")
+            print("=" * 60)
+            print(f"Total time: {int(elapsed/60)} minutes")
+            print(f"Papers processed: {total_stats['papers_processed']}")
+            print(f"Papers in S2: {total_stats['papers_in_s2']} " +
+                  f"({100*total_stats['papers_in_s2']/max(1,total_stats['papers_processed']):.1f}%)")
+            print(f"Papers not in S2: {total_stats['papers_not_in_s2']}")
+            print(f"Authors enriched: {total_stats['authors_enriched']}")
+            print(f"Authors already had S2 ID: {total_stats['authors_already_had_s2']}")
+
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Interrupted by user. Progress saved in checkpoint.")
+            print("   Run script again to resume from where you left off.")
+            driver.close()
+            sys.exit(0)
+
+        # Check if there's more work to do
+        print("\n🔍 Checking for more unenriched papers...")
+        next_oldest, next_newest = get_date_range_needing_enrichment(driver)
+
+        if not next_oldest:
+            # All done!
+            print("\n" + "=" * 60)
+            print("🎉 ALL PAPERS ENRICHED!")
+            print("=" * 60)
+            if not args.dry_run:
+                # Delete checkpoint file
+                if CHECKPOINT_FILE.exists():
+                    CHECKPOINT_FILE.unlink()
+                    print("🗑️  Checkpoint deleted")
+            break
+
+        # Calculate next chunk
+        next_start_dt = datetime.strptime(next_oldest, '%Y-%m-%d')
+        next_end_dt = next_start_dt + timedelta(days=args.month_chunk * 30)
+
+        start_date = next_oldest
+        end_date = min(next_end_dt.strftime('%Y-%m-%d'), next_newest)
+        offset = 0
+        checkpoint = None  # Reset checkpoint for new date range
+
+        print(f"\n➡️  Moving to next chunk: {start_date} to {end_date}\n")
+
+    # Cleanup
+    driver.close()
 
 
 if __name__ == "__main__":
