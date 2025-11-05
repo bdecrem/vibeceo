@@ -47,14 +47,16 @@ async function checkJobs(): Promise<void> {
       ) {
         job.lastRunDateKey = dateKey;
 
-        try {
-          await job.run();
-        } catch (error) {
-          if (job.onError) {
-            job.onError(error);
-          } else {
-            console.error(`Scheduler job ${job.name} failed:`, error);
-          }
+        // Run job non-blocking - don't await so other jobs can run independently
+        const result = job.run();
+        if (result && typeof result.catch === 'function') {
+          result.catch((error) => {
+            if (job.onError) {
+              job.onError(error);
+            } else {
+              console.error(`Scheduler job ${job.name} failed:`, error);
+            }
+          });
         }
       }
     }
