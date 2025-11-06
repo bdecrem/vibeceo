@@ -62,7 +62,7 @@ export default class ElevenLabsProvider {
     try {
       await axios.get(`${this.baseUrl}/user`, {
         headers: { 'xi-api-key': this.apiKey },
-        timeout: 5000,
+        timeout: 30000,
       });
       this.initialized = true;
       return true;
