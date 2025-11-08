@@ -10,14 +10,17 @@ Features:
 - Continuous: Processes in chunks, moves to next chunk automatically
 - Resumable: Checkpoint system - Ctrl+C anytime, resume later
 - Non-destructive: Only adds s2_author_id field
-- Direction: Oldest to newest (better S2 coverage)
+- Direction: Oldest to newest (default) OR newest to oldest (--reverse)
 
 Usage:
-    # Continuous mode (recommended) - just let it run!
+    # Continuous mode forwards (oldest to newest)
     python3 s2_enrichment_backfill.py
 
+    # Continuous mode backwards (newest to oldest) - RECOMMENDED for recent papers
+    python3 s2_enrichment_backfill.py --reverse
+
     # With custom chunk size (default: 2 months at a time)
-    python3 s2_enrichment_backfill.py --month-chunk 3
+    python3 s2_enrichment_backfill.py --reverse --month-chunk 3
 
     # Manual date range override
     python3 s2_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-10-31
@@ -27,7 +30,7 @@ Usage:
 
 Resume:
     If interrupted (Ctrl+C or error), just run the same command again.
-    It will automatically resume from the last checkpoint.
+    It will automatically resume from the last checkpoint with the same direction.
 """
 
 import argparse
@@ -167,17 +170,26 @@ class SemanticScholarClient:
 
 
 def get_papers_in_date_range(driver, start_date: str, end_date: str,
-                             offset: int = 0, limit: int = 50) -> List[Dict]:
-    """Get papers from Neo4j within date range."""
+                             offset: int = 0, limit: int = 50, reverse: bool = False) -> List[Dict]:
+    """Get papers from Neo4j within date range that need S2 enrichment.
+
+    Only returns papers that have at least one author without an S2 ID.
+
+    Args:
+        reverse: If True, order by published_date DESC (newest first)
+    """
+    order_direction = "DESC" if reverse else "ASC"
     with driver.session(database=NEO4J_DATABASE) as session:
-        query = """
-        MATCH (p:Paper)
-        WHERE p.published_date >= date($start_date)
+        query = f"""
+        MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+        WHERE a.s2_author_id IS NULL
+          AND p.published_date >= date($start_date)
           AND p.published_date <= date($end_date)
+        WITH DISTINCT p
         RETURN p.arxiv_id as arxiv_id,
                p.title as title,
                p.published_date as published_date
-        ORDER BY p.published_date ASC
+        ORDER BY p.published_date {order_direction}
         SKIP $offset
         LIMIT $limit
         """
@@ -268,16 +280,29 @@ def load_checkpoint() -> Optional[Dict]:
     return None
 
 
-def get_date_range_needing_enrichment(driver):
-    """Find the date range of papers that need S2 enrichment."""
+def get_date_range_needing_enrichment(driver, max_date=None):
+    """Find the date range of papers that need S2 enrichment.
+
+    Args:
+        max_date: Optional max date (YYYY-MM-DD) to cap the newest date
+    """
     with driver.session(database=NEO4J_DATABASE) as session:
-        query = """
-        MATCH (a:Author)-[:AUTHORED]->(p:Paper)
-        WHERE a.s2_author_id IS NULL
-        WITH p.published_date as pub_date
-        RETURN min(pub_date) as oldest, max(pub_date) as newest
-        """
-        result = session.run(query)
+        if max_date:
+            query = """
+            MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+            WHERE a.s2_author_id IS NULL AND p.published_date <= date($max_date)
+            WITH p.published_date as pub_date
+            RETURN min(pub_date) as oldest, max(pub_date) as newest
+            """
+            result = session.run(query, max_date=max_date)
+        else:
+            query = """
+            MATCH (a:Author)-[:AUTHORED]->(p:Paper)
+            WHERE a.s2_author_id IS NULL
+            WITH p.published_date as pub_date
+            RETURN min(pub_date) as oldest, max(pub_date) as newest
+            """
+            result = session.run(query)
         record = result.single()
         if record and record['oldest'] and record['newest']:
             return str(record['oldest']), str(record['newest'])
@@ -296,6 +321,8 @@ def main():
                        help="Preview without making changes")
     parser.add_argument("--month-chunk", type=int, default=2,
                        help="Process N months at a time (default: 2)")
+    parser.add_argument("--reverse", action="store_true",
+                       help="Process backwards in time (newest to oldest)")
 
     args = parser.parse_args()
 
@@ -318,15 +345,31 @@ def main():
         start_date = checkpoint['start_date']
         end_date = checkpoint['end_date']
         offset = checkpoint['offset']
+        # Command-line --reverse flag overrides checkpoint direction
+        if args.reverse:
+            reverse_mode = True
+            print("   Direction: ⏪ Backwards (newest to oldest) [command-line override]")
+        else:
+            # Resume with same direction from checkpoint
+            reverse_mode = checkpoint.get('reverse', False)
+            if reverse_mode:
+                print("   Direction: ⏪ Backwards (newest to oldest)")
+            else:
+                print("   Direction: ⏩ Forwards (oldest to newest)")
     elif args.start_date and args.end_date:
         # Manual override
         start_date = args.start_date
         end_date = args.end_date
         offset = 0
+        reverse_mode = args.reverse
     else:
-        # Auto-detect: find oldest unenriched papers
+        # Auto-detect: find unenriched papers
         print("🔍 Auto-detecting date range...")
-        oldest, newest = get_date_range_needing_enrichment(driver)
+        reverse_mode = args.reverse
+
+        # Cap at 2025-10-15 when in reverse mode to avoid reprocessing recent papers
+        max_date = '2025-10-15' if reverse_mode else None
+        oldest, newest = get_date_range_needing_enrichment(driver, max_date=max_date)
         if not oldest:
             print("✅ All papers already enriched!")
             driver.close()
@@ -335,11 +378,22 @@ def main():
         print(f"📅 Found papers needing enrichment: {oldest} to {newest}")
 
         # Process in chunks (default: 2 months at a time)
-        start_dt = datetime.strptime(oldest, '%Y-%m-%d')
-        end_dt = start_dt + timedelta(days=args.month_chunk * 30)
+        if reverse_mode:
+            print("   Direction: ⏪ Backwards (newest to oldest)")
+            # Start from newest, work backwards
+            end_dt = datetime.strptime(newest, '%Y-%m-%d')
+            start_dt = end_dt - timedelta(days=args.month_chunk * 30)
 
-        start_date = oldest
-        end_date = min(end_dt.strftime('%Y-%m-%d'), newest)
+            start_date = max(start_dt.strftime('%Y-%m-%d'), oldest)
+            end_date = newest
+        else:
+            print("   Direction: ⏩ Forwards (oldest to newest)")
+            # Start from oldest, work forwards
+            start_dt = datetime.strptime(oldest, '%Y-%m-%d')
+            end_dt = start_dt + timedelta(days=args.month_chunk * 30)
+
+            start_date = oldest
+            end_date = min(end_dt.strftime('%Y-%m-%d'), newest)
         offset = 0
 
     # Initialize S2 client
@@ -377,7 +431,8 @@ def main():
 
                 # Get batch of papers
                 papers = get_papers_in_date_range(driver, start_date, end_date,
-                                                 current_offset, args.batch_size)
+                                                 current_offset, args.batch_size,
+                                                 reverse=reverse_mode)
 
                 if not papers:
                     print(f"\n✅ Completed date range: {start_date} to {end_date}")
@@ -430,6 +485,7 @@ def main():
                         'papers_not_in_s2': total_stats['papers_not_in_s2'],
                         'authors_enriched': total_stats['authors_enriched'],
                         'authors_already_had_s2': total_stats['authors_already_had_s2'],
+                        'reverse': reverse_mode,
                         'timestamp': datetime.now().isoformat()
                     }
                     save_checkpoint(checkpoint_data)
@@ -479,16 +535,26 @@ def main():
                     print("🗑️  Checkpoint deleted")
             break
 
-        # Calculate next chunk
-        next_start_dt = datetime.strptime(next_oldest, '%Y-%m-%d')
-        next_end_dt = next_start_dt + timedelta(days=args.month_chunk * 30)
+        # Calculate next chunk based on direction
+        if reverse_mode:
+            # Moving backwards in time
+            next_end_dt = datetime.strptime(next_newest, '%Y-%m-%d')
+            next_start_dt = next_end_dt - timedelta(days=args.month_chunk * 30)
 
-        start_date = next_oldest
-        end_date = min(next_end_dt.strftime('%Y-%m-%d'), next_newest)
+            start_date = max(next_start_dt.strftime('%Y-%m-%d'), next_oldest)
+            end_date = next_newest
+            print(f"\n⏪ Moving to next chunk (backwards): {start_date} to {end_date}\n")
+        else:
+            # Moving forwards in time
+            next_start_dt = datetime.strptime(next_oldest, '%Y-%m-%d')
+            next_end_dt = next_start_dt + timedelta(days=args.month_chunk * 30)
+
+            start_date = next_oldest
+            end_date = min(next_end_dt.strftime('%Y-%m-%d'), next_newest)
+            print(f"\n⏩ Moving to next chunk (forwards): {start_date} to {end_date}\n")
+
         offset = 0
         checkpoint = None  # Reset checkpoint for new date range
-
-        print(f"\n➡️  Moving to next chunk: {start_date} to {end_date}\n")
 
     # Cleanup
     driver.close()
