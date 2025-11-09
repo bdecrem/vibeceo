@@ -12,7 +12,7 @@ import { startScheduler } from "../scheduler/index.js";
 import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
-import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js";
+// import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js"; // DISABLED - agent retired
 import { registerArxivGraphDailyJob } from "../../agents/arxiv-research-graph/index.js";
 
 function isAutomationEnabled(): boolean {
@@ -52,7 +52,7 @@ export async function startSmsBot(): Promise<void> {
     registerCryptoDailyJob(twilioClient);
     registerMedicalDailyJob(twilioClient);
     registerPeerReviewJob(twilioClient);
-    registerArxivDailyJob(twilioClient);
+    // registerArxivDailyJob(twilioClient); // DISABLED - arxiv-research agent retired
     registerArxivGraphDailyJob(twilioClient);
   } else {
     console.log(

@@ -10,20 +10,17 @@ Features:
 - Continuous: Processes in chunks, moves to next chunk automatically
 - Resumable: Checkpoint system - Ctrl+C anytime, resume later
 - Non-destructive: Only adds s2_author_id field
-- Direction: Oldest to newest (default) OR newest to oldest (--reverse)
+- Direction: Always newest to oldest (strictly backwards)
 
 Usage:
-    # Continuous mode forwards (oldest to newest)
+    # Continuous mode (always backwards: newest → oldest)
     python3 s2_enrichment_backfill.py
 
-    # Continuous mode backwards (newest to oldest) - RECOMMENDED for recent papers
-    python3 s2_enrichment_backfill.py --reverse
-
     # With custom chunk size (default: 2 months at a time)
-    python3 s2_enrichment_backfill.py --reverse --month-chunk 3
+    python3 s2_enrichment_backfill.py --month-chunk 3
 
     # Manual date range override
-    python3 s2_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-10-31
+    python3 s2_enrichment_backfill.py --start-date 2024-02-14 --end-date 2025-10-15
 
     # Dry run
     python3 s2_enrichment_backfill.py --dry-run
@@ -40,7 +37,7 @@ import sys
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from neo4j import GraphDatabase
 import requests
 
@@ -75,6 +72,10 @@ S2_API_BASE = "https://api.semanticscholar.org/graph/v1"
 S2_BASE_RATE_LIMIT = 3.0  # Base seconds between requests
 S2_MIN_RATE_LIMIT = 3.0   # Minimum delay (never go faster)
 S2_MAX_RATE_LIMIT = 60.0  # Maximum delay (cap exponential backoff)
+
+# Hard ceiling for newest papers to process
+MAX_ALLOWED_DATE_STR = "2025-10-15"
+MAX_ALLOWED_DATE = datetime.strptime(MAX_ALLOWED_DATE_STR, "%Y-%m-%d").date()
 
 # Checkpoint configuration
 CHECKPOINT_DIR = Path(__file__).parent / ".s2_enrichment_checkpoints"
@@ -114,11 +115,11 @@ class SemanticScholarClient:
         if old_delay != self.current_delay and old_delay > S2_BASE_RATE_LIMIT:
             print(f"✓ Rate limit recovering: {old_delay:.1f}s → {self.current_delay:.1f}s")
 
-    def get_paper_by_arxiv_id(self, arxiv_id: str) -> Optional[Dict]:
+    def get_paper_by_arxiv_id(self, arxiv_id: str) -> Tuple[Optional[Dict], str]:
         """
         Fetch paper and author data from S2.
 
-        Returns paper data with S2 author IDs.
+        Returns tuple of (paper data, status code string).
         """
         self._rate_limit()
 
@@ -151,50 +152,64 @@ class SemanticScholarClient:
             if response.status_code == 200:
                 # Success - apply exponential decay to recover rate
                 self._decay()
-                return response.json()
+                return response.json(), 'ok'
             elif response.status_code == 404:
-                return None
+                return None, 'not_found'
             elif response.status_code == 429:
                 # Rate limited - apply exponential backoff
                 self._backoff()
                 time.sleep(5)
                 self.last_request_time = time.time()
-                return None
+                return None, 'rate_limited'
             else:
                 print(f"⚠️  S2 API error {response.status_code} for {arxiv_id}")
-                return None
+                return None, 'error'
 
         except requests.exceptions.RequestException as e:
             print(f"❌ Network error for {arxiv_id}: {e}")
-            return None
+            return None, 'network_error'
 
 
 def get_papers_in_date_range(driver, start_date: str, end_date: str,
-                             offset: int = 0, limit: int = 50, reverse: bool = False) -> List[Dict]:
-    """Get papers from Neo4j within date range that need S2 enrichment.
+                             limit: int = 50,
+                             cursor_date: Optional[str] = None,
+                             cursor_arxiv_id: Optional[str] = None) -> List[Dict]:
+    """Get newest-first batch within range that still needs enrichment."""
+    if start_date > end_date:
+        return []
 
-    Only returns papers that have at least one author without an S2 ID.
+    extra_filter = ""
+    params = {
+        'start_date': start_date,
+        'end_date': end_date,
+        'limit': limit
+    }
 
-    Args:
-        reverse: If True, order by published_date DESC (newest first)
-    """
-    order_direction = "DESC" if reverse else "ASC"
+    if cursor_date and cursor_arxiv_id:
+        extra_filter = """
+          AND (
+                p.published_date < date($cursor_date)
+                OR (p.published_date = date($cursor_date) AND p.arxiv_id < $cursor_arxiv_id)
+              )
+        """
+        params.update({'cursor_date': cursor_date, 'cursor_arxiv_id': cursor_arxiv_id})
+
     with driver.session(database=NEO4J_DATABASE) as session:
         query = f"""
         MATCH (a:Author)-[:AUTHORED]->(p:Paper)
         WHERE a.s2_author_id IS NULL
+          AND p.s2_enrichment_attempted_at IS NULL
           AND p.published_date >= date($start_date)
           AND p.published_date <= date($end_date)
+          {extra_filter}
         WITH DISTINCT p
         RETURN p.arxiv_id as arxiv_id,
                p.title as title,
                p.published_date as published_date
-        ORDER BY p.published_date {order_direction}
-        SKIP $offset
+        ORDER BY p.published_date DESC, p.arxiv_id DESC
         LIMIT $limit
         """
-        result = session.run(query, start_date=start_date, end_date=end_date,
-                           offset=offset, limit=limit)
+        result = session.run(query, **params)
         return [dict(record) for record in result]
 
 
@@ -280,7 +295,26 @@ def load_checkpoint() -> Optional[Dict]:
     return None
 
 
-def get_date_range_needing_enrichment(driver, max_date=None):
+def mark_paper_enrichment_attempted(driver, arxiv_id: str, status: str):
+    """Mark a paper as processed so we never revisit it."""
+    with driver.session(database=NEO4J_DATABASE) as session:
+        session.run(
+            """
+            MATCH (p:Paper {arxiv_id: $arxiv_id})
+            SET p.s2_enrichment_attempted_at = datetime(),
+                p.s2_enrichment_status = $status
+            """,
+            arxiv_id=arxiv_id,
+            status=status
+        )
+
+
+def clamp_to_max_date(date_str: str) -> str:
+    """Drop any end date newer than the allowed ceiling."""
+    return min(date_str, MAX_ALLOWED_DATE_STR)
+
+
+def get_date_range_needing_enrichment(driver, max_date: Optional[str] = None):
     """Find the date range of papers that need S2 enrichment.
 
     Args:
@@ -290,7 +324,9 @@ def get_date_range_needing_enrichment(driver, max_date=None):
         if max_date:
             query = """
             MATCH (a:Author)-[:AUTHORED]->(p:Paper)
-            WHERE a.s2_author_id IS NULL AND p.published_date <= date($max_date)
+            WHERE a.s2_author_id IS NULL
+              AND p.s2_enrichment_attempted_at IS NULL
+              AND p.published_date <= date($max_date)
             WITH p.published_date as pub_date
             RETURN min(pub_date) as oldest, max(pub_date) as newest
             """
@@ -299,6 +335,7 @@ def get_date_range_needing_enrichment(driver, max_date=None):
             query = """
             MATCH (a:Author)-[:AUTHORED]->(p:Paper)
             WHERE a.s2_author_id IS NULL
+              AND p.s2_enrichment_attempted_at IS NULL
             WITH p.published_date as pub_date
             RETURN min(pub_date) as oldest, max(pub_date) as newest
             """
@@ -321,8 +358,6 @@ def main():
                        help="Preview without making changes")
     parser.add_argument("--month-chunk", type=int, default=2,
                        help="Process N months at a time (default: 2)")
-    parser.add_argument("--reverse", action="store_true",
-                       help="Process backwards in time (newest to oldest)")
 
     args = parser.parse_args()
 
@@ -340,61 +375,45 @@ def main():
 
     # Handle resume or auto-detect date range
     checkpoint = load_checkpoint()
+    cursor_date = None
+    cursor_arxiv_id = None
+
     if checkpoint:
-        print(f"📍 Resuming from checkpoint: {checkpoint['last_processed_date']}")
+        last_processed = checkpoint.get('last_processed_date', 'unknown')
+        print(f"📍 Resuming from checkpoint: {last_processed}")
         start_date = checkpoint['start_date']
-        end_date = checkpoint['end_date']
-        offset = checkpoint['offset']
-        # Command-line --reverse flag overrides checkpoint direction
-        if args.reverse:
-            reverse_mode = True
-            print("   Direction: ⏪ Backwards (newest to oldest) [command-line override]")
-        else:
-            # Resume with same direction from checkpoint
-            reverse_mode = checkpoint.get('reverse', False)
-            if reverse_mode:
-                print("   Direction: ⏪ Backwards (newest to oldest)")
-            else:
-                print("   Direction: ⏩ Forwards (oldest to newest)")
+        end_date = clamp_to_max_date(checkpoint['end_date'])
+        cursor_date = checkpoint.get('cursor_date')
+        cursor_arxiv_id = checkpoint.get('cursor_arxiv_id')
+        print("   Direction: ⏪ Backwards (newest to oldest)")
     elif args.start_date and args.end_date:
-        # Manual override
+        # Manual override (still clamps to newest allowed date)
+        end_date = clamp_to_max_date(args.end_date)
         start_date = args.start_date
-        end_date = args.end_date
-        offset = 0
-        reverse_mode = args.reverse
+        if start_date > end_date:
+            start_date = end_date
+        cursor_date = None
+        print("📅 Manual date range selected")
+        print("   Direction: ⏪ Backwards (newest to oldest)")
     else:
         # Auto-detect: find unenriched papers
         print("🔍 Auto-detecting date range...")
-        reverse_mode = args.reverse
-
-        # Cap at 2025-10-15 when in reverse mode to avoid reprocessing recent papers
-        max_date = '2025-10-15' if reverse_mode else None
-        oldest, newest = get_date_range_needing_enrichment(driver, max_date=max_date)
+        oldest, newest = get_date_range_needing_enrichment(driver, max_date=MAX_ALLOWED_DATE_STR)
         if not oldest:
             print("✅ All papers already enriched!")
             driver.close()
             sys.exit(0)
 
+        newest = clamp_to_max_date(newest)
         print(f"📅 Found papers needing enrichment: {oldest} to {newest}")
+        print("   Direction: ⏪ Backwards (newest to oldest)")
 
-        # Process in chunks (default: 2 months at a time)
-        if reverse_mode:
-            print("   Direction: ⏪ Backwards (newest to oldest)")
-            # Start from newest, work backwards
-            end_dt = datetime.strptime(newest, '%Y-%m-%d')
-            start_dt = end_dt - timedelta(days=args.month_chunk * 30)
-
-            start_date = max(start_dt.strftime('%Y-%m-%d'), oldest)
-            end_date = newest
-        else:
-            print("   Direction: ⏩ Forwards (oldest to newest)")
-            # Start from oldest, work forwards
-            start_dt = datetime.strptime(oldest, '%Y-%m-%d')
-            end_dt = start_dt + timedelta(days=args.month_chunk * 30)
-
-            start_date = oldest
-            end_date = min(end_dt.strftime('%Y-%m-%d'), newest)
-        offset = 0
+        # Start from newest chunk, work backwards by configured month window
+        end_dt = datetime.strptime(newest, '%Y-%m-%d')
+        start_dt = end_dt - timedelta(days=args.month_chunk * 30)
+        start_date = max(start_dt.strftime('%Y-%m-%d'), oldest)
+        end_date = newest
+        cursor_date = None
 
     # Initialize S2 client
     s2_client = SemanticScholarClient(S2_API_KEY) if not args.dry_run else None
@@ -412,38 +431,44 @@ def main():
 
         # Overall stats for this chunk
         total_stats = {
-            'papers_processed': checkpoint['papers_processed'] if checkpoint else 0,
-            'papers_in_s2': checkpoint['papers_in_s2'] if checkpoint else 0,
-            'papers_not_in_s2': checkpoint['papers_not_in_s2'] if checkpoint else 0,
-            'authors_enriched': checkpoint['authors_enriched'] if checkpoint else 0,
-            'authors_already_had_s2': checkpoint['authors_already_had_s2'] if checkpoint else 0,
+            'papers_processed': checkpoint.get('papers_processed', 0) if checkpoint else 0,
+            'papers_in_s2': checkpoint.get('papers_in_s2', 0) if checkpoint else 0,
+            'papers_not_in_s2': checkpoint.get('papers_not_in_s2', 0) if checkpoint else 0,
+            'authors_enriched': checkpoint.get('authors_enriched', 0) if checkpoint else 0,
+            'authors_already_had_s2': checkpoint.get('authors_already_had_s2', 0) if checkpoint else 0,
             'start_time': time.time(),
             'papers_in_current_run': 0  # Track papers processed in THIS run for accurate rate
         }
 
         try:
             batch_num = 0
-            current_offset = offset
 
             # Process all papers in current date range
             while True:
                 batch_num += 1
 
-                # Get batch of papers
-                papers = get_papers_in_date_range(driver, start_date, end_date,
-                                                 current_offset, args.batch_size,
-                                                 reverse=reverse_mode)
+                papers = get_papers_in_date_range(
+                    driver,
+                    start_date,
+                    end_date,
+                    limit=args.batch_size,
+                    cursor_date=cursor_date,
+                    cursor_arxiv_id=cursor_arxiv_id
+                )
 
                 if not papers:
                     print(f"\n✅ Completed date range: {start_date} to {end_date}")
                     break
 
-                print(f"\n📦 Batch {batch_num} ({len(papers)} papers, offset={current_offset})")
+                print(f"\n📦 Batch {batch_num} ({len(papers)} papers)")
                 print(f"   Date range: {papers[0]['published_date']} to {papers[-1]['published_date']}")
 
-                # Process each paper in batch
+                # Process each paper in batch (already newest → oldest order)
                 for paper in papers:
                     arxiv_id = paper['arxiv_id']
+                    paper_cursor_date = str(paper['published_date'])
+                    paper_cursor_id = arxiv_id
+
                     total_stats['papers_processed'] += 1
                     total_stats['papers_in_current_run'] += 1
 
@@ -452,10 +477,19 @@ def main():
 
                     if args.dry_run:
                         print(f"   [DRY RUN] Would enrich {arxiv_id} ({len(our_authors)} authors)")
+                        cursor_date = paper_cursor_date
+                        cursor_arxiv_id = paper_cursor_id
                         continue
 
-                    # Query S2
-                    s2_paper = s2_client.get_paper_by_arxiv_id(arxiv_id)
+                    # Query S2 with automatic retry on rate limiting
+                    while True:
+                        s2_paper, s2_status = s2_client.get_paper_by_arxiv_id(arxiv_id)
+                        if s2_status == 'rate_limited':
+                            print(f"   ⏳ Rate limited for {arxiv_id}, retrying...")
+                            continue
+                        if s2_status in ('error', 'network_error'):
+                            raise RuntimeError(f"Semantic Scholar request failed for {arxiv_id} ({s2_status})")
+                        break
 
                     if s2_paper:
                         total_stats['papers_in_s2'] += 1
@@ -467,28 +501,32 @@ def main():
 
                         total_stats['authors_enriched'] += enrich_stats['authors_enriched']
                         total_stats['authors_already_had_s2'] += enrich_stats['authors_already_had_s2']
+                        status = 's2_found'
                     else:
                         total_stats['papers_not_in_s2'] += 1
+                        status = 's2_not_found'
 
-                # Update offset for next batch
-                current_offset += len(papers)
+                    mark_paper_enrichment_attempted(driver, arxiv_id, status)
+                    cursor_date = paper_cursor_date
+                    cursor_arxiv_id = paper_cursor_id
 
-                # Save checkpoint every batch
-                if not args.dry_run:
+                    # Save checkpoint after every paper for precise resume
                     checkpoint_data = {
                         'start_date': start_date,
                         'end_date': end_date,
-                        'offset': current_offset,
-                        'last_processed_date': str(papers[-1]['published_date']),
+                        'cursor_date': cursor_date,
+                        'cursor_arxiv_id': cursor_arxiv_id,
+                        'last_processed_date': cursor_date,
+                        'last_processed_arxiv_id': cursor_arxiv_id,
                         'papers_processed': total_stats['papers_processed'],
                         'papers_in_s2': total_stats['papers_in_s2'],
                         'papers_not_in_s2': total_stats['papers_not_in_s2'],
                         'authors_enriched': total_stats['authors_enriched'],
                         'authors_already_had_s2': total_stats['authors_already_had_s2'],
-                        'reverse': reverse_mode,
                         'timestamp': datetime.now().isoformat()
                     }
                     save_checkpoint(checkpoint_data)
+                    checkpoint = checkpoint_data
 
                 # Progress update
                 elapsed = time.time() - total_stats['start_time']
@@ -518,10 +556,15 @@ def main():
             print("   Run script again to resume from where you left off.")
             driver.close()
             sys.exit(0)
+        except RuntimeError as err:
+            print(f"\n❌ {err}")
+            print("   Progress saved in checkpoint. Resolve the issue and rerun.")
+            driver.close()
+            sys.exit(1)
 
         # Check if there's more work to do
         print("\n🔍 Checking for more unenriched papers...")
-        next_oldest, next_newest = get_date_range_needing_enrichment(driver)
+        next_oldest, next_newest = get_date_range_needing_enrichment(driver, max_date=MAX_ALLOWED_DATE_STR)
 
         if not next_oldest:
             # All done!
@@ -535,26 +578,16 @@ def main():
                     print("🗑️  Checkpoint deleted")
             break
 
-        # Calculate next chunk based on direction
-        if reverse_mode:
-            # Moving backwards in time
-            next_end_dt = datetime.strptime(next_newest, '%Y-%m-%d')
-            next_start_dt = next_end_dt - timedelta(days=args.month_chunk * 30)
+        # Always move backwards in time for the next chunk
+        next_end_dt = datetime.strptime(next_newest, '%Y-%m-%d')
+        next_start_dt = next_end_dt - timedelta(days=args.month_chunk * 30)
 
-            start_date = max(next_start_dt.strftime('%Y-%m-%d'), next_oldest)
-            end_date = next_newest
-            print(f"\n⏪ Moving to next chunk (backwards): {start_date} to {end_date}\n")
-        else:
-            # Moving forwards in time
-            next_start_dt = datetime.strptime(next_oldest, '%Y-%m-%d')
-            next_end_dt = next_start_dt + timedelta(days=args.month_chunk * 30)
-
-            start_date = next_oldest
-            end_date = min(next_end_dt.strftime('%Y-%m-%d'), next_newest)
-            print(f"\n⏩ Moving to next chunk (forwards): {start_date} to {end_date}\n")
-
-        offset = 0
+        start_date = max(next_start_dt.strftime('%Y-%m-%d'), next_oldest)
+        end_date = next_newest
+        cursor_date = None
+        cursor_arxiv_id = None
         checkpoint = None  # Reset checkpoint for new date range
+        print(f"\n⏪ Moving to next chunk (backwards): {start_date} to {end_date}\n")
 
     # Cleanup
     driver.close()

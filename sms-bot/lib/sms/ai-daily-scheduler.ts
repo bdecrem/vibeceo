@@ -7,10 +7,7 @@ const DEFAULT_SEND_HOUR = Number(process.env.AI_DAILY_SEND_HOUR || 7);
 const DEFAULT_SEND_MINUTE = Number(process.env.AI_DAILY_SEND_MINUTE || 0);
 const BROADCAST_DELAY_MS = Number(process.env.AI_DAILY_PER_MESSAGE_DELAY_MS || 150);
 const FALLBACK_MESSAGE = 'AI Daily is temporarily unavailable. Please try again in a few minutes.';
-
-function toPacificDate(date: Date): Date {
-  return new Date(date.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-}
+const pacificDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' });
 
 function hasReceivedToday(lastSentAt: string | null | undefined, todayKey: string): boolean {
   if (!lastSentAt) {
@@ -18,9 +15,7 @@ function hasReceivedToday(lastSentAt: string | null | undefined, todayKey: strin
   }
 
   const lastSentDate = new Date(lastSentAt);
-  const lastSentKey = lastSentDate.toLocaleDateString('en-CA', {
-    timeZone: 'America/Los_Angeles',
-  });
+  const lastSentKey = pacificDateFormatter.format(lastSentDate);
   return lastSentKey === todayKey;
 }
 
@@ -57,10 +52,7 @@ async function broadcastMessage(
 
 async function runAiDailyBroadcast(twilioClient: TwilioClient): Promise<void> {
   const now = new Date();
-  const pacificNow = toPacificDate(now);
-  const todayKey = pacificNow.toLocaleDateString('en-CA', {
-    timeZone: 'America/Los_Angeles',
-  });
+  const todayKey = pacificDateFormatter.format(now);
 
   const subscribers = await getAiDailySubscribers();
   if (!subscribers.length) {
