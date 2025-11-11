@@ -68,6 +68,66 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
   // Load recent messages (12hr window)
   const windowStart = new Date(Date.now() - CONTEXT_WINDOW_MS).toISOString();
 
+  // Extract messages from context records
+  const recentMessages: RecentMessage[] = [];
+
+  // Fetch recent report content from subscriptions
+  for (const sub of subscriptions) {
+    // Check if report was sent within last 12 hours
+    if (sub.last_sent_at) {
+      const lastSentTime = new Date(sub.last_sent_at).getTime();
+      const now = Date.now();
+      if (now - lastSentTime < CONTEXT_WINDOW_MS) {
+        try {
+          let reportContent: string | null = null;
+
+          // Fetch report based on agent type
+          if (sub.agent_slug === 'air') {
+            // Fetch from ai_research_reports_personalized table
+            const { data: airReport } = await supabase
+              .from('ai_research_reports_personalized')
+              .select('markdown_content, report_date')
+              .eq('subscriber_id', subscriber.id)
+              .order('report_date', { ascending: false })
+              .limit(1)
+              .single();
+
+            if (airReport?.markdown_content) {
+              reportContent = airReport.markdown_content;
+            }
+          } else {
+            // Fetch from Supabase Storage for other agents
+            const { getLatestReportMetadata } = await import('../agents/report-storage.js');
+            const metadata = await getLatestReportMetadata(sub.agent_slug);
+
+            if (metadata?.reportPath) {
+              const { data: file } = await supabase.storage
+                .from('agent-reports')
+                .download(metadata.reportPath);
+
+              if (file) {
+                reportContent = await file.text();
+              }
+            }
+          }
+
+          // Add to recent messages if we got content
+          if (reportContent) {
+            recentMessages.push({
+              role: 'system',
+              content: reportContent,
+              timestamp: sub.last_sent_at,
+              type: `${sub.agent_slug}_report_sent`,
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to fetch report for ${sub.agent_slug}:`, error);
+          // Continue without this report
+        }
+      }
+    }
+  }
+
   const { data: contextData } = await supabase
     .from('conversation_context')
     .select('*')
@@ -75,9 +135,7 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
     .gte('expires_at', new Date().toISOString())
     .order('created_at', { ascending: true });
 
-  // Extract messages from context records
-  const recentMessages: RecentMessage[] = [];
-
+  // Also load user/assistant messages from conversation_context
   if (contextData) {
     for (const record of contextData) {
       const history = record.conversation_history || [];
