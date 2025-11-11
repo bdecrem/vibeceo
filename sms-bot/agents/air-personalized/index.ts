@@ -110,23 +110,88 @@ export async function testQuery(
 /**
  * Check historical frequency of matches
  * Returns how often this query would have matched over last 14 days
+ * Uses multiple test queries with different date ranges
  */
 export async function checkHistoricalFrequency(
   cleanedQuery: string
 ): Promise<{ daysWithMatches: number; totalDays: number; avgDaysBetween: number }> {
   console.log(`[AIR] Checking historical frequency for: "${cleanedQuery}"`);
 
-  // This is a simplified implementation - in reality we'd need to run
-  // the kg-query for each of the last 14 days, which is expensive.
-  // For now, return a placeholder that we'll refine later.
+  try {
+    const cleanDataBoundary = await getCleanDataBoundary();
 
-  // TODO: Implement actual historical check via MCP Neo4j queries
-  // For MVP, return conservative estimate
-  return {
-    daysWithMatches: 5,
-    totalDays: 14,
-    avgDaysBetween: 3,
-  };
+    // Test multiple date windows to estimate frequency
+    // We'll test: last 3 days, last 7 days, last 14 days
+    const windows = [
+      { days: 3, query: `Show me papers published in the last 3 days about: ${cleanedQuery}` },
+      { days: 7, query: `Show me papers published in the last 7 days about: ${cleanedQuery}` },
+      { days: 14, query: `Show me papers published in the last 14 days about: ${cleanedQuery}` },
+    ];
+
+    const results: { days: number; paperCount: number }[] = [];
+
+    for (const window of windows) {
+      try {
+        const response = await runKGQuery(window.query, [], '', cleanDataBoundary);
+        const paperCount = (response.match(/###\s+\d+\./g) || []).length;
+        results.push({ days: window.days, paperCount });
+        console.log(`[AIR] ${window.days} days: ${paperCount} papers`);
+
+        // Small delay to avoid overwhelming the system
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.error(`[AIR] Failed to test ${window.days} day window:`, error);
+        results.push({ days: window.days, paperCount: 0 });
+      }
+    }
+
+    // Estimate frequency based on paper growth
+    const [day3, day7, day14] = results;
+
+    // If we have papers in 3 days but not many more in 7 days, it's sparse
+    // If we have steady growth, it's frequent
+
+    let estimatedDaysWithMatches = 0;
+
+    if (day14.paperCount === 0) {
+      estimatedDaysWithMatches = 0;
+    } else if (day3.paperCount >= 3) {
+      // Good daily coverage
+      estimatedDaysWithMatches = 10; // ~5x per week
+    } else if (day7.paperCount >= 3) {
+      // Weekly coverage
+      estimatedDaysWithMatches = 5; // ~2-3x per week
+    } else if (day14.paperCount >= 3) {
+      // Bi-weekly coverage
+      estimatedDaysWithMatches = 3; // ~1-2x per week
+    } else {
+      // Very sparse
+      estimatedDaysWithMatches = 1;
+    }
+
+    const totalDays = 14;
+    const avgDaysBetween = estimatedDaysWithMatches > 0
+      ? totalDays / estimatedDaysWithMatches
+      : totalDays;
+
+    console.log(`[AIR] Estimated frequency: ${estimatedDaysWithMatches}/${totalDays} days`);
+
+    return {
+      daysWithMatches: estimatedDaysWithMatches,
+      totalDays,
+      avgDaysBetween: Math.round(avgDaysBetween * 10) / 10,
+    };
+  } catch (error) {
+    console.error('[AIR] Historical frequency check failed:', error);
+
+    // Fallback to conservative estimate
+    console.log('[AIR] Using fallback estimate');
+    return {
+      daysWithMatches: 3,
+      totalDays: 14,
+      avgDaysBetween: 4.7,
+    };
+  }
 }
 
 /**

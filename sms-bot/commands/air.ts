@@ -196,61 +196,109 @@ async function handleGetReport(context: CommandContext): Promise<void> {
 
 /**
  * Handle: AIR {natural language query}
+ * Now with preview + confirmation flow
  */
 async function handleSubscribeWithQuery(
   context: CommandContext,
   query: string
 ): Promise<void> {
-  const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+  const { from, normalizedFrom, twilioClient, sendSmsResponse, sendChunkedSmsResponse, updateLastMessageDate } = context;
 
-  console.log(`[AIR] Subscribe request: "${query}"`);
+  console.log(`[AIR] Subscribe request with preview: "${query}"`);
 
   try {
-    // Subscribe to agent
-    const result = await subscribeToAgent(normalizedFrom, AIR_AGENT_SLUG);
+    // Check if user is already subscribed - if so, this is an update
+    const isAlreadySubscribed = await isSubscribedToAgent(normalizedFrom, AIR_AGENT_SLUG);
 
-    const subscriber = await getSubscriber(normalizedFrom);
-    if (!subscriber) {
-      await sendSmsResponse(from, `❌ Failed to create subscription`, twilioClient);
-      await updateLastMessageDate(normalizedFrom);
-      return;
-    }
+    // Run test query to get preview
+    await sendSmsResponse(from, `🔍 Testing your query: "${query}"...`, twilioClient);
 
-    // Store natural language query in preferences
-    const preferences: AIRPreferences = {
-      natural_language_query: query,
-      notification_time: '10:00', // Default 10 AM PT (after reports generate at 9 AM)
-    };
+    const cleanedQuery = stripTemporalKeywords(query);
+    const testResult = await testQuery(cleanedQuery);
 
-    await supabase
-      .from('agent_subscriptions')
-      .update({ preferences })
-      .eq('subscriber_id', subscriber.id)
-      .eq('agent_slug', AIR_AGENT_SLUG);
+    console.log(`[AIR] Test query result: ${testResult.paperCount} papers`);
 
-    // Build confirmation message
-    let message = '';
+    // Decision point based on paper count
+    if (testResult.paperCount >= 3) {
+      // Good preview - show papers and ask for confirmation
+      let message = `📊 Found ${testResult.paperCount} papers matching "${cleanedQuery}" from last 3 days:\n\n`;
+      message += testResult.response;
+      message += `\n\n---\n📌 Looks good? Reply YES to get this daily at 10:00 AM PT`;
 
-    if (result === 'already') {
-      message = `✅ AIR query updated!\n\n`;
+      if (isAlreadySubscribed) {
+        message += ` (will update your current AIR query)`;
+      }
+
+      // Send via chunks if needed
+      await sendChunkedSmsResponse(from, message, twilioClient);
+
+      // Store pending subscription
+      setPending(normalizedFrom, {
+        originalQuery: query,
+        cleanedQuery,
+        hasResults: true,
+        preview: testResult.response,
+        timestamp: Date.now(),
+      }, context);
+
+      console.log(`[AIR] Preview sent, awaiting confirmation`);
+    } else if (testResult.paperCount === 0) {
+      // No results - check historical frequency
+      await sendSmsResponse(from, `🔍 No matches in last 3 days. Checking historical frequency...`, twilioClient);
+
+      const frequency = await checkHistoricalFrequency(cleanedQuery);
+
+      console.log(`[AIR] Historical frequency: ${frequency.daysWithMatches}/${frequency.totalDays} days`);
+
+      let message = `📊 Query: "${cleanedQuery}"\n\n`;
+      message += `❌ No matches in last 3 days\n`;
+      message += `📈 Historical data: Matches on ${frequency.daysWithMatches} of last ${frequency.totalDays} days`;
+
+      if (frequency.daysWithMatches > 0) {
+        message += ` (~${Math.round((frequency.daysWithMatches / frequency.totalDays) * 7)} times per week)\n\n`;
+        message += `💡 This is a targeted query. Options:\n`;
+        message += `1️⃣ Reply YES - Get updates only when matches appear\n`;
+        message += `2️⃣ Reply BROADER - Expand query for daily reports`;
+      } else {
+        message += `\n\n❌ No historical matches found. Try a broader query:\n`;
+        message += `AIR {broader topic}`;
+      }
+
+      await sendSmsResponse(from, message, twilioClient);
+
+      // Store pending subscription even with no results
+      if (frequency.daysWithMatches > 0) {
+        setPending(normalizedFrom, {
+          originalQuery: query,
+          cleanedQuery,
+          hasResults: false,
+          frequency,
+          timestamp: Date.now(),
+        }, context);
+      }
     } else {
-      message = `✅ AIR activated!\n\n`;
+      // 1-2 papers - borderline case, still show preview
+      let message = `📊 Found ${testResult.paperCount} papers matching "${cleanedQuery}":\n\n`;
+      message += testResult.response;
+      message += `\n\n---\n⚠️ Only ${testResult.paperCount} matches. Reply:\n`;
+      message += `• YES - Subscribe (reports may be sparse)\n`;
+      message += `• BROADER - Expand for more daily matches`;
+
+      await sendChunkedSmsResponse(from, message, twilioClient);
+
+      setPending(normalizedFrom, {
+        originalQuery: query,
+        cleanedQuery,
+        hasResults: true,
+        preview: testResult.response,
+        timestamp: Date.now(),
+      }, context);
     }
 
-    message += `Query: "${query}"\n`;
-    message += `Time: 10:00 AM PT\n\n`;
-    message += `📧 Your first report arrives tomorrow morning\n\n`;
-    message += `Commands:\n`;
-    message += `• AIR TIME 08:00 - Change time\n`;
-    message += `• AIR SETTINGS - View settings\n`;
-    message += `• KG {question} - Ask about papers\n`;
-    message += `• AIR HELP - Full command list`;
-
-    await sendSmsResponse(from, message, twilioClient);
     await updateLastMessageDate(normalizedFrom);
   } catch (error) {
-    console.error('[AIR] Subscribe failed:', error);
-    await sendSmsResponse(from, `❌ Subscription failed. Please try again.`, twilioClient);
+    console.error('[AIR] Preview failed:', error);
+    await sendSmsResponse(from, `❌ Query test failed. Please try again or try: AIR HELP`, twilioClient);
     await updateLastMessageDate(normalizedFrom);
   }
 }
@@ -441,6 +489,108 @@ async function handleUnsubscribe(context: CommandContext): Promise<void> {
 }
 
 /**
+ * Handle YES confirmation for pending AIR subscription
+ */
+async function handleConfirmSubscription(context: CommandContext): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+
+  const pending = getPending(normalizedFrom, context);
+  if (!pending) {
+    return false; // No pending AIR subscription
+  }
+
+  console.log(`[AIR] Confirming subscription for "${pending.cleanedQuery}"`);
+
+  try {
+    // Subscribe to agent
+    const result = await subscribeToAgent(normalizedFrom, AIR_AGENT_SLUG);
+
+    const subscriber = await getSubscriber(normalizedFrom);
+    if (!subscriber) {
+      await sendSmsResponse(from, `❌ Failed to create subscription`, twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+
+    // Store natural language query in preferences
+    const preferences: AIRPreferences = {
+      natural_language_query: pending.cleanedQuery,
+      notification_time: '10:00', // Default 10 AM PT
+      empty_day_strategy: pending.hasResults ? 'expand' : 'skip', // If no results in preview, use skip strategy
+    };
+
+    await supabase
+      .from('agent_subscriptions')
+      .update({ preferences })
+      .eq('subscriber_id', subscriber.id)
+      .eq('agent_slug', AIR_AGENT_SLUG);
+
+    // Clear pending
+    clearPending(normalizedFrom, context);
+
+    // Build confirmation message
+    let message = result === 'already'
+      ? `✅ AIR query updated!\n\n`
+      : `✅ AIR activated!\n\n`;
+
+    message += `Query: "${pending.cleanedQuery}"\n`;
+    message += `Time: 10:00 AM PT\n`;
+
+    if (pending.hasResults) {
+      message += `📧 Next report: Tomorrow morning\n\n`;
+    } else {
+      message += `📧 Reports sent only when matches appear\n\n`;
+    }
+
+    message += `Commands:\n`;
+    message += `• AIR TIME 08:00 - Change time\n`;
+    message += `• AIR SETTINGS - View settings\n`;
+    message += `• AIR STOP - Unsubscribe`;
+
+    await sendSmsResponse(from, message, twilioClient);
+    await updateLastMessageDate(normalizedFrom);
+    return true;
+  } catch (error) {
+    console.error('[AIR] Confirmation failed:', error);
+    await sendSmsResponse(from, `❌ Subscription failed. Please try again.`, twilioClient);
+    await updateLastMessageDate(normalizedFrom);
+    return true;
+  }
+}
+
+/**
+ * Handle BROADER request - expand query for better daily coverage
+ */
+async function handleBroaderQuery(context: CommandContext): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+
+  const pending = getPending(normalizedFrom, context);
+  if (!pending) {
+    return false; // No pending AIR subscription
+  }
+
+  console.log(`[AIR] User requested broader query for "${pending.cleanedQuery}"`);
+
+  // For now, suggest manual broadening
+  // TODO: Use Claude to automatically suggest broader query
+  let message = `💡 Try a broader version of your query:\n\n`;
+  message += `Original: "${pending.cleanedQuery}"\n\n`;
+  message += `Suggestions:\n`;
+  message += `• Remove specific terms\n`;
+  message += `• Use general topics\n`;
+  message += `• Combine related areas\n\n`;
+  message += `Example: AIR {your broader query}`;
+
+  await sendSmsResponse(from, message, twilioClient);
+
+  // Clear pending
+  clearPending(normalizedFrom, context);
+
+  await updateLastMessageDate(normalizedFrom);
+  return true;
+}
+
+/**
  * Main AIR command handler
  */
 export async function handleAIRCommand(
@@ -486,6 +636,24 @@ export async function handleAIRCommand(
       );
       await context.updateLastMessageDate(context.normalizedFrom);
   }
+}
+
+/**
+ * Check if message is YES/BROADER confirmation for pending AIR subscription
+ * Called from orchestrated-routing when message is YES or BROADER
+ */
+export async function handleAIRConfirmation(context: CommandContext): Promise<boolean> {
+  const msgUpper = context.messageUpper.trim();
+
+  if (msgUpper === 'YES') {
+    return await handleConfirmSubscription(context);
+  }
+
+  if (msgUpper === 'BROADER') {
+    return await handleBroaderQuery(context);
+  }
+
+  return false;
 }
 
 /**

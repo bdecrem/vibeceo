@@ -24,14 +24,26 @@ export async function handleOrchestratedMessage(
 ): Promise<void> {
   console.log(`[Orchestrated Routing] Processing: "${commandContext.message}"`);
 
-  // Check for YES confirmation (personalization)
-  if (commandContext.messageUpper === 'YES') {
-    const handled = await handlePersonalizationConfirmation(commandContext);
-    if (handled) {
-      console.log(`[Orchestrated Routing] Handled YES confirmation`);
+  // Check for YES/BROADER confirmation (AIR subscription takes priority)
+  if (commandContext.messageUpper === 'YES' || commandContext.messageUpper === 'BROADER') {
+    // Try AIR confirmation first
+    const { handleAIRConfirmation } = await import('../../commands/air.js');
+    const airHandled = await handleAIRConfirmation(commandContext);
+    if (airHandled) {
+      console.log(`[Orchestrated Routing] Handled AIR confirmation: ${commandContext.messageUpper}`);
       return;
     }
-    // If not handled, continue with normal routing
+
+    // Then try personalization confirmation
+    if (commandContext.messageUpper === 'YES') {
+      const personalHandled = await handlePersonalizationConfirmation(commandContext);
+      if (personalHandled) {
+        console.log(`[Orchestrated Routing] Handled personalization confirmation`);
+        return;
+      }
+    }
+
+    // If neither handled, continue with normal routing
   }
 
   // Load user context (personalization + subscriptions + recent messages)
