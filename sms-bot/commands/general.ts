@@ -78,23 +78,28 @@ export async function handleGeneralKochiAgent(
       // Automatic personalization detection
       try {
         const hasPersonalInfo = await detectPersonalInfo(message);
+        console.log(`[General Kochi] Personal info detected: ${hasPersonalInfo}`);
 
         if (hasPersonalInfo) {
-          console.log(`[General Kochi] Detected personal info, extracting...`);
+          console.log(`[General Kochi] Extracting personal info...`);
           const extracted = await extractPersonalization(message);
+          console.log(`[General Kochi] Extracted:`, JSON.stringify(extracted));
 
           // Check if anything meaningful was extracted
           const hasData = Object.keys(extracted).length > 0;
+          console.log(`[General Kochi] Has data: ${hasData}`);
 
           if (hasData) {
             // Store as pending confirmation
             await storePendingPersonalization(subscriber.id, extracted);
+            console.log(`[General Kochi] Stored pending personalization`);
 
             // Add confirmation prompt to reply
             const confirmationPrompt = `\n\n---\n💡 I noticed you shared:\n${formatExtracted(extracted)}\n\nWant me to remember this? Reply YES to save.`;
-            reply += confirmationPrompt;
+            console.log(`[General Kochi] Confirmation prompt:`, confirmationPrompt);
 
-            console.log(`[General Kochi] Added personalization confirmation prompt`);
+            reply += confirmationPrompt;
+            console.log(`[General Kochi] Reply length after adding prompt: ${reply.length}`);
           }
         }
       } catch (detectionError) {
@@ -104,6 +109,8 @@ export async function handleGeneralKochiAgent(
     }
 
     // Send response
+    console.log(`[General Kochi] About to send SMS, reply length: ${reply.length}`);
+    console.log(`[General Kochi] Reply preview:`, reply.substring(0, 200));
     await sendSmsResponse(from, reply, twilioClient);
     await updateLastMessageDate(normalizedFrom);
 
