@@ -20,6 +20,7 @@ export type SMSSubscriber = {
 	hide_default?: boolean; // Hide pages by default when creating new content
 	ai_daily_subscribed?: boolean;
 	ai_daily_last_sent_at?: string | null;
+	personalization?: Record<string, any>; // JSONB: {name, interests, timezone, location, notes}
 };
 
 // Initialize Supabase client
