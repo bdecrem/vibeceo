@@ -4960,28 +4960,37 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       return;
     }
 
-    // Handle unrecognized commands/text - use Kochi chatbot
-    console.log(`Unrecognized command/message from ${from}: ${message} - routing to Kochi chatbot`);
+    // ========================================
+    // ORCHESTRATOR: Context-Aware Routing
+    // ========================================
+    // No keyword command matched - use orchestrator to route based on context
+    try {
+      const { handleOrchestratedMessage } = await import('./orchestrated-routing.js');
+      await handleOrchestratedMessage(commandContext, normalizedPhoneNumber);
+      return;
+    } catch (orchestratorError) {
+      console.error('[Orchestrator] Error:', orchestratorError);
 
-    // Always use Kochi as the default chatbot (100% of the time)
-    const kochiCoach = coachData.ceos.find(c => c.id === 'kochi');
+      // Fall back to legacy Kochi chatbot if orchestrator fails
+      console.log('Falling back to legacy Kochi chatbot');
+      const kochiCoach = coachData.ceos.find(c => c.id === 'kochi');
 
-    if (kochiCoach) {
-      console.log('⚙️ Routing to Kochi for default conversation');
-      updateActiveConversation(from, 'Kochi');
-      const handled = await handleCoachConversation(message, twilioClient, from, kochiCoach);
-      if (handled) {
-        return;
+      if (kochiCoach) {
+        updateActiveConversation(from, 'Kochi');
+        const handled = await handleCoachConversation(message, twilioClient, from, kochiCoach);
+        if (handled) {
+          return;
+        }
       }
-    }
 
-    // If Kochi chatbot fails, send fallback message
-    await sendSmsResponse(
-      from,
-      'Sorry, I encountered an error. Try "COMMANDS" for help or start with "WTAF" to create an app.',
-      twilioClient
-    );
-    return;
+      // If everything fails, send fallback message
+      await sendSmsResponse(
+        from,
+        'Sorry, I encountered an error. Try "COMMANDS" for help or start with "WTAF" to create an app.',
+        twilioClient
+      );
+      return;
+    }
   } catch (error) {
     console.error("Error handling SMS message:", error);
     console.error(

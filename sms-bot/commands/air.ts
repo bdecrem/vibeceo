@@ -24,6 +24,9 @@ import {
   getLatestPersonalizedReport,
   buildAIRReportMessage,
   type AIRPreferences,
+  stripTemporalKeywords,
+  testQuery,
+  checkHistoricalFrequency,
 } from '../agents/air-personalized/index.js';
 import {
   getLatestStoredArxivGraphReport,
@@ -34,6 +37,63 @@ import { matchesPrefix, normalizeCommandPrefix } from './command-utils.js';
 
 const AIR_PREFIX = 'AIR';
 const AI_RESEARCH_PREFIX = 'AI RESEARCH';
+const PENDING_TIMEOUT_MS = 600000; // 10 minutes
+
+// ============================================================================
+// Pending Subscription State
+// ============================================================================
+
+interface PendingSubscription {
+  originalQuery: string;
+  cleanedQuery: string;
+  hasResults: boolean;
+  preview?: string;
+  frequency?: {
+    daysWithMatches: number;
+    totalDays: number;
+    avgDaysBetween: number;
+  };
+  timestamp: number;
+}
+
+function getPendingMap(context: CommandContext): Map<string, PendingSubscription> | undefined {
+  return context.commandHelpers?.['airPendingSubscriptions'] as Map<string, PendingSubscription> | undefined;
+}
+
+function getPending(phoneNumber: string, context: CommandContext): PendingSubscription | undefined {
+  const map = getPendingMap(context);
+  if (!map) return undefined;
+
+  const pending = map.get(phoneNumber);
+  if (!pending) return undefined;
+
+  // Check if expired (10 minutes)
+  if (Date.now() - pending.timestamp > PENDING_TIMEOUT_MS) {
+    map.delete(phoneNumber);
+    return undefined;
+  }
+
+  return pending;
+}
+
+function setPending(phoneNumber: string, pending: PendingSubscription, context: CommandContext): void {
+  let map = getPendingMap(context);
+  if (!map) {
+    map = new Map();
+    if (!context.commandHelpers) {
+      (context as any).commandHelpers = {};
+    }
+    context.commandHelpers!['airPendingSubscriptions'] = map;
+  }
+  map.set(phoneNumber, pending);
+}
+
+function clearPending(phoneNumber: string, context: CommandContext): void {
+  const map = getPendingMap(context);
+  if (map) {
+    map.delete(phoneNumber);
+  }
+}
 
 /**
  * Parse AIR command and extract subcommand + args
