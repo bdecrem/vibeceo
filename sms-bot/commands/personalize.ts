@@ -106,10 +106,19 @@ async function handlePersonalize(
 
     // Merge with existing personalization
     const currentPersonalization = subscriber.personalization || {};
-    const merged = {
-      ...currentPersonalization,
-      ...extracted,
-    };
+
+    // Smart merge: concatenate arrays, override other fields
+    const merged: any = { ...currentPersonalization };
+
+    for (const [key, value] of Object.entries(extracted)) {
+      if (Array.isArray(value) && Array.isArray(merged[key])) {
+        // Merge arrays, removing duplicates
+        merged[key] = [...new Set([...merged[key], ...value])];
+      } else {
+        // Override non-array fields
+        merged[key] = value;
+      }
+    }
 
     // Update subscriber
     await supabase
