@@ -64,29 +64,29 @@ export async function handleOrchestratedMessage(
   switch (routing.destination) {
     case 'kg-query':
       // Route to KG agent (knowledge graph queries)
+      // Trust orchestrator's decision - call handler directly without matches() check
       const { kgCommandHandler } = await import('../../commands/kg.js');
-      if (kgCommandHandler.matches(commandContext)) {
-        const handled = await kgCommandHandler.handle(commandContext);
-        if (handled) {
-          return;
-        }
+      console.log('[Orchestrator] Calling KG handler (orchestrator-routed)');
+      const kgHandled = await kgCommandHandler.handle(commandContext);
+      if (kgHandled) {
+        return;
       }
-      // If KG handler doesn't match, fall through to general
-      console.log('[Orchestrator] KG handler did not match, falling through to general');
+      // If handler couldn't process, fall through to general
+      console.log('[Orchestrator] KG handler returned false, falling through to general');
       await handleGeneralKochiAgent(commandContext, userContext);
       return;
 
     case 'air':
       // Route to AIR handler (subscription confirmation flow)
+      // Trust orchestrator's decision - call handler directly without matches() check
       const { airCommandHandler } = await import('../../commands/air.js');
-      if (airCommandHandler.matches(commandContext)) {
-        const handled = await airCommandHandler.handle(commandContext);
-        if (handled) {
-          return;
-        }
+      console.log('[Orchestrator] Calling AIR handler (orchestrator-routed)');
+      const airHandled = await airCommandHandler.handle(commandContext);
+      if (airHandled) {
+        return;
       }
-      // If AIR handler doesn't match, fall through to general
-      console.log('[Orchestrator] AIR handler did not match, falling through to general');
+      // If handler couldn't process, fall through to general
+      console.log('[Orchestrator] AIR handler returned false, falling through to general');
       await handleGeneralKochiAgent(commandContext, userContext);
       return;
 
