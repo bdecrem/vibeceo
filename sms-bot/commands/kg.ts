@@ -7,6 +7,10 @@
 
 import { runKGQuery, getCleanDataBoundary } from '../agents/kg-query/index.js';
 import { getLatestStoredArxivGraphReport } from '../agents/arxiv-research-graph/index.js';
+import { isSubscribedToAgent } from '../lib/agent-subscriptions.js';
+import { getSubscriber } from '../lib/subscribers.js';
+import { AIR_AGENT_SLUG, getLatestPersonalizedReport, type AIRPreferences } from '../agents/air-personalized/index.js';
+import { supabase } from '../lib/supabase.js';
 import type { CommandContext, CommandHandler } from './types.js';
 
 const KG_PREFIX = 'KG';
@@ -67,6 +71,62 @@ async function initializeState(
     }
   } catch (error) {
     console.error('[KG] Failed to fetch latest report:', error);
+  }
+
+  // Check if user has AIR subscription and load personalized context
+  try {
+    const isAIRSubscriber = await isSubscribedToAgent(phoneNumber, AIR_AGENT_SLUG);
+
+    if (isAIRSubscriber) {
+      console.log(`[KG] Loading AIR context for ${phoneNumber}`);
+
+      const subscriber = await getSubscriber(phoneNumber);
+      if (subscriber) {
+        // Load AIR preferences
+        const { data: subscription } = await supabase
+          .from('agent_subscriptions')
+          .select('preferences')
+          .eq('subscriber_id', subscriber.id)
+          .eq('agent_slug', AIR_AGENT_SLUG)
+          .eq('active', true)
+          .single();
+
+        if (subscription?.preferences) {
+          const prefs = subscription.preferences as AIRPreferences;
+
+          // Load latest personalized report
+          const personalizedReport = await getLatestPersonalizedReport(subscriber.id);
+
+          // Build enriched context
+          let airContext = `\n\n---\nUSER'S AIR PERSONALIZATION:\n`;
+          airContext += `Research Interest: "${prefs.natural_language_query}"\n`;
+
+          if (personalizedReport) {
+            airContext += `\nToday's Personalized Report (${personalizedReport.report_date}):\n`;
+            airContext += `Papers: ${personalizedReport.paper_count}\n`;
+            airContext += `Query: "${personalizedReport.query_used}"\n`;
+
+            // Include first 500 chars of report as preview
+            const preview = personalizedReport.markdown_content?.substring(0, 500) || '';
+            if (preview) {
+              airContext += `\nReport Preview:\n${preview}...\n`;
+            }
+
+            airContext += `\nNote: When user refers to "paper 1", "paper 2", etc., they mean papers from THIS personalized report.\n`;
+          }
+
+          airContext += `---\n`;
+
+          // Prepend AIR context to report context
+          reportContext = airContext + reportContext;
+
+          console.log(`[KG] AIR context loaded: query="${prefs.natural_language_query}", report=${personalizedReport?.report_date || 'none'}`);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[KG] Failed to load AIR context:', error);
+    // Continue without AIR context
   }
 
   // Get clean data boundary
