@@ -1,13 +1,14 @@
 import { handleEventSearch } from "../agents/ticketmaster-events/agent.js";
 import { CommandContext, CommandHandler } from "./types.js";
+import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
 
 const TICKETMASTER_PREFIX = "EVENTS";
 
 async function handleSearch(context: CommandContext): Promise<boolean> {
   const { from, twilioClient, sendSmsResponse } = context;
   try {
-    // Extract query after "EVENTS" prefix
-    const query = context.message.replace(/^EVENTS\s*/i, '').trim();
+    // Extract query after "EVENTS" prefix (handles punctuation)
+    const query = extractAfterPrefix(context.message, context.messageUpper, TICKETMASTER_PREFIX);
 
     if (!query) {
       await sendSmsResponse(
@@ -44,10 +45,11 @@ async function handleSearch(context: CommandContext): Promise<boolean> {
 export const ticketmasterCommandHandler: CommandHandler = {
   name: "ticketmaster",
   matches(context) {
-    return context.messageUpper.startsWith(TICKETMASTER_PREFIX);
+    // Handle "EVENTS", "EVENTS,", "events!", etc.
+    return matchesPrefix(context.messageUpper, TICKETMASTER_PREFIX);
   },
   async handle(context) {
-    if (context.messageUpper.startsWith(TICKETMASTER_PREFIX)) {
+    if (matchesPrefix(context.messageUpper, TICKETMASTER_PREFIX)) {
       return handleSearch(context);
     }
   },

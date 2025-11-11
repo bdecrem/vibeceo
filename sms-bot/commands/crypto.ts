@@ -10,17 +10,21 @@ import {
   unsubscribeFromAgent,
 } from "../lib/agent-subscriptions.js";
 import type { CommandContext, CommandHandler } from "./types.js";
+import { matchesPrefix, normalizeCommandPrefix } from "./command-utils.js";
 
 const CRYPTO_PREFIX = "CRYPTO";
 const ADMIN_PHONE = "+16508989508";
 
 function parseCryptoCommand(messageUpper: string): { subcommand: string } {
-  const trimmed = messageUpper.trim();
-  if (trimmed === CRYPTO_PREFIX) {
+  const normalized = normalizeCommandPrefix(messageUpper);
+
+  // Just "CRYPTO" (or "CRYPTO," "CRYPTO!" etc.)
+  if (normalized === CRYPTO_PREFIX) {
     return { subcommand: "REPORT" };
   }
 
-  const parts = trimmed.split(/\s+/);
+  // Extract subcommand after prefix
+  const parts = normalized.split(/\s+/);
   if (parts.length === 1) {
     return { subcommand: "REPORT" };
   }
@@ -278,7 +282,8 @@ async function handleUnsubscribe(context: CommandContext): Promise<boolean> {
 export const cryptoCommandHandler: CommandHandler = {
   name: "crypto",
   matches(context) {
-    return context.messageUpper.startsWith(CRYPTO_PREFIX);
+    // Handle "CRYPTO", "CRYPTO,", "crypto!", etc.
+    return matchesPrefix(context.messageUpper, CRYPTO_PREFIX);
   },
   async handle(context) {
     const { subcommand } = parseCryptoCommand(context.messageUpper);

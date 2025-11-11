@@ -1,0 +1,16 @@
+{
+  "checkpoint_id": "backfill-2025-10-30",
+  "current_date": "2025-10-30",
+  "stats": {
+    "papers_processed": 39693,
+    "papers_found_in_openalex": 15242,
+    "authors_total": 79805,
+    "authors_matched": 78417,
+    "authors_enriched": 12595,
+    "high_confidence_matches": 78394,
+    "medium_confidence_matches": 15,
+    "low_confidence_matches": 8,
+    "batches_processed": 956
+  },
+  "timestamp": "2025-11-01T09:56:54.746210"
+}

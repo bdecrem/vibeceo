@@ -12,6 +12,7 @@ import { getSubscriber } from '../lib/subscribers.js';
 import { AIR_AGENT_SLUG, getLatestPersonalizedReport, type AIRPreferences } from '../agents/air-personalized/index.js';
 import { supabase } from '../lib/supabase.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix, extractAfterPrefix } from './command-utils.js';
 
 const KG_PREFIX = 'KG';
 const STATE_TIMEOUT_MS = 3600000; // 1 hour
@@ -184,8 +185,8 @@ function isOtherCommand(msg: string): boolean {
 function matches(context: CommandContext): boolean {
   const msg = context.messageUpper.trim();
 
-  // Direct KG command
-  if (msg.startsWith(KG_PREFIX + ' ') || msg === KG_PREFIX) {
+  // Direct KG command (handles "KG", "KG ", "KG,", "kg!", etc.)
+  if (matchesPrefix(msg, KG_PREFIX)) {
     return true;
   }
 
@@ -226,25 +227,14 @@ async function handle(context: CommandContext): Promise<boolean> {
     state = await initializeState(normalizedFrom, context);
   }
 
-  // Extract query (remove KG prefix if present)
-  let query = msg;
-  if (msg.toUpperCase().startsWith(KG_PREFIX + ' ')) {
-    query = msg.substring(KG_PREFIX.length + 1).trim();
-  } else if (msg.toUpperCase() === KG_PREFIX) {
-    // Just "KG" without a query
+  // Extract query (remove KG prefix if present, handling punctuation)
+  const query = extractAfterPrefix(msg, msgUpper, KG_PREFIX);
+
+  if (!query) {
+    // Just "KG" (or "KG," "KG!" etc.) without a query
     await sendSmsResponse(
       from,
       'Ask me anything about the arXiv research graph!\n\nExamples:\n• Who are the top authors?\n• What papers about RAG?\n• Show trending topics\n\nType STOP to end conversation.',
-      twilioClient
-    );
-    await context.updateLastMessageDate(normalizedFrom);
-    return true;
-  }
-
-  if (!query) {
-    await sendSmsResponse(
-      from,
-      'Please ask a question. Example: KG who are interesting authors today?',
       twilioClient
     );
     await context.updateLastMessageDate(normalizedFrom);

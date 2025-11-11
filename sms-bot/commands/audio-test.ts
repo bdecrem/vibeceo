@@ -2,6 +2,7 @@ import { getLatestAiDailyEpisode, type AiDailyEpisode } from '../lib/sms/ai-dail
 import { buildAiDailyMusicPlayerUrl } from '../lib/utils/music-player-link.js';
 import { createShortLink } from '../lib/utils/shortlink-service.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix } from './command-utils.js';
 
 const AUDIO_TEST_KEYWORDS = ['AUDIO TEST', 'AUDIO-TEST'];
 async function resolvePlayerLink(
@@ -61,7 +62,8 @@ export const audioTestCommandHandler: CommandHandler = {
   name: 'audio-test',
   matches(context) {
     const trimmed = context.messageUpper.trim();
-    return AUDIO_TEST_KEYWORDS.some((keyword) => trimmed.startsWith(keyword));
+    // Handle "AUDIO TEST", "AUDIO TEST,", "AUDIO-TEST!", etc.
+    return AUDIO_TEST_KEYWORDS.some((keyword) => matchesPrefix(trimmed, keyword));
   },
   handle: handleAudioTestCommand,
 };

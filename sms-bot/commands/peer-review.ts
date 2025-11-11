@@ -10,6 +10,7 @@ import {
   markAgentReportSent,
 } from '../lib/agent-subscriptions.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix, normalizeCommandPrefix } from './command-utils.js';
 
 const PEER_REVIEW_COMMAND_PREFIX = 'PEER REVIEW';
 const PEER_REVIEW_AGENT_SLUG = 'peer-review-fight-club';
@@ -20,7 +21,9 @@ type SubscribeResult = Awaited<ReturnType<typeof subscribeToAgent>>;
 type UnsubscribeResult = Awaited<ReturnType<typeof unsubscribeFromAgent>>;
 
 function normalizePeerReviewCommand(messageUpper: string): string {
-  return messageUpper.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  // First normalize punctuation, then convert hyphens to spaces
+  const withoutPunctuation = normalizeCommandPrefix(messageUpper);
+  return withoutPunctuation.replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
 }
 
 async function deliverPeerReviewEpisode(
@@ -179,11 +182,12 @@ export const peerReviewCommandHandler: CommandHandler = {
   name: 'peer-review',
   matches(context: CommandContext): boolean {
     const normalized = normalizePeerReviewCommand(context.messageUpper);
-    if (normalized === 'PR LINKS') {
+    if (matchesPrefix(normalized, 'PR LINKS')) {
       return true;
     }
 
-    return normalized.startsWith(PEER_REVIEW_COMMAND_PREFIX);
+    // Handle "PEER REVIEW", "PEER-REVIEW", "PEER REVIEW,", etc.
+    return matchesPrefix(normalized, PEER_REVIEW_COMMAND_PREFIX);
   },
   async handle(context: CommandContext): Promise<boolean> {
     const normalized = normalizePeerReviewCommand(context.messageUpper);

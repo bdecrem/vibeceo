@@ -10,6 +10,7 @@ import {
   type YouTubeVideo,
 } from '../agents/youtube-search/index.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix, extractAfterPrefix } from './command-utils.js';
 
 interface YouTubeAgentState {
   videos: YouTubeVideo[];
@@ -216,12 +217,8 @@ export const youtubeAgentHandler: CommandHandler = {
       return true;
     }
 
-    // Match if starts with YT or YOUTUBE
-    return (
-      context.messageUpper.startsWith('YT ') ||
-      context.messageUpper === 'YT' ||
-      context.messageUpper.startsWith('YOUTUBE ')
-    );
+    // Match if starts with YT or YOUTUBE (handles "YT," "YOUTUBE!" etc.)
+    return matchesPrefix(context.messageUpper, 'YT') || matchesPrefix(context.messageUpper, 'YOUTUBE');
   },
   async handle(context) {
     const stateMap = getStateMap(context);
@@ -248,12 +245,12 @@ export const youtubeAgentHandler: CommandHandler = {
       );
     }
 
-    // New search
-    if (
-      context.messageUpper.startsWith('YT') ||
-      context.messageUpper.startsWith('YOUTUBE')
-    ) {
-      const query = context.message.replace(/^YT(?:UBE)?\s*/i, '').trim();
+    // New search - extract query after YT or YOUTUBE prefix
+    if (matchesPrefix(context.messageUpper, 'YT')) {
+      const query = extractAfterPrefix(context.message, context.messageUpper, 'YT');
+      return startNewSearch(context, stateMap, query);
+    } else if (matchesPrefix(context.messageUpper, 'YOUTUBE')) {
+      const query = extractAfterPrefix(context.message, context.messageUpper, 'YOUTUBE');
       return startNewSearch(context, stateMap, query);
     }
 

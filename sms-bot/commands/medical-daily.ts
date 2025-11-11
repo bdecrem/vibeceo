@@ -13,6 +13,7 @@ import {
   unsubscribeFromAgent,
 } from '../lib/agent-subscriptions.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix, normalizeCommandPrefix } from './command-utils.js';
 
 const ADMIN_PHONE = '+16508989508';
 
@@ -33,12 +34,15 @@ function normalizeCommand(messageUpper: string): string {
 }
 
 function stripPrefix(normalized: string, prefix: string): string | null {
-  if (normalized === prefix) {
+  // Normalize to handle punctuation like "MEDICAL," "MD!" etc.
+  const cleanNormalized = normalizeCommandPrefix(normalized);
+
+  if (cleanNormalized === prefix) {
     return '';
   }
 
-  if (normalized.startsWith(`${prefix} `)) {
-    return normalized.slice(prefix.length + 1);
+  if (cleanNormalized.startsWith(`${prefix} `)) {
+    return cleanNormalized.slice(prefix.length + 1);
   }
 
   return null;
@@ -336,12 +340,8 @@ export const medicalDailyCommandHandler: CommandHandler = {
   name: 'medical-daily',
   matches(context) {
     const upper = context.messageUpper;
-    return (
-      upper === PRIMARY_PREFIX ||
-      upper.startsWith(`${PRIMARY_PREFIX} `) ||
-      upper === SHORT_PREFIX ||
-      upper.startsWith(`${SHORT_PREFIX} `)
-    );
+    // Handle "MEDICAL", "MEDICAL,", "MD", "MD!", etc.
+    return matchesPrefix(upper, PRIMARY_PREFIX) || matchesPrefix(upper, SHORT_PREFIX);
   },
   async handle(context) {
     const { subcommand, args } = parseMedicalCommand(context.messageUpper);

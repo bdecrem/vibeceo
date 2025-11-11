@@ -1,5 +1,6 @@
 import { handleStockNewsSearch } from "../agents/stock-news/agent.js";
 import { CommandContext, CommandHandler } from "./types.js";
+import { matchesPrefix } from "./command-utils.js";
 
 // Prefix definition
 const STOCK_PREFIX = "STOCKNEWS";
@@ -26,10 +27,11 @@ async function handleSearch(context: CommandContext): Promise<boolean> {
 export const stockNewsCommandHandler: CommandHandler = {
   name: "stocknews",
   matches(context) {
-    return context.messageUpper.startsWith(STOCK_PREFIX);
+    // Handle "STOCKNEWS", "STOCKNEWS,", "stocknews!", etc.
+    return matchesPrefix(context.messageUpper, STOCK_PREFIX);
   },
   async handle(context) {
-    if (context.messageUpper.startsWith(STOCK_PREFIX)) {
+    if (matchesPrefix(context.messageUpper, STOCK_PREFIX)) {
       return handleSearch(context);
     }
   },

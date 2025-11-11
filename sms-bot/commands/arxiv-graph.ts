@@ -10,6 +10,7 @@ import {
   unsubscribeFromAgent,
 } from '../lib/agent-subscriptions.js';
 import type { CommandContext, CommandHandler } from './types.js';
+import { matchesPrefix, normalizeCommandPrefix } from './command-utils.js';
 
 const ARXIV_GRAPH_PREFIX = 'ARXIV-GRAPH';
 const ADMIN_PHONE = '+16508989508';
@@ -18,26 +19,27 @@ function parseArxivGraphCommand(messageUpper: string): {
   subcommand: string;
   args: string[];
 } {
-  const trimmed = messageUpper.trim();
+  const normalized = normalizeCommandPrefix(messageUpper.trim());
 
   // Support "ARXIV", "ARXIV-GRAPH", and "ARXIV-RESEARCH-GRAPH" prefixes
+  // Check longest prefixes first
   let remainder = '';
-  if (trimmed.startsWith('ARXIV-RESEARCH-GRAPH')) {
-    if (trimmed === 'ARXIV-RESEARCH-GRAPH') {
+  if (normalized.startsWith('ARXIV-RESEARCH-GRAPH')) {
+    if (normalized === 'ARXIV-RESEARCH-GRAPH') {
       return { subcommand: 'REPORT', args: [] };
     }
-    remainder = trimmed.slice('ARXIV-RESEARCH-GRAPH'.length).trim();
-  } else if (trimmed.startsWith(ARXIV_GRAPH_PREFIX)) {
-    if (trimmed === ARXIV_GRAPH_PREFIX) {
+    remainder = normalized.slice('ARXIV-RESEARCH-GRAPH'.length).trim();
+  } else if (normalized.startsWith(ARXIV_GRAPH_PREFIX)) {
+    if (normalized === ARXIV_GRAPH_PREFIX) {
       return { subcommand: 'REPORT', args: [] };
     }
-    remainder = trimmed.slice(ARXIV_GRAPH_PREFIX.length).trim();
-  } else if (trimmed.startsWith('ARXIV')) {
+    remainder = normalized.slice(ARXIV_GRAPH_PREFIX.length).trim();
+  } else if (normalized.startsWith('ARXIV')) {
     // Handle the new short form "ARXIV"
-    if (trimmed === 'ARXIV') {
+    if (normalized === 'ARXIV') {
       return { subcommand: 'REPORT', args: [] };
     }
-    remainder = trimmed.slice('ARXIV'.length).trim();
+    remainder = normalized.slice('ARXIV'.length).trim();
   } else {
     return { subcommand: '', args: [] };
   }
@@ -233,16 +235,19 @@ export const arxivGraphCommandHandler: CommandHandler = {
     const upper = context.messageUpper;
     // Match "ARXIV", "ARXIV-GRAPH", and "ARXIV-RESEARCH-GRAPH"
     // BUT NOT "ARXIV-RESEARCH" (that's the deprecated handler)
+    // Handle punctuation like "ARXIV," "ARXIV-GRAPH!" etc.
+
+    const normalized = normalizeCommandPrefix(upper);
 
     // Check for deprecated "ARXIV-RESEARCH" first and exclude it
-    if (upper.startsWith('ARXIV-RESEARCH') && !upper.startsWith('ARXIV-RESEARCH-GRAPH')) {
+    if (normalized.startsWith('ARXIV-RESEARCH') && !normalized.startsWith('ARXIV-RESEARCH-GRAPH')) {
       return false;
     }
 
-    // Match our supported prefixes
-    return upper.startsWith('ARXIV-RESEARCH-GRAPH') ||
-           upper.startsWith(ARXIV_GRAPH_PREFIX) ||
-           upper.startsWith('ARXIV');
+    // Match our supported prefixes (check longest first to avoid false matches)
+    return matchesPrefix(upper, 'ARXIV-RESEARCH-GRAPH') ||
+           matchesPrefix(upper, ARXIV_GRAPH_PREFIX) ||
+           matchesPrefix(upper, 'ARXIV');
   },
   async handle(context: CommandContext): Promise<boolean> {
     const messageUpper = context.message.trim().toUpperCase();

@@ -30,21 +30,24 @@ import {
   buildArxivReportMessage,
 } from '../agents/arxiv-research-graph/index.js';
 import type { CommandContext } from './types.js';
+import { matchesPrefix, normalizeCommandPrefix } from './command-utils.js';
 
 const AIR_PREFIX = 'AIR';
 const AI_RESEARCH_PREFIX = 'AI RESEARCH';
 
 /**
  * Parse AIR command and extract subcommand + args
+ * Handles punctuation after command prefix (e.g., "AIR," "AI RESEARCH!")
  */
 function parseAIRCommand(messageUpper: string): { subcommand: string; args: string } {
-  const trimmed = messageUpper.trim();
+  const normalized = normalizeCommandPrefix(messageUpper);
   let remainder = '';
 
-  if (trimmed.startsWith(AI_RESEARCH_PREFIX)) {
-    remainder = trimmed.slice(AI_RESEARCH_PREFIX.length).trim();
-  } else if (trimmed.startsWith(AIR_PREFIX)) {
-    remainder = trimmed.slice(AIR_PREFIX.length).trim();
+  // Check for "AI RESEARCH" first (longer prefix)
+  if (normalized.startsWith(AI_RESEARCH_PREFIX + ' ') || normalized === AI_RESEARCH_PREFIX) {
+    remainder = normalized.slice(AI_RESEARCH_PREFIX.length).trim();
+  } else if (normalized.startsWith(AIR_PREFIX + ' ') || normalized === AIR_PREFIX) {
+    remainder = normalized.slice(AIR_PREFIX.length).trim();
   } else {
     return { subcommand: '', args: '' };
   }
@@ -432,7 +435,8 @@ export const airCommandHandler: import('./types.js').CommandHandler = {
   name: 'air',
   matches(context: CommandContext): boolean {
     const msgUpper = context.messageUpper.trim();
-    return msgUpper.startsWith('AIR') || msgUpper.startsWith('AI RESEARCH');
+    // Handle "AIR", "AIR,", "AI RESEARCH", "AI RESEARCH!" etc.
+    return matchesPrefix(msgUpper, AIR_PREFIX) || matchesPrefix(msgUpper, AI_RESEARCH_PREFIX);
   },
   async handle(context: CommandContext): Promise<boolean> {
     await handleAIRCommand(context.message, context);
