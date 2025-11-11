@@ -15,6 +15,7 @@ export interface ExtractedPersonalization {
   timezone?: string;
   location?: string;
   twitter?: string;
+  linkedin?: string;
   notes?: string;
 }
 
@@ -30,6 +31,7 @@ Extract these fields (leave undefined if not mentioned):
 - timezone: Timezone (e.g., "PST", "UTC", "EST", "UTC+1")
 - location: City/region (e.g., "San Francisco", "NYC", "London")
 - twitter: Twitter handle (with or without @)
+- linkedin: LinkedIn handle or profile path (e.g., "/in/bartdecrem" or "bartdecrem")
 - notes: Any other relevant info not captured above
 
 Examples:
@@ -42,6 +44,9 @@ Output: {"name": "Alex", "interests": ["crypto trading", "defi", "nfts"], "locat
 
 Input: "I'm @bartdecrem on Twitter"
 Output: {"twitter": "@bartdecrem"}
+
+Input: "Wanna know my linkedin handle? It's /in/bartdecrem"
+Output: {"linkedin": "/in/bartdecrem"}
 
 Input: "Call me Jay. Research scientist working on transformers. UTC+1"
 Output: {"name": "Jay", "interests": ["research", "transformers"], "timezone": "UTC+1"}
@@ -77,37 +82,28 @@ Respond with ONLY valid JSON, no explanation.`;
 
 /**
  * Detect if message contains personal information worth extracting
- * Fast check before doing full extraction
+ * Uses Claude directly - no regex filtering
  */
 export async function detectPersonalInfo(text: string): Promise<boolean> {
-  // Simple heuristics first (fast)
-  const personalKeywords = [
-    /\bmy name is\b/i,
-    /\bcall me\b/i,
-    /\bi'm\s+@?\w+/i,
-    /\binterested in\b/i,
-    /\bi love\b/i,
-    /\btimezone\b/i,
-    /\bPST\b|\bEST\b|\bUTC\b/i,
-    /\btwitter\b/i,
-    /@\w+/,
-  ];
+  const systemPrompt = `Does this message contain personal information about the user?
 
-  const hasKeywords = personalKeywords.some((pattern) => pattern.test(text));
-  if (!hasKeywords) {
-    return false;
-  }
-
-  // Use Claude for final check (only if keywords matched)
-  const systemPrompt = `Does this message contain personal information about the user (name, interests, location, timezone, social media)?
+Personal information includes:
+- Name or nickname
+- Social media handles (Twitter, LinkedIn, etc.)
+- Location or timezone
+- Interests or hobbies
+- Professional background
 
 Respond with ONLY: YES or NO
 
 Examples:
 "I'm @bartdecrem on Twitter" → YES
-"what's the weather?" → NO
+"Wanna know my linkedin handle? It's /in/bartdecrem" → YES
 "My name is Sarah" → YES
-"tell me about AI" → NO`;
+"I'm interested in AI and robotics" → YES
+"what's the weather?" → NO
+"tell me about AI research" → NO
+"how does Bitcoin work?" → NO`;
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',
@@ -133,6 +129,7 @@ export function formatExtracted(extracted: ExtractedPersonalization): string {
 
   if (extracted.name) parts.push(`Name: ${extracted.name}`);
   if (extracted.twitter) parts.push(`Twitter: ${extracted.twitter}`);
+  if (extracted.linkedin) parts.push(`LinkedIn: ${extracted.linkedin}`);
   if (extracted.interests && extracted.interests.length > 0) {
     parts.push(`Interests: ${extracted.interests.join(', ')}`);
   }
