@@ -1,5 +1,6 @@
 import type { CommandHandler } from "./types.js";
 
+import { airCommandHandler } from "./air.js";
 import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivGraphCommandHandler } from "./arxiv-graph.js";
 // import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
@@ -12,6 +13,7 @@ import { youtubeAgentHandler } from "./youtube-agent.js";
 import { stockNewsCommandHandler } from "./stock-news.js";
 
 export const commandHandlers: CommandHandler[] = [
+  airCommandHandler, // AIR (AI Research) - personalized research reports
   audioTestCommandHandler,
   arxivGraphCommandHandler,
   // arxivCommandHandler, // DISABLED - arxiv-research agent retired

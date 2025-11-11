@@ -13,6 +13,7 @@ interface AgentSubscriptionRow {
 
 export interface AgentSubscriber extends SMSSubscriber {
   last_sent_at: string | null;
+  preferences?: Record<string, any>; // Agent-specific preferences (from agent_subscriptions.preferences)
 }
 
 type SubscribeResult = 'subscribed' | 'reactivated' | 'already' | 'missing_subscriber' | 'error';
@@ -159,9 +160,9 @@ export async function markAgentReportSent(
 export async function getAgentSubscribers(
   agentSlug: string
 ): Promise<AgentSubscriber[]> {
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from('agent_subscriptions')
-    .select('subscriber_id, last_sent_at')
+    .select('subscriber_id, last_sent_at, preferences')
     .eq('agent_slug', agentSlug)
     .eq('active', true);
 
@@ -170,7 +171,7 @@ export async function getAgentSubscribers(
     return [];
   }
 
-  const rows = (data || []) as Array<{ subscriber_id: string; last_sent_at: string | null }>;
+  const rows = (data || []) as Array<{ subscriber_id: string; last_sent_at: string | null; preferences?: Record<string, any> }>;
   const ids = rows.map((row) => row.subscriber_id);
 
   if (ids.length === 0) {
@@ -206,6 +207,7 @@ export async function getAgentSubscribers(
     merged.push({
       ...subscriber,
       last_sent_at: row.last_sent_at ?? null,
+      preferences: row.preferences,
     });
   }
 
