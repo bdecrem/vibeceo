@@ -12,75 +12,12 @@
  *   "PERSONALIZE Call me Jay. Research scientist working on transformers. UTC+1"
  */
 
-import Anthropic from '@anthropic-ai/sdk';
 import type { CommandContext } from './types.js';
 import { getSubscriber } from '../lib/subscribers.js';
 import { supabase } from '../lib/supabase.js';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { extractPersonalization, formatExtracted } from '../lib/personalization-extractor.js';
 
 const PERSONALIZE_PREFIX = 'PERSONALIZE';
-
-/**
- * Extract structured personalization from natural language
- */
-async function extractPersonalization(text: string): Promise<{
-  name?: string;
-  interests?: string[];
-  timezone?: string;
-  location?: string;
-  notes?: string;
-}> {
-  const systemPrompt = `You are a personalization extractor. Given natural language text about a person, extract structured data.
-
-Extract these fields (leave undefined if not mentioned):
-- name: Their name/nickname
-- interests: Array of interests/topics (lowercase, concise)
-- timezone: Timezone (e.g., "PST", "UTC", "EST", "UTC+1")
-- location: City/region (e.g., "San Francisco", "NYC", "London")
-- notes: Any other relevant info not captured above
-
-Examples:
-
-Input: "I'm Sarah, interested in machine learning and robotics. SF Bay Area, PST timezone"
-Output: {"name": "Sarah", "interests": ["machine learning", "robotics"], "timezone": "PST", "location": "SF Bay Area"}
-
-Input: "My name is Alex. I'm a crypto trader in NYC. Love DeFi and NFTs."
-Output: {"name": "Alex", "interests": ["crypto trading", "defi", "nfts"], "location": "NYC"}
-
-Input: "Call me Jay. Research scientist working on transformers. UTC+1"
-Output: {"name": "Jay", "interests": ["research", "transformers"], "timezone": "UTC+1"}
-
-Respond with ONLY valid JSON, no explanation.`;
-
-  const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-5-20250929',
-    max_tokens: 500,
-    temperature: 0,
-    system: systemPrompt,
-    messages: [
-      {
-        role: 'user',
-        content: text,
-      },
-    ],
-  });
-
-  const textContent = response.content.find((c) => c.type === 'text');
-  if (!textContent || textContent.type !== 'text') {
-    throw new Error('No text response from Claude');
-  }
-
-  // Parse JSON response
-  const jsonMatch = textContent.text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('No JSON found in response');
-  }
-
-  return JSON.parse(jsonMatch[0]);
-}
 
 /**
  * Handle PERSONALIZE command
@@ -181,17 +118,7 @@ async function handlePersonalize(
       .eq('id', subscriber.id);
 
     // Build confirmation message
-    let confirmation = '✅ Personalization updated!\n\n';
-
-    if (extracted.name) confirmation += `Name: ${extracted.name}\n`;
-    if (extracted.interests && extracted.interests.length > 0) {
-      confirmation += `Interests: ${extracted.interests.join(', ')}\n`;
-    }
-    if (extracted.location) confirmation += `Location: ${extracted.location}\n`;
-    if (extracted.timezone) confirmation += `Timezone: ${extracted.timezone}\n`;
-    if (extracted.notes) confirmation += `Notes: ${extracted.notes}\n`;
-
-    confirmation += `\n💡 View: PERSONALIZE SHOW\n💡 Update: PERSONALIZE {new info}`;
+    const confirmation = `✅ Personalization updated!\n\n${formatExtracted(extracted)}\n\n💡 View: PERSONALIZE SHOW\n💡 Update: PERSONALIZE {new info}`;
 
     await sendSmsResponse(from, confirmation, twilioClient);
     await updateLastMessageDate(normalizedFrom);

@@ -12,6 +12,13 @@ import type { CommandContext } from './types.js';
 import type { UserContext } from '../lib/context-loader.js';
 import { storeMessage } from '../lib/context-loader.js';
 import { getSubscriber } from '../lib/subscribers.js';
+import {
+  detectPersonalInfo,
+  extractPersonalization,
+  formatExtracted,
+  type ExtractedPersonalization
+} from '../lib/personalization-extractor.js';
+import { supabase } from '../lib/supabase.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
@@ -51,7 +58,7 @@ export async function handleGeneralKochiAgent(
       throw new Error('No text response from Claude');
     }
 
-    const reply = textContent.text;
+    let reply = textContent.text;
 
     // Store both user message and assistant response
     const subscriber = await getSubscriber(normalizedFrom);
@@ -67,6 +74,33 @@ export async function handleGeneralKochiAgent(
         content: reply,
         type: 'general_agent_response',
       });
+
+      // Automatic personalization detection
+      try {
+        const hasPersonalInfo = await detectPersonalInfo(message);
+
+        if (hasPersonalInfo) {
+          console.log(`[General Kochi] Detected personal info, extracting...`);
+          const extracted = await extractPersonalization(message);
+
+          // Check if anything meaningful was extracted
+          const hasData = Object.keys(extracted).length > 0;
+
+          if (hasData) {
+            // Store as pending confirmation
+            await storePendingPersonalization(subscriber.id, extracted);
+
+            // Add confirmation prompt to reply
+            const confirmationPrompt = `\n\n---\n💡 I noticed you shared:\n${formatExtracted(extracted)}\n\nWant me to remember this? Reply YES to save.`;
+            reply += confirmationPrompt;
+
+            console.log(`[General Kochi] Added personalization confirmation prompt`);
+          }
+        }
+      } catch (detectionError) {
+        console.error('[General Kochi] Personalization detection failed:', detectionError);
+        // Continue without personalization detection
+      }
     }
 
     // Send response
@@ -168,6 +202,106 @@ function getTimeAgo(date: Date): string {
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
   return `${Math.floor(seconds / 86400)}d ago`;
+}
+
+/**
+ * Store pending personalization for confirmation
+ */
+async function storePendingPersonalization(
+  subscriberId: string,
+  extracted: ExtractedPersonalization
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + 600000).toISOString(); // 10 minutes
+
+  await supabase
+    .from('conversation_context')
+    .insert({
+      subscriber_id: subscriberId,
+      context_type: 'pending_personalization',
+      metadata: { extracted },
+      expires_at: expiresAt,
+    });
+}
+
+/**
+ * Get pending personalization for confirmation
+ */
+async function getPendingPersonalization(
+  subscriberId: string
+): Promise<ExtractedPersonalization | null> {
+  const { data } = await supabase
+    .from('conversation_context')
+    .select('metadata')
+    .eq('subscriber_id', subscriberId)
+    .eq('context_type', 'pending_personalization')
+    .gte('expires_at', new Date().toISOString())
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  if (!data?.metadata?.extracted) {
+    return null;
+  }
+
+  return data.metadata.extracted as ExtractedPersonalization;
+}
+
+/**
+ * Clear pending personalization
+ */
+async function clearPendingPersonalization(subscriberId: string): Promise<void> {
+  await supabase
+    .from('conversation_context')
+    .delete()
+    .eq('subscriber_id', subscriberId)
+    .eq('context_type', 'pending_personalization');
+}
+
+/**
+ * Handle YES confirmation for personalization
+ */
+export async function handlePersonalizationConfirmation(
+  context: CommandContext
+): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+
+  const subscriber = await getSubscriber(normalizedFrom);
+  if (!subscriber) {
+    return false;
+  }
+
+  const pending = await getPendingPersonalization(subscriber.id);
+  if (!pending) {
+    return false; // No pending personalization
+  }
+
+  console.log(`[General Kochi] Confirming personalization:`, pending);
+
+  // Merge with existing personalization
+  const currentPersonalization = subscriber.personalization || {};
+  const merged = {
+    ...currentPersonalization,
+    ...pending,
+  };
+
+  // Update subscriber
+  await supabase
+    .from('sms_subscribers')
+    .update({ personalization: merged })
+    .eq('id', subscriber.id);
+
+  // Clear pending
+  await clearPendingPersonalization(subscriber.id);
+
+  // Send confirmation
+  await sendSmsResponse(
+    from,
+    `✅ Saved!\n\n${formatExtracted(pending)}\n\n💡 View: PERSONALIZE SHOW`,
+    twilioClient
+  );
+  await updateLastMessageDate(normalizedFrom);
+
+  return true; // Handled
 }
 
 /**

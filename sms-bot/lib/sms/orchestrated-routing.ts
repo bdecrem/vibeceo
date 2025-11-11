@@ -12,7 +12,7 @@
 import type { CommandContext } from '../../commands/types.js';
 import { loadUserContext, storeMessage } from '../context-loader.js';
 import { routeMessage } from '../orchestrator.js';
-import { handleGeneralKochiAgent } from '../../commands/general.js';
+import { handleGeneralKochiAgent, handlePersonalizationConfirmation } from '../../commands/general.js';
 
 /**
  * Handle a message using orchestrated routing
@@ -23,6 +23,16 @@ export async function handleOrchestratedMessage(
   normalizedPhoneNumber: string
 ): Promise<void> {
   console.log(`[Orchestrated Routing] Processing: "${commandContext.message}"`);
+
+  // Check for YES confirmation (personalization)
+  if (commandContext.messageUpper === 'YES') {
+    const handled = await handlePersonalizationConfirmation(commandContext);
+    if (handled) {
+      console.log(`[Orchestrated Routing] Handled YES confirmation`);
+      return;
+    }
+    // If not handled, continue with normal routing
+  }
 
   // Load user context (personalization + subscriptions + recent messages)
   const userContext = await loadUserContext(normalizedPhoneNumber);
