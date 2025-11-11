@@ -156,7 +156,7 @@ async function handleSubscribeWithQuery(
     // Store natural language query in preferences
     const preferences: AIRPreferences = {
       natural_language_query: query,
-      notification_time: '06:00', // Default 6 AM PT
+      notification_time: '10:00', // Default 10 AM PT (after reports generate at 9 AM)
     };
 
     await supabase
@@ -175,7 +175,7 @@ async function handleSubscribeWithQuery(
     }
 
     message += `Query: "${query}"\n`;
-    message += `Time: 6:00 AM PT\n\n`;
+    message += `Time: 10:00 AM PT\n\n`;
     message += `📧 Your first report arrives tomorrow morning\n\n`;
     message += `Commands:\n`;
     message += `• AIR TIME 08:00 - Change time\n`;
@@ -306,7 +306,7 @@ async function handleShowSettings(context: CommandContext): Promise<void> {
 
   let message = `📊 Your AIR Settings\n\n`;
   message += `Query: "${prefs.natural_language_query || 'Not set'}"\n`;
-  message += `Time: ${prefs.notification_time || '06:00'} PT\n`;
+  message += `Time: ${prefs.notification_time || '10:00'} PT\n`;
   message += `Status: Active\n`;
   message += `Last report: ${lastSent}\n\n`;
   message += `Commands:\n`;

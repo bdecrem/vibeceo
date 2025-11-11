@@ -89,7 +89,7 @@ Send SMS at user's notification_time
 ```json
 {
   "natural_language_query": "physical ai",
-  "notification_time": "06:00",
+  "notification_time": "10:00",
   "last_delivery_status": "success",
   "consecutive_failures": 0
 }
