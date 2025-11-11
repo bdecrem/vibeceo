@@ -8,6 +8,7 @@ import { cryptoCommandHandler } from "./crypto.js";
 import { kgCommandHandler } from "./kg.js";
 import { medicalDailyCommandHandler } from "./medical-daily.js";
 import { peerReviewCommandHandler } from "./peer-review.js";
+import { personalizeCommandHandler } from "./personalize.js";
 import { ticketmasterCommandHandler } from "./ticketmaster.js";
 import { youtubeAgentHandler } from "./youtube-agent.js";
 import { stockNewsCommandHandler } from "./stock-news.js";
@@ -21,6 +22,7 @@ export const commandHandlers: CommandHandler[] = [
   kgCommandHandler,
   medicalDailyCommandHandler,
   peerReviewCommandHandler,
+  personalizeCommandHandler, // PERSONALIZE - natural language personalization
   ticketmasterCommandHandler,
   youtubeAgentHandler,
   stockNewsCommandHandler,
