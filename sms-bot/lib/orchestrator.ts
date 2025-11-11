@@ -53,8 +53,12 @@ ROUTING OPTIONS:
    Examples: "YES", "1", "2", after AIR preview was sent
 
 3. "general" - Route to general Kochi assistant
-   Use when: Everything else (crypto questions, general chat, other topics)
-   Examples: "what about bitcoin?", "tell me more", general questions
+   Use when: Everything else including:
+   - General questions (crypto, tech, news)
+   - Personal conversations and introductions
+   - Sharing personal info (name, interests, social handles, location, etc.)
+   - Follow-up questions or clarifications
+   Examples: "what about bitcoin?", "tell me more", "I'm interested in AI", "my name is...", "I'm @username on Twitter"
 
 CONTEXT:
 ${contextSummary}

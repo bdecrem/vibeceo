@@ -76,34 +76,40 @@ export async function handleGeneralKochiAgent(
       });
 
       // Automatic personalization detection
+      console.log(`[General Kochi] Starting personalization detection for message: "${message.substring(0, 50)}..."`);
       try {
         const hasPersonalInfo = await detectPersonalInfo(message);
         console.log(`[General Kochi] Personal info detected: ${hasPersonalInfo}`);
 
         if (hasPersonalInfo) {
-          console.log(`[General Kochi] Extracting personal info...`);
+          console.log(`[General Kochi] ✅ Personal info detected! Extracting...`);
           const extracted = await extractPersonalization(message);
-          console.log(`[General Kochi] Extracted:`, JSON.stringify(extracted));
+          console.log(`[General Kochi] Extracted:`, JSON.stringify(extracted, null, 2));
 
           // Check if anything meaningful was extracted
           const hasData = Object.keys(extracted).length > 0;
-          console.log(`[General Kochi] Has data: ${hasData}`);
+          console.log(`[General Kochi] Has meaningful data: ${hasData}`);
 
           if (hasData) {
             // Store as pending confirmation
             await storePendingPersonalization(subscriber.id, extracted);
-            console.log(`[General Kochi] Stored pending personalization`);
+            console.log(`[General Kochi] ✅ Stored pending personalization`);
 
             // Add confirmation prompt to reply
             const confirmationPrompt = `\n\n---\n💡 I noticed you shared:\n${formatExtracted(extracted)}\n\nWant me to remember this? Reply YES to save.`;
-            console.log(`[General Kochi] Confirmation prompt:`, confirmationPrompt);
+            console.log(`[General Kochi] Adding confirmation prompt (${confirmationPrompt.length} chars)`);
 
             reply += confirmationPrompt;
-            console.log(`[General Kochi] Reply length after adding prompt: ${reply.length}`);
+            console.log(`[General Kochi] ✅ Confirmation prompt added to reply`);
+          } else {
+            console.log(`[General Kochi] ⚠️ No meaningful data extracted, skipping confirmation`);
           }
+        } else {
+          console.log(`[General Kochi] ℹ️  No personal info detected in this message`);
         }
       } catch (detectionError) {
-        console.error('[General Kochi] Personalization detection failed:', detectionError);
+        console.error('[General Kochi] ❌ Personalization detection failed:', detectionError);
+        console.error('[General Kochi] Error stack:', detectionError instanceof Error ? detectionError.stack : 'No stack');
         // Continue without personalization detection
       }
     }
