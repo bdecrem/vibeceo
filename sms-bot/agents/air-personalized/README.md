@@ -18,7 +18,7 @@ AIR delivers personalized daily AI/ML research reports by running each user's st
 - **Broadcast Fallback**: Non-subscribers get arxiv-graph general report
 - **Custom Notification Times**: Users set delivery time in PT timezone
 - **Conversation Context**: KG follow-up questions with AIR context
-- **Non-Blocking Scheduler**: Runs at 4 AM PT, doesn't interfere with other agents
+- **Non-Blocking Scheduler**: Runs at 9 AM PT (after arxiv-graph), doesn't interfere with other agents
 
 ## Commands
 
@@ -70,7 +70,7 @@ User: AIR physical ai
   ↓
 Store in Supabase: preferences.natural_language_query = "physical ai"
   ↓
-Daily at 4 AM PT: For each subscriber
+Daily at 9 AM PT: For each subscriber (after arxiv-graph loads new papers)
   ↓
 Query = "Show me papers from today about: {user's query}"
   ↓
@@ -162,7 +162,7 @@ registerAIRDailyJob(twilioClient);
 ```
 
 ### Schedule
-- **Time:** 4:00 AM PT
+- **Time:** 9:00 AM PT (after arxiv-graph completes around 8:15 AM)
 - **Frequency:** Daily
 - **Non-blocking:** Won't prevent other agents from running
 
@@ -170,7 +170,7 @@ registerAIRDailyJob(twilioClient);
 ```typescript
 registerDailyJob({
   name: 'air-personalized-reports',
-  hour: 4,
+  hour: 9,
   minute: 0,
   timezone: 'America/Los_Angeles',
   run: async () => {
@@ -191,7 +191,8 @@ registerDailyJob({
 - **Sequential generation**: One report at a time
 - **50 users**: ~21 minutes (25 sec/user)
 - **100 users**: ~42 minutes (25 sec/user)
-- **Buffer**: 2 hours before earliest delivery (6 AM default)
+- **Start time**: 9:00 AM PT (after arxiv-graph completes)
+- **Buffer**: Completes by ~9:45 AM, well before user notifications
 - **Rate limiting**: 150ms delay between SMS sends
 
 ## Cost Analysis
@@ -245,7 +246,7 @@ try {
 
 ### Environment Variables
 ```bash
-AIR_REPORT_HOUR=4              # Optional, defaults to 4 AM PT
+AIR_REPORT_HOUR=9              # Optional, defaults to 9 AM PT
 AIR_REPORT_MINUTE=0            # Optional, defaults to 0
 AIR_SMS_DELAY_MS=150           # Optional, rate limiting between SMS
 ```
@@ -253,7 +254,7 @@ AIR_SMS_DELAY_MS=150           # Optional, rate limiting between SMS
 ### Deployment
 1. Build: `npm run build`
 2. Deploy to Railway (auto-deploys on push to main)
-3. Verify scheduler registration in logs: `[AIR] Daily job registered for 4:00 AM PT`
+3. Verify scheduler registration in logs: `[AIR] Daily job registered for 9:00 AM PT`
 4. Test with real phone number: `AIR physical ai`
 
 ## Testing
@@ -344,7 +345,7 @@ npm run build
 **Problem:** Wrong delivery time
 - Check: Preferences.notification_time format (HH:MM)
 - Check: Timezone (all times in PT)
-- Check: Scheduler hour (4 AM PT start time)
+- Check: Scheduler hour (9 AM PT start time, after arxiv-graph)
 
 ## Files
 

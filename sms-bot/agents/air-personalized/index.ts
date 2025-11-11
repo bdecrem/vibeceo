@@ -17,7 +17,7 @@ import type { TwilioClient } from '../../lib/sms/webhooks.js';
 
 export const AIR_AGENT_SLUG = 'air';
 
-const DEFAULT_JOB_HOUR = Number(process.env.AIR_REPORT_HOUR || 4); // 4 AM PT
+const DEFAULT_JOB_HOUR = Number(process.env.AIR_REPORT_HOUR || 9); // 9 AM PT - after arxiv-graph completes (~8:15 AM)
 const DEFAULT_JOB_MINUTE = Number(process.env.AIR_REPORT_MINUTE || 0);
 const SMS_DELAY_MS = Number(process.env.AIR_SMS_DELAY_MS || 150);
 
