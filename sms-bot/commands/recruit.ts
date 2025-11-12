@@ -54,7 +54,14 @@ async function getRecruitingPreferences(subscriberId: string): Promise<Recruitin
     return { projects: {} };
   }
 
-  return data.preferences as RecruitingPreferences;
+  const prefs = data.preferences as any;
+
+  // Ensure projects field exists even if preferences object exists
+  if (!prefs.projects) {
+    prefs.projects = {};
+  }
+
+  return prefs as RecruitingPreferences;
 }
 
 /**
