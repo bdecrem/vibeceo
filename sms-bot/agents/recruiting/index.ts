@@ -231,17 +231,24 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
     }
 
     const text = content.text.trim();
-    console.log('[Recruiting] Claude raw response:', text.substring(0, 500));
+
+    console.log('[Recruiting] Claude response:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
 
     // Try to parse JSON from response
     let candidates: any[];
 
-    // Handle markdown code blocks
-    const jsonMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-    if (jsonMatch) {
-      candidates = JSON.parse(jsonMatch[1]);
-    } else {
-      candidates = JSON.parse(text);
+    try {
+      // Handle markdown code blocks
+      const jsonMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+      if (jsonMatch) {
+        candidates = JSON.parse(jsonMatch[1]);
+      } else {
+        candidates = JSON.parse(text);
+      }
+    } catch (error) {
+      console.error('[Recruiting] Failed to parse Claude response as JSON:', error);
+      console.error('[Recruiting] Full response:', text);
+      throw new Error('Failed to parse candidate selection from Claude');
     }
 
     console.log(`[Recruiting] Claude selected ${candidates.length} diverse candidates`);
@@ -266,10 +273,9 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
 
   } catch (error) {
     console.error('[Recruiting] Claude selection failed:', error);
-    console.log('[Recruiting] Falling back to first 10 LinkedIn candidates');
 
     // Fallback: return first 10 LinkedIn candidates
-    const fallbackCandidates = linkedInCandidates.slice(0, 10).map((c, i) => ({
+    return linkedInCandidates.slice(0, 10).map((c, i) => ({
       name: c.name,
       title: c.title,
       company: c.company,
@@ -282,9 +288,6 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
       source: 'linkedin',
       raw_profile: c,
     }));
-
-    console.log(`[Recruiting] Fallback: returning ${fallbackCandidates.length} candidates`);
-    return fallbackCandidates;
   }
 }
 
