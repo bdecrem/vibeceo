@@ -326,8 +326,11 @@ export async function storePersonalizedReport(
 ): Promise<AIRReport> {
   const dateStr = reportDate.toISOString().split('T')[0];
 
-  // Count papers mentioned (rough estimate from markdown)
-  const paperCount = (markdown.match(/###\s+\d+\./g) || []).length;
+  // Count papers mentioned - match various formats
+  const numberedHeaders = (markdown.match(/###\s+\d+\./g) || []).length;
+  const emojiBullets = (markdown.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
+  const arxivLinks = (markdown.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
+  const paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
 
   const { data, error } = await supabase
     .from('ai_research_reports_personalized')
