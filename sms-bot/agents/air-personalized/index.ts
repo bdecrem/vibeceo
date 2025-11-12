@@ -234,7 +234,6 @@ export async function generatePersonalizedReport(
       console.log(`[AIR] Expanding search to last 7 days`);
       query = `Show me papers published in the last 7 days about: ${cleanedQuery}`;
       kgResponse = await runKGQuery(query, [], '', cleanDataBoundary);
-      console.log(`[AIR DEBUG] Full KG Response:\n${kgResponse}`);
       // Count papers - match various formats:
       // 1. ### 1. Title
       // 2. 🤖 [Title](url)
@@ -243,7 +242,6 @@ export async function generatePersonalizedReport(
       const emojiBullets = (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
       const arxivLinks = (kgResponse.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
       paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
-      console.log(`[AIR DEBUG] Paper count: numbered=${numberedHeaders}, emoji=${emojiBullets}, arxiv=${arxivLinks}, total=${paperCount}`);
       wasExpanded = true;
 
       if (paperCount === 0) {
