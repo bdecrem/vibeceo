@@ -17,6 +17,7 @@ import { supabase } from '../../lib/supabase.js';
 import { getSubscriber } from '../../lib/subscribers.js';
 import { sendChunkedSmsResponse, sendSmsResponse } from '../../lib/sms/handlers.js';
 import Anthropic from '@anthropic-ai/sdk';
+import { registerDailyJob } from '../../lib/scheduler/index.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -42,6 +43,130 @@ interface CandidateRow {
   position_in_report?: number;
   user_score?: number;
   scored_at?: string;
+}
+
+function inferCompanySize(company?: string): string {
+  if (!company) return 'unknown';
+  const normalized = company.toLowerCase();
+  const enterpriseSignals = ['google', 'meta', 'microsoft', 'amazon', 'apple', 'oracle', 'ibm', 'salesforce', 'linkedin'];
+  const startupSignals = ['labs', 'studio', 'ventures', 'collective', 'capital', 'seed', 'garage'];
+  if (enterpriseSignals.some(signal => normalized.includes(signal))) return 'enterprise';
+  if (startupSignals.some(signal => normalized.includes(signal))) return 'startup';
+  return 'midsize';
+}
+
+function buildFallbackCandidates(
+  linkedInCandidates: LinkedInCandidate[],
+  twitterCandidates: TwitterCandidate[],
+  desiredCount: number,
+  query: string
+): any[] {
+  const results: any[] = [];
+  const seen = new Set<string>();
+
+  const pushLinkedIn = (profile: LinkedInCandidate) => {
+    const key = profile.linkedinUrl?.toLowerCase() || `${profile.name}|${profile.title}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    results.push({
+      name: profile.name,
+      title: profile.title,
+      company: profile.company,
+      company_size: inferCompanySize(profile.company),
+      location: profile.location,
+      linkedin_url: profile.linkedinUrl,
+      twitter_handle: null,
+      match_reason: profile.summary
+        ? `${profile.summary.slice(0, 120)}`
+        : `Relevant ${profile.title || 'candidate'} for "${query}"`,
+      recent_activity: profile.experience?.[0]?.duration || null,
+      source: 'linkedin',
+      raw_profile: profile,
+    });
+  };
+
+  const pushTwitter = (profile: TwitterCandidate) => {
+    const key = profile.handle?.toLowerCase() || profile.twitterUrl?.toLowerCase() || profile.name;
+    if (seen.has(key)) return;
+    seen.add(key);
+    const normalizedHandle = profile.handle
+      ? profile.handle.startsWith('@')
+        ? profile.handle
+        : `@${profile.handle}`
+      : profile.twitterUrl;
+    results.push({
+      name: profile.name || profile.handle,
+      title: profile.bio || 'No title listed',
+      company: null,
+      company_size: 'unknown',
+      location: profile.location,
+      linkedin_url: null,
+      twitter_handle: normalizedHandle,
+      match_reason: profile.bio
+        ? `${profile.bio.slice(0, 120)}`
+        : `Active on Twitter re "${query}"`,
+      recent_activity: profile.recentTweets?.[0]?.text || null,
+      source: 'twitter',
+      raw_profile: profile,
+    });
+  };
+
+  const max = Math.max(linkedInCandidates.length, twitterCandidates.length);
+  for (let i = 0; i < max && results.length < desiredCount; i++) {
+    if (i < linkedInCandidates.length) {
+      pushLinkedIn(linkedInCandidates[i]);
+    }
+    if (results.length >= desiredCount) break;
+    if (i < twitterCandidates.length) {
+      pushTwitter(twitterCandidates[i]);
+    }
+  }
+
+  // If still short, dump the remainder from whichever source has more
+  if (results.length < desiredCount) {
+    for (const profile of linkedInCandidates) {
+      if (results.length >= desiredCount) break;
+      pushLinkedIn(profile);
+    }
+  }
+
+  if (results.length < desiredCount) {
+    for (const profile of twitterCandidates) {
+      if (results.length >= desiredCount) break;
+      pushTwitter(profile);
+    }
+  }
+
+  return results.slice(0, desiredCount);
+}
+
+function ensureMinimumCandidates(
+  selected: any[],
+  fallbackPool: any[],
+  targetCount: number
+): any[] {
+  const keyFor = (candidate: any) => {
+    if (candidate.linkedin_url) return candidate.linkedin_url.toLowerCase();
+    if (candidate.twitter_handle) return String(candidate.twitter_handle).toLowerCase();
+    return candidate.name?.toLowerCase() || Math.random().toString();
+  };
+
+  const seen = new Set<string>();
+  const hydrated = selected.map(candidate => {
+    const key = keyFor(candidate);
+    seen.add(key);
+    return candidate;
+  });
+
+  for (const candidate of fallbackPool) {
+    if (hydrated.length >= targetCount) break;
+    const key = keyFor(candidate);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    hydrated.push(candidate);
+  }
+
+  return hydrated.slice(0, targetCount);
 }
 
 /**
@@ -188,27 +313,32 @@ async function selectDiverseCandidates(
   query: string
 ): Promise<any[]> {
   console.log('[Recruiting] Selecting diverse candidates via Claude...');
+  console.log(`[Recruiting] Input: ${linkedInCandidates.length} LinkedIn, ${twitterCandidates.length} Twitter candidates`);
 
-  const prompt = `You are a recruiting assistant. From these search results, select 10 DIVERSE candidates that match the query: "${query}"
+  // Log sample data to see what Claude will receive
+  if (linkedInCandidates.length > 0) {
+    console.log('[Recruiting] Sample LinkedIn candidate for Claude:');
+    console.log(JSON.stringify(linkedInCandidates[0], null, 2));
+  }
 
-DIVERSITY CRITERIA (this is critical):
-- Vary seniority levels (junior, mid, senior, lead, principal, etc.)
-- Vary company sizes (startups, mid-size, large enterprises)
-- Vary tech stacks and specializations
-- DO NOT prioritize geography
+  const prompt = `You are a recruiting assistant. From these search results, select UP TO 10 candidates that match the query: "${query}"
 
-For each selected candidate, provide:
-1. name
-2. title
-3. company
-4. company_size (estimate: "startup", "midsize", "enterprise")
-5. location
-6. linkedin_url OR twitter_handle (or both)
-7. match_reason (1-2 sentences: why they match the query)
-8. recent_activity (if available from Twitter)
-9. source ("linkedin", "twitter", or "both")
+IMPORTANT:
+- Even if some fields are missing (title, company, etc.), include the candidate if they seem relevant
+- Focus on name, linkedin_url, and any available context
+- If fewer than 10 candidates are available, return what you can find
+- Prioritize diversity in backgrounds when possible
 
-Return EXACTLY 10 candidates as a JSON array.
+For each candidate you select, provide these fields (use null for missing data):
+- name: string (required)
+- title: string or null
+- company: string or null
+- company_size: "startup" | "midsize" | "enterprise" | "unknown"
+- location: string or null
+- linkedin_url: string (if available)
+- twitter_handle: string (if available)
+- match_reason: brief explanation of why they match
+- source: "linkedin" | "twitter" | "both"
 
 LinkedIn Candidates:
 ${JSON.stringify(linkedInCandidates.slice(0, 20), null, 2)}
@@ -216,7 +346,8 @@ ${JSON.stringify(linkedInCandidates.slice(0, 20), null, 2)}
 Twitter Candidates:
 ${JSON.stringify(twitterCandidates.slice(0, 20), null, 2)}
 
-Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no explanation.`;
+Return ONLY a JSON array of candidates. Use this exact format:
+[{"name": "...", "title": "...", "company": "...", "company_size": "...", "location": "...", "linkedin_url": "...", "twitter_handle": null, "match_reason": "...", "source": "linkedin"}]`;
 
   try {
     const response = await anthropic.messages.create({
@@ -238,20 +369,48 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
     let candidates: any[];
 
     try {
-      // Handle markdown code blocks
-      const jsonMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-      if (jsonMatch) {
-        candidates = JSON.parse(jsonMatch[1]);
+      // Try multiple parsing strategies
+      let jsonText = text;
+
+      // Strategy 1: Look for JSON in markdown code blocks
+      const markdownMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
+      if (markdownMatch) {
+        console.log('[Recruiting] Found JSON in markdown code block');
+        jsonText = markdownMatch[1];
       } else {
-        candidates = JSON.parse(text);
+        // Strategy 2: Look for any JSON array in the text
+        const arrayMatch = text.match(/\[[\s\S]*\]/);
+        if (arrayMatch) {
+          console.log('[Recruiting] Found JSON array in response');
+          jsonText = arrayMatch[0];
+        }
       }
+
+      candidates = JSON.parse(jsonText);
+
+      if (!Array.isArray(candidates)) {
+        console.error('[Recruiting] Parsed result is not an array:', typeof candidates);
+        throw new Error('Response is not a JSON array');
+      }
+
+      console.log(`[Recruiting] Successfully parsed ${candidates.length} candidates`);
+
     } catch (error) {
       console.error('[Recruiting] Failed to parse Claude response as JSON:', error);
       console.error('[Recruiting] Full response:', text);
-      throw new Error('Failed to parse candidate selection from Claude');
+      console.warn('[Recruiting] Using fallback selection due to parsing error');
+      return buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
     }
 
     console.log(`[Recruiting] Claude selected ${candidates.length} diverse candidates`);
+
+    if (candidates.length === 0) {
+      console.warn('[Recruiting] Claude returned 0 candidates, using fallback selection');
+      console.log('[Recruiting] Available: LinkedIn=' + linkedInCandidates.length + ', Twitter=' + twitterCandidates.length);
+      const fallback = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
+      console.log(`[Recruiting] Fallback generated ${fallback.length} candidates`);
+      return fallback;
+    }
 
     // Add raw_profile field for each candidate
     for (const candidate of candidates) {
@@ -267,6 +426,11 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
         );
         candidate.raw_profile = original || {};
       }
+    }
+
+    if (candidates.length < 10) {
+      const fallbackPool = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
+      candidates = ensureMinimumCandidates(candidates, fallbackPool, 10);
     }
 
     return candidates.slice(0, 10);
@@ -555,6 +719,11 @@ Return ONLY a JSON array of 3 candidates. No markdown, no explanation.`;
 
     console.log(`[Recruiting] Claude selected ${candidates.length} daily candidates`);
 
+    if (!Array.isArray(candidates) || candidates.length === 0) {
+      console.warn('[Recruiting] Claude returned 0 daily candidates, using fallback');
+      return buildFallbackCandidates(linkedInCandidates, twitterCandidates, 3, query);
+    }
+
     // Add raw_profile field for each candidate
     for (const candidate of candidates) {
       if (candidate.linkedin_url) {
@@ -568,6 +737,11 @@ Return ONLY a JSON array of 3 candidates. No markdown, no explanation.`;
         );
         candidate.raw_profile = original || {};
       }
+    }
+
+    if (candidates.length < 3) {
+      const fallbackPool = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 3, query);
+      candidates = ensureMinimumCandidates(candidates, fallbackPool, 3);
     }
 
     return candidates.slice(0, 3);
@@ -596,8 +770,6 @@ Return ONLY a JSON array of 3 candidates. No markdown, no explanation.`;
  * Register daily recruiting job (runs at 9 AM PT)
  */
 export function registerRecruitingDailyJob(twilioClient: Twilio): void {
-  const { registerDailyJob } = require('../../lib/scheduler/index.js');
-
   registerDailyJob({
     name: 'recruiting-daily',
     hour: 9,
