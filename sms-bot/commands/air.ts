@@ -56,43 +56,56 @@ interface PendingSubscription {
   timestamp: number;
 }
 
-function getPendingMap(context: CommandContext): Map<string, PendingSubscription> | undefined {
-  return context.commandHelpers?.['airPendingSubscriptions'] as Map<string, PendingSubscription> | undefined;
-}
+/**
+ * Get pending AIR subscription from database
+ * Returns undefined if no pending subscription or if expired
+ */
+async function getPending(phoneNumber: string): Promise<PendingSubscription | undefined> {
+  const subscriber = await getSubscriber(phoneNumber);
+  if (!subscriber?.pending_air_subscription) {
+    return undefined;
+  }
 
-function getPending(phoneNumber: string, context: CommandContext): PendingSubscription | undefined {
-  const map = getPendingMap(context);
-  if (!map) return undefined;
-
-  const pending = map.get(phoneNumber);
-  if (!pending) return undefined;
+  const pending = subscriber.pending_air_subscription as PendingSubscription;
 
   // Check if expired (10 minutes)
   if (Date.now() - pending.timestamp > PENDING_TIMEOUT_MS) {
-    map.delete(phoneNumber);
+    await clearPending(phoneNumber);
     return undefined;
   }
 
   return pending;
 }
 
-function setPending(phoneNumber: string, pending: PendingSubscription, context: CommandContext): void {
-  let map = getPendingMap(context);
-  if (!map) {
-    map = new Map();
-    if (!context.commandHelpers) {
-      (context as any).commandHelpers = {};
-    }
-    context.commandHelpers!['airPendingSubscriptions'] = map;
+/**
+ * Store pending AIR subscription in database
+ */
+async function setPending(phoneNumber: string, pending: PendingSubscription): Promise<void> {
+  const subscriber = await getSubscriber(phoneNumber);
+  if (!subscriber) {
+    console.error('[AIR] Cannot set pending subscription - subscriber not found');
+    return;
   }
-  map.set(phoneNumber, pending);
+
+  await supabase
+    .from('sms_subscribers')
+    .update({ pending_air_subscription: pending as any })
+    .eq('id', subscriber.id);
 }
 
-function clearPending(phoneNumber: string, context: CommandContext): void {
-  const map = getPendingMap(context);
-  if (map) {
-    map.delete(phoneNumber);
+/**
+ * Clear pending AIR subscription from database
+ */
+async function clearPending(phoneNumber: string): Promise<void> {
+  const subscriber = await getSubscriber(phoneNumber);
+  if (!subscriber) {
+    return;
   }
+
+  await supabase
+    .from('sms_subscribers')
+    .update({ pending_air_subscription: null })
+    .eq('id', subscriber.id);
 }
 
 /**
@@ -232,13 +245,13 @@ async function handleSubscribeWithQuery(
       await sendChunkedSmsResponse(from, message, twilioClient);
 
       // Store pending subscription
-      setPending(normalizedFrom, {
+      await setPending(normalizedFrom, {
         originalQuery: query,
         cleanedQuery: query, // Keep original query with temporal keywords
         hasResults: true,
         preview: testResult.response,
         timestamp: Date.now(),
-      }, context);
+      });
 
       console.log(`[AIR] Preview sent, awaiting confirmation`);
     } else if (testResult.paperCount === 0) {
@@ -261,13 +274,13 @@ async function handleSubscribeWithQuery(
 
       await sendChunkedSmsResponse(from, message, twilioClient);
 
-      setPending(normalizedFrom, {
+      await setPending(normalizedFrom, {
         originalQuery: query,
         cleanedQuery: query, // Keep original query with temporal keywords
         hasResults: true,
         preview: testResult.response,
         timestamp: Date.now(),
-      }, context);
+      });
     }
 
     await updateLastMessageDate(normalizedFrom);
@@ -469,7 +482,7 @@ async function handleUnsubscribe(context: CommandContext): Promise<void> {
 async function handleConfirmSubscription(context: CommandContext): Promise<boolean> {
   const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
 
-  const pending = getPending(normalizedFrom, context);
+  const pending = await getPending(normalizedFrom);
   if (!pending) {
     return false; // No pending AIR subscription
   }
@@ -501,7 +514,7 @@ async function handleConfirmSubscription(context: CommandContext): Promise<boole
       .eq('agent_slug', AIR_AGENT_SLUG);
 
     // Clear pending
-    clearPending(normalizedFrom, context);
+    await clearPending(normalizedFrom);
 
     // Build confirmation message
     let message = result === 'already'
@@ -539,7 +552,7 @@ async function handleConfirmSubscription(context: CommandContext): Promise<boole
 async function handleBroaderQuery(context: CommandContext): Promise<boolean> {
   const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
 
-  const pending = getPending(normalizedFrom, context);
+  const pending = await getPending(normalizedFrom);
   if (!pending) {
     return false; // No pending AIR subscription
   }
@@ -559,7 +572,7 @@ async function handleBroaderQuery(context: CommandContext): Promise<boolean> {
   await sendSmsResponse(from, message, twilioClient);
 
   // Clear pending
-  clearPending(normalizedFrom, context);
+  await clearPending(normalizedFrom);
 
   await updateLastMessageDate(normalizedFrom);
   return true;

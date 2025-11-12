@@ -21,6 +21,7 @@ export type SMSSubscriber = {
 	ai_daily_subscribed?: boolean;
 	ai_daily_last_sent_at?: string | null;
 	personalization?: Record<string, any>; // JSONB: {name, interests, timezone, location, notes}
+	pending_air_subscription?: Record<string, any>; // JSONB: pending AIR subscription confirmation state
 };
 
 // Initialize Supabase client
