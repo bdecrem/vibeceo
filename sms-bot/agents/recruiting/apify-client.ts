@@ -139,10 +139,15 @@ export async function searchLinkedIn(query: string, maxProfiles: number = 20): P
   console.log(`[Apify] Searching LinkedIn for: "${query}", max profiles: ${maxProfiles}`);
 
   try {
+    // Construct LinkedIn people search URL
+    const encodedQuery = encodeURIComponent(query);
+    const linkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodedQuery}`;
+
+    console.log(`[Apify] Using LinkedIn URL: ${linkedinUrl}`);
+
     const runId = await startActorRun(LINKEDIN_PEOPLE_SEARCH_ACTOR, {
-      searchQuery: query,
-      maxProfiles,
-      includeFullProfile: true,
+      url: linkedinUrl,
+      count: maxProfiles,
     });
 
     const datasetId = await pollForCompletion(runId);
