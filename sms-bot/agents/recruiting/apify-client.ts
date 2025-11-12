@@ -152,10 +152,18 @@ export async function searchLinkedIn(query: string, maxProfiles: number = 20): P
       throw new Error('LINKEDIN_COOKIE environment variable not set');
     }
 
+    // Parse cookies from JSON string (from Cookie-Editor export)
+    let cookies;
+    try {
+      cookies = JSON.parse(LINKEDIN_COOKIE);
+    } catch (error) {
+      throw new Error('LINKEDIN_COOKIE must be a valid JSON array from Cookie-Editor');
+    }
+
     const runId = await startActorRun(LINKEDIN_PEOPLE_SEARCH_ACTOR, {
       searchUrl: linkedinUrl,
       count: maxProfiles,
-      cookie: LINKEDIN_COOKIE,
+      cookie: cookies,
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
     });
 
