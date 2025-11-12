@@ -45,6 +45,76 @@ interface CandidateRow {
 }
 
 /**
+ * Store candidates and send SMS
+ */
+async function storeCandidates(
+  subscriberId: string,
+  projectId: string,
+  candidates: any[],
+  from: string,
+  twilioClient: Twilio
+): Promise<void> {
+  const reportDate = new Date().toISOString().split('T')[0];
+
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i];
+
+    await supabase.from('recruiting_candidates').insert({
+      subscriber_id: subscriberId,
+      project_id: projectId,
+      name: candidate.name,
+      title: candidate.title,
+      company: candidate.company,
+      company_size: candidate.company_size,
+      location: candidate.location,
+      linkedin_url: candidate.linkedin_url,
+      twitter_handle: candidate.twitter_handle,
+      match_reason: candidate.match_reason,
+      recent_activity: candidate.recent_activity,
+      source: candidate.source || 'web',
+      raw_profile: candidate.raw_profile || candidate,
+      report_type: 'setup',
+      report_date: reportDate,
+      position_in_report: i + 1,
+    });
+  }
+
+  console.log(`[Recruiting] Stored ${candidates.length} diverse candidates`);
+
+  // Send SMS with candidates
+  let message = `✨ Found ${candidates.length} diverse candidates!\n\n`;
+
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i];
+    message += `${i + 1}. ${candidate.name}\n`;
+    if (candidate.title) message += `   ${candidate.title}`;
+    if (candidate.company) message += ` @ ${candidate.company}`;
+    message += '\n';
+
+    if (candidate.location) message += `   ${candidate.location}\n`;
+    if (candidate.linkedin_url) message += `   🔗 ${candidate.linkedin_url}\n`;
+    if (candidate.twitter_handle) message += `   🐦 ${candidate.twitter_handle}\n`;
+    if (candidate.portfolio || candidate.website) {
+      message += `   🎨 ${candidate.portfolio || candidate.website}\n`;
+    }
+
+    if (candidate.match_reason) {
+      message += `   ✨ ${candidate.match_reason}\n`;
+    }
+
+    if (candidate.recent_activity) {
+      message += `   📍 ${candidate.recent_activity}\n`;
+    }
+
+    message += '\n';
+  }
+
+  message += `---\n💡 Score each candidate 1-5:\nSCORE 1:5 2:3 3:4...\n\n(5=great match, 1=poor match)`;
+
+  await sendChunkedSmsResponse(from, message, twilioClient);
+}
+
+/**
  * Run setup search: Find 10 diverse candidates
  */
 export async function runSetupSearch(
@@ -74,7 +144,7 @@ export async function runSetupSearch(
     if (linkedInCandidates.length === 0 && twitterCandidates.length === 0) {
       await sendSmsResponse(
         from,
-        `❌ No candidates found for "${query}"\n\nTry a different query or broader criteria.`,
+        `❌ No candidates found\n\nApify actors may require paid access. Check:\n• Apify account has credits\n• Actors are accessible on your plan\n\nTry: RECRUIT SETTINGS`,
         twilioClient
       );
       return;
@@ -96,62 +166,8 @@ export async function runSetupSearch(
       return;
     }
 
-    // Store candidates in database
-    const reportDate = new Date().toISOString().split('T')[0];
-
-    for (let i = 0; i < diverseCandidates.length; i++) {
-      const candidate = diverseCandidates[i];
-
-      await supabase.from('recruiting_candidates').insert({
-        subscriber_id: subscriberId,
-        project_id: projectId,
-        name: candidate.name,
-        title: candidate.title,
-        company: candidate.company,
-        company_size: candidate.company_size,
-        location: candidate.location,
-        linkedin_url: candidate.linkedin_url,
-        twitter_handle: candidate.twitter_handle,
-        match_reason: candidate.match_reason,
-        recent_activity: candidate.recent_activity,
-        source: candidate.source,
-        raw_profile: candidate.raw_profile,
-        report_type: 'setup',
-        report_date: reportDate,
-        position_in_report: i + 1,
-      });
-    }
-
-    console.log(`[Recruiting] Stored ${diverseCandidates.length} diverse candidates`);
-
-    // Send SMS with candidates
-    let message = `✨ Found ${diverseCandidates.length} diverse candidates!\n\n`;
-
-    for (let i = 0; i < diverseCandidates.length; i++) {
-      const candidate = diverseCandidates[i];
-      message += `${i + 1}. ${candidate.name}\n`;
-      if (candidate.title) message += `   ${candidate.title}`;
-      if (candidate.company) message += ` @ ${candidate.company}`;
-      message += '\n';
-
-      if (candidate.location) message += `   ${candidate.location}\n`;
-      if (candidate.linkedin_url) message += `   🔗 ${candidate.linkedin_url}\n`;
-      if (candidate.twitter_handle) message += `   🐦 ${candidate.twitter_handle}\n`;
-
-      if (candidate.match_reason) {
-        message += `   ✨ ${candidate.match_reason}\n`;
-      }
-
-      if (candidate.recent_activity) {
-        message += `   📍 ${candidate.recent_activity}\n`;
-      }
-
-      message += '\n';
-    }
-
-    message += `---\n💡 Score each candidate 1-5:\nSCORE 1:5 2:3 3:4...\n\n(5=great match, 1=poor match)`;
-
-    await sendChunkedSmsResponse(from, message, twilioClient);
+    // Store and send candidates
+    await storeCandidates(subscriberId, projectId, diverseCandidates, from, twilioClient);
 
   } catch (error) {
     console.error('[Recruiting] Setup search failed:', error);
