@@ -231,6 +231,7 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
     }
 
     const text = content.text.trim();
+    console.log('[Recruiting] Claude raw response:', text.substring(0, 500));
 
     // Try to parse JSON from response
     let candidates: any[];
@@ -265,9 +266,10 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
 
   } catch (error) {
     console.error('[Recruiting] Claude selection failed:', error);
+    console.log('[Recruiting] Falling back to first 10 LinkedIn candidates');
 
     // Fallback: return first 10 LinkedIn candidates
-    return linkedInCandidates.slice(0, 10).map((c, i) => ({
+    const fallbackCandidates = linkedInCandidates.slice(0, 10).map((c, i) => ({
       name: c.name,
       title: c.title,
       company: c.company,
@@ -280,6 +282,9 @@ Return ONLY a JSON array of 10 candidates with the fields above. No markdown, no
       source: 'linkedin',
       raw_profile: c,
     }));
+
+    console.log(`[Recruiting] Fallback: returning ${fallbackCandidates.length} candidates`);
+    return fallbackCandidates;
   }
 }
 
