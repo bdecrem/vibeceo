@@ -210,18 +210,17 @@ async function handleSubscribeWithQuery(
     // Check if user is already subscribed - if so, this is an update
     const isAlreadySubscribed = await isSubscribedToAgent(normalizedFrom, AIR_AGENT_SLUG);
 
-    // Run test query to get preview
+    // Run test query to get preview (use original query - KG agent will interpret temporal keywords)
     await sendSmsResponse(from, `🔍 Testing your query: "${query}"...`, twilioClient);
 
-    const cleanedQuery = stripTemporalKeywords(query);
-    const testResult = await testQuery(cleanedQuery);
+    const testResult = await testQuery(query);
 
     console.log(`[AIR] Test query result: ${testResult.paperCount} papers`);
 
     // Decision point based on paper count
     if (testResult.paperCount >= 3) {
       // Good preview - show papers and ask for confirmation
-      let message = `📊 Found ${testResult.paperCount} papers matching "${cleanedQuery}" from last 3 days:\n\n`;
+      let message = `📊 Found ${testResult.paperCount} papers matching "${query}":\n\n`;
       message += testResult.response;
       message += `\n\n---\n📌 Looks good? Reply YES to get this daily at 10:00 AM PT`;
 
@@ -235,7 +234,7 @@ async function handleSubscribeWithQuery(
       // Store pending subscription
       setPending(normalizedFrom, {
         originalQuery: query,
-        cleanedQuery,
+        cleanedQuery: query, // Keep original query with temporal keywords
         hasResults: true,
         preview: testResult.response,
         timestamp: Date.now(),
@@ -243,52 +242,28 @@ async function handleSubscribeWithQuery(
 
       console.log(`[AIR] Preview sent, awaiting confirmation`);
     } else if (testResult.paperCount === 0) {
-      // No results - check historical frequency
-      await sendSmsResponse(from, `🔍 No matches in last 3 days. Checking historical frequency...`, twilioClient);
-
-      const frequency = await checkHistoricalFrequency(cleanedQuery);
-
-      console.log(`[AIR] Historical frequency: ${frequency.daysWithMatches}/${frequency.totalDays} days`);
-
-      let message = `📊 Query: "${cleanedQuery}"\n\n`;
-      message += `❌ No matches in last 3 days\n`;
-      message += `📈 Historical data: Matches on ${frequency.daysWithMatches} of last ${frequency.totalDays} days`;
-
-      if (frequency.daysWithMatches > 0) {
-        message += ` (~${Math.round((frequency.daysWithMatches / frequency.totalDays) * 7)} times per week)\n\n`;
-        message += `💡 This is a targeted query. Options:\n`;
-        message += `1️⃣ Reply YES - Get updates only when matches appear\n`;
-        message += `2️⃣ Reply BROADER - Expand query for daily reports`;
-      } else {
-        message += `\n\n❌ No historical matches found. Try a broader query:\n`;
-        message += `AIR {broader topic}`;
-      }
+      // No results
+      let message = `📊 Query: "${query}"\n\n`;
+      message += `❌ No matches found\n\n`;
+      message += `💡 Try:\n`;
+      message += `• Broader topic (e.g., "recent RL papers")\n`;
+      message += `• Different time range (e.g., "papers from last week")\n`;
+      message += `• Removing specific filters`;
 
       await sendSmsResponse(from, message, twilioClient);
-
-      // Store pending subscription even with no results
-      if (frequency.daysWithMatches > 0) {
-        setPending(normalizedFrom, {
-          originalQuery: query,
-          cleanedQuery,
-          hasResults: false,
-          frequency,
-          timestamp: Date.now(),
-        }, context);
-      }
     } else {
       // 1-2 papers - borderline case, still show preview
-      let message = `📊 Found ${testResult.paperCount} papers matching "${cleanedQuery}":\n\n`;
+      let message = `📊 Found ${testResult.paperCount} papers matching "${query}":\n\n`;
       message += testResult.response;
       message += `\n\n---\n⚠️ Only ${testResult.paperCount} matches. Reply:\n`;
       message += `• YES - Subscribe (reports may be sparse)\n`;
-      message += `• BROADER - Expand for more daily matches`;
+      message += `• Or try a broader query`;
 
       await sendChunkedSmsResponse(from, message, twilioClient);
 
       setPending(normalizedFrom, {
         originalQuery: query,
-        cleanedQuery,
+        cleanedQuery: query, // Keep original query with temporal keywords
         hasResults: true,
         preview: testResult.response,
         timestamp: Date.now(),

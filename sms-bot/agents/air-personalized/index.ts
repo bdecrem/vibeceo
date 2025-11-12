@@ -77,25 +77,26 @@ export function stripTemporalKeywords(query: string): string {
  * Returns { hasResults: boolean, paperCount: number, response: string }
  */
 export async function testQuery(
-  cleanedQuery: string
+  query: string
 ): Promise<{ hasResults: boolean; paperCount: number; response: string }> {
-  console.log(`[AIR] Testing query: "${cleanedQuery}"`);
+  console.log(`[AIR] Testing query: "${query}"`);
 
   try {
-    const cleanDataBoundary = await getCleanDataBoundary();
-
-    // Run query with "last 3 days" window
-    const query = `Show me papers published in the last 3 days about: ${cleanedQuery}`;
+    // Use empty boundary - let KG agent interpret the query's temporal keywords
+    const emptyBoundary = { startDate: '', endDate: '', cleanPercentage: 0 };
 
     const response = await runKGQuery(
       query,
       [], // No conversation history
       '', // No report context
-      cleanDataBoundary
+      emptyBoundary
     );
 
-    // Count papers (rough estimate from markdown)
-    const paperCount = (response.match(/###\s+\d+\./g) || []).length;
+    // Count papers - match various formats
+    const numberedHeaders = (response.match(/###\s+\d+\./g) || []).length;
+    const emojiBullets = (response.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
+    const arxivLinks = (response.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
+    const paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
 
     console.log(`[AIR] Test query result: ${paperCount} papers`);
 
@@ -208,67 +209,46 @@ export async function generatePersonalizedReport(
   console.log(`[AIR] Query: "${preferences.natural_language_query}"`);
 
   try {
-    const cleanedQuery = stripTemporalKeywords(preferences.natural_language_query);
+    // Use the original query as-is - let KG agent interpret temporal keywords
+    // This makes AIR work exactly like KG, but runs automatically daily
+    const query = preferences.natural_language_query;
 
-    // Try with last 3 days first - use same query format as manual KG queries
-    let query = `Show me papers about ${cleanedQuery} from the last 3 days`;
     // Pass empty boundary - let KG agent search all papers like manual queries do
     const emptyBoundary = { startDate: '', endDate: '', cleanPercentage: 0 };
-    let kgResponse = await runKGQuery(query, [], '', emptyBoundary);
-    // Count papers - match both numbered headers (### 1.) and emoji bullets (🤖 [Title])
-    let paperCount = Math.max(
-      (kgResponse.match(/###\s+\d+\./g) || []).length,
-      (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length
-    );
-    let wasExpanded = false;
+    const kgResponse = await runKGQuery(query, [], '', emptyBoundary);
 
-    // Check if we got results
+    // Count papers - match various formats
+    const numberedHeaders = (kgResponse.match(/###\s+\d+\./g) || []).length;
+    const emojiBullets = (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
+    const arxivLinks = (kgResponse.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
+    const paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
+
+    // Check strategy if no papers found
     if (paperCount === 0) {
-      console.log(`[AIR] No matches found for "${cleanedQuery}" in last 3 days`);
+      console.log(`[AIR] No matches found for "${query}"`);
 
-      // Check strategy
-      const strategy = preferences.empty_day_strategy || 'expand';
-
+      const strategy = preferences.empty_day_strategy || 'skip';
       if (strategy === 'skip') {
         console.log(`[AIR] Strategy is 'skip' - not sending report today`);
         return null;
       }
-
-      // Expand to 7 days
-      console.log(`[AIR] Expanding search to last 7 days`);
-      query = `Show me papers about ${cleanedQuery} from the last 7 days`;
-      kgResponse = await runKGQuery(query, [], '', emptyBoundary);
-      // Count papers - match various formats:
-      // 1. ### 1. Title
-      // 2. 🤖 [Title](url)
-      // 3. [Title](http://arxiv.org/abs/...)
-      const numberedHeaders = (kgResponse.match(/###\s+\d+\./g) || []).length;
-      const emojiBullets = (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
-      const arxivLinks = (kgResponse.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
-      paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
-      wasExpanded = true;
-
-      if (paperCount === 0) {
-        console.log(`[AIR] Still no matches after expansion - skipping report`);
-        return null;
-      }
     }
 
-    console.log(`[AIR] Found ${paperCount} papers${wasExpanded ? ' (expanded)' : ''}`);
+    console.log(`[AIR] Found ${paperCount} papers`);
 
     // Format as report markdown
     const markdown = formatKGResponseAsReport(
       kgResponse,
-      cleanedQuery,
+      query,
       new Date(),
-      wasExpanded
+      false // No longer expanding, KG agent handles time range
     );
 
     // TODO: Generate audio narration
     const audioUrl = null;
 
     console.log(`[AIR] Report generated successfully`);
-    return { markdown, audioUrl, wasExpanded };
+    return { markdown, audioUrl };
   } catch (error) {
     console.error(`[AIR] Failed to generate report:`, error);
     throw error;
