@@ -5,6 +5,7 @@
  */
 
 const APIFY_API_KEY = process.env.APIFY_API_KEY;
+const LINKEDIN_COOKIE = process.env.LINKEDIN_COOKIE;
 const APIFY_BASE_URL = 'https://api.apify.com/v2';
 
 // Apify Actor IDs (format: username~actor-name)
@@ -147,9 +148,14 @@ export async function searchLinkedIn(query: string, maxProfiles: number = 20): P
 
     console.log(`[Apify] Using LinkedIn URL: ${linkedinUrl}`);
 
+    if (!LINKEDIN_COOKIE) {
+      throw new Error('LINKEDIN_COOKIE environment variable not set');
+    }
+
     const runId = await startActorRun(LINKEDIN_PEOPLE_SEARCH_ACTOR, {
       url: linkedinUrl,
       count: maxProfiles,
+      cookie: LINKEDIN_COOKIE,
     });
 
     const datasetId = await pollForCompletion(runId);
