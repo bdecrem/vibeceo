@@ -153,7 +153,7 @@ export async function searchLinkedIn(query: string, maxProfiles: number = 20): P
     }
 
     const runId = await startActorRun(LINKEDIN_PEOPLE_SEARCH_ACTOR, {
-      url: linkedinUrl,
+      searchUrl: linkedinUrl,
       count: maxProfiles,
       cookie: LINKEDIN_COOKIE,
     });
