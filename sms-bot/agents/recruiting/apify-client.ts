@@ -65,7 +65,9 @@ async function startActorRun(actorId: string, input: Record<string, any>): Promi
   });
 
   if (!response.ok) {
-    throw new Error(`Apify actor start failed: ${response.statusText}`);
+    const errorBody = await response.text();
+    console.error(`[Apify] Actor start error response:`, errorBody);
+    throw new Error(`Apify actor start failed: ${response.statusText} - ${errorBody}`);
   }
 
   const run: ApifyRun = await response.json();
