@@ -14,6 +14,9 @@ import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { getAgentSubscribers, markAgentReportSent, type AgentSubscriber } from '../../lib/agent-subscriptions.js';
 import { runKGQuery, getCleanDataBoundary, type ConversationMessage } from '../kg-query/index.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
+import { storeAgentReport } from '../report-storage.js';
+import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
+import { createShortLink } from '../../lib/utils/shortlink-service.js';
 
 export const AIR_AGENT_SLUG = 'air';
 
@@ -332,15 +335,17 @@ export async function storePersonalizedReport(
   const arxivLinks = (markdown.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
   const paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
 
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from('ai_research_reports_personalized')
-    .insert({
+    .upsert({
       subscriber_id: subscriberId,
       report_date: dateStr,
       markdown_content: markdown,
       audio_url: audioUrl,
       paper_count: paperCount,
       query_used: queryUsed,
+    }, {
+      onConflict: 'subscriber_id,report_date'
     })
     .select()
     .single();
@@ -387,15 +392,34 @@ export function buildAIRReportMessage(
   message += `Query: "${report.query_used}"\n`;
   message += `Papers: ${report.paper_count}\n\n`;
 
+  // Extract first 3 papers from markdown for SMS preview
+  const arxivMatches = report.markdown_content.match(/\[([^\]]+)\]\((https?:\/\/arxiv\.org\/abs\/[^\)]+)\)/g);
+  if (arxivMatches && arxivMatches.length > 0) {
+    const paperLinks = arxivMatches.slice(0, 3); // First 3 papers
+    paperLinks.forEach((link, idx) => {
+      // Extract title and URL
+      const match = link.match(/\[([^\]]+)\]\((https?:\/\/arxiv\.org\/abs\/[^\)]+)\)/);
+      if (match) {
+        const [, title, url] = match;
+        const shortTitle = title.length > 40 ? title.substring(0, 37) + '...' : title;
+        message += `${idx + 1}. ${shortTitle}\n   ${url}\n\n`;
+      }
+    });
+
+    if (arxivMatches.length > 3) {
+      message += `...and ${arxivMatches.length - 3} more\n\n`;
+    }
+  }
+
   if (shortLink) {
-    message += `📖 Read: ${shortLink}\n`;
+    message += `📖 Full report: ${shortLink}\n`;
   }
 
   if (report.audio_url) {
     message += `🎧 Listen: ${report.audio_url}\n`;
   }
 
-  message += `\n💬 Ask questions: KG [your question]\n`;
+  message += `\n💬 Ask: KG [question]\n`;
   message += `⚙️ Settings: AIR HELP`;
 
   return message;
@@ -467,7 +491,16 @@ async function generateAndSendReport(
 
     const { markdown, audioUrl, wasExpanded } = result;
 
-    // Store report
+    // Store report in agent_reports table for viewer
+    const dateStr = new Date().toISOString().split('T')[0];
+    const stored = await storeAgentReport({
+      agent: AIR_AGENT_SLUG,
+      date: dateStr,
+      markdown,
+      summary: `Personalized research brief for "${preferences.natural_language_query}"`,
+    });
+
+    // Store in personalized reports table
     const report = await storePersonalizedReport(
       subscriber.id,
       new Date(),
@@ -476,8 +509,19 @@ async function generateAndSendReport(
       preferences.natural_language_query
     );
 
-    // TODO: Generate short link for report viewer
-    const shortLink = null;
+    // Generate short link for report viewer
+    const viewerUrl = buildReportViewerUrl({
+      path: stored.reportPath,
+      agentSlug: AIR_AGENT_SLUG,
+    });
+
+    let shortLink: string | null = null;
+    try {
+      shortLink = await createShortLink(viewerUrl);
+    } catch (error) {
+      console.error('[AIR] Failed to create short link:', error);
+      shortLink = viewerUrl; // Fallback to full URL
+    }
 
     // Build SMS message
     const smsMessage = buildAIRReportMessage(report, shortLink);
