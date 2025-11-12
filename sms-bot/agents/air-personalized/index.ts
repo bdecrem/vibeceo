@@ -205,12 +205,13 @@ export async function generatePersonalizedReport(
   console.log(`[AIR] Query: "${preferences.natural_language_query}"`);
 
   try {
-    const cleanDataBoundary = await getCleanDataBoundary();
     const cleanedQuery = stripTemporalKeywords(preferences.natural_language_query);
 
-    // Try with last 3 days first
-    let query = `Show me papers published in the last 3 days about: ${cleanedQuery}`;
-    let kgResponse = await runKGQuery(query, [], '', cleanDataBoundary);
+    // Try with last 3 days first - use same query format as manual KG queries
+    let query = `Show me papers about ${cleanedQuery} from the last 3 days`;
+    // Pass empty boundary - let KG agent search all papers like manual queries do
+    const emptyBoundary = { startDate: '', endDate: '', cleanPercentage: 0 };
+    let kgResponse = await runKGQuery(query, [], '', emptyBoundary);
     // Count papers - match both numbered headers (### 1.) and emoji bullets (🤖 [Title])
     let paperCount = Math.max(
       (kgResponse.match(/###\s+\d+\./g) || []).length,
@@ -232,8 +233,8 @@ export async function generatePersonalizedReport(
 
       // Expand to 7 days
       console.log(`[AIR] Expanding search to last 7 days`);
-      query = `Show me papers published in the last 7 days about: ${cleanedQuery}`;
-      kgResponse = await runKGQuery(query, [], '', cleanDataBoundary);
+      query = `Show me papers about ${cleanedQuery} from the last 7 days`;
+      kgResponse = await runKGQuery(query, [], '', emptyBoundary);
       // Count papers - match various formats:
       // 1. ### 1. Title
       // 2. 🤖 [Title](url)
