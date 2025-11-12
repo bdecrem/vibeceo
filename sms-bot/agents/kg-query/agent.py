@@ -113,6 +113,13 @@ You have Neo4j tools - USE THEM to answer queries:
 
 IMPORTANT QUERY GUIDELINES:
 
+**CRITICAL - Temporal Queries:**
+When users ask for "today", "recent", "last few days", "last 3 days", etc., interpret these RELATIVE TO AVAILABLE DATA:
+- If clean data ends {clean_end}, then "last few days" means the most recent days in the clean range
+- Example: If today is Nov 12 but clean data ends Oct 23, "last 3 days" should query Oct 21-23
+- NEVER return empty results for temporal queries - adjust the date range to match available data
+- Be transparent: mention if you're showing older data because recent data isn't available yet
+
 **For "up and coming" / "emerging" authors:**
 - Look for h_index between 5-25 (established but not senior)
 - Filter by last_seen >= recent date (active recently)

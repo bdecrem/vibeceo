@@ -211,7 +211,11 @@ export async function generatePersonalizedReport(
     // Try with last 3 days first
     let query = `Show me papers published in the last 3 days about: ${cleanedQuery}`;
     let kgResponse = await runKGQuery(query, [], '', cleanDataBoundary);
-    let paperCount = (kgResponse.match(/###\s+\d+\./g) || []).length;
+    // Count papers - match both numbered headers (### 1.) and emoji bullets (🤖 [Title])
+    let paperCount = Math.max(
+      (kgResponse.match(/###\s+\d+\./g) || []).length,
+      (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length
+    );
     let wasExpanded = false;
 
     // Check if we got results
@@ -230,7 +234,16 @@ export async function generatePersonalizedReport(
       console.log(`[AIR] Expanding search to last 7 days`);
       query = `Show me papers published in the last 7 days about: ${cleanedQuery}`;
       kgResponse = await runKGQuery(query, [], '', cleanDataBoundary);
-      paperCount = (kgResponse.match(/###\s+\d+\./g) || []).length;
+      console.log(`[AIR DEBUG] Full KG Response:\n${kgResponse}`);
+      // Count papers - match various formats:
+      // 1. ### 1. Title
+      // 2. 🤖 [Title](url)
+      // 3. [Title](http://arxiv.org/abs/...)
+      const numberedHeaders = (kgResponse.match(/###\s+\d+\./g) || []).length;
+      const emojiBullets = (kgResponse.match(/[\u{1F300}-\u{1F9FF}]\s*\[/gu) || []).length;
+      const arxivLinks = (kgResponse.match(/\[[\w\s\-:]+\]\(https?:\/\/arxiv\.org\/abs\//g) || []).length;
+      paperCount = Math.max(numberedHeaders, emojiBullets, arxivLinks);
+      console.log(`[AIR DEBUG] Paper count: numbered=${numberedHeaders}, emoji=${emojiBullets}, arxiv=${arxivLinks}, total=${paperCount}`);
       wasExpanded = true;
 
       if (paperCount === 0) {
