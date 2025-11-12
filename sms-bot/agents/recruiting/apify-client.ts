@@ -105,7 +105,15 @@ async function pollForCompletion(runId: string): Promise<string> {
     }
 
     if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-      throw new Error(`Actor run ${status.toLowerCase()}`);
+      // Fetch error details
+      const errorMessage = run.data?.status === 'FAILED'
+        ? `Actor run failed. Check Apify console for details: https://console.apify.com/actors/runs/${runId}`
+        : `Actor run ${status.toLowerCase()}`;
+
+      console.error(`[Apify] Run ${runId} failed with status ${status}`);
+      console.error(`[Apify] Run details:`, JSON.stringify(run.data, null, 2));
+
+      throw new Error(errorMessage);
     }
 
     // Status is RUNNING or READY, wait and poll again
