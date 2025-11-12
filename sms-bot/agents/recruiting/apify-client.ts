@@ -7,9 +7,9 @@
 const APIFY_API_KEY = process.env.APIFY_API_KEY;
 const APIFY_BASE_URL = 'https://api.apify.com/v2';
 
-// Apify Actor IDs
-const LINKEDIN_PEOPLE_SEARCH_ACTOR = 'curious_coder/linkedin-people-search-scraper';
-const TWITTER_SCRAPER_ACTOR = 'apidojo/tweet-scraper';
+// Apify Actor IDs (format: username~actor-name)
+const LINKEDIN_PEOPLE_SEARCH_ACTOR = 'curious_coder~linkedin-people-search-scraper';
+const TWITTER_SCRAPER_ACTOR = 'apidojo~tweet-scraper';
 
 // Poll configuration
 const POLL_INTERVAL_MS = 5000; // 5 seconds
