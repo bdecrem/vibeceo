@@ -9,6 +9,7 @@ const LINKEDIN_COOKIE = process.env.LINKEDIN_COOKIE;
 const APIFY_BASE_URL = 'https://api.apify.com/v2';
 
 // Apify Actor IDs (format: username~actor-name)
+// Using authenticated actor with residential proxies for full profile access
 const LINKEDIN_PEOPLE_SEARCH_ACTOR = 'curious_coder~linkedin-people-search-scraper';
 const TWITTER_SCRAPER_ACTOR = 'apidojo~tweet-scraper';
 
@@ -48,6 +49,7 @@ interface ApifyRun {
   data: {
     id: string;
     status: string;
+    statusMessage?: string;
     defaultDatasetId?: string;
   };
 }
@@ -105,15 +107,9 @@ async function pollForCompletion(runId: string): Promise<string> {
     }
 
     if (status === 'FAILED' || status === 'ABORTED' || status === 'TIMED-OUT') {
-      // Fetch error details
-      const errorMessage = run.data?.status === 'FAILED'
-        ? `Actor run failed. Check Apify console for details: https://console.apify.com/actors/runs/${runId}`
-        : `Actor run ${status.toLowerCase()}`;
-
-      console.error(`[Apify] Run ${runId} failed with status ${status}`);
-      console.error(`[Apify] Run details:`, JSON.stringify(run.data, null, 2));
-
-      throw new Error(errorMessage);
+      const statusMessage = run.data.statusMessage;
+      const reason = statusMessage ? `: ${statusMessage}` : '';
+      throw new Error(`Actor run ${status.toLowerCase()}${reason}`);
     }
 
     // Status is RUNNING or READY, wait and poll again
@@ -148,47 +144,85 @@ async function fetchDataset<T>(datasetId: string): Promise<T[]> {
  */
 export async function searchLinkedIn(query: string, maxProfiles: number = 20): Promise<LinkedInCandidate[]> {
   console.log(`[Apify] Searching LinkedIn for: "${query}", max profiles: ${maxProfiles}`);
+  console.log(`[Apify] Using authenticated actor with proxies: ${LINKEDIN_PEOPLE_SEARCH_ACTOR}`);
 
   try {
     // Construct LinkedIn people search URL
     const encodedQuery = encodeURIComponent(query);
-    const linkedinUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodedQuery}`;
-
-    console.log(`[Apify] Using LinkedIn URL: ${linkedinUrl}`);
+    const searchUrl = `https://www.linkedin.com/search/results/people/?keywords=${encodedQuery}`;
+    console.log(`[Apify] Search URL: ${searchUrl}`);
 
     if (!LINKEDIN_COOKIE) {
       throw new Error('LINKEDIN_COOKIE environment variable not set');
     }
 
-    // Parse cookies from JSON string (from Cookie-Editor export)
+    // Parse and filter cookies
     let cookies;
     try {
       cookies = JSON.parse(LINKEDIN_COOKIE);
+
+      // Filter out only truly expired cookies (not Cloudflare ones)
+      // Residential proxies will handle bot detection better
+      const now = Date.now() / 1000;
+      const validCount = cookies.length;
+      cookies = cookies.filter((cookie: any) => {
+        // Only remove actually expired cookies
+        if (cookie.expirationDate && cookie.expirationDate < now) {
+          console.log(`[Apify] Filtering expired cookie: ${cookie.name}`);
+          return false;
+        }
+        return true;
+      });
+
+      console.log(`[Apify] Using ${cookies.length}/${validCount} cookies with residential proxies`);
     } catch (error) {
       throw new Error('LINKEDIN_COOKIE must be a valid JSON array from Cookie-Editor');
     }
 
     const runId = await startActorRun(LINKEDIN_PEOPLE_SEARCH_ACTOR, {
-      searchUrl: linkedinUrl,
+      searchUrl: searchUrl,
       count: maxProfiles,
       cookie: cookies,
       userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      // Note: Proxy configuration commented out for now - testing without proxies first
+      // The actor may use its own proxy handling
+      // proxyConfiguration: {
+      //   useApifyProxy: true,
+      //   apifyProxyGroups: ['RESIDENTIAL']
+      // },
     });
 
     const datasetId = await pollForCompletion(runId);
     const results = await fetchDataset<any>(datasetId);
 
+    // Log raw data format for debugging
+    if (results.length > 0) {
+      console.log('[Apify] Sample raw LinkedIn result (first item):');
+      console.log(JSON.stringify(results[0], null, 2));
+      console.log('[Apify] Available fields:', Object.keys(results[0]).join(', '));
+    }
+
     // Transform Apify results to our format
-    const candidates: LinkedInCandidate[] = results.map(result => ({
-      name: result.name || result.fullName || 'Unknown',
-      title: result.title || result.headline,
-      company: result.company || result.companyName,
-      location: result.location,
-      linkedinUrl: result.url || result.profileUrl || result.linkedinUrl,
-      summary: result.summary || result.about,
-      experience: result.experience || [],
-      skills: result.skills || [],
-    }));
+    const candidates: LinkedInCandidate[] = results.map((result, index) => {
+      const transformed = {
+        name: result.name || result.fullName || 'Unknown',
+        title: result.title || result.headline,
+        company: result.company || result.companyName,
+        location: result.location,
+        linkedinUrl: result.url || result.profileUrl || result.linkedinUrl,
+        summary: result.summary || result.about,
+        experience: result.experience || [],
+        skills: result.skills || [],
+      };
+
+      // Log first transformed candidate to see what Claude will receive
+      if (index === 0) {
+        console.log('[Apify] Sample transformed candidate:');
+        console.log(JSON.stringify(transformed, null, 2));
+      }
+
+      return transformed;
+    });
 
     console.log(`[Apify] LinkedIn search complete: ${candidates.length} candidates found`);
     return candidates;

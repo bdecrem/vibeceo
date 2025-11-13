@@ -139,3 +139,126 @@ export function formatExtracted(extracted: ExtractedPersonalization): string {
 
   return parts.join('\n');
 }
+
+/**
+ * Get Gmail context for enriching agent responses
+ * This function is called by other agents to include relevant email data
+ *
+ * @param subscriberId - The subscriber's ID
+ * @param queryContext - The context of the user's query (e.g., "crypto research", "meeting scheduling")
+ * @param maxResults - Maximum number of emails to include (default: 3)
+ * @returns Gmail context string to include in AI prompts, or null if Gmail not connected
+ */
+export async function getGmailContext(
+  subscriberId: string,
+  queryContext: string,
+  maxResults: number = 3
+): Promise<string | null> {
+  try {
+    // Lazy import to avoid circular dependencies
+    const { hasGmailConnected, searchGmail } = await import('./gmail-client.js');
+
+    // Check if Gmail is connected
+    const isConnected = await hasGmailConnected(subscriberId);
+    if (!isConnected) {
+      return null;
+    }
+
+    // Use Claude to generate a Gmail search query based on context
+    const searchQuery = await generateGmailSearchQuery(queryContext);
+
+    if (!searchQuery) {
+      return null; // No relevant search query could be generated
+    }
+
+    // Search Gmail
+    const results = await searchGmail(subscriberId, searchQuery, maxResults);
+
+    if (results.length === 0) {
+      return null; // No relevant emails found
+    }
+
+    // Format results for AI context
+    let context = `\n\n[Gmail Context - Recent relevant emails]:\n`;
+
+    results.forEach((msg, index) => {
+      const date = new Date(msg.date).toLocaleDateString();
+      const fromEmail = msg.from.split('<')[0].trim() || msg.from;
+
+      context += `\nEmail ${index + 1}:\n`;
+      context += `  From: ${fromEmail}\n`;
+      context += `  Subject: ${msg.subject}\n`;
+      context += `  Date: ${date}\n`;
+      context += `  Snippet: ${msg.snippet}\n`;
+    });
+
+    context += '\n[End Gmail Context]\n';
+
+    return context;
+  } catch (error) {
+    console.error('[Gmail Context] Failed to fetch:', error);
+    return null; // Don't let Gmail errors break the main agent flow
+  }
+}
+
+/**
+ * Generate a Gmail search query based on the user's query context
+ * Uses Claude to intelligently create search terms
+ */
+async function generateGmailSearchQuery(queryContext: string): Promise<string | null> {
+  try {
+    const systemPrompt = `Given a user query context, generate a Gmail search query to find relevant emails.
+
+Return ONLY the search query string, nothing else. Use Gmail search syntax.
+
+Examples:
+Context: "crypto research about Bitcoin price"
+Query: Bitcoin OR BTC OR cryptocurrency price
+
+Context: "meeting with john about the project"
+Query: from:john subject:meeting OR subject:project
+
+Context: "AI research papers"
+Query: AI OR "artificial intelligence" OR "machine learning" subject:research OR subject:paper
+
+Context: "stock market updates"
+Query: stock OR market OR trading OR investment
+
+If the context is too generic or not email-related, respond with: SKIP
+
+Context: "what's the weather?"
+Response: SKIP
+
+Context: "tell me about quantum physics"
+Response: SKIP`;
+
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-5-20250929',
+      max_tokens: 100,
+      temperature: 0,
+      system: systemPrompt,
+      messages: [
+        {
+          role: 'user',
+          content: queryContext,
+        },
+      ],
+    });
+
+    const textContent = response.content.find((c) => c.type === 'text');
+    if (!textContent || textContent.type !== 'text') {
+      return null;
+    }
+
+    const query = textContent.text.trim();
+
+    if (query === 'SKIP' || query.length < 3) {
+      return null;
+    }
+
+    return query;
+  } catch (error) {
+    console.error('[Gmail Query Generator] Failed:', error);
+    return null;
+  }
+}

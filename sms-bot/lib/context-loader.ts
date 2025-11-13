@@ -34,6 +34,14 @@ export interface UserSubscription {
   last_sent_at: string | null;
 }
 
+export interface ActiveThread {
+  threadId: string;
+  handler: string;
+  startedAt: string;
+  lastActivity: string;
+  fullContext: Record<string, any>;
+}
+
 export interface UserContext {
   phoneNumber: string;
   subscriberId: string;
@@ -41,6 +49,7 @@ export interface UserContext {
   subscriptions: UserSubscription[];
   recentMessages: RecentMessage[];
   hasRecentActivity: boolean;
+  activeThread?: ActiveThread;
 }
 
 /**
@@ -164,6 +173,29 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
 
   const hasRecentActivity = recentMessages.length > 0;
 
+  // Load active thread (last 5 minutes)
+  const { data: activeThreadData } = await supabase
+    .from('conversation_context')
+    .select('thread_id, active_handler, thread_started_at, created_at, metadata')
+    .eq('subscriber_id', subscriber.id)
+    .eq('context_type', 'active_thread')
+    .gte('expires_at', new Date().toISOString())
+    .gte('created_at', new Date(Date.now() - 300000).toISOString()) // 5 minutes
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single();
+
+  let activeThread: ActiveThread | undefined;
+  if (activeThreadData) {
+    activeThread = {
+      threadId: activeThreadData.thread_id,
+      handler: activeThreadData.active_handler,
+      startedAt: activeThreadData.thread_started_at,
+      lastActivity: activeThreadData.created_at,
+      fullContext: activeThreadData.metadata || {},
+    };
+  }
+
   return {
     phoneNumber,
     subscriberId: subscriber.id,
@@ -171,6 +203,7 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
     subscriptions,
     recentMessages,
     hasRecentActivity,
+    activeThread,
   };
 }
 
@@ -259,4 +292,66 @@ export async function cleanupExpiredContexts(): Promise<void> {
   if (error) {
     console.error('[Context] Failed to cleanup expired contexts:', error);
   }
+}
+
+/**
+ * Store active thread state for multi-turn conversations
+ */
+export async function storeThreadState(
+  subscriberId: string,
+  params: {
+    handler: string;
+    topic: string;
+    context?: Record<string, any>;
+  }
+): Promise<string> {
+  const { data, error } = await supabase.rpc('store_thread_state', {
+    p_subscriber_id: subscriberId,
+    p_handler: params.handler,
+    p_topic: params.topic,
+    p_context: params.context || {},
+  });
+
+  if (error) {
+    console.error('[Thread] Failed to store thread state:', error);
+    throw error;
+  }
+
+  return data as string;
+}
+
+/**
+ * Update thread context (extends expiration)
+ */
+export async function updateThreadContext(
+  subscriberId: string,
+  context: Record<string, any>
+): Promise<boolean> {
+  const { data, error } = await supabase.rpc('update_thread_context', {
+    p_subscriber_id: subscriberId,
+    p_context: context,
+  });
+
+  if (error) {
+    console.error('[Thread] Failed to update thread context:', error);
+    return false;
+  }
+
+  return data as boolean;
+}
+
+/**
+ * Clear active thread state
+ */
+export async function clearThreadState(subscriberId: string): Promise<boolean> {
+  const { data, error } = await supabase.rpc('clear_thread_state', {
+    p_subscriber_id: subscriberId,
+  });
+
+  if (error) {
+    console.error('[Thread] Failed to clear thread state:', error);
+    return false;
+  }
+
+  return data as boolean;
 }

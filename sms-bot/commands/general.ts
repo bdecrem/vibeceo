@@ -16,6 +16,7 @@ import {
   detectPersonalInfo,
   extractPersonalization,
   formatExtracted,
+  getGmailContext,
   type ExtractedPersonalization
 } from '../lib/personalization-extractor.js';
 import { supabase } from '../lib/supabase.js';
@@ -35,8 +36,28 @@ export async function handleGeneralKochiAgent(
 
   console.log(`[General Kochi] Processing message for ${normalizedFrom}`);
 
-  // Build system prompt with full context
-  const systemPrompt = buildSystemPrompt(userContext);
+  // Get subscriber for Gmail context
+  const subscriber = await getSubscriber(normalizedFrom);
+
+  // Try to get Gmail context if connected
+  let gmailContext: string | null = null;
+  if (subscriber) {
+    try {
+      console.log(`[General Kochi] Attempting to fetch Gmail context for query: "${message.substring(0, 50)}..."`);
+      gmailContext = await getGmailContext(subscriber.id, message);
+      if (gmailContext) {
+        console.log(`[General Kochi] ✅ Gmail context retrieved (${gmailContext.length} chars)`);
+      } else {
+        console.log(`[General Kochi] ℹ️  No Gmail context available`);
+      }
+    } catch (error) {
+      console.error('[General Kochi] ⚠️  Failed to fetch Gmail context:', error);
+      // Continue without Gmail context
+    }
+  }
+
+  // Build system prompt with full context (including Gmail)
+  const systemPrompt = buildSystemPrompt(userContext, gmailContext);
 
   try {
     // Call Claude with context
@@ -61,7 +82,6 @@ export async function handleGeneralKochiAgent(
     let reply = textContent.text;
 
     // Store both user message and assistant response
-    const subscriber = await getSubscriber(normalizedFrom);
     if (subscriber) {
       await storeMessage(subscriber.id, {
         role: 'user',
@@ -135,7 +155,7 @@ export async function handleGeneralKochiAgent(
 /**
  * Build system prompt with full user context
  */
-function buildSystemPrompt(context: UserContext): string {
+function buildSystemPrompt(context: UserContext, gmailContext: string | null = null): string {
   const parts: string[] = [];
 
   // Base identity
@@ -157,6 +177,11 @@ function buildSystemPrompt(context: UserContext): string {
   }
   if (context.personalization.notes) {
     parts.push(`\nNotes about user: ${context.personalization.notes}`);
+  }
+
+  // Gmail Context (if available)
+  if (gmailContext) {
+    parts.push(gmailContext);
   }
 
   // Active subscriptions

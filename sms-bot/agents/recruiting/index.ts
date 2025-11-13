@@ -11,13 +11,21 @@
  */
 
 import type { Twilio } from 'twilio';
-import { searchLinkedIn, searchTwitter } from './apify-client.js';
-import type { LinkedInCandidate, TwitterCandidate } from './apify-client.js';
 import { supabase } from '../../lib/supabase.js';
 import { getSubscriber } from '../../lib/subscribers.js';
 import { sendChunkedSmsResponse, sendSmsResponse } from '../../lib/sms/handlers.js';
 import Anthropic from '@anthropic-ai/sdk';
 import { registerDailyJob } from '../../lib/scheduler/index.js';
+
+// Talent Radar imports
+import { discoverSources, shouldRefreshSources, mergeSources } from './source-discovery-agent.js';
+import type { DiscoveredSources } from './source-discovery-agent.js';
+import { collectFromGitHub } from './collectors/github-collector.js';
+import { collectFromTwitter } from './collectors/twitter-collector.js';
+import { collectFromRSS } from './collectors/rss-collector.js';
+import { collectFromYouTube } from './collectors/youtube-collector.js';
+import { scoreAndSelectCandidates } from './candidate-scorer.js';
+import type { CollectedCandidates, ScoredCandidate } from './candidate-scorer.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -56,15 +64,15 @@ function inferCompanySize(company?: string): string {
 }
 
 function buildFallbackCandidates(
-  linkedInCandidates: LinkedInCandidate[],
-  twitterCandidates: TwitterCandidate[],
+  linkedInCandidates: any[],
+  twitterCandidates: any[],
   desiredCount: number,
   query: string
 ): any[] {
   const results: any[] = [];
   const seen = new Set<string>();
 
-  const pushLinkedIn = (profile: LinkedInCandidate) => {
+  const pushLinkedIn = (profile: any) => {
     const key = profile.linkedinUrl?.toLowerCase() || `${profile.name}|${profile.title}`;
     if (seen.has(key)) return;
     seen.add(key);
@@ -85,7 +93,7 @@ function buildFallbackCandidates(
     });
   };
 
-  const pushTwitter = (profile: TwitterCandidate) => {
+  const pushTwitter = (profile: any) => {
     const key = profile.handle?.toLowerCase() || profile.twitterUrl?.toLowerCase() || profile.name;
     if (seen.has(key)) return;
     seen.add(key);
@@ -170,7 +178,69 @@ function ensureMinimumCandidates(
 }
 
 /**
- * Store candidates and send SMS
+ * Store candidates from Talent Radar and send SMS
+ */
+async function storeCandidatesFromTalentRadar(
+  subscriberId: string,
+  projectId: string,
+  candidates: ScoredCandidate[],
+  from: string,
+  twilioClient: Twilio
+): Promise<void> {
+  // Convert ScoredCandidate to database format
+  const dbCandidates = candidates.map(c => ({
+    subscriber_id: subscriberId,
+    project_id: projectId,
+    name: c.name,
+    title: c.title || null,
+    company: c.company || null,
+    company_size: c.company_size || 'unknown',
+    location: c.location || null,
+    linkedin_url: c.linkedin_url || null,
+    twitter_handle: c.twitter_handle || null,
+    match_reason: c.match_reason,
+    recent_activity: c.recent_activity || null,
+    source: c.source,
+    raw_profile: c.raw_profile || {},
+    report_type: 'setup',
+    report_date: new Date().toISOString().split('T')[0],
+    position_in_report: 0,
+  }));
+
+  const { error } = await supabase
+    .from('recruiting_candidates')
+    .insert(dbCandidates.map((c, i) => ({ ...c, position_in_report: i + 1 })));
+
+  if (error) {
+    console.error('[Recruiting] Failed to store candidates:', error);
+    throw error;
+  }
+
+  console.log(`[Recruiting] Stored ${dbCandidates.length} candidates`);
+
+  // Send SMS with top 5 candidates
+  let message = `🎯 Talent Radar Results\n\nFound ${candidates.length} candidates!\n\n`;
+
+  for (let i = 0; i < Math.min(5, candidates.length); i++) {
+    const candidate = candidates[i];
+    message += `${i + 1}. ${candidate.name}\n`;
+    if (candidate.title) message += `   ${candidate.title}`;
+    if (candidate.company) message += ` @ ${candidate.company}`;
+    message += '\n';
+    message += `   ${candidate.match_reason.substring(0, 100)}...\n\n`;
+  }
+
+  if (candidates.length > 5) {
+    message += `...and ${candidates.length - 5} more\n\n`;
+  }
+
+  message += `---\nScore: SCORE 1:5 2:3 ...`;
+
+  await sendChunkedSmsResponse(from, message, twilioClient);
+}
+
+/**
+ * Store candidates and send SMS (legacy function, kept for compatibility)
  */
 async function storeCandidates(
   subscriberId: string,
@@ -240,7 +310,7 @@ async function storeCandidates(
 }
 
 /**
- * Run setup search: Find 10 diverse candidates
+ * Run setup search: Discover sources and find 10 diverse candidates
  */
 export async function runSetupSearch(
   subscriberId: string,
@@ -252,37 +322,85 @@ export async function runSetupSearch(
   console.log(`[Recruiting] Setup search for project ${projectId}: "${query}"`);
 
   try {
-    // Search both LinkedIn and Twitter
-    const [linkedInCandidates, twitterCandidates] = await Promise.all([
-      searchLinkedIn(query, 30).catch(err => {
-        console.error('[Recruiting] LinkedIn search failed:', err);
-        return [] as LinkedInCandidate[];
+    // Send immediate response that we're working on it
+    await sendSmsResponse(
+      from,
+      `🔍 Talent Radar activated!\n\nDiscovering sources for: "${query}"\n\nThis will take 30-60 seconds...`,
+      twilioClient
+    );
+
+    // Step 1: Discover sources via agentic loop
+    console.log('[Recruiting] Running source discovery...');
+    const discoveredSources = await discoverSources(query);
+
+    // Store sources in the NESTED project preferences (agent_slug='recruiting' format)
+    const { data: subscription } = await supabase
+      .from('agent_subscriptions')
+      .select('preferences')
+      .eq('subscriber_id', subscriberId)
+      .eq('agent_slug', 'recruiting')
+      .single();
+
+    if (subscription?.preferences) {
+      const prefs = subscription.preferences as any;
+      if (prefs.projects && prefs.projects[projectId]) {
+        prefs.projects[projectId].sources = discoveredSources;
+
+        await supabase
+          .from('agent_subscriptions')
+          .update({ preferences: prefs })
+          .eq('subscriber_id', subscriberId)
+          .eq('agent_slug', 'recruiting');
+
+        console.log('[Recruiting] Sources stored in project preferences');
+      }
+    }
+
+    // Step 2: Collect candidates from all discovered sources in parallel
+    console.log('[Recruiting] Collecting candidates from discovered sources...');
+    const [githubCandidates, twitterCandidates, rssCandidates, youtubeCandidates] = await Promise.all([
+      collectFromGitHub(discoveredSources.github, 20).catch(err => {
+        console.error('[Recruiting] GitHub collection failed:', err);
+        return [];
       }),
-      searchTwitter(query, 100).catch(err => {
-        console.error('[Recruiting] Twitter search failed:', err);
-        return [] as TwitterCandidate[];
+      collectFromTwitter(discoveredSources.twitter, 20).catch(err => {
+        console.error('[Recruiting] Twitter collection failed:', err);
+        return [];
+      }),
+      collectFromRSS(discoveredSources.rss, 20).catch(err => {
+        console.error('[Recruiting] RSS collection failed:', err);
+        return [];
+      }),
+      collectFromYouTube(discoveredSources.youtube, 20).catch(err => {
+        console.error('[Recruiting] YouTube collection failed:', err);
+        return [];
       }),
     ]);
 
-    console.log(`[Recruiting] Found ${linkedInCandidates.length} LinkedIn, ${twitterCandidates.length} Twitter candidates`);
+    const collected: CollectedCandidates = {
+      github: githubCandidates,
+      twitter: twitterCandidates,
+      rss: rssCandidates,
+      youtube: youtubeCandidates,
+    };
 
-    if (linkedInCandidates.length === 0 && twitterCandidates.length === 0) {
+    const totalCollected = githubCandidates.length + twitterCandidates.length + rssCandidates.length + youtubeCandidates.length;
+    console.log(`[Recruiting] Collected ${totalCollected} total candidates`);
+
+    if (totalCollected === 0) {
       await sendSmsResponse(
         from,
-        `❌ No candidates found\n\nApify actors may require paid access. Check:\n• Apify account has credits\n• Actors are accessible on your plan\n\nTry: RECRUIT SETTINGS`,
+        `❌ No candidates found from discovered sources.\n\nTry a different query or check API keys.`,
         twilioClient
       );
       return;
     }
 
-    // Use Claude to select 10 diverse candidates
-    const diverseCandidates = await selectDiverseCandidates(
-      linkedInCandidates,
-      twitterCandidates,
-      query
-    );
+    // Step 3: Use Claude to score and select top 10 candidates
+    console.log('[Recruiting] Scoring and selecting top candidates...');
+    const selectedCandidates = await scoreAndSelectCandidates(collected, query, 10);
 
-    if (diverseCandidates.length === 0) {
+    if (selectedCandidates.length === 0) {
       await sendSmsResponse(
         from,
         `❌ Could not identify suitable candidates\n\nTry adjusting your criteria.`,
@@ -291,8 +409,8 @@ export async function runSetupSearch(
       return;
     }
 
-    // Store and send candidates
-    await storeCandidates(subscriberId, projectId, diverseCandidates, from, twilioClient);
+    // Step 4: Store and send candidates
+    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient);
 
   } catch (error) {
     console.error('[Recruiting] Setup search failed:', error);
@@ -304,156 +422,7 @@ export async function runSetupSearch(
   }
 }
 
-/**
- * Use Claude to select 10 diverse candidates from search results
- */
-async function selectDiverseCandidates(
-  linkedInCandidates: LinkedInCandidate[],
-  twitterCandidates: TwitterCandidate[],
-  query: string
-): Promise<any[]> {
-  console.log('[Recruiting] Selecting diverse candidates via Claude...');
-  console.log(`[Recruiting] Input: ${linkedInCandidates.length} LinkedIn, ${twitterCandidates.length} Twitter candidates`);
-
-  // Log sample data to see what Claude will receive
-  if (linkedInCandidates.length > 0) {
-    console.log('[Recruiting] Sample LinkedIn candidate for Claude:');
-    console.log(JSON.stringify(linkedInCandidates[0], null, 2));
-  }
-
-  const prompt = `You are a recruiting assistant. From these search results, select UP TO 10 candidates that match the query: "${query}"
-
-IMPORTANT:
-- Even if some fields are missing (title, company, etc.), include the candidate if they seem relevant
-- Focus on name, linkedin_url, and any available context
-- If fewer than 10 candidates are available, return what you can find
-- Prioritize diversity in backgrounds when possible
-
-For each candidate you select, provide these fields (use null for missing data):
-- name: string (required)
-- title: string or null
-- company: string or null
-- company_size: "startup" | "midsize" | "enterprise" | "unknown"
-- location: string or null
-- linkedin_url: string (if available)
-- twitter_handle: string (if available)
-- match_reason: brief explanation of why they match
-- source: "linkedin" | "twitter" | "both"
-
-LinkedIn Candidates:
-${JSON.stringify(linkedInCandidates.slice(0, 20), null, 2)}
-
-Twitter Candidates:
-${JSON.stringify(twitterCandidates.slice(0, 20), null, 2)}
-
-Return ONLY a JSON array of candidates. Use this exact format:
-[{"name": "...", "title": "...", "company": "...", "company_size": "...", "location": "...", "linkedin_url": "...", "twitter_handle": null, "match_reason": "...", "source": "linkedin"}]`;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 4000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
-
-    const text = content.text.trim();
-
-    console.log('[Recruiting] Claude response:', text.substring(0, 500) + (text.length > 500 ? '...' : ''));
-
-    // Try to parse JSON from response
-    let candidates: any[];
-
-    try {
-      // Try multiple parsing strategies
-      let jsonText = text;
-
-      // Strategy 1: Look for JSON in markdown code blocks
-      const markdownMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-      if (markdownMatch) {
-        console.log('[Recruiting] Found JSON in markdown code block');
-        jsonText = markdownMatch[1];
-      } else {
-        // Strategy 2: Look for any JSON array in the text
-        const arrayMatch = text.match(/\[[\s\S]*\]/);
-        if (arrayMatch) {
-          console.log('[Recruiting] Found JSON array in response');
-          jsonText = arrayMatch[0];
-        }
-      }
-
-      candidates = JSON.parse(jsonText);
-
-      if (!Array.isArray(candidates)) {
-        console.error('[Recruiting] Parsed result is not an array:', typeof candidates);
-        throw new Error('Response is not a JSON array');
-      }
-
-      console.log(`[Recruiting] Successfully parsed ${candidates.length} candidates`);
-
-    } catch (error) {
-      console.error('[Recruiting] Failed to parse Claude response as JSON:', error);
-      console.error('[Recruiting] Full response:', text);
-      console.warn('[Recruiting] Using fallback selection due to parsing error');
-      return buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
-    }
-
-    console.log(`[Recruiting] Claude selected ${candidates.length} diverse candidates`);
-
-    if (candidates.length === 0) {
-      console.warn('[Recruiting] Claude returned 0 candidates, using fallback selection');
-      console.log('[Recruiting] Available: LinkedIn=' + linkedInCandidates.length + ', Twitter=' + twitterCandidates.length);
-      const fallback = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
-      console.log(`[Recruiting] Fallback generated ${fallback.length} candidates`);
-      return fallback;
-    }
-
-    // Add raw_profile field for each candidate
-    for (const candidate of candidates) {
-      // Find original profile data
-      if (candidate.linkedin_url) {
-        const original = linkedInCandidates.find(c =>
-          c.linkedinUrl === candidate.linkedin_url
-        );
-        candidate.raw_profile = original || {};
-      } else if (candidate.twitter_handle) {
-        const original = twitterCandidates.find(c =>
-          c.handle === candidate.twitter_handle
-        );
-        candidate.raw_profile = original || {};
-      }
-    }
-
-    if (candidates.length < 10) {
-      const fallbackPool = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 10, query);
-      candidates = ensureMinimumCandidates(candidates, fallbackPool, 10);
-    }
-
-    return candidates.slice(0, 10);
-
-  } catch (error) {
-    console.error('[Recruiting] Claude selection failed:', error);
-
-    // Fallback: return first 10 LinkedIn candidates
-    return linkedInCandidates.slice(0, 10).map((c, i) => ({
-      name: c.name,
-      title: c.title,
-      company: c.company,
-      company_size: 'unknown',
-      location: c.location,
-      linkedin_url: c.linkedinUrl,
-      twitter_handle: null,
-      match_reason: 'Matches search criteria',
-      recent_activity: null,
-      source: 'linkedin',
-      raw_profile: c,
-    }));
-  }
-}
+// NOTE: Old selectDiverseCandidates function removed - replaced by candidate-scorer.ts
 
 /**
  * Analyze project scores and extract learned preferences
@@ -585,32 +554,89 @@ Return ONLY JSON, no markdown or explanation.`;
 }
 
 /**
- * Find daily candidates based on learned preferences
+ * Find daily candidates based on learned preferences (Talent Radar version)
  */
 export async function findDailyCandidates(
   subscriberId: string,
   projectId: string,
   query: string,
   learnedProfile: any
-): Promise<any[]> {
+): Promise<ScoredCandidate[]> {
   console.log(`[Recruiting] Finding daily candidates for project ${projectId}`);
 
   try {
-    // Search both LinkedIn and Twitter
-    const [linkedInCandidates, twitterCandidates] = await Promise.all([
-      searchLinkedIn(query, 20).catch(err => {
-        console.error('[Recruiting] LinkedIn search failed:', err);
-        return [] as LinkedInCandidate[];
+    // Get stored sources from NESTED project preferences (agent_slug='recruiting' format)
+    const { data: subscription } = await supabase
+      .from('agent_subscriptions')
+      .select('preferences')
+      .eq('subscriber_id', subscriberId)
+      .eq('agent_slug', 'recruiting')
+      .single();
+
+    if (!subscription?.preferences) {
+      console.error('[Recruiting] No subscription found');
+      return [];
+    }
+
+    const prefs = subscription.preferences as any;
+    const project = prefs.projects?.[projectId];
+
+    if (!project?.sources) {
+      console.error('[Recruiting] No sources found for project');
+      return [];
+    }
+
+    const sources: DiscoveredSources = project.sources;
+
+    // Check if we need to refresh sources (every 30 days)
+    if (shouldRefreshSources({ sources })) {
+      console.log('[Recruiting] 30-day refresh: Discovering new sources...');
+      const newSources = await discoverSources(query);
+      const mergedSources = mergeSources(sources, newSources);
+
+      // Update stored sources in nested structure
+      prefs.projects[projectId].sources = mergedSources;
+      await supabase
+        .from('agent_subscriptions')
+        .update({ preferences: prefs })
+        .eq('subscriber_id', subscriberId)
+        .eq('agent_slug', 'recruiting');
+
+      console.log('[Recruiting] Sources refreshed');
+    }
+
+    // Collect candidates from all sources
+    console.log('[Recruiting] Collecting from stored sources...');
+    const [githubCandidates, twitterCandidates, rssCandidates, youtubeCandidates] = await Promise.all([
+      collectFromGitHub(sources.github, 20).catch(err => {
+        console.error('[Recruiting] GitHub collection failed:', err);
+        return [];
       }),
-      searchTwitter(query, 50).catch(err => {
-        console.error('[Recruiting] Twitter search failed:', err);
-        return [] as TwitterCandidate[];
+      collectFromTwitter(sources.twitter, 20).catch(err => {
+        console.error('[Recruiting] Twitter collection failed:', err);
+        return [];
+      }),
+      collectFromRSS(sources.rss, 20).catch(err => {
+        console.error('[Recruiting] RSS collection failed:', err);
+        return [];
+      }),
+      collectFromYouTube(sources.youtube, 20).catch(err => {
+        console.error('[Recruiting] YouTube collection failed:', err);
+        return [];
       }),
     ]);
 
-    console.log(`[Recruiting] Found ${linkedInCandidates.length} LinkedIn, ${twitterCandidates.length} Twitter candidates`);
+    const collected: CollectedCandidates = {
+      github: githubCandidates,
+      twitter: twitterCandidates,
+      rss: rssCandidates,
+      youtube: youtubeCandidates,
+    };
 
-    if (linkedInCandidates.length === 0 && twitterCandidates.length === 0) {
+    const totalCollected = githubCandidates.length + twitterCandidates.length + rssCandidates.length + youtubeCandidates.length;
+    console.log(`[Recruiting] Collected ${totalCollected} candidates`);
+
+    if (totalCollected === 0) {
       console.log('[Recruiting] No candidates found in daily search');
       return [];
     }
@@ -618,35 +644,31 @@ export async function findDailyCandidates(
     // Get already-shown candidates to avoid duplicates
     const { data: existingCandidates } = await supabase
       .from('recruiting_candidates')
-      .select('linkedin_url, twitter_handle')
+      .select('name, github_url, linkedin_url, twitter_handle, youtube_url')
       .eq('project_id', projectId);
 
-    const shownLinkedInUrls = new Set(
-      existingCandidates?.map(c => c.linkedin_url).filter(Boolean) || []
+    // Filter out duplicates (simplified - just checking names for now)
+    // TODO: More sophisticated deduplication based on URLs/handles
+    const shownNames = new Set(
+      existingCandidates?.map(c => c.name?.toLowerCase()).filter(Boolean) || []
     );
-    const shownTwitterHandles = new Set(
-      existingCandidates?.map(c => c.twitter_handle).filter(Boolean) || []
-    );
-
-    // Filter out already-shown candidates
-    const newLinkedIn = linkedInCandidates.filter(c =>
-      !shownLinkedInUrls.has(c.linkedinUrl)
-    );
-    const newTwitter = twitterCandidates.filter(c =>
-      !shownTwitterHandles.has(c.handle)
-    );
-
-    console.log(`[Recruiting] After deduplication: ${newLinkedIn.length} LinkedIn, ${newTwitter.length} Twitter`);
 
     // Use Claude to select 3 candidates matching learned preferences
-    const selectedCandidates = await selectDailyCandidates(
-      newLinkedIn,
-      newTwitter,
+    const selectedCandidates = await scoreAndSelectCandidates(
+      collected,
       query,
+      3,
       learnedProfile
     );
 
-    return selectedCandidates;
+    // Filter out already-shown candidates
+    const newCandidates = selectedCandidates.filter(c =>
+      !shownNames.has(c.name.toLowerCase())
+    );
+
+    console.log(`[Recruiting] After deduplication: ${newCandidates.length} new candidates`);
+
+    return newCandidates;
 
   } catch (error) {
     console.error('[Recruiting] Daily candidate search failed:', error);
@@ -654,239 +676,142 @@ export async function findDailyCandidates(
   }
 }
 
-/**
- * Use Claude to select 3 daily candidates matching learned preferences
- */
-async function selectDailyCandidates(
-  linkedInCandidates: LinkedInCandidate[],
-  twitterCandidates: TwitterCandidate[],
-  query: string,
-  learnedProfile: any
-): Promise<any[]> {
-  console.log('[Recruiting] Selecting daily candidates via Claude...');
-
-  const prompt = `You are a recruiting assistant. From these search results, select 3 candidates that match the query AND the user's learned preferences.
-
-Query: "${query}"
-
-User's Learned Preferences:
-${JSON.stringify(learnedProfile, null, 2)}
-
-For each selected candidate, provide:
-1. name
-2. title
-3. company
-4. company_size (estimate: "startup", "midsize", "enterprise")
-5. location
-6. linkedin_url OR twitter_handle (or both)
-7. match_reason (1-2 sentences: why they match preferences)
-8. recent_activity (if available from Twitter)
-9. source ("linkedin", "twitter", or "both")
-
-Return EXACTLY 3 candidates as a JSON array.
-
-LinkedIn Candidates:
-${JSON.stringify(linkedInCandidates.slice(0, 15), null, 2)}
-
-Twitter Candidates:
-${JSON.stringify(twitterCandidates.slice(0, 15), null, 2)}
-
-Return ONLY a JSON array of 3 candidates. No markdown, no explanation.`;
-
-  try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-5-20250929',
-      max_tokens: 2000,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const content = response.content[0];
-    if (content.type !== 'text') {
-      throw new Error('Unexpected response type from Claude');
-    }
-
-    const text = content.text.trim();
-
-    // Try to parse JSON from response
-    let candidates: any[];
-
-    const jsonMatch = text.match(/```(?:json)?\s*(\[[\s\S]*?\])\s*```/);
-    if (jsonMatch) {
-      candidates = JSON.parse(jsonMatch[1]);
-    } else {
-      candidates = JSON.parse(text);
-    }
-
-    console.log(`[Recruiting] Claude selected ${candidates.length} daily candidates`);
-
-    if (!Array.isArray(candidates) || candidates.length === 0) {
-      console.warn('[Recruiting] Claude returned 0 daily candidates, using fallback');
-      return buildFallbackCandidates(linkedInCandidates, twitterCandidates, 3, query);
-    }
-
-    // Add raw_profile field for each candidate
-    for (const candidate of candidates) {
-      if (candidate.linkedin_url) {
-        const original = linkedInCandidates.find(c =>
-          c.linkedinUrl === candidate.linkedin_url
-        );
-        candidate.raw_profile = original || {};
-      } else if (candidate.twitter_handle) {
-        const original = twitterCandidates.find(c =>
-          c.handle === candidate.twitter_handle
-        );
-        candidate.raw_profile = original || {};
-      }
-    }
-
-    if (candidates.length < 3) {
-      const fallbackPool = buildFallbackCandidates(linkedInCandidates, twitterCandidates, 3, query);
-      candidates = ensureMinimumCandidates(candidates, fallbackPool, 3);
-    }
-
-    return candidates.slice(0, 3);
-
-  } catch (error) {
-    console.error('[Recruiting] Claude selection failed:', error);
-
-    // Fallback: return first 3 LinkedIn candidates
-    return linkedInCandidates.slice(0, 3).map(c => ({
-      name: c.name,
-      title: c.title,
-      company: c.company,
-      company_size: 'unknown',
-      location: c.location,
-      linkedin_url: c.linkedinUrl,
-      twitter_handle: null,
-      match_reason: 'Matches search criteria',
-      recent_activity: null,
-      source: 'linkedin',
-      raw_profile: c,
-    }));
-  }
-}
+// NOTE: Old selectDailyCandidates function removed - replaced by candidate-scorer.ts
 
 /**
  * Register daily recruiting job (runs at 9 AM PT)
+ * Uses Talent Radar system for source discovery and candidate collection
  */
 export function registerRecruitingDailyJob(twilioClient: Twilio): void {
   registerDailyJob({
-    name: 'recruiting-daily',
+    name: 'recruiting-talent-radar-daily',
     hour: 9,
     minute: 0,
     timezone: 'America/Los_Angeles',
     run: async () => {
-      console.log('[Recruiting] Running daily recruiting job');
+      console.log('[Recruiting] Running Talent Radar daily job');
 
       try {
-        // Get all active recruiting projects
-        const { data: subscriptions } = await supabase
+        // Get all recruiting subscriptions (agent_slug='recruiting' with nested projects)
+        const { data: subscriptions, error } = await supabase
           .from('agent_subscriptions')
-          .select('subscriber_id, preferences')
+          .select('*')
           .eq('agent_slug', 'recruiting')
-          .eq('is_subscribed', true);
+          .eq('active', true);
+
+        if (error) {
+          console.error('[Recruiting] Failed to fetch subscriptions:', error);
+          return;
+        }
 
         if (!subscriptions || subscriptions.length === 0) {
           console.log('[Recruiting] No active subscriptions');
           return;
         }
 
-        for (const sub of subscriptions) {
-          const prefs = sub.preferences as any;
+        console.log(`[Recruiting] Processing ${subscriptions.length} recruiting subscriptions`);
 
-          if (!prefs?.projects) continue;
+        // Process each subscription's projects
+        for (const subscription of subscriptions) {
+          try {
+            const prefs = subscription.preferences as any;
+            if (!prefs?.projects) continue;
 
-          // Process each active project
-          for (const [projectId, project] of Object.entries(prefs.projects)) {
-            const proj = project as any;
+            // Process each active project
+            for (const [projectId, project] of Object.entries(prefs.projects)) {
+              const proj = project as any;
 
-            if (!proj.active || !proj.setupComplete) continue;
+              if (!proj.active || !proj.setupComplete) {
+                console.log(`[Recruiting] Skipping inactive/incomplete project ${projectId}`);
+                continue;
+              }
 
-            console.log(`[Recruiting] Processing project ${projectId} for subscriber ${sub.subscriber_id}`);
+              console.log(`[Recruiting] Processing project ${projectId}: "${proj.query}"`);
 
-            // Find 3 daily candidates
-            const candidates = await findDailyCandidates(
-              sub.subscriber_id,
-              projectId,
-              proj.query,
-              proj.learnedProfile || {}
-            );
+              // Analyze past scores to learn preferences
+              await analyzeProjectScores(subscription.subscriber_id, projectId);
 
-            if (candidates.length === 0) {
-              console.log(`[Recruiting] No new candidates for project ${projectId}`);
-              continue;
-            }
+              // Find new daily candidates using Talent Radar
+              const newCandidates = await findDailyCandidates(
+                subscription.subscriber_id,
+                projectId,
+                proj.query,
+                proj.learnedProfile || {}
+              );
 
-            // Store candidates in database
-            const reportDate = new Date().toISOString().split('T')[0];
+              if (newCandidates.length === 0) {
+                console.log(`[Recruiting] No new candidates for project ${projectId}`);
+                continue;
+              }
 
-            for (let i = 0; i < candidates.length; i++) {
-              const candidate = candidates[i];
-
-              await supabase.from('recruiting_candidates').insert({
-                subscriber_id: sub.subscriber_id,
+              // Store candidates
+              const reportDate = new Date().toISOString().split('T')[0];
+              const dbCandidates = newCandidates.map((c, i) => ({
+                subscriber_id: subscription.subscriber_id,
                 project_id: projectId,
-                name: candidate.name,
-                title: candidate.title,
-                company: candidate.company,
-                company_size: candidate.company_size,
-                location: candidate.location,
-                linkedin_url: candidate.linkedin_url,
-                twitter_handle: candidate.twitter_handle,
-                match_reason: candidate.match_reason,
-                recent_activity: candidate.recent_activity,
-                source: candidate.source,
-                raw_profile: candidate.raw_profile,
-                report_type: 'daily',
-                report_date: reportDate,
-                position_in_report: i + 1,
-              });
-            }
+              name: c.name,
+              title: c.title || null,
+              company: c.company || null,
+              company_size: c.company_size || 'unknown',
+              location: c.location || null,
+              linkedin_url: c.linkedin_url || null,
+              twitter_handle: c.twitter_handle || null,
+              match_reason: c.match_reason,
+              recent_activity: c.recent_activity || null,
+              source: c.source,
+              raw_profile: c.raw_profile || {},
+              report_type: 'daily',
+              report_date: reportDate,
+              position_in_report: i + 1,
+            }));
 
-            console.log(`[Recruiting] Stored ${candidates.length} daily candidates for project ${projectId}`);
+              const { error: insertError } = await supabase
+                .from('recruiting_candidates')
+                .insert(dbCandidates);
 
-            // Send SMS notification
-            // Get subscriber by querying with subscriber_id
-            const { data: subscriberData } = await supabase
-              .from('sms_subscribers')
-              .select('phone_number')
-              .eq('id', sub.subscriber_id)
-              .single();
-
-            if (!subscriberData) {
-              console.error(`[Recruiting] Subscriber ${sub.subscriber_id} not found`);
-              continue;
-            }
-
-            let message = `🎯 Your Daily Candidates (${candidates.length})\n\n`;
-
-            for (let i = 0; i < candidates.length; i++) {
-              const candidate = candidates[i];
-              message += `${i + 1}. ${candidate.name}\n`;
-              if (candidate.title) message += `   ${candidate.title}`;
-              if (candidate.company) message += ` @ ${candidate.company}`;
-              message += '\n';
-
-              if (candidate.location) message += `   ${candidate.location}\n`;
-              if (candidate.linkedin_url) message += `   🔗 ${candidate.linkedin_url}\n`;
-              if (candidate.twitter_handle) message += `   🐦 ${candidate.twitter_handle}\n`;
-
-              if (candidate.match_reason) {
-                message += `   ✨ ${candidate.match_reason}\n`;
+              if (insertError) {
+                console.error('[Recruiting] Failed to store daily candidates:', insertError);
+                continue;
               }
 
-              if (candidate.recent_activity) {
-                message += `   📍 ${candidate.recent_activity}\n`;
+              // Get subscriber
+              const subscriber = await getSubscriber(subscription.subscriber_id);
+              if (!subscriber) {
+                console.error(`[Recruiting] Subscriber ${subscription.subscriber_id} not found`);
+                continue;
               }
 
-              message += '\n';
+              // Send SMS notification
+              let message = `🎯 Talent Radar Daily Update\n\nFound ${newCandidates.length} new candidates for: "${proj.query}"\n\n`;
+
+              for (let i = 0; i < newCandidates.length; i++) {
+                const candidate = newCandidates[i];
+                message += `${i + 1}. ${candidate.name}\n`;
+                if (candidate.title) message += `   ${candidate.title}`;
+                if (candidate.company) message += ` @ ${candidate.company}`;
+                message += '\n';
+                message += `   ${candidate.match_reason.substring(0, 100)}...\n\n`;
+              }
+
+              message += `---\nScore: SCORE 1:5 2:3 ...`;
+
+              await sendChunkedSmsResponse(subscriber.phone_number, message, twilioClient);
+
+              console.log(`[Recruiting] Sent ${newCandidates.length} candidates to ${subscriber.phone_number}`);
+
+              // Small delay between projects to avoid rate limits
+              await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            message += `---\n💡 Score: SCORE 1:5 2:3 3:4...`;
-
-            await sendChunkedSmsResponse(subscriberData.phone_number, message, twilioClient);
+          } catch (error) {
+            console.error(`[Recruiting] Failed to process subscription ${subscription.id}:`, error);
           }
+
+          // Small delay between subscriptions
+          await new Promise(resolve => setTimeout(resolve, 2000));
         }
+
+        console.log('[Recruiting] Daily job complete');
 
       } catch (error) {
         console.error('[Recruiting] Daily job failed:', error);

@@ -18,12 +18,14 @@ export type RouteDestination =
   | 'keyword' // Already handled by keyword routing
   | 'kg-query' // Research questions → KG agent
   | 'air' // AIR subscription/confirmation → AIR handler
+  | 'discovery' // Finding/searching for content → Agentic with web search
   | 'general'; // Everything else → General Kochi agent
 
 export interface RoutingDecision {
   destination: RouteDestination;
   reasoning: string;
   confidence: 'high' | 'medium' | 'low';
+  isFollowUp: boolean;
 }
 
 /**
@@ -42,7 +44,12 @@ export async function routeMessage(
 
 Your job: Analyze the user's message and context, then decide where to route it.
 
-ROUTING OPTIONS:
+${context.activeThread ? `⚠️ ACTIVE THREAD DETECTED:
+- Current handler: ${context.activeThread.handler}
+- If this message is a FOLLOW-UP to the ongoing conversation, set isFollowUp=true and route to the SAME handler
+- If this is a NEW TOPIC, set isFollowUp=false and route to the appropriate new handler
+
+` : ''}ROUTING OPTIONS:
 
 1. "kg-query" - Route to research agent (has Neo4j database with arXiv papers)
    Use when: Questions about research papers, authors, AI research, academic topics
@@ -52,13 +59,15 @@ ROUTING OPTIONS:
    Use when: User is responding to AIR subscription flow (confirmation, choices)
    Examples: "YES", "1", "2", after AIR preview was sent
 
-3. "general" - Route to general Kochi assistant
-   Use when: Everything else including:
-   - General questions (crypto, tech, news)
-   - Personal conversations and introductions
-   - Sharing personal info (name, interests, social handles, location, etc.)
-   - Follow-up questions or clarifications
-   Examples: "what about bitcoin?", "tell me more", "I'm interested in AI", "my name is...", "I'm @username on Twitter"
+3. "discovery" - Route to agentic agent with web search
+   Use when: User wants to FIND or SEARCH for current content (articles, podcasts, news, etc.)
+   Examples: "find me articles about X", "search for podcasts on Y", "what are good reads about Z", "when was that article posted"
+   Note: This can search the web for actual current content with real links
+
+4. "general" - Route to general Kochi assistant (NO web search)
+   Use when: Simple conversations, explanations, follow-ups that don't need live data
+   Examples: "hi", "thanks", "tell me more", "explain X", sharing personal info
+   Note: Cannot search web or provide current content - will hallucinate if asked to find things
 
 CONTEXT:
 ${contextSummary}
@@ -67,9 +76,10 @@ USER MESSAGE: "${userMessage}"
 
 Analyze and respond with JSON:
 {
-  "destination": "kg-query" | "air" | "general",
+  "destination": "kg-query" | "air" | "discovery" | "general",
   "reasoning": "brief explanation",
-  "confidence": "high" | "medium" | "low"
+  "confidence": "high" | "medium" | "low",
+  "isFollowUp": true/false
 }`;
 
   try {
@@ -110,6 +120,7 @@ Analyze and respond with JSON:
       destination: 'general',
       reasoning: 'Routing error, defaulting to general agent',
       confidence: 'low',
+      isFollowUp: false,
     };
   }
 }
@@ -119,6 +130,22 @@ Analyze and respond with JSON:
  */
 function buildContextSummary(context: UserContext): string {
   const parts: string[] = [];
+
+  // Active conversation thread
+  if (context.activeThread) {
+    parts.push(`\n🧵 ACTIVE CONVERSATION THREAD:`);
+    parts.push(`Handler: ${context.activeThread.handler}`);
+    parts.push(`Started: ${getTimeAgo(new Date(context.activeThread.startedAt))}`);
+    if (context.activeThread.fullContext?.topic) {
+      parts.push(`Topic: ${context.activeThread.fullContext.topic}`);
+    }
+    // Include summary of previous results if available
+    if (context.activeThread.fullContext?.lastResults) {
+      const resultPreview = JSON.stringify(context.activeThread.fullContext.lastResults).substring(0, 300);
+      parts.push(`Previous results: ${resultPreview}...`);
+    }
+    parts.push(''); // Empty line for separation
+  }
 
   // Personalization
   if (context.personalization.name) {

@@ -10,7 +10,7 @@
  */
 
 import type { CommandContext } from '../../commands/types.js';
-import { loadUserContext, storeMessage } from '../context-loader.js';
+import { loadUserContext, storeMessage, storeThreadState, clearThreadState } from '../context-loader.js';
 import { routeMessage } from '../orchestrator.js';
 import { handleGeneralKochiAgent, handlePersonalizationConfirmation } from '../../commands/general.js';
 
@@ -71,6 +71,29 @@ export async function handleOrchestratedMessage(
 
   console.log(`[Orchestrator] Routed to: ${routing.destination} (${routing.confidence})`);
   console.log(`[Orchestrator] Reasoning: ${routing.reasoning}`);
+  console.log(`[Orchestrator] Is follow-up: ${routing.isFollowUp}`);
+
+  // Store thread state for multi-turn capable handlers
+  const multiTurnHandlers = ['discovery', 'kg-query'];
+  if (multiTurnHandlers.includes(routing.destination)) {
+    // Extract topic from message (simple heuristic)
+    const topic = extractTopic(commandContext.message);
+
+    await storeThreadState(userContext.subscriberId, {
+      handler: routing.destination,
+      topic,
+      context: {
+        initialMessage: commandContext.message,
+        isFollowUp: routing.isFollowUp,
+      },
+    });
+
+    console.log(`[Orchestrator] Stored thread state: handler=${routing.destination}, topic=${topic}`);
+  } else if (routing.destination === 'general' && !routing.isFollowUp) {
+    // Clear thread state when switching to general conversation (non-follow-up)
+    await clearThreadState(userContext.subscriberId);
+    console.log(`[Orchestrator] Cleared thread state (switching to general)`);
+  }
 
   // Route based on orchestrator decision
   switch (routing.destination) {
@@ -102,10 +125,32 @@ export async function handleOrchestratedMessage(
       await handleGeneralKochiAgent(commandContext, userContext);
       return;
 
+    case 'discovery':
+      // Route to discovery agent (agentic with web search)
+      const { handleDiscoveryAgent } = await import('../../commands/discovery.js');
+      console.log('[Orchestrator] Calling discovery handler (orchestrator-routed)');
+      await handleDiscoveryAgent(commandContext, userContext);
+      return;
+
     case 'general':
     default:
       // Route to general Kochi agent
       await handleGeneralKochiAgent(commandContext, userContext);
       return;
   }
+}
+
+/**
+ * Extract topic from message (simple heuristic)
+ */
+function extractTopic(message: string): string {
+  // Remove common question words
+  const cleaned = message
+    .toLowerCase()
+    .replace(/^(find|search|show|get|what|when|where|who|why|how|tell me about|looking for)\s+/i, '')
+    .trim();
+
+  // Take first 5 words as topic
+  const words = cleaned.split(/\s+/).slice(0, 5);
+  return words.join(' ') || 'general query';
 }
