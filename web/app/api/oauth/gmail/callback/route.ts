@@ -245,14 +245,17 @@ async function storeOAuthTokens(
 }
 
 /**
- * Simple token encryption
- * TODO: Replace with proper encryption from sms-bot/lib/encryption.ts
+ * Token encryption - matches format from sms-bot/lib/encryption.ts
+ * Uses AES-256-GCM with format: salt:iv:authTag:encryptedData
  */
 function encryptToken(token: string): string {
   const crypto = require('crypto');
   const algorithm = 'aes-256-gcm';
   const key = getEncryptionKey();
-  const iv = crypto.randomBytes(16);
+
+  // Generate random IV and salt (must match sms-bot/lib/encryption.ts)
+  const iv = crypto.randomBytes(16);  // 128 bits
+  const salt = crypto.randomBytes(32); // 256 bits
 
   const cipher = crypto.createCipheriv(algorithm, key, iv);
   const encrypted = Buffer.concat([
@@ -262,8 +265,8 @@ function encryptToken(token: string): string {
 
   const authTag = cipher.getAuthTag();
 
-  // Combine: iv:authTag:encrypted
-  const combined = Buffer.concat([iv, authTag, encrypted]);
+  // Combine: salt:iv:authTag:encrypted (MUST match sms-bot format!)
+  const combined = Buffer.concat([salt, iv, authTag, encrypted]);
   return combined.toString('base64');
 }
 

@@ -83,6 +83,11 @@ async function handleGmailConnect(
     const state = `subscriber_id:${subscriber.id}`;
     const authUrl = generateAuthUrl(state);
 
+    // Log full URL for development/debugging
+    console.log('\n📧 GMAIL CONNECT - Full OAuth URL:');
+    console.log(authUrl);
+    console.log('\n');
+
     // Shorten the URL
     const shortUrl = await shortenUrl(authUrl);
 
