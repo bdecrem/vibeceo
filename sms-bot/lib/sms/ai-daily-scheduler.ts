@@ -1,7 +1,8 @@
 import type { TwilioClient } from './webhooks.js';
-import { getAiDailySubscribers, updateAiDailyLastSent } from '../subscribers.js';
-import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink } from './ai-daily.js';
+import { getAiDailySubscribers, updateAiDailyLastSent, getSubscriber } from '../subscribers.js';
+import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink, formatAiDailyLinks, type AiDailyEpisode } from './ai-daily.js';
 import { registerDailyJob } from '../scheduler/index.js';
+import { storeSystemAction } from '../context-loader.js';
 
 const DEFAULT_SEND_HOUR = Number(process.env.AI_DAILY_SEND_HOUR || 7);
 const DEFAULT_SEND_MINUTE = Number(process.env.AI_DAILY_SEND_MINUTE || 0);
@@ -26,7 +27,8 @@ async function delay(durationMs: number): Promise<void> {
 async function broadcastMessage(
   twilioClient: TwilioClient,
   toNumbers: string[],
-  message: string
+  message: string,
+  episode: AiDailyEpisode
 ): Promise<void> {
   const fromNumber = process.env.TWILIO_PHONE_NUMBER;
 
@@ -43,6 +45,32 @@ async function broadcastMessage(
         from: fromNumber,
       });
       await updateAiDailyLastSent(to);
+
+      // Store AI Daily content in conversation context
+      try {
+        const subscriber = await getSubscriber(to);
+        if (subscriber) {
+          // Build full content including links
+          const links = formatAiDailyLinks(episode);
+          const fullContent = links ? `${message}\n\n${links}` : message;
+
+          await storeSystemAction(subscriber.id, {
+            type: 'ai_daily_sent',
+            content: fullContent,
+            metadata: {
+              episode_id: episode.episodeId,
+              published_at: episode.publishedAt,
+              title: episode.title,
+            },
+          });
+
+          console.log(`[AI Daily] Stored content in context for ${to}`);
+        }
+      } catch (contextError) {
+        console.error(`[AI Daily] Failed to store context for ${to}:`, contextError);
+        // Don't fail the broadcast if context storage fails
+      }
+
       await delay(BROADCAST_DELAY_MS);
     } catch (error) {
       console.error(`Failed to send AI Daily episode to ${to}:`, error);
@@ -70,8 +98,10 @@ async function runAiDailyBroadcast(twilioClient: TwilioClient): Promise<void> {
   }
 
   let message: string;
+  let episode: AiDailyEpisode | null = null;
+
   try {
-    const episode = await getLatestAiDailyEpisode();
+    episode = await getLatestAiDailyEpisode();
     const shortLink = await getAiDailyShortLink(episode, 'ai_daily_broadcast');
     message = formatAiDailySms(episode, { shortLink });
   } catch (error) {
@@ -80,7 +110,7 @@ async function runAiDailyBroadcast(twilioClient: TwilioClient): Promise<void> {
   }
 
   console.log(`AI Daily scheduler: sending episode to ${recipients.length} subscriber(s).`);
-  await broadcastMessage(twilioClient, recipients, message);
+  await broadcastMessage(twilioClient, recipients, message, episode!);
 }
 
 export function registerAiDailyJob(twilioClient: TwilioClient): void {

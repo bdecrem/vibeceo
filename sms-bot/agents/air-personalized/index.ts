@@ -17,6 +17,7 @@ import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import { storeAgentReport } from '../report-storage.js';
 import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
+import { storeSystemAction } from '../../lib/context-loader.js';
 
 export const AIR_AGENT_SLUG = 'air';
 
@@ -516,6 +517,17 @@ async function generateAndSendReport(
     // Mark as sent
     await markAgentReportSent(subscriber.phone_number, AIR_AGENT_SLUG);
     await updateSubscriptionStatus(subscriber.id, 'success');
+
+    // Store message content in conversation context
+    await storeSystemAction(subscriber.id, {
+      type: 'air_report_sent',
+      content: smsMessage,
+      metadata: {
+        report_date: report.report_date,
+        query: report.query_used,
+        paper_count: report.paper_count,
+      },
+    });
 
     console.log(`[AIR] ✓ Sent to ${subscriber.phone_number}`);
   } catch (error) {

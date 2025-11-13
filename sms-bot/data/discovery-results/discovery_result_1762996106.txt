@@ -1,0 +1,21 @@
+Hey! Found some wild stuff about Claude Code beyond typical programming:
+
+1. "Everyone should be using Claude Code more" - Lenny's Newsletter
+Non-techies building real stuff: lawyers creating phone systems, marketers auto-generating ad variations, someone even used it as a hospital advocate to cut a $195k bill down to $33k
+https://www.lennysnewsletter.com/p/everyone-should-be-using-claude-code
+
+2. "How Anthropic teams use Claude Code" - Anthropic (Jan 2025)
+Inside look at unexpected uses: Product designers catching edge cases before coding starts, data scientists building React apps without knowing TypeScript, 2-10x productivity gains
+https://www.anthropic.com/news/how-anthropic-teams-use-claude-code
+
+3. "20+ Real Use Cases That Prove Claude Code Is a Game-Changer" - Medium
+Blood lab dashboard builder, meeting analysis for conflict patterns, self-driving documentation that explores apps and writes its own updates
+https://medium.com/@agencyai/20-real-use-cases-that-prove-claude-code-is-a-game-changer-46ceefaf19ed
+
+4. "5 powerful Claude Code use cases you probably didn't know about" - The Prompt Warrior
+Audio manipulation, competitor ad extraction, journal-to-Git commit analysis - the creative stuff people are building
+https://www.thepromptwarrior.com/p/5-powerful-claude-code-use-cases-you-probably-didn-t-know-about-5826bfb7f5b8fdd8
+
+The theme: it's dissolving the boundary between technical and non-technical work. Anyone who can describe a problem can now build a solution.
+
+Want more on AI coding tools or looking for something else?

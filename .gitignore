@@ -35,7 +35,8 @@ yarn-error.log*
 .env.test
 .env.production
 
-# Claude Code MCP config (contains credentials)
+# Claude Code config directory (contains credentials)
+.claude/
 .mcp.json
 
 # Neo4j credentials

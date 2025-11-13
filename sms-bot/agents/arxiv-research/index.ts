@@ -28,6 +28,7 @@ import {
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import * as db from './database.js';
+import { storeSystemAction } from '../../lib/context-loader.js';
 import {
   buildEpisodeTitle,
   generateArxivPodcast,
@@ -1016,6 +1017,17 @@ export function registerArxivDailyJob(twilioClient: TwilioClient): void {
 
             // Mark as sent
             await markAgentReportSent(subscriber.phone_number, ARXIV_AGENT_SLUG);
+
+            // Store message content in conversation context
+            await storeSystemAction(subscriber.id, {
+              type: 'arxiv_research_sent',
+              content: message,
+              metadata: {
+                report_date: metadata.date,
+                report_path: metadata.reportPath,
+                summary: metadata.summary,
+              },
+            });
 
             // Delay to avoid rate limiting
             await new Promise((resolve) => setTimeout(resolve, delay));

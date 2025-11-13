@@ -16,6 +16,8 @@ import {
   type AgentSubscriber,
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
+import { storeSystemAction } from '../../lib/context-loader.js';
+import { getSubscriber } from '../../lib/subscribers.js';
 import {
   generateCryptoPodcast,
   lookupCryptoPodcastEpisode,
@@ -473,6 +475,18 @@ async function broadcastCryptoReport(
         });
 
         await markAgentReportSent(subscriber.phone_number, CRYPTO_AGENT_SLUG);
+
+        // Store message content in conversation context
+        await storeSystemAction(subscriber.id, {
+          type: 'crypto_daily_sent',
+          content: message,
+          metadata: {
+            report_date: metadata.date,
+            report_path: metadata.reportPath,
+            summary: metadata.summary,
+          },
+        });
+
         sent += 1;
 
         if (BROADCAST_DELAY_MS > 0) {

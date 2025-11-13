@@ -19,6 +19,7 @@ import {
 } from '../../lib/agent-subscriptions.js';
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import { supabase } from '../../lib/supabase.js';
+import { storeSystemAction } from '../../lib/context-loader.js';
 
 function parseNumber(value: string | undefined, fallback: number): number {
   if (value === undefined || value === null) {
@@ -650,6 +651,18 @@ async function broadcastMedicalDailyReport(
         });
 
         await markAgentReportSent(subscriber.phone_number, MEDICAL_AGENT_SLUG);
+
+        // Store message content in conversation context
+        await storeSystemAction(subscriber.id, {
+          type: 'medical_daily_sent',
+          content: message,
+          metadata: {
+            report_date: metadata.date,
+            report_path: metadata.reportPath,
+            summary: metadata.summary,
+          },
+        });
+
         sent += 1;
 
         if (BROADCAST_DELAY_MS > 0) {
