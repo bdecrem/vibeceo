@@ -385,12 +385,25 @@ export async function runSetupSearch(
     };
 
     const totalCollected = githubCandidates.length + twitterCandidates.length + rssCandidates.length + youtubeCandidates.length;
-    console.log(`[Recruiting] Collected ${totalCollected} total candidates`);
+    const totalSources = discoveredSources.youtube.length + discoveredSources.twitter.length +
+                        discoveredSources.rss.length + discoveredSources.github.length +
+                        discoveredSources.other.length;
+
+    console.log(`[Recruiting] Collected ${totalCollected} total candidates from ${totalSources} sources`);
+
+    if (totalSources === 0) {
+      await sendSmsResponse(
+        from,
+        `❌ Query too vague to find sources.\n\nTry a more specific query like:\n• "senior backend engineers"\n• "motion designers with portfolios"\n• "react developers at startups"\n\nFor help: RECRUIT HELP`,
+        twilioClient
+      );
+      return;
+    }
 
     if (totalCollected === 0) {
       await sendSmsResponse(
         from,
-        `❌ No candidates found from discovered sources.\n\nTry a different query or check API keys.`,
+        `❌ Found sources but no candidates.\n\nThis may be due to:\n• API rate limits\n• Sources returning no results\n\nTry again in a few minutes.`,
         twilioClient
       );
       return;

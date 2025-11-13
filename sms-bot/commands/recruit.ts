@@ -465,6 +465,40 @@ async function handleSettings(context: CommandContext): Promise<void> {
 }
 
 /**
+ * Handle: RECRUIT HELP - Show help
+ */
+async function handleHelp(context: CommandContext): Promise<void> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+
+  const helpMessage = `🎯 Talent Radar Commands
+
+📋 Starting:
+• RECRUIT {criteria}
+  Find candidates
+  Example: "RECRUIT senior backend engineers at startups"
+
+⭐ Scoring:
+• SCORE 1:5 2:3 3:4...
+  Rate candidates 1-5
+  (5=great match, 1=poor)
+
+📊 Managing:
+• RECRUIT - Today's candidates
+• RECRUIT LIST - All projects
+• RECRUIT SETTINGS - View settings
+• RECRUIT STOP - Pause daily reports
+
+💡 Tips:
+• Be specific in queries
+• Score all 10 to activate daily reports
+• Reports sent at 9 AM PT
+• Each query = separate project`;
+
+  await sendSmsResponse(from, helpMessage, twilioClient);
+  await updateLastMessageDate(normalizedFrom);
+}
+
+/**
  * Handle: RECRUIT STOP - Stop daily reports
  */
 async function handleStop(context: CommandContext): Promise<void> {
@@ -524,6 +558,8 @@ export async function handleRECRUITCommand(
   if (!content) {
     // RECRUIT (no args) - show today's candidates
     await handleShowToday(context);
+  } else if (content.toUpperCase() === 'HELP') {
+    await handleHelp(context);
   } else if (content.toUpperCase() === 'LIST') {
     await handleListProjects(context);
   } else if (content.toUpperCase() === 'SETTINGS') {

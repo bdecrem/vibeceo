@@ -48,6 +48,8 @@ export async function discoverSources(query: string): Promise<DiscoveredSources>
 
 "${query}"
 
+IMPORTANT: If this query is too vague, ambiguous, or not a real recruiting search (like "help", "test", single words), return EMPTY arrays for all source types. Do not explain why - just return the empty structure.
+
 Use web search to explore and find:
 1. **YouTube channels** - Specific channels where these candidates create content or learn
 2. **Twitter accounts/hashtags** - Key influencers, communities, hashtags in this space
@@ -63,7 +65,7 @@ For each source you discover:
 Focus on finding 3-5 HIGH QUALITY sources per type (not exhaustive lists).
 Prioritize active communities and channels where real professionals hang out.
 
-Return your findings as JSON in this format:
+Return your findings as JSON in this format (ALWAYS return valid JSON, even if arrays are empty):
 {
   "youtube": [
     {"name": "Channel Name", "channelId": "UC123...", "score": 9, "reason": "Top resource for learning motion design"}
@@ -143,6 +145,11 @@ Return your findings as JSON in this format:
 
   } catch (error) {
     console.error('[Source Discovery] Failed:', error);
+
+    // Log the raw response for debugging if available
+    if (error instanceof Error && error.message.includes('Could not find JSON')) {
+      console.error('[Source Discovery] Query may be too vague or ambiguous');
+    }
 
     // Return empty sources rather than failing completely
     return {
