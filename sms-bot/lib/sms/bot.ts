@@ -15,7 +15,7 @@ import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 // import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js"; // DISABLED - agent retired
 import { registerArxivGraphDailyJob } from "../../agents/arxiv-research-graph/index.js";
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
-import { registerRecruitingDailyJob } from "../../agents/recruiting/index.js";
+import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -57,7 +57,7 @@ export async function startSmsBot(): Promise<void> {
     // registerArxivDailyJob(twilioClient); // DISABLED - arxiv-research agent retired
     registerArxivGraphDailyJob(twilioClient);
     registerAIRDailyJob(twilioClient); // AIR (AI Research) - personalized research reports
-    registerRecruitingDailyJob(twilioClient); // RECRUIT - recruiting agent with AI learning
+    registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."

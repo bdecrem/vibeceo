@@ -1,0 +1,124 @@
+{
+  "status": "success",
+  "query": "Computer Science students (undergrad or grad) in USA or Canada for part-time or intern role coding on AI SMS agent project - must have public GitHub repos or portfolio showing completed software projects, demonstrate genuine interest in AI/LLMs through coursework or side projects, willing to work remotely and learn existing codebase, tech stack agnostic but must show ability to ship working code",
+  "channels": [
+    {
+      "name": "GitHub - LLM Portfolio Students",
+      "channelType": "github-search",
+      "description": "CS students with dedicated LLM/AI portfolio repositories showcasing RAG, chatbots, and multimodal applications",
+      "searchQuery": "site:github.com LLM portfolio student projects",
+      "example": {
+        "name": "kimmypracha",
+        "url": "https://github.com/kimmypracha",
+        "description": "MS CS Student at UCSD working on LLM Evaluation & Reasoning, Human-Centered AI, and CS Education. Currently researching LLM self-evaluation and fine-tuning with RL paradigm. Open to collaboration on fun projects."
+      },
+      "score": 9,
+      "reason": "High quality candidates with demonstrated LLM expertise and portfolio of completed projects. Students are explicitly interested in collaboration and have shipped working code."
+    },
+    {
+      "name": "LinkedIn - CS Students with AI/ML Internship Experience",
+      "channelType": "linkedin-search",
+      "description": "Computer science students and recent grads with AI/ML internship experience actively seeking opportunities",
+      "searchQuery": "site:linkedin.com/in computer science student intern AI machine learning projects USA Canada",
+      "example": {
+        "name": "Aryan Chandra",
+        "url": "https://www.linkedin.com/in/aryanchandrasoftware/",
+        "description": "CS + Math @ UT Austin, AI Intern @ Cognitive Space. Building Paralegal.AI with Legal-BERT. 4+ years experience in software dev, ML, and game design. Created cross-platform mobile app with 5,000+ users. GitHub: TheAryanchandra"
+      },
+      "score": 9,
+      "reason": "Active students with proven ability to ship working code at scale. Strong AI/LLM experience and demonstrated interest in building practical applications."
+    },
+    {
+      "name": "LinkedIn - Software Engineering Fellows (HeadStarter AI)",
+      "channelType": "linkedin-search",
+      "description": "CS students participating in AI-focused fellowship programs with strong software engineering fundamentals",
+      "searchQuery": "site:linkedin.com/in HeadStarter AI SWE Fellow computer science student",
+      "example": {
+        "name": "Ivan Valdez",
+        "url": "https://www.linkedin.com/in/ivan-valdez-24503018b/",
+        "description": "CS @ UIUC (4th year), SWE Intern @ FEDDATA, SWE Fellow @ HeadStarter AI. Strong interest in AI, Machine Learning, and NLP. Economics minor. Actively building AI/ML projects."
+      },
+      "score": 8,
+      "reason": "Students in structured AI fellowship programs demonstrate commitment and are actively seeking opportunities. Strong technical fundamentals with AI/ML interest."
+    },
+    {
+      "name": "GitHub - Recent CS AI/ML Graduates",
+      "channelType": "github-search",
+      "description": "Recent CS graduates (2024-2025) with AI/ML specialization and extensive project portfolios",
+      "searchQuery": "site:github.com AI ML graduate 2025 LLM projects",
+      "example": {
+        "name": "myselfshravan",
+        "url": "https://github.com/myselfshravan",
+        "description": "CSE (AI & ML) Graduate 2025 from M.S. Ramaiah Institute of Technology. 180+ projects shipped. Built RAG applications with ChromaDB, Mistral 7B & Llama 2. Fine-tuned BART models. ML Project Engineer experience. Full-stack AI builder."
+      },
+      "score": 8,
+      "reason": "Recent graduate with extensive hands-on experience shipping AI projects. Prolific builder with demonstrated ability to work with modern LLM stack. May be available for part-time/contract work."
+    },
+    {
+      "name": "Devpost - AI/LLM Hackathon Participants",
+      "channelType": "devpost-hackathon",
+      "description": "Students who participated in AI/LLM-focused hackathons at top universities (Cornell, UC Berkeley, etc.)",
+      "searchQuery": "site:devpost.com LLM hackathon student projects Cornell Berkeley",
+      "example": {
+        "name": "LLaMahack Cornell-Tech participants",
+        "url": "https://llamahack.devpost.com/project-gallery",
+        "description": "24-hour student hackathon at Cornell-Tech exploring cutting-edge LLMs. Projects include Llabeler (auto data labeling with LLMs), ScriptAI (AI feedback for presentations), and learning tools using few-shot learning."
+      },
+      "score": 8,
+      "reason": "Students demonstrate ability to rapidly build and ship LLM applications under time constraints. Hackathon participants are typically eager for opportunities and comfortable with fast-paced development."
+    },
+    {
+      "name": "LinkedIn - Canadian CS Students with AI Projects",
+      "channelType": "linkedin-search",
+      "description": "Canadian university CS students with AI/ML projects and internship experience",
+      "searchQuery": "site:linkedin.com/in computer science student Canada AI machine learning projects Toronto",
+      "example": {
+        "name": "Dev Patel",
+        "url": "https://www.linkedin.com/in/devp19/",
+        "description": "Greater Toronto Area. Data Analyst Intern @ CIBC Summer 2024. Building StockEye discord bot for automated investment analysis using ML. Implementing ML algorithms for stock prediction. Active in AI/ML student collaborations."
+      },
+      "score": 7,
+      "reason": "Canadian students meeting geographic requirements with practical AI project experience. Discord bot development shows ability to integrate AI into real applications."
+    },
+    {
+      "name": "Buildspace - Nights & Weekends Program",
+      "channelType": "community-platform",
+      "description": "Students building projects (tech and non-tech) over 6-week program with demo days",
+      "searchQuery": "buildspace nights weekends AI LLM student projects",
+      "example": {
+        "name": "Buildspace S4 Demo Day Participants",
+        "url": "https://buildspace.so/s4/demoday",
+        "description": "1000+ students showcased projects built over 6 weeks. Many using GPT-3, Stable Diffusion, and LLMs. GenAI B2C applications with focus on prompt engineering. 30,000+ people joined program. Community of builders eager to ship."
+      },
+      "score": 7,
+      "reason": "Large community of builders with demonstrated ability to ship projects. Many AI-focused projects. Students are self-motivated and comfortable with remote work and rapid iteration."
+    },
+    {
+      "name": "Hacker News - Show HN (Student AI Projects)",
+      "channelType": "hackernews-show",
+      "description": "Students posting their AI/LLM projects on Show HN for community feedback",
+      "searchQuery": "site:news.ycombinator.com Show HN student AI LLM project GitHub",
+      "example": {
+        "name": "Show HN LLM Project Contributors",
+        "url": "https://news.ycombinator.com/item?id=43739456",
+        "description": "Students building AI codebase tutorial generators, Git-to-LLM converters, unified LLM chat apps, and local Perplexity clones. Projects demonstrate deep understanding of LLM architecture and practical applications."
+      },
+      "score": 7,
+      "reason": "Students posting on HN are typically high-quality builders seeking feedback and opportunities. Projects are production-ready and demonstrate strong technical skills. Community engagement shows willingness to learn."
+    }
+  ],
+  "metadata": {
+    "totalChannels": 8,
+    "generatedAt": "2025-11-14T14:24:02Z",
+    "searchMethod": "WebSearch with verified examples",
+    "targetRole": "part-time/intern AI SMS agent developer",
+    "geographicFocus": "USA and Canada",
+    "keyRequirements": [
+      "Public GitHub repos with completed projects",
+      "Genuine interest in AI/LLMs",
+      "Ability to ship working code",
+      "Remote work capability",
+      "Willingness to learn existing codebase"
+    ]
+  }
+}

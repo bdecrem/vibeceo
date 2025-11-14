@@ -111,6 +111,9 @@ export interface RecruitingProject {
     rejectionReason?: string;
   }>;
 
+  // Approved channels for daily candidate collection
+  approvedChannels?: Array<any>;
+
   // Candidate feedback tracking
   candidateFeedback?: {
     // Score patterns (what scores mean)
@@ -147,6 +150,11 @@ export interface RecruitingProject {
   active: boolean;
   createdAt: string;
   lastRefinedAt?: string; // When spec was last updated
+  lastCandidateSentAt?: string; // When last batch of candidates was sent
+  durationDays?: number; // How many days to run daily candidate collection (default 7)
+  startedAt?: string; // When the project started (for duration tracking)
+  lastReportUrl?: string | null; // URL to latest candidate report
+  lastReportShortLink?: string | null; // Short link to latest candidate report
 }
 
 export interface Candidate {
@@ -254,7 +262,7 @@ async function addCandidateNote(
 /**
  * Get recruiting preferences for a subscriber
  */
-async function getRecruitingPreferences(subscriberId: string): Promise<RecruitingPreferences> {
+export async function getRecruitingPreferences(subscriberId: string): Promise<RecruitingPreferences> {
   const { data } = await supabase
     .from('agent_subscriptions')
     .select('preferences')
@@ -279,7 +287,7 @@ async function getRecruitingPreferences(subscriberId: string): Promise<Recruitin
 /**
  * Update recruiting preferences
  */
-async function updateRecruitingPreferences(
+export async function updateRecruitingPreferences(
   subscriberId: string,
   preferences: RecruitingPreferences
 ): Promise<void> {
@@ -569,9 +577,10 @@ async function handleNewProject(
     setupComplete: false,
     sourcesApproved: false,
     channelsApproved: false,
-    notificationTime: '09:00',
+    notificationTime: '11:00', // Default to 11am PT
     active: false,  // Not active until setup complete
     createdAt: new Date().toISOString(),
+    durationDays: 7, // Default to 7 days of daily candidate collection
   };
 
   prefs.activeProjectId = projectId;
@@ -1278,15 +1287,62 @@ export async function handleRecruitConfirmation(
         candidates: candidates,
         pendingCandidates: candidates.slice(0, 10), // First 10 for initial scoring
         setupComplete: true, // Mark setup as complete
+        startedAt: new Date().toISOString(), // Track when daily collection starts
+        active: true, // Activate daily candidate collection
       };
       await updateRecruitingPreferences(subscriber.id, updatedPrefs);
+    }
+
+    // Generate and store report
+    const today = new Date().toISOString().split('T')[0];
+    let reportShortLink: string | null = null;
+
+    try {
+      const { generateAndStoreRecruitingReport } = await import('../agents/recruiting/report-generator.js');
+      const project = updatedPrefs.projects[projectId];
+
+      const reportResult = await generateAndStoreRecruitingReport({
+        project,
+        candidates,
+        date: today,
+        reportType: 'setup',
+      });
+
+      reportShortLink = reportResult.shortLink;
+
+      // Store report link in project
+      project.lastReportUrl = reportResult.stored.publicUrl || null;
+      project.lastReportShortLink = reportShortLink;
+      await updateRecruitingPreferences(subscriber.id, updatedPrefs);
+
+      console.log(`[RECRUIT] Report generated and stored: ${reportShortLink || reportResult.stored.publicUrl}`);
+    } catch (error) {
+      console.error('[RECRUIT] Failed to generate report:', error);
+      // Continue even if report generation fails
     }
 
     // Send first batch of candidates to user
     const firstBatch = candidates.slice(0, 10);
     if (firstBatch.length > 0) {
-      const candidatesMessage = formatCandidatesForScoring(firstBatch);
+      let candidatesMessage = formatCandidatesForScoring(firstBatch);
+
+      // Add report link if available
+      if (reportShortLink) {
+        candidatesMessage += `\n\nFull report: ${reportShortLink}`;
+      }
+
       await sendSmsResponse(from, candidatesMessage, twilioClient);
+
+      // Inform user about daily schedule
+      const project = updatedPrefs.projects[projectId];
+      const notificationTime = project?.notificationTime || '11:00';
+      const durationDays = project?.durationDays || 7;
+
+      await sendSmsResponse(
+        from,
+        `✅ Setup complete!\n\nYou'll receive ${durationDays} days of daily candidate batches at ${notificationTime} PT.\n\nYour scores help me learn your preferences over time.`,
+        twilioClient
+      );
     } else {
       await sendSmsResponse(
         from,
@@ -1356,51 +1412,64 @@ async function handleShowToday(context: CommandContext): Promise<void> {
     return;
   }
 
-  // Get today's candidates
-  const today = new Date().toISOString().split('T')[0];
-  const { data: candidates } = await supabase
-    .from('recruiting_candidates')
-    .select('*')
-    .eq('project_id', projectId)
-    .eq('report_date', today)
-    .eq('report_type', 'daily')
-    .order('position_in_report', { ascending: true });
+  // Get pending candidates (new channel-based system)
+  const pendingCandidates = project.pendingCandidates || [];
 
-  if (!candidates || candidates.length === 0) {
-    await sendSmsResponse(
-      from,
-      `📊 No candidates yet today\n\nQuery: "${project.query}"\n\nDaily reports at 9 AM PT`,
-      twilioClient
-    );
+  if (pendingCandidates.length === 0) {
+    // Check if we have any candidates at all
+    const allCandidates = project.candidates || [];
+    if (allCandidates.length === 0) {
+      await sendSmsResponse(
+        from,
+        `📊 No candidates yet\n\nQuery: "${project.query}"\n\nDaily batches at ${project.notificationTime || '11:00'} PT`,
+        twilioClient
+      );
+    } else {
+      // Have candidates, but none pending scoring
+      await sendSmsResponse(
+        from,
+        `✅ All candidates scored!\n\nQuery: "${project.query}"\n\nNext batch: Tomorrow at ${project.notificationTime || '11:00'} PT`,
+        twilioClient
+      );
+    }
     await updateLastMessageDate(normalizedFrom);
     return;
   }
 
-  // Format candidates
-  let message = `🎯 Your Daily Candidates (${candidates.length})\n\n`;
+  const candidates = pendingCandidates;
 
-  for (const candidate of candidates) {
-    message += `${candidate.position_in_report}. ${candidate.name}\n`;
-    if (candidate.title) message += `   ${candidate.title}`;
-    if (candidate.company) message += ` @ ${candidate.company}`;
-    if (candidate.location) message += `\n   ${candidate.location}`;
-    message += '\n';
+  // Format candidates (new channel-based format)
+  let message = `🎯 Your Candidates (${candidates.length})\n\n`;
 
-    if (candidate.linkedin_url) message += `   🔗 ${candidate.linkedin_url}\n`;
-    if (candidate.twitter_handle) message += `   🐦 ${candidate.twitter_handle}\n`;
+  for (let i = 0; i < candidates.length; i++) {
+    const candidate = candidates[i];
+    message += `${i + 1}. ${candidate.name}\n`;
+    message += `   ${candidate.location}\n`;
 
-    if (candidate.match_reason) {
-      message += `   \n   ✨ ${candidate.match_reason}\n`;
+    // Add GitHub/Portfolio if available
+    if (candidate.githubUrl) {
+      message += `   GitHub: ${candidate.githubUrl}\n`;
+    }
+    if (candidate.portfolioUrl) {
+      message += `   Portfolio: ${candidate.portfolioUrl}\n`;
     }
 
-    if (candidate.recent_activity) {
-      message += `   📍 ${candidate.recent_activity}\n`;
-    }
+    // Profile URL
+    message += `   ${candidate.profileUrl}\n`;
 
-    message += '\n';
+    // Bio (keep it short for SMS)
+    const shortBio = candidate.bio.substring(0, 100) + (candidate.bio.length > 100 ? '...' : '');
+    message += `   ${shortBio}\n`;
+
+    if (i < candidates.length - 1) message += `\n`;
   }
 
-  message += '---\n💡 Score: SCORE 1:5 2:3 3:4...';
+  message += '\n\nReply: SCORE 1:5 2:3 3:4...';
+
+  // Add report link if available
+  if (project.lastReportShortLink) {
+    message += `\n\nFull report: ${project.lastReportShortLink}`;
+  }
 
   await sendChunkedSmsResponse(from, message, twilioClient);
   await updateLastMessageDate(normalizedFrom);
@@ -1523,15 +1592,16 @@ async function handleHelp(context: CommandContext): Promise<void> {
   (5=great match, 1=poor)
 
 📊 Managing:
-• RECRUIT - Today's candidates
+• RECRUIT - Show pending candidates
 • RECRUIT LIST - All projects
 • RECRUIT SETTINGS - View settings
 • RECRUIT STOP - Pause daily reports
 
 💡 Tips:
 • Be specific in queries
-• Score all 10 to activate daily reports
-• Reports sent at 9 AM PT
+• Daily batches sent at 11 AM PT
+• Runs for 7 days (default)
+• Your scores help me learn preferences
 • Each query = separate project`;
 
   await sendSmsResponse(from, helpMessage, twilioClient);
@@ -1725,4 +1795,4 @@ export const recruitCommandHandler: import('./types.js').CommandHandler = {
 /**
  * Export helper functions for use by recruiting agent
  */
-export { updateChannelPerformance, addCandidateNote, getRecruitingPreferences, updateRecruitingPreferences };
+export { updateChannelPerformance, addCandidateNote };
