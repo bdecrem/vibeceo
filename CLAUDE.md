@@ -96,6 +96,43 @@ The SMS bot follows a microservices architecture with strict separation of conce
 - **Scheduler**: Shared daily job system (`lib/scheduler/index.ts`)
 - **Broadcasting**: SMS delivery to subscribers with rate limiting
 
+### CRITICAL: SMS Message Length Limits
+
+**ALL SMS messages sent by agents MUST stay under 670 UCS-2 code units (10 segments):**
+
+1. **Length Counting**:
+   - Count using UTF-16 code units, NOT characters
+   - Emojis and special characters count as 2+ code units
+   - UCS-2 encoding is used for SMS with special characters
+
+2. **Automatic Content Shortening**:
+   - If content exceeds 670 code units, automatically shorten or omit sections
+   - Prioritize key information over complete details
+   - Add "..." or "(more at [link])" for truncated content
+
+3. **Implementation**:
+   ```javascript
+   // ✅ CORRECT - Check length before sending
+   function countUCS2CodeUnits(text) {
+     return [...text].reduce((count, char) => {
+       const code = char.codePointAt(0);
+       return count + (code > 0xFFFF ? 2 : 1);
+     }, 0);
+   }
+
+   const MAX_CODE_UNITS = 670;
+   if (countUCS2CodeUnits(smsBody) > MAX_CODE_UNITS) {
+     // Shorten content automatically
+   }
+   ```
+
+4. **Why This Matters**:
+   - Messages over 670 code units get split into 11+ segments
+   - Can cause delivery failures or unexpected charges
+   - Poor user experience with fragmented messages
+
+**This is NON-NEGOTIABLE for all agent SMS messages.**
+
 ## Strict Rules for Code Agents
 
 ### 0. SECURITY: NEVER Hardcode Secrets
