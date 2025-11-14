@@ -131,6 +131,11 @@ export interface RecruitingProject {
   // Learned profile (AI-extracted preferences from scores)
   learnedProfile: Record<string, any>;
 
+  // Candidates collected from channels
+  candidates?: Candidate[];
+  pendingCandidates?: Candidate[]; // Candidates awaiting user scoring
+  scoredCandidates?: Candidate[]; // Candidates user has scored
+
   // Setup state
   setupComplete: boolean;
   sourcesApproved: boolean;
@@ -142,6 +147,25 @@ export interface RecruitingProject {
   active: boolean;
   createdAt: string;
   lastRefinedAt?: string; // When spec was last updated
+}
+
+export interface Candidate {
+  id: string; // Unique ID for tracking
+  name: string;
+  profileUrl: string; // Primary profile (LinkedIn, GitHub, etc.)
+  channelSource: string; // Which channel found them
+  bio: string; // 2-3 sentence summary
+  githubUrl?: string;
+  portfolioUrl?: string;
+  twitterUrl?: string;
+  location: string;
+  score: number; // AI's initial fit score (1-10)
+  matchReason: string; // Why they're a good fit
+  userScore?: number; // User's score after review (1-5)
+  userNotes?: string; // User's notes about this candidate
+  status: 'pending' | 'scored' | 'contacted' | 'rejected' | 'hired';
+  addedAt: string;
+  scoredAt?: string;
 }
 
 export interface RecruitingPreferences {
@@ -313,6 +337,43 @@ function formatConversationalChannels(conversational: any, query: string): strin
   });
 
   message += `\nReply:\n• YES - approve all\n• 1:yes 2:no... - pick some\n• Or give feedback to refine`;
+
+  return message;
+}
+
+/**
+ * Format candidates for user scoring
+ */
+function formatCandidatesForScoring(candidates: Candidate[]): string {
+  let message = `🎯 Found ${candidates.length} candidate${candidates.length > 1 ? 's' : ''}!\n\n`;
+
+  message += `Score each 1-5:\n`;
+  message += `5 = Perfect fit, contact now\n`;
+  message += `1 = Not a good match\n\n`;
+
+  candidates.forEach((candidate, i) => {
+    message += `${i + 1}. ${candidate.name}\n`;
+    message += `   ${candidate.location}\n`;
+
+    // Add GitHub/Portfolio if available
+    if (candidate.githubUrl) {
+      message += `   GitHub: ${candidate.githubUrl}\n`;
+    }
+    if (candidate.portfolioUrl) {
+      message += `   Portfolio: ${candidate.portfolioUrl}\n`;
+    }
+
+    // Profile URL
+    message += `   ${candidate.profileUrl}\n`;
+
+    // Bio (keep it short for SMS)
+    const shortBio = candidate.bio.substring(0, 100) + (candidate.bio.length > 100 ? '...' : '');
+    message += `   ${shortBio}\n`;
+
+    if (i < candidates.length - 1) message += `\n`;
+  });
+
+  message += `\n\nReply: SCORE 1:5 2:3 3:4...`;
 
   return message;
 }
@@ -1192,12 +1253,56 @@ export async function handleRecruitConfirmation(
   const totalApproved = approved.size;
   await sendSmsResponse(
     from,
-    `✅ Approved ${totalApproved} channel${totalApproved > 1 ? 's' : ''}!\n\nI'll start mining these channels for candidates.\n\nFirst batch coming soon...`,
+    `✅ Approved ${totalApproved} channel${totalApproved > 1 ? 's' : ''}!\n\nMining ${totalApproved} channels for candidates now...`,
     twilioClient
   );
 
-  // TODO: Trigger candidate collection from channels
-  // This will be implemented next - for now just acknowledge approval
+  // Trigger candidate collection from approved channels
+  try {
+    const approvedChannels = channels.filter((_, i) => approved.has(i));
+
+    // Get the refined spec
+    const project = prefs.projects[projectId];
+    const refinedSpec = project.refinedSpec?.specText || query;
+
+    // Run the Python agent to collect candidates
+    const candidates = await runCandidateCollectionAgent(refinedSpec, approvedChannels);
+
+    console.log(`[RECRUIT] Collected ${candidates.length} candidates from ${approvedChannels.length} channels`);
+
+    // Store candidates in project
+    const updatedPrefs = await getRecruitingPreferences(subscriber.id);
+    if (updatedPrefs.projects[projectId]) {
+      updatedPrefs.projects[projectId] = {
+        ...updatedPrefs.projects[projectId],
+        candidates: candidates,
+        pendingCandidates: candidates.slice(0, 10), // First 10 for initial scoring
+        setupComplete: true, // Mark setup as complete
+      };
+      await updateRecruitingPreferences(subscriber.id, updatedPrefs);
+    }
+
+    // Send first batch of candidates to user
+    const firstBatch = candidates.slice(0, 10);
+    if (firstBatch.length > 0) {
+      const candidatesMessage = formatCandidatesForScoring(firstBatch);
+      await sendSmsResponse(from, candidatesMessage, twilioClient);
+    } else {
+      await sendSmsResponse(
+        from,
+        `⚠️ Couldn't find any candidates matching your criteria yet.\n\nI'll keep looking and notify you when I find some!`,
+        twilioClient
+      );
+    }
+  } catch (error) {
+    console.error('[RECRUIT] Candidate collection failed:', error);
+
+    await sendSmsResponse(
+      from,
+      `⚠️ Had trouble collecting candidates.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nTry RECRUIT HELP for guidance.`,
+      twilioClient
+    );
+  }
 
   await updateLastMessageDate(normalizedFrom);
   return true;
@@ -1469,6 +1574,85 @@ async function handleStop(context: CommandContext): Promise<void> {
     twilioClient
   );
   await updateLastMessageDate(normalizedFrom);
+}
+
+/**
+ * Run the Python candidate collection agent
+ */
+async function runCandidateCollectionAgent(
+  refinedSpec: string,
+  channels: any[]
+): Promise<Candidate[]> {
+  const { spawn } = await import('node:child_process');
+  const path = await import('node:path');
+  const crypto = await import('node:crypto');
+
+  const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
+  const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'recruiting', 'collect-candidates-agent.py');
+
+  return new Promise((resolve, reject) => {
+    const args = [
+      AGENT_SCRIPT,
+      '--spec', refinedSpec,
+      '--channels', JSON.stringify(channels),
+    ];
+
+    console.log(`[Candidate Collection Agent] Running: ${PYTHON_BIN} ${args[0]} --spec "${refinedSpec.substring(0, 50)}..." --channels [${channels.length} channels]`);
+
+    const agentProcess = spawn(PYTHON_BIN, args);
+    let stdout = '';
+    let stderr = '';
+
+    agentProcess.stdout.on('data', (data) => {
+      stdout += data.toString();
+      console.log(`[Candidate Collection Agent] ${data.toString().trim()}`);
+    });
+
+    agentProcess.stderr.on('data', (data) => {
+      stderr += data.toString();
+      console.error(`[Candidate Collection Agent Error] ${data.toString().trim()}`);
+    });
+
+    agentProcess.on('close', (code) => {
+      if (code !== 0) {
+        reject(new Error(`Agent exited with code ${code}: ${stderr}`));
+        return;
+      }
+
+      try {
+        // Parse last JSON line
+        const lines = stdout.split(/\r?\n/).filter(l => l.trim());
+        const lastLine = lines[lines.length - 1];
+        const result = JSON.parse(lastLine);
+
+        if (result.status === 'error') {
+          reject(new Error(result.error));
+          return;
+        }
+
+        // Convert raw candidates to Candidate objects with IDs
+        const candidates: Candidate[] = (result.candidates || []).map((c: any) => ({
+          id: crypto.randomUUID(),
+          name: c.name,
+          profileUrl: c.profileUrl,
+          channelSource: c.channelSource,
+          bio: c.bio,
+          githubUrl: c.githubUrl,
+          portfolioUrl: c.portfolioUrl,
+          twitterUrl: c.twitterUrl,
+          location: c.location,
+          score: c.score,
+          matchReason: c.matchReason,
+          status: 'pending' as const,
+          addedAt: new Date().toISOString(),
+        }));
+
+        resolve(candidates);
+      } catch (e) {
+        reject(new Error(`Failed to parse agent output: ${e}`));
+      }
+    });
+  });
 }
 
 /**

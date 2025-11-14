@@ -1,0 +1,109 @@
+{
+  "status": "success",
+  "channels": [
+    {
+      "name": "LinkedIn - Canadian CS Students with AI Startups",
+      "channelType": "linkedin-search",
+      "description": "Computer science students in Canada who have founded AI startups or are working on AI projects",
+      "searchQuery": "site:linkedin.com/in computer science student Canada AI founder startup",
+      "example": {
+        "name": "Anas Khan",
+        "url": "https://www.linkedin.com/in/anas-k/",
+        "description": "4th year CS student at University of Toronto, Founder @ Learning Mode AI (AI-powered learning platform), has GitHub (AnasKhan0607) with microservices, K3s cluster, and AI projects using GPT-4 API. Portfolio: anaskhan.ca"
+      },
+      "score": 9,
+      "reason": "Direct access to CS students who have shipped AI products and have public GitHub portfolios demonstrating technical ability"
+    },
+    {
+      "name": "LinkedIn - Canadian CS Students with AI/ML Experience",
+      "channelType": "linkedin-search",
+      "description": "CS students at Canadian universities with hands-on AI/ML work experience and technical projects",
+      "searchQuery": "site:linkedin.com/in computer science student Canada AI machine learning projects",
+      "example": {
+        "name": "Ali Khan",
+        "url": "https://www.linkedin.com/in/ali-khan-88947a255/",
+        "description": "CS student at York University, AI Researcher @ AI Club, worked as ML Engineer at Exponentia.ai building RAG chatbots using Python, ChromaDB, Sentence Transformers, and Chainlit with Google Gemini Pro LLM"
+      },
+      "score": 8,
+      "reason": "Students with proven AI/ML work experience and specific technical skills in modern LLM stack"
+    },
+    {
+      "name": "LinkedIn - US CS Students Seeking AI/ML Opportunities",
+      "channelType": "linkedin-search",
+      "description": "Computer science students at US universities actively seeking AI/ML roles with GitHub portfolios",
+      "searchQuery": "site:linkedin.com/in computer science student USA AI machine learning seeking opportunities GitHub",
+      "example": {
+        "name": "Surya Harshith",
+        "url": "https://www.linkedin.com/in/surya-harshith-94a4981a6/",
+        "description": "CS & Bioinformatics student at California State University Fresno (2026), experience in ML (healthcare predictive models, Python/Scikit-learn), C++, Java, JavaScript. GitHub: github.com/SuryaGona. Actively seeking software engineering or AI/ML opportunities"
+      },
+      "score": 8,
+      "reason": "Students explicitly seeking opportunities with relevant ML project experience and active GitHub profiles"
+    },
+    {
+      "name": "LinkedIn - Canadian CS Students with AI Agent Projects",
+      "channelType": "linkedin-search",
+      "description": "CS students in Canada working on AI agents, RAG systems, and scalable AI tools",
+      "searchQuery": "site:linkedin.com/in computer science student Canada AI agent RAG",
+      "example": {
+        "name": "Abakar Kosso",
+        "url": "https://www.linkedin.com/in/abakarkosso/",
+        "description": "CS student at Brock University, Software Engineering Intern building scalable AI systems and tools, worked on AI projects involving retrieval-augmented generation and agent workflows"
+      },
+      "score": 8,
+      "reason": "Students working specifically on modern AI agent architectures and RAG systems relevant to the project"
+    },
+    {
+      "name": "GitHub - Awesome LLM Apps Repository Contributors",
+      "channelType": "github-repository",
+      "description": "Contributors and stargazers of popular open-source LLM application repositories",
+      "searchQuery": "github.com/Shubhamsaboo/awesome-llm-apps stargazers and contributors",
+      "example": {
+        "name": "Shubham Saboo (Repository Creator)",
+        "url": "https://github.com/Shubhamsaboo",
+        "description": "Creator of awesome-llm-apps (68k stars, 8.5k forks) - collection of LLM apps with AI Agents, RAG, multi-agent teams using OpenAI, Anthropic, Gemini. Active in LLM development community"
+      },
+      "score": 7,
+      "reason": "Repository has 68k+ engaged developers interested in LLM apps; contributors likely have relevant skills though need to filter for students in USA/Canada"
+    },
+    {
+      "name": "DEV Community - CS Students with AI Portfolio Projects",
+      "channelType": "dev-community",
+      "description": "Computer science students writing about their AI/LLM projects and portfolios on DEV.to",
+      "searchQuery": "site:dev.to computer science student AI portfolio LLM projects",
+      "example": {
+        "name": "Aniruddha Adak (based on article)",
+        "url": "https://dev.to/aniruddhaadak/building-a-dynamic-ai-powered-portfolio-my-journey-as-a-computer-science-student-4df1",
+        "description": "CS student who wrote 'Building a Dynamic AI-Powered Portfolio: My Journey as a Computer Science Student' - demonstrates interest in AI and building projects publicly"
+      },
+      "score": 7,
+      "reason": "Students who write about their AI projects publicly demonstrate strong interest and communication skills, though need to verify location and GitHub"
+    },
+    {
+      "name": "Y Combinator Jobs - Remote AI/ML Intern Positions",
+      "channelType": "job-board",
+      "description": "YC startup job board filtered for remote AI/ML internships and part-time positions that attract CS students",
+      "searchQuery": "ycombinator.com/jobs role:intern remote AI ML",
+      "example": {
+        "name": "AfterQuery (W25) - Software Engineer Intern",
+        "url": "https://www.ycombinator.com/jobs/role/software-engineer/remote",
+        "description": "YC W25 research lab investigating AI capabilities hiring Software Engineer Interns. Platform attracts CS students interested in AI/startups. Can reverse-search applicants and engage with qualified candidates"
+      },
+      "score": 6,
+      "reason": "Indirect channel - can identify students applying to similar AI internships, though requires more effort to source candidates"
+    },
+    {
+      "name": "Hacker News Who is Hiring - Remote AI Roles",
+      "channelType": "job-thread",
+      "description": "Monthly HN hiring threads filtered for remote AI/ML positions that CS students monitor",
+      "searchQuery": "hnhiring.com/locations/remote technologies:AI,Python,LLM",
+      "example": {
+        "name": "Learnwise.ai (via Nov 2025 thread)",
+        "url": "https://hnhiring.com/locations/remote",
+        "description": "Junior-Mid AI/ML/Backend Engineer role (2-4.5k EUR/month, remote EU timezone) building LLM-based conversational assistant in Edtech. HN threads attract CS students seeking remote work"
+      },
+      "score": 6,
+      "reason": "Many CS students actively read HN hiring threads for remote opportunities, though need to filter for students vs experienced engineers"
+    }
+  ]
+}
