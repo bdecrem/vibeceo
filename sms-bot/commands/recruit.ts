@@ -1524,13 +1524,9 @@ export const recruitCommandHandler: import('./types.js').CommandHandler = {
   matches(context: CommandContext): boolean {
     const msgUpper = context.messageUpper.trim();
 
-    // Match RECRUIT commands and SCORE commands
+    // Match RECRUIT commands and SCORE commands ONLY
+    // Don't match "YES" - let orchestrated routing handle approval responses
     if (msgUpper.startsWith(RECRUIT_PREFIX) || msgUpper.startsWith(SCORE_PREFIX)) {
-      return true;
-    }
-
-    // Also match standalone "YES" for source approval
-    if (msgUpper === 'YES' || msgUpper === 'YES!' || msgUpper === 'YES.') {
       return true;
     }
 

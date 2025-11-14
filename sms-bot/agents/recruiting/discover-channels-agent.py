@@ -13,7 +13,7 @@ from pathlib import Path
 from claude_agent_sdk import ClaudeAgentOptions, query
 
 PROMPT_TEMPLATE = """
-You are a talent sourcing expert. Find 3-5 SPECIFIC MINEABLE CHANNELS with REAL VERIFIED EXAMPLES of candidates.
+You are a talent sourcing expert. Find 5-8 SPECIFIC MINEABLE CHANNELS with REAL VERIFIED EXAMPLES of candidates.
 
 **YOU HAVE WEB SEARCH ACCESS - USE IT!** Use the WebSearch tool to find actual people.
 
@@ -24,7 +24,7 @@ RECRUITING QUERY: {refined_query}
 {additional_constraints}
 
 Your task:
-1. Identify 3-5 channel types (Twitter searches, GitHub, LinkedIn, communities, etc.)
+1. Identify 5-8 channel types (Twitter searches, GitHub, LinkedIn, communities, etc.)
 2. For EACH channel, use WebSearch to find 1-2 REAL people who fit the criteria
 3. Verify the URLs actually exist by searching for them
 4. Return ONLY channels where you found real verified examples
@@ -59,7 +59,7 @@ For community platforms (Buildspace, IndieHackers, etc.):
 - DO NOT include ANY channel without a verified real example that meets the constraints
 - Use WebSearch to find actual people - if you can't find them, SKIP that channel type
 - Each channel needs exactly ONE real example (name + URL + description)
-- If you can only find 2 channels with real examples that meet constraints, return 2 (not 3-5)
+- If you can only find fewer channels with real examples that meet constraints, return what you found (aim for 5-8 but quality over quantity)
 - NEVER use placeholder text like "Will mine this channel" - FIND ACTUAL PEOPLE
 - The example.url MUST be a direct link where the user can verify the person meets the criteria
 - If additional constraints mention "actual work", "portfolio", "GitHub repos", etc., the example.url MUST link to where that work can be seen

@@ -1,0 +1,65 @@
+{
+  "status": "partial_success",
+  "message": "Found 3 channels with real verified examples. Note: Twitter follower counts could not be verified via web search due to platform limitations. LinkedIn profiles and GitHub accounts were verified.",
+  "challenges_encountered": [
+    "Twitter/X profiles require JavaScript and don't display content in web search results",
+    "Specific follower counts (1k+) cannot be verified without direct platform access",
+    "Very specific criteria combination (student/recent grad + buildspace + 1k followers + AI + community) limits available matches"
+  ],
+  "channels": [
+    {
+      "name": "LinkedIn - Buildspace Alumni Network",
+      "channelType": "linkedin-search",
+      "description": "Recent graduates and students from Buildspace programs (Nights & Weekends S3-S5) who are active in AI and community building",
+      "searchQuery": "buildspace nights weekends AI student graduate community",
+      "example": {
+        "name": "Dinki Yaduwanshi",
+        "url": "https://www.linkedin.com/in/dinki-yaduwanshi/",
+        "description": "SDE Grad at CSG International, Buildspace S3 participant, open source contributor. Active on Twitter (@starsirius52) and GitHub (github.com/Dinki-Yaduwanshi). Based in India but participated in US-focused buildspace community. Computer Science background with Android/Java expertise."
+      },
+      "score": 8,
+      "reason": "Buildspace alumni are highly engaged in tech communities and often active on social media. Strong technical background with demonstrated community participation through hackathons (Hacktoberfest) and open source contributions."
+    },
+    {
+      "name": "GitHub - Buildspace Project Contributors",
+      "channelType": "github-search",
+      "description": "Developers who have forked or contributed to buildspace projects, especially AI-related ones",
+      "searchQuery": "buildspace AI projects stars forks",
+      "example": {
+        "name": "Markeljan (Markeljan Sokoli)",
+        "url": "https://github.com/Markeljan",
+        "description": "Web3 AI OSS Builder associated with ETHGlobal, Buildspace, and Backdrop. Built Web3-GPT (w3gpt.ai) combining AI with blockchain. Active community builder in Web3/AI space. Works at Bitte Protocol. LinkedIn: linkedin.com/in/markeljan"
+      },
+      "score": 9,
+      "reason": "GitHub provides direct access to technical profiles. Buildspace project contributors are actively building in public and engaged with AI/Web3 communities. Can identify engagement through stars, forks, and activity."
+    },
+    {
+      "name": "Medium - Buildspace Journey Writers",
+      "channelType": "content-platform",
+      "description": "Students and recent grads who document their buildspace journey and AI projects on Medium, often linking to their social profiles",
+      "searchQuery": "buildspace S4 OR S5 journey medium AI community",
+      "example": {
+        "name": "Hanshika Gupta",
+        "url": "https://medium.com/@hanshika02/reflecting-on-my-buildspace-s4-journey-from-viral-tweets-to-irl-game-testing-in-dubai-007eec0008d2",
+        "description": "Buildspace S4 participant who documented journey from viral tweets to IRL event in Dubai. Data Science background (Purdue University, IIT Roorkee), previously at BCG. Active on social media with demonstrated ability to create viral content. Built gaming platform with community engagement focus."
+      },
+      "score": 7,
+      "reason": "Medium writers who document buildspace journeys are naturally inclined toward community building and public engagement. They've demonstrated writing skills and social media activity. Articles often include links to Twitter/social profiles for further vetting."
+    }
+  ],
+  "additional_notes": {
+    "recommended_verification_steps": [
+      "Visit each candidate's Twitter/X profile directly to verify follower count (1k+ requirement)",
+      "Check their recent activity to confirm they're actively participating in communities",
+      "Review their GitHub/LinkedIn to assess technical depth and community involvement",
+      "For LinkedIn profiles, can use Sales Navigator or direct outreach to verify location (80% US/Canada requirement)"
+    ],
+    "why_only_3_channels": "Could not find 5 channels with fully verified examples that meet ALL criteria (student/recent grad + buildspace participation + verified 1k+ social following + AI focus + demonstrated community management). Twitter's technical limitations prevented verification of follower counts via web search.",
+    "alternative_search_strategies": [
+      "Use Twitter/X advanced search directly (not via web search) to find buildspace participants",
+      "Search buildspace demo day pages (buildspace.so/s5/demos) for participant profiles",
+      "Join buildspace Discord/community to identify active members",
+      "Search for #buildspace hashtag on Twitter with additional filters"
+    ]
+  }
+}
