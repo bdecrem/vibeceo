@@ -130,10 +130,10 @@ async def collect_candidates(
             cwd=str(output_dir),
         )
 
-        result = await query(
-            prompt=prompt,
-            options=options
-        )
+        # Run the agent and consume the async iterator
+        async for message in query(prompt=prompt, options=options):
+            # Just consume messages, agent will write to file
+            pass
 
         print(f"[Candidate Collection Agent] Agent completed", flush=True)
 
