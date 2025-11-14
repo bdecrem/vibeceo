@@ -123,13 +123,16 @@ async def collect_candidates(
     try:
         print(f"[Candidate Collection Agent] Starting search across {len(channels)} channels", flush=True)
 
+        # Use the correct API with allowed_tools
+        options = ClaudeAgentOptions(
+            permission_mode='acceptEdits',
+            allowed_tools=['Read', 'Write', 'WebSearch', 'WebFetch'],
+            cwd=str(output_dir),
+        )
+
         result = await query(
             prompt=prompt,
-            options=ClaudeAgentOptions(
-                model="claude-sonnet-4-5-20250929",
-                max_turns=15,  # Allow more turns for thorough candidate search
-                tools=["WebSearch", "Write"],  # Enable web search and file writing
-            )
+            options=options
         )
 
         print(f"[Candidate Collection Agent] Agent completed", flush=True)

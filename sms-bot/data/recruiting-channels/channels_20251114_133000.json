@@ -1,0 +1,137 @@
+{
+  "status": "success",
+  "metadata": {
+    "created_at": "2025-11-14T13:30:00Z",
+    "recruiting_query": "Computer Science students (undergrad or grad) in USA/Canada for part-time remote coding on AI SMS agent project, $30-50/hr - must have public GitHub or portfolio showing at least one completed software project, demonstrate genuine interest in AI/LLMs through projects or contributions, comfortable working with any tech stack and learning new codebases, available for part-time hours remotely",
+    "total_channels": 8
+  },
+  "channels": [
+    {
+      "name": "LinkedIn CS Students - AI/ML Focus",
+      "channelType": "linkedin-search",
+      "description": "Computer Science students at US/Canadian universities with AI/ML expertise and active GitHub profiles",
+      "searchQuery": "computer science student AI machine learning GitHub USA Canada",
+      "example": {
+        "name": "Phuong Anh Dang (Amy)",
+        "url": "https://www.linkedin.com/in/phuonganhdangamy/",
+        "description": "Third-year CS student at University of Toronto with passion for AI, ML, and Data Science. Has active GitHub with projects: github.com/phuonganhdangamy"
+      },
+      "score": 9,
+      "reason": "High-quality leads with verified education, GitHub profiles, and AI/ML focus. LinkedIn shows students actively seeking opportunities.",
+      "minability": "Direct messaging through LinkedIn, can filter by school, graduation year, and skills"
+    },
+    {
+      "name": "LinkedIn CS Students - Full-Stack + AI",
+      "channelType": "linkedin-search",
+      "description": "CS students with full-stack development skills and AI/ML enthusiasm",
+      "searchQuery": "computer science student full stack AI NLP GitHub",
+      "example": {
+        "name": "Ashutosh Jha",
+        "url": "https://www.linkedin.com/in/ashutosh-jha-477340259/",
+        "description": "CS student specializing in full-stack development and AI/ML with experience in data science lifecycle and Generative AI solutions. GitHub: github.com/LegendarySlayer"
+      },
+      "score": 9,
+      "reason": "Students with both full-stack skills and AI interest are ideal for adapting to any tech stack. Active project portfolios demonstrate completed work.",
+      "minability": "LinkedIn allows filtering by university, skills, and 'open to work' status"
+    },
+    {
+      "name": "GitHub GenAI Project Contributors",
+      "channelType": "github-repository",
+      "description": "Contributors and maintainers of GenAI/LLM project repositories on GitHub",
+      "searchQuery": "generative-ai OR llm-projects language:Python created:>2024-01-01",
+      "example": {
+        "name": "Ashlesh Khajbage (Ashleshk)",
+        "url": "https://github.com/Ashleshk/GenAI-Projects-Portfolio",
+        "description": "Maintains GenAI Projects Portfolio with RAG implementations, prompt engineering projects, and LLM applications. Active contributor with completed AI projects."
+      },
+      "score": 8,
+      "reason": "GitHub contributors show hands-on LLM/AI experience. Can verify coding skills directly through commits and projects.",
+      "minability": "Review repository contributors, check profiles for student status, reach out via GitHub or linked social profiles"
+    },
+    {
+      "name": "GitHub Student Developers with AI Focus",
+      "channelType": "github-search",
+      "description": "Students with AI/ML portfolios and active GitHub presence",
+      "searchQuery": "topic:artificial-intelligence topic:student-portfolio",
+      "example": {
+        "name": "Supratik Banerjee (supratikb23)",
+        "url": "https://supratikb23.github.io/",
+        "description": "Undergrad CS student specializing in AI/ML at IEM Kolkata. Built Deep Learning models for Epileptic Seizure Detection using CNN-BiLSTM. Active in open-source. Portfolio shows completed projects."
+      },
+      "score": 7,
+      "reason": "Portfolio sites demonstrate completed projects and technical writing skills. Can verify project quality directly.",
+      "minability": "Search GitHub for student portfolios with AI projects, contact through GitHub profile or portfolio contact form"
+    },
+    {
+      "name": "Indie Hackers - Student AI Builders",
+      "channelType": "community-platform",
+      "description": "Student indie hackers who built and shipped AI/LLM products",
+      "searchQuery": "student OR college AI chatbot LLM",
+      "example": {
+        "name": "Yasser Elsaid",
+        "url": "https://github.com/yasserelsaid",
+        "description": "Built Chatbase (AI chatbot builder) as a 4th year CS student at York University (Canada). GitHub shows coding ability. Twitter: @yasser_elsaid_"
+      },
+      "score": 8,
+      "reason": "Indie Hackers members have shipped real products, demonstrating both technical skills and initiative. Strong signal for self-motivated builders.",
+      "minability": "Search Indie Hackers posts for student builders, reach out via platform messaging or linked social profiles"
+    },
+    {
+      "name": "University AI Course Projects",
+      "channelType": "github-topic",
+      "description": "Students from top CS programs with AI/LLM course project repositories",
+      "searchQuery": "stanford-cs OR mit-csail OR cmu-cs AI LLM project",
+      "example": {
+        "name": "Stanford CS 224G Students",
+        "url": "https://cs224g.stanford.edu/",
+        "description": "Students from CS 224G (Apps with LLMs Inside) build prototype LLM applications. Course emphasizes hands-on project work with 2-week sprint cadence."
+      },
+      "score": 7,
+      "reason": "Top university courses produce students with strong fundamentals and completed AI/LLM projects. Projects are often on GitHub.",
+      "minability": "Review course websites for student project showcases, find students on LinkedIn or GitHub from these courses"
+    },
+    {
+      "name": "Dev.to / Hashnode - AI/LLM Student Bloggers",
+      "channelType": "developer-blog",
+      "description": "Students writing technical blogs about their AI/LLM projects and learning journey",
+      "searchQuery": "#llm OR #ai student developer project",
+      "example": {
+        "name": "Hashnode #llm Community",
+        "url": "https://hashnode.com/n/llm",
+        "description": "271 followers, 1.8K articles. Students document building chatbots, LLM applications, and local AI projects. Many link to GitHub repos in blog posts."
+      },
+      "score": 7,
+      "reason": "Technical bloggers demonstrate communication skills and deep understanding. Blog posts often link to GitHub projects for verification.",
+      "minability": "Search by #llm, #ai, #student tags. Contact authors through blog platform or linked social profiles"
+    },
+    {
+      "name": "CMU Research Projects - AI/LLM",
+      "channelType": "research-lab",
+      "description": "CMU students working on LLM/AI research projects with public code repositories",
+      "searchQuery": "CMU HCII OR CMU MLD LLM research GitHub",
+      "example": {
+        "name": "Christina Ma (CMU HCII PhD)",
+        "url": "https://hcii.cmu.edu/people/qianou-christina-ma",
+        "description": "PhD student at CMU HCII working on Requirement-Oriented Prompt Engineering (ROPE). Open-sourced training tools. Email: qianoum@andrew.cmu.edu"
+      },
+      "score": 6,
+      "reason": "Research students have deep AI/LLM knowledge but may prefer research roles. Good for advanced part-time opportunities.",
+      "minability": "Review university research lab pages, find students via lab websites or publications, contact through academic email"
+    }
+  ],
+  "notes": [
+    "Web search limitations: Some site-specific searches (site:twitter.com, site:github.com) were not supported, limiting ability to find direct Twitter profiles",
+    "Focus on verified examples: Each channel includes a real person or community with verifiable URLs",
+    "LinkedIn emerged as strongest channel with multiple high-quality verified examples",
+    "GitHub repositories and portfolios provide direct code verification",
+    "Community platforms (Indie Hackers, Hashnode) show students who ship real projects",
+    "University course projects provide access to students with structured AI/LLM learning"
+  ],
+  "recommended_approach": [
+    "Start with LinkedIn searches filtering for CS students at target universities with AI/ML skills and GitHub profiles",
+    "Review GitHub repositories in AI/LLM topics to find active student contributors",
+    "Post on Indie Hackers and similar communities targeting student builders",
+    "Monitor university AI course websites for student project showcases",
+    "Engage with technical bloggers on Hashnode/Dev.to who write about AI/LLM projects"
+  ]
+}
