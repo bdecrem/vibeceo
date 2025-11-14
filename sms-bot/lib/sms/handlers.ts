@@ -5083,26 +5083,6 @@ export async function sendSmsResponse(
   try {
     const platform = detectMessagePlatform(to);
 
-    // Check if this is a test phone number - if so, skip actual SMS sending
-    if (isTestPhoneNumber(to)) {
-      console.log(`🧪 DEV MODE: Skipping actual SMS to test number ${to}`);
-      console.log(
-        `🧪 Mock ${platform.toUpperCase()} response: ${message.substring(
-          0,
-          100
-        )}...`
-      );
-
-      // Return a mock response that looks like a real Twilio response
-      return {
-        sid: `TEST${Date.now()}`,
-        to: to,
-        body: message,
-        status: "delivered",
-        mock: true,
-      };
-    }
-
     // For WhatsApp, use verified business number or configured WhatsApp number
     const fromNumber =
       platform === "whatsapp"
@@ -5115,6 +5095,18 @@ export async function sendSmsResponse(
         `Message length ${message.length} exceeds 1600 character limit. Truncating...`
       );
       message = message.substring(0, 1597) + "...";
+    }
+
+    // Check if this is a test phone number - log but still call twilioClient.messages.create()
+    // so that dev webhook mock client can capture the response
+    if (isTestPhoneNumber(to)) {
+      console.log(`🧪 DEV MODE: Skipping actual SMS to test number ${to}`);
+      console.log(
+        `🧪 Mock ${platform.toUpperCase()} response: ${message.substring(
+          0,
+          100
+        )}...`
+      );
     }
 
     const response = await twilioClient.messages.create({

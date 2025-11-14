@@ -219,7 +219,8 @@ Return JSON:
  */
 async function runChannelDiscoveryAgent(
   refinedQuery: string,
-  companyInfo?: string
+  companyInfo?: string,
+  additionalConstraints?: string[]
 ): Promise<DiscoveredChannel[]> {
   const { spawn } = await import('node:child_process');
   const path = await import('node:path');
@@ -235,6 +236,10 @@ async function runChannelDiscoveryAgent(
 
     if (companyInfo) {
       args.push('--company-context', companyInfo);
+    }
+
+    if (additionalConstraints && additionalConstraints.length > 0) {
+      args.push('--constraints', ...additionalConstraints);
     }
 
     console.log(`[Channel Discovery Agent] Running: ${PYTHON_BIN} ${args.join(' ')}`);
@@ -284,17 +289,34 @@ async function runChannelDiscoveryAgent(
  */
 export async function proposeSpecificChannels(
   query: string,
-  context?: { companyInfo?: string; conversationHistory?: Array<{role: string; content: string}>; refinedQuery?: string }
+  context?: {
+    companyInfo?: string;
+    conversationHistory?: Array<{role: string; content: string}>;
+    refinedQuery?: string;
+    additionalConstraints?: string[];
+  }
 ): Promise<ConversationalResponse> {
   console.log(`[Channel Discovery] Phase 2 - Discovering channels with web search for: "${query}"`);
 
   const finalQuery = context?.refinedQuery || query;
+  const constraints = context?.additionalConstraints || [];
+
+  if (constraints.length > 0) {
+    console.log(`[Channel Discovery] Additional constraints: ${constraints.join(', ')}`);
+  }
 
   // Run the Python agent with web search to find REAL examples
-  const channels = await runChannelDiscoveryAgent(finalQuery, context?.companyInfo);
+  const channels = await runChannelDiscoveryAgent(finalQuery, context?.companyInfo, constraints);
 
   if (!channels || channels.length === 0) {
     throw new Error('No channels with verified examples found');
+  }
+
+  // CRITICAL: Validate that EVERY channel has a real example with URL
+  const invalidChannels = channels.filter(ch => !ch.example || !ch.example.url || !ch.example.name);
+  if (invalidChannels.length > 0) {
+    console.error('[Channel Discovery] Channels without examples:', invalidChannels.map(ch => ch.name));
+    throw new Error(`Agent returned ${invalidChannels.length} channels without verified examples. Every channel MUST have a real candidate example.`);
   }
 
   return {

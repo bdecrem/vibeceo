@@ -21,6 +21,8 @@ RECRUITING QUERY: {refined_query}
 
 {company_context}
 
+{additional_constraints}
+
 Your task:
 1. Identify 3-5 channel types (Twitter searches, GitHub, LinkedIn, communities, etc.)
 2. For EACH channel, use WebSearch to find 1-2 REAL people who fit the criteria
@@ -49,12 +51,18 @@ For community platforms (Buildspace, IndieHackers, etc.):
 - Search for real member profiles
 - Include actual URLs to their profiles
 
-**ABSOLUTELY CRITICAL:**
+**ABSOLUTELY CRITICAL - MANDATORY REQUIREMENTS:**
+- EVERY channel MUST have a real example with a working URL
+- The example MUST demonstrate meeting ALL the criteria above (recruiting query + any additional constraints)
 - DO NOT make up fake URLs
 - DO NOT guess plausible-looking profiles
-- ONLY return channels where WebSearch found REAL people
-- Verify each URL by searching for it
-- If you can't find real examples for a channel type, SKIP that channel entirely
+- DO NOT include ANY channel without a verified real example that meets the constraints
+- Use WebSearch to find actual people - if you can't find them, SKIP that channel type
+- Each channel needs exactly ONE real example (name + URL + description)
+- If you can only find 2 channels with real examples that meet constraints, return 2 (not 3-5)
+- NEVER use placeholder text like "Will mine this channel" - FIND ACTUAL PEOPLE
+- The example.url MUST be a direct link where the user can verify the person meets the criteria
+- If additional constraints mention "actual work", "portfolio", "GitHub repos", etc., the example.url MUST link to where that work can be seen
 
 USE THE WRITE TOOL to save your findings to: {output_path}
 
@@ -78,14 +86,15 @@ Output format (JSON):
   ]
 }}
 
-Remember: 3-5 channels MAX, each with VERIFIED REAL examples from your web searches!
+CRITICAL: Every channel MUST have example.name, example.url, and example.description filled in with REAL data from WebSearch!
 """
 
 
 async def discover_channels(
     refined_query: str,
     company_context: str,
-    output_dir: Path
+    output_dir: Path,
+    additional_constraints: list = None
 ) -> dict:
     """Run the channel discovery agent with web search"""
 
@@ -94,10 +103,18 @@ async def discover_channels(
     output_file = output_dir / f"channels_{timestamp}.json"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    # Format additional constraints
+    constraints_text = ""
+    if additional_constraints and len(additional_constraints) > 0:
+        constraints_text = "\n**ADDITIONAL CONSTRAINTS (examples MUST meet these):**\n"
+        for i, constraint in enumerate(additional_constraints, 1):
+            constraints_text += f"{i}. {constraint}\n"
+
     # Format prompt
     prompt = PROMPT_TEMPLATE.format(
         refined_query=refined_query,
         company_context=f"\nCOMPANY CONTEXT: {company_context}" if company_context else "",
+        additional_constraints=constraints_text,
         output_path=str(output_file)
     )
 
@@ -105,14 +122,17 @@ async def discover_channels(
     try:
         print(f"[Channel Discovery Agent] Starting search for: {refined_query}", flush=True)
 
-        result = await query(
-            prompt=prompt,
-            options=ClaudeAgentOptions(
-                model="claude-sonnet-4-5-20250929",
-                max_turns=10,  # Allow up to 10 agentic turns for thorough search
-                tools=["WebSearch", "Write"],  # Enable web search and file writing
-            )
+        # Use the correct API with allowed_tools
+        options = ClaudeAgentOptions(
+            permission_mode='acceptEdits',
+            allowed_tools=['Read', 'Write', 'WebSearch', 'WebFetch'],
+            cwd=str(output_dir),
         )
+
+        # Run the agent and consume the async iterator
+        async for message in query(prompt=prompt, options=options):
+            # Just consume messages, agent will write to file
+            pass
 
         print(f"[Channel Discovery Agent] Agent completed", flush=True)
 
@@ -145,6 +165,7 @@ def main():
     parser.add_argument("--query", required=True, help="Refined recruiting query")
     parser.add_argument("--company-context", default="", help="Optional company context")
     parser.add_argument("--output-dir", default="data/recruiting-channels", help="Output directory")
+    parser.add_argument("--constraints", nargs="*", default=[], help="Additional constraints (examples must meet these)")
 
     args = parser.parse_args()
 
@@ -154,7 +175,8 @@ def main():
     result = asyncio.run(discover_channels(
         refined_query=args.query,
         company_context=args.company_context,
-        output_dir=output_dir
+        output_dir=output_dir,
+        additional_constraints=args.constraints
     ))
 
     # Output result as JSON (last line for parsing)

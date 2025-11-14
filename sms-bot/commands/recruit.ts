@@ -9,6 +9,43 @@
  * - RECRUIT SWITCH {project#}   → Switch active project
  * - RECRUIT SETTINGS            → View current project settings
  * - RECRUIT STOP                → Stop daily reports for current project
+ *
+ * CONTINUOUS LEARNING SYSTEM:
+ * ===========================
+ * This system learns from ALL user feedback to continuously refine recruiting:
+ *
+ * 1. EXPLORATION PHASE (Phase 1)
+ *    - User provides initial query: "RECRUIT {criteria}"
+ *    - System asks clarifying questions (up to 2 rounds)
+ *    - ALL Q&A saved to project.explorationHistory[]
+ *    - System proposes detailed spec → user approves with "APPROVE"
+ *    - Spec saved to project.refinedSpec
+ *
+ * 2. CHANNEL DISCOVERY (Phase 2)
+ *    - Python agent uses WebSearch to find real candidate examples
+ *    - User can: YES, 1:yes 2:no, OR provide feedback
+ *    - Feedback → saved to project.userRefinements[], updates spec, re-runs discovery
+ *    - Approved channels → project.channels[] with tracking fields
+ *
+ * 3. CANDIDATE SCORING (Ongoing)
+ *    - User scores candidates 1-5
+ *    - Scores update channel.avgCandidateScore (which channels work best?)
+ *    - Scores feed into AI analysis → project.learnedProfile
+ *    - High/low score patterns → project.candidateFeedback.scorePatterns
+ *
+ * 4. CONTINUOUS REFINEMENT (Future)
+ *    - User can provide feedback anytime → project.userRefinements[]
+ *    - Feedback updates refined spec
+ *    - Next daily search uses updated spec + learned profile
+ *    - Low-performing channels can be replaced
+ *
+ * STORED DATA (in agent_subscriptions.preferences.projects[projectId]):
+ * - explorationHistory: Full Q&A from Phase 1
+ * - refinedSpec: AI-generated detailed recruiting spec (updated with feedback)
+ * - userRefinements[]: All user feedback with timestamps and context
+ * - channels[]: Discovered channels with performance metrics
+ * - candidateFeedback: Score patterns and notes about specific candidates
+ * - learnedProfile: AI-extracted preferences from scores
  */
 
 import type { CommandContext } from './types.js';
@@ -28,21 +65,166 @@ const SCORE_PREFIX = 'SCORE';
 export const RECRUITING_AGENT_SLUG = 'recruiting';
 
 export interface RecruitingProject {
+  // Original user query
   query: string;
+
+  // Phase 1: Exploration history (full Q&A during initial discovery)
+  explorationHistory?: Array<{
+    role: 'user' | 'assistant';
+    content: string;
+    timestamp: string;
+  }>;
+
+  // Phase 2: AI-generated refined spec (the detailed recruiting spec created from exploration)
+  refinedSpec?: {
+    specText: string; // The full detailed spec
+    createdAt: string;
+    lastUpdatedAt?: string;
+  };
+
+  // User refinements (ongoing feedback that updates the spec)
+  userRefinements?: Array<{
+    feedback: string; // User's feedback text
+    timestamp: string;
+    context: 'exploration' | 'channel_approval' | 'candidate_feedback' | 'general';
+    // When spec was updated based on this
+    appliedToSpecAt?: string;
+  }>;
+
+  // Channels discovered and their performance
+  channels?: Array<{
+    // Channel info
+    name: string;
+    channelType: string;
+    description: string;
+    example?: any;
+    score: number;
+    reason: string;
+
+    // Channel performance tracking
+    addedAt: string;
+    candidatesFound?: number;
+    candidatesScored?: number;
+    avgCandidateScore?: number; // Average user score of candidates from this channel
+    userApproved?: boolean;
+    userRejected?: boolean;
+    rejectionReason?: string;
+  }>;
+
+  // Candidate feedback tracking
+  candidateFeedback?: {
+    // Score patterns (what scores mean)
+    scorePatterns?: {
+      highScoreReasons: string[]; // Why users give 4-5 stars
+      lowScoreReasons: string[]; // Why users give 1-2 stars
+    };
+
+    // Individual candidate notes
+    candidateNotes?: Array<{
+      candidateId: string;
+      candidateName: string;
+      note: string;
+      timestamp: string;
+    }>;
+  };
+
+  // Learned profile (AI-extracted preferences from scores)
+  learnedProfile: Record<string, any>;
+
+  // Setup state
   setupComplete: boolean;
   sourcesApproved: boolean;
-  channelsApproved?: boolean; // New channel-based flow
-  channels?: any[]; // New channel-based flow - discovered channels
-  conversationalResponse?: any; // New channel-based flow - exploration response
-  learnedProfile: Record<string, any>;
+  channelsApproved?: boolean;
+  conversationalResponse?: any; // Legacy - can phase out
+
+  // Operational
   notificationTime: string;
   active: boolean;
   createdAt: string;
+  lastRefinedAt?: string; // When spec was last updated
 }
 
 export interface RecruitingPreferences {
   projects: Record<string, RecruitingProject>;
   activeProjectId?: string;
+}
+
+/**
+ * Update channel performance metrics when candidates are found/scored
+ */
+async function updateChannelPerformance(
+  subscriberId: string,
+  projectId: string,
+  channelName: string,
+  metrics: {
+    candidatesFound?: number;
+    candidateScore?: number; // Score for one candidate
+  }
+): Promise<void> {
+  const prefs = await getRecruitingPreferences(subscriberId);
+  const project = prefs.projects[projectId];
+
+  if (!project || !project.channels) return;
+
+  const channel = project.channels.find(ch => ch.name === channelName);
+  if (!channel) return;
+
+  // Update metrics
+  if (metrics.candidatesFound !== undefined) {
+    channel.candidatesFound = (channel.candidatesFound || 0) + metrics.candidatesFound;
+  }
+
+  if (metrics.candidateScore !== undefined) {
+    channel.candidatesScored = (channel.candidatesScored || 0) + 1;
+
+    // Update average score
+    const currentAvg = channel.avgCandidateScore || 0;
+    const currentCount = channel.candidatesScored - 1; // We just incremented
+    channel.avgCandidateScore = ((currentAvg * currentCount) + metrics.candidateScore) / channel.candidatesScored;
+  }
+
+  await updateRecruitingPreferences(subscriberId, prefs);
+  console.log(`[RECRUIT] Updated channel "${channelName}" metrics:`, {
+    found: channel.candidatesFound,
+    scored: channel.candidatesScored,
+    avgScore: channel.avgCandidateScore?.toFixed(2),
+  });
+}
+
+/**
+ * Add a note about a specific candidate
+ */
+async function addCandidateNote(
+  subscriberId: string,
+  projectId: string,
+  candidateId: string,
+  candidateName: string,
+  note: string
+): Promise<void> {
+  const prefs = await getRecruitingPreferences(subscriberId);
+  const project = prefs.projects[projectId];
+
+  if (!project) return;
+
+  if (!project.candidateFeedback) {
+    project.candidateFeedback = {
+      scorePatterns: { highScoreReasons: [], lowScoreReasons: [] },
+      candidateNotes: [],
+    };
+  }
+
+  if (!project.candidateFeedback.candidateNotes) {
+    project.candidateFeedback.candidateNotes = [];
+  }
+
+  project.candidateFeedback.candidateNotes.push({
+    candidateId,
+    candidateName,
+    note,
+    timestamp: new Date().toISOString(),
+  });
+
+  await updateRecruitingPreferences(subscriberId, prefs);
 }
 
 /**
@@ -113,7 +295,7 @@ function formatConversationalChannels(conversational: any, query: string): strin
     message += `\n`;
   }
 
-  // Add channels with examples (AI should limit these to fit)
+  // Add channels with examples (every channel is guaranteed to have a real example)
   const channels = conversational.channels;
   message += `Top ${channels.length} channels:\n\n`;
 
@@ -122,19 +304,15 @@ function formatConversationalChannels(conversational: any, query: string): strin
 
     message += `${i + 1}. ${cleanName}\n`;
 
-    // Only show example if it exists and is not null
-    if (ch.example && ch.example.url) {
-      const cleanExampleName = ch.example.name.replace(/\*/g, '');
-      message += `   → ${cleanExampleName}\n`;
-      message += `   ${ch.example.url}\n`;
-    } else {
-      message += `   (Will mine this channel for profiles)\n`;
-    }
+    // Every channel MUST have an example (validated by source-discovery-agent)
+    const cleanExampleName = ch.example.name.replace(/\*/g, '');
+    message += `   → ${cleanExampleName}\n`;
+    message += `   ${ch.example.url}\n`;
 
     if (i < channels.length - 1) message += `\n`;
   });
 
-  message += `\nReply YES to approve all, or 1:yes 2:no 3:yes...`;
+  message += `\nReply:\n• YES - approve all\n• 1:yes 2:no... - pick some\n• Or give feedback to refine`;
 
   return message;
 }
@@ -310,14 +488,26 @@ async function handleNewProject(
     );
   }
 
-  // Create new project
+  // Create new project with comprehensive tracking
   const projectId = uuidv4();
 
   prefs.projects[projectId] = {
     query,
+    explorationHistory: [], // Will be populated during exploration
+    refinedSpec: undefined, // Will be created when user approves refined query
+    userRefinements: [], // Will accumulate feedback over time
+    channels: [], // Will be populated when channels are discovered
+    candidateFeedback: {
+      scorePatterns: {
+        highScoreReasons: [],
+        lowScoreReasons: [],
+      },
+      candidateNotes: [],
+    },
+    learnedProfile: {},
     setupComplete: false,
     sourcesApproved: false,
-    learnedProfile: {},
+    channelsApproved: false,
     notificationTime: '09:00',
     active: false,  // Not active until setup complete
     createdAt: new Date().toISOString(),
@@ -347,6 +537,20 @@ async function handleNewProject(
   // Send conversational exploration message (remove asterisks only)
   const cleanedMessage = cleanSmsFormatting(exploration.conversationalMessage);
   await sendSmsResponse(from, cleanedMessage, twilioClient);
+
+  // Save to exploration history
+  const timestamp = new Date().toISOString();
+  const explorationPrefs = await getRecruitingPreferences(subscriber.id);
+  if (explorationPrefs.projects[projectId]) {
+    if (!explorationPrefs.projects[projectId].explorationHistory) {
+      explorationPrefs.projects[projectId].explorationHistory = [];
+    }
+    explorationPrefs.projects[projectId].explorationHistory.push(
+      { role: 'user', content: query, timestamp },
+      { role: 'assistant', content: exploration.conversationalMessage, timestamp }
+    );
+    await updateRecruitingPreferences(subscriber.id, explorationPrefs);
+  }
 
   // Store thread state for continuing the conversation
   await storeThreadState(subscriber.id, {
@@ -418,21 +622,54 @@ export async function handleRecruitExploration(
       // Use proposedQuery if available, otherwise original query
       const finalQuery = proposedQuery || query;
 
+      // Save the approved refined spec
+      const timestamp = new Date().toISOString();
+      const prefs = await getRecruitingPreferences(subscriber.id);
+      if (prefs.projects[projectId]) {
+        // Save exploration history
+        if (!prefs.projects[projectId].explorationHistory) {
+          prefs.projects[projectId].explorationHistory = [];
+        }
+        prefs.projects[projectId].explorationHistory.push(
+          { role: 'user', content: message, timestamp }
+        );
+
+        // Save the refined spec
+        prefs.projects[projectId].refinedSpec = {
+          specText: finalQuery,
+          createdAt: timestamp,
+        };
+        prefs.projects[projectId].lastRefinedAt = timestamp;
+
+        await updateRecruitingPreferences(subscriber.id, prefs);
+      }
+
       const conversational = await proposeSpecificChannels(finalQuery, {
         companyInfo,
         conversationHistory: updatedHistory,
         refinedQuery: finalQuery,
       });
 
-      // Store channels in project
-      const prefs = await getRecruitingPreferences(subscriber.id);
-      if (prefs.projects[projectId]) {
-        prefs.projects[projectId] = {
-          ...prefs.projects[projectId],
-          channels: conversational.channels,
+      // Store channels in project with tracking fields
+      const channelsWithTracking = conversational.channels.map(ch => ({
+        ...ch,
+        addedAt: timestamp,
+        candidatesFound: 0,
+        candidatesScored: 0,
+        avgCandidateScore: undefined,
+        userApproved: undefined,
+        userRejected: undefined,
+        rejectionReason: undefined,
+      }));
+
+      const updatedPrefs = await getRecruitingPreferences(subscriber.id);
+      if (updatedPrefs.projects[projectId]) {
+        updatedPrefs.projects[projectId] = {
+          ...updatedPrefs.projects[projectId],
+          channels: channelsWithTracking,
           conversationalResponse: conversational,
         };
-        await updateRecruitingPreferences(subscriber.id, prefs);
+        await updateRecruitingPreferences(subscriber.id, updatedPrefs);
       }
 
       // Format and send channel proposals
@@ -448,6 +685,8 @@ export async function handleRecruitExploration(
           query,
           channels: conversational.channels,
           conversational,
+          conversationHistory: updatedHistory,
+          additionalConstraints: [],  // Start with no additional constraints
         },
       });
 
@@ -488,6 +727,20 @@ export async function handleRecruitExploration(
 
     // Update conversation history
     updatedHistory.push({ role: 'assistant', content: exploration.conversationalMessage });
+
+    // Save to exploration history in project
+    const timestamp = new Date().toISOString();
+    const prefs = await getRecruitingPreferences(subscriber.id);
+    if (prefs.projects[projectId]) {
+      if (!prefs.projects[projectId].explorationHistory) {
+        prefs.projects[projectId].explorationHistory = [];
+      }
+      prefs.projects[projectId].explorationHistory.push(
+        { role: 'user', content: message, timestamp },
+        { role: 'assistant', content: exploration.conversationalMessage, timestamp }
+      );
+      await updateRecruitingPreferences(subscriber.id, prefs);
+    }
 
     // Update thread state with new conversation
     await storeThreadState(subscriber.id, {
@@ -710,7 +963,7 @@ export async function handleRecruitConfirmation(
 
   const { from, normalizedFrom, twilioClient, sendSmsResponse, updateLastMessageDate, message } = context;
 
-  console.log(`[RECRUIT] Handling source approval confirmation`);
+  console.log(`[RECRUIT] Handling source approval confirmation: "${message}"`);
 
   const subscriber = await getSubscriber(normalizedFrom);
   if (!subscriber) {
@@ -718,7 +971,7 @@ export async function handleRecruitConfirmation(
   }
 
   // Extract thread context - check for new format (channels) or old format (sources)
-  const { projectId, query, channels, conversational } = activeThread.fullContext;
+  const { projectId, query, channels, conversational, conversationHistory = [], additionalConstraints = [] } = activeThread.fullContext;
 
   if (!channels || !Array.isArray(channels)) {
     await sendSmsResponse(
@@ -731,6 +984,125 @@ export async function handleRecruitConfirmation(
   }
 
   const totalChannels = channels.length;
+
+  // Check if this is additional feedback/refinement (not a simple approval)
+  const messageUpper = message.trim().toUpperCase();
+  const isSimpleApproval = messageUpper === 'YES' || messageUpper === 'YES!' || messageUpper === 'YES.' || messageUpper === 'APPROVE';
+  const isNumberedApproval = /^\d+:(yes|no|y|n)/i.test(message.trim());
+
+  // If it's feedback/refinement (not approval), re-run channel discovery with constraints
+  if (!isSimpleApproval && !isNumberedApproval) {
+    console.log(`[RECRUIT] User provided feedback, re-running channel discovery with additional constraint`);
+
+    await sendSmsResponse(
+      from,
+      `Got it - incorporating your feedback and finding new channels...`,
+      twilioClient
+    );
+
+    // Save user refinement and update spec
+    const timestamp = new Date().toISOString();
+    const prefs = await getRecruitingPreferences(subscriber.id);
+    if (prefs.projects[projectId]) {
+      // Save this refinement
+      if (!prefs.projects[projectId].userRefinements) {
+        prefs.projects[projectId].userRefinements = [];
+      }
+      prefs.projects[projectId].userRefinements.push({
+        feedback: message,
+        timestamp,
+        context: 'channel_approval',
+        appliedToSpecAt: timestamp, // Will update spec now
+      });
+
+      // Update the refined spec to incorporate this feedback
+      if (prefs.projects[projectId].refinedSpec) {
+        const currentSpec = prefs.projects[projectId].refinedSpec.specText;
+        const updatedSpec = `${currentSpec}\n\nADDITIONAL REQUIREMENT: ${message}`;
+        prefs.projects[projectId].refinedSpec = {
+          ...prefs.projects[projectId].refinedSpec,
+          specText: updatedSpec,
+          lastUpdatedAt: timestamp,
+        };
+        prefs.projects[projectId].lastRefinedAt = timestamp;
+      }
+
+      await updateRecruitingPreferences(subscriber.id, prefs);
+    }
+
+    // Add this constraint to the list
+    const newConstraints = [...additionalConstraints, message];
+
+    try {
+      const { proposeSpecificChannels } = await import('../agents/recruiting/source-discovery-agent.js');
+
+      const companyInfo = query.toLowerCase().includes('kochi')
+        ? 'Kochi.to is an AI assistant over SMS - a personal agent platform for daily tasks and information.'
+        : undefined;
+
+      // Re-run channel discovery with additional constraints
+      const refinedConversational = await proposeSpecificChannels(query, {
+        companyInfo,
+        conversationHistory: [...conversationHistory, { role: 'user', content: message }],
+        refinedQuery: query,
+        additionalConstraints: newConstraints,
+      });
+
+      // Store updated channels in project with tracking
+      const channelsWithTracking = refinedConversational.channels.map(ch => ({
+        ...ch,
+        addedAt: timestamp,
+        candidatesFound: 0,
+        candidatesScored: 0,
+        avgCandidateScore: undefined,
+        userApproved: undefined,
+        userRejected: undefined,
+        rejectionReason: undefined,
+      }));
+
+      const updatedPrefs = await getRecruitingPreferences(subscriber.id);
+      if (updatedPrefs.projects[projectId]) {
+        updatedPrefs.projects[projectId] = {
+          ...updatedPrefs.projects[projectId],
+          channels: channelsWithTracking,
+          conversationalResponse: refinedConversational,
+        };
+        await updateRecruitingPreferences(subscriber.id, updatedPrefs);
+      }
+
+      // Format and send new channel proposals
+      const channelsMessage = formatConversationalChannels(refinedConversational, query);
+      await sendSmsResponse(from, channelsMessage, twilioClient);
+
+      // Update thread state with new channels and constraints
+      await storeThreadState(subscriber.id, {
+        handler: 'recruit-source-approval',
+        topic: query,
+        context: {
+          projectId,
+          query,
+          channels: refinedConversational.channels,
+          conversational: refinedConversational,
+          conversationHistory: [...conversationHistory, { role: 'user', content: message }],
+          additionalConstraints: newConstraints,
+        },
+      });
+
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    } catch (error) {
+      console.error('[RECRUIT] Channel refinement failed:', error);
+
+      await sendSmsResponse(
+        from,
+        `Sorry, I had trouble refining the channels.\n\nError: ${error instanceof Error ? error.message : 'Unknown error'}\n\nTry YES to approve current channels, or 1:yes 2:no...`,
+        twilioClient
+      );
+
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+  }
 
   // Parse user's approval/rejection response
   const { approved, rejected, approveAll } = parseSourceApprovals(message, totalChannels);
@@ -1169,3 +1541,8 @@ export const recruitCommandHandler: import('./types.js').CommandHandler = {
     return true;
   },
 };
+
+/**
+ * Export helper functions for use by recruiting agent
+ */
+export { updateChannelPerformance, addCandidateNote, getRecruitingPreferences, updateRecruitingPreferences };

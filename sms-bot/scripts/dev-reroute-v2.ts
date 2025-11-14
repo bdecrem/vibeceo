@@ -1,23 +1,28 @@
 #!/usr/bin/env node
 
 /**
- * DEV REROUTE INTERACTIVE SHELL V2 - FULLY LOCAL TESTING
+ * DEV REROUTE INTERACTIVE SHELL V2 - FULLY LOCAL SMS BOT TESTING
  *
- * This script creates an interactive shell where you can type WTAF commands.
+ * This script creates an interactive shell where you can test SMS bot commands locally.
  * It sends HTTP POST requests to localhost:3030 exactly like Twilio SMS webhooks.
  *
  * V2 IMPROVEMENTS:
  * - Uses test phone number (+15555551234) to prevent real SMS delivery
  * - All responses captured locally - no SMS costs or phone spam
+ * - Displays responses EXACTLY as they appear in SMS messages
+ * - Shows multi-message sequences clearly separated
  * - Complete local development loop with full SMS bot testing
  *
  * Usage: npm run dev:reroute:v2
- * Then type: wtaf create a hello world page
+ * Then type any SMS command like:
+ *   - RECRUIT senior backend engineers at startups
+ *   - AI DAILY
+ *   - KG find papers about transformers
  *
  * The script will:
  * 1. Send HTTP POST to localhost:3030/dev/webhook (dev endpoint)
  * 2. SMS bot processes with mock Twilio client (no real SMS)
- * 3. All responses captured and displayed in terminal
+ * 3. All responses captured and displayed EXACTLY as user sees them in SMS
  */
 
 import { createInterface } from 'readline';
@@ -73,18 +78,37 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1555555123
 
 		if (response.ok) {
 			console.log(`✅ Message sent successfully (${response.status})`);
-			
+
 			// Handle JSON response from dev webhook
 			try {
 				const responseData = await response.json() as any;
-				
+
 				if (responseData.success) {
 					const responses = responseData.responses || [];
 					if (responses.length > 0) {
-						console.log(`🤖 Bot responses (${responses.length}):`);
+						console.log(''); // Blank line before responses
+						console.log('─'.repeat(80));
+						console.log('📱 SMS MESSAGES (exactly as user receives them):');
+						console.log('─'.repeat(80));
+
 						responses.forEach((botResponse: string, index: number) => {
-							console.log(`  ${index + 1}. ${botResponse}`);
+							if (index > 0) {
+								// Add spacing between multiple messages to show they arrive separately
+								console.log('');
+								console.log('  [... new SMS message ...]');
+								console.log('');
+							}
+
+							// Display the message exactly as it appears in SMS
+							// No numbering, no prefixes - raw message content
+							console.log(botResponse);
 						});
+
+						console.log('─'.repeat(80));
+						if (responses.length > 1) {
+							console.log(`(Total: ${responses.length} separate SMS messages sent)`);
+						}
+						console.log('');
 					} else {
 						console.log(`🤖 Bot processed message but sent no responses`);
 					}
@@ -92,10 +116,20 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1555555123
 					console.log(`⚠️  Processing error: ${responseData.error || 'Unknown error'}`);
 					const responses = responseData.responses || [];
 					if (responses.length > 0) {
-						console.log(`🤖 Partial responses received:`);
+						console.log('');
+						console.log('─'.repeat(80));
+						console.log('📱 PARTIAL SMS MESSAGES:');
+						console.log('─'.repeat(80));
 						responses.forEach((botResponse: string, index: number) => {
-							console.log(`  ${index + 1}. ${botResponse}`);
+							if (index > 0) {
+								console.log('');
+								console.log('  [... new SMS message ...]');
+								console.log('');
+							}
+							console.log(botResponse);
 						});
+						console.log('─'.repeat(80));
+						console.log('');
 					}
 				}
 			} catch (parseError) {
@@ -105,7 +139,7 @@ async function sendSmsWebhook(message: string, fromNumber: string = '+1555555123
 					console.log(`📤 Response: ${responseText}`);
 				}
 			}
-			
+
 			return true;
 		} else {
 			console.log(`❌ Failed to send message (${response.status})`);
@@ -194,10 +228,6 @@ async function processCommand(input: string): Promise<void> {
 	console.log(''); // Add some spacing
 	const success = await sendSmsWebhook(command);
 	await saveToHistory(command, success);
-	
-	if (success) {
-		console.log('🎯 Command processed! All responses captured above (no real SMS sent).');
-	}
 	console.log(''); // Add some spacing before next prompt
 }
 
@@ -210,26 +240,29 @@ function showHelp(): void {
 ============================================
 
 Commands you can type:
-  wtaf create a hello world page     - Send WTAF request
-  wtaf -alex- build a contact form   - Send with coach injection
-  wtaf make a tetris game            - Send game request
-  
+  RECRUIT senior backend engineers   - Start recruiting project
+  SCORE 1:5 2:3 3:4                  - Score candidates
+  AI DAILY                           - Get today's AI Daily episode
+  KG find papers about transformers  - Knowledge graph query
+  DISCO find AI agents research      - Discovery search
+
 Special commands:
   help                               - Show this help
-  status                             - Check SMS bot connection  
+  status                             - Check SMS bot connection
   exit / quit                        - Exit the shell
 
 V2 Features:
   ✅ Uses test number (+15555551234) - no real SMS sent
-  ✅ All responses captured in terminal
+  ✅ Responses displayed EXACTLY as they appear in SMS
   ✅ Full SMS bot processing without phone spam
   ✅ No SMS costs during development
+  ✅ See multi-message responses in sequence
 
 Tips:
   • Make sure SMS bot is running: npm run start
   • Commands are sent to ${SMS_BOT_URL}${DEV_WEBHOOK_ENDPOINT}
   • History saved to dev-reroute-history.txt
-  • Just type naturally like you would text the bot!
+  • Messages display precisely as users receive them!
 `);
 }
 
@@ -238,9 +271,10 @@ Tips:
  */
 async function startInteractiveShell(): Promise<void> {
 	console.log("=" + "=".repeat(79));
-	console.log("🔄 DEV REROUTE V2 - FULLY LOCAL TESTING");
+	console.log("📱 DEV REROUTE V2 - SMS BOT LOCAL TESTING");
 	console.log("📡 Sends HTTP requests to SMS bot on port 3030");
 	console.log("✅ Uses test number - no real SMS delivery!");
+	console.log("📱 Responses mirror EXACTLY what users see in SMS");
 	console.log("=" + "=".repeat(79));
 
 	// Test initial connection
@@ -255,21 +289,23 @@ async function startInteractiveShell(): Promise<void> {
 	}
 
 	console.log(`
-🎯 Ready! Type your WTAF commands and press Enter.
+🎯 Ready! Type commands and press Enter.
 💡 Type 'help' for examples, 'status' to check connection, 'exit' to quit.
 📁 Command history will be saved to dev-reroute-history.txt
+📱 Responses display EXACTLY as they appear in SMS!
 
 Examples:
-  wtaf create a hello world page
-  wtaf -alex- build a contact form
-  wtaf make a tetris game
+  RECRUIT senior backend engineers at startups
+  SCORE 1:5 2:3 3:4
+  AI DAILY
+  KG find papers about transformers
 `);
 
 	// Create readline interface
 	const rl = createInterface({
 		input: process.stdin,
 		output: process.stdout,
-		prompt: '🤖 wtaf> '
+		prompt: '📱 sms> '
 	});
 
 	// Handle user input
@@ -291,10 +327,11 @@ Examples:
 // Check if script was called with arguments (old behavior)
 const args = process.argv.slice(2);
 if (args.length > 0) {
-	console.log("🔄 V2 Single command mode - local testing only");
+	console.log("🔄 DEV REROUTE V2 - Single command mode");
+	console.log("📡 Sending to local SMS bot (no real SMS sent)");
+	console.log("");
 	const command = args.join(" ");
 	processCommand(command).then(() => {
-		console.log("✅ Command processed! (no real SMS sent)");
 		process.exit(0);
 	}).catch((error) => {
 		console.error("💥 Error:", error);
