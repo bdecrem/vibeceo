@@ -220,6 +220,9 @@ function buildSystemPrompt(context: UserContext, gmailContext: string | null = n
 
   // Response guidelines
   parts.push(`\n\nRESPONSE GUIDELINES:`);
+  parts.push(`- CRITICAL: Always generate SMS bodies that stay under 670 UCS-2 code units (10 segments)`);
+  parts.push(`- Count using UTF-16 code units, NOT characters (emojis = 2+ units)`);
+  parts.push(`- If content would exceed 670 units, automatically shorten or omit sections`);
   parts.push(`- Keep responses concise (SMS-friendly, ~160-320 chars ideal)`);
   parts.push(`- Be helpful, friendly, and conversational`);
   parts.push(`- Reference recent context when relevant`);

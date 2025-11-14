@@ -131,7 +131,16 @@ IMPORTANT QUERY GUIDELINES:
 
 USER QUERY: {user_query}
 
-Task: Answer the user's question by querying Neo4j iteratively. Keep response concise for SMS (~400-500 chars). Include specific names, numbers, and details.
+Task: Answer the user's question by querying Neo4j iteratively.
+
+**CRITICAL SMS LENGTH LIMIT:**
+- Your response MUST stay under 670 UCS-2 code units (10 SMS segments)
+- Count using UTF-16 code units, NOT characters (emojis and special chars = 2+ units)
+- If content would exceed 670 units, automatically shorten or omit sections
+- Prioritize key information over complete details
+- Target ~400-500 chars for optimal SMS delivery
+
+Include specific names, numbers, and details within the length constraint.
 """
 
     # Configure Claude Agent SDK with in-process MCP server

@@ -357,21 +357,33 @@ export async function runSetupSearch(
     }
 
     // Step 2: Collect candidates from all discovered sources in parallel
-    console.log('[Recruiting] Collecting candidates from discovered sources...');
+    // TODO: Update candidate collection to work with new channel format
+    // For now, skip if using new channel-based discovery
+    if (!discoveredSources.github && !discoveredSources.twitter && !discoveredSources.rss && !discoveredSources.youtube) {
+      console.log('[Recruiting] New channel-based discovery detected - candidate collection not yet implemented');
+      await sendSmsResponse(
+        from,
+        `🚧 Channel approval complete!\n\nCandidate mining from channels is coming soon.\n\nFor now, your approved channels are saved.`,
+        twilioClient
+      );
+      return;
+    }
+
+    console.log('[Recruiting] Collecting candidates from discovered sources (legacy format)...');
     const [githubCandidates, twitterCandidates, rssCandidates, youtubeCandidates] = await Promise.all([
-      collectFromGitHub(discoveredSources.github, 20).catch(err => {
+      collectFromGitHub(discoveredSources.github || [], 20).catch(err => {
         console.error('[Recruiting] GitHub collection failed:', err);
         return [];
       }),
-      collectFromTwitter(discoveredSources.twitter, 20).catch(err => {
+      collectFromTwitter(discoveredSources.twitter || [], 20).catch(err => {
         console.error('[Recruiting] Twitter collection failed:', err);
         return [];
       }),
-      collectFromRSS(discoveredSources.rss, 20).catch(err => {
+      collectFromRSS(discoveredSources.rss || [], 20).catch(err => {
         console.error('[Recruiting] RSS collection failed:', err);
         return [];
       }),
-      collectFromYouTube(discoveredSources.youtube, 20).catch(err => {
+      collectFromYouTube(discoveredSources.youtube || [], 20).catch(err => {
         console.error('[Recruiting] YouTube collection failed:', err);
         return [];
       }),
@@ -385,9 +397,9 @@ export async function runSetupSearch(
     };
 
     const totalCollected = githubCandidates.length + twitterCandidates.length + rssCandidates.length + youtubeCandidates.length;
-    const totalSources = discoveredSources.youtube.length + discoveredSources.twitter.length +
-                        discoveredSources.rss.length + discoveredSources.github.length +
-                        discoveredSources.other.length;
+    const totalSources = (discoveredSources.youtube?.length || 0) + (discoveredSources.twitter?.length || 0) +
+                        (discoveredSources.rss?.length || 0) + (discoveredSources.github?.length || 0) +
+                        (discoveredSources.other?.length || 0);
 
     console.log(`[Recruiting] Collected ${totalCollected} total candidates from ${totalSources} sources`);
 
@@ -430,6 +442,91 @@ export async function runSetupSearch(
     await sendSmsResponse(
       from,
       `❌ Search failed. Please try again later.`,
+      twilioClient
+    );
+  }
+}
+
+/**
+ * Run candidate collection from already-approved sources
+ * (Used after user approves sources in Phase 1)
+ */
+export async function runCandidateCollection(
+  subscriberId: string,
+  projectId: string,
+  query: string,
+  sources: DiscoveredSources,
+  twilioClient: Twilio,
+  from: string
+): Promise<void> {
+  console.log(`[Recruiting] Collecting candidates for project ${projectId} from approved sources`);
+
+  try {
+    // Collect candidates from all approved sources in parallel
+    console.log('[Recruiting] Collecting candidates from approved sources...');
+    const [githubCandidates, twitterCandidates, rssCandidates, youtubeCandidates] = await Promise.all([
+      collectFromGitHub(sources.github, 20).catch(err => {
+        console.error('[Recruiting] GitHub collection failed:', err);
+        return [];
+      }),
+      collectFromTwitter(sources.twitter, 20).catch(err => {
+        console.error('[Recruiting] Twitter collection failed:', err);
+        return [];
+      }),
+      collectFromRSS(sources.rss, 20).catch(err => {
+        console.error('[Recruiting] RSS collection failed:', err);
+        return [];
+      }),
+      collectFromYouTube(sources.youtube, 20).catch(err => {
+        console.error('[Recruiting] YouTube collection failed:', err);
+        return [];
+      }),
+    ]);
+
+    const collected: CollectedCandidates = {
+      github: githubCandidates,
+      twitter: twitterCandidates,
+      rss: rssCandidates,
+      youtube: youtubeCandidates,
+    };
+
+    const totalCollected = githubCandidates.length + twitterCandidates.length + rssCandidates.length + youtubeCandidates.length;
+    const totalSources = sources.youtube.length + sources.twitter.length +
+                        sources.rss.length + sources.github.length +
+                        sources.other.length;
+
+    console.log(`[Recruiting] Collected ${totalCollected} total candidates from ${totalSources} sources`);
+
+    if (totalCollected === 0) {
+      await sendSmsResponse(
+        from,
+        `❌ Found sources but no candidates.\n\nThis may be due to:\n• API rate limits\n• Sources returning no results\n\nTry again in a few minutes.`,
+        twilioClient
+      );
+      return;
+    }
+
+    // Use Claude to score and select top 10 candidates
+    console.log('[Recruiting] Scoring and selecting top candidates...');
+    const selectedCandidates = await scoreAndSelectCandidates(collected, query, 10);
+
+    if (selectedCandidates.length === 0) {
+      await sendSmsResponse(
+        from,
+        `❌ Could not identify suitable candidates\n\nTry adjusting your criteria.`,
+        twilioClient
+      );
+      return;
+    }
+
+    // Store and send candidates
+    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient);
+
+  } catch (error) {
+    console.error('[Recruiting] Candidate collection failed:', error);
+    await sendSmsResponse(
+      from,
+      `❌ Candidate collection failed. Please try again later.`,
       twilioClient
     );
   }

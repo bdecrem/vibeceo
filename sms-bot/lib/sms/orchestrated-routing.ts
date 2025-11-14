@@ -24,9 +24,45 @@ export async function handleOrchestratedMessage(
 ): Promise<void> {
   console.log(`[Orchestrated Routing] Processing: "${commandContext.message}"`);
 
-  // Check for YES/BROADER confirmation (AIR subscription takes priority)
-  if (commandContext.messageUpper === 'YES' || commandContext.messageUpper === 'BROADER') {
-    // Try AIR confirmation first
+  // Load user context to check for active threads
+  const userContext = await loadUserContext(normalizedPhoneNumber);
+
+  if (!userContext) {
+    console.error('[Orchestrated Routing] Failed to load user context');
+    await commandContext.sendSmsResponse(
+      commandContext.from,
+      'Sorry, I encountered an error. Try "COMMANDS" for help.',
+      commandContext.twilioClient
+    );
+    return;
+  }
+
+  // Check for recruit exploration (Phase 1) - handle before approval responses
+  if (userContext.activeThread?.handler === 'recruit-exploration') {
+    const { handleRecruitExploration } = await import('../../commands/recruit.js');
+    const explorationHandled = await handleRecruitExploration(commandContext, userContext.activeThread);
+    if (explorationHandled) {
+      console.log(`[Orchestrated Routing] Handled recruit exploration: "${commandContext.message}"`);
+      return;
+    }
+  }
+
+  // Check for YES/BROADER or source approval format (e.g., "1:yes 2:no 3:yes")
+  const msgUpper = commandContext.messageUpper.trim();
+  const isApprovalResponse = msgUpper === 'YES' || msgUpper === 'BROADER' || /^\d+:(YES|Y|NO|N)/.test(msgUpper);
+
+  if (isApprovalResponse) {
+    // Try recruit source approval first (if there's an active recruit thread)
+    if (userContext.activeThread?.handler === 'recruit-source-approval') {
+      const { handleRecruitConfirmation } = await import('../../commands/recruit.js');
+      const recruitHandled = await handleRecruitConfirmation(commandContext, userContext.activeThread);
+      if (recruitHandled) {
+        console.log(`[Orchestrated Routing] Handled recruit source approval: ${commandContext.messageUpper}`);
+        return;
+      }
+    }
+
+    // Try AIR confirmation
     const { handleAIRConfirmation } = await import('../../commands/air.js');
     const airHandled = await handleAIRConfirmation(commandContext);
     if (airHandled) {
@@ -44,19 +80,6 @@ export async function handleOrchestratedMessage(
     }
 
     // If neither handled, continue with normal routing
-  }
-
-  // Load user context (personalization + subscriptions + recent messages)
-  const userContext = await loadUserContext(normalizedPhoneNumber);
-
-  if (!userContext) {
-    console.error('[Orchestrated Routing] Failed to load user context');
-    await commandContext.sendSmsResponse(
-      commandContext.from,
-      'Sorry, I encountered an error. Try "COMMANDS" for help.',
-      commandContext.twilioClient
-    );
-    return;
   }
 
   // Store user message in conversation context

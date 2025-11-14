@@ -48,11 +48,16 @@ Create a response that includes:
   * URL
 - Optional: suggestion for follow-up or related search
 
-Keep the tone friendly and conversational. Remember this is for SMS, so be concise but informative.
+Keep the tone friendly and conversational.
+
+**CRITICAL SMS LENGTH LIMIT:**
+- Your response MUST stay under 670 UCS-2 code units (10 SMS segments)
+- Count using UTF-16 code units, NOT characters (emojis and special chars = 2+ units)
+- If content would exceed 670 units, automatically shorten or omit sections
+- Reduce number of results, shorten descriptions, or use "..." to stay within limit
+- Prioritize quality over quantity - better to show 2-3 great results than exceed limit
 
 CRITICAL: Use the Write tool to save your response to: {output_path}
-
-The response should be ready to send as an SMS (max ~1000 characters preferred, but can go longer if needed for quality).
 """
 
 
