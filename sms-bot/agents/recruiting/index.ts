@@ -185,7 +185,9 @@ async function storeCandidatesFromTalentRadar(
   projectId: string,
   candidates: ScoredCandidate[],
   from: string,
-  twilioClient: Twilio
+  twilioClient: Twilio,
+  query: string,
+  project: any
 ): Promise<void> {
   // Convert ScoredCandidate to database format
   const dbCandidates = candidates.map(c => ({
@@ -218,25 +220,52 @@ async function storeCandidatesFromTalentRadar(
 
   console.log(`[Recruiting] Stored ${dbCandidates.length} candidates`);
 
-  // Send SMS with top 5 candidates
-  let message = `🎯 Talent Radar Results\n\nFound ${candidates.length} candidates!\n\n`;
+  // Generate report with shortlink
+  const { generateAndStoreRecruitingReport } = await import('./report-generator.js');
+  const reportDate = new Date().toISOString().split('T')[0];
 
-  for (let i = 0; i < Math.min(5, candidates.length); i++) {
-    const candidate = candidates[i];
-    message += `${i + 1}. ${candidate.name}\n`;
-    if (candidate.title) message += `   ${candidate.title}`;
-    if (candidate.company) message += ` @ ${candidate.company}`;
-    message += '\n';
-    message += `   ${candidate.match_reason.substring(0, 100)}...\n\n`;
+  const reportResult = await generateAndStoreRecruitingReport({
+    project: {
+      query,
+      refinedSpec: project.refinedSpec,
+      approvedChannels: project.channels || [],
+      learnedProfile: project.learnedProfile || {},
+    },
+    candidates: candidates.map((c, i) => ({
+      id: `temp-${i}`,
+      name: c.name,
+      bio: `${c.title || 'No title'}${c.company ? ` @ ${c.company}` : ''}`,
+      location: c.location || 'Unknown',
+      profileUrl: c.linkedin_url || c.github_url || c.twitter_handle || '',
+      githubUrl: c.github_url,
+      portfolioUrl: c.website,
+      twitterUrl: c.twitter_handle,
+      score: 8, // Default AI score
+      matchReason: c.match_reason,
+      channelSource: c.source,
+      status: 'pending' as const,
+      addedAt: new Date().toISOString(),
+    })),
+    date: reportDate,
+    reportType: 'setup',
+  });
+
+  // Send SMS with ONLY #1 candidate + shortlink (stays under 670 code units)
+  const topCandidate = candidates[0];
+  let message = `🎯 Talent Radar: Found ${candidates.length} candidates!\n\n`;
+  message += `Top Match:\n`;
+  message += `${topCandidate.name}\n`;
+  if (topCandidate.title) message += `${topCandidate.title}`;
+  if (topCandidate.company) message += ` @ ${topCandidate.company}`;
+  message += `\n${topCandidate.match_reason.substring(0, 120)}...\n\n`;
+
+  if (reportResult.shortLink) {
+    message += `View all ${candidates.length}: ${reportResult.shortLink}\n\n`;
   }
 
-  if (candidates.length > 5) {
-    message += `...and ${candidates.length - 5} more\n\n`;
-  }
+  message += `Score: SCORE 1:5 2:3 ...`;
 
-  message += `---\nScore: SCORE 1:5 2:3 ...`;
-
-  await sendChunkedSmsResponse(from, message, twilioClient);
+  await sendSmsResponse(from, message, twilioClient);
 }
 
 /**
@@ -434,8 +463,18 @@ export async function runSetupSearch(
       return;
     }
 
-    // Step 4: Store and send candidates
-    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient);
+    // Step 4: Get project for report generation
+    const { data: subData } = await supabase
+      .from('agent_subscriptions')
+      .select('preferences')
+      .eq('subscriber_id', subscriberId)
+      .eq('agent_slug', 'recruiting')
+      .single();
+
+    const project = subData?.preferences?.projects?.[projectId] || {};
+
+    // Step 5: Store and send candidates
+    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient, query, project);
 
   } catch (error) {
     console.error('[Recruiting] Setup search failed:', error);
@@ -519,8 +558,18 @@ export async function runCandidateCollection(
       return;
     }
 
+    // Get project for report generation
+    const { data: subData } = await supabase
+      .from('agent_subscriptions')
+      .select('preferences')
+      .eq('subscriber_id', subscriberId)
+      .eq('agent_slug', 'recruiting')
+      .single();
+
+    const project = subData?.preferences?.projects?.[projectId] || {};
+
     // Store and send candidates
-    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient);
+    await storeCandidatesFromTalentRadar(subscriberId, projectId, selectedCandidates, from, twilioClient, query, project);
 
   } catch (error) {
     console.error('[Recruiting] Candidate collection failed:', error);
@@ -891,21 +940,50 @@ export function registerRecruitingDailyJob(twilioClient: Twilio): void {
                 continue;
               }
 
-              // Send SMS notification
-              let message = `🎯 Talent Radar Daily Update\n\nFound ${newCandidates.length} new candidates for: "${proj.query}"\n\n`;
+              // Generate report with shortlink
+              const { generateAndStoreRecruitingReport } = await import('./report-generator.js');
+              const reportResult = await generateAndStoreRecruitingReport({
+                project: {
+                  query: proj.query,
+                  refinedSpec: proj.refinedSpec,
+                  approvedChannels: proj.channels || [],
+                  learnedProfile: proj.learnedProfile || {},
+                },
+                candidates: newCandidates.map((c, i) => ({
+                  id: `daily-${Date.now()}-${i}`,
+                  name: c.name,
+                  bio: c.match_reason,
+                  location: c.location || undefined,
+                  profileUrl: c.linkedin_url || c.twitter_handle || 'N/A',
+                  githubUrl: undefined,
+                  portfolioUrl: undefined,
+                  twitterUrl: c.twitter_handle || undefined,
+                  score: 8, // Default score for daily candidates
+                  matchReason: c.match_reason,
+                  channelSource: c.source,
+                  status: 'pending',
+                  addedAt: new Date().toISOString(),
+                })),
+                date: reportDate,
+                reportType: 'daily',
+              });
 
-              for (let i = 0; i < newCandidates.length; i++) {
-                const candidate = newCandidates[i];
-                message += `${i + 1}. ${candidate.name}\n`;
-                if (candidate.title) message += `   ${candidate.title}`;
-                if (candidate.company) message += ` @ ${candidate.company}`;
-                message += '\n';
-                message += `   ${candidate.match_reason.substring(0, 100)}...\n\n`;
+              // Send SMS with ONLY #1 candidate + shortlink (stays under 670 code units)
+              const topCandidate = newCandidates[0];
+              let message = `🎯 Talent Radar: Found ${newCandidates.length} new candidates!\n\n`;
+              message += `Top Match:\n`;
+              message += `${topCandidate.name}\n`;
+              if (topCandidate.title) message += `${topCandidate.title}`;
+              if (topCandidate.company) message += ` @ ${topCandidate.company}`;
+              message += `\n${topCandidate.match_reason.substring(0, 120)}...\n\n`;
+
+              if (reportResult.shortLink) {
+                message += `View all ${newCandidates.length}: ${reportResult.shortLink}\n\n`;
               }
 
-              message += `---\nScore: SCORE 1:5 2:3 ...`;
+              message += `Score: SCORE 1:5 2:3 ...`;
 
-              await sendChunkedSmsResponse(subscriber.phone_number, message, twilioClient);
+              await sendSmsResponse(subscriber.phone_number, message, twilioClient);
 
               console.log(`[Recruiting] Sent ${newCandidates.length} candidates to ${subscriber.phone_number}`);
 

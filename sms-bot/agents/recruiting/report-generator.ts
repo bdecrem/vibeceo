@@ -1,10 +1,22 @@
 import { storeAgentReport, type StoredReportMetadata } from '../report-storage.js';
 import { createShortLink } from '../../lib/utils/shortlink-service.js';
 import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
-import type { Candidate, RecruitingProject } from '../../commands/recruit.js';
+import type { Candidate } from '../../commands/recruit.js';
+
+/**
+ * Minimal project data needed for report generation
+ */
+interface ReportProjectData {
+  query: string;
+  refinedSpec?: {
+    specText?: string;
+  };
+  approvedChannels?: any[];
+  learnedProfile?: any;
+}
 
 interface RecruitingReportInput {
-  project: RecruitingProject;
+  project: ReportProjectData;
   candidates: Candidate[];
   date: string;
   reportType: 'setup' | 'daily';
