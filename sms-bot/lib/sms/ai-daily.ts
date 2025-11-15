@@ -1,6 +1,9 @@
 import axios, { AxiosError } from 'axios';
 import { buildAiDailyMusicPlayerUrl } from '../utils/music-player-link.js';
 import { createShortLink } from '../utils/shortlink-service.js';
+import { getLatestStoredArxivGraphReport } from '../../agents/arxiv-research-graph/index.js';
+import { storeAgentReport } from '../../agents/report-storage.js';
+import { supabase } from '../supabase.js';
 
 export interface AiDailyEpisode {
   topicId: string;
@@ -120,7 +123,7 @@ export async function getLatestAiDailyEpisode(forceRefresh = false): Promise<AiD
 
 export function formatAiDailySms(
   episode: AiDailyEpisode,
-  options: { shortLink?: string } = {}
+  options: { shortLink?: string; reportLink?: string } = {}
 ): string {
   const fallbackDate = new Date();
   const publishedDate = episode.publishedAt ? new Date(episode.publishedAt) : fallbackDate;
@@ -129,12 +132,24 @@ export function formatAiDailySms(
   const snippet = episode.snippet?.trim() || '';
   const micPrefix = '🎙️ ';
   const headlineBase = snippet
-    ? `AI Daily ${formattedDate} — ${snippet}`
-    : `AI Daily ${formattedDate}`;
+    ? `AI Research Daily ${formattedDate} — ${snippet}`
+    : `AI Research Daily ${formattedDate}`;
   const headline = `${micPrefix}${headlineBase}`;
-  const cta = options.shortLink
-    ? `Hear it here: ${options.shortLink} or text LINKS.`
-    : 'Hear it here: text LISTEN or LINKS.';
+
+  // Build CTA with both podcast and report links
+  const lines = [];
+
+  if (options.shortLink) {
+    lines.push(`Listen: ${options.shortLink}`);
+  } else {
+    lines.push('Listen: text LISTEN');
+  }
+
+  if (options.reportLink) {
+    lines.push(`Read: ${options.reportLink}`);
+  }
+
+  const cta = lines.join('\n');
 
   return `${headline}\n${cta}`.trim();
 }
@@ -201,4 +216,129 @@ export function formatAiDailyLinks(episode: AiDailyEpisode): string | null {
     "Here's the papers we cover in today's episode of the AI Daily:",
     ...formattedLinks
   ].join('\n');
+}
+
+/**
+ * Retrieve the markdown content of the latest arXiv report
+ */
+async function fetchArxivReportMarkdown(reportPath: string): Promise<string | null> {
+  const bucket = process.env.AGENT_REPORTS_BUCKET || 'agent-reports';
+
+  try {
+    const { data: file, error } = await supabase.storage
+      .from(bucket)
+      .download(reportPath);
+
+    if (error) {
+      console.error('Failed to download arXiv report:', error);
+      return null;
+    }
+
+    return await file.text();
+  } catch (error) {
+    console.error('Error fetching arXiv report markdown:', error);
+    return null;
+  }
+}
+
+/**
+ * Build combined AI Research Daily report markdown
+ */
+export async function buildAiResearchDailyReport(
+  episode: AiDailyEpisode,
+  shortLink?: string
+): Promise<{ markdown: string; date: string; summary: string } | null> {
+  // Get today's date in Pacific Time
+  const now = new Date();
+  const pacificNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  const year = pacificNow.getFullYear();
+  const month = String(pacificNow.getMonth() + 1).padStart(2, '0');
+  const day = String(pacificNow.getDate()).padStart(2, '0');
+  const reportDate = `${year}-${month}-${day}`;
+
+  // Build AI Daily section
+  const aiDailySms = formatAiDailySms(episode, { shortLink });
+  const aiDailyLinks = formatAiDailyLinks(episode);
+
+  // Get latest arXiv report
+  const arxivReport = await getLatestStoredArxivGraphReport();
+
+  if (!arxivReport) {
+    console.warn('No arXiv report available for combined report');
+    return null;
+  }
+
+  // Fetch arXiv report markdown content
+  const arxivMarkdown = await fetchArxivReportMarkdown(arxivReport.reportPath);
+
+  if (!arxivMarkdown) {
+    console.warn('Failed to fetch arXiv report markdown content');
+    return null;
+  }
+
+  // Build combined markdown
+  const sections = [
+    `# AI Research Daily ${month}/${day}`,
+    '',
+    aiDailySms,
+    ''
+  ];
+
+  if (aiDailyLinks) {
+    sections.push('## Papers Covered in Today\'s Episode');
+    sections.push('');
+    // Extract just the links (skip the intro line)
+    const linksOnly = aiDailyLinks.split('\n').slice(1).join('\n');
+    sections.push(linksOnly);
+    sections.push('');
+  }
+
+  sections.push('## IN DEPTH: AI Research Papers from ARXIV');
+  sections.push('');
+  sections.push(arxivMarkdown);
+
+  const markdown = sections.join('\n');
+
+  // Create summary combining both
+  const summary = `AI Research Daily podcast + ${arxivReport.featuredCount} featured arXiv papers`;
+
+  return {
+    markdown,
+    date: reportDate,
+    summary
+  };
+}
+
+/**
+ * Generate and store the combined AI Research Daily report
+ */
+export async function generateAndStoreAiResearchDailyReport(): Promise<void> {
+  console.log('Generating AI Research Daily combined report...');
+
+  try {
+    // Fetch latest AI Daily episode
+    const episode = await getLatestAiDailyEpisode();
+    const shortLink = await getAiDailyShortLink(episode, 'ai_research_daily_report');
+
+    // Build combined report
+    const report = await buildAiResearchDailyReport(episode, shortLink ?? undefined);
+
+    if (!report) {
+      console.error('Failed to build AI Research Daily report');
+      return;
+    }
+
+    // Store the combined report
+    await storeAgentReport({
+      agent: 'ai-research-daily',
+      date: report.date,
+      markdown: report.markdown,
+      summary: report.summary
+    });
+
+    console.log(`AI Research Daily report stored successfully: ${report.date}`);
+  } catch (error) {
+    console.error('Failed to generate AI Research Daily report:', error);
+    throw error;
+  }
 }

@@ -158,8 +158,14 @@ const ENRICH_SCRIPT = path.join(process.cwd(), 'agents', 'arxiv-research-graph',
 // This avoids pyenv/PATH confusion and ensures packages are found in /opt/homebrew/lib/python3.13/site-packages
 const PYTHON_BIN = process.env.PYTHON_BIN || '/opt/homebrew/bin/python3.13';
 
-const ARXIV_GRAPH_JOB_HOUR = Number(process.env.ARXIV_GRAPH_REPORT_HOUR || 5);
-const ARXIV_GRAPH_JOB_MINUTE = Number(process.env.ARXIV_GRAPH_REPORT_MINUTE || 0);
+// Collection job (fetch papers, process, generate report)
+const ARXIV_GRAPH_COLLECTION_HOUR = Number(process.env.ARXIV_GRAPH_COLLECTION_HOUR || 3);
+const ARXIV_GRAPH_COLLECTION_MINUTE = Number(process.env.ARXIV_GRAPH_COLLECTION_MINUTE || 0);
+
+// Broadcast job (send stored report to subscribers)
+const ARXIV_GRAPH_BROADCAST_HOUR = Number(process.env.ARXIV_GRAPH_BROADCAST_HOUR || 7);
+const ARXIV_GRAPH_BROADCAST_MINUTE = Number(process.env.ARXIV_GRAPH_BROADCAST_MINUTE || 30);
+
 const ARXIV_MAX_PAPERS = Number(process.env.ARXIV_MAX_PAPERS || 1000);
 
 const REPORTS_BUCKET = process.env.AGENT_REPORTS_BUCKET || 'agent-reports';
@@ -404,13 +410,18 @@ async function generateArxivSmsDigest(
   const header = `arXiv Today - ${params.date} 📚`;
 
   const promptLines = [
-    "Summarize today's AI research trends from the following executive summary in a short SMS body (max 230 characters).",
+    "Summarize today's most interesting AI research from the executive summary in a short SMS body (max 230 characters).",
     'Style guide:',
-    '• Sound like a smart, energetic human highlighting the day’s breakthroughs—no numbered lists or markdown formatting.',
+    '• Sound like a thoughtful, curious researcher highlighting interesting ideas—not a sports announcer or stock ticker.',
+    '• Focus on WHAT the research discovered or achieved, not category growth or competition.',
     '• Keep it conversational and flowing, not academic.',
-    '• Highlight up to three ideas using short phrases separated by commas or em dashes.',
-    '• Add one or two fitting emojis for tone, but keep it sleek (no emoji before every phrase).',
-    '• Do NOT include the intro header or the final link lines; those will be added later.',
+    '• Highlight 2-3 interesting findings or techniques.',
+    '• Add one or two fitting emojis for tone, but keep it sleek.',
+    '• Do NOT include growth percentages, competitive language ("leads," "dominates," "explosive"), or category rankings.',
+    '• Do NOT include the intro header or final link lines; those will be added later.',
+    '',
+    'AVOID: "Computer Networking leads with explosive growth..."',
+    'GOOD: "Novel diffusion techniques achieve 10x speedup. Edge AI deployment explored by 3 teams."',
     '',
     'Executive Summary:',
     params.executiveSummary.trim(),
@@ -424,7 +435,7 @@ async function generateArxivSmsDigest(
       {
         role: 'system',
         content:
-          'You are an energetic editor who distills arXiv AI research reports into lively SMS briefings. Keep the body under 230 characters, flowing, and free of links or markdown. The system will add the intro header and closing links.',
+          'You are a thoughtful research editor who distills arXiv AI reports into intellectually curious SMS briefings. Focus on interesting ideas and findings, not category competition or growth metrics. Keep the body under 230 characters, flowing, and free of links or markdown. The system will add the intro header and closing links.',
       },
       {
         role: 'user',
@@ -1191,17 +1202,61 @@ export async function buildArxivReportMessage(
 // Scheduler Integration
 // ============================================================================
 
-export function registerArxivGraphDailyJob(twilioClient: TwilioClient): void {
+/**
+ * Collection job: Fetch papers, process data, generate and store report
+ * Runs at 3am PT by default
+ */
+export function registerArxivGraphCollectionJob(): void {
   registerDailyJob({
-    name: 'arxiv-graph-daily-report',
-    hour: ARXIV_GRAPH_JOB_HOUR,
-    minute: ARXIV_GRAPH_JOB_MINUTE,
+    name: 'arxiv-graph-collection',
+    hour: ARXIV_GRAPH_COLLECTION_HOUR,
+    minute: ARXIV_GRAPH_COLLECTION_MINUTE,
     run: async () => {
-      console.log('Starting arXiv graph daily job...');
+      console.log('Starting arXiv graph collection job...');
 
       try {
-        // Generate report
         const metadata = await runAndStoreArxivGraphReport();
+        console.log(`arXiv report generated and stored: ${metadata.date}`);
+        console.log(`  Total papers: ${metadata.totalPapers}`);
+        console.log(`  Featured: ${metadata.featuredCount}`);
+        console.log(`  Notable authors: ${metadata.notableAuthorsCount}`);
+        if (metadata.podcast?.shortLink) {
+          console.log(`  Podcast: ${metadata.podcast.shortLink}`);
+        }
+      } catch (error) {
+        console.error('arXiv collection job failed:', error);
+        throw error;
+      }
+    },
+  });
+
+  console.log(
+    `arXiv graph collection job registered for ${ARXIV_GRAPH_COLLECTION_HOUR}:${String(ARXIV_GRAPH_COLLECTION_MINUTE).padStart(2, '0')} PT`
+  );
+}
+
+/**
+ * Broadcast job: Retrieve latest stored report and send to subscribers
+ * Runs at 7:30am PT by default
+ */
+export function registerArxivGraphBroadcastJob(twilioClient: TwilioClient): void {
+  registerDailyJob({
+    name: 'arxiv-graph-broadcast',
+    hour: ARXIV_GRAPH_BROADCAST_HOUR,
+    minute: ARXIV_GRAPH_BROADCAST_MINUTE,
+    run: async () => {
+      console.log('Starting arXiv graph broadcast job...');
+
+      try {
+        // Retrieve latest stored report
+        const metadata = await getLatestStoredArxivGraphReport();
+
+        if (!metadata) {
+          console.error('No arXiv report found to broadcast');
+          return;
+        }
+
+        console.log(`Retrieved arXiv report: ${metadata.date}`);
 
         // Get subscribers
         const subscribers = await getAgentSubscribers(ARXIV_GRAPH_AGENT_SLUG);
@@ -1256,13 +1311,13 @@ export function registerArxivGraphDailyJob(twilioClient: TwilioClient): void {
 
         console.log('arXiv daily broadcast complete');
       } catch (error) {
-        console.error('arXiv daily job failed:', error);
+        console.error('arXiv broadcast job failed:', error);
         throw error;
       }
     },
   });
 
   console.log(
-    `arXiv graph daily job registered for ${ARXIV_GRAPH_JOB_HOUR}:${String(ARXIV_GRAPH_JOB_MINUTE).padStart(2, '0')} PT`
+    `arXiv graph broadcast job registered for ${ARXIV_GRAPH_BROADCAST_HOUR}:${String(ARXIV_GRAPH_BROADCAST_MINUTE).padStart(2, '0')} PT`
   );
 }

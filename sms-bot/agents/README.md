@@ -2,6 +2,28 @@
 
 This directory contains specialized agents that extend the SMS bot's capabilities beyond basic messaging.
 
+## Agent Inventory
+
+**IMPORTANT:** When reviewing "agents in sms-bot/agents/", always include ALL agents below, even those living outside this directory.
+
+### Agents in This Directory
+- **YouTube Search** - `youtube-agent.ts`, `youtube-search/`
+- **ArXiv Research** - `arxiv-research/`, `arxiv-research-graph/`
+- **Recruiting** - `recruiting/`
+- **Crypto Research** - `crypto-research/`
+- **Discovery** - `discovery/`
+- **Knowledge Graph Query** - `kg-query/`
+- **Medical Daily** - `medical-daily/`
+- **Stock News** - `stock-news/`
+- **Ticketmaster Events** - `ticketmaster-events/`
+- **Air Personalized** - `air-personalized/`
+
+### Agents Living Elsewhere
+- **AI Daily** - `sms-bot/lib/sms/ai-daily.ts`, `ai-daily-scheduler.ts`
+- **Peer Review** - `sms-bot/lib/sms/peer-review-scheduler.ts`, `lib/crash/peer-review.ts`
+
+---
+
 ## YouTube Agent
 
 **File:** `youtube-agent.ts`

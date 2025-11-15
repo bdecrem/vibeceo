@@ -1,5 +1,6 @@
 import type { CommandHandler } from "./types.js";
 
+import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
 import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivGraphCommandHandler } from "./arxiv-graph.js";
@@ -16,6 +17,7 @@ import { youtubeAgentHandler } from "./youtube-agent.js";
 import { stockNewsCommandHandler } from "./stock-news.js";
 
 export const commandHandlers: CommandHandler[] = [
+  aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
   airCommandHandler, // AIR (AI Research) - personalized research reports
   audioTestCommandHandler,
   arxivGraphCommandHandler,

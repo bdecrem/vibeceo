@@ -1,8 +1,18 @@
 import type { TwilioClient } from './webhooks.js';
 import { getAiDailySubscribers, updateAiDailyLastSent, getSubscriber } from '../subscribers.js';
-import { getLatestAiDailyEpisode, formatAiDailySms, getAiDailyShortLink, formatAiDailyLinks, type AiDailyEpisode } from './ai-daily.js';
+import {
+  getLatestAiDailyEpisode,
+  formatAiDailySms,
+  getAiDailyShortLink,
+  formatAiDailyLinks,
+  generateAndStoreAiResearchDailyReport,
+  type AiDailyEpisode
+} from './ai-daily.js';
 import { registerDailyJob } from '../scheduler/index.js';
 import { storeSystemAction } from '../context-loader.js';
+import { getLatestReportMetadata } from '../../agents/report-storage.js';
+import { buildReportViewerUrl } from '../utils/report-viewer-link.js';
+import { createShortLink } from '../utils/shortlink-service.js';
 
 const DEFAULT_SEND_HOUR = Number(process.env.AI_DAILY_SEND_HOUR || 7);
 const DEFAULT_SEND_MINUTE = Number(process.env.AI_DAILY_SEND_MINUTE || 0);
@@ -101,9 +111,39 @@ async function runAiDailyBroadcast(twilioClient: TwilioClient): Promise<void> {
   let episode: AiDailyEpisode | null = null;
 
   try {
+    // 1. Fetch AI Daily episode
     episode = await getLatestAiDailyEpisode();
-    const shortLink = await getAiDailyShortLink(episode, 'ai_daily_broadcast');
-    message = formatAiDailySms(episode, { shortLink });
+
+    // 2. Get podcast shortlink
+    const podcastShortLink = await getAiDailyShortLink(episode, 'ai_daily_broadcast');
+
+    // 3. Generate combined AI Research Daily report (includes arXiv report)
+    console.log('Generating AI Research Daily combined report...');
+    await generateAndStoreAiResearchDailyReport();
+    console.log('AI Research Daily report generated successfully');
+
+    // 4. Get report metadata
+    const reportMetadata = await getLatestReportMetadata('ai-research-daily');
+
+    let reportShortLink: string | null = null;
+    if (reportMetadata) {
+      // 5. Build viewer URL and create shortlink for the report
+      const viewerUrl = buildReportViewerUrl({ path: reportMetadata.reportPath });
+      reportShortLink = await createShortLink(viewerUrl, {
+        context: 'ai-research-daily-report',
+        createdFor: 'ai_daily_broadcast',
+        createdBy: 'sms-bot'
+      });
+      console.log(`AI Research Daily report link: ${reportShortLink || viewerUrl}`);
+    } else {
+      console.warn('Could not retrieve AI Research Daily report metadata for shortlink');
+    }
+
+    // 6. Format SMS with both podcast and report links
+    message = formatAiDailySms(episode, {
+      shortLink: podcastShortLink ?? undefined,
+      reportLink: reportShortLink ?? undefined
+    });
   } catch (error) {
     console.error('AI Daily scheduler: failed to retrieve latest episode. Sending fallback message.', error);
     message = FALLBACK_MESSAGE;
@@ -122,3 +162,4 @@ export function registerAiDailyJob(twilioClient: TwilioClient): void {
     run: () => runAiDailyBroadcast(twilioClient),
   });
 }
+

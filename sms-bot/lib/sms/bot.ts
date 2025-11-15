@@ -13,7 +13,7 @@ import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 // import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js"; // DISABLED - agent retired
-import { registerArxivGraphDailyJob } from "../../agents/arxiv-research-graph/index.js";
+import { registerArxivGraphCollectionJob, registerArxivGraphBroadcastJob } from "../../agents/arxiv-research-graph/index.js";
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
 import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
 
@@ -50,12 +50,13 @@ export async function startSmsBot(): Promise<void> {
 
   if (isAutomationEnabled()) {
     console.log("✅ Subscription automation enabled – registering daily jobs.");
-    registerAiDailyJob(twilioClient);
+    registerAiDailyJob(twilioClient); // AI Daily: broadcast + generates combined AI Research Daily report at 7:00am PT
     registerCryptoDailyJob(twilioClient);
     registerMedicalDailyJob(twilioClient);
     registerPeerReviewJob(twilioClient);
     // registerArxivDailyJob(twilioClient); // DISABLED - arxiv-research agent retired
-    registerArxivGraphDailyJob(twilioClient);
+    registerArxivGraphCollectionJob(); // arXiv: collect papers & generate report at 3am PT
+    registerArxivGraphBroadcastJob(twilioClient); // arXiv: broadcast report to subscribers at 7:30am PT
     registerAIRDailyJob(twilioClient); // AIR (AI Research) - personalized research reports
     registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
   } else {
