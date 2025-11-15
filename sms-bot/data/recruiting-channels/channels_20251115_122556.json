@@ -1,0 +1,120 @@
+{
+  "status": "partial_success",
+  "note": "Found 6 mineable channels with verified examples. Challenge: The specific combination of criteria (recent design school grad + SVG animation expertise + AI/vibe coding interest + active in creative communities) is very niche. Most motion designers from SVA/Parsons focus on traditional animation rather than web-based SVG work. Recommend broadening to include adjacent skills or looking at web developers with motion design interest.",
+  "channels": [
+    {
+      "name": "LinkedIn - SVA/Parsons Recent Motion Design Graduates",
+      "channelType": "linkedin-search",
+      "description": "Recent graduates from top design schools with motion graphics experience",
+      "searchQuery": "motion designer (SVA OR \"School of Visual Arts\" OR Parsons) 2024 2025 graduate",
+      "example": {
+        "name": "Hyojin Shim",
+        "url": "https://www.hyojinshim.com",
+        "description": "3D Animator/Motion graphic designer, SVA Class of 2024. Portfolio showcases motion design work with passion for crafting visuals that bring warmth and heart. Currently open to work. Contact: hshim0003@gmail.com. Instagram: @hyojin_lab"
+      },
+      "score": 8,
+      "reason": "Recent SVA graduate actively seeking work with strong portfolio. Focus is 3D/motion graphics rather than specifically SVG, but demonstrates technical skill and passion for motion design."
+    },
+    {
+      "name": "LinkedIn - Parsons Communication Design Recent Graduates",
+      "channelType": "linkedin-search",
+      "description": "Multidisciplinary designers from Parsons with motion graphics and UX/visual design skills",
+      "searchQuery": "Parsons Communication Design 2025 graduate motion designer",
+      "example": {
+        "name": "Rice Gallardo",
+        "url": "https://ricegallardo.xyz/",
+        "description": "UX & Visual Designer with MPS Communication Design from Parsons '25. Multidisciplinary artist working across UX/UI, motion, graphic design, illustration. Based in NYC. Portfolio showcases inclusive design work with empathy-first approach."
+      },
+      "score": 7,
+      "reason": "Very recent graduate (2025) with motion design skills. Multidisciplinary approach suggests adaptability. Portfolio shows strong design sense though focus is broader than pure motion/SVG work."
+    },
+    {
+      "name": "Instagram - SVA Motion Graphics Program",
+      "channelType": "instagram-community",
+      "description": "Official SVA motion graphics program showcasing student work and recent graduates",
+      "searchQuery": "@svamotion on Instagram",
+      "example": {
+        "name": "SVA Motion Graphics (@svamotion)",
+        "url": "https://www.instagram.com/svamotion/",
+        "description": "Motion design projects from School of Visual Arts Design Department. Features student work, graduate showcases, and connects to individual student portfolios. Active community of motion designers."
+      },
+      "score": 9,
+      "reason": "High concentration of recent motion design graduates. Direct pipeline to SVA talent. Can browse posts to find individual students' portfolios and contact information."
+    },
+    {
+      "name": "CodePen - SVG Animation Portfolios",
+      "channelType": "codepen-search",
+      "description": "Developers and designers showcasing SVG animation work with live code examples",
+      "searchQuery": "SVG animation portfolio site:codepen.io",
+      "example": {
+        "name": "Aniboaz (@Aniboaz)",
+        "url": "https://codepen.io/Aniboaz/pen/WpvpKO",
+        "description": "Designer specializing in SVG animations for portfolios. CodePen work demonstrates technical SVG animation skills without JavaScript. Also has portfolio on Devpost (devpost.com/aniboaz)."
+      },
+      "score": 7,
+      "reason": "Strong SVG animation skills demonstrated in code. Technical curiosity evident from CodePen presence. However, unclear if recent graduate or seeking immediate freelance work."
+    },
+    {
+      "name": "GitHub - Framer Motion Portfolio Developers",
+      "channelType": "github-search",
+      "description": "Developers building animated portfolios with modern motion libraries (adjacent to SVG animation)",
+      "searchQuery": "framer-motion portfolio 2024 2025 site:github.com",
+      "example": {
+        "name": "Gideon1107",
+        "url": "https://github.com/Gideon1107/Portfolio-Website-2025",
+        "description": "Software engineer with 2025 portfolio built using React, Tailwind CSS, and Framer Motion. Demonstrates modern animation techniques, responsive design, interactive particle backgrounds. Shows technical curiosity and current tech stack knowledge."
+      },
+      "score": 6,
+      "reason": "Recent work (2025) with animation expertise using modern libraries. Technical curiosity demonstrated. However, appears more developer-focused than designer, and not specifically from target schools."
+    },
+    {
+      "name": "Personal Blog - Creative Coders with P5.js/Motion Focus",
+      "channelType": "web-search",
+      "description": "Technical creatives writing about motion animation and creative coding",
+      "searchQuery": "p5.js motion animation portfolio creative coding 2024 2025",
+      "example": {
+        "name": "Ryosuke Hana (@whoisryosuke)",
+        "url": "https://whoisryosuke.com",
+        "description": "Creative coder at PlayStation prototyping new experiences. Active blogger about p5.js, Motion animations, and creative coding. Recent posts on integrating Motion.js with P5.js (2025). GitHub: github.com/whoisryosuke. Demonstrates deep technical curiosity."
+      },
+      "score": 5,
+      "reason": "Strong technical skills and passion for creative coding/motion work. Active in community. However, currently employed at PlayStation (not available for immediate freelance) and not a recent graduate."
+    }
+  ],
+  "additional_notes": {
+    "challenges_encountered": [
+      "Twitter/X search results were largely inaccessible due to JavaScript requirements",
+      "Very few candidates found who specifically combine: recent graduate + design school + SVG animation + AI/vibe coding interest",
+      "Most motion designers focus on video/3D animation rather than web-based SVG work",
+      "Creative coding community members tend to be developers rather than design school graduates"
+    ],
+    "recommended_adjustments": [
+      "Consider web developers with strong motion design interest (rather than only motion designers)",
+      "Broaden animation skills to include Framer Motion, GSAP, Three.js (not just SVG)",
+      "Look at bootcamp graduates or self-taught developers in addition to design school grads",
+      "Focus on 'technical curiosity' and 'passion for craft' as primary filters rather than specific school credentials"
+    ],
+    "other_promising_channels": [
+      {
+        "name": "OpenProcessing Community",
+        "url": "https://openprocessing.org/",
+        "note": "100k+ creative coders sharing projects. Need to browse manually to find recent graduates."
+      },
+      {
+        "name": "P5.js Showcase",
+        "url": "https://showcase.p5js.org/",
+        "note": "International community of p5.js creators. Good source for creative coders with motion design skills."
+      },
+      {
+        "name": "Motion Designers Discord",
+        "url": "https://discord.gg/4gRXSwe",
+        "note": "1,392 members. Community-based sourcing possible but requires active engagement."
+      },
+      {
+        "name": "SVA Shows 2025",
+        "url": "https://sva.edu/svashows",
+        "note": "Upcoming graduate exhibitions (Animation Celebration May 16, 2025). Direct access to Class of 2025 thesis work."
+      }
+    ]
+  }
+}
