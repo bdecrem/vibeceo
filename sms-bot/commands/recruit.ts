@@ -350,38 +350,30 @@ function formatConversationalChannels(conversational: any, query: string): strin
 }
 
 /**
- * Format candidates for user scoring
+ * Format candidates for user scoring (UPDATED: Only send #1 + shortlink)
+ * This function now formats ONLY the first candidate to avoid SMS chaos
  */
-function formatCandidatesForScoring(candidates: Candidate[]): string {
-  let message = `🎯 Found ${candidates.length} candidate${candidates.length > 1 ? 's' : ''}!\n\n`;
+function formatCandidatesForScoring(totalCount: number, firstCandidate: Candidate): string {
+  let message = `🎯 Found ${totalCount} candidate${totalCount > 1 ? 's' : ''}!\n\n`;
 
-  message += `Score each 1-5:\n`;
+  message += `1. ${firstCandidate.name}\n`;
+  message += `   ${firstCandidate.location}\n`;
+
+  // Add GitHub/Portfolio if available
+  if (firstCandidate.portfolioUrl) {
+    message += `   ${firstCandidate.portfolioUrl}\n`;
+  }
+  if (firstCandidate.githubUrl) {
+    message += `   GitHub: ${firstCandidate.githubUrl}\n`;
+  }
+
+  // Bio (keep it very short for SMS)
+  const shortBio = firstCandidate.bio.substring(0, 80) + (firstCandidate.bio.length > 80 ? '...' : '');
+  message += `   ${shortBio}\n`;
+
+  message += `\nScore 1-5:\n`;
   message += `5 = Perfect fit, contact now\n`;
-  message += `1 = Not a good match\n\n`;
-
-  candidates.forEach((candidate, i) => {
-    message += `${i + 1}. ${candidate.name}\n`;
-    message += `   ${candidate.location}\n`;
-
-    // Add GitHub/Portfolio if available
-    if (candidate.githubUrl) {
-      message += `   GitHub: ${candidate.githubUrl}\n`;
-    }
-    if (candidate.portfolioUrl) {
-      message += `   Portfolio: ${candidate.portfolioUrl}\n`;
-    }
-
-    // Profile URL
-    message += `   ${candidate.profileUrl}\n`;
-
-    // Bio (keep it short for SMS)
-    const shortBio = candidate.bio.substring(0, 100) + (candidate.bio.length > 100 ? '...' : '');
-    message += `   ${shortBio}\n`;
-
-    if (i < candidates.length - 1) message += `\n`;
-  });
-
-  message += `\n\nReply: SCORE 1:5 2:3 3:4...`;
+  message += `1 = Not a good match`;
 
   return message;
 }
@@ -1322,14 +1314,16 @@ export async function handleRecruitConfirmation(
       // Continue even if report generation fails
     }
 
-    // Send first batch of candidates to user
-    const firstBatch = candidates.slice(0, 10);
-    if (firstBatch.length > 0) {
-      let candidatesMessage = formatCandidatesForScoring(firstBatch);
+    // Send ONLY first candidate + shortlink to avoid SMS chaos
+    if (candidates.length > 0) {
+      const firstCandidate = candidates[0];
+      let candidatesMessage = formatCandidatesForScoring(candidates.length, firstCandidate);
 
-      // Add report link if available
+      // Add report link (REQUIRED - full details are in the report)
       if (reportShortLink) {
         candidatesMessage += `\n\nFull report: ${reportShortLink}`;
+      } else {
+        candidatesMessage += `\n\n(Report link coming soon)`;
       }
 
       await sendSmsResponse(from, candidatesMessage, twilioClient);
