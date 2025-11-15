@@ -955,6 +955,7 @@ async function handleScore(
     // Mark setup complete and activate project
     prefs.projects[projectId].setupComplete = true;
     prefs.projects[projectId].active = true;
+    prefs.projects[projectId].startedAt = new Date().toISOString();
     await updateRecruitingPreferences(subscriber.id, prefs);
 
     await sendSmsResponse(
@@ -1595,12 +1596,13 @@ async function handleHelp(context: CommandContext): Promise<void> {
 • RECRUIT - Show pending candidates
 • RECRUIT LIST - All projects
 • RECRUIT SETTINGS - View settings
+• RECRUIT CONTINUE - Extend for another week
 • RECRUIT STOP - Pause daily reports
 
 💡 Tips:
 • Be specific in queries
-• Daily batches sent at 11 AM PT
-• Runs for 7 days (default)
+• Daily batches sent at 9 AM PT
+• Runs for 7 days, then asks to continue
 • Your scores help me learn preferences
 • Each query = separate project`;
 
@@ -1641,6 +1643,48 @@ async function handleStop(context: CommandContext): Promise<void> {
   await sendSmsResponse(
     from,
     `✅ Daily reports stopped for this project\n\nReactivate: RECRUIT SWITCH {number}`,
+    twilioClient
+  );
+  await updateLastMessageDate(normalizedFrom);
+}
+
+/**
+ * Handle: RECRUIT CONTINUE - Extend project for another week
+ */
+async function handleContinue(context: CommandContext): Promise<void> {
+  const { from, twilioClient, normalizedFrom, sendSmsResponse, updateLastMessageDate } = context;
+
+  const subscriber = await getSubscriber(normalizedFrom);
+  if (!subscriber) {
+    await sendSmsResponse(from, '❌ Subscriber not found', twilioClient);
+    await updateLastMessageDate(normalizedFrom);
+    return;
+  }
+
+  const prefs = await getRecruitingPreferences(subscriber.id);
+  const projectId = prefs.activeProjectId;
+
+  if (!projectId || !prefs.projects[projectId]) {
+    await sendSmsResponse(
+      from,
+      '❌ No project to continue\n\nStart a new search: RECRUIT {your criteria}',
+      twilioClient
+    );
+    await updateLastMessageDate(normalizedFrom);
+    return;
+  }
+
+  const project = prefs.projects[projectId];
+
+  // Reactivate project and extend duration by resetting startedAt
+  project.active = true;
+  project.startedAt = new Date().toISOString(); // Reset to start a new 7-day cycle
+
+  await updateRecruitingPreferences(subscriber.id, prefs);
+
+  await sendSmsResponse(
+    from,
+    `✅ Extended for another week!\n\n"${project.query}"\n\nYou'll receive daily candidates for 7 more days at 9 AM PT.`,
     twilioClient
   );
   await updateLastMessageDate(normalizedFrom);
@@ -1756,6 +1800,8 @@ export async function handleRECRUITCommand(
     await handleSettings(context);
   } else if (content.toUpperCase() === 'STOP') {
     await handleStop(context);
+  } else if (content.toUpperCase() === 'CONTINUE') {
+    await handleContinue(context);
   } else if (content.toUpperCase().startsWith('SWITCH ')) {
     // TODO: Implement project switching
     await context.sendSmsResponse(

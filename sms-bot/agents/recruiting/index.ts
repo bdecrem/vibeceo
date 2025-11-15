@@ -885,7 +885,39 @@ export function registerRecruitingDailyJob(twilioClient: Twilio): void {
                 continue;
               }
 
-              console.log(`[Recruiting] Processing project ${projectId}: "${proj.query}"`);
+              // Check if project has exceeded its duration
+              const durationDays = proj.durationDays || 7;
+              const startedAt = proj.startedAt ? new Date(proj.startedAt) : null;
+
+              if (!startedAt) {
+                console.log(`[Recruiting] Project ${projectId} missing startedAt, setting it now`);
+                proj.startedAt = new Date().toISOString();
+                await supabase
+                  .from('agent_subscriptions')
+                  .update({ preferences: prefs })
+                  .eq('subscriber_id', subscription.subscriber_id)
+                  .eq('agent_slug', 'recruiting');
+              }
+
+              const daysSinceStart = startedAt
+                ? Math.floor((Date.now() - startedAt.getTime()) / (1000 * 60 * 60 * 24))
+                : 0;
+
+              if (daysSinceStart >= durationDays) {
+                console.log(`[Recruiting] Project ${projectId} has reached day ${daysSinceStart}/${durationDays}, pausing`);
+                // Deactivate the project - user needs to reply CONTINUE to reactivate
+                proj.active = false;
+                await supabase
+                  .from('agent_subscriptions')
+                  .update({ preferences: prefs })
+                  .eq('subscriber_id', subscription.subscriber_id)
+                  .eq('agent_slug', 'recruiting');
+                continue;
+              }
+
+              const isDay7 = daysSinceStart === (durationDays - 1);
+
+              console.log(`[Recruiting] Processing project ${projectId}: "${proj.query}" (Day ${daysSinceStart + 1}/${durationDays})`);
 
               // Analyze past scores to learn preferences
               await analyzeProjectScores(subscription.subscriber_id, projectId);
@@ -986,6 +1018,13 @@ export function registerRecruitingDailyJob(twilioClient: Twilio): void {
               await sendSmsResponse(subscriber.phone_number, message, twilioClient);
 
               console.log(`[Recruiting] Sent ${newCandidates.length} candidates to ${subscriber.phone_number}`);
+
+              // On day 7, send continuation prompt
+              if (isDay7) {
+                const continuationMessage = `\n📅 This is your final daily report for this search.\n\nWant to keep receiving candidates? Reply:\n\nRECRUIT CONTINUE\n\n...to get another week of daily matches.`;
+                await sendSmsResponse(subscriber.phone_number, continuationMessage, twilioClient);
+                console.log(`[Recruiting] Sent day 7 continuation prompt to ${subscriber.phone_number}`);
+              }
 
               // Small delay between projects to avoid rate limits
               await new Promise(resolve => setTimeout(resolve, 1000));
