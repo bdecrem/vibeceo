@@ -151,14 +151,14 @@ def format_graph_context(context: Dict[str, Any]) -> str:
     """Format graph context into readable text for the AI prompt."""
     lines = []
 
-    # Trending topics
+    # Active research areas (show counts only, no growth percentages)
     if context['trending_topics']:
-        lines.append("**📈 Trending Research Areas (1.3x+ growth this week):**")
+        lines.append("**📈 Most Active Research Areas (by paper count this week):**")
         for topic in context['trending_topics']:
-            lines.append(f"- **{topic['category']}**: {topic['growth']}x growth ({topic['recent_count']} papers this week vs {topic['earlier_count']} last week)")
+            lines.append(f"- **{topic['category']}**: {topic['recent_count']} papers this week")
         lines.append("")
     else:
-        lines.append("**📈 Trending Research Areas:** No significant trends detected this week")
+        lines.append("**📈 Research Areas:** Activity broadly distributed across traditional AI/ML areas")
         lines.append("")
 
     # Productive authors
@@ -247,22 +247,34 @@ You have access to:
 
 ## Executive Summary
 
-[Write 1-2 SPECIFIC, DATA-DRIVEN sentences (MAX 320 chars total for SMS). Focus on CONCRETE findings:
-- Name specific research areas/breakthroughs (e.g., "3 papers on diffusion models," "breakthrough in RL from DeepMind")
-- Use NUMBERS from graph context (e.g., "Computer vision up 40% this week")
-- Mention SPECIFIC authors if notable (e.g., "Yann LeCun published on...")
-- State WHAT CHANGED, not generic excitement
-- AVOID: "buzzing," "exciting," "promising" without specifics
-- GOOD: "Transformer efficiency dominated with 4 papers. MIT team achieved 10x speedup."
-- BAD: "Today's AI scene is buzzing with excitement!"]
+[Write 2-3 sentences (MAX 320 chars total for SMS) highlighting the most INTELLECTUALLY INTERESTING papers from today's batch. Focus on:
+- What new ideas or techniques emerged (e.g., "Novel diffusion approach achieves 10x speedup")
+- Surprising findings or counterintuitive results
+- Papers that advance long-standing research questions
+- Notable authors if relevant (e.g., "Hinton's team explores...")
+- ONE brief mention of which area was most active IF notably unusual (e.g., "Computer networking particularly active with 15 papers")
+
+AVOID:
+- Growth percentages and "X leads with Y% growth" language
+- Competitive framing ("dominated," "leads," "explosive")
+- Treating research areas like stock tickers or sports teams
+- Generic excitement without substance
+
+GOOD: "Three papers explore diffusion model efficiency, with a Stanford team achieving 10x speedup. Computer networking saw unusual activity around edge AI deployment."
+
+BAD: "Computer Networking leads with explosive 2.83x growth, driven by edge computing needs. This aligns with industry push toward decentralized deployment."]
 
 ---
 
-## 📈 What's Hot Right Now
+## 📚 Research Activity Overview
 
-[Analyze trending research areas from graph context. Why are these areas heating up? What's driving the growth?]
+[Write 1-2 sentences about the overall research landscape. Mention which area was most active ONLY if it's notably unusual. Otherwise, focus on thematic connections between papers or interesting research directions.]
 
-[If no strong trends: "Research activity was broadly distributed today across traditional AI/ML areas."]
+Examples:
+- "Computer networking unusually active today with 15 papers exploring edge AI deployment. Several featured papers tackle transformer efficiency from different angles."
+- "Activity broadly distributed across traditional AI/ML areas. Interesting convergence on multimodal learning techniques across vision and language domains."
+
+Do NOT write competitive/growth-focused analysis like "X leads with Y% growth."
 
 ---
 
@@ -308,13 +320,13 @@ You have access to:
 
 ---
 
-## 📊 Daily Statistics
+## 📊 Report Metadata
 
-- **Total papers submitted:** [count from JSON]
-- **Papers curated:** [count]
-- **Trending research areas:** [list from graph context]
-- **Rising star authors featured:** [count]
+- **Total papers reviewed:** [count from JSON]
+- **Papers featured:** [count]
+- **Notable authors highlighted:** [count]
 - **Cross-institutional collaborations:** [count]
+- **Most active area:** [single category name if notably unusual, otherwise "Broadly distributed"]
 
 ---
 

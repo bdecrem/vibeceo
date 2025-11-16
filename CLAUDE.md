@@ -777,6 +777,50 @@ When using Claude Code, the Supabase MCP server provides direct database access 
 
 The MCP server is automatically available in Claude Code - no configuration needed in the project.
 
+## Claude Code Skills (Available in This Repository)
+
+**What are Skills?** Skills are specialized prompts that activate automatically based on task context to provide domain-specific guidance. Unlike slash commands (user-invoked), skills are model-invoked - Claude Code automatically uses them when relevant.
+
+**Learn more**: [Improving Frontend Design Through Skills](https://www.claude.com/blog/improving-frontend-design-through-skills)
+
+### Available Skills
+
+#### 1. Frontend Design (`frontend-design`)
+**Purpose**: Provides comprehensive frontend design principles to create distinctive, aesthetically compelling web interfaces. Helps avoid generic "AI slop" aesthetics.
+
+**Guidance includes**:
+- Typography selection (avoiding generic fonts like Inter, Arial)
+- Color & theme strategies (cohesive aesthetics with CSS variables)
+- Motion and animations (CSS-only solutions, Motion library for React)
+- Background design (layered gradients, geometric patterns)
+- Creative approaches that avoid cookie-cutter designs
+
+**Use when**: Creating HTML artifacts, React components, or any frontend UI work
+
+**Installation**:
+```bash
+# From the project root
+unzip -d ~/.claude/skills/ sms-bot/documentation/claude-skills/frontend-design.skill
+
+# Or manually extract and copy
+cp -r sms-bot/documentation/claude-skills/frontend-design-extracted ~/.claude/skills/frontend-design
+```
+
+**Verification**: After installation, restart Claude Code. The skill will automatically activate when working on frontend tasks.
+
+### Adding New Skills to This Repository
+
+To add a new skill for team-wide use:
+
+1. **Create the skill** in your local `~/.claude/skills/` directory following the [skill structure](https://www.claude.com/blog/improving-frontend-design-through-skills)
+2. **Export as .skill file** (ZIP archive containing `SKILL.md` with YAML frontmatter)
+3. **Copy to documentation**:
+   ```bash
+   cp ~/.claude/skills/your-skill-name.skill sms-bot/documentation/claude-skills/
+   ```
+4. **Document in CLAUDE.md** under "Available Skills" section
+5. **Commit and push** so the skill is available to all team members
+
 <!-- AUTO-GENERATED-START -->
 <!-- This section is automatically updated by npm run docs:generate -->
 <!-- DO NOT EDIT MANUALLY -->
