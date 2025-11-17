@@ -3,11 +3,11 @@ import { registerDailyJob } from '../scheduler/index.js';
 import { getRecruitingPreferences, updateRecruitingPreferences, type RecruitingProject } from '../../commands/recruit.js';
 import { getActiveSubscribers } from '../subscribers.js';
 import type { Candidate } from '../../commands/recruit.js';
+import { countUCS2CodeUnits, MAX_SMS_CODE_UNITS } from '../utils/sms-length.js';
 
 const DEFAULT_SEND_HOUR = Number(process.env.RECRUITING_SEND_HOUR || 11); // 11am PT
 const DEFAULT_SEND_MINUTE = Number(process.env.RECRUITING_SEND_MINUTE || 0);
 const BROADCAST_DELAY_MS = Number(process.env.RECRUITING_PER_MESSAGE_DELAY_MS || 200);
-const CANDIDATES_PER_BATCH = 10;
 
 const pacificDateFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' });
 
@@ -25,36 +25,51 @@ async function delay(durationMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, durationMs));
 }
 
-function formatCandidatesForScoring(candidates: Candidate[]): string {
-  let message = `🎯 Found ${candidates.length} new candidate${candidates.length > 1 ? 's' : ''}!\n\n`;
+/**
+ * Format candidates for SMS - ONLY sends top candidate + shortlink to stay under SMS limits
+ * Based on proven format from sms-bot/agents/recruiting/index.ts:253-268
+ */
+function formatCandidatesForScoring(candidates: Candidate[], shortLink?: string | null): string {
+  if (candidates.length === 0) {
+    return '🎯 No new candidates found today.';
+  }
 
-  message += `Score each 1-5:\n`;
-  message += `5 = Perfect fit, contact now\n`;
-  message += `1 = Not a good match\n\n`;
+  // Send ONLY top candidate details to stay under 670 UCS-2 code units
+  const topCandidate = candidates[0];
 
-  candidates.forEach((candidate, i) => {
-    message += `${i + 1}. ${candidate.name}\n`;
-    message += `   ${candidate.location}\n`;
+  let message = `🎯 Talent Radar: Found ${candidates.length} new candidate${candidates.length > 1 ? 's' : ''}!\n\n`;
+  message += `Top Match:\n`;
+  message += `${topCandidate.name}\n`;
 
-    // Add GitHub/Portfolio if available
-    if (candidate.githubUrl) {
-      message += `   GitHub: ${candidate.githubUrl}\n`;
-    }
-    if (candidate.portfolioUrl) {
-      message += `   Portfolio: ${candidate.portfolioUrl}\n`;
-    }
+  // Add location and bio
+  if (topCandidate.location) {
+    message += `${topCandidate.location}\n`;
+  }
 
-    // Profile URL
-    message += `   ${candidate.profileUrl}\n`;
+  // Add short bio (max 120 chars)
+  const shortBio = topCandidate.bio.substring(0, 120);
+  message += `${shortBio}${topCandidate.bio.length > 120 ? '...' : ''}\n\n`;
 
-    // Bio (keep it short for SMS)
-    const shortBio = candidate.bio.substring(0, 100) + (candidate.bio.length > 100 ? '...' : '');
-    message += `   ${shortBio}\n`;
+  // Add shortlink to full report if available
+  if (shortLink) {
+    message += `View all ${candidates.length}: ${shortLink}\n\n`;
+  }
 
-    if (i < candidates.length - 1) message += `\n`;
-  });
+  message += `Score: SCORE 1:5 2:3 ...`;
 
-  message += `\n\nReply: SCORE 1:5 2:3 3:4...`;
+  // Safety check: Ensure message is under SMS limits
+  const codeUnits = countUCS2CodeUnits(message);
+  if (codeUnits > MAX_SMS_CODE_UNITS) {
+    console.warn(`[Recruiting Scheduler] Message exceeds SMS limit (${codeUnits} > ${MAX_SMS_CODE_UNITS}), truncating bio`);
+    // If still too long, truncate bio further
+    const truncatedBio = topCandidate.bio.substring(0, 80);
+    message = `🎯 Talent Radar: Found ${candidates.length} new candidate${candidates.length > 1 ? 's' : ''}!\n\n`;
+    message += `Top Match:\n${topCandidate.name}\n`;
+    if (topCandidate.location) message += `${topCandidate.location}\n`;
+    message += `${truncatedBio}...\n\n`;
+    if (shortLink) message += `View all ${candidates.length}: ${shortLink}\n\n`;
+    message += `Score: SCORE 1:5 2:3 ...`;
+  }
 
   return message;
 }
@@ -223,14 +238,17 @@ async function runRecruitingBroadcast(twilioClient: TwilioClient): Promise<void>
             // Continue even if report generation fails
           }
 
-          // Send first batch (up to CANDIDATES_PER_BATCH)
-          const batch = newCandidates.slice(0, CANDIDATES_PER_BATCH);
-          let message = formatCandidatesForScoring(batch);
+          // Format message with top candidate + shortlink (stays under SMS limits)
+          const message = formatCandidatesForScoring(newCandidates, reportShortLink);
 
-          // Add report link if available
-          if (reportShortLink) {
-            message += `\n\nFull report: ${reportShortLink}`;
+          // Final safety check before sending
+          const finalCodeUnits = countUCS2CodeUnits(message);
+          if (finalCodeUnits > MAX_SMS_CODE_UNITS) {
+            console.error(`[Recruiting Scheduler] CRITICAL: Message still exceeds limit after formatting (${finalCodeUnits} > ${MAX_SMS_CODE_UNITS})`);
+            throw new Error(`SMS message too long: ${finalCodeUnits} code units`);
           }
+
+          console.log(`[Recruiting Scheduler] Message length: ${finalCodeUnits}/${MAX_SMS_CODE_UNITS} code units`);
 
           // Send SMS
           const fromNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -241,11 +259,11 @@ async function runRecruitingBroadcast(twilioClient: TwilioClient): Promise<void>
               from: fromNumber,
             });
 
-            console.log(`[Recruiting Scheduler] Sent ${batch.length} candidates to ${subscriber.phone_number}`);
+            console.log(`[Recruiting Scheduler] Sent ${newCandidates.length} candidates to ${subscriber.phone_number}`);
 
             // Update project with new candidates
             typedProject.candidates = allCandidates;
-            typedProject.pendingCandidates = batch;
+            typedProject.pendingCandidates = newCandidates; // All new candidates are pending scoring
             typedProject.lastCandidateSentAt = new Date().toISOString();
 
             await updateRecruitingPreferences(subscriber.id, prefs);
