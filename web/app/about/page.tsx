@@ -62,7 +62,7 @@ export default function AboutPage() {
 
             <ul className="space-y-3 pl-6 list-disc marker:text-[#FFE148]">
               <li>
-                <strong>AI Daily</strong> → a daily 3-minute podcast on three of that day's most important new AI research papers —links included
+                <strong>AI Research Daily</strong> → a daily research report and podcast on the day's most important new AI research papers — links included
               </li>
               <li>
                 <strong>Peer Review</strong> → your daily dose of ivory tower drama (3-min podcast + links)
