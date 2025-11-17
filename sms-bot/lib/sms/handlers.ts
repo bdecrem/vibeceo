@@ -168,9 +168,42 @@ async function deliverAiDailyEpisode(
   const { prefix, forceRefresh = false, recordDelivery = true } = options;
 
   try {
+    // 1. Fetch AI Daily episode
     const episode = await getLatestAiDailyEpisode(forceRefresh);
+
+    // 2. Get podcast shortlink
     const shortLink = await getAiDailyShortLink(episode, normalizedPhoneNumber);
-    const baseMessage = formatAiDailySms(episode, { shortLink });
+
+    // 3. Generate/fetch AI Research Daily report (podcast + arXiv papers)
+    const { generateAndStoreAiResearchDailyReport } = await import('./ai-daily.js');
+    const { getLatestReportMetadata } = await import('../../agents/report-storage.js');
+    const { buildReportViewerUrl } = await import('../utils/report-viewer-link.js');
+    const { createShortLink } = await import('../utils/shortlink-service.js');
+
+    // Generate report if needed (this is idempotent - won't regenerate if already exists for today)
+    try {
+      await generateAndStoreAiResearchDailyReport();
+    } catch (reportError) {
+      console.warn('Failed to generate AI Research Daily report:', reportError);
+    }
+
+    // 4. Get report metadata and create shortlink
+    let reportLink: string | undefined;
+    const reportMetadata = await getLatestReportMetadata('ai-research-daily');
+    if (reportMetadata) {
+      const viewerUrl = buildReportViewerUrl({ path: reportMetadata.reportPath });
+      reportLink = await createShortLink(viewerUrl, {
+        context: 'ai-research-daily-report',
+        createdFor: normalizedPhoneNumber,
+        createdBy: 'sms-bot'
+      }) ?? undefined;
+    }
+
+    // 5. Format message with BOTH podcast and report links
+    const baseMessage = formatAiDailySms(episode, {
+      shortLink: shortLink ?? undefined,
+      reportLink
+    });
     const responseMessage = prefix
       ? `${prefix}\n\n${baseMessage}`
       : baseMessage;
@@ -2034,29 +2067,26 @@ export async function processIncomingSms(
     }
 
     if (aiDailyNormalizedCommand === "AI DAILY") {
+      // Send main AI Research Daily message (podcast + report)
       await deliverAiDailyEpisode(from, normalizedPhoneNumber, twilioClient, {
         forceRefresh: false, // Use cached episode and link (same as 7am broadcast)
         recordDelivery: false,
       });
 
-      await updateLastMessageDate(normalizedPhoneNumber);
+      // Send PS message about subscribing (always, not just for unsubscribed users)
+      setTimeout(async () => {
+        try {
+          await sendSmsResponse(
+            from,
+            "PS: Text 'AI DAILY subscribe' or 'AI DAILY help' for more.",
+            twilioClient
+          );
+        } catch (error) {
+          console.error("Error sending AI DAILY PS message:", error);
+        }
+      }, 2000); // 2 seconds delay for message separation
 
-      // Check if user is already subscribed
-      const subscriber = await getSubscriber(normalizedPhoneNumber);
-      if (isExactUppercaseAiDaily && subscriber && !subscriber.ai_daily_subscribed) {
-        // Schedule follow-up message 30 seconds later
-        setTimeout(async () => {
-          try {
-            await sendSmsResponse(
-              from,
-              "👋 Want this every day?\nJust reply AI Daily subscribe.",
-              twilioClient
-            );
-          } catch (error) {
-            console.error("Error sending AI DAILY follow-up:", error);
-          }
-        }, 30000); // 30 seconds
-      }
+      await updateLastMessageDate(normalizedPhoneNumber);
 
       return;
     }
