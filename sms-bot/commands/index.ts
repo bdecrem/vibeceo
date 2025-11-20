@@ -15,6 +15,7 @@ import { recruitCommandHandler } from "./recruit.js";
 import { ticketmasterCommandHandler } from "./ticketmaster.js";
 import { youtubeAgentHandler } from "./youtube-agent.js";
 import { stockNewsCommandHandler } from "./stock-news.js";
+import { contextualNewsCommandHandler } from "./contextual-news.js";
 
 export const commandHandlers: CommandHandler[] = [
   aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
@@ -32,4 +33,5 @@ export const commandHandlers: CommandHandler[] = [
   ticketmasterCommandHandler,
   youtubeAgentHandler,
   stockNewsCommandHandler,
+  contextualNewsCommandHandler
 ];
