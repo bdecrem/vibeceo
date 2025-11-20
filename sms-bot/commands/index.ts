@@ -1,10 +1,12 @@
+import { githubCommandHandler } from "./github-list-prs.js";
+
 import type { CommandHandler } from "./types.js";
 
 import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
 import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivGraphCommandHandler } from "./arxiv-graph.js";
-// import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
+import { arxivCommandHandler } from "./arxiv.js"; 
 import { cryptoCommandHandler } from "./crypto.js";
 import { gmailCommandHandler } from "./gmail.js";
 import { kgCommandHandler } from "./kg.js";
@@ -15,21 +17,27 @@ import { recruitCommandHandler } from "./recruit.js";
 import { ticketmasterCommandHandler } from "./ticketmaster.js";
 import { youtubeAgentHandler } from "./youtube-agent.js";
 import { stockNewsCommandHandler } from "./stock-news.js";
+import { organizeCommandHandler } from "./organize.js";  
 
 export const commandHandlers: CommandHandler[] = [
-  aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
-  airCommandHandler, // AIR (AI Research) - personalized research reports
+  aiDailyCommandHandler,
+  airCommandHandler,
   audioTestCommandHandler,
   arxivGraphCommandHandler,
-  // arxivCommandHandler, // DISABLED - arxiv-research agent retired
+  arxivCommandHandler,
   cryptoCommandHandler,
-  gmailCommandHandler, // GMAIL - Gmail integration for personalization
+  gmailCommandHandler,
   kgCommandHandler,
   medicalDailyCommandHandler,
   peerReviewCommandHandler,
-  personalizeCommandHandler, // PERSONALIZE - natural language personalization
-  recruitCommandHandler, // RECRUIT - recruiting agent with AI learning
+  personalizeCommandHandler,
+  recruitCommandHandler,
   ticketmasterCommandHandler,
   youtubeAgentHandler,
   stockNewsCommandHandler,
+  organizeCommandHandler,
+
+  
+  githubCommandHandler
 ];
+
