@@ -236,9 +236,11 @@ client.once(Events.ClientReady, async (readyClient) => {
         console.error('PITCH_CHANNEL_ID not set, skipping webhook initialization for #pitch');
       }
       
-      // Initialize scheduler with both channel IDs
-      initializeScheduler(client);
-      console.log('Centralized scheduler started');
+      // DISABLED: Initialize scheduler with both channel IDs
+      // NOTE: Automated Discord posting to #general and other channels is disabled
+      // initializeScheduler(client);
+      // console.log('Centralized scheduler started');
+      console.log('Centralized scheduler DISABLED - no automated posts');
     } catch (error) {
       console.error('Failed to initialize webhooks:', error);
     }
