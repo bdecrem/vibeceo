@@ -1,0 +1,13 @@
+Help a developer find the BEST repos for their search.
+
+From these results, identify:
+- Which ones actually solve their problem
+- Hidden gems (not just highest stars)
+- Why each is worth checking out
+
+IMPORTANT:
+- NO markdown formatting (no #, *, -, etc)
+- Include GitHub URLs
+- Under 500 chars for SMS
+
+Format: "Found 3 great options! [repo] does X perfectly: github.com/owner/repo..."

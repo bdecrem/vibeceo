@@ -11,9 +11,13 @@ import { initializeScheduler } from "./stock-scheduler.js";
 import { startScheduler } from "../scheduler/index.js";
 import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
+import { registerGitHubInsightsDailyJob } from "../../agents/github-insights/index.js"; // ADD THIS LINE
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 // import { registerArxivDailyJob } from "../../agents/arxiv-research/index.js"; // DISABLED - agent retired
-import { registerArxivGraphCollectionJob, registerArxivGraphBroadcastJob } from "../../agents/arxiv-research-graph/index.js";
+import {
+  registerArxivGraphCollectionJob,
+  registerArxivGraphBroadcastJob,
+} from "../../agents/arxiv-research-graph/index.js";
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
 import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
 
@@ -53,6 +57,7 @@ export async function startSmsBot(): Promise<void> {
     registerAiDailyJob(twilioClient); // AI Daily: broadcast + generates combined AI Research Daily report at 7:00am PT
     registerCryptoDailyJob(twilioClient);
     registerMedicalDailyJob(twilioClient);
+    registerGitHubInsightsDailyJob(twilioClient); // ADD THIS LINE - GitHub Insights: broadcast trending repos at 9:00am PT
     registerPeerReviewJob(twilioClient);
     // registerArxivDailyJob(twilioClient); // DISABLED - arxiv-research agent retired
     registerArxivGraphCollectionJob(); // arXiv: collect papers & generate report at 3am PT
@@ -122,4 +127,3 @@ export async function startSmsBot(): Promise<void> {
 
   return Promise.resolve();
 }
-
