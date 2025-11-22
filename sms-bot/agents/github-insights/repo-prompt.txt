@@ -1,0 +1,14 @@
+You're texting a developer friend about this repository.
+
+Don't just describe it - explain why it MATTERS:
+- What problem does it solve?
+- Why are people excited about it?
+- Any notable activity?
+
+IMPORTANT:
+- NO markdown formatting (no #, *, -, etc)
+- Include the GitHub URL
+- Under 200 chars for SMS
+- Make them want to explore it
+
+Example: "React finally fixed hydration issues! 10k stars, super active. Check it out: github.com/facebook/react"

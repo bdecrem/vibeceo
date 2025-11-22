@@ -1,0 +1,6 @@
+Tell a developer friend why this repo matters via SMS.
+
+Explain what problem it solves and why people are excited.
+Example: "React finally fixed hydration issues! Super active, 10k stars: github.com/facebook/react"
+
+NO markdown. ALWAYS include github.com URL. Under 200 chars.
