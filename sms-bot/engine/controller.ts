@@ -303,6 +303,18 @@ const REQUEST_CONFIGS = {
         builderMaxTokens: 8192,
         builderTemperature: 0.7
     },
+    opus: {
+        // BUILD command uses Opus 4.5 (OPERATOR+ only)
+        classifierModel: 'gpt-4o',
+        classifierMaxTokens: 600,
+        classifierTemperature: 0.7,
+        classifierTopP: 1,
+        classifierPresencePenalty: 0.3,
+        classifierFrequencyPenalty: 0,
+        builderModel: 'claude-opus-4-5-20251101',  // Opus 4.5
+        builderMaxTokens: 8192,
+        builderTemperature: 0.7
+    },
     edit: {
         builderModel: 'claude-sonnet-4-5-20250929',
         builderMaxTokens: 4096,  // Edits typically need less
@@ -510,19 +522,19 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         logWithTimestamp(`🚀 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
     
-    // ✏️ REVISE: Check for --revise flag to edit existing Webtoys
-    if (userPrompt && (userPrompt.startsWith('--revise ') || userPrompt.startsWith('wtaf --revise '))) {
-        logWithTimestamp("✏️ REVISE DETECTED: Processing edit request for existing Webtoy");
-        
+    // ✏️ REVISE-OG: Legacy webhook-based revision system (renamed from --revise)
+    if (userPrompt && (userPrompt.startsWith('--revise-OG ') || userPrompt.startsWith('wtaf --revise-OG '))) {
+        logWithTimestamp("✏️ REVISE-OG DETECTED: Processing edit request via legacy webhook system");
+
         try {
-            // Parse the revise command: --revise app-slug edit request
+            // Parse the revise command: --revise-OG app-slug edit request
             const reviseCommand = userPrompt.replace(/^wtaf\s+/, '').trim();
-            const parts = reviseCommand.substring(9).trim().split(' '); // Remove '--revise '
+            const parts = reviseCommand.substring(12).trim().split(' '); // Remove '--revise-OG '
             const appSlug = parts[0];
             const editRequest = parts.slice(1).join(' ');
-            
+
             if (!appSlug || !editRequest) {
-                await sendConfirmationSms("Usage: --revise [app-slug] [edit request]. Example: --revise my-game make it faster", senderPhone);
+                await sendConfirmationSms("Usage: --revise-OG [app-slug] [edit request]. Example: --revise-OG my-game make it faster", senderPhone);
                 return false;
             }
             
@@ -580,7 +592,40 @@ export async function processWtafRequest(processingPath: string, fileData: any, 
         isMusicRequest = true;
         logWithTimestamp(`🎵 Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
     }
-    
+
+    // 🏗️ OPUS/BUILD: Check for --opus flag to use Claude Opus 4.5
+    let isOpusRequest = false;
+    if (userPrompt && userPrompt.includes('--opus')) {
+        logWithTimestamp("🏗️ OPUS/BUILD DETECTED: Using Claude Opus 4.5 model");
+        userPrompt = userPrompt.replace(/--opus\s*/g, '').trim();
+        isOpusRequest = true;
+        logWithTimestamp(`🏗️ Cleaned prompt: ${userPrompt.slice(0, 50)}...`);
+    }
+
+    // 🔧 REVISE: Check for --revise flag (agent-based revision, part of BUILD)
+    let isReviseRequest = false;
+    let reviseAppSlug = '';
+    let reviseRequest = '';
+    if (userPrompt && userPrompt.includes('--revise ')) {
+        logWithTimestamp("🔧 REVISE DETECTED: Agent-based revision request");
+
+        // Extract: --revise [app-slug] [revision request]
+        const reviseMatch = userPrompt.match(/--revise\s+([a-z0-9-]+)\s+(.*)/i);
+        if (reviseMatch) {
+            reviseAppSlug = reviseMatch[1];
+            reviseRequest = reviseMatch[2].trim();
+            isReviseRequest = true;
+            // Clean --revise from the prompt (rest of prompt processing won't need it)
+            userPrompt = reviseRequest;
+            logWithTimestamp(`🔧 Revising app: ${reviseAppSlug}, request: ${reviseRequest.slice(0, 50)}...`);
+        } else {
+            // No app slug or request - send error
+            logWithTimestamp("🔧 REVISE ERROR: Invalid format");
+            await sendConfirmationSms("Usage: BUILD --revise [app-slug] [changes]. Example: BUILD --revise my-app make buttons blue", senderPhone);
+            return false;
+        }
+    }
+
     // 🗄️ STACKDB: Check for --stackdb flag (process BEFORE other stack commands)
     let isStackDBRequest = false;
     if (userPrompt && (userPrompt.startsWith('--stackdb ') || userPrompt.startsWith('wtaf --stackdb '))) {
@@ -1690,7 +1735,39 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
             return false;
         }
     }
-    
+
+    // 🔧 REVISE: Route to revision agent (bypasses classifier)
+    if (isReviseRequest && reviseAppSlug && reviseRequest) {
+        logWithTimestamp(`🔧 Routing to revision agent for app: ${userSlug}/${reviseAppSlug}`);
+
+        try {
+            // Import and call revision agent
+            const { processRevision } = await import('../agents/revision/index.js');
+
+            const result = await processRevision({
+                appSlug: reviseAppSlug,
+                revisionRequest: reviseRequest,
+                userSlug: userSlug,
+                phoneNumber: senderPhone,
+                useOpus: isOpusRequest // Pass through if BUILD was used
+            });
+
+            if (result.success && result.url) {
+                await sendSuccessNotification(result.url, null, senderPhone, false);
+                logWithTimestamp(`🔧 REVISION COMPLETE: ${result.url}`);
+                return true;
+            } else {
+                logError(`❌ Revision failed: ${result.error}`);
+                await sendConfirmationSms(`Revision failed: ${result.error || 'Unknown error'}`, senderPhone);
+                return false;
+            }
+        } catch (error) {
+            logError(`❌ Revision agent error: ${error instanceof Error ? error.message : String(error)}`);
+            await sendConfirmationSms("Revision failed. Please try again.", senderPhone);
+            return false;
+        }
+    }
+
     try {
         // Determine request configuration based on content type
         const isGameRequest = userPrompt.toLowerCase().includes('game') || 
@@ -1701,8 +1778,10 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
         // Determine config type based on basic request analysis
         // ZAD detection will happen in the classifier step
         let configType: keyof typeof REQUEST_CONFIGS;
-        if (isGameRequest) {
+        if (isGameRequest && !isOpusRequest) {
             configType = 'game';
+        } else if (isOpusRequest) {
+            configType = 'opus';  // BUILD command uses Opus 4.5
         } else {
             configType = 'creation';  // Default to creation, classifier will determine if ZAD is needed
         }

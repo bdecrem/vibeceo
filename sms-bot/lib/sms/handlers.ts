@@ -2277,8 +2277,39 @@ export async function processIncomingSms(
       }
     }
 
+    // Handle BUILD command - Opus 4.5 (OPERATOR+ only)
+    // Transforms to WTAF --opus and falls through to WTAF processing
+    let processedMessage = message; // Mutable copy for BUILD transformation
+
+    if (message.match(/^BUILD(?:[,:\s]|$)/i)) {
+      console.log(`Processing BUILD command from ${from}`);
+
+      // Check user role - OPERATOR or ADMIN only
+      const buildSubscriber = await getSubscriber(normalizedPhoneNumber);
+      if (
+        !buildSubscriber ||
+        (buildSubscriber.role !== "operator" && buildSubscriber.role !== "admin")
+      ) {
+        console.log(
+          `User ${normalizedPhoneNumber} attempted BUILD command without operator/admin privileges`
+        );
+        await sendSmsResponse(
+          from,
+          "BUILD requires OPERATOR access. Use WTAF instead.",
+          twilioClient
+        );
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+
+      // Transform BUILD to WTAF with --opus marker
+      processedMessage = message.replace(/^BUILD/i, "WTAF --opus");
+      console.log(`🏗️ BUILD transformed to: ${processedMessage.substring(0, 50)}...`);
+      // Fall through to WTAF processing below
+    }
+
     // Handle WTAF command with slug system
-    if (message.match(/^WTAF(?:[,:\s]|$)/i)) {
+    if (processedMessage.match(/^WTAF(?:[,:\s]|$)/i)) {
       console.log(`Processing WTAF command from ${from}`);
 
       try {
@@ -2302,7 +2333,7 @@ export async function processIncomingSms(
         const userSlug = await getOrCreateUserSlug(normalizedPhoneNumber);
 
         // Check if user just typed "WTAF" alone (with optional punctuation)
-        const wtafMatch = message.match(/^WTAF[,:\s]*$/i);
+        const wtafMatch = processedMessage.match(/^WTAF[,:\s]*$/i);
         if (wtafMatch) {
           // Check if this is their first time - get user from Supabase to see if they have a slug already
           const subscriber = await getSubscriber(normalizedPhoneNumber);
@@ -2335,7 +2366,7 @@ ${response}`;
         let coachPrefix = "";
 
         // Check if this is the coach-specific format (WTAF - coach - prompt)
-        const coachMatch = message.match(/^WTAF[,:\s]*-\s*(\w+)\s*-\s*(.+)$/i);
+        const coachMatch = processedMessage.match(/^WTAF[,:\s]*-\s*(\w+)\s*-\s*(.+)$/i);
 
         if (coachMatch) {
           // Coach-specific format
@@ -2367,8 +2398,8 @@ ${response}`;
           coachPrefix = `COACH:${coach.id}\nPROMPT:${coach.prompt}\n\n`;
         } else {
           // Original format - extract content after "WTAF " or "WTAF:" or "WTAF,"
-          const codePrefix = message.match(/^WTAF[,:\s]+/i)?.[0] || "WTAF ";
-          codeContent = message.substring(codePrefix.length).trim();
+          const codePrefix = processedMessage.match(/^WTAF[,:\s]+/i)?.[0] || "WTAF ";
+          codeContent = processedMessage.substring(codePrefix.length).trim();
         }
 
         if (!codeContent) {
