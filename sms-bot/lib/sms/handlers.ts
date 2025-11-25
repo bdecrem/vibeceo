@@ -2637,6 +2637,8 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       "AI DAILY SUBSCRIBE",
       "AI DAILY STOP",
       "AI DAILY UNSUBSCRIBE",
+      "ANNOUNCEMENTS",
+      "ANNOUNCEMENTS STOP",
       "LINKS",
       "CRYPTO",
       "CRYPTO RESEARCH",
@@ -2686,6 +2688,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
 
       let helpText =
         "📻 AI DAILY:\n• AI DAILY - Get today's episode on demand\n• AI DAILY SUBSCRIBE - Morning episode at 7am PT\n• AI DAILY STOP - Opt out of daily episodes";
+
+      helpText +=
+        "\n\n📢 PLATFORM UPDATES:\n• ANNOUNCEMENTS - Opt in to Kochi updates\n• ANNOUNCEMENTS STOP - Opt out of updates";
 
       helpText +=
         "\n\n🥊 PEER REVIEW FIGHT CLUB:\n• PEER REVIEW\n• PEER REVIEW SUBSCRIBE\n• PEER REVIEW STOP";

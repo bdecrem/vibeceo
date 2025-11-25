@@ -20,6 +20,8 @@ export type SMSSubscriber = {
 	hide_default?: boolean; // Hide pages by default when creating new content
 	ai_daily_subscribed?: boolean;
 	ai_daily_last_sent_at?: string | null;
+	announcements_subscribed?: boolean; // User opted in to receive periodic Kochi announcements/updates
+	announcements_last_sent_at?: string | null; // Timestamp of last announcement sent to this user
 	personalization?: Record<string, any>; // JSONB: {name, interests, timezone, location, notes}
 	pending_air_subscription?: Record<string, any>; // JSONB: pending AIR subscription confirmation state
 };
