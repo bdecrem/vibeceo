@@ -87,7 +87,20 @@ function validateEmailEnvVariables(): boolean {
   return true;
 }
 
+/**
+ * Check if SendGrid should be bypassed
+ */
+function isSendGridBypassed(): boolean {
+  return process.env.SENDGRID_ENABLED === 'FALSE';
+}
+
 export function setupEmailWebhooks(app: Application): void {
+  // Skip SendGrid setup if bypassed
+  if (isSendGridBypassed()) {
+    console.log('🚫 SendGrid Bypassed: Skipping SendGrid webhook setup');
+    return;
+  }
+
   // Validate environment variables
   if (!validateEmailEnvVariables()) {
     console.error('Email webhooks setup failed - missing required environment variables');
@@ -124,13 +137,18 @@ export function setupEmailWebhooks(app: Application): void {
       const leoReply = await generateLeoReply(body);
 
       // Send reply via SendGrid
-      await sgMail.send({
-        to: from,
-        from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
-        replyTo: 'leo@reply.advisorsfoundry.ai',
-        subject: `Re: ${subject || 'your startup crisis'}`,
-        text: leoReply,
-      });
+      if (isSendGridBypassed()) {
+        console.log(`🚫 SendGrid Bypassed: Would send reply to ${from}`);
+        console.log(`🚫 SendGrid Bypassed: Subject: Re: ${subject || 'your startup crisis'}`);
+      } else {
+        await sgMail.send({
+          to: from,
+          from: 'Advisors Foundry <bot@advisorsfoundry.ai>',
+          replyTo: 'leo@reply.advisorsfoundry.ai',
+          subject: `Re: ${subject || 'your startup crisis'}`,
+          text: leoReply,
+        });
+      }
 
       console.log(`✅ Leo replied to ${from}`);
       res.status(200).send('OK');

@@ -12,11 +12,16 @@ import { SMS_CONFIG } from '../../lib/sms/config.js';
 // Load environment variables
 dotenv.config();
 
-// Set up Twilio client
-const twilioClient = twilio(
-  process.env.TWILIO_ACCOUNT_SID as string,
-  process.env.TWILIO_AUTH_TOKEN as string
-);
+// Set up Twilio client (only if not bypassed)
+let twilioClient: twilio.Twilio | null = null;
+if (process.env.TWILIO_ENABLED !== 'FALSE') {
+  if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+    twilioClient = twilio(
+      process.env.TWILIO_ACCOUNT_SID as string,
+      process.env.TWILIO_AUTH_TOKEN as string
+    );
+  }
+}
 
 export default async function handler(req: Request, res: Response) {
   // Validate request method
