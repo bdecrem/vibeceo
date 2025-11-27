@@ -114,10 +114,20 @@ export const aiDailyCommandHandler: CommandHandler = {
   async handle(context) {
     const { subcommand } = parseAiDailyCommand(context.messageUpper);
 
+    //handles the AI DAILY RUN
     if (subcommand === "RUN") {
       return handleRun(context);
     }
 
+    //handles the AI DAILY HELP
+    if (subcommand === 'HELP') {
+      await sendSMSResponse(
+          context.normalizedForm,
+          "AI DAILY COMMANDS: \n- AI DAILY Subscribe\n- AI DAILY stop\n- AI DAILY HELP\n\nMore Help: https://kochi.to/kochi/help"
+      );
+      return true; // prevents the AIR handler from processing this command
+    }
+    
     // Let existing handlers (in handlers.ts) handle other AI DAILY commands
     return false;
   },
