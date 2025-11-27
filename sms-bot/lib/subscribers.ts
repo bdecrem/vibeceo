@@ -338,6 +338,83 @@ export async function updateAiDailyLastSent(phoneNumber: string, date: Date = ne
 }
 
 /**
+ * Set announcements subscription status for a subscriber
+ * When subscribing, also sets consent_given to true for Twilio TOS compliance
+ */
+export async function setAnnouncementsSubscription(phoneNumber: string, subscribed: boolean): Promise<boolean> {
+  try {
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+
+    const updates: Record<string, unknown> = {
+      announcements_subscribed: subscribed
+    };
+
+    // When subscribing, ensure consent_given is true for Twilio TOS compliance
+    if (subscribed) {
+      updates.consent_given = true;
+    } else {
+      // When unsubscribing, clear the last sent timestamp
+      updates.announcements_last_sent_at = null;
+    }
+
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update(updates)
+      .eq('phone_number', normalizedNumber);
+
+    if (error) {
+      console.error('Error updating announcements subscription:', error);
+      return false;
+    }
+
+    console.log(`Updated announcements subscription for ${normalizedNumber}: ${subscribed}`);
+    return true;
+  } catch (error) {
+    console.error('Error in setAnnouncementsSubscription:', error);
+    return false;
+  }
+}
+
+/**
+ * Get all subscribers who opted in to receive announcements
+ */
+export async function getAnnouncementsSubscribers(): Promise<SMSSubscriber[]> {
+  const { data, error } = await supabase
+    .from('sms_subscribers')
+    .select('*')
+    .eq('announcements_subscribed', true)
+    .eq('consent_given', true)
+    .eq('unsubscribed', false);
+
+  if (error) {
+    console.error('Error fetching announcements subscribers:', error);
+    return [];
+  }
+
+  return data || [];
+}
+
+/**
+ * Update the timestamp for when an announcement was last sent to this subscriber
+ */
+export async function updateAnnouncementsLastSent(phoneNumber: string, date: Date = new Date()): Promise<void> {
+  try {
+    const normalizedNumber = normalizePhoneNumber(phoneNumber);
+
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update({ announcements_last_sent_at: date.toISOString() })
+      .eq('phone_number', normalizedNumber);
+
+    if (error) {
+      console.error('Error updating announcements last sent timestamp:', error);
+    }
+  } catch (error) {
+    console.error('Error in updateAnnouncementsLastSent:', error);
+  }
+}
+
+/**
  * Set the hide_default setting for a subscriber
  * @param phoneNumber The phone number of the subscriber
  * @param hideDefault Boolean value - true to hide pages by default, false to show them

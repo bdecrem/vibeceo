@@ -17,9 +17,25 @@ Pre-screening happens before the GPT classifier to handle obvious cases:
    - `--zad-test` → Use simple ZAD test builder
    - `--zad-api` → Use comprehensive ZAD builder
    - `--music` → Force music app generation
+   - `--opus` → Use Claude Opus 4.5 instead of Sonnet 4.5
    - `--stack`, `--remix`, etc. → Direct to stacker system
 
-2. **Basic Detection**
+2. **BUILD Command** (OPERATOR+ only)
+   - `BUILD [request]` → Same as WTAF but uses Claude Opus 4.5
+   - Internally transforms to `WTAF --opus [request]`
+   - All flags work: `BUILD --remix`, `BUILD --stack`, etc.
+   - Requires OPERATOR or ADMIN role
+
+3. **Revision Commands**
+   - `--revise [app-slug] [changes]` → Agent-based revision using claude-agent-sdk
+     - Works with BUILD: `BUILD --revise my-app make buttons blue`
+     - Uses Opus 4.5 when combined with BUILD/--opus
+     - Runs autonomous agent that fetches HTML, revises it, updates Supabase
+   - `--revise-OG [app-slug] [changes]` → Legacy webhook-based revision
+     - Original system using Mac Mini worker pool
+     - Queues to database, triggers webhook, processed by worker
+
+4. **Basic Detection**
    - Simple keyword matching for games ("game", "pong", "puzzle", "arcade")
    - Adds special markers (`MUSIC_MARKER`, `ZAD_API_MARKER`) to influence routing
 
