@@ -6,8 +6,11 @@
 /.pnp
 .pnp.js
 
-# all .env files
-.env*
+# all .env files in all directories
+*.env
+.env.*
+*.env.*
+
 
 # testing
 /coverage
