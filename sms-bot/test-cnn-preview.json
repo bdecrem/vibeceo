@@ -1,0 +1,57 @@
+{
+  "definition": {
+    "metadata": {
+      "name": "CNN Top Stories",
+      "slug": "cnn-top-stories",
+      "description": "Latest top stories from CNN RSS feed",
+      "category": "news",
+      "version": "1.0.0"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "CNN",
+          "description": "Get CNN top stories"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "id": "cnn_rss",
+        "kind": "builtin",
+        "sourceType": "rss",
+        "feedUrl": "http://rss.cnn.com/rss/cnn_topstories.rss",
+        "maxItems": 5
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 5
+    },
+    "pipeline": [
+      {
+        "kind": "fetch"
+      },
+      {
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      },
+      {
+        "kind": "filter",
+        "maxItems": 3
+      }
+    ],
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "{{agentName}}\n\n{{count}} items found.\n\n{{#each items}}• {{title}}\n{{/each}}",
+        "maxLength": 1600
+      }
+    }
+  },
+  "context": {
+    "dryRun": true,
+    "skipNotifications": true
+  }
+}

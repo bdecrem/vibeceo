@@ -1,0 +1,47 @@
+{
+  "agentDefinition": {
+    "metadata": {
+      "name": "Test Tech News Agent",
+      "slug": "test-tech-news-agent",
+      "description": "Test agent for tech news from Hacker News",
+      "category": "news",
+      "version": "1.0.0",
+      "icon": "📰"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "TECH",
+          "description": "Get Test Tech News Agent"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "kind": "builtin",
+        "sourceType": "rss",
+        "feedUrl": "https://hnrss.org/frontpage",
+        "maxItems": 10
+      }
+    ],
+    "pipeline": [
+      {
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 20
+    },
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "{{title}}\n\n{{summary}}",
+        "maxLength": 1600
+      }
+    }
+  },
+  "userId": null
+}

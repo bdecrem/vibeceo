@@ -4,6 +4,7 @@
   "description": "VibeCEO8 multi-service workspace (web, sms-bot, discord-bot)",
   "private": true,
   "workspaces": [
+    "packages/shared-types",
     "web",
     "sms-bot",
     "discord-bot",

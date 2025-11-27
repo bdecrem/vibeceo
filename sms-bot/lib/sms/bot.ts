@@ -3,6 +3,7 @@ import bodyParser from "body-parser";
 import { setupTwilioWebhooks, setupWhatsAppWebhooks } from "./webhooks.js";
 import { setupSupabaseWebhooks } from "./supabase-webhooks.js";
 import { setupEmailWebhooks } from "./email-webhooks.js";
+import { setupAgentWebhooks } from "../../src/agents/webhooks.js";
 import { initializeMessageHandlers } from "./handlers.js";
 import { registerAiDailyJob } from "./ai-daily-scheduler.js";
 import { initializeTwilioClient } from "./webhooks.js";
@@ -81,6 +82,9 @@ export async function startSmsBot(): Promise<void> {
 
   // Setup Email webhooks
   setupEmailWebhooks(server);
+
+  // Setup Agent admin webhooks (Kochi Intelligence Platform)
+  setupAgentWebhooks(server);
 
   // Health check endpoint
   server.get("/health", (req, res) => {

@@ -1,0 +1,62 @@
+{
+  "definition": {
+    "metadata": {
+      "name": "AI News Digest",
+      "slug": "ai-news-digest",
+      "description": "Get the latest AI and tech news delivered daily via SMS",
+      "category": "technology",
+      "tags": ["ai", "news", "tech"],
+      "version": "1.0.0"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "AI NEWS",
+          "description": "Get latest AI news updates"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "id": "rss-1",
+        "name": "TechCrunch AI",
+        "kind": "builtin",
+        "sourceType": "rss",
+        "feedUrl": "https://techcrunch.com/category/artificial-intelligence/feed/",
+        "maxItems": 5
+      }
+    ],
+    "pipeline": [
+      {
+        "id": "sort-1",
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      },
+      {
+        "id": "filter-1",
+        "kind": "filter",
+        "maxItems": 3
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 10
+    },
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "🤖 {{agentName}} - {{count}} new items:\n\n{{#each items}}\n{{inc @index}}. {{this.title}}\n{{/each}}\n\nFull report: {{reportUrl}}",
+        "maxLength": 1600
+      },
+      "report": {
+        "enabled": true,
+        "format": "markdown"
+      }
+    }
+  },
+  "context": {
+    "dryRun": true,
+    "skipNotifications": true
+  }
+}

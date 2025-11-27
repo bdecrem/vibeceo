@@ -1,0 +1,59 @@
+{
+  "definition": {
+    "metadata": {
+      "name": "CNN Summary",
+      "slug": "cnn-summary",
+      "description": "AI-summarized CNN top stories",
+      "category": "news",
+      "version": "1.0.0"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "CNN SUMMARY"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "id": "cnn_rss",
+        "kind": "builtin",
+        "sourceType": "rss",
+        "feedUrl": "http://rss.cnn.com/rss/cnn_topstories.rss",
+        "maxItems": 10
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 10
+    },
+    "pipeline": [
+      {
+        "kind": "fetch"
+      },
+      {
+        "kind": "summarize",
+        "model": "gpt-4",
+        "maxTokens": 800,
+        "perItem": false,
+        "promptTemplateId": "research-digest"
+      },
+      {
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      }
+    ],
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "📰 {{agentName}}\n\n{{summary}}\n\n---\nFull report: {{reportUrl}}",
+        "maxLength": 1600
+      }
+    }
+  },
+  "context": {
+    "dryRun": true,
+    "skipNotifications": true
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "agentDefinition": {
+    "metadata": {
+      "name": "AI Research Digest",
+      "slug": "ai-research-digest-v2",
+      "description": "Daily digest of AI research papers from arXiv with summaries",
+      "category": "research",
+      "version": "1.0.0",
+      "icon": "🔬"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "RESEARCH",
+          "description": "Get AI Research Digest"
+        }
+      ],
+      "schedule": {
+        "enabled": true,
+        "cron": "0 9 * * *",
+        "timezone": "America/Los_Angeles"
+      }
+    },
+    "sources": [
+      {
+        "kind": "builtin",
+        "sourceType": "arxiv",
+        "query": "cat:cs.AI OR cat:cs.LG",
+        "maxItems": 20
+      }
+    ],
+    "pipeline": [
+      {
+        "kind": "dedupe",
+        "dedupeBy": "url"
+      },
+      {
+        "kind": "filter"
+      },
+      {
+        "kind": "summarize",
+        "promptTemplateId": "inline-summarize",
+        "model": "gpt-4"
+      },
+      {
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 10
+    },
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "📚 {{title}}\n\n{{summary}}\n\n🔗 {{url}}",
+        "maxLength": 1600
+      },
+      "report": {
+        "enabled": true,
+        "format": "markdown"
+      }
+    }
+  },
+  "userId": null
+}

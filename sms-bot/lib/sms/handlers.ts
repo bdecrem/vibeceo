@@ -1905,10 +1905,55 @@ export async function processIncomingSms(
     //     }
 
     // ========================================
+    // AGENTS MARKETPLACE COMMAND
+    // ========================================
+    if (messageUpper === "AGENTS") {
+      console.log(`Generating AGENTS marketplace link for ${from}`);
+
+      try {
+        // Call the API to generate a magic link
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+        const response = await fetch(`${baseUrl}/api/agents/generate-magic-link`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ phone_number: normalizedPhoneNumber })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API returned ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success && data.magic_link) {
+          await sendSmsResponse(
+            from,
+            `🤖 AGENT MARKETPLACE\n\nBrowse public agents, add them to your account, or create your own:\n\n${data.magic_link}\n\nLink expires in 1 hour.`,
+            twilioClient
+          );
+          console.log(`✅ Sent agent marketplace link to ${normalizedPhoneNumber}`);
+        } else {
+          throw new Error('Failed to generate magic link');
+        }
+      } catch (error: any) {
+        console.error('Error generating agent marketplace link:', error);
+        await sendSmsResponse(
+          from,
+          "Sorry, I couldn't generate your agent marketplace link right now. Please try again later.",
+          twilioClient
+        );
+      }
+
+      return;
+    }
+
+    // ========================================
     // AUTO-CREATE SUBSCRIBER RECORD IF NEEDED
     // ========================================
     // Check if subscriber exists, if not create one automatically (except for START, STOP, YES which handle their own logic)
-    if (!["START", "UNSTOP", "STOP", "YES"].includes(messageUpper)) {
+    if (!["START", "UNSTOP", "STOP", "YES", "AGENTS"].includes(messageUpper)) {
       console.log("Checking subscriber status...");
       const currentSubscriber = await getSubscriber(normalizedPhoneNumber);
       console.log("Subscriber lookup result:", currentSubscriber);
@@ -2709,6 +2754,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           "\n\n💻 APP BUILDER COMMANDS:\n• WTAF COMMANDS";
         console.log(`🔍 COMMANDS: Added WTAF COMMANDS reference`);
       }
+
+      helpText +=
+        "\n\n🤖 AGENT MARKETPLACE:\n• AGENTS - Browse & manage agents";
 
       helpText +=
         "\n\nGeneral commands:\n• STOP - Unsubscribe. We won't be able to message you again after that, so use with care.\n• COMMANDS - Show this help";
@@ -4988,6 +5036,28 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         );
       }
       return;
+    }
+
+    // ========================================
+    // AGENT COMMANDS: Check for workflow agent commands
+    // ========================================
+    try {
+      const { handleAgentCommand } = await import('./agent-command-handler.js');
+      const agentHandled = await handleAgentCommand(
+        message,
+        from,
+        sendSmsResponse,
+        twilioClient
+      );
+
+      if (agentHandled) {
+        console.log(`[Agent Commands] Command handled: ${messageUpper}`);
+        await updateLastMessageDate(normalizedPhoneNumber);
+        return;
+      }
+    } catch (agentCommandError) {
+      console.error('[Agent Commands] Error:', agentCommandError);
+      // Continue to orchestrator on error
     }
 
     // ========================================

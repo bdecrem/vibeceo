@@ -87,6 +87,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/register') ||
       pathname.startsWith('/link') ||
       pathname.startsWith('/dashboard') ||
+      pathname.startsWith('/dev/') ||
+      pathname.startsWith('/agents/') ||
       pathname.startsWith('/l/') ||
       pathname.startsWith('/trending') ||
       pathname.startsWith('/recents') ||

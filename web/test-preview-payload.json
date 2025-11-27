@@ -1,0 +1,45 @@
+{
+  "agentDefinition": {
+    "metadata": {
+      "name": "Test Preview",
+      "slug": "test-preview",
+      "description": "Test agent for preview functionality",
+      "category": "news",
+      "version": "1.0.0"
+    },
+    "triggers": {
+      "commands": [
+        {
+          "keyword": "TEST",
+          "description": "Test command"
+        }
+      ]
+    },
+    "sources": [
+      {
+        "kind": "builtin",
+        "sourceType": "rss",
+        "feedUrl": "https://example.com/feed.xml",
+        "maxItems": 10
+      }
+    ],
+    "pipeline": [
+      {
+        "kind": "sort",
+        "sortBy": "publishedAt",
+        "order": "desc"
+      }
+    ],
+    "collation": {
+      "strategy": "merge",
+      "maxTotalItems": 20
+    },
+    "output": {
+      "sms": {
+        "enabled": true,
+        "template": "{{title}}",
+        "maxLength": 1600
+      }
+    }
+  }
+}

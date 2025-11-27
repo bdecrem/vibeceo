@@ -31,8 +31,17 @@ if (!isProduction) {
 }
 
 async function start() {
+  console.log('🚀 Starting Kochi Intelligence Runtime...\n');
+
+  // Start Admin API for agent execution
+  const { startAdminAPI } = await import('./agents/api/admin.js');
+  startAdminAPI();
+
+  // Start SMS Bot for Twilio webhooks
   const { startSmsBot } = await import('../lib/sms/bot.js');
   await startSmsBot();
+
+  console.log('\n✅ All services started successfully');
 }
 
 start().catch((error) => {
