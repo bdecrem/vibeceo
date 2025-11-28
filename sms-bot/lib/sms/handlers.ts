@@ -1913,6 +1913,10 @@ export async function processIncomingSms(
       const currentSubscriber = await getSubscriber(normalizedPhoneNumber);
       console.log("Subscriber lookup result:", currentSubscriber);
 
+      // Check if this is the user's first real message (for discovery PS)
+      const isFirstMessage = currentSubscriber && !currentSubscriber.last_message_date;
+      const isAiDailyCommand = messageUpper.replace(/-/g, " ").replace(/\s+/g, " ").trim().startsWith("AI DAILY");
+
       if (!currentSubscriber) {
         console.log("New user - auto-creating subscriber record");
         const success = await createNewSubscriber(normalizedPhoneNumber);
@@ -1943,6 +1947,21 @@ export async function processIncomingSms(
 
       // Update last message date for all active users (confirmed or not)
       await updateLastMessageDate(normalizedPhoneNumber);
+
+      // Send discovery PS for first-time users (except AI DAILY which has its own PS)
+      if (isFirstMessage && !isAiDailyCommand) {
+        setTimeout(async () => {
+          try {
+            await sendSmsResponse(
+              from,
+              "💡 Discover what I can do: text COMMANDS",
+              twilioClient
+            );
+          } catch (error) {
+            console.error("Error sending first-message discovery PS:", error);
+          }
+        }, 2000);
+      }
     }
 
     const commandContext: CommandContext = {
