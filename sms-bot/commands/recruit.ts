@@ -765,6 +765,10 @@ export async function handleRecruitExploration(
 
       // Clear the thread state so user can start fresh
       await clearThreadState(subscriber.id);
+    
+      // Process queued messages now that conversation has ended
+      const { processQueueForSubscriber } = await import('../lib/scheduler/queue-processor.js');
+      await processQueueForSubscriber(subscriber.id, normalizedFrom, twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
@@ -833,6 +837,10 @@ export async function handleRecruitExploration(
 
     // Clear the thread state so user can start fresh
     await clearThreadState(subscriber.id);
+    
+    // Process queued messages now that conversation has ended
+    const { processQueueForSubscriber } = await import('../lib/scheduler/queue-processor.js');
+    await processQueueForSubscriber(subscriber.id, normalizedFrom, twilioClient);
     await updateLastMessageDate(normalizedFrom);
     return true;
   }

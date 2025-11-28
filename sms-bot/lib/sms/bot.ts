@@ -16,6 +16,7 @@ import { registerPeerReviewJob } from "./peer-review-scheduler.js";
 import { registerArxivGraphCollectionJob, registerArxivGraphBroadcastJob } from "../../agents/arxiv-research-graph/index.js";
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
 import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
+import { registerQueueProcessorJob } from "../scheduler/queue-processor.js"; // Message queue processor
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -64,6 +65,9 @@ export async function startSmsBot(): Promise<void> {
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
     );
   }
+
+  // Queue processor always runs (infrastructure, not a subscription broadcast)
+  registerQueueProcessorJob(twilioClient); // Message queue processor - processes queued messages every minute
 
   // Initialize stock scheduler service
   await initializeScheduler();

@@ -116,6 +116,12 @@ export async function handleOrchestratedMessage(
     // Clear thread state when switching to general conversation (non-follow-up)
     await clearThreadState(userContext.subscriberId);
     console.log(`[Orchestrator] Cleared thread state (switching to general)`);
+    
+    // Process queued messages now that conversation has ended
+    const { processQueueForSubscriber } = await import('../scheduler/queue-processor.js');
+    const { initializeTwilioClient } = await import('./webhooks.js');
+    const twilioClient = initializeTwilioClient();
+    await processQueueForSubscriber(userContext.subscriberId, normalizedPhoneNumber, twilioClient);
   }
 
   // Route based on orchestrator decision
