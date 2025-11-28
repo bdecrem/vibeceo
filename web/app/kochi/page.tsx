@@ -1009,7 +1009,7 @@ export default function KochiDiscoTestPage() {
 
                 <div className="flex flex-col items-center gap-2 sm:gap-4">
                   <a
-                    href="sms:8663300015?body=AI%20DAILY"
+                    href="sms:+18663300015?body=AI%20DAILY"
                     className={`${poppins.className} rounded-full border border-[#2C3E1F] px-5 py-3 sm:px-7 sm:py-4 text-[15px] sm:text-[17px] font-bold transition-all duration-200 shadow-[0_8px_24px_rgba(255,225,72,0.32)]`}
                     style={{
                       background: "#FFE148",
