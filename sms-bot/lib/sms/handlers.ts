@@ -2066,6 +2066,28 @@ export async function processIncomingSms(
       return;
     }
 
+    if (aiDailyNormalizedCommand === "AI DAILY HELP") {
+      const helpMessage = `🎙️ AI DAILY Commands
+
+AI DAILY
+  Get today's AI research podcast & report
+
+AI DAILY SUBSCRIBE
+  Get daily delivery at 7am PT
+
+AI DAILY STOP
+  Unsubscribe from daily delivery
+
+AI DAILY LINKS
+  Get paper links from today's episode
+
+More commands: text COMMANDS`;
+
+      await sendSmsResponse(from, helpMessage, twilioClient);
+      await updateLastMessageDate(normalizedPhoneNumber);
+      return;
+    }
+
     if (aiDailyNormalizedCommand === "AI DAILY") {
       // Send main AI Research Daily message (podcast + report)
       await deliverAiDailyEpisode(from, normalizedPhoneNumber, twilioClient, {
@@ -2073,18 +2095,21 @@ export async function processIncomingSms(
         recordDelivery: false,
       });
 
-      // Send PS message about subscribing (always, not just for unsubscribed users)
-      setTimeout(async () => {
-        try {
-          await sendSmsResponse(
-            from,
-            "PS: Text 'AI DAILY subscribe' or 'AI DAILY help' for more.",
-            twilioClient
-          );
-        } catch (error) {
-          console.error("Error sending AI DAILY PS message:", error);
-        }
-      }, 2000); // 2 seconds delay for message separation
+      // Only send PS message for non-subscribers
+      const subscriber = await getSubscriber(normalizedPhoneNumber);
+      if (!subscriber?.ai_daily_subscribed) {
+        setTimeout(async () => {
+          try {
+            await sendSmsResponse(
+              from,
+              "💡 Get this daily at 7am PT: text AI DAILY SUBSCRIBE\nMore commands: text COMMANDS",
+              twilioClient
+            );
+          } catch (error) {
+            console.error("Error sending AI DAILY PS message:", error);
+          }
+        }, 2000); // 2 seconds delay for message separation
+      }
 
       await updateLastMessageDate(normalizedPhoneNumber);
 
