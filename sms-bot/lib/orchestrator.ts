@@ -46,8 +46,30 @@ Your job: Analyze the user's message and context, then decide where to route it.
 
 ${context.activeThread ? `⚠️ ACTIVE THREAD DETECTED:
 - Current handler: ${context.activeThread.handler}
-- If this message is a FOLLOW-UP to the ongoing conversation, set isFollowUp=true and route to the SAME handler
-- If this is a NEW TOPIC, set isFollowUp=false and route to the appropriate new handler
+- Thread topic: ${context.activeThread.fullContext?.topic || 'unknown'}
+- Thread started: ${getTimeAgo(new Date(context.activeThread.startedAt))}
+
+IMPORTANT: Check if the user's current message is:
+1. A FOLLOW-UP to the ongoing conversation → set isFollowUp=true and route to the SAME handler
+2. A NEW TOPIC (user changed subjects) → set isFollowUp=false and route to the appropriate new handler
+
+To detect topic changes, compare the current message with:
+- The thread topic
+- Recent conversation history (see CONTEXT below)
+- The handler's purpose
+
+CRITICAL: If the active thread is "recruit-exploration" (recruiting agent), you MUST be especially careful:
+- If the user asks about something completely unrelated to recruiting (e.g., "what's the weather", "show me papers about AI", "find articles about crypto"), 
+  this is a CLEAR topic change → set isFollowUp=false
+- Only set isFollowUp=true if the message is clearly continuing the recruiting conversation (answering questions, providing feedback, saying "APPROVE", etc.)
+- Examples of topic changes from recruiting:
+  * User was in recruiting flow → now asks "what are papers about X?" → isFollowUp=false, route to "kg-query"
+  * User was in recruiting flow → now asks "find me articles about Y" → isFollowUp=false, route to "discovery"
+  * User was in recruiting flow → now asks "hi" or "thanks" → isFollowUp=false, route to "general"
+  * User was in recruiting flow → now asks about crypto/stocks/research → isFollowUp=false, route appropriately
+
+If the user is clearly switching topics (e.g., was asking about research papers, now asking about stock prices), 
+set isFollowUp=false even if there's an active thread.
 
 ` : ''}ROUTING OPTIONS:
 
@@ -168,17 +190,32 @@ function buildContextSummary(context: UserContext): string {
     parts.push(`Active subscriptions: ${subList}`);
   }
 
-  // Recent messages (last 3)
+  // Recent conversation history (last 5 messages for better topic detection)
   if (context.recentMessages.length > 0) {
-    parts.push('\nRecent activity:');
-    const recent = context.recentMessages.slice(-3);
+    parts.push('\nRecent conversation history:');
+    const recent = context.recentMessages.slice(-5);
     for (const msg of recent) {
       const timeAgo = getTimeAgo(new Date(msg.timestamp));
-      const preview = msg.content.substring(0, 100);
-      parts.push(`  - ${timeAgo}: [${msg.type}] ${preview}...`);
+      const role = msg.role === 'user' ? 'User' : 'System';
+      const preview = msg.content.substring(0, 150);
+      parts.push(`  - ${timeAgo}: [${role}] ${preview}${msg.content.length > 150 ? '...' : ''}`);
     }
   } else {
-    parts.push('\nNo recent activity (>12 hours)');
+    parts.push('\nNo recent conversation history (>12 hours)');
+  }
+  
+  // Include conversation history from active thread if available
+  if (context.activeThread?.fullContext?.conversationHistory) {
+    const threadHistory = context.activeThread.fullContext.conversationHistory;
+    if (threadHistory.length > 0) {
+      parts.push('\nActive thread conversation history:');
+      const recentThread = threadHistory.slice(-3);
+      for (const msg of recentThread) {
+        const role = msg.role === 'user' ? 'User' : 'Assistant';
+        const preview = typeof msg.content === 'string' ? msg.content.substring(0, 100) : String(msg.content).substring(0, 100);
+        parts.push(`  - [${role}] ${preview}${(typeof msg.content === 'string' ? msg.content.length : String(msg.content).length) > 100 ? '...' : ''}`);
+      }
+    }
   }
 
   return parts.join('\n');

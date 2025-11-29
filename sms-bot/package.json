@@ -20,6 +20,7 @@
 		"broadcast:sms": "npm run build && node dist/scripts/broadcast-sms.js",
 		"broadcast:all": "npm run build && node dist/scripts/broadcast-sms-and-email.js",
 		"send-confirmations": "npm run build && node dist/scripts/send-confirmation-sms.js",
+		"dev:clear-context": "npm run build && node dist/scripts/clear-test-context.js",
 		"delete-subscriber": "npm run build && node dist/scripts/delete-subscriber.js",
 		"start:prod": "NODE_ENV=production node dist/src/index.js",
 		"start:dev": "nodemon --watch 'src/**/*.ts' --exec 'npm run dev'",

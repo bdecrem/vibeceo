@@ -10,10 +10,45 @@ export type TwilioClient = Twilio;
 let twilioClient: Twilio | null = null;
 
 /**
+ * Check if Twilio should be bypassed
+ */
+function isTwilioBypassed(): boolean {
+  return process.env.TWILIO_ENABLED === 'FALSE';
+}
+
+/**
+ * Create a mock Twilio client that logs but doesn't send messages
+ */
+function createMockTwilioClient(): TwilioClient {
+  return {
+    messages: {
+      create: async (params: any) => {
+        console.log(`🚫 Twilio Bypassed: Would send ${params.to ? 'SMS' : 'message'} to ${params.to || 'unknown'}`);
+        console.log(`🚫 Twilio Bypassed: Message: ${params.body?.substring(0, 100)}${params.body?.length > 100 ? '...' : ''}`);
+        return {
+          sid: `MOCK${Date.now()}`,
+          to: params.to,
+          body: params.body,
+          status: 'queued',
+          mock: true
+        } as any;
+      }
+    }
+  } as any as TwilioClient;
+}
+
+/**
  * Setup Twilio webhooks on Express server
  * @param app Express application
  */
 export function setupTwilioWebhooks(app: Application): void {
+  // Skip Twilio setup if bypassed
+  if (isTwilioBypassed()) {
+    console.log('🚫 Twilio Bypassed: Skipping Twilio webhook setup');
+    twilioClient = createMockTwilioClient();
+    return;
+  }
+
   // Validate environment variables
   if (!validateEnvVariables()) {
     console.error('Missing required Twilio environment variables');
@@ -139,6 +174,15 @@ export function setupTwilioWebhooks(app: Application): void {
  * @param app Express application
  */
 export function setupWhatsAppWebhooks(app: Application): void {
+  // Skip WhatsApp setup if Twilio is bypassed
+  if (isTwilioBypassed()) {
+    console.log('🚫 Twilio Bypassed: Skipping WhatsApp webhook setup');
+    if (!twilioClient) {
+      twilioClient = createMockTwilioClient();
+    }
+    return;
+  }
+
   // WhatsApp webhook endpoint - uses same infrastructure as SMS
   app.post('/whatsapp/webhook', async (req: Request, res: Response) => {
     try {
@@ -177,6 +221,12 @@ export function setupWhatsAppWebhooks(app: Application): void {
 }
 
 export function initializeTwilioClient(): TwilioClient {
+  // Return mock client if Twilio is bypassed
+  if (isTwilioBypassed()) {
+    console.log('🚫 Twilio Bypassed: Using mock Twilio client');
+    return createMockTwilioClient();
+  }
+
   if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
     throw new Error('Missing required Twilio environment variables');
   }

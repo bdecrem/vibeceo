@@ -32,6 +32,8 @@ import { handleStockAgent } from "./stock-agent.js";
 import { commandHandlers } from "../../commands/index.js";
 import type { CommandContext } from "../../commands/types.js";
 import type { KGAgentState } from "../../commands/kg.js";
+// Import orchestrated send functions (re-exported below for external use)
+import { sendSmsResponse as orchestratedSendSmsResponse, sendChunkedSmsResponse as orchestratedSendChunkedSmsResponse } from "./orchestrated-send.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -110,36 +112,8 @@ export function splitMessageIntoChunks(
   return chunks;
 }
 
-// Helper function to send chunked messages
-export async function sendChunkedSmsResponse(
-  to: string,
-  message: string,
-  twilioClient: TwilioClient,
-  maxLength: number = 1500
-): Promise<void> {
-  // Use 1500 as default to leave room for continuation indicators
-  const chunks = splitMessageIntoChunks(message, maxLength);
-
-  for (let i = 0; i < chunks.length; i++) {
-    let chunk = chunks[i];
-
-    // Add continuation indicator if there are multiple chunks
-    if (chunks.length > 1) {
-      if (i < chunks.length - 1) {
-        chunk += `\n\n(${i + 1}/${chunks.length} - continued...)`;
-      } else {
-        chunk = `(${i + 1}/${chunks.length} - final)\n\n` + chunk;
-      }
-    }
-
-    await sendSmsResponse(to, chunk, twilioClient);
-
-    // Small delay between chunks to ensure order
-    if (i < chunks.length - 1) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
-    }
-  }
-}
+// NOTE: sendChunkedSmsResponse is now exported from orchestrated-send.ts
+// The original implementation is preserved there with orchestration layer
 
 // Global variable for next daily message - set at 7am, used at 9am
 let nextDailyMessage: any = null;
@@ -2796,7 +2770,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(
         `🔍 COMMANDS: Final helpText length: ${helpText.length} characters`
       );
-      await sendSmsResponse(from, helpText, twilioClient);
+      await sendSmsResponse(from, helpText, twilioClient, {
+        messageType: 'command_response',
+        source: 'command',
+        priority: 10, // Highest priority - always send immediately
+      });
       return;
     }
 
@@ -2816,7 +2794,12 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         await sendSmsResponse(
           from,
           "❌ App builder commands are not available for your account. Text COMMANDS to see what's available.",
-          twilioClient
+          twilioClient,
+          {
+            messageType: 'command_response',
+            source: 'command',
+            priority: 10,
+          }
         );
         return;
       }
@@ -2854,7 +2837,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           "\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible";
       }
 
-      await sendSmsResponse(from, builderHelp, twilioClient);
+      await sendSmsResponse(from, builderHelp, twilioClient, {
+        messageType: 'command_response',
+        source: 'command',
+        priority: 10, // Highest priority - always send immediately
+      });
       return;
     }
 
@@ -5164,7 +5151,7 @@ function saveConversationHistory(
  * Check if a phone number is a test/dev number that should skip actual SMS sending
  * @param phoneNumber Phone number to check
  */
-function isTestPhoneNumber(phoneNumber: string): boolean {
+export function isTestPhoneNumber(phoneNumber: string): boolean {
   // Remove any whatsapp: prefix for checking
   const cleanNumber = phoneNumber.replace(/^whatsapp:/, "");
 
@@ -5181,72 +5168,18 @@ function isTestPhoneNumber(phoneNumber: string): boolean {
 
 /**
  * Send message response to user (SMS or WhatsApp)
+ * 
+ * NOTE: This function now uses orchestrated-send.ts
+ * All outbound messages are intercepted for orchestration (Phase 1: logging, Future: queue/routing)
+ * 
  * @param to Recipient's phone number (with or without whatsapp: prefix)
  * @param message Message content
  * @param twilioClient Twilio client instance
+ * @param metadata Optional metadata for orchestration (messageType, priority, source, etc.)
  */
-export async function sendSmsResponse(
-  to: string,
-  message: string,
-  twilioClient: TwilioClient
-): Promise<any> {
-  try {
-    const platform = detectMessagePlatform(to);
-
-    // For WhatsApp, use verified business number or configured WhatsApp number
-    const fromNumber =
-      platform === "whatsapp"
-        ? process.env.TWILIO_WHATSAPP_NUMBER || "whatsapp:+18663300015" // Your verified WhatsApp Business number
-        : process.env.TWILIO_PHONE_NUMBER;
-
-    // Enforce 1600 character limit
-    if (message.length > 1600) {
-      console.error(
-        `Message length ${message.length} exceeds 1600 character limit. Truncating...`
-      );
-      message = message.substring(0, 1597) + "...";
-    }
-
-    // Check if this is a test phone number - log but still call twilioClient.messages.create()
-    // so that dev webhook mock client can capture the response
-    if (isTestPhoneNumber(to)) {
-      console.log(`🧪 DEV MODE: Skipping actual SMS to test number ${to}`);
-      console.log(
-        `🧪 Mock ${platform.toUpperCase()} response: ${message.substring(
-          0,
-          100
-        )}...`
-      );
-    }
-
-    const response = await twilioClient.messages.create({
-      body: message,
-      to, // Keep original format (whatsapp: prefix if WhatsApp)
-      from: fromNumber,
-    });
-
-    console.log(
-      `${platform.toUpperCase()} sent to ${to}: ${message.substring(0, 50)}...`
-    );
-    return response;
-  } catch (error: any) {
-    const platform = detectMessagePlatform(to);
-    // Handle Twilio's automatic unsubscribe gracefully
-    if (error.code === 21610) {
-      console.log(
-        `${platform.toUpperCase()} to ${to} blocked - user is carrier-unsubscribed (Twilio error 21610)`
-      );
-      console.log(`Message was: ${message.substring(0, 100)}...`);
-      return null; // Don't crash, just return null
-    } else {
-      console.error(
-        `Failed to send ${platform.toUpperCase()} to ${to}:`,
-        error
-      );
-      throw error;
-    }
-  }
-}
+export const sendSmsResponse = orchestratedSendSmsResponse;
+export const sendChunkedSmsResponse = orchestratedSendChunkedSmsResponse;
+export type { OutboundMessageMetadata } from './orchestrated-send.js';
 
 /**
  * Cleanup resources when shutting down

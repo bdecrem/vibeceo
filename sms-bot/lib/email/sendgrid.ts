@@ -9,13 +9,23 @@ if (!isProduction) {
   dotenv.config({ path: '.env.local' });
 }
 
-// Initialize SendGrid
-const apiKey = process.env.SENDGRID_API_KEY;
-if (!apiKey) {
-  throw new Error(`SENDGRID_API_KEY not found in ${isProduction ? 'Railway environment' : '.env.local'}`);
+/**
+ * Check if SendGrid should be bypassed
+ */
+function isSendGridBypassed(): boolean {
+  return process.env.SENDGRID_ENABLED === 'FALSE';
 }
 
-sgMail.setApiKey(apiKey);
+// Initialize SendGrid (only if not bypassed)
+const apiKey = process.env.SENDGRID_API_KEY;
+if (!isSendGridBypassed()) {
+  if (!apiKey) {
+    throw new Error(`SENDGRID_API_KEY not found in ${isProduction ? 'Railway environment' : '.env.local'}`);
+  }
+  sgMail.setApiKey(apiKey);
+} else {
+  console.log('🚫 SendGrid Bypassed: Using mock SendGrid client');
+}
 
 // Helper function to check if an error is a SendGrid API error
 interface ApiError {
@@ -101,6 +111,12 @@ export async function sendTestEmail(message: string, recipientEmail: string) {
       html: formatMessageAsHtml(message),
     };
 
+    if (isSendGridBypassed()) {
+      console.log(`🚫 SendGrid Bypassed: Would send test email to ${recipientEmail}`);
+      console.log(`🚫 SendGrid Bypassed: Subject: ${msg.subject}`);
+      return { success: true, messageId: `MOCK${Date.now()}` };
+    }
+
     const response = await sgMail.send(msg);
     console.log(`📧 Test email sent to ${recipientEmail}, Message ID: ${response[0].headers['x-message-id']}`);
     return { success: true, messageId: response[0].headers['x-message-id'] };
@@ -113,6 +129,11 @@ export async function sendTestEmail(message: string, recipientEmail: string) {
 // Fetch all contacts from a SendGrid list
 async function getListContacts(listId: string): Promise<string[]> {
   console.log(`📧 Fetching contacts from SendGrid list: ${listId}`);
+  
+  if (isSendGridBypassed()) {
+    console.log(`🚫 SendGrid Bypassed: Would fetch contacts from list ${listId}`);
+    return []; // Return empty array for bypass mode
+  }
   
   try {
     // First, let's verify the list exists by getting list info
@@ -212,9 +233,14 @@ async function sendToListContacts(message: string, listId: string): Promise<{suc
             }
           };
           
-          await sgMail.send(msg);
-          sentCount++;
-          console.log(`📧 Sent to ${email}`);
+          if (isSendGridBypassed()) {
+            console.log(`🚫 SendGrid Bypassed: Would send to ${email}`);
+            sentCount++;
+          } else {
+            await sgMail.send(msg);
+            sentCount++;
+            console.log(`📧 Sent to ${email}`);
+          }
         } catch (error: any) {
           failedCount++;
           console.error(`📧 Failed to send to ${email}:`, error.response?.body || error.message);
@@ -303,9 +329,14 @@ export async function sendToCustomEmailList(
             }
           };
           
-          await sgMail.send(msg);
-          sentCount++;
-          console.log(`📧 Sent stackemail to ${email}`);
+          if (isSendGridBypassed()) {
+            console.log(`🚫 SendGrid Bypassed: Would send stackemail to ${email}`);
+            sentCount++;
+          } else {
+            await sgMail.send(msg);
+            sentCount++;
+            console.log(`📧 Sent stackemail to ${email}`);
+          }
         } catch (error: any) {
           failedCount++;
           console.error(`📧 Failed to send stackemail to ${email}:`, error.response?.body || error.message);
