@@ -127,6 +127,61 @@ export async function sendSmsResponseInternal(
  */
 
 /**
+ * Check if message is a command response (list of available commands)
+ */
+function isCommandResponse(message: string, metadata: OutboundMessageMetadata | undefined): boolean {
+  // Check metadata first
+  if (metadata?.messageType === 'command_response' || metadata?.source === 'command') {
+    return true;
+  }
+  
+  // Check message content for command list indicators
+  const messageUpper = message.toUpperCase();
+  const commandIndicators = [
+    'AI DAILY',
+    'COMMANDS',
+    'PEER REVIEW',
+    'CRYPTO',
+    'ANNOUNCEMENTS',
+    'WTAF',
+    'SLUG',
+    'INDEX',
+    'FAVE',
+    'EDIT',
+    'MEME',
+    'STOP',
+    'HELP',
+    'GENERAL COMMANDS',
+    'CODER COMMANDS',
+    'DEGEN COMMANDS',
+    'STACK COMMANDS',
+    'OPERATOR COMMANDS'
+  ];
+  
+  // If message contains multiple command indicators, it's likely a command list
+  const foundIndicators = commandIndicators.filter(indicator => messageUpper.includes(indicator));
+  if (foundIndicators.length >= 2) {
+    return true;
+  }
+  
+  // Check for common command list patterns
+  if (
+    messageUpper.includes('📻') || // AI Daily emoji
+    messageUpper.includes('📢') || // Announcements emoji
+    messageUpper.includes('🥊') || // Peer Review emoji
+    messageUpper.includes('💰') || // Crypto emoji
+    messageUpper.includes('💻') || // Coder emoji
+    messageUpper.includes('🎨') || // Degen emoji
+    messageUpper.includes('🧱') || // Stack emoji
+    messageUpper.includes('COMMANDS')
+  ) {
+    return true;
+  }
+  
+  return false;
+}
+
+/**
  * Determine routing decision for outbound message using AI
  */
 async function determineMessageRouting(
@@ -144,6 +199,15 @@ async function determineMessageRouting(
   }
 
   const thread = userContext.activeThread;
+  
+  // Command responses should always be sent immediately
+  if (isCommandResponse(message, metadata)) {
+    return {
+      decision: 'send_now',
+      reasoning: 'Command response - always send immediately',
+      confidence: 'high',
+    };
+  }
   
   // If metadata explicitly says it's related to this thread, consider merging
   if (metadata?.relatedThreadId === thread.threadId || metadata?.canMerge === true) {
@@ -212,10 +276,58 @@ Type: ${messageType}
 Source: ${messageSource}
 Content: ${message.substring(0, 500)}${message.length > 500 ? '...' : ''}
 
+CRITICAL RULE - COMMAND RESPONSES:
+Command responses (lists of available commands) MUST ALWAYS be sent immediately ("send_now"). These include:
+- Responses to "COMMANDS", "HELP", or "INFO" requests
+- Messages containing lists of available commands (AI DAILY, CRYPTO, PEER REVIEW, etc.)
+- Messages with command list indicators (emojis like 📻, 📢, 🥊, 💰, 💻, 🎨, 🧱)
+- Messages with messageType="command_response" or source="command"
+
+AVAILABLE COMMANDS (for reference):
+📻 AI DAILY:
+- AI DAILY - Get today's episode on demand
+- AI DAILY SUBSCRIBE - Morning episode at 7am PT
+- AI DAILY STOP - Opt out of daily episodes
+
+📢 PLATFORM UPDATES:
+- ANNOUNCEMENTS - Opt in to Kochi updates
+- ANNOUNCEMENTS STOP - Opt out of updates
+
+🥊 PEER REVIEW FIGHT CLUB:
+- PEER REVIEW
+- PEER REVIEW SUBSCRIBE
+- PEER REVIEW STOP
+
+💰 CRYPTO RESEARCH:
+- CRYPTO - Get BTC/ETH prices & market summary
+- CRYPTO SUBSCRIBE
+- CRYPTO STOP
+
+💻 APP BUILDER (Coder role):
+- WTAF [text] - Build an app from your prompt
+- SLUG [name] - Change your custom URL
+- INDEX - List pages, set homepage
+- FAVE [num] - Mark page as favorite
+
+🎨 DEGEN COMMANDS:
+- EDIT [page] [changes] - Modify existing pages
+- MEME [idea] - Generate dank memes
+
+🧱 STACK COMMANDS:
+- --stack [app] [req] - Use app as template
+- --stackdb [app] [req] - Create live-updating app
+- --stackzad [app] [req] - Share data with ZAD app
+
+General:
+- COMMANDS - Show available commands
+- STOP - Unsubscribe
+- HELP - Show help
+
 DECISION OPTIONS:
 
 1. "send_now" - Send immediately
    Use when:
+   - Message is a command response (list of available commands) - ALWAYS send_now
    - Message is directly relevant to the active conversation topic
    - Message is a response to something the user asked for in the active conversation
    - Message completes or continues the active conversation naturally
@@ -235,12 +347,15 @@ DECISION OPTIONS:
    - Message would interrupt an important multi-turn conversation
    - Message is informational but not urgent
    - Active conversation is in a critical state (user is providing input, making decisions)
+   - NEVER queue command responses - they must always be sent immediately
 
 EXAMPLES:
 - Active: User asking about research papers → Outbound: Daily AI research report → Decision: queue (unrelated scheduled content)
 - Active: User in recruiting flow → Outbound: New candidates found → Decision: merge (directly related)
 - Active: User asking questions → Outbound: Answer to their question → Decision: send_now (direct response)
 - Active: User in discovery agent → Outbound: Scheduled crypto daily → Decision: queue (unrelated)
+- Active: Any conversation → Outbound: Command list response → Decision: send_now (ALWAYS - command responses must be immediate)
+- Active: User asked "COMMANDS" → Outbound: List of commands → Decision: send_now (ALWAYS - direct response to user request)
 
 Respond with JSON:
 {

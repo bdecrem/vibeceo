@@ -2726,7 +2726,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
       console.log(
         `🔍 COMMANDS: Final helpText length: ${helpText.length} characters`
       );
-      await sendSmsResponse(from, helpText, twilioClient);
+      await sendSmsResponse(from, helpText, twilioClient, {
+        messageType: 'command_response',
+        source: 'command',
+        priority: 10, // Highest priority - always send immediately
+      });
       return;
     }
 
@@ -2746,7 +2750,12 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
         await sendSmsResponse(
           from,
           "❌ App builder commands are not available for your account. Text COMMANDS to see what's available.",
-          twilioClient
+          twilioClient,
+          {
+            messageType: 'command_response',
+            source: 'command',
+            priority: 10,
+          }
         );
         return;
       }
@@ -2784,7 +2793,11 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
           "\n\n🔧 ADMIN COMMANDS:\n• --make-public [app-slug] - Make existing app publicly accessible";
       }
 
-      await sendSmsResponse(from, builderHelp, twilioClient);
+      await sendSmsResponse(from, builderHelp, twilioClient, {
+        messageType: 'command_response',
+        source: 'command',
+        priority: 10, // Highest priority - always send immediately
+      });
       return;
     }
 
