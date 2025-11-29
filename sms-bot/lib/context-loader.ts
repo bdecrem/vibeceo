@@ -50,6 +50,12 @@ export interface UserContext {
   recentMessages: RecentMessage[];
   hasRecentActivity: boolean;
   activeThread?: ActiveThread;
+  /**
+   * Stack of previously active threads that were paused
+   * when the user switched topics (e.g. to run a command/help flow).
+   * Most recent paused thread should be resumed first (LIFO).
+   */
+  pausedThreads?: ActiveThread[];
 }
 
 /**
@@ -173,7 +179,7 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
 
   const hasRecentActivity = recentMessages.length > 0;
 
-  // Load active thread (last 5 minutes)
+  // Load active thread (last 5 minutes) and any paused threads
   const { data: activeThreadData } = await supabase
     .from('conversation_context')
     .select('thread_id, active_handler, thread_started_at, created_at, metadata')
@@ -196,6 +202,26 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
     };
   }
 
+  // Load paused threads stack (if any) from dedicated context record
+  const { data: pausedData } = await supabase
+    .from('conversation_context')
+    .select('metadata')
+    .eq('subscriber_id', subscriber.id)
+    .eq('context_type', 'paused_threads')
+    .gte('expires_at', new Date().toISOString())
+    .single();
+
+  let pausedThreads: ActiveThread[] | undefined;
+  if (pausedData?.metadata?.threads && Array.isArray(pausedData.metadata.threads)) {
+    pausedThreads = (pausedData.metadata.threads as any[]).map((t) => ({
+      threadId: t.threadId,
+      handler: t.handler,
+      startedAt: t.startedAt,
+      lastActivity: t.lastActivity,
+      fullContext: t.fullContext || {},
+    }));
+  }
+
   return {
     phoneNumber,
     subscriberId: subscriber.id,
@@ -204,6 +230,7 @@ export async function loadUserContext(phoneNumber: string): Promise<UserContext 
     recentMessages,
     hasRecentActivity,
     activeThread,
+    pausedThreads,
   };
 }
 
@@ -354,4 +381,102 @@ export async function clearThreadState(subscriberId: string): Promise<boolean> {
   }
 
   return data as boolean;
+}
+
+/**
+ * Pause the current active thread by moving it onto the pausedThreads stack.
+ * The caller is responsible for then creating a new active thread if desired.
+ */
+export async function pauseActiveThread(
+  subscriberId: string,
+  currentThread: ActiveThread
+): Promise<void> {
+  const expiresAt = new Date(Date.now() + CONTEXT_WINDOW_MS).toISOString();
+
+  // Load existing paused_threads record (if any)
+  const { data: existing } = await supabase
+    .from('conversation_context')
+    .select('*')
+    .eq('subscriber_id', subscriberId)
+    .eq('context_type', 'paused_threads')
+    .single();
+
+  const currentStack: ActiveThread[] = existing?.metadata?.threads || [];
+  currentStack.push(currentThread);
+
+  const payload = {
+    subscriber_id: subscriberId,
+    context_type: 'paused_threads',
+    metadata: {
+      threads: currentStack,
+    },
+    expires_at: expiresAt,
+  };
+
+  if (existing) {
+    await supabase
+      .from('conversation_context')
+      .update({
+        metadata: payload.metadata,
+        expires_at: expiresAt,
+      })
+      .eq('id', existing.id);
+  } else {
+    await supabase.from('conversation_context').insert(payload);
+  }
+}
+
+/**
+ * Resume the most recently paused thread (if any) and clear it from the stack.
+ * Returns the resumed thread, or undefined if none available.
+ */
+export async function resumePreviousThread(
+  subscriberId: string
+): Promise<ActiveThread | undefined> {
+  const expiresAt = new Date(Date.now() + CONTEXT_WINDOW_MS).toISOString();
+
+  const { data: existing, error } = await supabase
+    .from('conversation_context')
+    .select('*')
+    .eq('subscriber_id', subscriberId)
+    .eq('context_type', 'paused_threads')
+    .single();
+
+  if (error) {
+    console.error('[Thread] Failed to load paused_threads:', error);
+    return undefined;
+  }
+
+  const stack: ActiveThread[] = existing?.metadata?.threads || [];
+  if (stack.length === 0) {
+    return undefined;
+  }
+
+  const resumed = stack.pop() as ActiveThread;
+
+  // Persist updated stack
+  if (stack.length === 0) {
+    // No more paused threads → delete record
+    await supabase
+      .from('conversation_context')
+      .delete()
+      .eq('id', existing.id);
+  } else {
+    await supabase
+      .from('conversation_context')
+      .update({
+        metadata: { threads: stack },
+        expires_at: expiresAt,
+      })
+      .eq('id', existing.id);
+  }
+
+  // Also restore this thread as the active_thread
+  await storeThreadState(subscriberId, {
+    handler: resumed.handler,
+    topic: resumed.fullContext?.topic || 'resumed conversation',
+    context: resumed.fullContext,
+  });
+
+  return resumed;
 }

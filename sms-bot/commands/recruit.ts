@@ -59,6 +59,7 @@ import {
 import { storeThreadState, clearThreadState, type ActiveThread } from '../lib/context-loader.js';
 import { v4 as uuidv4 } from 'uuid';
 import { countUCS2CodeUnits, MAX_SMS_CODE_UNITS } from '../lib/utils/sms-length.js';
+import { findPythonBin } from '../lib/utils/python-exec.js';
 
 const RECRUIT_PREFIX = 'RECRUIT';
 const SCORE_PREFIX = 'SCORE';
@@ -1692,6 +1693,7 @@ async function handleContinue(context: CommandContext): Promise<void> {
   await updateLastMessageDate(normalizedFrom);
 }
 
+
 /**
  * Run the Python candidate collection agent
  */
@@ -1703,7 +1705,7 @@ async function runCandidateCollectionAgent(
   const path = await import('node:path');
   const crypto = await import('node:crypto');
 
-  const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
+  const PYTHON_BIN = await findPythonBin();
   const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'recruiting', 'collect-candidates-agent.py');
 
   return new Promise((resolve, reject) => {
@@ -1716,6 +1718,10 @@ async function runCandidateCollectionAgent(
     console.log(`[Candidate Collection Agent] Running: ${PYTHON_BIN} ${args[0]} --spec "${refinedSpec.substring(0, 50)}..." --channels [${channels.length} channels]`);
 
     const agentProcess = spawn(PYTHON_BIN, args);
+    
+    agentProcess.on('error', (error) => {
+      reject(new Error(`Failed to spawn Python process: ${error.message}. Make sure Python 3 is installed and accessible.`));
+    });
     let stdout = '';
     let stderr = '';
 

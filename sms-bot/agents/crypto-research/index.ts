@@ -10,6 +10,7 @@ import {
 import { registerDailyJob } from '../../lib/scheduler/index.js';
 import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/shortlink-service.js';
 import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
+import { findPythonBin } from '../../lib/utils/python-exec.js';
 import {
   getAgentSubscribers,
   markAgentReportSent,
@@ -45,7 +46,6 @@ const AGENT_SCRIPT = path.join(
   'crypto-research',
   'agent.py'
 );
-const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
 const CRYPTO_JOB_HOUR = Number(process.env.CRYPTO_REPORT_HOUR || 7);
 const CRYPTO_JOB_MINUTE = Number(process.env.CRYPTO_REPORT_MINUTE || 5);
 export const CRYPTO_AGENT_SLUG = 'crypto-daily';
@@ -105,6 +105,7 @@ async function verifyPythonEnvironment(): Promise<void> {
   ].join('\n');
 
   const args = ['-c', checkScript];
+  const PYTHON_BIN = await findPythonBin();
 
   const subprocess = spawn(PYTHON_BIN, args, {
     cwd: process.cwd(),
@@ -144,6 +145,7 @@ async function runPythonAgent(date?: string): Promise<AgentRunResult> {
     CLAUDE_CODE_OAUTH_TOKEN: undefined,
   };
 
+  const PYTHON_BIN = await findPythonBin();
   const subprocess = spawn(PYTHON_BIN, args, {
     cwd: process.cwd(),
     env: agentEnv,

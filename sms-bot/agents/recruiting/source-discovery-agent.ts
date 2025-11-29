@@ -14,6 +14,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk';
+import { findPythonBin } from '../../lib/utils/python-exec.js';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || '',
@@ -225,7 +226,7 @@ async function runChannelDiscoveryAgent(
   const { spawn } = await import('node:child_process');
   const path = await import('node:path');
 
-  const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
+  const PYTHON_BIN = await findPythonBin();
   const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'recruiting', 'discover-channels-agent.py');
 
   return new Promise((resolve, reject) => {
@@ -245,6 +246,10 @@ async function runChannelDiscoveryAgent(
     console.log(`[Channel Discovery Agent] Running: ${PYTHON_BIN} ${args.join(' ')}`);
 
     const agentProcess = spawn(PYTHON_BIN, args);
+    
+    agentProcess.on('error', (error) => {
+      reject(new Error(`Failed to spawn Python process: ${error.message}. Make sure Python 3 is installed and accessible.`));
+    });
     let stdout = '';
     let stderr = '';
 
