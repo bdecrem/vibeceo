@@ -37,16 +37,6 @@ export async function handleOrchestratedMessage(
     return;
   }
 
-  // Check for recruit exploration (Phase 1) - handle before approval responses
-  if (userContext.activeThread?.handler === 'recruit-exploration') {
-    const { handleRecruitExploration } = await import('../../commands/recruit.js');
-    const explorationHandled = await handleRecruitExploration(commandContext, userContext.activeThread);
-    if (explorationHandled) {
-      console.log(`[Orchestrated Routing] Handled recruit exploration: "${commandContext.message}"`);
-      return;
-    }
-  }
-
   // Store user message in conversation context FIRST (before routing)
   // This ensures conversation history is available for topic change detection
   await storeMessage(userContext.subscriberId, {
@@ -102,28 +92,48 @@ export async function handleOrchestratedMessage(
     // If neither handled, continue with normal routing
   }
 
-  // Route message using orchestrator (with updated context that includes the new message)
+  // Route message using orchestrator FIRST to detect topic changes
+  // This must happen before checking for recruit exploration to prevent
+  // unrelated messages from being routed to the recruiter
   const routing = await routeMessage(commandContext.message, updatedContext);
 
   console.log(`[Orchestrator] Routed to: ${routing.destination} (${routing.confidence})`);
   console.log(`[Orchestrator] Reasoning: ${routing.reasoning}`);
   console.log(`[Orchestrator] Is follow-up: ${routing.isFollowUp}`);
 
-  // Check for topic change detection
+  // Check for topic change detection - clear thread if user switched topics
+  let finalContext = updatedContext;
   if (updatedContext.activeThread && !routing.isFollowUp) {
     console.log(`[Orchestrator] ⚠️  Topic change detected - user switched topics mid-conversation`);
     console.log(`[Orchestrator]   Previous topic: ${updatedContext.activeThread.fullContext?.topic || 'unknown'}`);
+    console.log(`[Orchestrator]   Previous handler: ${updatedContext.activeThread.handler}`);
     console.log(`[Orchestrator]   New message: "${commandContext.message.substring(0, 50)}..."`);
     
     // Clear the old thread since user changed topics
     await clearThreadState(updatedContext.subscriberId);
     console.log(`[Orchestrator] Cleared previous thread due to topic change`);
     
-    // Process queued messages from the previous conversation
-    const { processQueueForSubscriber } = await import('../scheduler/queue-processor.js');
-    const { initializeTwilioClient } = await import('./webhooks.js');
-    const twilioClient = initializeTwilioClient();
-    await processQueueForSubscriber(updatedContext.subscriberId, normalizedPhoneNumber, twilioClient);
+    // Reload context after clearing thread
+    const clearedContext = await loadUserContext(normalizedPhoneNumber);
+    if (clearedContext) {
+      finalContext = clearedContext;
+      // Process queued messages from the previous conversation
+      const { processQueueForSubscriber } = await import('../scheduler/queue-processor.js');
+      const { initializeTwilioClient } = await import('./webhooks.js');
+      const twilioClient = initializeTwilioClient();
+      await processQueueForSubscriber(clearedContext.subscriberId, normalizedPhoneNumber, twilioClient);
+    }
+  }
+
+  // Only check for recruit exploration if it's a follow-up to an active recruit thread
+  // This prevents unrelated messages from being routed to the recruiter
+  if (finalContext.activeThread?.handler === 'recruit-exploration' && routing.isFollowUp) {
+    const { handleRecruitExploration } = await import('../../commands/recruit.js');
+    const explorationHandled = await handleRecruitExploration(commandContext, finalContext.activeThread);
+    if (explorationHandled) {
+      console.log(`[Orchestrated Routing] Handled recruit exploration: "${commandContext.message}"`);
+      return;
+    }
   }
 
   // Store thread state for multi-turn capable handlers
@@ -132,13 +142,13 @@ export async function handleOrchestratedMessage(
     // Extract topic from message (simple heuristic)
     const topic = extractTopic(commandContext.message);
 
-    await storeThreadState(updatedContext.subscriberId, {
+    await storeThreadState(finalContext.subscriberId, {
       handler: routing.destination,
       topic,
       context: {
         initialMessage: commandContext.message,
         isFollowUp: routing.isFollowUp,
-        conversationHistory: updatedContext.recentMessages.slice(-5).map(m => ({
+        conversationHistory: finalContext.recentMessages.slice(-5).map(m => ({
           role: m.role,
           content: m.content,
         })),
@@ -148,14 +158,14 @@ export async function handleOrchestratedMessage(
     console.log(`[Orchestrator] Stored thread state: handler=${routing.destination}, topic=${topic}`);
   } else if (routing.destination === 'general' && !routing.isFollowUp) {
     // Clear thread state when switching to general conversation (non-follow-up)
-    await clearThreadState(updatedContext.subscriberId);
+    await clearThreadState(finalContext.subscriberId);
     console.log(`[Orchestrator] Cleared thread state (switching to general)`);
     
     // Process queued messages now that conversation has ended
     const { processQueueForSubscriber } = await import('../scheduler/queue-processor.js');
     const { initializeTwilioClient } = await import('./webhooks.js');
     const twilioClient = initializeTwilioClient();
-    await processQueueForSubscriber(updatedContext.subscriberId, normalizedPhoneNumber, twilioClient);
+    await processQueueForSubscriber(finalContext.subscriberId, normalizedPhoneNumber, twilioClient);
   }
 
   // Route based on orchestrator decision
@@ -171,7 +181,7 @@ export async function handleOrchestratedMessage(
       }
       // If handler couldn't process, fall through to general
       console.log('[Orchestrator] KG handler returned false, falling through to general');
-      await handleGeneralKochiAgent(commandContext, userContext);
+      await handleGeneralKochiAgent(commandContext, finalContext);
       return;
 
     case 'air':
@@ -185,20 +195,20 @@ export async function handleOrchestratedMessage(
       }
       // If handler couldn't process, fall through to general
       console.log('[Orchestrator] AIR handler returned false, falling through to general');
-      await handleGeneralKochiAgent(commandContext, userContext);
+      await handleGeneralKochiAgent(commandContext, finalContext);
       return;
 
     case 'discovery':
       // Route to discovery agent (agentic with web search)
       const { handleDiscoveryAgent } = await import('../../commands/discovery.js');
       console.log('[Orchestrator] Calling discovery handler (orchestrator-routed)');
-      await handleDiscoveryAgent(commandContext, userContext);
+      await handleDiscoveryAgent(commandContext, finalContext);
       return;
 
     case 'general':
     default:
       // Route to general Kochi agent
-      await handleGeneralKochiAgent(commandContext, userContext);
+      await handleGeneralKochiAgent(commandContext, finalContext);
       return;
   }
 }

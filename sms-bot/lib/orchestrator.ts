@@ -58,6 +58,16 @@ To detect topic changes, compare the current message with:
 - Recent conversation history (see CONTEXT below)
 - The handler's purpose
 
+CRITICAL: If the active thread is "recruit-exploration" (recruiting agent), you MUST be especially careful:
+- If the user asks about something completely unrelated to recruiting (e.g., "what's the weather", "show me papers about AI", "find articles about crypto"), 
+  this is a CLEAR topic change → set isFollowUp=false
+- Only set isFollowUp=true if the message is clearly continuing the recruiting conversation (answering questions, providing feedback, saying "APPROVE", etc.)
+- Examples of topic changes from recruiting:
+  * User was in recruiting flow → now asks "what are papers about X?" → isFollowUp=false, route to "kg-query"
+  * User was in recruiting flow → now asks "find me articles about Y" → isFollowUp=false, route to "discovery"
+  * User was in recruiting flow → now asks "hi" or "thanks" → isFollowUp=false, route to "general"
+  * User was in recruiting flow → now asks about crypto/stocks/research → isFollowUp=false, route appropriately
+
 If the user is clearly switching topics (e.g., was asking about research papers, now asking about stock prices), 
 set isFollowUp=false even if there's an active thread.
 
