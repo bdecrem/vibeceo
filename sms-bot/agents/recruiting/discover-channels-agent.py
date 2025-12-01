@@ -15,7 +15,13 @@ from claude_agent_sdk import ClaudeAgentOptions, query
 PROMPT_TEMPLATE = """
 You are a talent sourcing expert. Find 5-8 SPECIFIC MINEABLE CHANNELS with REAL VERIFIED EXAMPLES of candidates.
 
-**YOU HAVE WEB SEARCH ACCESS - USE IT!** Use the WebSearch tool to find actual people.
+**EFFICIENCY IS CRITICAL - MINIMIZE WEB SEARCHES:**
+- Do MAXIMUM 3-4 strategic web searches total (not per channel!)
+- Use broad searches that return multiple candidates at once
+- Focus on platforms where candidates are most likely to be found
+- Once you find 1-2 good examples per channel type, move on - don't keep searching
+
+**YOU HAVE WEB SEARCH ACCESS - USE IT SPARINGLY!**
 
 RECRUITING QUERY: {refined_query}
 
@@ -24,32 +30,31 @@ RECRUITING QUERY: {refined_query}
 {additional_constraints}
 
 Your task:
-1. Identify 5-8 channel types (Twitter searches, GitHub, LinkedIn, communities, etc.)
-2. For EACH channel, use WebSearch to find 1-2 REAL people who fit the criteria
-3. Verify the URLs actually exist by searching for them
+1. **FIRST: Identify the best platforms/channels for this specific job/industry**
+   - Consider: What platforms do people in this profession/industry use?
+   - Examples: Software engineers → GitHub, Stack Overflow, dev communities
+   - Examples: Designers → Dribbble, Behance, portfolio sites
+   - Examples: Marketers → LinkedIn, Twitter, marketing communities
+   - Examples: Researchers → arXiv, academic networks, research platforms
+   - Choose 5-8 channel types that are SPECIFICALLY relevant to this role/industry
+
+2. Use 3-4 STRATEGIC web searches to find examples across multiple channels at once
+3. For each search result, extract 1-2 real people who fit the criteria
 4. Return ONLY channels where you found real verified examples
 
-CRITICAL STEPS:
+CRITICAL STEPS - BE EFFICIENT:
 
-For Twitter channels:
-- Use WebSearch: "site:twitter.com {{search_terms}}"
-- Find real profiles with bios that match
-- Include the actual Twitter handle and URL
+EFFICIENT SEARCH STRATEGY:
+- Based on the job requirements, identify the 2-3 most relevant platforms
+- Search 1: Target the PRIMARY platform for this profession (e.g., GitHub for devs, Dribbble for designers)
+- Search 2: Target the SECONDARY platform (e.g., LinkedIn for professionals, portfolio sites)
+- Search 3: Target community/niche platforms specific to this industry
+- Search 4 (if needed): One more targeted search for any missing channel types
 
-For GitHub channels:
-- Use WebSearch: "site:github.com {{search_terms}}"
-- Find real GitHub users with relevant projects
-- Include their actual GitHub username and URL
-
-For LinkedIn channels:
-- Use WebSearch: "site:linkedin.com/in {{search_terms}}"
-- Find real LinkedIn profiles
-- Include actual profile URLs
-
-For community platforms (Buildspace, IndieHackers, etc.):
-- Use WebSearch to find the platform
-- Search for real member profiles
-- Include actual URLs to their profiles
+For each search result:
+- Extract 1-2 real people who clearly fit the criteria
+- Include their actual profile URL (platform-specific format)
+- Don't do follow-up searches for individual profiles - use what you find
 
 **ABSOLUTELY CRITICAL - MANDATORY REQUIREMENTS:**
 - EVERY channel MUST have a real example with a working URL
@@ -71,17 +76,18 @@ Output format (JSON):
   "status": "success",
   "channels": [
     {{
-      "name": "Twitter #buildinpublic AI students",
-      "channelType": "twitter-search",
-      "description": "Students tweeting about AI projects",
-      "searchQuery": "#buildinpublic AI student",
+      "name": "Platform/Channel name (e.g., 'GitHub Go developers', 'Dribbble UI designers', 'LinkedIn marketing professionals')",
+      "channelType": "platform" | "community" | "job-board" | "portfolio-site" | "social-network" | "other",
+      "description": "How to mine this channel for candidates",
+      "searchQuery": "Search query to find candidates in this channel",
+      "platformUrl": "Base URL for the platform (optional)",
       "example": {{
-        "name": "@actual_twitter_handle",
-        "url": "https://twitter.com/actual_twitter_handle",
-        "description": "Brief description from their bio"
+        "name": "Real person's name or handle",
+        "url": "Direct link to their profile",
+        "description": "Brief description showing they meet the criteria"
       }},
       "score": 9,
-      "reason": "High concentration of active builders"
+      "reason": "Why this channel is good for finding these candidates"
     }}
   ]
 }}
@@ -98,10 +104,14 @@ async def discover_channels(
 ) -> dict:
     """Run the channel discovery agent with web search"""
 
-    # Prepare output path
+    # Prepare output path - make it absolute to avoid path issues
+    output_dir = output_dir.resolve()  # Convert to absolute path
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = output_dir / f"channels_{timestamp}.json"
     output_dir.mkdir(parents=True, exist_ok=True)
+    
+    print(f"[Channel Discovery Agent] Output directory (absolute): {output_dir}", flush=True)
+    print(f"[Channel Discovery Agent] Output file (absolute): {output_file}", flush=True)
 
     # Format additional constraints
     constraints_text = ""
@@ -121,35 +131,82 @@ async def discover_channels(
     # Run agent with web search
     try:
         print(f"[Channel Discovery Agent] Starting search for: {refined_query}", flush=True)
+        
+        # Check if API key is available
+        import os
+        api_key = os.environ.get('ANTHROPIC_API_KEY')
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY environment variable is not set")
+        print(f"[Channel Discovery Agent] API key found: {api_key[:10]}...{api_key[-4:] if len(api_key) > 14 else '***'}", flush=True)
 
         # Use the correct API with allowed_tools
+        # Use absolute path for cwd to ensure Write tool writes to correct location
         options = ClaudeAgentOptions(
             permission_mode='acceptEdits',
             allowed_tools=['Read', 'Write', 'WebSearch', 'WebFetch'],
-            cwd=str(output_dir),
+            cwd=str(output_dir.absolute()),
         )
 
+        print(f"[Channel Discovery Agent] Calling query() with prompt length: {len(prompt)}", flush=True)
+        print(f"[Channel Discovery Agent] Output file will be: {output_file}", flush=True)
+        
         # Run the agent and consume the async iterator
-        async for message in query(prompt=prompt, options=options):
-            # Just consume messages, agent will write to file
-            pass
+        message_count = 0
+        try:
+            print(f"[Channel Discovery Agent] Starting async iteration...", flush=True)
+            async for message in query(prompt=prompt, options=options):
+                message_count += 1
+                print(f"[Channel Discovery Agent] Received message #{message_count}: {type(message).__name__}", flush=True)
+                # Log message content if available
+                if hasattr(message, 'content'):
+                    content_preview = str(message.content)[:200] if message.content else "None"
+                    print(f"[Channel Discovery Agent] Message content preview: {content_preview}...", flush=True)
+                # Also check for tool calls
+                if hasattr(message, 'tool_calls'):
+                    print(f"[Channel Discovery Agent] Message has {len(message.tool_calls) if message.tool_calls else 0} tool calls", flush=True)
+        except Exception as query_error:
+            print(f"[Channel Discovery Agent] Error during query iteration: {str(query_error)}", flush=True)
+            print(f"[Channel Discovery Agent] Error type: {type(query_error).__name__}", flush=True)
+            import traceback
+            print(f"[Channel Discovery Agent] Traceback: {traceback.format_exc()}", flush=True)
+            raise
 
-        print(f"[Channel Discovery Agent] Agent completed", flush=True)
+        print(f"[Channel Discovery Agent] Agent completed after {message_count} messages", flush=True)
 
         # Read the output file the agent created
-        if output_file.exists():
-            with open(output_file, 'r') as f:
+        # Check both the expected path and /tmp variant (Write tool sometimes uses /tmp)
+        possible_paths = [
+            output_file,  # Expected path
+            Path('/tmp') / output_file.relative_to(output_dir),  # /tmp variant
+        ]
+        
+        print(f"[Channel Discovery Agent] Checking for output file at: {output_file}", flush=True)
+        print(f"[Channel Discovery Agent] File exists: {output_file.exists()}", flush=True)
+        
+        found_file = None
+        for path in possible_paths:
+            if path.exists():
+                found_file = path
+                print(f"[Channel Discovery Agent] Found output file at: {path}", flush=True)
+                break
+        
+        if found_file:
+            with open(found_file, 'r') as f:
                 channels_data = json.load(f)
 
             return {
                 "status": "success",
                 "channels": channels_data.get("channels", []),
-                "output_file": str(output_file)
+                "output_file": str(found_file)
             }
         else:
+            # List what files do exist in the directory for debugging
+            if output_dir.exists():
+                existing_files = list(output_dir.glob('*.json'))
+                print(f"[Channel Discovery Agent] Existing JSON files in {output_dir}: {[str(f) for f in existing_files]}", flush=True)
             return {
                 "status": "error",
-                "error": "Agent did not create output file"
+                "error": f"Agent did not create output file. Expected: {output_file}"
             }
 
     except Exception as e:

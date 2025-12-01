@@ -228,6 +228,7 @@ async function runChannelDiscoveryAgent(
 
   const PYTHON_BIN = await findPythonBin();
   const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'recruiting', 'discover-channels-agent.py');
+  const DEFAULT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes (agent does many web searches)
 
   return new Promise((resolve, reject) => {
     const args = [
@@ -245,26 +246,104 @@ async function runChannelDiscoveryAgent(
 
     console.log(`[Channel Discovery Agent] Running: ${PYTHON_BIN} ${args.join(' ')}`);
 
-    const agentProcess = spawn(PYTHON_BIN, args);
+    // Pass required environment variables for claude-agent-sdk
+    const apiKey = process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.ANTHROPIC_API_KEY;
+    if (!apiKey) {
+      console.error('[Channel Discovery Agent] WARNING: No ANTHROPIC_API_KEY found in environment');
+    } else {
+      console.log(`[Channel Discovery Agent] API key found: ${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)}`);
+    }
+
+    const env = {
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      ANTHROPIC_API_KEY: apiKey,
+      // Explicitly exclude CLAUDE_CODE_OAUTH_TOKEN to force API key usage
+      CLAUDE_CODE_OAUTH_TOKEN: undefined,
+    };
+
+    console.log(`[Channel Discovery Agent] Spawning process with env vars: PATH=${env.PATH ? 'set' : 'missing'}, HOME=${env.HOME ? 'set' : 'missing'}, ANTHROPIC_API_KEY=${env.ANTHROPIC_API_KEY ? 'set' : 'missing'}`);
+
+    const agentProcess = spawn(PYTHON_BIN, args, {
+      env,
+      cwd: process.cwd(),
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    console.log(`[Channel Discovery Agent] Process spawned with PID: ${agentProcess.pid}`);
     
+    // Timeout handler
+    const timeout = setTimeout(() => {
+      console.error(`[Channel Discovery Agent] TIMEOUT after ${DEFAULT_TIMEOUT_MS}ms`);
+      console.error(`[Channel Discovery Agent] Process PID: ${agentProcess.pid}`);
+      console.error(`[Channel Discovery Agent] Process killed: ${agentProcess.killed}`);
+      console.error(`[Channel Discovery Agent] Last stdout (last 500 chars): ${stdout.substring(Math.max(0, stdout.length - 500))}`);
+      console.error(`[Channel Discovery Agent] Last stderr (last 500 chars): ${stderr.substring(Math.max(0, stderr.length - 500))}`);
+      agentProcess.kill('SIGTERM');
+      // Give it a moment, then force kill
+      setTimeout(() => {
+        if (!agentProcess.killed) {
+          console.error(`[Channel Discovery Agent] Force killing process`);
+          agentProcess.kill('SIGKILL');
+        }
+      }, 1000);
+      const errorMsg = stderr
+        ? `Channel discovery agent timed out after ${DEFAULT_TIMEOUT_MS}ms. Last error: ${stderr.substring(0, 200)}`
+        : `Channel discovery agent timed out after ${DEFAULT_TIMEOUT_MS}ms`;
+      reject(new Error(errorMsg));
+    }, DEFAULT_TIMEOUT_MS);
+
     agentProcess.on('error', (error) => {
+      clearTimeout(timeout);
       reject(new Error(`Failed to spawn Python process: ${error.message}. Make sure Python 3 is installed and accessible.`));
     });
     let stdout = '';
     let stderr = '';
 
+    let lastMessageTime = Date.now();
+    let messageCount = 0;
+    const startTime = Date.now();
+    
     agentProcess.stdout.on('data', (data) => {
-      stdout += data.toString();
-      console.log(`[Channel Discovery Agent] ${data.toString().trim()}`);
+      const text = data.toString();
+      stdout += text;
+      
+      // Track progress - if we see "Received message", the agent is making progress
+      if (text.includes('Received message')) {
+        messageCount++;
+        lastMessageTime = Date.now();
+        const elapsed = Math.round((Date.now() - startTime) / 1000);
+        console.log(`[Channel Discovery Agent] Progress: ${messageCount} messages received, ${elapsed}s elapsed`);
+      }
+      
+      // Log each line separately for better visibility
+      text.split('\n').forEach(line => {
+        if (line.trim()) {
+          console.log(`[Channel Discovery Agent STDOUT] ${line.trim()}`);
+        }
+      });
     });
 
     agentProcess.stderr.on('data', (data) => {
-      stderr += data.toString();
-      console.error(`[Channel Discovery Agent Error] ${data.toString().trim()}`);
+      const text = data.toString();
+      stderr += text;
+      // Log each line separately for better visibility
+      text.split('\n').forEach(line => {
+        if (line.trim()) {
+          console.error(`[Channel Discovery Agent STDERR] ${line.trim()}`);
+        }
+      });
     });
 
     agentProcess.on('close', (code) => {
+      clearTimeout(timeout);
+      
+      console.log(`[Channel Discovery Agent] Process closed with exit code: ${code}`);
+      console.log(`[Channel Discovery Agent] Total stdout length: ${stdout.length} chars`);
+      console.log(`[Channel Discovery Agent] Total stderr length: ${stderr.length} chars`);
+      
       if (code !== 0) {
+        console.error(`[Channel Discovery Agent] Process failed. Full stderr: ${stderr}`);
         reject(new Error(`Agent exited with code ${code}: ${stderr}`));
         return;
       }
@@ -272,7 +351,13 @@ async function runChannelDiscoveryAgent(
       try {
         // Parse last JSON line
         const lines = stdout.split(/\r?\n/).filter(l => l.trim());
+        console.log(`[Channel Discovery Agent] Found ${lines.length} non-empty lines in stdout`);
+        if (lines.length === 0) {
+          reject(new Error('Agent produced no output'));
+          return;
+        }
         const lastLine = lines[lines.length - 1];
+        console.log(`[Channel Discovery Agent] Last line (${lastLine.length} chars): ${lastLine.substring(0, 200)}...`);
         const result = JSON.parse(lastLine);
 
         if (result.status === 'error') {

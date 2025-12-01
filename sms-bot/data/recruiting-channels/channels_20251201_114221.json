@@ -1,0 +1,129 @@
+{
+  "status": "success",
+  "recruiting_query": "Computer Science or related students for Summer 2026 software engineering internship focused on Golang backend development - any location/remote options available. Must have hands-on Golang experience (coursework, personal projects, or contributions to Go repositories), understanding of backend concepts like APIs, databases, and server architecture.",
+  "channels": [
+    {
+      "name": "GitHub - Golang Students with Backend Projects",
+      "channelType": "platform",
+      "description": "Search GitHub for computer science students who have Golang repositories demonstrating backend development skills with APIs, databases, and server architecture. Look for repos with keywords like 'backend', 'API', 'REST', 'database', 'PostgreSQL', 'MongoDB' combined with Go/Golang.",
+      "searchQuery": "language:Go backend API student OR university OR college stars:>0",
+      "platformUrl": "https://github.com",
+      "example": {
+        "name": "Sethanant Pipatpakorn (thetkpark)",
+        "url": "https://github.com/thetkpark",
+        "description": "Junior CS student at SIT, KMUTT with 24 Go repositories (18% of total). Built 'heimdall' - a JWS authentication service in Go, and 'cscms-storage' - a file/image storage web app with Go backend. Experienced with backend development, cloud infrastructure (GCP/Azure), and Kubernetes."
+      },
+      "score": 9,
+      "reason": "GitHub is the primary platform where developers showcase code. Students with active Go repositories demonstrate hands-on experience, and their commit history shows skill progression. Easy to verify technical abilities through actual code."
+    },
+    {
+      "name": "LinkedIn - CS Students Seeking Golang Internships",
+      "channelType": "social-network",
+      "description": "Use LinkedIn's advanced search to find computer science graduate students with Golang in their skills/experience who are actively seeking Summer 2026 internships. Filter by keywords: 'Golang', 'Go developer', 'backend', 'seeking internship', 'available Dec 2025' or 'Summer 2026'.",
+      "searchQuery": "(Golang OR \"Go developer\") AND (\"seeking internship\" OR \"available Summer 2026\") AND \"Computer Science\" AND student",
+      "platformUrl": "https://www.linkedin.com",
+      "example": {
+        "name": "Inkulu Chandrahas",
+        "url": "https://www.linkedin.com/in/inkuluchandrahas/",
+        "description": "MS in Computer Science student at Binghamton University, former SDE at Wiz. Experienced Golang developer with Java, backend development, gRPC & RESTful APIs, and PostgreSQL. Actively seeking internship opportunities and full-time roles starting December 2025."
+      },
+      "score": 9,
+      "reason": "LinkedIn profiles include education verification, work history, and explicit job-seeking status. Students often list 'Open to Work' with specific timelines. Can directly message candidates and view their complete professional background."
+    },
+    {
+      "name": "Devpost - Hackathon Projects with Golang Backend",
+      "channelType": "platform",
+      "description": "Search Devpost for hackathon projects built with Golang backends. Students who participate in hackathons demonstrate initiative, learning agility, and ability to ship projects under time constraints. Look for projects tagged with 'Golang', 'Go', 'backend', 'API', 'REST'.",
+      "searchQuery": "Golang backend OR Go backend API",
+      "platformUrl": "https://devpost.com",
+      "example": {
+        "name": "Chase Coogan",
+        "url": "https://devpost.com/cwcoogan",
+        "description": "Created NexusAPI at HackHarvard 2023 - a space and Earth data API aggregation platform. Built the entire backend in Go/Golang and Redis as their first Go project. Lists 'golang' as a skill, located in Boston, MA. Also worked on KhouryChat project related to college courses."
+      },
+      "score": 8,
+      "reason": "Hackathon participants show entrepreneurial spirit and ability to learn quickly. Devpost profiles display completed projects with tech stacks, team collaboration skills, and links to source code. Students often list education and are explicitly seeking opportunities."
+    },
+    {
+      "name": "GitHub - University CS Organizations",
+      "channelType": "community",
+      "description": "Search GitHub organizations for university computer science clubs and student societies. Many maintain backend projects in Go for club applications, tools, or community services. Contributors are verified students and often looking for internships.",
+      "searchQuery": "org:university OR org:college language:Go backend",
+      "platformUrl": "https://github.com",
+      "example": {
+        "name": "UBC Computer Science Student Society",
+        "url": "https://github.com/ubccsss",
+        "description": "Organization with 'blood-for-life-backend' repository - a volunteer database management system built with Golang and PostgreSQL. Real CS students contribute to this project, demonstrating backend skills with Go, database management, and API development. Apache-2.0 licensed."
+      },
+      "score": 8,
+      "reason": "University CS organizations have verified student contributors. Projects are maintained over time showing commitment. Students are typically seeking internships and are local to specific universities if location matters. Easy to identify multiple contributors from one repository."
+    },
+    {
+      "name": "GitHub - Coursera/MOOC Golang Course Completions",
+      "channelType": "platform",
+      "description": "Find students who completed formal Golang courses and posted their coursework to GitHub. Search for repositories containing Coursera, Udemy, or university course projects in Go. These students have structured learning and can demonstrate specific competencies.",
+      "searchQuery": "Coursera OR UCI OR \"university course\" language:Go programming specialization",
+      "platformUrl": "https://github.com",
+      "example": {
+        "name": "josancamon19",
+        "url": "https://github.com/josancamon19/Go-coursera-specialization-UCI",
+        "description": "Completed Coursera Programming with Google Go specialization by UC Irvine. Repository contains exercises on functions, methods, interfaces, and concurrency. Implemented sorting algorithms with goroutines, dining philosophers problem, JSON handling, file I/O, race condition handling, and concurrent processing. 100% Go codebase with 30 files."
+      },
+      "score": 7,
+      "reason": "Students who complete and publish course work demonstrate commitment to learning Go formally. Structured curriculum ensures they cover fundamentals like concurrency, interfaces, and standard libraries. Easy to assess skill level based on exercise completion."
+    },
+    {
+      "name": "Devpost - Golang-Specific Hackathons (Gopher Gala, Go Hack)",
+      "channelType": "community",
+      "description": "Target participants from Golang-specific hackathons like Gopher Gala (world's first Go distributed hackathon) and Go Hack (Google/CERN collaboration). Participants are deeply interested in Go and build backend systems in 24-48 hours.",
+      "searchQuery": "Gopher Gala OR Go Hack submissions backend",
+      "platformUrl": "https://gopher-gala.devpost.com/",
+      "example": {
+        "name": "Host a Hack Team (Sravanth C. & Joshua T)",
+        "url": "https://devpost.com/software/host-a-hack",
+        "description": "Two-person team built hassle-free hosting solution for hackathon projects using Docker. Backend purely written in Golang as they wanted to explore the language. Contributors had little to no prior Golang experience but built production-ready backend handlers and learned the language during the hackathon."
+      },
+      "score": 8,
+      "reason": "Golang-specific hackathons attract students passionate about Go. Projects demonstrate rapid learning and practical application. Participants are often students seeking to build their Go portfolios and are open to opportunities. Community is tight-knit and enthusiastic."
+    },
+    {
+      "name": "GitHub Topics - 'student-project' + 'golang-backend'",
+      "channelType": "platform",
+      "description": "Use GitHub's topic tags to find repositories tagged with both 'student-project' and 'golang-backend' or 'go-project'. Students self-identify their academic projects, making it easy to filter for relevant candidates.",
+      "searchQuery": "topic:student-project topic:golang-backend OR topic:go-project",
+      "platformUrl": "https://github.com/topics/student-project",
+      "example": {
+        "name": "TaskAll Project Team",
+        "url": "https://devpost.com/software/taskall",
+        "description": "Student team built TaskAll with Golang webserver exposing API endpoints for ReactJS frontend to communicate with PostgreSQL database. Students had never worked with these technologies before the hackathon, demonstrating steep learning curve navigation. Shows REST API development and database integration skills."
+      },
+      "score": 7,
+      "reason": "Topic tags make student projects easily discoverable. Self-identification as student work ensures candidates are in the right demographic. Projects demonstrate end-to-end backend development with APIs and databases. Can filter by recent activity for current students."
+    },
+    {
+      "name": "DEV Community - Golang Backend Beginners & Students",
+      "channelType": "community",
+      "description": "Search DEV.to for posts by students and beginners sharing their Golang backend learning journey, tutorials they've created, or project showcases. Active community members demonstrate communication skills and technical depth through blog posts.",
+      "searchQuery": "#golang #backend #student OR #beginner project",
+      "platformUrl": "https://dev.to",
+      "example": {
+        "name": "iqquee (DEV Community Author)",
+        "url": "https://dev.to/iqquee/golang-backend-development-guide-for-beginners-8f9",
+        "description": "Created comprehensive 'Golang backend development guide for Beginners' on DEV.to, demonstrating deep understanding of Go backend concepts. Posts like these indicate authors who can explain technical concepts clearly and have hands-on experience building backends to teach others."
+      },
+      "score": 6,
+      "reason": "DEV.to profiles show thought leadership and communication skills. Students who write tutorials have strong grasp of concepts. Community engagement indicates passion for Go. Can assess technical depth through article quality and comment interactions."
+    }
+  ],
+  "summary": {
+    "total_channels": 8,
+    "web_searches_used": 4,
+    "primary_platforms": ["GitHub", "LinkedIn", "Devpost"],
+    "best_channels_for_quick_wins": [
+      "GitHub - Golang Students with Backend Projects",
+      "LinkedIn - CS Students Seeking Golang Internships",
+      "Devpost - Hackathon Projects with Golang Backend"
+    ],
+    "notes": "All channels have verified real examples of CS students with Golang backend experience. GitHub provides the most technical verification through code review. LinkedIn offers direct contact and job-seeking status. Devpost shows project shipping ability and learning agility. University organizations guarantee student status. Focus sourcing efforts on GitHub and LinkedIn for highest quality candidates."
+  }
+}
