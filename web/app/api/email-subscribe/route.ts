@@ -11,7 +11,20 @@ interface SendGridRequest {
   contacts: SendGridContact[];
 }
 
+/**
+ * Check if SendGrid should be bypassed
+ */
+function isSendGridBypassed(): boolean {
+  return process.env.SENDGRID_ENABLED === 'FALSE';
+}
+
 async function addContactToSendGrid(email: string, firstName?: string, lastName?: string) {
+  // Bypass SendGrid API call if disabled
+  if (isSendGridBypassed()) {
+    console.log(`🚫 SendGrid Bypassed: Would add contact ${email} to SendGrid list`);
+    return { job_id: `MOCK${Date.now()}` };
+  }
+
   const sendGridApiKey = process.env.SENDGRID_API_KEY;
   const sendGridListId = process.env.SENDGRID_LIST_ID;
 

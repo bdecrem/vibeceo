@@ -4,6 +4,7 @@ import { getRecruitingPreferences, updateRecruitingPreferences, type RecruitingP
 import { getActiveSubscribers } from '../subscribers.js';
 import type { Candidate } from '../../commands/recruit.js';
 import { countUCS2CodeUnits, MAX_SMS_CODE_UNITS } from '../utils/sms-length.js';
+import { findPythonBin } from '../utils/python-exec.js';
 
 const DEFAULT_SEND_HOUR = Number(process.env.RECRUITING_SEND_HOUR || 11); // 11am PT
 const DEFAULT_SEND_MINUTE = Number(process.env.RECRUITING_SEND_MINUTE || 0);
@@ -83,7 +84,7 @@ async function collectNewCandidatesForProject(
   const path = await import('node:path');
   const crypto = await import('node:crypto');
 
-  const PYTHON_BIN = process.env.PYTHON_BIN || path.join(process.cwd(), '..', '.venv', 'bin', 'python3');
+  const PYTHON_BIN = await findPythonBin();
   const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'recruiting', 'collect-candidates-agent.py');
 
   return new Promise((resolve, reject) => {
@@ -94,6 +95,10 @@ async function collectNewCandidatesForProject(
     ];
 
     const agentProcess = spawn(PYTHON_BIN, args);
+    
+    agentProcess.on('error', (error) => {
+      reject(new Error(`Failed to spawn Python process: ${error.message}. Make sure Python 3 is installed and accessible.`));
+    });
     let stdout = '';
     let stderr = '';
 
