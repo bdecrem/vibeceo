@@ -208,8 +208,9 @@ export function formatAiDailyLinks(episode: AiDailyEpisode): string | null {
 
   const formattedLinks = huggingfaceLinks.map((link) => {
     const label = link.target.split(':')[0].trim();
-    const shortenedUrl = link.url.replace(/^https?:\/\//i, '');
-    return `${label}: ${shortenedUrl}`;
+    // Use full URL for clickable markdown links
+    const fullUrl = link.url.startsWith('http') ? link.url : `https://${link.url}`;
+    return `[${label}](${fullUrl})`;
   });
 
   return [
