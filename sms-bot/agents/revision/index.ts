@@ -18,8 +18,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Python path - use environment variable or default
-const PYTHON_BIN = process.env.PYTHON_BIN || '/opt/homebrew/bin/python3.13';
-const AGENT_SCRIPT = path.join(__dirname, 'agent.py');
+// Use system python3 by default (works on any platform). Override with PYTHON_BIN env var if needed.
+const PYTHON_BIN = process.env.PYTHON_BIN || 'python3';
+const AGENT_SCRIPT = path.join(process.cwd(), 'agents', 'revision', 'agent.py');
 const TEMP_DIR = path.join(process.cwd(), 'data', 'revision-temp');
 
 // Models
