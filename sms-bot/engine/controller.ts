@@ -2053,7 +2053,8 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 
                 // Deploy public page (normal app)
                 // Determine the coach type for database storage
-                const coachType = configType === 'game' ? 'game' : (coach || "unknown");
+                // Use isGameRequest (not configType) so BUILD+game still gets type 'GAME'
+                const coachType = isGameRequest ? 'game' : (coach || "unknown");
                 
                 const publicResult = await saveCodeToSupabase(
                     publicHtml.trim(), 
@@ -2118,8 +2119,9 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 logWithTimestamp(`💰 Credit check passed: ${creditCheck.creditsRemaining} credits remaining`);
                 
                 // Determine the coach type for database storage
-                const coachType = configType === 'game' ? 'game' : (coach || "unknown");
-                
+                // Use isGameRequest (not configType) so BUILD+game still gets type 'GAME'
+                const coachType = isGameRequest ? 'game' : (coach || "unknown");
+
                 const result = await saveCodeToSupabase(code, coachType, userSlug, senderPhone, originalUserInput, null, false, isPublicZadRequest);
                 
                 // Deduct credit after successful deployment
@@ -2135,7 +2137,7 @@ Generate the complete HTML for the INDEX page. The object pages will be handled 
                 publicUrl = result.publicUrl;
                 if (result.uuid) {
                     logWithTimestamp(`📱 Single-page app deployed with UUID: ${result.uuid}`);
-                    if (configType === 'game') {
+                    if (isGameRequest) {
                         logWithTimestamp(`🎮 Game app will be stored with type: 'GAME'`);
                     }
                 }
