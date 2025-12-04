@@ -100,10 +100,10 @@ WHERE agent_slug = 'recruiting';
 
 ```bash
 # 1. Reset project to allow re-testing
-npx tsx scripts/reset-recruiting-project.ts +1234567890
+# npx tsx scripts/reset-recruiting-project.ts +1234567890
 
 # 2. Manually trigger daily collection (bypasses 11am PT)
-npx tsx scripts/test-recruiting-daily.ts +1234567890
+npx tsx scripts/test-recruiting-daily.ts +15555551234
 
 # 3. Check Supabase
 # Run SQL queries from documentation
@@ -154,5 +154,5 @@ WHERE agent_slug = 'recruiting'
 - **Agent Logic:** `agents/recruiting/index.ts`
 - **Channel Discovery:** `agents/recruiting/discover-channels-agent.py`
 - **Candidate Collection:** `agents/recruiting/collect-candidates-agent.py`
-- **Test Scripts:** `scripts/test-recruiting-daily.ts`, `scripts/reset-recruiting-project.ts`
+<!-- - **Test Scripts:** `scripts/test-recruiting-daily.ts`, `scripts/reset-recruiting-project.ts` -->
 
