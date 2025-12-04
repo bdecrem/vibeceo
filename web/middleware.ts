@@ -75,9 +75,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // SPECIFIC FIX: Bypass token-tank immediately
+  // SPECIFIC FIX: Bypass token-tank immediately (v2 - forced rebuild)
   if (pathname === '/token-tank' || pathname.startsWith('/token-tank/')) {
-    log(`[Middleware] Token Tank bypassed: ${pathname}`)
+    console.log(`[Middleware] Token Tank bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
