@@ -3,10 +3,11 @@
  *
  * Handles non-keyword messages by:
  * 1. Loading user context (personalization + subscriptions + recent messages)
- * 2. Routing via AI orchestrator (kg-query, air, or general)
+ * 2. Routing via AI orchestrator (kg-query, discovery, or general)
  * 3. Delegating to appropriate handler
  *
  * This offloads routing logic from handlers.ts
+ * Note: AIR commands are handled by keyword routing, not orchestrated routing
  */
 
 import type { CommandContext } from '../../commands/types.js';
@@ -184,20 +185,6 @@ export async function handleOrchestratedMessage(
       await handleGeneralKochiAgent(commandContext, finalContext);
       return;
 
-    case 'air':
-      // Route to AIR handler (subscription confirmation flow)
-      // Trust orchestrator's decision - call handler directly without matches() check
-      const { airCommandHandler } = await import('../../commands/air.js');
-      console.log('[Orchestrator] Calling AIR handler (orchestrator-routed)');
-      const airHandled = await airCommandHandler.handle(commandContext);
-      if (airHandled) {
-        return;
-      }
-      // If handler couldn't process, fall through to general
-      console.log('[Orchestrator] AIR handler returned false, falling through to general');
-      await handleGeneralKochiAgent(commandContext, finalContext);
-      return;
-
     case 'discovery':
       // Route to discovery agent (agentic with web search)
       const { handleDiscoveryAgent } = await import('../../commands/discovery.js');
@@ -208,6 +195,7 @@ export async function handleOrchestratedMessage(
     case 'general':
     default:
       // Route to general Kochi agent
+      // Note: AIR commands (starting with "AIR" or "AI RESEARCH") are handled by keyword routing, not here
       await handleGeneralKochiAgent(commandContext, finalContext);
       return;
   }
