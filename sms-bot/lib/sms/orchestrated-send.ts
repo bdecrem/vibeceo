@@ -234,12 +234,12 @@ async function determineMessageRouting(
     return relevanceDecision;
   } catch (error) {
     console.error(`[ORCH-LOG] Error in AI routing decision:`, error);
-    // Fallback: queue if there's an active thread (safe default)
+    // Fallback: prefer merge over queue - better to deliver messages naturally than queue them
     return {
-      decision: 'queue',
-      reasoning: 'AI analysis failed, defaulting to queue for safety',
+      decision: 'merge',
+      reasoning: 'AI analysis failed, defaulting to merge to ensure message delivery',
       confidence: 'low',
-      queueReason: 'Error in relevance analysis',
+      canMerge: true,
     };
   }
 }
@@ -323,7 +323,7 @@ General:
 - STOP - Unsubscribe
 - HELP - Show help
 
-DECISION OPTIONS:
+DECISION OPTIONS (in priority order):
 
 1. "send_now" - Send immediately
    Use when:
@@ -333,27 +333,34 @@ DECISION OPTIONS:
    - Message completes or continues the active conversation naturally
    - Message is urgent/time-sensitive and related to the conversation
 
-2. "merge" - Merge into current conversation
+2. "merge" - Merge into current conversation (PREFERRED when message has ANY connection to active conversation)
    Use when:
    - Message can be naturally added as part of the ongoing conversation
    - Message provides additional context or information related to the active topic
    - Message is a follow-up or continuation of the active conversation
    - Message enhances rather than interrupts the conversation flow
+   - Message is even tangentially related to the active conversation topic
+   - Message is a scheduled broadcast that relates to the active conversation (e.g., daily reports about a topic the user is discussing)
+   - Message shares any thematic connection with the active conversation
+   - When in doubt between merge and queue, choose merge - it's better to deliver relevant information naturally than to queue it
 
-3. "queue" - Queue for later
-   Use when:
-   - Message is completely unrelated to the active conversation
-   - Message is a scheduled broadcast (daily reports, notifications)
-   - Message would interrupt an important multi-turn conversation
-   - Message is informational but not urgent
-   - Active conversation is in a critical state (user is providing input, making decisions)
+3. "queue" - Queue for later (LAST RESORT - only when message is completely unrelated AND cannot be merged)
+   Use ONLY when:
+   - Message is completely unrelated to the active conversation AND cannot be naturally merged
+   - Message would genuinely interrupt a critical multi-turn conversation that cannot accommodate additional context
+   - Message is a scheduled broadcast that has NO connection whatsoever to the active conversation topic
+   - Active conversation is in a critical decision-making state where ANY interruption would be disruptive
    - NEVER queue command responses - they must always be sent immediately
+   - NEVER queue messages that are even tangentially related - use merge instead
+   - IMPORTANT: Queue should be the exception, not the rule. If there's any way to merge the message naturally, do that instead.
 
 EXAMPLES:
-- Active: User asking about research papers → Outbound: Daily AI research report → Decision: queue (unrelated scheduled content)
+- Active: User asking about research papers → Outbound: Daily AI research report → Decision: merge (related to research topic, can be naturally added)
 - Active: User in recruiting flow → Outbound: New candidates found → Decision: merge (directly related)
 - Active: User asking questions → Outbound: Answer to their question → Decision: send_now (direct response)
-- Active: User in discovery agent → Outbound: Scheduled crypto daily → Decision: queue (unrelated)
+- Active: User in discovery agent → Outbound: Scheduled crypto daily → Decision: merge (if user is interested in crypto/discovery, merge it; only queue if completely unrelated)
+- Active: User discussing web development → Outbound: Daily AI research report → Decision: merge (can be naturally added as additional context)
+- Active: User in critical multi-step setup flow → Outbound: Completely unrelated daily report → Decision: queue (only if truly unrelated and would disrupt flow)
 - Active: Any conversation → Outbound: Command list response → Decision: send_now (ALWAYS - command responses must be immediate)
 - Active: User asked "COMMANDS" → Outbound: List of commands → Decision: send_now (ALWAYS - direct response to user request)
 
