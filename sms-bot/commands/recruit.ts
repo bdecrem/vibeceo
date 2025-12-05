@@ -1396,14 +1396,93 @@ async function handleShowToday(context: CommandContext): Promise<void> {
 
   const project = prefs.projects[projectId];
   if (!project.setupComplete) {
-    // Check what stage we're at
+    // Check what stage we're at and restore thread state if needed
+    const { loadUserContext } = await import('../lib/context-loader.js');
+    const userContext = await loadUserContext(normalizedFrom);
+    
     if (!project.channelsApproved) {
       // Still in exploration/channel approval
-      await sendSmsResponse(
-        from,
-        `🔍 Channel discovery in progress\n\nQuery: "${project.query}"\n\nPlease continue the conversation to approve channels.`,
-        twilioClient
-      );
+      // Check if we have channels to approve (approval phase) or still exploring
+      const hasChannels = project.channels && project.channels.length > 0;
+      const hasRefinedSpec = !!project.refinedSpec;
+      
+      // Restore thread state if missing
+      if (!userContext?.activeThread) {
+        if (hasChannels) {
+          // We have channels - restore approval thread
+          await storeThreadState(subscriber.id, {
+            handler: 'recruit-source-approval',
+            topic: project.query,
+            context: {
+              projectId,
+              query: project.query,
+              channels: project.channels,
+              conversational: project.conversationalResponse,
+              conversationHistory: project.explorationHistory?.map((h: any) => ({
+                role: h.role,
+                content: h.content,
+              })) || [],
+              additionalConstraints: [],
+            },
+          });
+        } else if (hasRefinedSpec || project.explorationHistory?.length) {
+          // We're in exploration phase - restore exploration thread
+          const companyInfo = project.query.toLowerCase().includes('kochi')
+            ? 'Kochi.to is an AI assistant over SMS - a personal agent platform for daily tasks and information.'
+            : undefined;
+          
+          await storeThreadState(subscriber.id, {
+            handler: 'recruit-exploration',
+            topic: project.query,
+            context: {
+              projectId,
+              query: project.query,
+              companyInfo,
+              conversationHistory: project.explorationHistory?.map((h: any) => ({
+                role: h.role,
+                content: h.content,
+              })) || [{ role: 'user', content: project.query }],
+              roundCount: project.explorationHistory?.length ? Math.floor(project.explorationHistory.length / 2) : 0,
+              isQueryProposal: !!project.refinedSpec,
+              proposedQuery: project.refinedSpec?.specText,
+            },
+          });
+        }
+      }
+      
+      // Send clear message based on stage
+      if (hasChannels) {
+        // Channels ready for approval
+        const channelsMessage = formatConversationalChannels(
+          project.conversationalResponse || { channels: project.channels, understanding: '' },
+          project.query
+        );
+        await sendSmsResponse(from, channelsMessage, twilioClient);
+      } else if (hasRefinedSpec) {
+        // Spec approved, waiting for channels
+        await sendSmsResponse(
+          from,
+          `🔍 Finding channels with examples...\n\nQuery: "${project.query}"\n\nI'll send you channels to approve shortly.`,
+          twilioClient
+        );
+      } else {
+        // Still in exploration
+        const lastMessage = project.explorationHistory?.[project.explorationHistory.length - 1];
+        if (lastMessage && lastMessage.role === 'assistant') {
+          // Resend last exploration message
+          await sendSmsResponse(
+            from,
+            cleanSmsFormatting(lastMessage.content),
+            twilioClient
+          );
+        } else {
+          await sendSmsResponse(
+            from,
+            `🔍 Let's refine your search\n\nQuery: "${project.query}"\n\nReply with more details or say "APPROVE" if ready.`,
+            twilioClient
+          );
+        }
+      }
     } else {
       // Channels approved, waiting for candidates
       await sendSmsResponse(
