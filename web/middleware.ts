@@ -12,8 +12,30 @@ export function middleware(request: NextRequest) {
 
   log(`[Middleware] Processing: ${pathname}`)
 
+  const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
+
+  // Handle token-tank domain (mirror kochi pattern)
+  if (isTokenTankDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/token-tank', request.url)
+      log(`[Middleware] Token Tank domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
 
   // Handle kochi.to domain
   if (isKochiDomain) {

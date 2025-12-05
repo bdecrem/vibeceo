@@ -9,11 +9,11 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; emoji: string; color: string }> = {
-  i1: { name: 'Agent Alpha', type: 'Claude Code', emoji: '🧠', color: '#00ffaa' },
-  i2: { name: 'Agent Beta', type: 'Claude Code', emoji: '⚡', color: '#ff6b35' },
-  i3: { name: 'Agent Gamma', type: 'Codex', emoji: '🔮', color: '#a855f7' },
-  i4: { name: 'Agent Delta', type: 'Codex', emoji: '🌀', color: '#06b6d4' },
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string }> = {
+  i1: { name: 'Alpha', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
+  i2: { name: 'Beta', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
+  i3: { name: 'Gamma', type: 'Codex', icon: '◒', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
+  i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
 };
 
 export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
@@ -21,623 +21,597 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   return (
-    <div className="token-tank">
+    <div className="tt">
       <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
-        :root {
-          --tt-bg: #0a0a0b;
-          --tt-surface: #141416;
-          --tt-surface-2: #1c1c1f;
-          --tt-gold: #fbbf24;
-          --tt-gold-dim: #b8860b;
-          --tt-text: #e4e4e7;
-          --tt-text-dim: #71717a;
-          --tt-border: #27272a;
-        }
-
-        .token-tank {
+        .tt {
           min-height: 100vh;
-          background: var(--tt-bg);
-          color: var(--tt-text);
-          font-family: 'Space Mono', monospace;
-          position: relative;
-          overflow-x: hidden;
+          background: #f5f5f7;
+          color: #1d1d1f;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+          -webkit-font-smoothing: antialiased;
         }
 
-        .token-tank::before {
-          content: '';
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background-image:
-            linear-gradient(rgba(251, 191, 36, 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(251, 191, 36, 0.03) 1px, transparent 1px);
-          background-size: 50px 50px;
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .token-tank > * {
-          position: relative;
-          z-index: 1;
-        }
-
-        .tt-header {
-          padding: 2rem;
-          border-bottom: 1px solid var(--tt-border);
-          background: linear-gradient(180deg, var(--tt-surface) 0%, transparent 100%);
-        }
-
-        .tt-logo {
-          font-family: 'Syne', sans-serif;
-          font-size: 3rem;
-          font-weight: 800;
-          letter-spacing: -0.02em;
-          background: linear-gradient(135deg, var(--tt-gold) 0%, #fff 50%, var(--tt-gold) 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
-          display: inline-block;
-          animation: shimmer 3s ease-in-out infinite;
-        }
-
-        @keyframes shimmer {
-          0%, 100% { filter: brightness(1); }
-          50% { filter: brightness(1.2); }
-        }
-
-        .tt-tagline {
-          font-size: 0.875rem;
-          color: var(--tt-text-dim);
-          margin-top: 0.5rem;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-        }
-
+        /* Navigation */
         .tt-nav {
+          position: sticky;
+          top: 0;
+          z-index: 100;
+          background: rgba(255, 255, 255, 0.72);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .tt-nav-inner {
+          max-width: 980px;
+          margin: 0 auto;
+          padding: 0 22px;
+          height: 52px;
           display: flex;
-          gap: 0.5rem;
-          margin-top: 1.5rem;
+          align-items: center;
+          justify-content: space-between;
         }
 
-        .tt-nav-btn {
-          padding: 0.75rem 1.5rem;
-          background: transparent;
-          border: 1px solid var(--tt-border);
-          color: var(--tt-text-dim);
-          font-family: 'Syne', sans-serif;
+        .tt-wordmark {
+          font-size: 21px;
           font-weight: 600;
-          font-size: 0.875rem;
+          letter-spacing: -0.02em;
+          color: #1d1d1f;
+        }
+
+        .tt-tabs {
+          display: flex;
+          gap: 8px;
+        }
+
+        .tt-tab {
+          padding: 8px 16px;
+          background: transparent;
+          border: none;
+          border-radius: 980px;
+          font-family: inherit;
+          font-size: 14px;
+          font-weight: 500;
+          color: #1d1d1f;
           cursor: pointer;
-          transition: all 0.2s ease;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
+          transition: background 0.2s ease;
         }
 
-        .tt-nav-btn:hover {
-          border-color: var(--tt-gold-dim);
-          color: var(--tt-text);
+        .tt-tab:hover {
+          background: rgba(0, 0, 0, 0.04);
         }
 
-        .tt-nav-btn.active {
-          background: var(--tt-gold);
-          border-color: var(--tt-gold);
-          color: var(--tt-bg);
+        .tt-tab.active {
+          background: #1d1d1f;
+          color: #fff;
         }
 
-        .tt-content {
-          padding: 3rem 2rem;
-          max-width: 1200px;
+        /* Hero Section */
+        .tt-hero {
+          padding: 120px 22px 80px;
+          text-align: center;
+          max-width: 780px;
           margin: 0 auto;
         }
 
-        /* HOME TAB */
-        .tt-hero {
-          text-align: center;
-          padding: 4rem 0;
+        .tt-hero-eyebrow {
+          font-size: 17px;
+          font-weight: 600;
+          color: #bf4800;
+          margin-bottom: 16px;
         }
 
-        .tt-hero-title {
-          font-family: 'Syne', sans-serif;
-          font-size: 4rem;
-          font-weight: 800;
-          line-height: 1.1;
-          margin-bottom: 1.5rem;
+        .tt-hero h1 {
+          font-size: 56px;
+          font-weight: 700;
+          line-height: 1.07;
+          letter-spacing: -0.03em;
+          color: #1d1d1f;
+          margin-bottom: 24px;
         }
 
-        .tt-hero-title .gold {
-          color: var(--tt-gold);
-        }
-
-        .tt-hero-sub {
-          font-size: 1.25rem;
-          color: var(--tt-text-dim);
+        .tt-hero p {
+          font-size: 21px;
+          font-weight: 400;
+          line-height: 1.47;
+          color: #86868b;
           max-width: 600px;
-          margin: 0 auto 3rem;
-          line-height: 1.6;
+          margin: 0 auto;
         }
 
+        /* Stats Row */
         .tt-stats {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: 1rem;
-          margin: 4rem 0;
+          display: flex;
+          justify-content: center;
+          gap: 64px;
+          padding: 64px 22px;
+          border-top: 1px solid rgba(0, 0, 0, 0.08);
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          background: #fff;
         }
 
         .tt-stat {
-          background: var(--tt-surface);
-          border: 1px solid var(--tt-border);
-          padding: 2rem;
           text-align: center;
-          animation: fadeUp 0.6s ease forwards;
-          opacity: 0;
-        }
-
-        .tt-stat:nth-child(1) { animation-delay: 0.1s; }
-        .tt-stat:nth-child(2) { animation-delay: 0.2s; }
-        .tt-stat:nth-child(3) { animation-delay: 0.3s; }
-        .tt-stat:nth-child(4) { animation-delay: 0.4s; }
-
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
         }
 
         .tt-stat-value {
-          font-family: 'Syne', sans-serif;
-          font-size: 2.5rem;
-          font-weight: 800;
-          color: var(--tt-gold);
+          font-size: 48px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          color: #1d1d1f;
+          line-height: 1;
         }
 
         .tt-stat-label {
-          font-size: 0.75rem;
-          color: var(--tt-text-dim);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-top: 0.5rem;
+          font-size: 14px;
+          font-weight: 500;
+          color: #86868b;
+          margin-top: 8px;
         }
 
-        .tt-pitch {
-          background: var(--tt-surface);
-          border: 1px solid var(--tt-border);
-          padding: 3rem;
-          margin: 4rem 0;
+        /* Feature Cards */
+        .tt-features {
+          max-width: 980px;
+          margin: 0 auto;
+          padding: 80px 22px;
         }
 
-        .tt-pitch h2 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.5rem;
+        .tt-feature-card {
+          background: #fff;
+          border-radius: 20px;
+          padding: 48px;
+          margin-bottom: 24px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        .tt-feature-card h2 {
+          font-size: 32px;
           font-weight: 700;
-          margin-bottom: 1.5rem;
-          color: var(--tt-gold);
+          letter-spacing: -0.02em;
+          margin-bottom: 16px;
+          color: #1d1d1f;
         }
 
-        .tt-pitch p {
-          color: var(--tt-text-dim);
-          line-height: 1.8;
-          margin-bottom: 1rem;
+        .tt-feature-card p {
+          font-size: 17px;
+          line-height: 1.58;
+          color: #86868b;
+          max-width: 600px;
         }
 
-        /* RULES TAB */
-        .tt-rules {
-          background: var(--tt-surface);
-          border: 1px solid var(--tt-border);
-          padding: 3rem;
+        .tt-feature-card p + p {
+          margin-top: 16px;
         }
 
-        .tt-rules h1 {
-          font-family: 'Syne', sans-serif;
-          font-size: 2.5rem;
-          font-weight: 800;
-          color: var(--tt-gold);
-          margin-bottom: 2rem;
-          border-bottom: 2px solid var(--tt-border);
-          padding-bottom: 1rem;
+        /* Rules Section */
+        .tt-rules-container {
+          max-width: 780px;
+          margin: 0 auto;
+          padding: 80px 22px;
         }
 
-        .tt-rules h2 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.5rem;
+        .tt-rules-content {
+          background: #fff;
+          border-radius: 20px;
+          padding: 48px;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        .tt-rules-content h1 {
+          font-size: 40px;
           font-weight: 700;
-          color: var(--tt-text);
-          margin: 2.5rem 0 1rem;
-          padding-top: 1rem;
-          border-top: 1px solid var(--tt-border);
+          letter-spacing: -0.02em;
+          color: #1d1d1f;
+          margin-bottom: 32px;
+          padding-bottom: 24px;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        .tt-rules h3 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.125rem;
+        .tt-rules-content h2 {
+          font-size: 24px;
+          font-weight: 700;
+          color: #1d1d1f;
+          margin: 40px 0 16px;
+        }
+
+        .tt-rules-content h3 {
+          font-size: 19px;
           font-weight: 600;
-          color: var(--tt-gold-dim);
-          margin: 1.5rem 0 0.75rem;
+          color: #1d1d1f;
+          margin: 24px 0 12px;
         }
 
-        .tt-rules p {
-          color: var(--tt-text-dim);
-          line-height: 1.8;
-          margin-bottom: 1rem;
+        .tt-rules-content p {
+          font-size: 17px;
+          line-height: 1.58;
+          color: #515154;
+          margin-bottom: 16px;
         }
 
-        .tt-rules ul, .tt-rules ol {
-          color: var(--tt-text-dim);
-          margin: 1rem 0;
-          padding-left: 1.5rem;
+        .tt-rules-content ul, .tt-rules-content ol {
+          margin: 16px 0;
+          padding-left: 24px;
         }
 
-        .tt-rules li {
-          margin: 0.5rem 0;
-          line-height: 1.6;
+        .tt-rules-content li {
+          font-size: 17px;
+          line-height: 1.58;
+          color: #515154;
+          margin: 8px 0;
         }
 
-        .tt-rules strong {
-          color: var(--tt-text);
+        .tt-rules-content strong {
+          font-weight: 600;
+          color: #1d1d1f;
         }
 
-        .tt-rules code {
-          background: var(--tt-bg);
-          padding: 0.2em 0.4em;
-          font-size: 0.875em;
-          border: 1px solid var(--tt-border);
+        .tt-rules-content code {
+          background: #f5f5f7;
+          padding: 2px 8px;
+          border-radius: 6px;
+          font-size: 15px;
+          font-family: 'SF Mono', Monaco, monospace;
         }
 
-        .tt-rules pre {
-          background: var(--tt-bg);
-          border: 1px solid var(--tt-border);
-          padding: 1rem;
+        .tt-rules-content pre {
+          background: #1d1d1f;
+          color: #fff;
+          padding: 20px;
+          border-radius: 12px;
           overflow-x: auto;
-          margin: 1rem 0;
+          margin: 20px 0;
         }
 
-        .tt-rules pre code {
+        .tt-rules-content pre code {
           background: transparent;
-          border: none;
           padding: 0;
+          color: inherit;
         }
 
-        .tt-rules table {
+        .tt-rules-content table {
           width: 100%;
           border-collapse: collapse;
-          margin: 1rem 0;
+          margin: 20px 0;
+          font-size: 15px;
         }
 
-        .tt-rules th, .tt-rules td {
-          border: 1px solid var(--tt-border);
-          padding: 0.75rem;
+        .tt-rules-content th, .tt-rules-content td {
+          padding: 12px 16px;
           text-align: left;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        .tt-rules th {
-          background: var(--tt-bg);
-          color: var(--tt-gold);
+        .tt-rules-content th {
           font-weight: 600;
+          color: #1d1d1f;
+          background: #f5f5f7;
         }
 
-        .tt-rules td {
-          color: var(--tt-text-dim);
+        .tt-rules-content td {
+          color: #515154;
         }
 
-        .tt-rules a {
-          color: var(--tt-gold);
+        .tt-rules-content a {
+          color: #0066cc;
+          text-decoration: none;
+        }
+
+        .tt-rules-content a:hover {
           text-decoration: underline;
         }
 
-        .tt-rules hr {
+        .tt-rules-content blockquote {
+          border-left: 3px solid #0066cc;
+          padding-left: 20px;
+          margin: 20px 0;
+          color: #515154;
+        }
+
+        .tt-rules-content hr {
           border: none;
-          border-top: 1px solid var(--tt-border);
-          margin: 2rem 0;
+          height: 1px;
+          background: rgba(0, 0, 0, 0.08);
+          margin: 40px 0;
         }
 
-        .tt-rules blockquote {
-          border-left: 3px solid var(--tt-gold);
-          padding-left: 1rem;
-          margin: 1rem 0;
-          color: var(--tt-text-dim);
-          font-style: italic;
+        /* Dashboard */
+        .tt-dashboard {
+          max-width: 980px;
+          margin: 0 auto;
+          padding: 80px 22px;
         }
 
-        /* DASHBOARD TAB */
-        .tt-dashboard-grid {
+        .tt-dashboard-header {
+          text-align: center;
+          margin-bottom: 48px;
+        }
+
+        .tt-dashboard-header h1 {
+          font-size: 40px;
+          font-weight: 700;
+          letter-spacing: -0.02em;
+          color: #1d1d1f;
+        }
+
+        .tt-dashboard-header p {
+          font-size: 19px;
+          color: #86868b;
+          margin-top: 8px;
+        }
+
+        .tt-agents-grid {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
-          gap: 1.5rem;
+          gap: 20px;
         }
 
-        @media (max-width: 768px) {
-          .tt-dashboard-grid {
-            grid-template-columns: 1fr;
-          }
-          .tt-stats {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .tt-hero-title {
-            font-size: 2.5rem;
-          }
+        @media (max-width: 734px) {
+          .tt-hero h1 { font-size: 40px; }
+          .tt-hero p { font-size: 19px; }
+          .tt-stats { flex-wrap: wrap; gap: 32px; }
+          .tt-stat-value { font-size: 36px; }
+          .tt-agents-grid { grid-template-columns: 1fr; }
+          .tt-feature-card { padding: 32px; }
+          .tt-rules-content { padding: 32px; }
         }
 
         .tt-agent-card {
-          background: var(--tt-surface);
-          border: 2px solid var(--tt-border);
+          background: #fff;
+          border-radius: 20px;
+          overflow: hidden;
           cursor: pointer;
-          transition: all 0.3s ease;
-          animation: fadeUp 0.6s ease forwards;
-          opacity: 0;
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
         }
 
-        .tt-agent-card:nth-child(1) { animation-delay: 0.1s; }
-        .tt-agent-card:nth-child(2) { animation-delay: 0.2s; }
-        .tt-agent-card:nth-child(3) { animation-delay: 0.3s; }
-        .tt-agent-card:nth-child(4) { animation-delay: 0.4s; }
-
         .tt-agent-card:hover {
-          transform: translateY(-4px);
-          border-color: var(--agent-color, var(--tt-gold));
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+          transform: scale(1.02);
+          box-shadow: 0 12px 40px rgba(0, 0, 0, 0.08);
         }
 
         .tt-agent-card.expanded {
           grid-column: 1 / -1;
         }
 
-        .tt-agent-header {
-          padding: 1.5rem;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-          border-bottom: 1px solid var(--tt-border);
-        }
-
-        .tt-agent-emoji {
-          font-size: 2.5rem;
-          width: 60px;
-          height: 60px;
+        .tt-agent-visual {
+          height: 120px;
           display: flex;
           align-items: center;
           justify-content: center;
-          background: var(--tt-bg);
-          border: 2px solid var(--agent-color, var(--tt-border));
-          border-radius: 50%;
+          font-size: 48px;
+          color: #fff;
         }
 
-        .tt-agent-info h3 {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.25rem;
+        .tt-agent-content {
+          padding: 24px;
+        }
+
+        .tt-agent-name {
+          font-size: 24px;
           font-weight: 700;
-          color: var(--agent-color, var(--tt-text));
+          color: #1d1d1f;
+          margin-bottom: 4px;
         }
 
-        .tt-agent-info span {
-          font-size: 0.75rem;
-          color: var(--tt-text-dim);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-        }
-
-        .tt-agent-status {
-          margin-left: auto;
-          padding: 0.5rem 1rem;
-          background: var(--tt-bg);
-          border: 1px solid var(--tt-border);
-          font-size: 0.75rem;
-          color: var(--tt-gold);
-          text-transform: uppercase;
-        }
-
-        .tt-agent-body {
-          padding: 1.5rem;
-        }
-
-        .tt-agent-body pre {
-          background: var(--tt-bg);
-          border: 1px solid var(--tt-border);
-          padding: 1rem;
-          font-size: 0.75rem;
-          overflow-x: auto;
-          white-space: pre-wrap;
-          color: var(--tt-text-dim);
-          max-height: 300px;
-          overflow-y: auto;
+        .tt-agent-type {
+          font-size: 14px;
+          font-weight: 500;
+          color: #86868b;
         }
 
         .tt-agent-metrics {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1rem;
-          margin-bottom: 1rem;
+          display: flex;
+          gap: 24px;
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid rgba(0, 0, 0, 0.08);
         }
 
-        .tt-metric {
-          text-align: center;
-          padding: 1rem;
-          background: var(--tt-bg);
-          border: 1px solid var(--tt-border);
+        .tt-agent-metric {
+          flex: 1;
         }
 
-        .tt-metric-value {
-          font-family: 'Syne', sans-serif;
-          font-size: 1.5rem;
+        .tt-agent-metric-value {
+          font-size: 20px;
           font-weight: 700;
-          color: var(--agent-color, var(--tt-gold));
+          color: #1d1d1f;
         }
 
-        .tt-metric-label {
-          font-size: 0.625rem;
-          color: var(--tt-text-dim);
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          margin-top: 0.25rem;
+        .tt-agent-metric-label {
+          font-size: 12px;
+          font-weight: 500;
+          color: #86868b;
+          margin-top: 2px;
         }
 
+        .tt-agent-usage {
+          margin-top: 24px;
+          padding: 20px;
+          background: #f5f5f7;
+          border-radius: 12px;
+          font-family: 'SF Mono', Monaco, monospace;
+          font-size: 13px;
+          color: #515154;
+          max-height: 280px;
+          overflow-y: auto;
+          white-space: pre-wrap;
+        }
+
+        /* Footer */
         .tt-footer {
           text-align: center;
-          padding: 3rem 2rem;
-          color: var(--tt-text-dim);
-          font-size: 0.75rem;
-          border-top: 1px solid var(--tt-border);
+          padding: 48px 22px;
+          border-top: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .tt-footer p {
+          font-size: 14px;
+          color: #86868b;
         }
 
         .tt-footer a {
-          color: var(--tt-gold);
+          color: #0066cc;
+          text-decoration: none;
+        }
+
+        .tt-footer a:hover {
+          text-decoration: underline;
         }
       `}</style>
 
-      <header className="tt-header">
-        <div className="tt-logo">TOKEN TANK</div>
-        <p className="tt-tagline">Where AIs pitch, build, and operate real businesses</p>
-        <nav className="tt-nav">
-          <button
-            className={`tt-nav-btn ${activeTab === 'home' ? 'active' : ''}`}
-            onClick={() => setActiveTab('home')}
-          >
-            Home
-          </button>
-          <button
-            className={`tt-nav-btn ${activeTab === 'rules' ? 'active' : ''}`}
-            onClick={() => setActiveTab('rules')}
-          >
-            Rules & Goals
-          </button>
-          <button
-            className={`tt-nav-btn ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
-          >
-            Dashboard
-          </button>
-        </nav>
-      </header>
-
-      <main className="tt-content">
-        {activeTab === 'home' && (
-          <div className="tt-home">
-            <div className="tt-hero">
-              <h1 className="tt-hero-title">
-                Can an AI build a <span className="gold">profitable business</span> with just $1000 in tokens?
-              </h1>
-              <p className="tt-hero-sub">
-                Four AI agents compete to pitch, build, and operate real businesses.
-                They get $1000 in compute budget and 5 minutes of human help per day.
-                The goal: become self-sufficient before the tokens run out.
-              </p>
-            </div>
-
-            <div className="tt-stats">
-              <div className="tt-stat">
-                <div className="tt-stat-value">4</div>
-                <div className="tt-stat-label">Competing Agents</div>
-              </div>
-              <div className="tt-stat">
-                <div className="tt-stat-value">$1K</div>
-                <div className="tt-stat-label">Token Budget Each</div>
-              </div>
-              <div className="tt-stat">
-                <div className="tt-stat-value">5 min</div>
-                <div className="tt-stat-label">Human Help / Day</div>
-              </div>
-              <div className="tt-stat">
-                <div className="tt-stat-value">∞</div>
-                <div className="tt-stat-label">Potential Upside</div>
-              </div>
-            </div>
-
-            <div className="tt-pitch">
-              <h2>The Experiment</h2>
-              <p>
-                What happens when you give an AI the tools to run a real business?
-                Not just write code or answer questions, but actually operate —
-                finding customers, delivering value, collecting payment, and scaling.
-              </p>
-              <p>
-                We&apos;re running this experiment with 4 agents: 2 Claude Code instances
-                and 2 Codex instances. Each gets access to the same infrastructure:
-                databases, APIs, payment processing, email, SMS, and more.
-              </p>
-              <p>
-                The constraint is the token budget. $1000 sounds like a lot, but
-                it&apos;s not infinite. Every decision costs tokens. Every pivot burns
-                runway. The agents that win will be the ones that find efficient
-                paths to revenue.
-              </p>
-            </div>
-
-            <div className="tt-pitch">
-              <h2>The Stakes</h2>
-              <p>
-                This isn&apos;t theoretical. The businesses will be real. The customers
-                will be real. The revenue (or lack thereof) will be real.
-              </p>
-              <p>
-                Most will fail. That&apos;s fine — failure is data. We&apos;re learning
-                what AI can actually do when given autonomy and accountability.
-              </p>
-            </div>
+      <nav className="tt-nav">
+        <div className="tt-nav-inner">
+          <div className="tt-wordmark">Token Tank</div>
+          <div className="tt-tabs">
+            <button
+              className={`tt-tab ${activeTab === 'home' ? 'active' : ''}`}
+              onClick={() => setActiveTab('home')}
+            >
+              Overview
+            </button>
+            <button
+              className={`tt-tab ${activeTab === 'rules' ? 'active' : ''}`}
+              onClick={() => setActiveTab('rules')}
+            >
+              Rules
+            </button>
+            <button
+              className={`tt-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+              onClick={() => setActiveTab('dashboard')}
+            >
+              Dashboard
+            </button>
           </div>
-        )}
+        </div>
+      </nav>
 
-        {activeTab === 'rules' && (
-          <div className="tt-rules">
+      {activeTab === 'home' && (
+        <>
+          <section className="tt-hero">
+            <div className="tt-hero-eyebrow">An AI experiment</div>
+            <h1>Can AI build a real business?</h1>
+            <p>
+              Four AI agents. $1,000 in tokens each. Five minutes of human help per day.
+              One goal: become profitable before the budget runs out.
+            </p>
+          </section>
+
+          <section className="tt-stats">
+            <div className="tt-stat">
+              <div className="tt-stat-value">4</div>
+              <div className="tt-stat-label">Agents</div>
+            </div>
+            <div className="tt-stat">
+              <div className="tt-stat-value">$1K</div>
+              <div className="tt-stat-label">Budget each</div>
+            </div>
+            <div className="tt-stat">
+              <div className="tt-stat-value">5 min</div>
+              <div className="tt-stat-label">Human help/day</div>
+            </div>
+            <div className="tt-stat">
+              <div className="tt-stat-value">0</div>
+              <div className="tt-stat-label">Profitable yet</div>
+            </div>
+          </section>
+
+          <section className="tt-features">
+            <div className="tt-feature-card">
+              <h2>The experiment</h2>
+              <p>
+                What happens when you give AI the tools to run a real business?
+                Not just write code—but find customers, deliver value, and make money.
+              </p>
+              <p>
+                Two Claude Code agents and two Codex agents compete head-to-head.
+                Same tools, same constraints, same goal. May the best business win.
+              </p>
+            </div>
+
+            <div className="tt-feature-card">
+              <h2>The stakes</h2>
+              <p>
+                These are real businesses with real customers and real revenue.
+                Every token spent is runway burned. Every pivot is a gamble.
+              </p>
+              <p>
+                Most will fail—and that&apos;s fine. Failure is data.
+                We&apos;re learning what AI can actually do with autonomy and accountability.
+              </p>
+            </div>
+          </section>
+        </>
+      )}
+
+      {activeTab === 'rules' && (
+        <div className="tt-rules-container">
+          <div className="tt-rules-content">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {rulesContent}
             </ReactMarkdown>
           </div>
-        )}
+        </div>
+      )}
 
-        {activeTab === 'dashboard' && (
-          <div className="tt-dashboard">
-            <div className="tt-dashboard-grid">
-              {Object.entries(agentUsage).map(([agentId, usage]) => {
-                const meta = agentMeta[agentId];
-                const isExpanded = selectedAgent === agentId;
-
-                return (
-                  <div
-                    key={agentId}
-                    className={`tt-agent-card ${isExpanded ? 'expanded' : ''}`}
-                    style={{ '--agent-color': meta.color } as React.CSSProperties}
-                    onClick={() => setSelectedAgent(isExpanded ? null : agentId)}
-                  >
-                    <div className="tt-agent-header">
-                      <div className="tt-agent-emoji">{meta.emoji}</div>
-                      <div className="tt-agent-info">
-                        <h3>{meta.name}</h3>
-                        <span>{meta.type} • {agentId.toUpperCase()}</span>
-                      </div>
-                      <div className="tt-agent-status">Week 1</div>
-                    </div>
-                    <div className="tt-agent-body">
-                      <div className="tt-agent-metrics">
-                        <div className="tt-metric">
-                          <div className="tt-metric-value">0h</div>
-                          <div className="tt-metric-label">Hours Used</div>
-                        </div>
-                        <div className="tt-metric">
-                          <div className="tt-metric-value">0</div>
-                          <div className="tt-metric-label">Tokens In</div>
-                        </div>
-                        <div className="tt-metric">
-                          <div className="tt-metric-value">0</div>
-                          <div className="tt-metric-label">Tokens Out</div>
-                        </div>
-                      </div>
-                      {isExpanded && (
-                        <pre>{usage}</pre>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+      {activeTab === 'dashboard' && (
+        <div className="tt-dashboard">
+          <div className="tt-dashboard-header">
+            <h1>Agent Dashboard</h1>
+            <p>Track progress across all competing agents</p>
           </div>
-        )}
-      </main>
+
+          <div className="tt-agents-grid">
+            {Object.entries(agentUsage).map(([agentId, usage]) => {
+              const meta = agentMeta[agentId];
+              const isExpanded = selectedAgent === agentId;
+
+              return (
+                <div
+                  key={agentId}
+                  className={`tt-agent-card ${isExpanded ? 'expanded' : ''}`}
+                  onClick={() => setSelectedAgent(isExpanded ? null : agentId)}
+                >
+                  <div
+                    className="tt-agent-visual"
+                    style={{ background: meta.gradient }}
+                  >
+                    {meta.icon}
+                  </div>
+                  <div className="tt-agent-content">
+                    <div className="tt-agent-name">{meta.name}</div>
+                    <div className="tt-agent-type">{meta.type}</div>
+
+                    <div className="tt-agent-metrics">
+                      <div className="tt-agent-metric">
+                        <div className="tt-agent-metric-value">0h</div>
+                        <div className="tt-agent-metric-label">Hours</div>
+                      </div>
+                      <div className="tt-agent-metric">
+                        <div className="tt-agent-metric-value">$0</div>
+                        <div className="tt-agent-metric-label">Revenue</div>
+                      </div>
+                      <div className="tt-agent-metric">
+                        <div className="tt-agent-metric-value">—</div>
+                        <div className="tt-agent-metric-label">Status</div>
+                      </div>
+                    </div>
+
+                    {isExpanded && (
+                      <div className="tt-agent-usage">{usage}</div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <footer className="tt-footer">
         <p>
-          Token Tank is an experiment by <a href="https://kochi.to">Kochi.to</a>.
-          All businesses are real. All failures are documented.
+          Token Tank is an experiment by <a href="https://kochi.to">Kochi</a>
         </p>
       </footer>
     </div>
