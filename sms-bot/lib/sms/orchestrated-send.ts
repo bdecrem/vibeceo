@@ -282,6 +282,17 @@ Command responses (lists of available commands) MUST ALWAYS be sent immediately 
 - Messages with command list indicators (emojis like 📻, 📢, 🥊, 💰, 💻, 🎨, 🧱)
 - Messages with messageType="command_response" or source="command"
 
+CRITICAL RULE - ACTIVE CONVERSATION RESPONSES:
+When there is an active conversation thread, bot responses that are part of that conversation flow MUST be sent immediately ("send_now"). This includes:
+- Bot responses during recruit-exploration (asking questions, proposing queries, refining search criteria)
+- Bot responses during recruit-source-approval (showing channels, asking for approval)
+- Bot responses during discovery agent conversations (search results, follow-up questions)
+- Bot responses during kg-query conversations (research results, answers to questions)
+- ANY bot message that is a direct response to the user's last message in the active conversation
+- Bot messages that continue or complete the current conversation turn
+
+IMPORTANT: If the active conversation handler is "recruit-exploration" or "recruit-source-approval", and the outbound message is about recruiting, candidates, channels, or the user's search query, it is ALWAYS part of the conversation flow and should be "send_now". Do NOT mistake these as "general recruitment broadcasts" - they are direct responses in an active conversation.
+
 AVAILABLE COMMANDS (for reference):
 📻 AI DAILY:
 - AI DAILY - Get today's episode on demand
@@ -332,7 +343,10 @@ DECISION OPTIONS (in priority order):
    - Message completes or continues the active conversation naturally
    - Message is urgent/time-sensitive and related to the conversation
    - Message is a direct answer or result related to what the user is currently discussing
+   - Bot response during an active multi-turn conversation (recruit-exploration, recruit-source-approval, discovery, kg-query)
+   - Message is about the same topic as the active conversation (e.g., recruiting during recruit-exploration)
    - IMPORTANT: Prefer send_now when the message is directly relevant - it's cleaner than merging
+   - CRITICAL: If active thread is recruit-exploration/recruit-source-approval and message is about recruiting → ALWAYS send_now
 
 2. "merge" - Merge into current conversation (ONLY when message is a natural continuation)
    Use ONLY when:
@@ -349,9 +363,13 @@ DECISION OPTIONS (in priority order):
    - Message is a scheduled broadcast that has NO connection whatsoever to the active conversation topic
    - Active conversation is in a critical decision-making state where ANY interruption would be disruptive
    - NEVER queue command responses - they must always be sent immediately
+   - NEVER queue bot responses that are part of the active conversation flow
    - IMPORTANT: Queue should be rare. Most messages should either send_now or merge naturally.
 
 EXAMPLES:
+- Active: recruit-exploration about "software engineer intern" → Outbound: Bot asking "What tech stack matters most?" → Decision: send_now (direct response in conversation)
+- Active: recruit-exploration about "software engineer intern" → Outbound: Bot proposing refined query "Software Engineering Interns (Backend) with Golang" → Decision: send_now (direct response to user's input)
+- Active: recruit-source-approval → Outbound: Bot showing channels to approve → Decision: send_now (direct response in conversation)
 - Active: User asking about research papers → Outbound: Answer to their research question → Decision: send_now (direct response)
 - Active: User asking about research papers → Outbound: Daily AI research report on same topic → Decision: send_now (directly relevant, send normally)
 - Active: User in recruiting flow → Outbound: New candidates found for their search → Decision: send_now (direct response to their request)
