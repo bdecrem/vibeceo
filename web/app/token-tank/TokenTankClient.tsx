@@ -220,59 +220,105 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
         /* Rules Section */
         .tt-rules-container {
-          max-width: 780px;
+          max-width: 900px;
           margin: 0 auto;
           padding: 80px 22px;
         }
 
         .tt-rules-content {
           background: #fff;
-          border-radius: 20px;
-          padding: 48px;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+          border-radius: 24px;
+          padding: 56px;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.06);
         }
 
         .tt-rules-content h1 {
-          font-size: 40px;
+          font-size: 44px;
           font-weight: 700;
-          letter-spacing: -0.02em;
-          color: #1d1d1f;
-          margin-bottom: 32px;
-          padding-bottom: 24px;
+          letter-spacing: -0.03em;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          margin-bottom: 16px;
+        }
+
+        .tt-rules-content h1 + p {
+          font-size: 19px;
+          color: #86868b;
+          padding-bottom: 32px;
           border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          margin-bottom: 40px;
         }
 
         .tt-rules-content h2 {
-          font-size: 24px;
+          font-size: 28px;
           font-weight: 700;
           color: #1d1d1f;
-          margin: 40px 0 16px;
+          margin: 48px 0 20px;
+          padding-top: 32px;
+          border-top: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .tt-rules-content h2:first-of-type {
+          border-top: none;
+          padding-top: 0;
+          margin-top: 0;
         }
 
         .tt-rules-content h3 {
-          font-size: 19px;
+          font-size: 20px;
           font-weight: 600;
-          color: #1d1d1f;
-          margin: 24px 0 12px;
+          color: #667eea;
+          margin: 32px 0 12px;
         }
 
         .tt-rules-content p {
           font-size: 17px;
-          line-height: 1.58;
+          line-height: 1.7;
           color: #515154;
           margin-bottom: 16px;
         }
 
         .tt-rules-content ul, .tt-rules-content ol {
-          margin: 16px 0;
-          padding-left: 24px;
+          margin: 20px 0;
+          padding-left: 0;
+          list-style: none;
         }
 
         .tt-rules-content li {
           font-size: 17px;
-          line-height: 1.58;
+          line-height: 1.7;
           color: #515154;
-          margin: 8px 0;
+          margin: 12px 0;
+          padding-left: 28px;
+          position: relative;
+        }
+
+        .tt-rules-content ul li::before {
+          content: '';
+          position: absolute;
+          left: 0;
+          top: 10px;
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tt-rules-content ol {
+          counter-reset: item;
+        }
+
+        .tt-rules-content ol li::before {
+          counter-increment: item;
+          content: counter(item);
+          position: absolute;
+          left: 0;
+          top: 0;
+          font-size: 14px;
+          font-weight: 700;
+          color: #667eea;
         }
 
         .tt-rules-content strong {
@@ -281,20 +327,22 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         }
 
         .tt-rules-content code {
-          background: #f5f5f7;
-          padding: 2px 8px;
+          background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+          padding: 3px 10px;
           border-radius: 6px;
           font-size: 15px;
-          font-family: 'SF Mono', Monaco, monospace;
+          font-family: 'SF Mono', Monaco, 'Cascadia Code', monospace;
+          color: #667eea;
         }
 
         .tt-rules-content pre {
-          background: #1d1d1f;
-          color: #fff;
-          padding: 20px;
-          border-radius: 12px;
+          background: linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%);
+          color: #e4e4e7;
+          padding: 24px;
+          border-radius: 16px;
           overflow-x: auto;
-          margin: 20px 0;
+          margin: 24px 0;
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
         .tt-rules-content pre code {
@@ -305,48 +353,69 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
         .tt-rules-content table {
           width: 100%;
-          border-collapse: collapse;
-          margin: 20px 0;
+          border-collapse: separate;
+          border-spacing: 0;
+          margin: 24px 0;
           font-size: 15px;
-        }
-
-        .tt-rules-content th, .tt-rules-content td {
-          padding: 12px 16px;
-          text-align: left;
-          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
         }
 
         .tt-rules-content th {
+          padding: 14px 18px;
+          text-align: left;
           font-weight: 600;
-          color: #1d1d1f;
-          background: #f5f5f7;
+          color: #fff;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
 
         .tt-rules-content td {
+          padding: 14px 18px;
           color: #515154;
+          background: #fff;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+        }
+
+        .tt-rules-content tr:last-child td {
+          border-bottom: none;
+        }
+
+        .tt-rules-content tr:hover td {
+          background: #f9f9fb;
         }
 
         .tt-rules-content a {
-          color: #0066cc;
+          color: #667eea;
           text-decoration: none;
+          font-weight: 500;
+          transition: color 0.2s ease;
         }
 
         .tt-rules-content a:hover {
-          text-decoration: underline;
+          color: #764ba2;
         }
 
         .tt-rules-content blockquote {
-          border-left: 3px solid #0066cc;
-          padding-left: 20px;
-          margin: 20px 0;
-          color: #515154;
+          border-left: 4px solid;
+          border-image: linear-gradient(180deg, #667eea 0%, #764ba2 100%) 1;
+          padding: 16px 24px;
+          margin: 24px 0;
+          background: rgba(102, 126, 234, 0.04);
+          border-radius: 0 12px 12px 0;
+        }
+
+        .tt-rules-content blockquote p {
+          color: #667eea;
+          font-style: italic;
+          margin: 0;
         }
 
         .tt-rules-content hr {
           border: none;
-          height: 1px;
-          background: rgba(0, 0, 0, 0.08);
-          margin: 40px 0;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.3), transparent);
+          margin: 48px 0;
         }
 
         /* Dashboard */
