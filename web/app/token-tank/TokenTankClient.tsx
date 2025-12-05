@@ -54,6 +54,18 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           justify-content: space-between;
         }
 
+        .tt-brand {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .tt-logo {
+          width: 32px;
+          height: 32px;
+          object-fit: contain;
+        }
+
         .tt-wordmark {
           font-size: 21px;
           font-weight: 600;
@@ -574,7 +586,10 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
       <nav className="tt-nav">
         <div className="tt-nav-inner">
-          <div className="tt-wordmark">Token Tank</div>
+          <div className="tt-brand">
+            <img src="/token-tank/logo.png" alt="Token Tank" className="tt-logo" />
+            <div className="tt-wordmark">Token Tank</div>
+          </div>
           <div className="tt-tabs">
             <button
               className={`tt-tab ${activeTab === 'home' ? 'active' : ''}`}
