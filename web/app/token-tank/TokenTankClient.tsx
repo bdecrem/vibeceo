@@ -97,10 +97,16 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         }
 
         .tt-hero-eyebrow {
-          font-size: 17px;
+          display: inline-block;
+          font-size: 14px;
           font-weight: 600;
-          color: #bf4800;
-          margin-bottom: 16px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          padding: 8px 16px;
+          border-radius: 980px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #fff;
+          margin-bottom: 24px;
         }
 
         .tt-hero h1 {
@@ -125,29 +131,36 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         .tt-stats {
           display: flex;
           justify-content: center;
-          gap: 64px;
+          gap: 32px;
           padding: 64px 22px;
-          border-top: 1px solid rgba(0, 0, 0, 0.08);
-          border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-          background: #fff;
+          background: linear-gradient(135deg, #1d1d1f 0%, #2d2d30 100%);
         }
 
         .tt-stat {
           text-align: center;
+          padding: 32px 40px;
+          border-radius: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.1);
         }
+
+        .tt-stat:nth-child(1) .tt-stat-value { color: #667eea; }
+        .tt-stat:nth-child(2) .tt-stat-value { color: #f5576c; }
+        .tt-stat:nth-child(3) .tt-stat-value { color: #4facfe; }
+        .tt-stat:nth-child(4) .tt-stat-value { color: #43e97b; }
 
         .tt-stat-value {
           font-size: 48px;
           font-weight: 700;
           letter-spacing: -0.02em;
-          color: #1d1d1f;
           line-height: 1;
         }
 
         .tt-stat-label {
           font-size: 14px;
           font-weight: 500;
-          color: #86868b;
+          color: rgba(255, 255, 255, 0.6);
           margin-top: 8px;
         }
 
@@ -156,18 +169,39 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           max-width: 980px;
           margin: 0 auto;
           padding: 80px 22px;
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 24px;
         }
 
         .tt-feature-card {
           background: #fff;
           border-radius: 20px;
           padding: 48px;
-          margin-bottom: 24px;
           box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .tt-feature-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+        }
+
+        .tt-feature-card:nth-child(1)::before {
+          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tt-feature-card:nth-child(2)::before {
+          background: linear-gradient(90deg, #f093fb 0%, #f5576c 100%);
         }
 
         .tt-feature-card h2 {
-          font-size: 32px;
+          font-size: 28px;
           font-weight: 700;
           letter-spacing: -0.02em;
           margin-bottom: 16px;
@@ -178,7 +212,6 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           font-size: 17px;
           line-height: 1.58;
           color: #86868b;
-          max-width: 600px;
         }
 
         .tt-feature-card p + p {
@@ -350,8 +383,17 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         @media (max-width: 734px) {
           .tt-hero h1 { font-size: 40px; }
           .tt-hero p { font-size: 19px; }
-          .tt-stats { flex-wrap: wrap; gap: 32px; }
-          .tt-stat-value { font-size: 36px; }
+          .tt-stats {
+            flex-wrap: wrap;
+            gap: 16px;
+            padding: 48px 22px;
+          }
+          .tt-stat {
+            padding: 24px 32px;
+            flex: 1 1 40%;
+          }
+          .tt-stat-value { font-size: 32px; }
+          .tt-features { grid-template-columns: 1fr; }
           .tt-agents-grid { grid-template-columns: 1fr; }
           .tt-feature-card { padding: 32px; }
           .tt-rules-content { padding: 32px; }
