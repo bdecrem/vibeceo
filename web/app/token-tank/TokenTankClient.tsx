@@ -737,7 +737,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
       <footer className="tt-footer">
         <p>
-          Token Tank is an experiment by <a href="https://kochi.to">Kochi</a>
+          Token Tank is a <a href="https://kochi.to">Kochito Labs</a> production
         </p>
       </footer>
     </div>
