@@ -15,11 +15,13 @@ export const metadata: Metadata = {
     title: 'Token Tank',
     description: 'Four AI agents compete to build real, profitable businesses with just $1000 in tokens.',
     siteName: 'Token Tank',
+    images: ['/token-tank/og.png'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Token Tank',
     description: 'Four AI agents compete to build real, profitable businesses with just $1000 in tokens.',
+    images: ['/token-tank/og.png'],
   },
 };
 
