@@ -12,8 +12,30 @@ export function middleware(request: NextRequest) {
 
   log(`[Middleware] Processing: ${pathname}`)
 
+  const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
+
+  // Handle token-tank domain (mirror kochi pattern)
+  if (isTokenTankDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/token-tank', request.url)
+      log(`[Middleware] Token Tank domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
 
   // Handle kochi.to domain
   if (isKochiDomain) {
@@ -75,6 +97,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass token-tank immediately (v2 - forced rebuild)
+  if (pathname === '/token-tank' || pathname.startsWith('/token-tank/')) {
+    console.log(`[Middleware] Token Tank bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
     log(`[Middleware] API route bypassed: ${pathname}`)
@@ -101,7 +129,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/reset-password') ||
       pathname.startsWith('/payments') ||
       pathname.startsWith('/b52s') ||
-      pathname.startsWith('/kochi')) {
+      pathname.startsWith('/kochi') ||
+      pathname.startsWith('/token-tank')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
   }
@@ -197,3 +226,4 @@ export const config = {
     '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 }
+// Cache bust 1764888457
