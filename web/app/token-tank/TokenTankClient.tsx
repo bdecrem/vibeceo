@@ -56,7 +56,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
         .tt-brand {
           display: flex;
-          align-items: center;
+          align-items: flex-end;
           gap: 10px;
         }
 
@@ -64,6 +64,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           width: 32px;
           height: 32px;
           object-fit: contain;
+          margin-bottom: 1px;
         }
 
         .tt-wordmark {
