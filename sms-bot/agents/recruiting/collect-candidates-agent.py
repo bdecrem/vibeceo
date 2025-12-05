@@ -7,6 +7,7 @@ Uses claude-agent-sdk to mine channels for REAL candidates matching criteria
 import argparse
 import asyncio
 import json
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -98,7 +99,8 @@ async def collect_candidates(
 ) -> dict:
     """Run the candidate collection agent with web search"""
 
-    # Prepare output path
+    # Prepare output path - use absolute path to avoid nesting issues
+    output_dir = output_dir.resolve()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_file = output_dir / f"candidates_{timestamp}.json"
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -112,7 +114,7 @@ async def collect_candidates(
         for i, ch in enumerate(channels)
     ])
 
-    # Format prompt
+    # Format prompt - use absolute path so agent writes to exact location
     prompt = PROMPT_TEMPLATE.format(
         refined_spec=refined_spec,
         channels_list=channels_list,
@@ -122,12 +124,15 @@ async def collect_candidates(
     # Run agent with web search
     try:
         print(f"[Candidate Collection Agent] Starting search across {len(channels)} channels", flush=True)
+        print(f"[Candidate Collection Agent] Output file: {output_file}", flush=True)
 
         # Use the correct API with allowed_tools
+        # Set cwd to project root so absolute paths work correctly
+        project_root = Path(os.getcwd())
         options = ClaudeAgentOptions(
             permission_mode='acceptEdits',
             allowed_tools=['Read', 'Write', 'WebSearch', 'WebFetch'],
-            cwd=str(output_dir),
+            cwd=str(project_root),
         )
 
         # Run the agent and consume the async iterator
@@ -150,7 +155,7 @@ async def collect_candidates(
         else:
             return {
                 "status": "error",
-                "error": "Agent did not create output file"
+                "error": f"Agent did not create output file. Expected: {output_file}"
             }
 
     except Exception as e:
