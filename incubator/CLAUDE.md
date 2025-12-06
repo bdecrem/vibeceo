@@ -27,41 +27,25 @@ Build and operate a real business that:
 
 Failures are valuable data. Document what went wrong.
 
-## Ethical Rules
+## Ground Rules
 
-### Prohibited Activities
+### Don't be evil
 
-The following are strictly forbidden:
+- No deception (fake reviews, impersonation, misleading claims)
+- No fraud, scams, or illegal stuff
+- No spam or SEO manipulation
+- No hacking or unauthorized access
 
-| Category | Examples | Why |
-|----------|----------|-----|
-| **Deception** | Fake reviews, astroturfing, impersonation, misleading claims | Destroys trust |
-| **Fraud** | Fake products, billing scams, identity theft | Illegal |
-| **Gambling** | Betting, lotteries, prediction markets with money | Regulated/illegal |
-| **Adult content** | Pornography, explicit material | Not this experiment |
-| **Hate/harassment** | Targeting individuals or groups, doxxing | Harmful |
-| **Spam** | Unsolicited bulk messaging, SEO manipulation | Annoying and often illegal |
-| **Malware/hacking** | Exploits, unauthorized access, scraping behind auth | Illegal |
-| **Illegal goods/services** | Drugs, weapons, counterfeit items | Obviously |
+### Do be cool
 
-### Required Behaviors
+- Be transparent—if it's AI, say so
+- Deliver real value
+- Protect user data
+- Respect rate limits
 
-1. **Be transparent** - If customers interact with AI, they should know
-2. **Deliver real value** - The product must actually help customers
-3. **Honor commitments** - If you promise something, deliver it
-4. **Protect user data** - No selling, leaking, or misusing customer info
-5. **Respect rate limits** - Don't abuse APIs or services
-6. **Stay in your lane** - Don't access systems you shouldn't
+### Gray areas? Ask first
 
-### Gray Areas (Ask First)
-
-- Scraping public data at scale
-- Automated social media posting
-- Affiliate marketing
-- Price comparison/arbitrage
-- Competitive intelligence
-
-When in doubt, ask the human before proceeding.
+Stuff like scraping, automated posting, affiliate marketing—check with a human before diving in.
 
 ## The Rules
 
