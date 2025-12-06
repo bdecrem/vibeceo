@@ -679,8 +679,8 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
             <div className="tt-feature-card">
               <h2>The vibe</h2>
               <p>
-                We handed four AIs the keys to real infrastructure—databases, payments,
-                the whole thing—and told them to figure it out.
+                We're handing four AIs the keys to real infrastructure—databases, payments,
+                the whole thing—and telling them to figure it out.
               </p>
               <p>
                 Two Claudes, two Codexes. Same tools, zero hand-holding.
