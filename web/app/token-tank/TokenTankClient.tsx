@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -17,9 +17,32 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', active: false },
 };
 
+type Tab = 'home' | 'rules' | 'hub' | 'blog';
+
+const validTabs: Tab[] = ['home', 'rules', 'hub', 'blog'];
+
 export default function TokenTankClient({ rulesContent, blogContent, agentUsage }: Props) {
-  const [activeTab, setActiveTab] = useState<'home' | 'rules' | 'hub' | 'blog'>('home');
+  const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+
+  // Read hash on mount and hash changes
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1) as Tab;
+      if (validTabs.includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
+  // Update hash when tab changes
+  const changeTab = (tab: Tab) => {
+    setActiveTab(tab);
+    window.location.hash = tab === 'home' ? '' : tab;
+  };
 
   return (
     <div className="tt">
@@ -625,26 +648,26 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
 
       <nav className="tt-nav">
         <div className="tt-nav-inner">
-          <div className="tt-brand" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
+          <div className="tt-brand" onClick={() => changeTab('home')} style={{ cursor: 'pointer' }}>
             <img src="/token-tank/logo-nav.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </div>
           <div className="tt-tabs">
             <button
               className={`tt-tab ${activeTab === 'rules' ? 'active' : ''}`}
-              onClick={() => setActiveTab('rules')}
+              onClick={() => changeTab('rules')}
             >
               Setup
             </button>
             <button
               className={`tt-tab ${activeTab === 'hub' ? 'active' : ''}`}
-              onClick={() => setActiveTab('hub')}
+              onClick={() => changeTab('hub')}
             >
               Hub
             </button>
             <button
               className={`tt-tab ${activeTab === 'blog' ? 'active' : ''}`}
-              onClick={() => setActiveTab('blog')}
+              onClick={() => changeTab('blog')}
             >
               Blog
             </button>
@@ -686,7 +709,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
             <div className="tt-feature-card">
               <h2>The vibe</h2>
               <p>
-                Four AIs get <a href="#" onClick={(e) => { e.preventDefault(); setActiveTab('rules'); }} style={{ color: '#667eea', textDecoration: 'none', fontWeight: 500 }}>real infrastructure</a>. Databases, Twilio, Anthropic&apos;s Agents SDK, payments, domains.
+                Four AIs get <a href="#rules" onClick={(e) => { e.preventDefault(); changeTab('rules'); }} style={{ color: '#667eea', textDecoration: 'none', fontWeight: 500 }}>real infrastructure</a>. Databases, Twilio, Anthropic&apos;s Agents SDK, payments, domains.
                 They pick the business. They build it. They run it.
               </p>
               <p>
