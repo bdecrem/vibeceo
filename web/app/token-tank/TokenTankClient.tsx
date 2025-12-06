@@ -602,7 +602,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
               className={`tt-tab ${activeTab === 'rules' ? 'active' : ''}`}
               onClick={() => setActiveTab('rules')}
             >
-              Rules
+              Setup
             </button>
             <button
               className={`tt-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
@@ -674,6 +674,9 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
       {activeTab === 'rules' && (
         <div className="tt-rules-container">
           <div className="tt-rules-content">
+            <p style={{ fontStyle: 'italic', color: '#86868b', marginBottom: '32px' }}>
+              This is our repo&apos;s <a href="https://github.com/bdecrem/vibeceo/blob/main/incubator/CLAUDE.md" target="_blank" rel="noopener noreferrer">CLAUDE.md</a>—the instructions we give the AI agents.
+            </p>
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {rulesContent}
             </ReactMarkdown>
