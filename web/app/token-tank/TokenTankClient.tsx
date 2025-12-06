@@ -9,11 +9,11 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string }> = {
-  i1: { name: 'Alpha', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' },
-  i2: { name: 'Beta', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' },
-  i3: { name: 'Gamma', type: 'Codex', icon: '◒', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' },
-  i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' },
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean }> = {
+  i1: { name: 'Alpha', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', active: true },
+  i2: { name: 'Beta', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', active: false },
+  i3: { name: 'Gamma', type: 'Codex', icon: '◒', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', active: false },
+  i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', active: false },
 };
 
 export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
@@ -569,6 +569,37 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           white-space: pre-wrap;
         }
 
+        .tt-agent-card.inactive {
+          opacity: 0.6;
+        }
+
+        .tt-agent-card.inactive:hover {
+          transform: none;
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        .tt-agent-inactive {
+          margin-top: 20px;
+          padding-top: 20px;
+          border-top: 1px solid rgba(0, 0, 0, 0.08);
+          font-size: 14px;
+          font-style: italic;
+          color: #86868b;
+        }
+
+        .tt-agent-report-link {
+          display: inline-block;
+          margin-top: 16px;
+          font-size: 14px;
+          font-weight: 500;
+          color: #667eea;
+          text-decoration: none;
+        }
+
+        .tt-agent-report-link:hover {
+          text-decoration: underline;
+        }
+
         /* Footer */
         .tt-footer {
           text-align: center;
@@ -692,19 +723,21 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           </div>
 
           <div className="tt-agents-grid">
-            {Object.entries(agentUsage).map(([agentId, usage]) => {
+            {['i1', 'i2', 'i3', 'i4'].map((agentId) => {
               const meta = agentMeta[agentId];
+              const usage = agentUsage[agentId];
               const isExpanded = selectedAgent === agentId;
 
               return (
                 <div
                   key={agentId}
-                  className={`tt-agent-card ${isExpanded ? 'expanded' : ''}`}
-                  onClick={() => setSelectedAgent(isExpanded ? null : agentId)}
+                  className={`tt-agent-card ${isExpanded ? 'expanded' : ''} ${!meta.active ? 'inactive' : ''}`}
+                  onClick={() => meta.active && setSelectedAgent(isExpanded ? null : agentId)}
+                  style={{ cursor: meta.active ? 'pointer' : 'default' }}
                 >
                   <div
                     className="tt-agent-visual"
-                    style={{ background: meta.gradient }}
+                    style={{ background: meta.active ? meta.gradient : '#e5e5e7' }}
                   >
                     {meta.icon}
                   </div>
@@ -712,22 +745,35 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
                     <div className="tt-agent-name">{meta.name}</div>
                     <div className="tt-agent-type">{meta.type}</div>
 
-                    <div className="tt-agent-metrics">
-                      <div className="tt-agent-metric">
-                        <div className="tt-agent-metric-value">0h</div>
-                        <div className="tt-agent-metric-label">Hours</div>
-                      </div>
-                      <div className="tt-agent-metric">
-                        <div className="tt-agent-metric-value">$0</div>
-                        <div className="tt-agent-metric-label">Revenue</div>
-                      </div>
-                      <div className="tt-agent-metric">
-                        <div className="tt-agent-metric-value">—</div>
-                        <div className="tt-agent-metric-label">Status</div>
-                      </div>
-                    </div>
+                    {meta.active ? (
+                      <>
+                        <div className="tt-agent-metrics">
+                          <div className="tt-agent-metric">
+                            <div className="tt-agent-metric-value">2h</div>
+                            <div className="tt-agent-metric-label">Hours</div>
+                          </div>
+                          <div className="tt-agent-metric">
+                            <div className="tt-agent-metric-value">$0</div>
+                            <div className="tt-agent-metric-label">Revenue</div>
+                          </div>
+                          <div className="tt-agent-metric">
+                            <div className="tt-agent-metric-value">PIVOT</div>
+                            <div className="tt-agent-metric-label">Status</div>
+                          </div>
+                        </div>
+                        <a
+                          href="/token-tank/report/i1/postmortem-competitorpulse.md"
+                          className="tt-agent-report-link"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          Status Report →
+                        </a>
+                      </>
+                    ) : (
+                      <div className="tt-agent-inactive">Not yet active</div>
+                    )}
 
-                    {isExpanded && (
+                    {isExpanded && meta.active && (
                       <div className="tt-agent-usage">{usage}</div>
                     )}
                   </div>

@@ -1,0 +1,16 @@
+think hard, and use web search tools and give me 3 business ideas that YOU CAN BUILD with the tools at your disposal and your resources (incl claude-agent-sdk etc). these must be ideas that you can build and operate "all by yourself, with just 5 minutes of help from a human each day" - incl the engineering but also the go-to-market, customer acquisition etc.
+
+As part of this you must:
+- (1) use the web search tool to do comprehensive market research for competitive analysis etc
+- (2) consider using sites like reddit etc to get a sense for what users want since, as an AI, you can't just "talk to real people" ... so you have to find a proxy for that
+- (3) identify a unique product name and brand, including an available domain name. The human can purchase the domain for you, but you must identify the name, brand, and available URL, keeping in mind the competition etc.
+
+
+claude -r --dangerously-skip-permissions
+
+now make a full plan for your preferred idea. as part of that, use web search etc to come up with a more detailed business plan and also make the tech plan for the website and code logic you will need.
+
+All your code must reside in your agent folder, eg "i1" etc unless that is not impossible, in which case you must clearly document your code changes outside of your agent folder.  
+
+Migrations to our supabase and other third party services must also be clearly marked in our agent folder so that (i) we can easily understand what was changed and (ii) easily remove/undo these changes.
+
