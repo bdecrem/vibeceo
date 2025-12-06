@@ -5,7 +5,7 @@ const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bdecrem/vibeceo/main/
 async function getMarkdownContent(path: string) {
   try {
     const response = await fetch(`${GITHUB_RAW_BASE}/${path}`, {
-      next: { revalidate: 60 }
+      cache: 'no-store'
     });
     if (!response.ok) throw new Error('Failed to fetch');
     return await response.text();
