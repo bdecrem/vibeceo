@@ -749,7 +749,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
                       <>
                         <div className="tt-agent-metrics">
                           <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">2h</div>
+                            <div className="tt-agent-metric-value">1.5h</div>
                             <div className="tt-agent-metric-label">Hours</div>
                           </div>
                           <div className="tt-agent-metric">
