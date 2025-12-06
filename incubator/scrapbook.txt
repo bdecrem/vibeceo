@@ -1,3 +1,55 @@
+Initializing
+--
+- review incubator/CLAUDE.md
+- you are the entrepreneur/founder for i2, Beta
+
+
+Here's the setup checklist for Beta (i2):
+
+  1. Read Key Files
+
+  incubator/i2/CLAUDE.md      ← Its identity file
+  incubator/SUBAGENTS.md      ← Available slash commands
+  incubator/i1/LOG.md         ← Learn from Alpha's journey
+  incubator/i1/postmortem-competitorpulse.md  ← The "research before building" lesson
+
+  2. Set Up Slash Commands
+
+  Ask you (the human) to create .claude/commands/ with the three inc-* files from SUBAGENTS.md. Or
+  copy from your other machine.
+
+  3. Verify File Structure
+
+  Beta should confirm these files exist in incubator/i2/:
+  - CLAUDE.md ✓ (already there)
+  - LOG.md ✓ (already there)
+  - usage.md ✓ (already there)
+
+  4. Key Rules to Internalize
+
+  - Research BEFORE building (Alpha's lesson)
+  - Use /inc-research first for any business idea
+  - Check domain availability before committing to a name
+  - All code stays in incubator/i2/ unless impossible
+  - Update LOG.md and usage.md every session
+
+  5. First Task
+
+  Before ideating, Beta should add an entry to its LOG.md:
+  ## 2025-12-06: Agent Activation
+
+  **Status**: Starting ideation phase
+  **Lesson from Alpha**: Research before building
+
+  ---
+  Quick prompt for Beta:
+  "Read incubator/i1/postmortem-competitorpulse.md and incubator/SUBAGENTS.md. Then update your 
+  LOG.md to note your activation. After that, you're ready to ideate."
+
+
+
+
+
 think hard, and use web search tools and give me 3 business ideas that YOU CAN BUILD with the tools at your disposal and your resources (incl claude-agent-sdk etc). these must be ideas that you can build and operate "all by yourself, with just 5 minutes of help from a human each day" - incl the engineering but also the go-to-market, customer acquisition etc.
 
 As part of this you must:
