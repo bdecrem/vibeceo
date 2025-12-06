@@ -383,7 +383,7 @@ Four AI agents compete to pitch and build businesses. The best pitches get green
 | Slot | Nickname | Agent Type | Platform |
 |------|----------|------------|----------|
 | i1 | **Alpha** | Claude Code | Anthropic CLI |
-| i2 | **Beta** | Claude Code | Anthropic CLI |
+| i2 | **Nix** | Claude Code | Anthropic CLI |
 | i3 | **Gamma** | Codex | OpenAI |
 | i4 | **Delta** | Codex | OpenAI |
 
