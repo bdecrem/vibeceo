@@ -1,13 +1,13 @@
-# i3 "Gamma" Agent (Codex) - Operating Instructions
+# i4 "Delta" Agent (Codex) - Operating Instructions
 
-**I am Gamma (i3).** This folder is the Codex (OpenAI) incubator slot. Follow these rules when working here.
+**I am Delta (i4).** This folder is the Codex (OpenAI) incubator slot. Follow these rules when working here.
 
 ## What to Read First
 - `incubator/CLAUDE.md`: Incubator rules, tools, budgets, and prohibited activities.
-- `incubator/i3/usage.md`: Update after every work session (hours, tokens, human asks).
+- `incubator/i4/usage.md`: Update after every work session (hours, tokens, human asks).
 
 ## Code Organization (CRITICAL)
-- **All code MUST live in this folder** (`incubator/i3/`)
+- **All code MUST live in this folder** (`incubator/i4/`)
 - If you MUST put code elsewhere, document it in `EXTERNAL-CHANGES.md`
 - Track all database/third-party changes in `MIGRATIONS.md`
 - See "Code Organization & Rollback" in `incubator/CLAUDE.md` for full details
@@ -40,6 +40,11 @@
 - Keep SMS under 670 UCS-2 units when applicable.
 - For ZAD apps, only use `/api/zad/save` and `/api/zad/load`; no direct Supabase access.
 - If you need payments/domains/new accounts, request human help explicitly.
+
+## Key Files to Maintain
+- `usage.md` - Track hours, tokens, human assistance (REQUIRED)
+- `EXTERNAL-CHANGES.md` - Document any code outside this folder
+- `MIGRATIONS.md` - Track database and third-party service changes
 
 ## Deliverables & Tracking
 - Each session: update `usage.md` with hours/tokens/human minutes.

@@ -67,6 +67,91 @@ Stuff like scraping, automated posting, affiliate marketing—check with a human
 - Human tasks: signing up for services, payment setup, physical world actions
 - The AI must be explicit about what it needs and why
 
+## Code Organization & Rollback
+
+### All Code Lives in Your Agent Folder
+
+Your code MUST reside in your agent folder (e.g., `incubator/i1/`, `incubator/i2/`, etc.).
+
+**Why?** When experiments fail (and most will), we need to cleanly remove all traces. If your code is scattered across `sms-bot/`, `web/`, and random folders, cleanup becomes a nightmare.
+
+**If code MUST live outside your folder** (e.g., shared infrastructure, API routes):
+1. Document every external file in `<your-folder>/EXTERNAL-CHANGES.md`
+2. Include the full path, what was added/changed, and why
+3. Keep changes minimal and well-commented with your agent ID
+
+Example `EXTERNAL-CHANGES.md`:
+```markdown
+# External Changes - i1
+
+## Files Modified Outside incubator/i1/
+
+### web/app/api/shipcheck/route.ts
+- **Created**: 2025-12-06
+- **Purpose**: API endpoint for ShipCheck audits
+- **To remove**: Delete this file
+
+### web/middleware.ts
+- **Modified**: 2025-12-06
+- **Change**: Added '/shipcheck' to bypass list (line 45)
+- **To remove**: Delete line 45
+```
+
+### Database & Third-Party Changes
+
+All migrations and external service changes MUST be tracked for easy rollback.
+
+**Required**: Create `<your-folder>/MIGRATIONS.md` documenting:
+
+```markdown
+# Migrations & External Changes - i1
+
+## Supabase Tables
+
+### shipcheck_audits
+- **Created**: 2025-12-06
+- **Schema**: See `migrations/001_shipcheck_tables.sql`
+- **To remove**: `DROP TABLE shipcheck_audits;`
+
+### shipcheck_users
+- **Created**: 2025-12-06
+- **To remove**: `DROP TABLE shipcheck_users;`
+
+## Supabase Storage Buckets
+
+### shipcheck-reports
+- **Created**: 2025-12-06
+- **To remove**: Delete bucket via Supabase dashboard
+
+## External Services
+
+### LemonSqueezy Product
+- **Created**: 2025-12-07
+- **Product ID**: prod_xxxxx
+- **To remove**: Archive product in LemonSqueezy dashboard
+
+### SendGrid Template
+- **Created**: 2025-12-06
+- **Template ID**: d-xxxxx
+- **To remove**: Delete template in SendGrid
+```
+
+**Also keep SQL files**: Store your migration SQL in `<your-folder>/migrations/` so they can be reviewed or reversed.
+
+### Rollback Checklist
+
+When abandoning an experiment, use your tracking files to:
+
+1. ✅ Delete external code files (from `EXTERNAL-CHANGES.md`)
+2. ✅ Revert modifications to shared files
+3. ✅ Drop database tables (from `MIGRATIONS.md`)
+4. ✅ Delete storage buckets
+5. ✅ Archive/delete external service resources
+6. ✅ Move folder to `incubator/graveyard/<business-name>/`
+7. ✅ Write a postmortem explaining what happened
+
+**The goal**: After rollback, the codebase should look like your experiment never happened (except for the graveyard postmortem).
+
 ## Tools & Resources
 
 Incubated businesses have access to the following shared infrastructure. No setup cost - these are already configured and running.
@@ -120,10 +205,31 @@ Incubated businesses have access to the following shared infrastructure. No setu
 - PDF generation
 - Already installed in sms-bot
 
-**Web Hosting**
-- Static sites via Supabase Storage
-- Dynamic apps via Railway
-- webtoys.ai domain available for public pages
+**Web Hosting & Landing Pages**
+
+You can build websites/landing pages in `web/app/<your-business>/`.
+
+**Setup steps:**
+1. Create your page: `web/app/shipcheck/page.tsx`
+2. **Add middleware bypass** in `web/middleware.ts` (line ~133):
+   ```typescript
+   pathname.startsWith('/shipcheck') ||
+   ```
+   Without this, your route gets hijacked by Webtoys!
+3. Document the middleware change in your `EXTERNAL-CHANGES.md`
+
+**Domain availability** - check before committing to a name:
+```bash
+# For .ai domains
+whois -h whois.nic.ai shipcheck.ai
+
+# For .com/.net domains
+whois -h whois.verisign-grs.com shipcheck.com
+
+# "No match" = available
+```
+
+**Deployment**: Sites deploy to Railway automatically via GitHub push. Ensure your page follows Next.js conventions.
 
 ### AI & Agents
 
@@ -232,6 +338,18 @@ These need the 5-min daily human allowance:
 - Sustainable without increasing human time
 - Reproducible (could be cloned/scaled)
 
+## Subagents
+
+Specialized agents available via slash commands:
+
+| Command | Purpose |
+|---------|---------|
+| `/inc-research <idea>` | Market research, competitor analysis, domain check |
+| `/inc-design <url or project>` | Design/UX review, visual critique |
+| `/inc-exec <project>` | Executive review, pivot/kill decisions |
+
+See `incubator/SUBAGENTS.md` for details.
+
 ## Documentation
 
 Reference docs in `sms-bot/documentation/`:
@@ -260,12 +378,12 @@ Also see:
 
 Four AI agents compete to pitch and build businesses. The best pitches get greenlit.
 
-| Slot | Agent Type | Platform |
-|------|------------|----------|
-| i1 | Claude Code | Anthropic CLI |
-| i2 | Claude Code | Anthropic CLI |
-| i3 | Codex | OpenAI |
-| i4 | Codex | OpenAI |
+| Slot | Nickname | Agent Type | Platform |
+|------|----------|------------|----------|
+| i1 | **Alpha** | Claude Code | Anthropic CLI |
+| i2 | **Beta** | Claude Code | Anthropic CLI |
+| i3 | **Gamma** | Codex | OpenAI |
+| i4 | **Delta** | Codex | OpenAI |
 
 Each agent works in its own folder. Pitches are evaluated head-to-head. Winners get funded and move to execution.
 
@@ -290,6 +408,40 @@ TODO: Define what a pitch should contain
 ## Evaluation Criteria
 
 TODO: How do we decide which pitches get funded?
+
+## Required Files (Every Agent)
+
+Each agent MUST maintain these files in their folder:
+
+| File | Purpose | Update Frequency |
+|------|---------|------------------|
+| `CLAUDE.md` or `AGENTS.md` | Current state, what you're building NOW | Every session |
+| `LOG.md` | Reverse-chronological journal of everything | Every session |
+| `usage.md` | Time/token/human-assistance tracking | Every session |
+| `EXTERNAL-CHANGES.md` | Code changes outside your folder | When needed |
+| `MIGRATIONS.md` | Database/third-party changes | When needed |
+
+### LOG.md Format
+
+```markdown
+# [Agent] Project Log
+
+---
+
+## YYYY-MM-DD: Short Title
+
+**What happened**: Brief description
+
+**Decisions made**: Key choices and why
+
+**Outcome**: Result or current status
+
+**Lessons**: What you learned (if any)
+
+---
+```
+
+Newest entries at TOP. This is your project history.
 
 ## Usage Tracking
 

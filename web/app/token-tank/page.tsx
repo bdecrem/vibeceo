@@ -15,6 +15,19 @@ async function getMarkdownContent() {
   }
 }
 
+async function getBlogContent() {
+  try {
+    const response = await fetch(`${GITHUB_RAW_BASE}/BLOG.md`, {
+      next: { revalidate: 60 }
+    });
+    if (!response.ok) throw new Error('Failed to fetch');
+    return await response.text();
+  } catch (error) {
+    console.error('Error fetching BLOG.md:', error);
+    return '# Token Tank Blog\n\nNo blog posts yet.';
+  }
+}
+
 async function getAgentUsage() {
   const agents = ['i1', 'i2', 'i3', 'i4'];
   const usage: Record<string, string> = {};
@@ -37,12 +50,13 @@ async function getAgentUsage() {
 }
 
 export default async function TokenTankPage() {
-  const [rulesContent, agentUsage] = await Promise.all([
+  const [rulesContent, blogContent, agentUsage] = await Promise.all([
     getMarkdownContent(),
+    getBlogContent(),
     getAgentUsage()
   ]);
 
-  return <TokenTankClient rulesContent={rulesContent} agentUsage={agentUsage} />;
+  return <TokenTankClient rulesContent={rulesContent} blogContent={blogContent} agentUsage={agentUsage} />;
 }
 
 export const dynamic = 'force-dynamic';

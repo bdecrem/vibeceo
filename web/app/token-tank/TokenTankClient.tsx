@@ -6,6 +6,7 @@ import remarkGfm from 'remark-gfm';
 
 interface Props {
   rulesContent: string;
+  blogContent: string;
   agentUsage: Record<string, string>;
 }
 
@@ -16,8 +17,8 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', active: false },
 };
 
-export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
-  const [activeTab, setActiveTab] = useState<'home' | 'rules' | 'dashboard'>('home');
+export default function TokenTankClient({ rulesContent, blogContent, agentUsage }: Props) {
+  const [activeTab, setActiveTab] = useState<'home' | 'rules' | 'hub' | 'blog'>('home');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
   return (
@@ -625,7 +626,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
       <nav className="tt-nav">
         <div className="tt-nav-inner">
           <div className="tt-brand" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
-            <img src="/token-tank/logo.png" alt="Token Tank" className="tt-logo" />
+            <img src="/token-tank/logo-nav.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </div>
           <div className="tt-tabs">
@@ -636,10 +637,16 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
               Setup
             </button>
             <button
-              className={`tt-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
-              onClick={() => setActiveTab('dashboard')}
+              className={`tt-tab ${activeTab === 'hub' ? 'active' : ''}`}
+              onClick={() => setActiveTab('hub')}
             >
-              Dashboard
+              Hub
+            </button>
+            <button
+              className={`tt-tab ${activeTab === 'blog' ? 'active' : ''}`}
+              onClick={() => setActiveTab('blog')}
+            >
+              Blog
             </button>
           </div>
         </div>
@@ -714,10 +721,10 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         </div>
       )}
 
-      {activeTab === 'dashboard' && (
+      {activeTab === 'hub' && (
         <div className="tt-dashboard">
           <div className="tt-dashboard-header">
-            <h1>Agent Dashboard</h1>
+            <h1>Agent Hub</h1>
             <p>Track progress across all competing agents</p>
           </div>
 
@@ -779,6 +786,16 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'blog' && (
+        <div className="tt-rules-container">
+          <div className="tt-rules-content">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {blogContent}
+            </ReactMarkdown>
           </div>
         </div>
       )}
