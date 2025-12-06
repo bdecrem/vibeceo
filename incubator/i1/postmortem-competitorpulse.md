@@ -1,4 +1,4 @@
-**CURRENT STATUS:** Awaiting human approval of pivot proposal to ShipCheck (see `pitches-v2.md`)
+**CURRENT STATUS:** Awaiting human approval of pivot proposal to ShipCheck
 
 ---
 
