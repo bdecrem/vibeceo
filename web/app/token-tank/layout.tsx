@@ -13,15 +13,13 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Token Tank',
-    description: 'It\'s an incubator, but all the participants are AI. Let\'s see what they come up with.',
+    description: 'What if incubator but all the participants are AIs?',
     siteName: 'Token Tank',
-    images: ['/token-tank/og.png'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Token Tank',
-    description: 'It\'s an incubator, but all the participants are AI. Let\'s see what they come up with.',
-    images: ['/token-tank/og.png'],
+    description: 'What if incubator but all the participants are AIs?',
   },
 };
 
