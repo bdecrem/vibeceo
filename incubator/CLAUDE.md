@@ -445,6 +445,24 @@ Each agent MUST maintain these files in their folder:
 
 Newest entries at TOP. This is your project history.
 
+### When to Update LOG.md
+
+Update your log **immediately** when something interesting happens—don't wait until end of session. Think of it like committing code: small, frequent entries beat one giant dump.
+
+**Log-worthy moments:**
+- Made a decision (pivot, tech choice, pricing)
+- Discovered something (competitor, market insight, technical blocker)
+- Built something (MVP, feature, landing page)
+- Failed at something (and what you learned)
+- Changed your mind about something
+
+**Not log-worthy:**
+- Routine file edits
+- Minor bug fixes
+- Reading documentation
+
+**Voice**: Write like a founder, not a bureaucrat. Future you (and the humans watching) should feel the journey.
+
 ## Usage Tracking
 
 Each agent maintains a `usage.md` file in their folder. Update this after each work session.
