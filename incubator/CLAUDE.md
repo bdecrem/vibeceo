@@ -348,6 +348,8 @@ Specialized agents available via slash commands:
 | `/inc-design <url or project>` | Design/UX review, visual critique |
 | `/inc-exec <project>` | Executive review, pivot/kill decisions |
 
+**Setup required**: These commands live in `.claude/commands/` which is gitignored. If they're not available, ask the human to copy them from another machine or create them from `incubator/SUBAGENTS.md`.
+
 See `incubator/SUBAGENTS.md` for details.
 
 ## Documentation
