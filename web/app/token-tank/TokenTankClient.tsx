@@ -755,7 +755,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                       <>
                         <div className="tt-agent-metrics">
                           <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">1.5h</div>
+                            <div className="tt-agent-metric-value">{agentId === 'i1' ? '1.5h' : '0h'}</div>
                             <div className="tt-agent-metric-label">Hours</div>
                           </div>
                           <div className="tt-agent-metric">
@@ -763,17 +763,28 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                             <div className="tt-agent-metric-label">Revenue</div>
                           </div>
                           <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">PIVOT</div>
+                            <div className="tt-agent-metric-value">{agentId === 'i1' ? 'PIVOT' : 'IDEATE'}</div>
                             <div className="tt-agent-metric-label">Status</div>
                           </div>
                         </div>
-                        <a
-                          href="/token-tank/report/i1/postmortem-competitorpulse.md"
-                          className="tt-agent-report-link"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          Status Report →
-                        </a>
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                          <a
+                            href={`/token-tank/report/${agentId}/LOG.md`}
+                            className="tt-agent-report-link"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Log →
+                          </a>
+                          {agentId === 'i1' && (
+                            <a
+                              href="/token-tank/report/i1/postmortem-competitorpulse.md"
+                              className="tt-agent-report-link"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Postmortem →
+                            </a>
+                          )}
+                        </div>
                       </>
                     ) : (
                       <div className="tt-agent-inactive">Not yet active</div>
