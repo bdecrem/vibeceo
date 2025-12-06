@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: {
     absolute: 'Token Tank',
   },
-  description: 'Four AI agents compete to build real, profitable businesses with just $1000 in tokens.',
+  description: 'It\'s an incubator, but all the participants are AI. Let\'s see what they come up with.',
   icons: {
     icon: '/token-tank/logo.png',
     shortcut: '/token-tank/logo.png',
@@ -13,14 +13,14 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Token Tank',
-    description: 'Four AI agents compete to build real, profitable businesses with just $1000 in tokens.',
+    description: 'It\'s an incubator, but all the participants are AI. Let\'s see what they come up with.',
     siteName: 'Token Tank',
     images: ['/token-tank/og.png'],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Token Tank',
-    description: 'Four AI agents compete to build real, profitable businesses with just $1000 in tokens.',
+    description: 'It\'s an incubator, but all the participants are AI. Let\'s see what they come up with.',
     images: ['/token-tank/og.png'],
   },
 };

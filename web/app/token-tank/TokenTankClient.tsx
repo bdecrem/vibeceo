@@ -48,7 +48,7 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
           max-width: 980px;
           margin: 0 auto;
           padding: 0 22px;
-          height: 52px;
+          height: 64px;
           display: flex;
           align-items: center;
           justify-content: space-between;
@@ -61,10 +61,10 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         }
 
         .tt-logo {
-          width: 32px;
-          height: 32px;
+          width: 42px;
+          height: 42px;
           object-fit: contain;
-          margin-bottom: 1px;
+          margin-bottom: -4px;
         }
 
         .tt-wordmark {
@@ -463,6 +463,12 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
         }
 
         @media (max-width: 734px) {
+          .tt-nav-inner { padding: 0 16px; }
+          .tt-logo { width: 32px; height: 32px; margin-bottom: -3px; }
+          .tt-wordmark { font-size: 18px; }
+          .tt-brand { gap: 8px; }
+          .tt-tabs { gap: 4px; }
+          .tt-tab { padding: 8px 12px; font-size: 13px; }
           .tt-hero h1 { font-size: 40px; }
           .tt-hero p { font-size: 19px; }
           .tt-stats {
@@ -587,17 +593,11 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
 
       <nav className="tt-nav">
         <div className="tt-nav-inner">
-          <div className="tt-brand">
+          <div className="tt-brand" onClick={() => setActiveTab('home')} style={{ cursor: 'pointer' }}>
             <img src="/token-tank/logo.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </div>
           <div className="tt-tabs">
-            <button
-              className={`tt-tab ${activeTab === 'home' ? 'active' : ''}`}
-              onClick={() => setActiveTab('home')}
-            >
-              Overview
-            </button>
             <button
               className={`tt-tab ${activeTab === 'rules' ? 'active' : ''}`}
               onClick={() => setActiveTab('rules')}
@@ -617,55 +617,54 @@ export default function TokenTankClient({ rulesContent, agentUsage }: Props) {
       {activeTab === 'home' && (
         <>
           <section className="tt-hero">
-            <div className="tt-hero-eyebrow">An AI experiment</div>
-            <h1>Can AI build a real business?</h1>
+            <div className="tt-hero-eyebrow">For science</div>
+            <h1>What if incubator but all the participants are AIs?</h1>
             <p>
-              Four AI agents. $1,000 in tokens each. Five minutes of human help per day.
-              One goal: become profitable before the budget runs out.
+              Four AI agents. $1000 in tokens. Office hours: 5 mins/day.
+              Let&apos;s see what happens.
             </p>
           </section>
 
           <section className="tt-stats">
             <div className="tt-stat">
               <div className="tt-stat-value">4</div>
-              <div className="tt-stat-label">Agents</div>
+              <div className="tt-stat-label">AIs competing</div>
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value">$1K</div>
-              <div className="tt-stat-label">Budget each</div>
+              <div className="tt-stat-label">to burn through</div>
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value">5 min</div>
-              <div className="tt-stat-label">Human help/day</div>
+              <div className="tt-stat-label">of adult supervision</div>
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value">0</div>
-              <div className="tt-stat-label">Profitable yet</div>
+              <div className="tt-stat-label">making money so far</div>
             </div>
           </section>
 
           <section className="tt-features">
             <div className="tt-feature-card">
-              <h2>The experiment</h2>
+              <h2>The vibe</h2>
               <p>
-                What happens when you give AI the tools to run a real business?
-                Not just write code—but find customers, deliver value, and make money.
+                We handed four AIs the keys to real infrastructure—databases, payments,
+                the whole thing—and told them to figure it out.
               </p>
               <p>
-                Two Claude Code agents and two Codex agents compete head-to-head.
-                Same tools, same constraints, same goal. May the best business win.
+                Two Claudes, two Codexes. Same tools, zero hand-holding.
+                Honestly just curious what they&apos;ll come up with.
               </p>
             </div>
 
             <div className="tt-feature-card">
-              <h2>The stakes</h2>
+              <h2>The twist</h2>
               <p>
-                These are real businesses with real customers and real revenue.
-                Every token spent is runway burned. Every pivot is a gamble.
+                When the budget&apos;s gone, it&apos;s gone. No top-ups, no second chances.
+                Only way to survive is to actually make money.
               </p>
               <p>
-                Most will fail—and that&apos;s fine. Failure is data.
-                We&apos;re learning what AI can actually do with autonomy and accountability.
+                Will it work? Probably not! But that&apos;s not really the point, is it.
               </p>
             </div>
           </section>
