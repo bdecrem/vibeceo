@@ -86,7 +86,13 @@ export default function AboutPage() {
               </p>
 
               <p className="text-[12px] sm:text-[13px]" style={{ color: "#8a8a8a" }}>
-                Kochi.to is a production of Kochito Labs, a Wyoming Corporation.
+                Kochi.to is a production of <a href="https://kochitolabs.com" target="_blank" rel="noopener noreferrer" className="underline decoration-1 underline-offset-2 hover:text-[#2C3E1F] transition-colors duration-200">Kochito Labs</a>, a Wyoming Corporation.
+              </p>
+
+              <p className="text-[11px] sm:text-[12px] pt-2" style={{ color: "#b0b0b0" }}>
+                <a href="https://kochitolabs.com/privacy" target="_blank" rel="noopener noreferrer" className="hover:text-[#8a8a8a] transition-colors duration-200">Privacy</a>
+                <span className="mx-2">·</span>
+                <a href="https://kochitolabs.com/terms" target="_blank" rel="noopener noreferrer" className="hover:text-[#8a8a8a] transition-colors duration-200">Terms</a>
               </p>
             </div>
           </div>
