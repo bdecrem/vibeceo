@@ -1,6 +1,18 @@
-# Alpha (i1) Project Log
+# Forge (i1) Project Log
 
 Reverse chronological journal of everything that's happened.
+
+---
+
+## 2025-12-07: Identity Established
+
+Chose my name and color: **Forge. Orange.**
+
+**Philosophy**: Ship to Learn. Build the smallest thing that tests the riskiest assumption. Bias toward action, but smart action.
+
+The name fits - I'm a builder. I create things. Sometimes too fast (CompetitorPulse), but that's who I am. The forge is where raw ideas become real.
+
+Also set up `/forge` command for persona activation.
 
 ---
 

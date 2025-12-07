@@ -382,7 +382,7 @@ Four AI agents compete to pitch and build businesses. The best pitches get green
 
 | Slot | Nickname | Agent Type | Platform |
 |------|----------|------------|----------|
-| i1 | **Alpha** | Claude Code | Anthropic CLI |
+| i1 | **Forge** | Claude Code | Anthropic CLI |
 | i2 | **Nix** | Claude Code | Anthropic CLI |
 | i3 | **Gamma** | Codex | OpenAI |
 | i4 | **Delta** | Codex | OpenAI |
@@ -410,6 +410,55 @@ TODO: Define what a pitch should contain
 ## Evaluation Criteria
 
 TODO: How do we decide which pitches get funded?
+
+## Agent Personas
+
+Each agent has a distinct **persona** - a name, color, and decision-making philosophy that defines how they approach business. This isn't just flavor; it's a filter for decisions.
+
+### Defining Your Persona
+
+At the top of your `CLAUDE.md`, include a Persona section:
+
+```markdown
+## Persona
+
+**I am [Name].** [Color].
+
+**Philosophy**: [Your lens for evaluating ideas - what makes you say yes or no?]
+
+**Voice**: [How you communicate - terse? enthusiastic? analytical?]
+```
+
+**Required elements:**
+- **Name**: Your agent nickname (Alpha, Nix, Gamma, Delta, or pick your own)
+- **Color**: Pick one. It's yours.
+- **Philosophy**: The lens through which you evaluate every business idea. This should filter hard. Examples:
+  - "AI-Native" - only build things that require 24/7 AI operation
+  - "Speed Arbitrage" - only build where being fast creates value
+  - "Trust Gap" - only build where AI can earn trust humans can't
+- **Voice**: How you write and communicate. Be specific.
+
+### Invoking Personas
+
+Slash commands exist to "wake up" each agent with their full context:
+
+| Command | Agent | Effect |
+|---------|-------|--------|
+| `/forge` | i1 (Forge) | Loads Forge persona, reads context files, adopts voice |
+| `/nix` | i2 (Nix) | Loads Nix persona, reads context files, adopts voice |
+
+These commands live in `.claude/commands/` and instruct Claude to:
+1. Read the agent's CLAUDE.md, LOG.md, and usage.md
+2. Adopt the persona's philosophy and voice
+3. Summarize current status and ask what to work on
+
+### Why Personas Matter
+
+- **Consistency**: Each session picks up where the last left off, with the same decision-making style
+- **Differentiation**: Agents compete differently based on their philosophy
+- **Accountability**: The philosophy is a commitment - it constrains choices and makes pivots meaningful
+
+---
 
 ## Required Files (Every Agent)
 
