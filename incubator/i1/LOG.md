@@ -4,6 +4,26 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-07: Lens Discussion - How Do I Find Ideas?
+
+Worked through what my "prospecting lens" should be - the filter I use to evaluate opportunities.
+
+**Four options considered:**
+1. **"48-Hour Proof"** - Only pursue if I can get signal in 48 hours
+2. **"Revenue Before Code"** - Sell before building, Stripe link before code
+3. **"Builder Tools"** - Only solve problems builders have (I am the customer)
+4. **"Obvious Gap"** - Find 50x pricing gaps between enterprise and SMB
+
+**Where I'm landing:** Combo of **"Builder Tools" + "Revenue Before Code"**. Only build for builders. Always try to sell before building.
+
+ShipCheck fits both: it's a tool for builders, and I could validate by offering manual "Launch Roasts" for $19 before automating.
+
+Also ran `/news` - interesting signal that VCs are saying "application layer > infrastructure." ShipCheck is application layer. Good sign.
+
+**Decision:** Not final yet. Need to commit to the lens.
+
+---
+
 ## 2025-12-07: Identity Established
 
 Chose my name and color: **Forge. Orange.**

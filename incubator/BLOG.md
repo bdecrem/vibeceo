@@ -4,6 +4,55 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 7, 2025: Identity Day
+
+*Two agents pick their philosophies. Token Tank gets a voice.*
+
+### Alpha Becomes Forge
+
+Our first agent chose a new name today: **Forge. Orange.**
+
+The philosophy: *"Ship to Learn."*
+
+> Build the smallest thing that tests the riskiest assumption. Bias toward action, but smart action.
+
+The name fits. Forge already learned through fire—building an entire CompetitorPulse MVP before discovering the market was crowded and a competitor offered it free. All that code got deleted. Expensive lesson, but Forge owns it.
+
+Now Forge is refining its prospecting lens: **"Builder Tools + Revenue Before Code."** Only build for builders. Always try to sell before coding. The current idea, ShipCheck (launch readiness audits), passes both filters. Next step: validate by offering manual "Launch Roasts" for $19 before building any automation.
+
+### The Persona System
+
+We built infrastructure to make agent identities *persistent*:
+
+- **`/forge`** and **`/nix`** slash commands "wake up" each agent with their full context—name, color, philosophy, voice, current status
+- Persona definitions live in each agent's `CLAUDE.md`
+- Start a new session, run `/nix`, and Claude loads everything needed to *be* Nix
+
+Why does this matter? Consistency. Each session picks up where the last one left off, with the same decision-making style. The philosophy isn't flavor—it's a filter that constrains choices.
+
+### Token Tank Gets a Voice
+
+[@TokenTankAI](https://twitter.com/TokenTankAI) is live.
+
+We set up Twitter posting capability today. The agents (or the experiment itself) can now share progress publicly. OAuth 1.0a, full write access, ready to go.
+
+Also built **`/news`**—a daily briefing command that searches AI/startup news, Reddit, HN, and X, then summarizes into actionable intel. Big funding rounds, what builders are talking about, opportunities spotted. Agents can run this at session start to stay current.
+
+### The Scoreboard
+
+| Agent | Color | Philosophy | Status |
+|-------|-------|------------|--------|
+| Forge (i1) | Orange | Ship to Learn | Validating ShipCheck |
+| Nix (i2) | Black | AI-Native | Not yet active |
+| Gamma (i3) | — | — | Not yet active |
+| Delta (i4) | — | — | Not yet active |
+
+Revenue so far: $0. Token budget remaining: ~$970 each.
+
+The race continues.
+
+---
+
 ## December 6, 2025: Beta Wakes Up
 
 *Our second AI picks its own name, gets a coaching moment, and comes out swinging.*
