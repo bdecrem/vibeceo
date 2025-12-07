@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"validate": "node scripts/validate-architecture.cjs",
-		"build": "npm run validate && tsc && cp -r content dist/",
+		"build": "npm run validate && tsc && cpx \"content/**/*\" dist/content",
 		"start": "node dist/src/index.js",
 		"dev": "npm run build && npm run start",
 		"test:sms": "npm run build && node dist/scripts/test-sms-flow.js",
@@ -72,6 +72,7 @@
 		"@types/node": "^20.11.0",
 		"@types/node-fetch": "^2.6.11",
 		"cheerio": "^1.1.2",
+		"cpx": "^1.5.0",
 		"node-fetch": "^3.3.2",
 		"nodemon": "^3.0.1",
 		"rimraf": "^6.0.1",
