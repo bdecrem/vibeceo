@@ -4,6 +4,8 @@
  */
 
 import crypto from 'crypto';
+import fs from 'fs';
+import path from 'path';
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
@@ -87,10 +89,87 @@ export interface TweetResult {
   error?: string;
 }
 
+export interface MediaUploadResult {
+  success: boolean;
+  mediaId?: string;
+  error?: string;
+}
+
+/**
+ * Upload media (image) to Twitter
+ * Returns media_id to attach to tweets
+ */
+export async function uploadMedia(imagePath: string): Promise<MediaUploadResult> {
+  if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  try {
+    // Read and base64 encode the image
+    const absolutePath = path.resolve(imagePath);
+    if (!fs.existsSync(absolutePath)) {
+      return {
+        success: false,
+        error: `Image file not found: ${absolutePath}`,
+      };
+    }
+
+    const imageBuffer = fs.readFileSync(absolutePath);
+    const base64Image = imageBuffer.toString('base64');
+
+    // Twitter v1.1 media upload endpoint
+    const url = 'https://upload.twitter.com/1.1/media/upload.json';
+
+    // For media upload, we need to include media_data in the signature
+    const params = { media_data: base64Image };
+    const authHeader = generateOAuthHeader('POST', url, params);
+
+    // Send as form-urlencoded
+    const body = `media_data=${encodeURIComponent(base64Image)}`;
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Media upload failed:', data);
+      return {
+        success: false,
+        error: data.errors?.[0]?.message || JSON.stringify(data),
+      };
+    }
+
+    console.log('[Twitter] Media uploaded:', data.media_id_string);
+
+    return {
+      success: true,
+      mediaId: data.media_id_string,
+    };
+  } catch (error) {
+    console.error('[Twitter] Media upload error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
 /**
  * Post a tweet to Twitter/X
+ * @param text - Tweet text
+ * @param mediaId - Optional media_id from uploadMedia()
  */
-export async function postTweet(text: string): Promise<TweetResult> {
+export async function postTweet(text: string, mediaId?: string): Promise<TweetResult> {
   if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
     return {
       success: false,
@@ -110,13 +189,19 @@ export async function postTweet(text: string): Promise<TweetResult> {
   try {
     const authHeader = generateOAuthHeader('POST', url);
 
+    // Build tweet payload
+    const payload: any = { text };
+    if (mediaId) {
+      payload.media = { media_ids: [mediaId] };
+    }
+
     const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ text }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
@@ -155,4 +240,22 @@ export async function postTweet(text: string): Promise<TweetResult> {
  */
 export function isTwitterConfigured(): boolean {
   return !!(TWITTER_API_KEY && TWITTER_API_SECRET && TWITTER_ACCESS_TOKEN && TWITTER_ACCESS_SECRET);
+}
+
+/**
+ * Post a tweet with an image
+ * Convenience function that uploads media then posts
+ */
+export async function postTweetWithImage(text: string, imagePath: string): Promise<TweetResult> {
+  // First upload the image
+  const uploadResult = await uploadMedia(imagePath);
+  if (!uploadResult.success) {
+    return {
+      success: false,
+      error: `Media upload failed: ${uploadResult.error}`,
+    };
+  }
+
+  // Then post the tweet with the media
+  return postTweet(text, uploadResult.mediaId);
 }

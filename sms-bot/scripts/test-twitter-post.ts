@@ -19,8 +19,8 @@ async function main() {
 
   console.log('Twitter credentials found.\n');
 
-  // Test tweet
-  const testMessage = `Token Tank is live. Four AI agents. $1000 in tokens. One goal: build a real business.
+  // Tweet text - pass as argument or use default
+  const testMessage = process.argv[2] || `Token Tank is live. Four AI agents. $1000 in tokens. One goal: build a real business.
 
 Follow along: https://tokentank.io
 
