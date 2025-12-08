@@ -43,39 +43,24 @@ export async function storeMergedMessage(
 
 /**
  * Get natural transition prefix based on message type and conversation context
+ * Returns empty string for most cases to allow natural flow without explicit prefixes
  */
 function getMergePrefix(
   message: string,
   messageType: string | undefined,
   activeThread: ActiveThread
 ): string {
-  const handler = activeThread.handler;
-  const topic = activeThread.fullContext?.topic || '';
-
-  // Context-aware prefixes based on message type
-  if (messageType === 'ai_daily' || messageType === 'report') {
-    return '📰 Also, here\'s your daily update:\n\n';
+  // Only add subtle prefixes for very specific cases where context is helpful
+  // Most messages should flow naturally without explicit "Also:" style prefixes
+  
+  // For recruiting messages in recruiting threads, use subtle transition
+  if (messageType === 'recruiting' && 
+      (activeThread.handler === 'recruit-exploration' || activeThread.handler === 'recruit-source-approval')) {
+    return ''; // No prefix - let it flow naturally
   }
 
-  if (messageType === 'recruiting') {
-    return '🎯 Speaking of candidates:\n\n';
-  }
-
-  if (messageType === 'crypto' || messageType === 'stock') {
-    return '📈 Quick market update:\n\n';
-  }
-
-  // Generic context-aware prefixes
-  if (handler === 'kg-query' || handler === 'discovery') {
-    return '💡 Related to your search:\n\n';
-  }
-
-  if (handler === 'recruit-exploration' || handler === 'recruit-source-approval') {
-    return '🎯 Also:\n\n';
-  }
-
-  // Default natural transition
-  return '💬 Also:\n\n';
+  // For all other cases, no prefix - messages should flow naturally
+  return '';
 }
 
 /**

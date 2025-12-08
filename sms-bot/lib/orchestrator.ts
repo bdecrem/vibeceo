@@ -17,9 +17,9 @@ const anthropic = new Anthropic({
 export type RouteDestination =
   | 'keyword' // Already handled by keyword routing
   | 'kg-query' // Research questions → KG agent
-  | 'air' // AIR subscription/confirmation → AIR handler
   | 'discovery' // Finding/searching for content → Agentic with web search
   | 'general'; // Everything else → General Kochi agent
+// 'air' // AIR subscription/confirmation → AIR handler *REMOVED FOR NOW* *NEEDS NATURAL LANGUAGE ROUTING BEFORE ENABLING*
 
 export interface RoutingDecision {
   destination: RouteDestination;
@@ -77,19 +77,16 @@ set isFollowUp=false even if there's an active thread.
    Use when: Questions about research papers, authors, AI research, academic topics
    Examples: "show me papers about X", "who are top authors in Y", "what's new in Z research"
 
-2. "air" - Route to AIR subscription handler
-   Use when: User is responding to AIR subscription flow (confirmation, choices)
-   Examples: "YES", "1", "2", after AIR preview was sent
-
-3. "discovery" - Route to agentic agent with web search
+2. "discovery" - Route to agentic agent with web search
    Use when: User wants to FIND or SEARCH for current content (articles, podcasts, news, etc.)
    Examples: "find me articles about X", "search for podcasts on Y", "what are good reads about Z", "when was that article posted"
    Note: This can search the web for actual current content with real links
 
-4. "general" - Route to general Kochi assistant (NO web search)
-   Use when: Simple conversations, explanations, follow-ups that don't need live data
-   Examples: "hi", "thanks", "tell me more", "explain X", sharing personal info
+3. "general" - Route to general Kochi assistant (NO web search)
+   Use when: Simple conversations, explanations, follow-ups that don't need live data, or questions about AIR subscriptions
+   Examples: "hi", "thanks", "tell me more", "explain X", sharing personal info, "what's my AIR query?"
    Note: Cannot search web or provide current content - will hallucinate if asked to find things
+   Note: AIR commands (starting with "AIR" or "AI RESEARCH") are handled by keyword routing, not here
 
 CONTEXT:
 ${contextSummary}
@@ -98,7 +95,7 @@ USER MESSAGE: "${userMessage}"
 
 Analyze and respond with JSON:
 {
-  "destination": "kg-query" | "air" | "discovery" | "general",
+  "destination": "kg-query" | "discovery" | "general",
   "reasoning": "brief explanation",
   "confidence": "high" | "medium" | "low",
   "isFollowUp": true/false

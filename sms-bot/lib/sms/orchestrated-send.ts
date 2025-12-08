@@ -234,12 +234,11 @@ async function determineMessageRouting(
     return relevanceDecision;
   } catch (error) {
     console.error(`[ORCH-LOG] Error in AI routing decision:`, error);
-    // Fallback: queue if there's an active thread (safe default)
+    // Fallback: prefer send_now - better to send normally than merge unnecessarily
     return {
-      decision: 'queue',
-      reasoning: 'AI analysis failed, defaulting to queue for safety',
+      decision: 'send_now',
+      reasoning: 'AI analysis failed, defaulting to send_now to ensure message delivery',
       confidence: 'low',
-      queueReason: 'Error in relevance analysis',
     };
   }
 }
@@ -283,6 +282,17 @@ Command responses (lists of available commands) MUST ALWAYS be sent immediately 
 - Messages with command list indicators (emojis like 📻, 📢, 🥊, 💰, 💻, 🎨, 🧱)
 - Messages with messageType="command_response" or source="command"
 
+CRITICAL RULE - ACTIVE CONVERSATION RESPONSES:
+When there is an active conversation thread, bot responses that are part of that conversation flow MUST be sent immediately ("send_now"). This includes:
+- Bot responses during recruit-exploration (asking questions, proposing queries, refining search criteria)
+- Bot responses during recruit-source-approval (showing channels, asking for approval)
+- Bot responses during discovery agent conversations (search results, follow-up questions)
+- Bot responses during kg-query conversations (research results, answers to questions)
+- ANY bot message that is a direct response to the user's last message in the active conversation
+- Bot messages that continue or complete the current conversation turn
+
+IMPORTANT: If the active conversation handler is "recruit-exploration" or "recruit-source-approval", and the outbound message is about recruiting, candidates, channels, or the user's search query, it is ALWAYS part of the conversation flow and should be "send_now". Do NOT mistake these as "general recruitment broadcasts" - they are direct responses in an active conversation.
+
 AVAILABLE COMMANDS (for reference):
 📻 AI DAILY:
 - AI DAILY - Get today's episode on demand
@@ -323,37 +333,50 @@ General:
 - STOP - Unsubscribe
 - HELP - Show help
 
-DECISION OPTIONS:
+DECISION OPTIONS (in priority order):
 
-1. "send_now" - Send immediately
+1. "send_now" - Send immediately (PREFERRED for directly relevant messages)
    Use when:
    - Message is a command response (list of available commands) - ALWAYS send_now
    - Message is directly relevant to the active conversation topic
    - Message is a response to something the user asked for in the active conversation
    - Message completes or continues the active conversation naturally
    - Message is urgent/time-sensitive and related to the conversation
+   - Message is a direct answer or result related to what the user is currently discussing
+   - Bot response during an active multi-turn conversation (recruit-exploration, recruit-source-approval, discovery, kg-query)
+   - Message is about the same topic as the active conversation (e.g., recruiting during recruit-exploration)
+   - IMPORTANT: Prefer send_now when the message is directly relevant - it's cleaner than merging
+   - CRITICAL: If active thread is recruit-exploration/recruit-source-approval and message is about recruiting → ALWAYS send_now
 
-2. "merge" - Merge into current conversation
-   Use when:
-   - Message can be naturally added as part of the ongoing conversation
-   - Message provides additional context or information related to the active topic
-   - Message is a follow-up or continuation of the active conversation
-   - Message enhances rather than interrupts the conversation flow
+2. "merge" - Merge into current conversation (ONLY when message is a natural continuation)
+   Use ONLY when:
+   - Message is a natural continuation or follow-up that enhances the current conversation
+   - Message provides additional context that directly relates to the active topic
+   - Message is a scheduled broadcast that directly relates to what the user is currently discussing
+   - Message can be seamlessly integrated into the ongoing conversation without feeling forced
+   - IMPORTANT: Only merge when the connection is clear and natural. If unsure, prefer send_now instead.
 
-3. "queue" - Queue for later
-   Use when:
-   - Message is completely unrelated to the active conversation
-   - Message is a scheduled broadcast (daily reports, notifications)
-   - Message would interrupt an important multi-turn conversation
-   - Message is informational but not urgent
-   - Active conversation is in a critical state (user is providing input, making decisions)
+3. "queue" - Queue for later (ONLY when message is completely unrelated)
+   Use ONLY when:
+   - Message is completely unrelated to the active conversation AND cannot be naturally merged
+   - Message would genuinely interrupt a critical multi-turn conversation that cannot accommodate additional context
+   - Message is a scheduled broadcast that has NO connection whatsoever to the active conversation topic
+   - Active conversation is in a critical decision-making state where ANY interruption would be disruptive
    - NEVER queue command responses - they must always be sent immediately
+   - NEVER queue bot responses that are part of the active conversation flow
+   - IMPORTANT: Queue should be rare. Most messages should either send_now or merge naturally.
 
 EXAMPLES:
-- Active: User asking about research papers → Outbound: Daily AI research report → Decision: queue (unrelated scheduled content)
-- Active: User in recruiting flow → Outbound: New candidates found → Decision: merge (directly related)
+- Active: recruit-exploration about "software engineer intern" → Outbound: Bot asking "What tech stack matters most?" → Decision: send_now (direct response in conversation)
+- Active: recruit-exploration about "software engineer intern" → Outbound: Bot proposing refined query "Software Engineering Interns (Backend) with Golang" → Decision: send_now (direct response to user's input)
+- Active: recruit-source-approval → Outbound: Bot showing channels to approve → Decision: send_now (direct response in conversation)
+- Active: User asking about research papers → Outbound: Answer to their research question → Decision: send_now (direct response)
+- Active: User asking about research papers → Outbound: Daily AI research report on same topic → Decision: send_now (directly relevant, send normally)
+- Active: User in recruiting flow → Outbound: New candidates found for their search → Decision: send_now (direct response to their request)
 - Active: User asking questions → Outbound: Answer to their question → Decision: send_now (direct response)
-- Active: User in discovery agent → Outbound: Scheduled crypto daily → Decision: queue (unrelated)
+- Active: User in discovery agent → Outbound: Scheduled crypto daily → Decision: send_now (if related to discovery topic) OR queue (if completely unrelated)
+- Active: User discussing web development → Outbound: Daily AI research report → Decision: send_now (if about web dev) OR queue (if completely unrelated)
+- Active: User in critical multi-step setup flow → Outbound: Completely unrelated daily report → Decision: queue (truly unrelated and would disrupt flow)
 - Active: Any conversation → Outbound: Command list response → Decision: send_now (ALWAYS - command responses must be immediate)
 - Active: User asked "COMMANDS" → Outbound: List of commands → Decision: send_now (ALWAYS - direct response to user request)
 

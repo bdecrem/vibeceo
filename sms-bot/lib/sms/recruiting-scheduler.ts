@@ -153,7 +153,150 @@ async function collectNewCandidatesForProject(
   });
 }
 
-async function runRecruitingBroadcast(twilioClient: TwilioClient): Promise<void> {
+/**
+ * Collect and send candidates for a specific subscriber (for testing)
+ * Bypasses "already sent today" check and other scheduler restrictions
+ */
+export async function collectAndSendCandidatesForSubscriber(
+  phoneNumber: string,
+  twilioClient: TwilioClient,
+  options?: {
+    skipTodayCheck?: boolean; // Skip "already sent today" check
+    skipDaysRemainingCheck?: boolean; // Skip days remaining check
+  }
+): Promise<void> {
+  const now = new Date();
+  const todayKey = pacificDateFormatter.format(now);
+
+  console.log(`[Recruiting Test] Collecting candidates for ${phoneNumber}...`);
+
+  const { getSubscriber } = await import('../subscribers.js');
+  const subscriber = await getSubscriber(phoneNumber);
+
+  if (!subscriber) {
+    throw new Error(`Subscriber not found: ${phoneNumber}`);
+  }
+
+  const prefs = await getRecruitingPreferences(subscriber.id);
+
+  // Skip if no projects
+  if (!prefs.projects || Object.keys(prefs.projects).length === 0) {
+    console.log(`[Recruiting Test] No projects found for ${phoneNumber}`);
+    return;
+  }
+
+  // Process each active recruiting project
+  for (const [projectId, project] of Object.entries(prefs.projects)) {
+    const typedProject = project as RecruitingProject;
+
+    // Skip if setup not complete or no approved channels
+    if (!typedProject.setupComplete || !typedProject.approvedChannels || typedProject.approvedChannels.length === 0) {
+      console.log(`[Recruiting Test] Project ${projectId} not ready (setupComplete: ${typedProject.setupComplete}, channels: ${typedProject.approvedChannels?.length || 0})`);
+      continue;
+    }
+
+    // Skip if already sent today (unless skipTodayCheck is true)
+    if (!options?.skipTodayCheck && hasReceivedToday(typedProject.lastCandidateSentAt, todayKey)) {
+      console.log(`[Recruiting Test] Project ${projectId} already received candidates today (use --force to override)`);
+      continue;
+    }
+
+    // Check if project is still active (unless skipDaysRemainingCheck is true)
+    if (!options?.skipDaysRemainingCheck) {
+      const startDate = typedProject.startedAt ? new Date(typedProject.startedAt) : new Date();
+      const daysElapsed = Math.floor((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const daysRemaining = (typedProject.durationDays || 7) - daysElapsed;
+
+      if (daysRemaining <= 0) {
+        console.log(`[Recruiting Test] Project ${projectId} has expired (${typedProject.durationDays || 7} days)`);
+        continue;
+      }
+    }
+
+    console.log(`[Recruiting Test] Collecting candidates for project ${projectId}: "${typedProject.query}"`);
+
+    try {
+      // Collect new candidates from approved channels
+      const newCandidates = await collectNewCandidatesForProject(
+        typedProject.refinedSpec?.specText || typedProject.query || '',
+        typedProject.approvedChannels
+      );
+
+      if (newCandidates.length === 0) {
+        console.log(`[Recruiting Test] No new candidates found for project ${projectId}`);
+        continue;
+      }
+
+      console.log(`[Recruiting Test] Found ${newCandidates.length} new candidates for project ${projectId}`);
+
+      // Add new candidates to existing list
+      const existingCandidates = typedProject.candidates || [];
+      const allCandidates = [...existingCandidates, ...newCandidates];
+
+      // Generate and store daily report
+      let reportShortLink: string | null = null;
+      try {
+        const { generateAndStoreRecruitingReport } = await import('../../agents/recruiting/report-generator.js');
+
+        const reportResult = await generateAndStoreRecruitingReport({
+          project: typedProject,
+          candidates: newCandidates,
+          date: todayKey,
+          reportType: 'daily',
+        });
+
+        reportShortLink = reportResult.shortLink;
+
+        // Store report link in project
+        typedProject.lastReportUrl = reportResult.stored.publicUrl || null;
+        typedProject.lastReportShortLink = reportShortLink;
+
+        console.log(`[Recruiting Test] Report generated: ${reportShortLink || reportResult.stored.publicUrl}`);
+      } catch (error) {
+        console.error(`[Recruiting Test] Failed to generate report:`, error);
+        // Continue even if report generation fails
+      }
+
+      // Format message with top candidate + shortlink (stays under SMS limits)
+      const message = formatCandidatesForScoring(newCandidates, reportShortLink);
+
+      // Final safety check before sending
+      const finalCodeUnits = countUCS2CodeUnits(message);
+      if (finalCodeUnits > MAX_SMS_CODE_UNITS) {
+        console.error(`[Recruiting Test] CRITICAL: Message still exceeds limit after formatting (${finalCodeUnits} > ${MAX_SMS_CODE_UNITS})`);
+        throw new Error(`SMS message too long: ${finalCodeUnits} code units`);
+      }
+
+      console.log(`[Recruiting Test] Message length: ${finalCodeUnits}/${MAX_SMS_CODE_UNITS} code units`);
+
+      // Send SMS
+      const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+      if (fromNumber) {
+        await twilioClient.messages.create({
+          body: message,
+          to: subscriber.phone_number,
+          from: fromNumber,
+        });
+
+        console.log(`[Recruiting Test] ✅ Sent ${newCandidates.length} candidates to ${subscriber.phone_number}`);
+
+        // Update project with new candidates
+        typedProject.candidates = allCandidates;
+        typedProject.pendingCandidates = newCandidates; // All new candidates are pending scoring
+        typedProject.lastCandidateSentAt = new Date().toISOString();
+
+        await updateRecruitingPreferences(subscriber.id, prefs);
+      }
+    } catch (error) {
+      console.error(`[Recruiting Test] Failed to collect candidates for project ${projectId}:`, error);
+      throw error; // Re-throw so test script can see the error
+    }
+  }
+
+  console.log(`[Recruiting Test] Complete for ${phoneNumber}`);
+}
+
+export async function runRecruitingBroadcast(twilioClient: TwilioClient): Promise<void> {
   const now = new Date();
   const todayKey = pacificDateFormatter.format(now);
 

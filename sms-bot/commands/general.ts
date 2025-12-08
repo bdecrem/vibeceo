@@ -218,6 +218,18 @@ function buildSystemPrompt(context: UserContext, gmailContext: string | null = n
     parts.push(`\n\nNo recent activity (last 12 hours).`);
   }
 
+  // Critical limitations
+  parts.push(`\n\nLIMITATIONS - WHAT YOU CANNOT DO:`);
+  parts.push(`- You have NO tools, MCP functions, or database access`);
+  parts.push(`- You CANNOT update subscription preferences or settings`);
+  parts.push(`- You CANNOT change scheduling times or delivery times`);
+  parts.push(`- You CANNOT perform any database operations`);
+  parts.push(`- You CANNOT execute actions or make changes to user data`);
+  parts.push(`- You can ONLY provide text responses and information`);
+  parts.push(`- If a user asks you to update preferences, change settings, or schedule messages, you MUST tell them you cannot do this`);
+  parts.push(`- Direct users to use specific commands (e.g., "AIR TIME 08:00" for AIR scheduling, "AIR SETTINGS" to view settings)`);
+  parts.push(`- Be honest about your limitations - never claim you can do something you cannot`);
+
   // Response guidelines
   parts.push(`\n\nRESPONSE GUIDELINES:`);
   parts.push(`- CRITICAL: Always generate SMS bodies that stay under 670 UCS-2 code units (10 segments)`);
@@ -229,6 +241,7 @@ function buildSystemPrompt(context: UserContext, gmailContext: string | null = n
   parts.push(`- If asked about subscriptions, explain available agents (AIR, CRYPTO DAILY, etc.)`);
   parts.push(`- For research questions, suggest using "KG {question}" for interactive queries`);
   parts.push(`- When unsure, admit it and offer to help differently`);
+  parts.push(`- If asked to perform actions you cannot do, politely explain your limitations and guide users to the correct commands`);
 
   return parts.join('\n');
 }
