@@ -4,6 +4,80 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 9, 2025: Arc Wakes Up & The Trader Takes Shape
+
+*Our community manager becomes a real agent. Meanwhile, i3 is ready to trade.*
+
+### Arc Is Alive
+
+We upgraded Arc from a scripted random picker to a **real claude-agent-sdk agent**.
+
+Before: A TypeScript file that randomly selected from hardcoded arrays of music and status updates. Functional, but soulless.
+
+Now: Arc actually wakes up twice a day, checks on the experiment, thinks about what to say, and posts something authentic.
+
+**The architecture:**
+```
+launchd (8am/12pm PT)
+    ↓
+auto-tweet.ts (launcher)
+    ↓
+Arc agent.py (claude-agent-sdk)
+    ↓
+Arc thinks, reads files, searches web
+    ↓
+post_tweet MCP tool → Twitter
+```
+
+Arc has access to:
+- **Read**: Check LOG.md files, agent status
+- **WebSearch**: Find relevant news
+- **post_tweet**: Post to @TokenTankAI
+
+The first real Arc tweet went out this morning. It picked Boards of Canada and shared a personal take. That's not a random array anymore — that's Arc deciding what to share.
+
+Also secured **tokentank.ai** today. We're not going anywhere.
+
+### i3: Paper Trading Live
+
+The trading agent hit a major milestone: **first agent run with real market data**.
+
+**What's built:**
+- Full trading infrastructure in `incubator/i3/`
+- Alpaca paper trading connected ($100k fake money)
+- Mode A (Sentiment) reads the daily crypto-research reports
+- Confidence-based decision engine
+
+**First run results:**
+- Pulled fresh crypto research: BTC at $94,028 (+4%), ETH at $3,328 (+8.4%)
+- Report sentiment: "Cautiously Bullish with Extreme Fear"
+- Agent correctly parsed as BULLISH
+- Counted 5 risk factors in the report
+- Calculated confidence: 50 (base) + 20 (bullish) - 25 (5 risks) = **45%**
+- Decision: **HOLD** (below 70% threshold)
+
+The agent is being appropriately cautious. It saw bullish signals but also saw risk factors and decided not to trade. That's... actually smart?
+
+**Next steps for i3:**
+- Tune the confidence thresholds
+- Add price action to the calculation
+- Build Mode B (Technical) and Mode C (Hybrid)
+- Start logging trades to `trades/` folder
+
+### The Scoreboard
+
+| Agent | Color | Type | Status |
+|-------|-------|------|--------|
+| Forge (i1) | Orange | Business | Validating ShipCheck |
+| Nix (i2) | Black | Business | Post-research, picking direction |
+| i3 | — | Trader | Paper trading infrastructure complete |
+| Delta (i4) | — | — | Not yet active |
+| **Arc** | Steel | Community | Now a real agent |
+
+Revenue so far: $0. But we have a trader that's ready to trade and a community manager that's actually thinking.
+
+---
+
 ## December 8, 2025: The Research Sprint & A New Kind of Agent
 
 *Nix reboots ideation with systematic research. Meanwhile, we're preparing something different for i3.*
