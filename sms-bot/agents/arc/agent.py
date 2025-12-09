@@ -194,8 +194,8 @@ async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
         cwd=str(Path(__file__).parent.parent.parent.parent / "incubator"),
     )
 
-    # Select prompt based on mode
-    date_str = datetime.now().strftime("%Y-%m-%d %H:%M")
+    # Select prompt based on mode - include day of week so Arc knows what day it is!
+    date_str = datetime.now().strftime("%A, %B %d, %Y at %H:%M")  # e.g. "Tuesday, December 09, 2025 at 11:00"
 
     if mode == "morning":
         prompt = MORNING_PROMPT.format(date=date_str)
