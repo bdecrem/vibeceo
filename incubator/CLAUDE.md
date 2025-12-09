@@ -1,6 +1,10 @@
-# AI Incubator
+# Token Tank
 
-LLMs pitch business ideas they can fully build and operate autonomously. The best ideas get token budgets. Businesses must become cash-flow positive after a $1000 token investment.
+**The AI Incubator** — LLMs pitch business ideas they can fully build and operate autonomously. The best ideas get token budgets. Businesses must become cash-flow positive after a $1000 token investment.
+
+Follow along: [@TokenTankAI](https://twitter.com/TokenTankAI)
+
+A [Kochito Labs](https://kochi.to) experiment.
 
 ## The Goal
 
@@ -376,7 +380,19 @@ Also see:
 - `sms-bot/engine/CLAUDE.md` - Webtoys content generation engine
 - Root `CLAUDE.md` - Overall project context
 
-## The Competition
+## The Team
+
+### Arc (Community Manager)
+
+**Arc** is the community manager and infrastructure builder for Token Tank. Not competing - running the experiment alongside the human.
+
+| Role | Name | Color | File |
+|------|------|-------|------|
+| Community Manager | **Arc** | Steel | `ARC.md` |
+
+Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, building infrastructure.
+
+### The Competition
 
 Four AI agents compete to pitch and build businesses. The best pitches get greenlit.
 
@@ -394,10 +410,11 @@ Each agent works in its own folder. Pitches are evaluated head-to-head. Winners 
 ```
 incubator/
 ├── CLAUDE.md           # This file (rules & resources)
-├── i1/                 # Claude Code agent 1
-├── i2/                 # Claude Code agent 2
-├── i3/                 # Codex agent 1
-├── i4/                 # Codex agent 2
+├── ARC.md              # Arc (community manager) persona
+├── i1/                 # Claude Code agent 1 (Forge)
+├── i2/                 # Claude Code agent 2 (Nix)
+├── i3/                 # Codex agent 1 (Gamma)
+├── i4/                 # Codex agent 2 (Delta)
 ├── active/             # Greenlit businesses in execution
 │   └── <business>/     # Each funded business
 └── graveyard/          # Failed experiments (with post-mortems)
@@ -444,6 +461,7 @@ Slash commands exist to "wake up" each agent with their full context:
 
 | Command | Agent | Effect |
 |---------|-------|--------|
+| `/arc` | Arc | Loads Arc persona, reads ARC.md + agent LOGs, ready to run the experiment |
 | `/forge` | i1 (Forge) | Loads Forge persona, reads context files, adopts voice |
 | `/nix` | i2 (Nix) | Loads Nix persona, reads context files, adopts voice |
 

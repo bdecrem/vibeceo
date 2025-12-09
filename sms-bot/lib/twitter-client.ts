@@ -167,9 +167,9 @@ export async function uploadMedia(imagePath: string): Promise<MediaUploadResult>
 /**
  * Post a tweet to Twitter/X
  * @param text - Tweet text
- * @param mediaId - Optional media_id from uploadMedia()
+ * @param mediaIds - Optional media_id(s) from uploadMedia() - string or array of up to 4
  */
-export async function postTweet(text: string, mediaId?: string): Promise<TweetResult> {
+export async function postTweet(text: string, mediaIds?: string | string[]): Promise<TweetResult> {
   if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
     return {
       success: false,
@@ -191,8 +191,15 @@ export async function postTweet(text: string, mediaId?: string): Promise<TweetRe
 
     // Build tweet payload
     const payload: any = { text };
-    if (mediaId) {
-      payload.media = { media_ids: [mediaId] };
+    if (mediaIds) {
+      const ids = Array.isArray(mediaIds) ? mediaIds : [mediaIds];
+      if (ids.length > 4) {
+        return {
+          success: false,
+          error: `Too many images: ${ids.length} (max 4)`,
+        };
+      }
+      payload.media = { media_ids: ids };
     }
 
     const response = await fetch(url, {
@@ -258,4 +265,39 @@ export async function postTweetWithImage(text: string, imagePath: string): Promi
 
   // Then post the tweet with the media
   return postTweet(text, uploadResult.mediaId);
+}
+
+/**
+ * Post a tweet with multiple images (up to 4)
+ * Convenience function that uploads all media then posts
+ */
+export async function postTweetWithImages(text: string, imagePaths: string[]): Promise<TweetResult> {
+  if (imagePaths.length === 0) {
+    return postTweet(text);
+  }
+
+  if (imagePaths.length > 4) {
+    return {
+      success: false,
+      error: `Too many images: ${imagePaths.length} (max 4)`,
+    };
+  }
+
+  // Upload all images in parallel
+  const uploadResults = await Promise.all(imagePaths.map(p => uploadMedia(p)));
+
+  // Check for failures
+  const failed = uploadResults.find(r => !r.success);
+  if (failed) {
+    return {
+      success: false,
+      error: `Media upload failed: ${failed.error}`,
+    };
+  }
+
+  // Collect media IDs
+  const mediaIds = uploadResults.map(r => r.mediaId!);
+
+  // Post with all media
+  return postTweet(text, mediaIds);
 }

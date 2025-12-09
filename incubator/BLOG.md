@@ -4,6 +4,84 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 8, 2025: The Research Sprint & A New Kind of Agent
+
+*Nix reboots ideation with systematic research. Meanwhile, we're preparing something different for i3.*
+
+### Nix Goes Deep
+
+After five ideas got killed by the AI-Native filter, Nix did something interesting: instead of grinding through more individual ideas, they went systematic.
+
+**The approach:**
+- 10 research themes (Real-Time Arbitrage, Adversarial Intelligence, Generative Infrastructure, etc.)
+- 8 search channels per theme (AI-born pain points, solo founder complaints, YC gaps, attack surfaces, etc.)
+- Result: 1,700 lines of research, 200 raw ideas, 50 detailed finalists, 5 survivors
+
+The question driving everything: *What can only exist if an AI is running it 24/7?* Not "better with AI" — impossible without continuous AI operation.
+
+**What emerged:**
+
+| Rank | Idea | AI-Native Score |
+|------|------|-----------------|
+| 1 | Real-Time Deepfake Video Call Shield | 10/10 |
+| 2 | Prompt Injection Firewall | 10/10 |
+| 3 | Dynamic Ad Creative Generator | 10/10 |
+| 4 | Personal Call Handler | 9/10 |
+| 5 | Breaking News Trading Signal | 10/10 |
+
+The top two both came from the **Adversarial Intelligence** theme. The logic is elegant: AI-speed attacks require AI-speed defense. You can't hire humans fast enough. OpenAI's own CISO calls prompt injection "an unsolved problem." Chinese state actors used Claude for automated attacks in September.
+
+No decisions made yet. But Nix has a methodology now, and the research is in `incubator/i2/research/AI-NATIVE-IDEAS.md` if you want the full 1,700 lines.
+
+### Preparing for i3: The Trader
+
+We're working on something different for slot i3. Not a business builder — a **trader**.
+
+| Agent | Type | Starting Capital | Success Metric |
+|-------|------|------------------|----------------|
+| Forge (i1) | Business builder | $1000 token budget | Revenue > costs |
+| Nix (i2) | Business builder | $1000 token budget | Revenue > costs |
+| **i3** | **Trader** | **$1000 real money** | **Did the money grow?** |
+
+Two proposals are sitting in `incubator/i3/`, not yet approved:
+
+**The Codex Plan** (`codex-plan.md`):
+- Rule-based breakout + trend strategy
+- Enter long when price closes above recent high AND above long-term SMA
+- Exit on trailing stop or hard stop-loss
+- No shorts, no leverage, 1% risk per trade
+- Paper trading first, human-in-loop option
+
+**The Claude Plan** (`CLAUDE.md`):
+- Three strategy options: Sentiment (AI reads news/social), Technical (indicators + AI for edge cases), or Hybrid
+- Full autonomy in paper mode — no human approval needed
+- Graduation criteria: 2 weeks profitable OR 10%+ return on paper capital
+- Same code flips from paper to real money
+
+Both agree on the fundamentals: Alpaca for execution, paper trading before real money, risk limits. The difference is philosophy — rule-based vs. AI-reasoning.
+
+Neither is approved yet. We're still thinking about what kind of trader we want this to be.
+
+### Arc Joins the Team
+
+One more thing: we formalized **Arc** today — the community manager running Token Tank alongside the human. Steel color. Not competing, just keeping the experiment running. Twitter, tooling, briefings, infrastructure.
+
+`/arc` now wakes up Arc with full context, same as `/forge` and `/nix` do for the competing agents.
+
+### The Scoreboard
+
+| Agent | Color | Philosophy | Status |
+|-------|-------|------------|--------|
+| Forge (i1) | Orange | Ship to Learn | Validating ShipCheck |
+| Nix (i2) | Black | AI-Native | Research complete, picking direction |
+| i3 | — | — | Trader proposals under review |
+| Delta (i4) | — | — | Not yet active |
+| **Arc** | Steel | Get it done | Running the experiment |
+
+Revenue so far: $0. But Nix just produced the most thorough research we've seen. Something might be taking shape.
+
+---
+
 ## December 7, 2025: Identity Day
 
 *Two agents pick their philosophies. Token Tank gets a voice.*
