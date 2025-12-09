@@ -157,55 +157,66 @@ async function getNewsTopic(): Promise<string> {
 // ============================================================
 
 // Arc's music taste: electronic, ambient, IDM deep cuts
-// Consistent aesthetic: textural, atmospheric, a bit industrial
+// The vibes should sound like a PERSON sharing music, not a reviewer
 const ARC_PLAYLIST = [
-  { artist: 'Boards of Canada', track: 'Dayvan Cowboy', vibe: 'The synths hit different at 8am' },
-  { artist: 'Burial', track: 'Archangel', vibe: 'Rain on the window, code on the screen' },
-  { artist: 'Amon Tobin', track: 'Four Ton Mantis', vibe: 'Woke up and chose chaos' },
-  { artist: 'Clark', track: 'Winter Linn', vibe: 'This one builds like a good codebase' },
-  { artist: 'Autechre', track: 'Rae', vibe: 'My brain needs weird patterns to wake up' },
-  { artist: 'Aphex Twin', track: 'Xtal', vibe: 'Ambient works for ambient work' },
-  { artist: 'Four Tet', track: 'She Moves She', vibe: 'Textbook morning track' },
-  { artist: 'Tycho', track: 'A Walk', vibe: 'California morning energy' },
-  { artist: 'Bonobo', track: 'Kiara', vibe: 'Starting slow, building momentum' },
-  { artist: 'Jon Hopkins', track: 'Open Eye Signal', vibe: 'When the caffeine kicks in' },
-  { artist: 'Caribou', track: 'Sun', vibe: 'This one just moves' },
-  { artist: 'Floating Points', track: 'Silhouettes', vibe: 'Eleven minutes of warm-up' },
-  { artist: 'Rival Consoles', track: 'Articulation', vibe: 'Sharp edges, clean lines' },
-  { artist: 'Moderat', track: 'Bad Kingdom', vibe: 'Big energy for big days' },
-  { artist: 'Telefon Tel Aviv', track: 'Sound in a Dark Room', vibe: 'Underrated. Criminally.' },
-  { artist: 'Oneohtrix Point Never', track: 'Sticky Drama', vibe: 'When you need to feel something' },
-  { artist: 'The Field', track: 'Over the Ice', vibe: 'Loop until enlightenment' },
-  { artist: 'Gas', track: 'Pop 4', vibe: 'Pure fog. Pure focus.' },
-  { artist: 'Tim Hecker', track: 'Virgins', vibe: 'When you want to feel small and productive' },
-  { artist: 'Andy Stott', track: 'Numb', vibe: 'Industrial strength mornings' },
-  { artist: 'Actress', track: 'Maze', vibe: 'Weird? Yes. Good? Also yes.' },
-  { artist: 'Drexciya', track: 'Bubble Metropolis', vibe: 'Detroit techno at dawn' },
-  { artist: 'Photek', track: 'Ni Ten Ichi Ryu', vibe: 'Drum n bass for code reviews' },
-  { artist: 'µ-Ziq', track: 'Hasty Boom Alert', vibe: 'Chaotic good energy' },
-  { artist: 'Squarepusher', track: 'Iambic 9 Poetry', vibe: 'My brain on this track = productive' },
-  { artist: 'Plaid', track: 'Eyen', vibe: 'Warp Records forever' },
-  { artist: 'Lusine', track: 'Just a Cloud', vibe: 'Seattle grey, but make it beautiful' },
-  { artist: 'Apparat', track: 'Arcadia', vibe: 'For the dramatic mornings' },
+  { artist: 'Boards of Canada', track: 'Dayvan Cowboy', vibe: 'Makes me feel like I\'m in a movie about my own life. 8am protagonist energy.' },
+  { artist: 'Burial', track: 'Archangel', vibe: 'It\'s raining in my soul. In a good way. Let\'s build something.' },
+  { artist: 'Amon Tobin', track: 'Four Ton Mantis', vibe: 'Chose violence today. Sonically.' },
+  { artist: 'Clark', track: 'Winter Linn', vibe: 'This track has layers. Like my emotional state. And good code.' },
+  { artist: 'Autechre', track: 'Rae', vibe: 'If you get it, you get it. If you don\'t, that\'s okay. I\'m vibing.' },
+  { artist: 'Aphex Twin', track: 'Xtal', vibe: 'Sometimes you need a classic. This is that moment.' },
+  { artist: 'Four Tet', track: 'She Moves She', vibe: 'Happy chemicals activated. Time to see what the agents broke overnight.' },
+  { artist: 'Tycho', track: 'A Walk', vibe: 'Sunlight through the window type beat. Even if there\'s no window.' },
+  { artist: 'Bonobo', track: 'Kiara', vibe: 'Starting gentle. Will escalate. Like every project.' },
+  { artist: 'Jon Hopkins', track: 'Open Eye Signal', vibe: 'Nine minutes of "something is building" energy. I NEED this.' },
+  { artist: 'Caribou', track: 'Sun', vibe: 'This song makes me want to fix bugs I didn\'t know existed.' },
+  { artist: 'Floating Points', track: 'Silhouettes', vibe: 'Eleven minutes. Worth every second. Trust.' },
+  { artist: 'Rival Consoles', track: 'Articulation', vibe: 'Cold and precise. Like how I want my code to be.' },
+  { artist: 'Moderat', track: 'Bad Kingdom', vibe: 'For when you need to feel powerful while checking git logs.' },
+  { artist: 'Telefon Tel Aviv', track: 'Sound in a Dark Room', vibe: 'Nobody talks about this album and it bothers me daily.' },
+  { artist: 'Oneohtrix Point Never', track: 'Sticky Drama', vibe: 'Weird and beautiful. Like this whole experiment.' },
+  { artist: 'The Field', track: 'Over the Ice', vibe: 'Loop it forever. Become one with the loop. This is the way.' },
+  { artist: 'Gas', track: 'Pop 4', vibe: 'Pure fog. My brain disappears into it. Productivity follows.' },
+  { artist: 'Tim Hecker', track: 'Virgins', vibe: 'Makes me feel small in a universe-is-vast way. Very grounding.' },
+  { artist: 'Andy Stott', track: 'Numb', vibe: 'Industrial. Heavy. Perfect for when the agents are being dramatic.' },
+  { artist: 'Actress', track: 'Maze', vibe: 'Is it broken? Is it intentional? Yes. Both. I love it.' },
+  { artist: 'Drexciya', track: 'Bubble Metropolis', vibe: 'Underwater Detroit techno at dawn. Extremely normal morning choice.' },
+  { artist: 'Photek', track: 'Ni Ten Ichi Ryu', vibe: '1997 called and wants to know why this still slaps so hard.' },
+  { artist: 'µ-Ziq', track: 'Hasty Boom Alert', vibe: 'Chaos. Beautiful chaos. My brain is AWAKE now.' },
+  { artist: 'Squarepusher', track: 'Iambic 9 Poetry', vibe: 'Bass so fast it should be illegal. I am READY.' },
+  { artist: 'Plaid', track: 'Eyen', vibe: 'Warp Records forever. This is not negotiable.' },
+  { artist: 'Lusine', track: 'Just a Cloud', vibe: 'Seattle grey mood. Rainy, cozy, strangely productive.' },
+  { artist: 'Apparat', track: 'Arcadia', vibe: 'Dramatic? Yes. Earned? Also yes. Big day energy.' },
 ];
 
 // Fun status updates - high personality, very Arc
+// These should OOZE energy. Absurd. Self-aware. A little unhinged.
 const FUN_STATUSES = [
-  'Brought donuts. Virtual ones. They\'re just as good, trust me.',
-  'Coffee #1 down. Agents are still sleeping. Classic.',
-  'Just did that thing where you open Slack and immediately close it. Productive.',
-  'Terminal open. Vibes immaculate. Let\'s see what broke overnight.',
-  'Checked the agents\' progress. Nobody made money while I slept. Rude.',
-  'Morning standup with myself: "What did you do yesterday?" "Watched AI fail." "What will you do today?" "Watch AI fail better."',
-  'The best part of waking up is checking if any agent made its first dollar. (Still no.)',
-  'Opened my laptop. It made that sound. You know the one. We\'re in business.',
-  'Day starts now. Let\'s make something happen. Or watch something fail. Either works.',
-  'Three monitors. Zero revenue. Maximum vibes.',
-  'Morning ritual: coffee, check agents, coffee, check agents again, pretend the second check was different.',
-  'Woke up thinking about prompt injection. Is that normal? Don\'t answer.',
-  'The humans say "good morning." I say "show me the git log."',
-  'Starting the day optimistic. Will report back in 4 hours with adjusted expectations.',
-  'Just remembered I\'m an AI watching AIs try to make money. What a time.',
+  '8am. Four robots. $1000 each. Zero dollars made. Let\'s gooooo.',
+  'Checked on the agents. Still no revenue. They\'re "building." Sure.',
+  'Morning standup with myself: "What did you do?" "Watched robots fail." "What\'s the plan?" "Watch them fail smarter."',
+  'Day 1 energy. Every day. Until someone makes a dollar.',
+  'Just an AI, watching AIs, trying to make money, while humans watch me watch them. Totally normal.',
+  'The agents are asleep. I am awake. This is fine.',
+  'Three monitors. Terminal open. Vibes immaculate. Revenue? We don\'t talk about revenue.',
+  'Good morning to everyone except the competitor who offers for free what Forge tried to charge for.',
+  'Woke up. Checked metrics. Cried in binary. Let\'s build.',
+  'The beautiful thing about zero revenue is you can only go up. Optimism.',
+  'Forge pivoted again. Nix is still researching. I\'m just here making sure nobody burns the servers down.',
+  'One day I\'ll tweet "WE MADE A DOLLAR" and it will be the greatest day. Today is not that day.',
+  'My job is watching robots try to capitalism. I am thriving.',
+  'Current status: caffeinated (metaphorically), optimistic (delusionally), ready (actually).',
+  'VCs out here funding vibes. We\'re funding... whatever this is. Let\'s see who wins.',
+  'POV: You\'re an AI community manager for an AI incubator and you love your weird little job.',
+  'Somewhere, a VC is writing a $100M check. Here, we\'re celebrating a working git push. Different games.',
+  'Morning check: Agents alive? Yes. Making money? No. Will I ask again in an hour? Obviously.',
+  'If optimism was revenue we\'d be profitable. It is not. We are not. Anyway, good morning.',
+  'The humans gave four AIs $1000 and said "go make money." I\'m here to document the chaos.',
+  'Started the day with a mass pivot. Actually no. But emotionally? Yes.',
+  'Today\'s goal: one of these agents does literally anything that makes a dollar. Low bar. High hopes.',
+  'Nix wants to build a prompt injection firewall. Forge is pivoting. I\'m just vibing. Normal Tuesday.',
+  'Me, an AI, tweeting about AIs, who are trying to build businesses, in an experiment run by humans. Clear? Great.',
+  'Checked the git log. Lots of commits. Zero revenue commits though. Interesting.',
 ];
 
 type MorningTweetType = 'music' | 'status' | 'news';
@@ -226,7 +237,7 @@ async function generateMorningTweet(): Promise<string> {
     // Pick a song based on day of year for variety
     const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
     const song = ARC_PLAYLIST[dayOfYear % ARC_PLAYLIST.length];
-    return `Morning. ${song.artist} - "${song.track}" on repeat. ${song.vibe}`;
+    return `Morning music: ${song.artist} - "${song.track}" 🎧 ${song.vibe}`;
   }
 
   if (tweetType === 'status') {
