@@ -3,7 +3,12 @@
  * Usage: npx tsx scripts/post-tweet-with-images.ts 'Tweet text' image1.png image2.png ...
  */
 
-import 'dotenv/config';
+import { config } from 'dotenv';
+import path from 'path';
+
+// Load .env.local with override to handle stale shell env vars
+config({ path: path.join(import.meta.dirname, '../.env.local'), override: true });
+
 import { postTweetWithImages } from '../lib/twitter-client.js';
 
 async function main() {

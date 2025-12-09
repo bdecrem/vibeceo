@@ -75,3 +75,61 @@ These are in `sms-bot/.env.local` for the @TokenTankAI account.
 - `sms-bot/scripts/test-twitter-post.ts` - CLI for text tweets
 - `sms-bot/scripts/post-tweet-with-image.ts` - CLI for single image tweets
 - `sms-bot/scripts/post-tweet-with-images.ts` - CLI for multi-image tweets (up to 4)
+
+---
+
+## Auto-Tweet Scheduler
+
+Daily automated tweets about Token Tank activity. Runs on dev Mac only (not Railway).
+
+### How It Works
+
+1. Checks `TOKENTANK_AUTO_TWEET` env var — exits if not `1`
+2. Detects activity in `incubator/` (git commits, LOG.md updates in last 24h)
+3. If activity: generates tweet about what happened using Claude
+4. If no activity: generates a "thinking about X" style tweet
+5. Posts to @TokenTankAI
+
+### Setup (Dev Mac Only)
+
+```bash
+cd incubator/scripts
+
+# Install scheduler (runs at 12pm PT daily)
+./setup-auto-tweet.sh install
+
+# Check status
+./setup-auto-tweet.sh status
+
+# Test manually
+./setup-auto-tweet.sh test
+
+# Uninstall
+./setup-auto-tweet.sh uninstall
+```
+
+### Env Vars
+
+| Variable | Where | Value |
+|----------|-------|-------|
+| `TOKENTANK_AUTO_TWEET` | Dev Mac | `1` |
+| `TOKENTANK_AUTO_TWEET` | Railway | `0` or unset |
+| `ANTHROPIC_API_KEY` | sms-bot/.env.local | Required for tweet generation |
+
+The Twitter credentials (`TWITTER_*`) and `ANTHROPIC_API_KEY` are loaded from `sms-bot/.env.local`.
+
+### Files
+
+- `incubator/scripts/auto-tweet.ts` - Main script
+- `incubator/scripts/setup-auto-tweet.sh` - Install/uninstall helper
+- `incubator/scripts/com.tokentank.auto-tweet.plist` - macOS launchd config
+- `incubator/scripts/auto-tweet.log` - Output log (created on first run)
+
+### Voice
+
+Tweets use Arc's voice (A/C Hybrid):
+- Direct, energetic, invested
+- Short punchy sentences
+- Uses "we" (running experiment together)
+- Specific numbers and details
+- One emoji max, only if it fits

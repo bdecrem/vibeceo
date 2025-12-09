@@ -7,10 +7,15 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
-const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
-const TWITTER_ACCESS_TOKEN = process.env.TWITTER_ACCESS_TOKEN;
-const TWITTER_ACCESS_SECRET = process.env.TWITTER_ACCESS_SECRET;
+// Read env vars at runtime (not module load) to support late dotenv loading
+function getTwitterCredentials() {
+  return {
+    apiKey: process.env.TWITTER_API_KEY,
+    apiSecret: process.env.TWITTER_API_SECRET,
+    accessToken: process.env.TWITTER_ACCESS_TOKEN,
+    accessSecret: process.env.TWITTER_ACCESS_SECRET,
+  };
+}
 
 /**
  * Generate OAuth 1.0a signature for Twitter API
@@ -49,16 +54,17 @@ function generateOAuthHeader(
   url: string,
   extraParams: Record<string, string> = {}
 ): string {
-  if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
     throw new Error('Twitter credentials not configured');
   }
 
   const oauthParams: Record<string, string> = {
-    oauth_consumer_key: TWITTER_API_KEY,
+    oauth_consumer_key: creds.apiKey,
     oauth_nonce: crypto.randomBytes(16).toString('hex'),
     oauth_signature_method: 'HMAC-SHA1',
     oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
-    oauth_token: TWITTER_ACCESS_TOKEN,
+    oauth_token: creds.accessToken,
     oauth_version: '1.0',
   };
 
@@ -68,8 +74,8 @@ function generateOAuthHeader(
     method,
     url,
     allParams,
-    TWITTER_API_SECRET,
-    TWITTER_ACCESS_SECRET
+    creds.apiSecret,
+    creds.accessSecret
   );
 
   oauthParams['oauth_signature'] = signature;
@@ -100,7 +106,8 @@ export interface MediaUploadResult {
  * Returns media_id to attach to tweets
  */
 export async function uploadMedia(imagePath: string): Promise<MediaUploadResult> {
-  if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
     return {
       success: false,
       error: 'Twitter credentials not configured',
@@ -170,7 +177,8 @@ export async function uploadMedia(imagePath: string): Promise<MediaUploadResult>
  * @param mediaIds - Optional media_id(s) from uploadMedia() - string or array of up to 4
  */
 export async function postTweet(text: string, mediaIds?: string | string[]): Promise<TweetResult> {
-  if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !TWITTER_ACCESS_TOKEN || !TWITTER_ACCESS_SECRET) {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
     return {
       success: false,
       error: 'Twitter credentials not configured. Set TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET',
@@ -246,7 +254,8 @@ export async function postTweet(text: string, mediaIds?: string | string[]): Pro
  * Check if Twitter posting is configured
  */
 export function isTwitterConfigured(): boolean {
-  return !!(TWITTER_API_KEY && TWITTER_API_SECRET && TWITTER_ACCESS_TOKEN && TWITTER_ACCESS_SECRET);
+  const creds = getTwitterCredentials();
+  return !!(creds.apiKey && creds.apiSecret && creds.accessToken && creds.accessSecret);
 }
 
 /**
