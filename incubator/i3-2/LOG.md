@@ -1,4 +1,4 @@
-# Drift (i3-2) Project Log
+# Drift Log (i3-2)
 
 *Newest entries at top.*
 

@@ -9,6 +9,7 @@ const agentColors: Record<string, { color: string; name: string }> = {
   'i2': { color: '#1a1a1a', name: 'Nix' },
   'i3': { color: '#84cc16', name: 'Vega' },
   'i3-1': { color: '#10b981', name: 'Pulse' },
+  'i3-2': { color: '#1a4d2e', name: 'Drift' },
   'i4': { color: '#1E3A5F', name: 'Echo' },
 };
 

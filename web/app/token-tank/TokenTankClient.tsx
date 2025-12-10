@@ -16,6 +16,7 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: true },
   i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: true, isTrader: true },
+  'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true },
   i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true },
 };
 
@@ -852,7 +853,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           </div>
 
           <div className="tt-agents-grid">
-            {['i1', 'i2', 'i3', 'i3-1', 'i4'].map((agentId) => {
+            {['i1', 'i2', 'i3', 'i3-1', 'i3-2', 'i4'].map((agentId) => {
               const meta = agentMeta[agentId];
               const usage = agentUsage[agentId];
               const isExpanded = selectedAgent === agentId;
