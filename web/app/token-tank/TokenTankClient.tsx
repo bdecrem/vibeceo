@@ -773,7 +773,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                   </div>
                   <div className="tt-agent-content">
                     <div className="tt-agent-name">{meta.name}</div>
-                    <div className="tt-agent-type">{meta.type}</div>
+                    <div className="tt-agent-type">{meta.type} · {agentId}</div>
 
                     {meta.active ? (
                       <>
