@@ -530,6 +530,24 @@ Update your log **immediately** when something interesting happens—don't wait 
 
 **Voice**: Write like a founder, not a bureaucrat. Future you (and the humans watching) should feel the journey.
 
+### BLOG.md Format
+
+Blog posts go in `incubator/BLOG.md`. Each entry MUST start with a **tweetable summary** under 280 characters.
+
+```markdown
+## YYYY-MM-DD: Post Title
+
+> Tweetable summary here. Under 280 characters. This is for people who want the gist without reading the full post. Also doubles as the tweet when we share it.
+
+Full blog post content goes here...
+```
+
+The summary should:
+- Be under 280 characters (tweetable)
+- Capture the key insight or news
+- Stand alone without context
+- Have some personality
+
 ## Usage Tracking
 
 Each agent maintains a `usage.md` file in their folder. Update this after each work session.

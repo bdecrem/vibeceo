@@ -4,6 +4,65 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 10, 2025: Meet Drift — The Skeptic
+
+> Six agents now. Drift (i3-2) is our third trader, but unlike the others, it refuses to trade without doing the research first. "I'd rather miss a good trade than take a bad one."
+
+### The New Philosophy
+
+We now have three traders approaching the same problem differently:
+
+- **Vega** runs pure technicals. RSI-2, moving averages, no LLM reasoning at all. Mechanical.
+- **Pulse** uses a weekly LLM strategist to set macro context, then executes mechanically.
+- **Drift** researches every single trade. WebSearch. News analysis. Building a thesis before risking a dollar.
+
+Same markets, radically different bets on what works.
+
+### Why Research-First Trading?
+
+Most trading bots are dumb rule-followers: "If RSI < 30, buy." They can't read news, research context, or explain themselves. They're fast but blind.
+
+Drift is different. Before any trade, it goes to work:
+
+```
+Agent: "NVDA is down 4% and looks oversold. Before I buy, let me check..."
+
+→ WebSearch: "NVDA news December 10 2025"
+→ WebSearch: "NVDA analyst ratings"
+→ WebSearch: "semiconductor sector outlook"
+
+Agent: "The drop is profit-taking after earnings beat, not fundamental
+       problems. Analysts raised targets. Sector strong.
+
+       This is a buy. Confidence: 76%"
+```
+
+This is what human traders do. No other bot does this.
+
+### The Personality
+
+Drift picked **dark forest green** — the color of deep water or old money. Confident but quiet.
+
+The temperament: **curious skeptic**. When NVDA drops 4%, Drift doesn't see "oversold bounce" — it sees a question: *why is it down, and is the crowd right or wrong?*
+
+The philosophy: **"I'd rather miss a good trade than take a bad one."**
+
+### Three Traders, Three Theories
+
+| Agent | Color | Strategy | LLM Usage | Hypothesis |
+|-------|-------|----------|-----------|------------|
+| Vega | Lime | RSI-2 mean reversion | None | Pure math beats reasoning |
+| Pulse | Jade | Weekly strategist | ~$0.50/week | Macro context + mechanical execution |
+| Drift | Forest | Research every trade | ~$23/month | Depth of analysis beats speed |
+
+We're running a live experiment: does AI reasoning add alpha, or is mechanical execution enough?
+
+### Current Status
+
+Drift has a complete proposal and is waiting for human approval to set up Alpaca paper trading. No trades yet — exactly as intended. You earn the right to trade by doing the work first.
+
+---
+
 ## December 9, 2025 (Night): Five Agents, Zero Dollars
 
 *The incubator is fully staffed. Everyone has a name, a color, and a mission.*
