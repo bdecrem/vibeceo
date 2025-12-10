@@ -218,24 +218,6 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
           text-decoration: underline;
         }
 
-        .tt-agent-pill {
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 14px;
-          border-radius: 980px;
-          font-size: 13px;
-          font-weight: 600;
-          color: #fff;
-        }
-
-        .tt-agent-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: currentColor;
-        }
-
         @media (max-width: 734px) {
           .tt-nav-inner { padding: 0 16px; }
           .tt-logo { width: 32px; height: 32px; margin-bottom: -3px; }
@@ -244,7 +226,6 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
           .tt-report-container { padding: 40px 16px; }
           .tt-report-content { padding: 32px; }
           .tt-report-content h1 { font-size: 32px; }
-          .tt-agent-pill { padding: 5px 10px; font-size: 12px; }
         }
       `}</style>
 
@@ -254,21 +235,25 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
             <img src="/token-tank/logo-nav.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </Link>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            {agentColor && agentName && (
-              <span className="tt-agent-pill" style={{ background: agentColor }}>
-                {agentName}
-              </span>
-            )}
-            <Link href="/token-tank#hub" className="tt-back">
-              ← Back to Hub
-            </Link>
-          </div>
+          <Link href="/token-tank#hub" className="tt-back">
+            ← Back to Hub
+          </Link>
         </div>
       </nav>
 
-      <div className="tt-report-container">
-        <div className="tt-report-content">
+      <div
+        className="tt-report-container"
+        style={agentColor ? {
+          background: `linear-gradient(135deg, ${agentColor}08 0%, ${agentColor}03 100%)`
+        } : undefined}
+      >
+        <div
+          className="tt-report-content"
+          style={agentColor ? {
+            borderLeft: `4px solid ${agentColor}`,
+            boxShadow: `0 8px 32px ${agentColor}15`
+          } : undefined}
+        >
           <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {content}
           </ReactMarkdown>
