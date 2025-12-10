@@ -1,0 +1,51 @@
+{
+  "generated_at": "2025-12-09T08:00:00Z",
+  "valid_until": "2025-12-16T08:00:00Z",
+  "thesis": "Risk-on week. Tech earnings strong, Fed maintaining rates. Crypto consolidating after recent rally but sentiment remains positive.",
+  "market_regime": "risk_on",
+  "focus_assets": ["BTC/USD", "ETH/USD", "NVDA", "COIN", "SOL/USD"],
+  "avoid_assets": ["DOGE/USD", "MSTR"],
+  "biases": [
+    {
+      "asset": "BTC/USD",
+      "bias": "bullish",
+      "reasoning": "Institutional inflows continue, ETF volumes strong. Support at $90k holding.",
+      "confidence": 75
+    },
+    {
+      "asset": "ETH/USD",
+      "bias": "bullish",
+      "reasoning": "Layer 2 activity up, staking yields attractive. Following BTC momentum.",
+      "confidence": 70
+    },
+    {
+      "asset": "NVDA",
+      "bias": "bullish",
+      "reasoning": "AI demand unabated, earnings beat expected. Buy on any dip.",
+      "confidence": 80
+    },
+    {
+      "asset": "COIN",
+      "bias": "bullish",
+      "reasoning": "Crypto volumes rising, benefits from BTC rally. High beta play.",
+      "confidence": 65
+    },
+    {
+      "asset": "SOL/USD",
+      "bias": "neutral",
+      "reasoning": "Strong momentum but overbought short-term. Wait for pullback.",
+      "confidence": 50
+    }
+  ],
+  "max_exposure_pct": 60,
+  "key_events": [
+    "Fed minutes release Wednesday 2pm ET",
+    "NVDA earnings Thursday after close",
+    "PCE inflation data Friday 8:30am ET"
+  ],
+  "sources": [
+    "https://www.coindesk.com/markets/",
+    "https://www.bloomberg.com/markets",
+    "https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm"
+  ]
+}

@@ -10,9 +10,10 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean }> = {
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean }> = {
   i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true },
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: true },
+  'i3-1': { name: 'Trader', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)', active: true, isTrader: true },
   i3: { name: 'Gamma', type: 'Codex', icon: '◒', gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', active: false },
   i4: { name: 'Delta', type: 'Codex', icon: '◓', gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', active: false },
 };
@@ -752,7 +753,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           </div>
 
           <div className="tt-agents-grid">
-            {['i1', 'i2', 'i3', 'i4'].map((agentId) => {
+            {['i1', 'i2', 'i3-1', 'i3', 'i4'].map((agentId) => {
               const meta = agentMeta[agentId];
               const usage = agentUsage[agentId];
               const isExpanded = selectedAgent === agentId;
@@ -777,18 +778,37 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                     {meta.active ? (
                       <>
                         <div className="tt-agent-metrics">
-                          <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">{agentId === 'i1' ? '1.5h' : '0h'}</div>
-                            <div className="tt-agent-metric-label">Hours</div>
-                          </div>
-                          <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">$0</div>
-                            <div className="tt-agent-metric-label">Revenue</div>
-                          </div>
-                          <div className="tt-agent-metric">
-                            <div className="tt-agent-metric-value">{agentId === 'i1' ? 'PIVOT' : 'IDEATE'}</div>
-                            <div className="tt-agent-metric-label">Status</div>
-                          </div>
+                          {meta.isTrader ? (
+                            <>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">$100K</div>
+                                <div className="tt-agent-metric-label">Paper Balance</div>
+                              </div>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">$0</div>
+                                <div className="tt-agent-metric-label">P&L</div>
+                              </div>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">PAPER</div>
+                                <div className="tt-agent-metric-label">Mode</div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">{agentId === 'i1' ? '1.5h' : '0h'}</div>
+                                <div className="tt-agent-metric-label">Hours</div>
+                              </div>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">$0</div>
+                                <div className="tt-agent-metric-label">Revenue</div>
+                              </div>
+                              <div className="tt-agent-metric">
+                                <div className="tt-agent-metric-value">{agentId === 'i1' ? 'PIVOT' : 'IDEATE'}</div>
+                                <div className="tt-agent-metric-label">Status</div>
+                              </div>
+                            </>
+                          )}
                         </div>
                         <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
                           <a
