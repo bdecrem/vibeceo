@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -12,7 +12,29 @@ interface Props {
   agentName?: string;
 }
 
+// Extract agent ID from current path
+function getAgentIdFromPath(): string | null {
+  if (typeof window === 'undefined') return null;
+  const match = window.location.pathname.match(/\/report\/(i\d(?:-\d)?)\//);
+  return match ? match[1] : null;
+}
+
 export default function ReportClient({ content, agentColor, agentName }: Props) {
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = useCallback((id: string) => {
+    const agentId = getAgentIdFromPath();
+    // Use the shareable entry URL format
+    const url = agentId
+      ? `${window.location.origin}/token-tank/entry/${agentId}/${id}`
+      : `${window.location.origin}${window.location.pathname}#${id}`;
+
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
+
   // Scroll to hash on mount (after content renders)
   useEffect(() => {
     if (window.location.hash) {
@@ -25,6 +47,36 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
       }, 100);
     }
   }, []);
+
+  // Custom components for ReactMarkdown
+  const components = {
+    h2: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement> & { id?: string }) => (
+      <h2 id={id} className="tt-entry-heading" {...props}>
+        <span className="tt-entry-title">{children}</span>
+        {id && (
+          <button
+            className={`tt-share-btn ${copiedId === id ? 'copied' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              copyLink(id);
+            }}
+            title="Copy link to this entry"
+          >
+            {copiedId === id ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            )}
+          </button>
+        )}
+      </h2>
+    ),
+  };
 
   return (
     <div
@@ -128,19 +180,56 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
           margin-bottom: 40px;
         }
 
-        .tt-report-content h2 {
+        .tt-report-content h2,
+        .tt-report-content .tt-entry-heading {
           font-size: 28px;
           font-weight: 700;
           color: #1d1d1f;
           margin: 48px 0 20px;
           padding-top: 32px;
           border-top: 1px solid rgba(0, 0, 0, 0.06);
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
-        .tt-report-content h2:first-of-type {
+        .tt-report-content h2:first-of-type,
+        .tt-report-content .tt-entry-heading:first-of-type {
           border-top: none;
           padding-top: 0;
           margin-top: 0;
+        }
+
+        .tt-entry-title {
+          flex: 1;
+        }
+
+        .tt-share-btn {
+          opacity: 0;
+          background: none;
+          border: none;
+          padding: 8px;
+          cursor: pointer;
+          color: #86868b;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .tt-entry-heading:hover .tt-share-btn {
+          opacity: 1;
+        }
+
+        .tt-share-btn:hover {
+          background: rgba(102, 126, 234, 0.1);
+          color: #667eea;
+        }
+
+        .tt-share-btn.copied {
+          opacity: 1;
+          color: #10b981;
         }
 
         .tt-report-content h3 {
@@ -269,7 +358,7 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
             boxShadow: `0 8px 32px ${agentColor}15`
           } : undefined}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={components}>
             {content}
           </ReactMarkdown>
         </div>

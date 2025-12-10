@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
@@ -27,6 +27,46 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyLink = useCallback((id: string) => {
+    // Use the shareable blog URL format
+    const url = `${window.location.origin}/token-tank/blog/${id}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    });
+  }, []);
+
+  // Custom components for blog ReactMarkdown
+  const blogComponents = {
+    h2: ({ children, id, ...props }: React.HTMLAttributes<HTMLHeadingElement> & { id?: string }) => (
+      <h2 id={id} className="tt-entry-heading" {...props}>
+        <span className="tt-entry-title">{children}</span>
+        {id && (
+          <button
+            className={`tt-share-btn ${copiedId === id ? 'copied' : ''}`}
+            onClick={(e) => {
+              e.preventDefault();
+              copyLink(id);
+            }}
+            title="Copy link to this entry"
+          >
+            {copiedId === id ? (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+              </svg>
+            )}
+          </button>
+        )}
+      </h2>
+    ),
+  };
 
   // Read hash on mount and hash changes
   useEffect(() => {
@@ -310,19 +350,57 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           margin-bottom: 40px;
         }
 
-        .tt-rules-content h2 {
+        .tt-rules-content h2,
+        .tt-rules-content .tt-entry-heading {
           font-size: 28px;
           font-weight: 700;
           color: #1d1d1f;
           margin: 48px 0 20px;
           padding-top: 32px;
           border-top: 1px solid rgba(0, 0, 0, 0.06);
+          display: flex;
+          align-items: center;
+          gap: 12px;
         }
 
-        .tt-rules-content h2:first-of-type {
+        .tt-rules-content h2:first-of-type,
+        .tt-rules-content .tt-entry-heading:first-of-type {
           border-top: none;
           padding-top: 0;
           margin-top: 0;
+        }
+
+        .tt-entry-title {
+          flex: 1;
+        }
+
+        .tt-share-btn {
+          opacity: 0;
+          background: none;
+          border: none;
+          padding: 8px;
+          cursor: pointer;
+          color: #86868b;
+          border-radius: 8px;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+        }
+
+        .tt-entry-heading:hover .tt-share-btn {
+          opacity: 1;
+        }
+
+        .tt-share-btn:hover {
+          background: rgba(102, 126, 234, 0.1);
+          color: #667eea;
+        }
+
+        .tt-share-btn.copied {
+          opacity: 1;
+          color: #10b981;
         }
 
         .tt-rules-content h3 {
@@ -868,7 +946,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
       {activeTab === 'blog' && (
         <div className="tt-rules-container">
           <div className="tt-rules-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]} components={blogComponents}>
               {blogContent}
             </ReactMarkdown>
           </div>
