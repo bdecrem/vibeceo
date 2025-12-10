@@ -753,7 +753,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           </div>
 
           <div className="tt-agents-grid">
-            {['i1', 'i2', 'i3-1', 'i3', 'i4'].map((agentId) => {
+            {['i1', 'i2', 'i3', 'i3-1', 'i4'].map((agentId) => {
               const meta = agentMeta[agentId];
               const usage = agentUsage[agentId];
               const isExpanded = selectedAgent === agentId;
