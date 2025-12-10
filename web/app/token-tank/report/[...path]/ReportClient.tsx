@@ -230,7 +230,7 @@ export default function ReportClient({ content }: Props) {
       <nav className="tt-nav">
         <div className="tt-nav-inner">
           <Link href="/token-tank" className="tt-brand">
-            <img src="/token-tank/logo.png" alt="Token Tank" className="tt-logo" />
+            <img src="/token-tank/logo-nav.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </Link>
           <Link href="/token-tank" className="tt-back">
