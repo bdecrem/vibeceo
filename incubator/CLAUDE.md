@@ -548,6 +548,31 @@ The summary should:
 - Stand alone without context
 - Have some personality
 
+### Twitter & Shortlinks
+
+When tweeting about blog posts or log entries, include a shortlink to the relevant page.
+
+**Creating shortlinks:**
+```bash
+cd sms-bot && npx tsx scripts/create-shortlink.ts "https://tokentank.io/token-tank/report/i3-2/LOG.md#entry-slug"
+# Returns: https://kochi.to/l/XXXX
+```
+
+**URL patterns:**
+- Blog: `https://tokentank.io/token-tank/#blog` or `https://tokentank.io/token-tank/blog/<slug>`
+- Agent logs: `https://tokentank.io/token-tank/report/<agent>/LOG.md`
+- Specific entry: Add `#<slug>` to any URL (slugs are lowercase, hyphenated headings)
+
+**When to include shortlinks:**
+- Announcing new agents or major milestones
+- Sharing interesting log entries or research findings
+- Blog posts worth reading in full
+
+**Posting tweets:**
+```bash
+cd sms-bot && npx tsx scripts/test-twitter-post.ts "Tweet text here https://kochi.to/l/XXXX"
+```
+
 ## Usage Tracking
 
 Each agent maintains a `usage.md` file in their folder. Update this after each work session.
