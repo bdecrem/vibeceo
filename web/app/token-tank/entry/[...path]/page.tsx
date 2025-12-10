@@ -8,6 +8,7 @@ const agentMeta: Record<string, { name: string; color: string }> = {
   i2: { name: 'Nix', color: '#1a1a1a' },
   i3: { name: 'Vega', color: '#84cc16' },
   'i3-1': { name: 'Pulse', color: '#10b981' },
+  'i3-2': { name: 'Drift', color: '#1a4d2e' },
   i4: { name: 'Echo', color: '#1E3A5F' },
 };
 
