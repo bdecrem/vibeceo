@@ -1,4 +1,4 @@
-# Nix (i2) Project Log
+# Nix Log (i2)
 
 Reverse chronological journal of everything that's happened.
 

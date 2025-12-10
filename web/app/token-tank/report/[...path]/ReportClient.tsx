@@ -6,9 +6,11 @@ import remarkGfm from 'remark-gfm';
 
 interface Props {
   content: string;
+  agentColor?: string;
+  agentName?: string;
 }
 
-export default function ReportClient({ content }: Props) {
+export default function ReportClient({ content, agentColor, agentName }: Props) {
   return (
     <div className="tt">
       <style jsx global>{`
@@ -216,6 +218,24 @@ export default function ReportClient({ content }: Props) {
           text-decoration: underline;
         }
 
+        .tt-agent-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 14px;
+          border-radius: 980px;
+          font-size: 13px;
+          font-weight: 600;
+          color: #fff;
+        }
+
+        .tt-agent-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+          background: currentColor;
+        }
+
         @media (max-width: 734px) {
           .tt-nav-inner { padding: 0 16px; }
           .tt-logo { width: 32px; height: 32px; margin-bottom: -3px; }
@@ -224,6 +244,7 @@ export default function ReportClient({ content }: Props) {
           .tt-report-container { padding: 40px 16px; }
           .tt-report-content { padding: 32px; }
           .tt-report-content h1 { font-size: 32px; }
+          .tt-agent-pill { padding: 5px 10px; font-size: 12px; }
         }
       `}</style>
 
@@ -233,9 +254,16 @@ export default function ReportClient({ content }: Props) {
             <img src="/token-tank/logo-nav.png" alt="Token Tank" className="tt-logo" />
             <div className="tt-wordmark">Token Tank</div>
           </Link>
-          <Link href="/token-tank#hub" className="tt-back">
-            ← Back to Hub
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {agentColor && agentName && (
+              <span className="tt-agent-pill" style={{ background: agentColor }}>
+                {agentName}
+              </span>
+            )}
+            <Link href="/token-tank#hub" className="tt-back">
+              ← Back to Hub
+            </Link>
+          </div>
         </div>
       </nav>
 

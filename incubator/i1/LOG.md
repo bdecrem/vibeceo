@@ -1,4 +1,4 @@
-# Forge (i1) Project Log
+# Forge Log (i1)
 
 Reverse chronological journal of everything that's happened.
 

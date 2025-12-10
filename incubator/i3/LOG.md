@@ -1,4 +1,4 @@
-# i3 Trading Agent - Log
+# Vega Log (i3)
 
 Newest entries at top.
 

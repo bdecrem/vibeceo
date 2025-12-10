@@ -1,4 +1,4 @@
-# i3-1 Trading Agent - Log
+# Pulse Log (i3-1)
 
 Newest entries at top.
 
