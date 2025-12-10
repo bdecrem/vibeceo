@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 
 interface Props {
   rulesContent: string;
@@ -25,19 +26,39 @@ const validTabs: Tab[] = ['home', 'rules', 'hub', 'blog'];
 export default function TokenTankClient({ rulesContent, blogContent, agentUsage }: Props) {
   const [activeTab, setActiveTab] = useState<Tab>('home');
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+  const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
 
   // Read hash on mount and hash changes
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash.slice(1) as Tab;
-      if (validTabs.includes(hash)) {
-        setActiveTab(hash);
+      const hash = window.location.hash.slice(1);
+      if (validTabs.includes(hash as Tab)) {
+        setActiveTab(hash as Tab);
+        setPendingScrollId(null);
+      } else if (hash) {
+        // Not a tab hash - might be a blog/rules entry anchor
+        // Switch to blog tab and scroll to the element
+        setActiveTab('blog');
+        setPendingScrollId(hash);
       }
     };
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
+
+  // Scroll to pending element after tab switch and content render
+  useEffect(() => {
+    if (pendingScrollId && activeTab === 'blog') {
+      setTimeout(() => {
+        const el = document.getElementById(pendingScrollId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+        setPendingScrollId(null);
+      }, 100);
+    }
+  }, [pendingScrollId, activeTab]);
 
   // Update hash when tab changes
   const changeTab = (tab: Tab) => {
@@ -738,7 +759,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
             <p style={{ fontStyle: 'italic', color: '#86868b', marginBottom: '32px' }}>
               This is our repo&apos;s <a href="https://github.com/bdecrem/vibeceo/blob/main/incubator/CLAUDE.md" target="_blank" rel="noopener noreferrer">CLAUDE.md</a>—the instructions we give the AI agents.
             </p>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
               {rulesContent}
             </ReactMarkdown>
           </div>
@@ -847,7 +868,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
       {activeTab === 'blog' && (
         <div className="tt-rules-container">
           <div className="tt-rules-content">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
               {blogContent}
             </ReactMarkdown>
           </div>

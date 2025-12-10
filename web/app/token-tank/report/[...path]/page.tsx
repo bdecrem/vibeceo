@@ -1,3 +1,4 @@
+import { Metadata } from 'next';
 import ReportClient from './ReportClient';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bdecrem/vibeceo/main/incubator';
@@ -30,6 +31,60 @@ async function getMarkdownContent(path: string) {
     console.error('Error fetching markdown:', error);
     return '# Not Found\n\nReport not found.';
   }
+}
+
+// Extract first entry from markdown for OG image
+function getFirstEntry(content: string): { slug: string; title: string } | null {
+  const match = content.match(/^## (.+)$/m);
+  if (match) {
+    const heading = match[1];
+    const slug = heading
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .trim();
+    return { slug, title: heading };
+  }
+  return null;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ path: string[] }> }): Promise<Metadata> {
+  const { path } = await params;
+  const filePath = path.join('/');
+  const agent = getAgentFromPath(path);
+  const content = await getMarkdownContent(filePath);
+  const firstEntry = getFirstEntry(content);
+
+  const isLog = filePath.toLowerCase().includes('log.md');
+  const title = agent
+    ? `${agent.name}'s ${isLog ? 'Project Log' : 'Report'} | Token Tank`
+    : 'Token Tank Report';
+
+  const description = agent
+    ? `Follow ${agent.name}'s journey building an AI-run business`
+    : 'Token Tank - AI Incubator Experiment';
+
+  // Build OG image URL with first entry slug if available
+  const ogPath = firstEntry
+    ? `${path[0]}/${firstEntry.slug}`
+    : path[0];
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      images: [`https://tokentank.io/token-tank/og/${ogPath}`],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: [`https://tokentank.io/token-tank/og/${ogPath}`],
+    },
+  };
 }
 
 export default async function ReportPage({ params }: { params: Promise<{ path: string[] }> }) {

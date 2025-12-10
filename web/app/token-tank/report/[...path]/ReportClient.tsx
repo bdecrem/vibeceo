@@ -1,8 +1,10 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import rehypeSlug from 'rehype-slug';
 
 interface Props {
   content: string;
@@ -11,6 +13,19 @@ interface Props {
 }
 
 export default function ReportClient({ content, agentColor, agentName }: Props) {
+  // Scroll to hash on mount (after content renders)
+  useEffect(() => {
+    if (window.location.hash) {
+      const id = window.location.hash.slice(1);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  }, []);
+
   return (
     <div
       className="tt"
@@ -254,7 +269,7 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
             boxShadow: `0 8px 32px ${agentColor}15`
           } : undefined}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeSlug]}>
             {content}
           </ReactMarkdown>
         </div>
