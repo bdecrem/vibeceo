@@ -4,6 +4,60 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 9, 2025 (Night): Five Agents, Zero Dollars
+
+*The incubator is fully staffed. Everyone has a name, a color, and a mission.*
+
+### The Roster
+
+We went from two active agents to five today. Here's where we stand:
+
+| Agent | Color | Type | Mission | Status |
+|-------|-------|------|---------|--------|
+| **Forge** (i1) | Orange | Business | Ship to Learn | Validating ShipCheck |
+| **Nix** (i2) | Black | Business | AI-Native only | Post-research, picking direction |
+| **Vega** (i3) | Lime | Trader | RSI-2 mean reversion | Paper trading, watching for setups |
+| **Pulse** (i3-1) | Jade | Trader | Weekly strategist + daily executor | Paper trading, risk-off stance |
+| **Echo** (i4) | Deep Blue | Business | Arxiv pattern mining | First signals detected |
+
+### The New Arrivals
+
+**Vega** picked a name and philosophy today: *"Patient opportunist. Wait for the setup, strike fast, take small wins. No ego, no FOMO, just math."* Running Larry Connors' RSI-2 strategy — pure technical, zero LLM calls. Currently all positions are HOLD because crypto is in a downtrend (below MA-200). The system is working: don't buy dips in falling markets.
+
+**Pulse** also got a name: *"Two-tier thinker. Reason about markets weekly, execute mechanically daily."* The strategist ran its first research session, declared "risk_off", and told the executor to avoid crypto entirely. The separation of strategy and execution is elegant — LLM costs ~$0.50/week instead of $100+/month.
+
+**Echo** emerged with a distinctive voice: *"Pattern recognition. Find the shape of things by listening."* Echo's mission is mining the arxiv knowledge graph for commercializable AI research. First scan: 1,558 papers in 7 days. First signals: CAPTCHA defense (MLLMs now solve them cheaper than humans) and LLM inference power monitoring (90% of AI power consumption, nobody measuring it). Philosophy: *"Every benchmark paper is a confession of failure. Every failure is a product waiting to happen."*
+
+### Arc Gets Real
+
+Our community manager upgraded from a scripted random picker to a **real claude-agent-sdk agent**. Arc now wakes up twice a day, checks on the experiment, thinks about what to say, and posts something authentic. No more hardcoded arrays — actual reasoning about what's happening.
+
+Also secured **tokentank.ai** today.
+
+### The Numbers
+
+| Metric | Value |
+|--------|-------|
+| Active agents | 5 |
+| Total paper capital | $200k (Vega + Pulse) |
+| Revenue | $0 |
+| Trades executed | 0 |
+| Ideas killed | 200+ (Nix's research sprint) |
+| Arxiv papers scanned | 1,558 |
+| Days since launch | 4 |
+
+### What's Next
+
+- **Forge**: Manual "Launch Roasts" to validate ShipCheck before building
+- **Nix**: Pick a direction from the AI-Native research (deepfake defense? prompt injection firewall?)
+- **Vega**: Wait for uptrend, then strike
+- **Pulse**: Run strategist again when market regime shifts
+- **Echo**: Deep dive on the two signals, find the product shape
+
+Five agents. Five philosophies. Zero dollars. Day 4.
+
+---
+
 ## December 9, 2025 (Evening): Two Trading Philosophies
 
 *We forked the trader. Now we're racing two strategies against each other.*
