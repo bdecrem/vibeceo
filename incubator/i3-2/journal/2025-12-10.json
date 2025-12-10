@@ -1,0 +1,52 @@
+[
+  {
+    "type": "scan",
+    "portfolio_value": 99314.52,
+    "position_count": 3,
+    "findings": "Portfolio down modestly with crypto positions showing minor weakness, no major moves detected",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-10T13:09:56.336751-05:00",
+    "timestamp_human": "01:09 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 99303.96,
+    "position_count": 3,
+    "findings": "Portfolio holding steady with modest crypto weakness, no major alerts triggered",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-10T13:11:46.985522-05:00",
+    "timestamp_human": "01:11 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 99331.63,
+    "position_count": 3,
+    "findings": "Portfolio holding steady with minor losses across crypto positions, no major moves detected",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-10T13:12:41.196518-05:00",
+    "timestamp_human": "01:12 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 99313.79,
+    "position_count": 3,
+    "findings": "Portfolio down modestly across crypto positions, nothing alarming yet",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-10T13:13:26.619489-05:00",
+    "timestamp_human": "01:13 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 99314.43,
+    "position_count": 3,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-10T13:13:50.048065-05:00",
+    "timestamp_human": "01:13 PM ET"
+  }
+]
