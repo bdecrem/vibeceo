@@ -15,7 +15,7 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: true },
   i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: true, isTrader: true },
-  i4: { name: 'Delta', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)', active: true },
+  i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true },
 };
 
 type Tab = 'home' | 'rules' | 'hub' | 'blog';
