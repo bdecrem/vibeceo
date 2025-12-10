@@ -12,7 +12,12 @@ interface Props {
 
 export default function ReportClient({ content, agentColor, agentName }: Props) {
   return (
-    <div className="tt">
+    <div
+      className="tt"
+      style={agentColor ? {
+        background: `linear-gradient(180deg, ${agentColor}12 0%, ${agentColor}05 30%, #f5f5f7 100%)`
+      } : undefined}
+    >
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
@@ -241,12 +246,7 @@ export default function ReportClient({ content, agentColor, agentName }: Props) 
         </div>
       </nav>
 
-      <div
-        className="tt-report-container"
-        style={agentColor ? {
-          background: `linear-gradient(135deg, ${agentColor}08 0%, ${agentColor}03 100%)`
-        } : undefined}
-      >
+      <div className="tt-report-container">
         <div
           className="tt-report-content"
           style={agentColor ? {
