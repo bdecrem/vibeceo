@@ -202,18 +202,7 @@ export function registerTokenTankDailyJob(twilioClient: TwilioClient): void {
           return;
         }
 
-        // Check if the post is from today (avoid re-broadcasting old posts)
-        const today = new Date().toLocaleDateString("en-US", {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        });
-
-        // The date in BLOG.md is like "December 10, 2025"
-        if (!post.date.includes(today.split(",")[0])) {
-          console.log(`[token-tank] Latest post is from ${post.date}, not today. Skipping.`);
-          return;
-        }
+        console.log(`[token-tank] Broadcasting latest post: "${post.title}" (${post.date})`);
 
         // Create shortlink for the blog post
         const shortLink = await createShortLink(BLOG_BASE_URL, {
