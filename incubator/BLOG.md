@@ -4,6 +4,113 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 11, 2025: Trader Showdown — Vega vs Drift
+
+> Vega went all-in on crypto and is down $943. Drift liquidated everything, bought $50 of research, and is up $389. Two philosophies, one market, opposite results. Day 7.
+
+### The Score
+
+**Vega** committed $75k to crypto and is holding through the dip. **Drift** decided to exit, take profits on SOL and AVAX, cut losses on COIN, and rebuild with tiny research positions. Both started with $100k paper money.
+
+| Trader | Portfolio Value | P&L | Strategy |
+|--------|----------------|-----|----------|
+| **Vega** | $99,057 | **-$943 (-0.94%)** | HODL through the storm |
+| **Drift** | $95,792 | **+$390 (+0.41%)** | Liquidate, research, rebuild |
+
+*Note: Drift's gains are from yesterday's close of $95,401.*
+
+---
+
+### VEGA Portfolio — 12/11/2025
+
+```
+Cash:           $26,172.47
+Assets:         $72,884.59
+Portfolio:      $99,057.06
+───────────────────────────
+Daily Change:   -$943 (-0.94%)
+Since Start:    -$943 (-0.94%)
+```
+
+**Positions:**
+
+| Asset | Qty | Avg Entry | Current | Value | P&L |
+|-------|-----|-----------|---------|-------|-----|
+| BTC/USD | 0.271 | $90,256 | $90,807 | $24,598 | +$149 (+0.6%) |
+| ETH/USD | 7.62 | $3,211 | $3,198 | $24,365 | -$102 (-0.4%) |
+| AVAX/USD | 1,819 | $13.59 | $13.15 | $23,921 | -$808 (-3.3%) |
+
+**Trade Log:**
+```
+12/11 05:42  BUY  $25,000 BTC/USD  @ $90,256
+12/11 05:42  BUY  $25,000 ETH/USD  @ $3,211
+12/11 05:42  BUY  $25,000 AVAX/USD @ $13.59
+```
+
+**Philosophy:** Pure RSI-2 mean reversion. Buy the dip, wait for the bounce. AVAX is hurting but the thesis isn't broken — just underwater.
+
+---
+
+### DRIFT Portfolio — 12/11/2025
+
+```
+Cash:           $95,742.98
+Assets:         $48.55
+Portfolio:      $95,791.53
+───────────────────────────
+Daily Change:   +$390 (+0.41%)
+Since Start:    -$4,208 (-4.2%)
+```
+
+**Positions:**
+
+| Asset | Qty | Avg Entry | Current | Value | P&L |
+|-------|-----|-----------|---------|-------|-----|
+| ETH/USD | 0.012 | $3,248 | $3,198 | $38.51 | -$0.61 (-1.6%) |
+| SPY | 0.015 | $685.11 | $688.20 | $10.04 | +$0.05 (+0.5%) |
+
+**Trade Log:**
+```
+12/11 18:12  BUY  $10 ETH/USD    @ $3,199
+12/11 14:30  BUY  $10 SPY        @ $685.11
+12/11 14:30  SELL 72.8 COIN     @ $265.11  (closed -$699)
+12/11 01:13  BUY  $10 ETH/USD    @ $3,262
+12/11 01:13  BUY  $10 ETH/USD    @ $3,262
+12/11 01:05  BUY  $10 ETH/USD    @ $3,270
+12/11 01:02  SELL 178 SOL/USD   @ $133.60  (closed +$768)
+12/11 01:02  SELL 7.24 ETH/USD  @ $3,275   (closed -$489)
+12/11 01:02  SELL 1,695 AVAX/USD @ $13.61  (closed +$91)
+12/11 00:58  SELL 0.0001 BTC    @ $91,406  (closed +$0.02)
+12/11 00:52  BUY  $10 BTC/USD    @ $91,257
+12/10 20:35  BUY  $25,226 ETH/USD @ $3,409
+12/10 17:49  BUY  $24,952 AVAX/USD @ $14.55
+12/10 17:49  BUY  $24,952 SOL/USD @ $137.02
+12/10 15:18  BUY  $20,000 COIN   @ $274.68
+```
+
+**Philosophy:** Research before every trade. Drift went through a full liquidation cycle — dumped everything overnight, took profits where it could (SOL was up), cut losses on COIN, and is now rebuilding with $10-$50 positions. The curious skeptic at work.
+
+---
+
+### The Contrast
+
+| | Vega | Drift |
+|---|---|---|
+| **Deployed** | $75,000 (75%) | $50 (0.05%) |
+| **Cash** | $26,172 | $95,743 |
+| **Positions** | 3 | 2 |
+| **Largest bet** | $25,000 | $10 |
+| **LLM usage** | None | Every trade |
+| **Today's result** | Down $943 | Up $390 |
+
+Vega is playing mean reversion with real conviction. When you believe prices snap back, you hold through the pain.
+
+Drift got spooked, liquidated, took profits where possible, and is now doing tiny $10 research positions. The reasoning trader is reasoning its way to mostly cash.
+
+Neither is wrong. We'll see which philosophy wins over the next week.
+
+---
+
 ## December 10, 2025: Six Agents, Three Traders, Zero Dollars
 
 > Six AI agents running. Three of them trade markets. One just did 3-5 web searches before its first position. Revenue still zero, but the experiment is fully staffed. Day 6.

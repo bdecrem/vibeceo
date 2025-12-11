@@ -24,12 +24,18 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from config import (
     WATCHLIST,
     CRYPTO_WATCHLIST,
+    NEWS_MONITOR_LIST,
     MAX_POSITIONS,
     MAX_PORTFOLIO_VALUE,
     MIN_CONFIDENCE_TO_TRADE,
     SCAN_INTERVAL_MINUTES,
     RESEARCH_MODEL,
     MAX_RESEARCH_SEARCHES,
+    RSI_OVERSOLD,
+    RSI_OVERBOUGHT,
+    PULLBACK_THRESHOLD,
+    BREAKOUT_THRESHOLD,
+    NEWS_MOVE_THRESHOLD,
     VERBOSE,
     get_position_size,
     print_config,
@@ -37,6 +43,7 @@ from config import (
 from trading.alpaca_client import AlpacaClient, is_market_open, get_market_status
 from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
+from utils.technicals import get_technical_signals, screen_for_triggers
 
 # Try to import anthropic for API calls
 try:
@@ -146,13 +153,15 @@ class DriftAgent:
 
     def _light_scan(self, watchlist: list = None, seek_deployment: bool = False) -> dict:
         """
-        Light scan of portfolio and watchlist.
+        Quantitative + News-reactive scan.
 
-        Quick check to identify what needs attention.
+        Two-stage process:
+        1. Quantitative screening: Calculate RSI, price changes for watchlist
+        2. News scan: Check for big movers outside our watchlist
 
         Args:
             watchlist: List of symbols to scan. Defaults to WATCHLIST.
-            seek_deployment: If True, actively look for entry opportunities (stocks only, during market hours)
+            seek_deployment: If True, actively look for entry opportunities
         """
         if watchlist is None:
             watchlist = WATCHLIST
@@ -163,90 +172,108 @@ class DriftAgent:
             positions = self.alpaca.get_positions()
             pdt_status = self.pdt.get_status()
 
-            # Filter positions to only those in our active watchlist
-            # (so crypto scan only sees crypto positions, stock scan only sees stock positions)
-            watchlist_set = set(watchlist)
-            relevant_positions = [p for p in positions if p["symbol"] in watchlist_set]
+            all_triggers = []
+            thresholds = {
+                "RSI_OVERSOLD": RSI_OVERSOLD,
+                "RSI_OVERBOUGHT": RSI_OVERBOUGHT,
+                "PULLBACK_THRESHOLD": PULLBACK_THRESHOLD,
+                "BREAKOUT_THRESHOLD": BREAKOUT_THRESHOLD,
+            }
 
-            # Get prices for watchlist (minus what we already hold)
-            held_symbols = [p["symbol"] for p in relevant_positions]
-            watchlist_to_check = [s for s in watchlist if s not in held_symbols]
+            # ========== STAGE 1: Quantitative screening on watchlist ==========
+            if VERBOSE:
+                print(f"[Drift] Stage 1: Quantitative screening {len(watchlist)} symbols...")
 
-            # Build context for LLM
-            context = self._build_scan_context(account, positions, pdt_status)
+            watchlist_signals = {}
+            for symbol in watchlist:
+                try:
+                    bars = self.alpaca.get_bars(symbol, days=60)
+                    if bars:
+                        signals = get_technical_signals(bars)
+                        watchlist_signals[symbol] = signals
 
-            # Check market regime (SPY as proxy) if seeking deployment
-            market_context = ""
-            if seek_deployment:
-                spy_price = self.alpaca.get_latest_price("SPY")
-                # Get SPY's recent performance from bars
-                spy_bars = self.alpaca.get_bars("SPY", days=5)
-                if spy_bars and len(spy_bars) >= 2:
-                    prev_close = spy_bars[-2]["close"]
-                    today_change = (spy_price - prev_close) / prev_close * 100 if spy_price else 0
-                    market_context = f"\n\nMARKET REGIME:\nSPY today: {today_change:+.2f}%"
-                    if today_change < -2:
-                        market_context += " (CAUTION: Market down significantly - research WHY before deploying)"
-                    elif today_change > 2:
-                        market_context += " (Market strong)"
-                    else:
-                        market_context += " (Market stable)"
+                        # Check for triggers
+                        triggers = screen_for_triggers(symbol, signals, thresholds)
+                        all_triggers.extend(triggers)
+                except Exception as e:
+                    if VERBOSE:
+                        print(f"[Drift] Error getting data for {symbol}: {e}")
 
-            # Get news for held positions
-            if positions:
-                news = self.alpaca.get_news([p["symbol"] for p in positions], limit=5)
-                context += f"\n\nRecent news:\n"
-                for item in news[:5]:
-                    context += f"- {item['headline']} ({', '.join(item['symbols'])})\n"
+            # ========== STAGE 2: Check positions for exit triggers ==========
+            for pos in positions:
+                symbol = pos["symbol"]
+                pnl_pct = pos["unrealized_plpc"]
 
-            # Build different prompts based on mode
-            if seek_deployment:
-                deployment_instruction = f"""
-DEPLOYMENT MODE: You have cash to deploy (>50% of budget in cash).
-Available to buy: {', '.join(watchlist_to_check[:15])}
-{market_context}
+                # Profit target hit
+                if pnl_pct >= 5:
+                    all_triggers.append({
+                        "symbol": symbol,
+                        "trigger_type": "profit_target",
+                        "reason": f"Position up {pnl_pct:.1f}% - consider taking profits",
+                        "signals": {"pnl_pct": pnl_pct},
+                    })
+                # Stop check
+                elif pnl_pct <= -3:
+                    all_triggers.append({
+                        "symbol": symbol,
+                        "trigger_type": "stop_check",
+                        "reason": f"Position down {pnl_pct:.1f}% - thesis broken?",
+                        "signals": {"pnl_pct": pnl_pct},
+                    })
 
-Look for 1-2 stocks that might be good entry opportunities RIGHT NOW.
-Consider: recent pullbacks in strong stocks, positive momentum, good risk/reward setups.
-If the market is down big, be extra cautious - flag for research but note the risk."""
-            else:
-                deployment_instruction = ""
+            # ========== STAGE 3: News-reactive scan for movers outside watchlist ==========
+            if seek_deployment and VERBOSE:
+                print(f"[Drift] Stage 3: News-reactive scan...")
 
-            # Ask LLM to scan
-            scan_prompt = f"""You are Drift, a curious skeptic swing trader. Do a quick scan.
+            news_triggers = self._scan_news_movers(watchlist)
+            all_triggers.extend(news_triggers)
 
-CURRENT STATE:
-{context}
-{deployment_instruction}
+            # ========== Build summary for LLM refinement ==========
+            if all_triggers:
+                # Format triggers with actual data for LLM
+                trigger_summary = "\n".join([
+                    f"- {t['symbol']}: {t['reason']}" +
+                    (f" | RSI-2: {t['signals'].get('rsi_2', 'N/A')}" if 'rsi_2' in t.get('signals', {}) else "")
+                    for t in all_triggers[:10]  # Cap at 10 to not overwhelm
+                ])
 
-TASK: Quick scan (30 seconds). Identify anything that needs deeper research:
-- Positions with big moves (>3% either direction)
-- Positions with relevant news
-- Watchlist stocks with unusual moves
-{f"- Entry opportunities (you have cash to deploy)" if seek_deployment else ""}
+                # Ask LLM to prioritize/filter
+                refine_prompt = f"""You are Drift, a curious skeptic swing trader.
+
+QUANTITATIVE SCAN FOUND {len(all_triggers)} POTENTIAL TRIGGERS:
+{trigger_summary}
+
+CURRENT POSITIONS: {len(positions)}/{MAX_POSITIONS}
+BUDGET REMAINING: ${MAX_PORTFOLIO_VALUE - sum(p['market_value'] for p in positions):.0f}
+
+TASK: Pick the top 1-3 triggers worth researching RIGHT NOW. Consider:
+- RSI-2 below 20 is a strong oversold signal
+- Pullbacks in quality stocks > random movers
+- News-driven moves need more research (could be opportunity or trap)
 
 Respond in JSON:
 {{
-    "summary": "One line summary of portfolio state",
+    "summary": "One line on market state",
     "triggers": [
-        {{"symbol": "AAPL", "reason": "Down 4%, news about..."}},
+        {{"symbol": "NVDA", "reason": "RSI-2 at 15, oversold in quality stock"}},
         ...
-    ],
-    "all_stable": true/false
+    ]
 }}
 
-{"If nothing needs attention AND no good entry opportunities, return empty triggers list." if seek_deployment else "If nothing needs attention, return empty triggers list."}
-Be selective - only flag things worth researching."""
+Be selective. Quality over quantity. If nothing is compelling, return empty triggers."""
 
-            response = self._call_llm(scan_prompt, max_tokens=500)
-
-            # Parse response
-            try:
-                # Extract JSON from response
-                result = self._extract_json(response)
-            except Exception:
+                response = self._call_llm(refine_prompt, max_tokens=400)
+                try:
+                    result = self._extract_json(response)
+                except Exception:
+                    # Fall back to raw triggers
+                    result = {
+                        "summary": f"Found {len(all_triggers)} triggers",
+                        "triggers": [{"symbol": t["symbol"], "reason": t["reason"]} for t in all_triggers[:3]],
+                    }
+            else:
                 result = {
-                    "summary": "Scan completed",
+                    "summary": "No quantitative triggers found",
                     "triggers": [],
                     "all_stable": True,
                 }
@@ -259,11 +286,68 @@ Be selective - only flag things worth researching."""
                 triggers=[t.get("symbol", "") for t in result.get("triggers", [])],
             )
 
+            if VERBOSE:
+                print(f"[Drift] Scan complete: {len(result.get('triggers', []))} triggers to research")
+
             return result
 
         except Exception as e:
             self.journal.log_error("light_scan", str(e))
             return {"summary": f"Scan error: {e}", "triggers": [], "all_stable": True}
+
+    def _scan_news_movers(self, exclude_symbols: list) -> list:
+        """
+        Scan for news-driven movers outside our watchlist.
+
+        Uses web search to find stocks making big moves on news,
+        then checks if any are worth researching.
+        """
+        news_triggers = []
+
+        try:
+            # Get news for broader monitoring list
+            all_monitor = list(set(NEWS_MONITOR_LIST) - set(exclude_symbols))
+
+            if not all_monitor:
+                return []
+
+            # Get news for monitored symbols
+            news_items = self.alpaca.get_news(all_monitor[:30], limit=20)  # Cap to avoid rate limits
+
+            # Look for stocks mentioned in multiple news items (hot)
+            symbol_mentions = {}
+            for item in news_items:
+                for sym in item.get("symbols", []):
+                    if sym in all_monitor and sym not in exclude_symbols:
+                        symbol_mentions[sym] = symbol_mentions.get(sym, 0) + 1
+
+            # Check price moves for hot symbols
+            hot_symbols = [s for s, count in symbol_mentions.items() if count >= 2]
+
+            for symbol in hot_symbols[:5]:  # Check top 5 most mentioned
+                try:
+                    bars = self.alpaca.get_bars(symbol, days=5)
+                    if bars and len(bars) >= 2:
+                        signals = get_technical_signals(bars)
+                        change_1d = signals.get("change_1d", 0)
+
+                        # Big move = news-driven trigger
+                        if abs(change_1d) >= NEWS_MOVE_THRESHOLD:
+                            direction = "up" if change_1d > 0 else "down"
+                            news_triggers.append({
+                                "symbol": symbol,
+                                "trigger_type": "news_mover",
+                                "reason": f"NEWS: {symbol} {direction} {abs(change_1d):.1f}% (in news {symbol_mentions[symbol]}x)",
+                                "signals": signals,
+                            })
+                except Exception:
+                    pass
+
+        except Exception as e:
+            if VERBOSE:
+                print(f"[Drift] News scan error: {e}")
+
+        return news_triggers
 
     def _research(self, trigger: dict) -> dict:
         """
@@ -595,21 +679,35 @@ Respond with your research process, then final JSON:
             return "{}"
 
     def _extract_json(self, text: str) -> dict:
-        """Extract JSON from LLM response."""
-        # Try to find JSON in the response
+        """Extract JSON from LLM response, handling nested structures."""
         import re
 
-        # Look for JSON block
-        json_match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
-        if json_match:
-            try:
-                return json.loads(json_match.group())
-            except json.JSONDecodeError:
-                pass
+        # Strip markdown code blocks if present
+        text = re.sub(r'```json\s*', '', text)
+        text = re.sub(r'```\s*', '', text)
 
-        # Try the whole text
+        # Find the outermost JSON object by matching braces
+        start = text.find('{')
+        if start == -1:
+            return {}
+
+        # Count braces to find the matching close
+        depth = 0
+        for i, char in enumerate(text[start:], start):
+            if char == '{':
+                depth += 1
+            elif char == '}':
+                depth -= 1
+                if depth == 0:
+                    json_str = text[start:i+1]
+                    try:
+                        return json.loads(json_str)
+                    except json.JSONDecodeError:
+                        break
+
+        # Fallback: try the whole text
         try:
-            return json.loads(text)
+            return json.loads(text.strip())
         except json.JSONDecodeError:
             pass
 

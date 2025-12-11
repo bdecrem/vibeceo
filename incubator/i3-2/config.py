@@ -45,6 +45,32 @@ WATCHLIST = [
 # Crypto assets - traded 24/7, scanned when stock market is closed
 CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]
 
+# Broader news monitoring list - we scan news for these but don't actively trade them
+# unless they show up as big movers. This catches news-driven opportunities.
+NEWS_MONITOR_LIST = [
+    # Everything in WATCHLIST plus...
+    # More tech
+    "INTC", "AVGO", "ORCL", "ADBE", "NOW", "SNOW", "MDB", "DDOG", "NET", "CRWD",
+    # Consumer
+    "WMT", "COST", "TGT", "HD", "LOW", "NKE", "SBUX", "MCD",
+    # Healthcare
+    "UNH", "JNJ", "PFE", "MRNA", "LLY", "ABBV",
+    # Industrial/Other
+    "BA", "CAT", "GE", "UPS", "FDX",
+    # Hot/Volatile names (more likely to have news-driven moves)
+    "COIN", "HOOD", "RIVN", "LCID", "SOFI", "AFRM", "UPST",
+    # Meme/retail favorites
+    "GME", "AMC", "BBBY", "WISH",
+]
+
+# ============ QUANTITATIVE TRIGGERS ============
+# These thresholds determine what gets flagged for research
+RSI_OVERSOLD = 20          # RSI-2 below this = oversold, potential buy
+RSI_OVERBOUGHT = 80        # RSI-2 above this = overbought, potential sell
+PULLBACK_THRESHOLD = -2.0  # Down this much in 5 days = pullback candidate
+BREAKOUT_THRESHOLD = 3.0   # Up this much on high volume = breakout candidate
+NEWS_MOVE_THRESHOLD = 5.0  # Stock moved this much = news-driven, research it
+
 # ============ PORTFOLIO LIMITS ============
 MAX_PORTFOLIO_VALUE = 500  # Total budget agent can use
 MAX_POSITIONS = 12  # Max simultaneous positions
