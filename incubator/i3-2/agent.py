@@ -23,10 +23,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from config import (
     WATCHLIST,
+    CRYPTO_WATCHLIST,
     MAX_POSITIONS,
+    MAX_PORTFOLIO_VALUE,
     MIN_CONFIDENCE_TO_TRADE,
     SCAN_INTERVAL_MINUTES,
     RESEARCH_MODEL,
+    MAX_RESEARCH_SEARCHES,
     VERBOSE,
     get_position_size,
     print_config,
@@ -71,25 +74,47 @@ class DriftAgent:
         if VERBOSE:
             print_config()
 
-    def run_cycle(self) -> dict:
+    def run_cycle(self, crypto_only: bool = False) -> dict:
         """
         Run one trading cycle.
+
+        Args:
+            crypto_only: If True, only scan crypto assets (for after-hours trading)
 
         Returns dict with cycle results.
         """
         cycle_start = datetime.now()
 
-        # Check if market is open
-        market = get_market_status()
-        if not market["is_open"]:
-            return {
-                "status": "market_closed",
-                "message": f"Market closed. Time: {market['current_time_et']}",
-                "actions": [],
-            }
+        # Determine which watchlist to use
+        if crypto_only:
+            active_watchlist = CRYPTO_WATCHLIST
+            mode = "crypto"
+            seek_deployment = False  # Don't aggressively deploy into crypto
+        else:
+            # Check if market is open for stocks
+            market = get_market_status()
+            if not market["is_open"]:
+                return {
+                    "status": "market_closed",
+                    "message": f"Stock market closed. Time: {market['current_time_et']}",
+                    "actions": [],
+                }
+            active_watchlist = WATCHLIST
+            mode = "stocks"
+
+            # During market hours, check if we should seek deployment
+            positions = self.alpaca.get_positions()
+            current_invested = sum(p["market_value"] for p in positions)
+            budget_remaining = MAX_PORTFOLIO_VALUE - current_invested
+            seek_deployment = budget_remaining > MAX_PORTFOLIO_VALUE * 0.5  # Seek if >50% budget available
+
+        if VERBOSE:
+            print(f"[Drift] Scanning {mode}: {len(active_watchlist)} assets")
+            if seek_deployment:
+                print(f"[Drift] Cash >50% of budget - actively seeking entry opportunities")
 
         # Step 1: Light scan
-        scan_result = self._light_scan()
+        scan_result = self._light_scan(watchlist=active_watchlist, seek_deployment=seek_deployment)
 
         # Step 2: Check for triggers
         triggers = scan_result.get("triggers", [])
@@ -119,24 +144,53 @@ class DriftAgent:
             "cycle_time_seconds": (datetime.now() - cycle_start).total_seconds(),
         }
 
-    def _light_scan(self) -> dict:
+    def _light_scan(self, watchlist: list = None, seek_deployment: bool = False) -> dict:
         """
         Light scan of portfolio and watchlist.
 
         Quick check to identify what needs attention.
+
+        Args:
+            watchlist: List of symbols to scan. Defaults to WATCHLIST.
+            seek_deployment: If True, actively look for entry opportunities (stocks only, during market hours)
         """
+        if watchlist is None:
+            watchlist = WATCHLIST
+
         try:
             # Get current state
             account = self.alpaca.get_account()
             positions = self.alpaca.get_positions()
             pdt_status = self.pdt.get_status()
 
+            # Filter positions to only those in our active watchlist
+            # (so crypto scan only sees crypto positions, stock scan only sees stock positions)
+            watchlist_set = set(watchlist)
+            relevant_positions = [p for p in positions if p["symbol"] in watchlist_set]
+
             # Get prices for watchlist (minus what we already hold)
-            held_symbols = [p["symbol"] for p in positions]
-            watchlist_to_check = [s for s in WATCHLIST if s not in held_symbols]
+            held_symbols = [p["symbol"] for p in relevant_positions]
+            watchlist_to_check = [s for s in watchlist if s not in held_symbols]
 
             # Build context for LLM
             context = self._build_scan_context(account, positions, pdt_status)
+
+            # Check market regime (SPY as proxy) if seeking deployment
+            market_context = ""
+            if seek_deployment:
+                spy_price = self.alpaca.get_latest_price("SPY")
+                # Get SPY's recent performance from bars
+                spy_bars = self.alpaca.get_bars("SPY", days=5)
+                if spy_bars and len(spy_bars) >= 2:
+                    prev_close = spy_bars[-2]["close"]
+                    today_change = (spy_price - prev_close) / prev_close * 100 if spy_price else 0
+                    market_context = f"\n\nMARKET REGIME:\nSPY today: {today_change:+.2f}%"
+                    if today_change < -2:
+                        market_context += " (CAUTION: Market down significantly - research WHY before deploying)"
+                    elif today_change > 2:
+                        market_context += " (Market strong)"
+                    else:
+                        market_context += " (Market stable)"
 
             # Get news for held positions
             if positions:
@@ -145,17 +199,31 @@ class DriftAgent:
                 for item in news[:5]:
                     context += f"- {item['headline']} ({', '.join(item['symbols'])})\n"
 
+            # Build different prompts based on mode
+            if seek_deployment:
+                deployment_instruction = f"""
+DEPLOYMENT MODE: You have cash to deploy (>50% of budget in cash).
+Available to buy: {', '.join(watchlist_to_check[:15])}
+{market_context}
+
+Look for 1-2 stocks that might be good entry opportunities RIGHT NOW.
+Consider: recent pullbacks in strong stocks, positive momentum, good risk/reward setups.
+If the market is down big, be extra cautious - flag for research but note the risk."""
+            else:
+                deployment_instruction = ""
+
             # Ask LLM to scan
             scan_prompt = f"""You are Drift, a curious skeptic swing trader. Do a quick scan.
 
 CURRENT STATE:
 {context}
+{deployment_instruction}
 
 TASK: Quick scan (30 seconds). Identify anything that needs deeper research:
 - Positions with big moves (>3% either direction)
 - Positions with relevant news
 - Watchlist stocks with unusual moves
-- Anything else notable
+{f"- Entry opportunities (you have cash to deploy)" if seek_deployment else ""}
 
 Respond in JSON:
 {{
@@ -167,7 +235,7 @@ Respond in JSON:
     "all_stable": true/false
 }}
 
-If nothing needs attention, return empty triggers list.
+{"If nothing needs attention AND no good entry opportunities, return empty triggers list." if seek_deployment else "If nothing needs attention, return empty triggers list."}
 Be selective - only flag things worth researching."""
 
             response = self._call_llm(scan_prompt, max_tokens=500)
@@ -315,9 +383,17 @@ Respond with your research process, then final JSON:
         if len(positions) >= MAX_POSITIONS:
             return {"status": "skipped", "reason": f"Max positions ({MAX_POSITIONS}) reached"}
 
-        # Calculate position size
-        cash = self.alpaca.get_cash()
-        size = get_position_size(confidence, cash)
+        # Calculate position size based on confidence and budget remaining
+        current_invested = sum(p["market_value"] for p in positions)
+        budget_remaining = MAX_PORTFOLIO_VALUE - current_invested
+
+        if budget_remaining <= 0:
+            return {"status": "skipped", "reason": f"Budget exhausted (${MAX_PORTFOLIO_VALUE} deployed)"}
+
+        if VERBOSE:
+            print(f"[Drift] Budget: ${MAX_PORTFOLIO_VALUE} | Invested: ${current_invested:.2f} | Remaining: ${budget_remaining:.2f}")
+
+        size = get_position_size(confidence, budget_remaining)
 
         if size <= 0:
             return {"status": "skipped", "reason": "Insufficient funds or confidence"}
@@ -459,104 +535,64 @@ Respond with your research process, then final JSON:
 
     def _call_llm_with_tools(self, prompt: str) -> str:
         """
-        Call LLM with WebSearch tool for research.
+        Call LLM with Anthropic's native WebSearch tool for research.
 
-        This is where we go agentic.
+        Uses server-side web search - the API executes searches automatically.
         """
         if not self.anthropic:
             return "{}"
 
-        # Define web search tool
+        # Use Anthropic's native web search tool (server-side execution)
         tools = [
             {
+                "type": "web_search_20250305",
                 "name": "web_search",
-                "description": "Search the web for current information about stocks, news, and market sentiment.",
-                "input_schema": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The search query",
-                        },
-                    },
-                    "required": ["query"],
-                },
-            },
+                "max_uses": MAX_RESEARCH_SEARCHES,  # Cap searches per research session
+            }
         ]
 
-        messages = [{"role": "user", "content": prompt}]
-        searches_performed = []
+        try:
+            # Single call - Anthropic handles web search execution server-side
+            response = self.anthropic.messages.create(
+                model=RESEARCH_MODEL,
+                max_tokens=2000,
+                tools=tools,
+                messages=[{"role": "user", "content": prompt}],
+            )
 
-        # Agentic loop - let LLM use tools
-        max_iterations = 6  # Cap iterations
-        for _ in range(max_iterations):
-            try:
-                response = self.anthropic.messages.create(
+            # Log search usage if verbose
+            if VERBOSE and hasattr(response, 'usage'):
+                usage = response.usage
+                if hasattr(usage, 'server_tool_use'):
+                    searches = getattr(usage.server_tool_use, 'web_search_requests', 0)
+                    if searches > 0:
+                        print(f"[Drift] Web searches performed: {searches}")
+
+            # Handle pause_turn (long-running turn was paused)
+            if response.stop_reason == "pause_turn":
+                # Continue the turn
+                messages = [{"role": "user", "content": prompt}]
+                messages.append({"role": "assistant", "content": response.content})
+
+                continuation = self.anthropic.messages.create(
                     model=RESEARCH_MODEL,
                     max_tokens=2000,
                     tools=tools,
                     messages=messages,
                 )
+                response = continuation
 
-                # Check if we need to handle tool use
-                if response.stop_reason == "tool_use":
-                    # Find tool use block
-                    tool_use = None
-                    text_content = ""
+            # Extract text from response (may include citations)
+            final_text = ""
+            for block in response.content:
+                if hasattr(block, "text"):
+                    final_text += block.text
 
-                    for block in response.content:
-                        if block.type == "tool_use":
-                            tool_use = block
-                        elif block.type == "text":
-                            text_content += block.text
+            return final_text
 
-                    if tool_use and tool_use.name == "web_search":
-                        query = tool_use.input.get("query", "")
-                        searches_performed.append(query)
-
-                        if VERBOSE:
-                            print(f"[Drift] WebSearch: {query}")
-
-                        # Execute search (using Anthropic's built-in or our own)
-                        search_result = self._execute_web_search(query)
-
-                        # Add assistant message and tool result
-                        messages.append({"role": "assistant", "content": response.content})
-                        messages.append({
-                            "role": "user",
-                            "content": [
-                                {
-                                    "type": "tool_result",
-                                    "tool_use_id": tool_use.id,
-                                    "content": search_result,
-                                }
-                            ],
-                        })
-                        continue
-
-                # No more tool use, get final response
-                final_text = ""
-                for block in response.content:
-                    if hasattr(block, "text"):
-                        final_text += block.text
-
-                return final_text
-
-            except Exception as e:
-                print(f"[Drift] Research error: {e}")
-                return "{}"
-
-        return "{}"
-
-    def _execute_web_search(self, query: str) -> str:
-        """
-        Execute a web search.
-
-        Uses Anthropic's web search if available, or returns placeholder.
-        """
-        # For now, return a placeholder - in production, integrate with actual search
-        # The claude-agent-sdk would handle this automatically
-        return f"Search results for '{query}': [Simulated - integrate real search API]"
+        except Exception as e:
+            print(f"[Drift] Research error: {e}")
+            return "{}"
 
     def _extract_json(self, text: str) -> dict:
         """Extract JSON from LLM response."""

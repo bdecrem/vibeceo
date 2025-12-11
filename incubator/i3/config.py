@@ -13,7 +13,8 @@ import os
 from pathlib import Path
 
 # Load .env.local from sms-bot if credentials not already set
-if not os.getenv("ALPACA_API_KEY"):
+# i3 (Vega) uses its OWN Alpaca account: ALPACA_API_KEY_I3 / ALPACA_SECRET_KEY_I3
+if not os.getenv("ALPACA_API_KEY_I3"):
     env_file = Path(__file__).parent.parent.parent / "sms-bot" / ".env.local"
     if env_file.exists():
         with open(env_file) as f:
@@ -67,9 +68,10 @@ STOP_LOSS_PCT = int(os.getenv("STOP_LOSS_PCT", "5"))
 MIN_CONFIDENCE = int(os.getenv("MIN_CONFIDENCE", "70"))  # Min confidence to execute trade
 
 # ============ ALPACA ============
-ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
-ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
-ALPACA_BASE_URL = os.getenv("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
+# i3 (Vega) uses its own dedicated Alpaca account
+ALPACA_API_KEY = os.getenv("ALPACA_API_KEY_I3")
+ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY_I3")
+ALPACA_BASE_URL = os.getenv("ALPACA_BASE_URL_I3", "https://paper-api.alpaca.markets")
 
 # ============ LOGGING ============
 VERBOSE = os.getenv("VERBOSE", "true").lower() == "true"

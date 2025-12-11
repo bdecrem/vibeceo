@@ -1,0 +1,74 @@
+{
+  "generated_at": "2025-12-10T00:14:12Z",
+  "valid_until": "2025-12-16T23:59:59Z",
+  "thesis": "Fed rate cut expected but already priced in - market reaction depends on 2026 guidance and dot plot. Crypto weak on ETF outflows and extreme fear sentiment, while tech shows mixed signals with NVDA/MSFT still strong but facing valuation pressure. Week is defensive until Fed clarity emerges.",
+  "market_regime": "risk_off",
+  "focus_assets": [
+    "MSFT",
+    "NVDA",
+    "GOOGL",
+    "QQQ",
+    "SPY"
+  ],
+  "avoid_assets": [
+    "BTC/USD",
+    "ETH/USD",
+    "SOL/USD",
+    "DOGE/USD",
+    "MATIC/USD",
+    "ATOM/USD",
+    "TSLA"
+  ],
+  "biases": [
+    {
+      "asset": "MSFT",
+      "bias": "bullish",
+      "reasoning": "Strong Buy rating, Azure growth at 40%, $629 price target implies 28% upside. Most defensive mega-cap tech play with diversified revenue.",
+      "confidence": 78
+    },
+    {
+      "asset": "NVDA",
+      "bias": "neutral",
+      "reasoning": "Strong fundamentals (46% analyst upside target) but 12% pullback on valuation concerns. Wait for post-Fed clarity before adding exposure.",
+      "confidence": 65
+    },
+    {
+      "asset": "GOOGL",
+      "bias": "bullish",
+      "reasoning": "Up 69% YTD, Gemini 3 AI momentum, most profitable tech company ($124.5B annual earnings). Q3 first time over $100B quarterly revenue.",
+      "confidence": 75
+    },
+    {
+      "asset": "QQQ",
+      "bias": "neutral",
+      "reasoning": "Tech-heavy index facing rotation pressure as 10-year yields at 4.17%. Defensive stance until Fed provides 2026 clarity.",
+      "confidence": 60
+    },
+    {
+      "asset": "SPY",
+      "bias": "neutral",
+      "reasoning": "Trading at 6,840 near ATHs but waiting for Fed decision. Russell 2000 showing strength suggests potential rotation away from mega-caps.",
+      "confidence": 62
+    }
+  ],
+  "max_exposure_pct": 35,
+  "key_events": [
+    "Fed FOMC Meeting Dec 9-10 - 87% odds of 25bps cut, focus on 2026 dot plot guidance",
+    "JOLTS Job Openings data Dec 9 10:00 ET",
+    "Nov CPI report Dec 18 - inflation key to 2026 Fed path",
+    "Earnings: AutoZone, Campbell's, Ferguson (Dec 9); Palo Alto Networks, Ross Stores (Dec 9)",
+    "Bitcoin ETF outflows continue - $2.7B from BlackRock IBIT over 5 weeks"
+  ],
+  "sources": [
+    "https://www.cnbc.com/2025/12/07/global-week-ahead-feds-december-decision-to-inform-worlds-central-banks.html",
+    "https://www.cbsnews.com/news/federal-reserve-december-2025-rate-cut-probability-fomc-meeting-economy/",
+    "https://markets.financialcontent.com/stocks/article/marketminute-2025-12-9-global-markets-brace-for-volatility-amid-geopolitical-tensions-and-central-bank-shifts-on-december-9-2025",
+    "https://ts2.tech/en/bitcoin-price-today-december-9-2025-btc-holds-90k-as-standard-chartered-slashes-target-and-fed-rate-cut-looms/",
+    "https://www.bloomberg.com/news/articles/2025-12-05/blackrock-bitcoin-btc-etf-loses-2-7-billion-in-longest-outflows-run-ibit",
+    "https://ts2.tech/en/us-stock-market-today-december-9-2025-wall-street-pauses-as-fed-rate-cut-decision-nears/",
+    "https://www.tipranks.com/news/nvda-vs-msft-vs-googl-which-strong-buy-magnificent-7-stock-has-more-upside-according-to-analysts",
+    "https://coinmarketcap.com/charts/fear-and-greed-index/",
+    "https://www.coindesk.com/markets/2025/12/08/here-s-how-bitcoin-xrp-ether-and-solana-may-trade-today",
+    "https://www.bls.gov/schedule/news_release/cpi.htm"
+  ]
+}

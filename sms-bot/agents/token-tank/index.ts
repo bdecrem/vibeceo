@@ -1,15 +1,13 @@
 /**
  * Token Tank Daily - SMS + Twitter Distribution
  *
- * Reads the latest blog post from incubator/BLOG.md, extracts the tweetable
+ * Fetches the latest blog post from GitHub raw (BLOG.md), extracts the tweetable
  * summary, posts to Twitter, and sends to SMS subscribers.
  *
- * The blog post is written by Arc (the community manager) as part of daily work.
- * This module just handles distribution.
+ * The blog post is written by Arc locally and pushed to GitHub.
+ * This module fetches from GitHub raw (same source the website uses) and handles distribution.
  */
 
-import * as fs from "node:fs/promises";
-import * as path from "node:path";
 import { createShortLink } from "../../lib/utils/shortlink-service.js";
 import { getAgentSubscribers, markAgentReportSent } from "../../lib/agent-subscriptions.js";
 import type { TwilioClient } from "../../lib/sms/webhooks.js";
@@ -23,37 +21,36 @@ export const TOKEN_TANK_AGENT_SLUG = "token-tank";
 const DEFAULT_BROADCAST_HOUR = parseInt(process.env.TOKEN_TANK_BROADCAST_HOUR || "8", 10);
 const DEFAULT_BROADCAST_MINUTE = parseInt(process.env.TOKEN_TANK_BROADCAST_MINUTE || "0", 10);
 
-// Path to incubator folder (relative to sms-bot)
-const INCUBATOR_PATH = path.resolve(
-  process.cwd(),
-  process.env.INCUBATOR_PATH || "../incubator"
-);
-
-// Blog URL base
+// GitHub raw URL for BLOG.md (same source the website uses)
+const BLOG_MD_URL = "https://raw.githubusercontent.com/bdecrem/vibeceo/main/incubator/BLOG.md";
 const BLOG_BASE_URL = "https://tokentank.io/token-tank/#blog";
 
 interface LatestBlogPost {
   date: string;
   title: string;
   tweetSummary: string;
-  fullContent: string;
 }
 
 /**
- * Read and parse the latest blog post from BLOG.md
+ * Fetch and parse the latest blog post from GitHub raw
  *
- * Expected format:
- * ## December 10, 2025: Title Here
- *
- * > Tweetable summary under 280 characters.
- *
- * Full content...
+ * Fetches BLOG.md directly from GitHub (same source the website uses)
+ * and parses the markdown to extract:
+ * - Date (e.g., "December 10, 2025")
+ * - Title (e.g., "Six Agents, Three Traders, Zero Dollars")
+ * - Tweet summary (the blockquote text starting with >)
  */
 export async function getLatestBlogPost(): Promise<LatestBlogPost | null> {
-  const blogPath = path.join(INCUBATOR_PATH, "BLOG.md");
-
   try {
-    const content = await fs.readFile(blogPath, "utf-8");
+    console.log(`[token-tank] Fetching BLOG.md from GitHub...`);
+
+    const response = await fetch(BLOG_MD_URL);
+    if (!response.ok) {
+      console.error(`[token-tank] Failed to fetch BLOG.md: ${response.status}`);
+      return null;
+    }
+
+    const content = await response.text();
 
     // Split by "---" to get individual posts
     const sections = content.split(/\n---\n/);
@@ -73,7 +70,6 @@ export async function getLatestBlogPost(): Promise<LatestBlogPost | null> {
 
       const tweetSummary = summaryMatch[1].trim();
 
-      // Validate it's under 280 chars (tweet limit)
       if (tweetSummary.length > 280) {
         console.warn(`[token-tank] Tweet summary too long (${tweetSummary.length} chars), truncating`);
       }
@@ -82,13 +78,13 @@ export async function getLatestBlogPost(): Promise<LatestBlogPost | null> {
         date: dateStr,
         title,
         tweetSummary: tweetSummary.substring(0, 280),
-        fullContent: section.trim(),
       };
     }
 
+    console.error("[token-tank] No valid blog post found in BLOG.md");
     return null;
   } catch (error) {
-    console.error("[token-tank] Failed to read BLOG.md:", error);
+    console.error("[token-tank] Failed to fetch blog post:", error);
     return null;
   }
 }
@@ -182,8 +178,9 @@ export async function broadcastTokenTankUpdate(
 /**
  * Register the daily Token Tank broadcast job
  *
- * Note: This does NOT generate the blog post. Arc writes the blog post
- * as part of daily work. This job just broadcasts it.
+ * At 8am PT, fetches the latest blog post from GitHub raw and broadcasts
+ * it via Twitter and SMS. Arc writes and pushes the blog post; this job
+ * reads from GitHub so it always has fresh content.
  */
 export function registerTokenTankDailyJob(twilioClient: TwilioClient): void {
   registerDailyJob({

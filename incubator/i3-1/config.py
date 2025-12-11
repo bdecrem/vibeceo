@@ -62,6 +62,7 @@ STRATEGY_FILE = os.path.join(STATE_DIR, "strategy.json")
 EXECUTION_LOG_FILE = os.path.join(STATE_DIR, "execution_log.json")
 
 # ============ ALPACA ============
+# i3-1 (Pulse) uses main Alpaca account in PAPER mode
 ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
 ALPACA_BASE_URL = os.getenv("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")

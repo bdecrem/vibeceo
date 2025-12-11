@@ -12,7 +12,12 @@ from typing import Optional
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
 TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE_NUMBER")
-NOTIFY_PHONE_NUMBER = os.getenv("NOTIFY_PHONE_NUMBER", "+16508989508")  # Default admin
+
+# Phone numbers to notify on trades (same as i3)
+NOTIFY_PHONES = [
+    "+16508989508",  # Bart
+    "+14155056910",  # Partner
+]
 
 
 def is_sms_configured() -> bool:
@@ -30,7 +35,7 @@ def send_sms(message: str, to_number: str = None) -> bool:
 
     Args:
         message: Message text (max 1600 chars for SMS)
-        to_number: Recipient phone number (default: NOTIFY_PHONE_NUMBER)
+        to_number: Recipient phone number (default: all NOTIFY_PHONES)
 
     Returns:
         True if sent successfully, False otherwise
@@ -39,7 +44,8 @@ def send_sms(message: str, to_number: str = None) -> bool:
         print("⚠️  SMS not configured (missing Twilio credentials)")
         return False
 
-    to_number = to_number or NOTIFY_PHONE_NUMBER
+    # If specific number provided, send only to that; otherwise send to all
+    recipients = [to_number] if to_number else NOTIFY_PHONES
 
     try:
         from twilio.rest import Client
@@ -50,14 +56,20 @@ def send_sms(message: str, to_number: str = None) -> bool:
         if len(message) > 1600:
             message = message[:1597] + "..."
 
-        sms = client.messages.create(
-            body=message,
-            from_=TWILIO_PHONE_NUMBER,
-            to=to_number,
-        )
+        success = True
+        for phone in recipients:
+            try:
+                sms = client.messages.create(
+                    body=message,
+                    from_=TWILIO_PHONE_NUMBER,
+                    to=phone,
+                )
+                print(f"📱 SMS sent to {phone}: {sms.sid}")
+            except Exception as e:
+                print(f"❌ SMS failed to {phone}: {e}")
+                success = False
 
-        print(f"📱 SMS sent: {sms.sid}")
-        return True
+        return success
 
     except ImportError:
         print("⚠️  twilio package not installed")
@@ -90,7 +102,7 @@ def send_trade_alert(
     emoji = "🟢" if signal == "BUY" else "🔴"
 
     message = f"""
-{emoji} i3-1 TRADE ALERT
+{emoji} Pulse TRADE ALERT
 
 {signal} {asset}
 Confidence: {confidence}%
@@ -124,7 +136,7 @@ def send_daily_summary(
     pnl_emoji = "📈" if pnl_pct >= 0 else "📉"
 
     message = f"""
-📊 i3-1 DAILY SUMMARY
+📊 Pulse DAILY SUMMARY
 
 Portfolio: ${portfolio_value:,.2f}
 Today's P&L: {pnl_pct:+.2f}% {pnl_emoji}
@@ -159,7 +171,7 @@ def send_strategy_update(
     }.get(market_regime, "❓")
 
     message = f"""
-🧠 i3-1 NEW STRATEGY
+🧠 Pulse NEW STRATEGY
 
 {regime_emoji} Regime: {market_regime.upper()}
 

@@ -23,6 +23,7 @@ from config import (
     TRADING_MODE,
     VERBOSE,
 )
+from notify import notify_trade
 
 # US Eastern timezone for stock market
 ET = pytz.timezone('America/New_York')
@@ -34,13 +35,13 @@ MARKET_CLOSE = (16, 0)  # 4:00 PM ET
 
 class AlpacaClient:
     """
-    Wrapper for Alpaca trading API (stocks only).
+    Wrapper for Alpaca trading API (stocks + crypto).
 
     Handles:
     - Account info and portfolio value
     - Position management
     - Order execution (market orders)
-    - Price and news data
+    - Price and news data for stocks and crypto
     """
 
     def __init__(self, paper: bool = True):
@@ -48,6 +49,7 @@ class AlpacaClient:
         self.paper = paper
         self._trading_client = None
         self._data_client = None
+        self._crypto_data_client = None
         self._news_client = None
 
         if not ALPACA_API_KEY or not ALPACA_SECRET_KEY:
@@ -69,6 +71,7 @@ class AlpacaClient:
         try:
             from alpaca.trading.client import TradingClient
             from alpaca.data.historical import StockHistoricalDataClient, NewsClient
+            from alpaca.data.historical import CryptoHistoricalDataClient
 
             self._trading_client = TradingClient(
                 api_key=ALPACA_API_KEY,
@@ -80,6 +83,9 @@ class AlpacaClient:
                 api_key=ALPACA_API_KEY,
                 secret_key=ALPACA_SECRET_KEY,
             )
+
+            # Crypto data client (no auth needed for market data)
+            self._crypto_data_client = CryptoHistoricalDataClient()
 
             self._news_client = NewsClient(
                 api_key=ALPACA_API_KEY,
@@ -150,10 +156,10 @@ class AlpacaClient:
 
     def buy(self, symbol: str, notional: float, reason: str = "") -> Optional[dict]:
         """
-        Buy a stock using dollar amount (fractional shares).
+        Buy a stock or crypto using dollar amount (fractional shares).
 
         Args:
-            symbol: Stock symbol (e.g., "AAPL")
+            symbol: Stock symbol (e.g., "AAPL") or crypto (e.g., "BTC/USD")
             notional: Dollar amount to spend
             reason: Reason for trade (for logging)
 
@@ -164,11 +170,14 @@ class AlpacaClient:
             from alpaca.trading.requests import MarketOrderRequest
             from alpaca.trading.enums import OrderSide, TimeInForce
 
+            # Crypto requires GTC (good til canceled), stocks use DAY
+            tif = TimeInForce.GTC if self._is_crypto(symbol) else TimeInForce.DAY
+
             order_data = MarketOrderRequest(
                 symbol=symbol,
                 notional=notional,
                 side=OrderSide.BUY,
-                time_in_force=TimeInForce.DAY,  # Required for fractional orders
+                time_in_force=tif,
             )
 
             order = self._trading_client.submit_order(order_data)
@@ -186,6 +195,9 @@ class AlpacaClient:
             if VERBOSE:
                 print(f"[Drift] BUY {symbol} ${notional:.2f} - {reason}")
 
+            # Send SMS notification
+            notify_trade("BUY", symbol, notional, reason)
+
             return result
 
         except Exception as e:
@@ -194,10 +206,10 @@ class AlpacaClient:
 
     def sell(self, symbol: str, qty: Optional[float] = None, reason: str = "") -> Optional[dict]:
         """
-        Sell a stock position.
+        Sell a stock or crypto position.
 
         Args:
-            symbol: Stock symbol
+            symbol: Stock symbol or crypto (e.g., "BTC/USD")
             qty: Quantity to sell (None = entire position)
             reason: Reason for trade
 
@@ -216,11 +228,14 @@ class AlpacaClient:
                     return None
                 qty = position["qty"]
 
+            # Crypto requires GTC (good til canceled), stocks use DAY
+            tif = TimeInForce.GTC if self._is_crypto(symbol) else TimeInForce.DAY
+
             order_data = MarketOrderRequest(
                 symbol=symbol,
                 qty=qty,
                 side=OrderSide.SELL,
-                time_in_force=TimeInForce.DAY,
+                time_in_force=tif,
             )
 
             order = self._trading_client.submit_order(order_data)
@@ -238,19 +253,33 @@ class AlpacaClient:
             if VERBOSE:
                 print(f"[Drift] SELL {symbol} {qty} shares - {reason}")
 
+            # Send SMS notification
+            notify_trade("SELL", symbol, qty, reason)
+
             return result
 
         except Exception as e:
             print(f"[Drift] ERROR selling {symbol}: {e}")
             return None
 
-    def get_latest_price(self, symbol: str) -> Optional[float]:
-        """Get latest price for a stock."""
-        try:
-            from alpaca.data.requests import StockLatestQuoteRequest
+    def _is_crypto(self, symbol: str) -> bool:
+        """Check if symbol is a crypto asset."""
+        # Crypto symbols are like "BTC/USD" or "BTCUSD" (positions)
+        crypto_bases = ["BTC", "ETH", "AVAX", "SOL", "DOGE", "SHIB", "LTC", "LINK", "UNI", "AAVE"]
+        symbol_upper = symbol.upper().replace("/", "")
+        return any(symbol_upper.startswith(base) and symbol_upper.endswith("USD") for base in crypto_bases)
 
-            request = StockLatestQuoteRequest(symbol_or_symbols=symbol)
-            quotes = self._data_client.get_stock_latest_quote(request)
+    def get_latest_price(self, symbol: str) -> Optional[float]:
+        """Get latest price for a stock or crypto."""
+        try:
+            if self._is_crypto(symbol):
+                from alpaca.data.requests import CryptoLatestQuoteRequest
+                request = CryptoLatestQuoteRequest(symbol_or_symbols=symbol)
+                quotes = self._crypto_data_client.get_crypto_latest_quote(request)
+            else:
+                from alpaca.data.requests import StockLatestQuoteRequest
+                request = StockLatestQuoteRequest(symbol_or_symbols=symbol)
+                quotes = self._data_client.get_stock_latest_quote(request)
 
             if symbol in quotes:
                 quote = quotes[symbol]
@@ -266,27 +295,48 @@ class AlpacaClient:
             return None
 
     def get_latest_prices(self, symbols: list[str]) -> dict[str, float]:
-        """Get latest prices for multiple stocks."""
-        try:
-            from alpaca.data.requests import StockLatestQuoteRequest
+        """Get latest prices for multiple stocks/crypto."""
+        # Split symbols into stocks and crypto
+        stocks = [s for s in symbols if not self._is_crypto(s)]
+        crypto = [s for s in symbols if self._is_crypto(s)]
 
-            request = StockLatestQuoteRequest(symbol_or_symbols=symbols)
-            quotes = self._data_client.get_stock_latest_quote(request)
+        prices = {}
 
-            prices = {}
-            for symbol in symbols:
-                if symbol in quotes:
-                    quote = quotes[symbol]
-                    if quote.bid_price and quote.ask_price:
-                        prices[symbol] = (float(quote.bid_price) + float(quote.ask_price)) / 2
-                    elif quote.ask_price:
-                        prices[symbol] = float(quote.ask_price)
+        # Fetch stock prices
+        if stocks:
+            try:
+                from alpaca.data.requests import StockLatestQuoteRequest
+                request = StockLatestQuoteRequest(symbol_or_symbols=stocks)
+                quotes = self._data_client.get_stock_latest_quote(request)
 
-            return prices
+                for symbol in stocks:
+                    if symbol in quotes:
+                        quote = quotes[symbol]
+                        if quote.bid_price and quote.ask_price:
+                            prices[symbol] = (float(quote.bid_price) + float(quote.ask_price)) / 2
+                        elif quote.ask_price:
+                            prices[symbol] = float(quote.ask_price)
+            except Exception as e:
+                print(f"[Drift] ERROR getting stock prices: {e}")
 
-        except Exception as e:
-            print(f"[Drift] ERROR getting prices: {e}")
-            return {}
+        # Fetch crypto prices
+        if crypto:
+            try:
+                from alpaca.data.requests import CryptoLatestQuoteRequest
+                request = CryptoLatestQuoteRequest(symbol_or_symbols=crypto)
+                quotes = self._crypto_data_client.get_crypto_latest_quote(request)
+
+                for symbol in crypto:
+                    if symbol in quotes:
+                        quote = quotes[symbol]
+                        if quote.bid_price and quote.ask_price:
+                            prices[symbol] = (float(quote.bid_price) + float(quote.ask_price)) / 2
+                        elif quote.ask_price:
+                            prices[symbol] = float(quote.ask_price)
+            except Exception as e:
+                print(f"[Drift] ERROR getting crypto prices: {e}")
+
+        return prices
 
     def get_bars(self, symbol: str, days: int = 30) -> list[dict]:
         """Get historical daily bars."""

@@ -3,6 +3,7 @@
 Test episode generation with sample papers.
 
 Usage:
+    cd incubator/i5
     python scripts/test_episode.py
 """
 
@@ -11,6 +12,9 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Load config (this also loads env vars from sms-bot/.env.local)
+import config
 
 from src.generation import script_writer, audio_generator
 

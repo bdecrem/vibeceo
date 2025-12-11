@@ -4,6 +4,51 @@ Newest entries at top.
 
 ---
 
+## 2025-12-09: First Live Paper Trading Session
+
+**What happened**: Vega ran autonomously for several hours using Mode B (RSI-2 strategy). Made 4 trades.
+
+### Account Status (End of Session)
+| Metric | Value |
+|--------|-------|
+| Starting Balance | $100,000.00 |
+| Current Value | $98,653.94 |
+| **Gain/Loss** | **-$1,346.06 (-1.35%)** |
+| Cash Remaining | $6,105.43 |
+
+### Open Positions
+| Asset | Quantity | Entry Price | Current P/L |
+|-------|----------|-------------|-------------|
+| AVAX/USD | 1,694.6 | ~$14.50 | -$620.53 |
+| COIN | 72.8 | ~$274.68 | -$75.00 |
+| ETH/USD | 7.2 | ~$3,408 | -$444.79 |
+| SOL/USD | 178.0 | ~$137 | -$21.96 |
+
+### Observations
+- Vega correctly identified oversold conditions and entered positions
+- Market continued to dip after entry → unrealized losses
+- COIN position is unexpected (not in configured assets - may have been from earlier testing or config change)
+- Strategy is working as designed: bought dips, now waiting for recovery to sell
+
+### Config Changes Made During Session
+- Vega now uses dedicated Alpaca credentials: `ALPACA_API_KEY_I3` / `ALPACA_SECRET_KEY_I3`
+- Added SMS notifications on startup and trades (`i3_notify.py`)
+- Phone numbers: +1-650-898-9508, +1-415-505-6910
+
+### Agent Status
+- **Running**: Yes (press Ctrl+C to stop)
+- **Mode**: B (RSI-2 Technical)
+- **Check Interval**: 15 minutes
+
+### To Resume
+```bash
+cd incubator/i3
+source venv/bin/activate
+STRATEGY_MODE=B python agent.py
+```
+
+---
+
 ## 2025-12-09: Mode B Complete + SMS Notifications
 
 **What happened**: Full implementation of Larry Connors' RSI-2 mean reversion strategy with SMS trade alerts.

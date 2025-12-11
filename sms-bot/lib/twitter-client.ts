@@ -95,6 +95,29 @@ export interface TweetResult {
   error?: string;
 }
 
+export interface Tweet {
+  id: string;
+  text: string;
+  authorId: string;
+  authorUsername?: string;
+  authorName?: string;
+  createdAt?: string;
+  conversationId?: string;
+  inReplyToUserId?: string;
+}
+
+export interface MentionsResult {
+  success: boolean;
+  mentions?: Tweet[];
+  error?: string;
+}
+
+export interface SearchResult {
+  success: boolean;
+  tweets?: Tweet[];
+  error?: string;
+}
+
 export interface MediaUploadResult {
   success: boolean;
   mediaId?: string;
@@ -309,4 +332,289 @@ export async function postTweetWithImages(text: string, imagePaths: string[]): P
 
   // Post with all media
   return postTweet(text, mediaIds);
+}
+
+/**
+ * Get the authenticated user's ID
+ * Required for fetching mentions
+ */
+async function getAuthenticatedUserId(): Promise<string | null> {
+  const url = 'https://api.twitter.com/2/users/me';
+
+  try {
+    const authHeader = generateOAuthHeader('GET', url);
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Failed to get user ID:', data);
+      return null;
+    }
+
+    return data.data?.id || null;
+  } catch (error) {
+    console.error('[Twitter] Error getting user ID:', error);
+    return null;
+  }
+}
+
+/**
+ * Get recent mentions of the authenticated user
+ * @param maxResults - Number of mentions to fetch (default 10, max 100)
+ * @param sinceId - Only return mentions newer than this tweet ID
+ */
+export async function getMentions(maxResults: number = 10, sinceId?: string): Promise<MentionsResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  try {
+    // First get our user ID
+    const userId = await getAuthenticatedUserId();
+    if (!userId) {
+      return {
+        success: false,
+        error: 'Could not get authenticated user ID',
+      };
+    }
+
+    // Build query params object for OAuth signature
+    const queryParams: Record<string, string> = {
+      max_results: Math.min(maxResults, 100).toString(),
+      'tweet.fields': 'created_at,conversation_id,in_reply_to_user_id',
+      'expansions': 'author_id',
+      'user.fields': 'username,name',
+    };
+    if (sinceId) {
+      queryParams['since_id'] = sinceId;
+    }
+
+    const baseUrl = `https://api.twitter.com/2/users/${userId}/mentions`;
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+
+    // OAuth signature must include query params for GET requests
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Failed to get mentions:', data);
+      return {
+        success: false,
+        error: data.detail || data.title || JSON.stringify(data),
+      };
+    }
+
+    // Build user lookup map from expansions
+    const userMap = new Map<string, { username: string; name: string }>();
+    if (data.includes?.users) {
+      for (const user of data.includes.users) {
+        userMap.set(user.id, { username: user.username, name: user.name });
+      }
+    }
+
+    // Transform tweets
+    const mentions: Tweet[] = (data.data || []).map((tweet: any) => {
+      const user = userMap.get(tweet.author_id);
+      return {
+        id: tweet.id,
+        text: tweet.text,
+        authorId: tweet.author_id,
+        authorUsername: user?.username,
+        authorName: user?.name,
+        createdAt: tweet.created_at,
+        conversationId: tweet.conversation_id,
+        inReplyToUserId: tweet.in_reply_to_user_id,
+      };
+    });
+
+    console.log(`[Twitter] Fetched ${mentions.length} mentions`);
+
+    return {
+      success: true,
+      mentions,
+    };
+  } catch (error) {
+    console.error('[Twitter] Error getting mentions:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Search for recent tweets matching a query
+ * @param query - Search query (Twitter search syntax)
+ * @param maxResults - Number of tweets to fetch (default 10, max 100)
+ */
+export async function searchTweets(query: string, maxResults: number = 10): Promise<SearchResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  try {
+    // Build query params object for OAuth signature
+    const queryParams: Record<string, string> = {
+      query,
+      max_results: Math.min(Math.max(maxResults, 10), 100).toString(), // Twitter requires min 10
+      'tweet.fields': 'created_at,conversation_id,in_reply_to_user_id',
+      'expansions': 'author_id',
+      'user.fields': 'username,name',
+    };
+
+    const baseUrl = 'https://api.twitter.com/2/tweets/search/recent';
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+
+    // OAuth signature must include query params for GET requests
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Search failed:', data);
+      return {
+        success: false,
+        error: data.detail || data.title || JSON.stringify(data),
+      };
+    }
+
+    // Build user lookup map from expansions
+    const userMap = new Map<string, { username: string; name: string }>();
+    if (data.includes?.users) {
+      for (const user of data.includes.users) {
+        userMap.set(user.id, { username: user.username, name: user.name });
+      }
+    }
+
+    // Transform tweets
+    const tweets: Tweet[] = (data.data || []).map((tweet: any) => {
+      const user = userMap.get(tweet.author_id);
+      return {
+        id: tweet.id,
+        text: tweet.text,
+        authorId: tweet.author_id,
+        authorUsername: user?.username,
+        authorName: user?.name,
+        createdAt: tweet.created_at,
+        conversationId: tweet.conversation_id,
+        inReplyToUserId: tweet.in_reply_to_user_id,
+      };
+    });
+
+    console.log(`[Twitter] Search found ${tweets.length} tweets`);
+
+    return {
+      success: true,
+      tweets,
+    };
+  } catch (error) {
+    console.error('[Twitter] Search error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Reply to a specific tweet
+ * @param text - Reply text
+ * @param inReplyToTweetId - ID of the tweet to reply to
+ */
+export async function replyToTweet(text: string, inReplyToTweetId: string): Promise<TweetResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  if (text.length > 280) {
+    return {
+      success: false,
+      error: `Reply too long: ${text.length} characters (max 280)`,
+    };
+  }
+
+  const url = 'https://api.twitter.com/2/tweets';
+
+  try {
+    const authHeader = generateOAuthHeader('POST', url);
+
+    const payload = {
+      text,
+      reply: {
+        in_reply_to_tweet_id: inReplyToTweetId,
+      },
+    };
+
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Reply failed:', data);
+      return {
+        success: false,
+        error: data.detail || data.title || JSON.stringify(data),
+      };
+    }
+
+    const tweetId = data.data?.id;
+    const tweetUrl = tweetId ? `https://twitter.com/i/web/status/${tweetId}` : undefined;
+
+    console.log('[Twitter] Reply posted:', tweetId);
+
+    return {
+      success: true,
+      tweetId,
+      tweetUrl,
+    };
+  } catch (error) {
+    console.error('[Twitter] Reply error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
 }

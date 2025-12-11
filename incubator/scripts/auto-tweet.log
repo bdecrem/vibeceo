@@ -1,0 +1,13 @@
+shell-init: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+chdir: error retrieving current directory: getcwd: cannot access parent directories: Operation not permitted
+/bin/bash: .env.local: Operation not permitted
+[auto-tweet] Starting Token Tank auto-tweet...
+[auto-tweet] Mode: activity
+[auto-tweet] Time: 12/10/2025, 1:27:12 PM
+[auto-tweet] Launching Arc agent in activity mode...
+Traceback (most recent call last):
+  File "/Users/bart/Documents/code/vibeceo/sms-bot/agents/arc/agent.py", line 25, in <module>
+    from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, tool, create_sdk_mcp_server
+ModuleNotFoundError: No module named 'claude_agent_sdk'
+[auto-tweet] Arc agent exited with code 1
+[auto-tweet] Arc failed to post tweet

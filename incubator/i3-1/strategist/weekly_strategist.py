@@ -14,7 +14,7 @@ import json
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
-from claude_agent_sdk import ClaudeAgentOptions, query
+from claude_code_sdk import ClaudeCodeOptions, query
 
 # Assets we can trade (from config)
 ALL_ASSETS = {
@@ -142,7 +142,7 @@ async def run_strategist(output_path: Path, report_date: datetime, verbose: bool
         report_date: Date to generate strategy for
         verbose: Whether to print progress
     """
-    options = ClaudeAgentOptions(
+    options = ClaudeCodeOptions(
         permission_mode='acceptEdits',
         allowed_tools=['Read', 'Write', 'WebSearch', 'WebFetch'],
         cwd=str(output_path.parent),

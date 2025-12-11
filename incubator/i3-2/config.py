@@ -13,7 +13,7 @@ try:
     from dotenv import load_dotenv
     env_path = Path(__file__).parent.parent.parent / "sms-bot" / ".env.local"
     if env_path.exists():
-        load_dotenv(env_path)
+        load_dotenv(env_path, override=True)
 except ImportError:
     pass  # dotenv not installed, rely on shell env
 
@@ -42,10 +42,14 @@ WATCHLIST = [
     "SPY", "QQQ", "SMH", "XLF", "XLE",
 ]
 
+# Crypto assets - traded 24/7, scanned when stock market is closed
+CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]
+
 # ============ PORTFOLIO LIMITS ============
+MAX_PORTFOLIO_VALUE = 500  # Total budget agent can use
 MAX_POSITIONS = 12  # Max simultaneous positions
-MIN_POSITION_SIZE = 65  # Minimum $ per position
-MAX_POSITION_SIZE = 150  # Maximum $ per position (15% of $1000)
+MIN_POSITION_SIZE = 25  # Minimum $ per position
+MAX_POSITION_SIZE = 75  # Maximum $ per position (~15% of budget)
 CASH_RESERVE_PCT = 15  # Keep 15% cash for opportunities
 MAX_SECTOR_EXPOSURE_PCT = 40  # Max 40% in correlated positions
 
@@ -70,9 +74,15 @@ HIGH_CONFIDENCE_THRESHOLD = 75  # Scale up position size above this
 VERY_HIGH_CONFIDENCE_THRESHOLD = 85  # Max position size above this
 
 # ============ ALPACA ============
+# i3-2 (Drift) uses main Alpaca account in LIVE mode
+# Set TRADING_MODE=live when ready for real money
 ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
-ALPACA_BASE_URL = os.getenv("ALPACA_BASE_URL", "https://paper-api.alpaca.markets")
+# Use paper API by default, switch to live when TRADING_MODE=live
+ALPACA_BASE_URL = os.getenv(
+    "ALPACA_BASE_URL",
+    "https://api.alpaca.markets" if TRADING_MODE == "live" else "https://paper-api.alpaca.markets"
+)
 
 # ============ ANTHROPIC (for agentic research) ============
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
@@ -132,7 +142,8 @@ def print_config():
 ║  DRIFT (i3-2) - THE REASONING TRADER                         ║
 ╠══════════════════════════════════════════════════════════════╣
 ║  Trading Mode:     {TRADING_MODE.upper():10}  {"⚠️  REAL MONEY!" if TRADING_MODE == "live" else "📝 Paper"}
-║  Watchlist:        {len(WATCHLIST)} stocks
+║  Budget:           ${MAX_PORTFOLIO_VALUE}
+║  Watchlist:        {len(WATCHLIST)} stocks + {len(CRYPTO_WATCHLIST)} crypto
 ║  Max Positions:    {MAX_POSITIONS}
 ║  Position Size:    ${MIN_POSITION_SIZE}-${MAX_POSITION_SIZE}
 ║  Scan Interval:    {SCAN_INTERVAL_MINUTES} minutes

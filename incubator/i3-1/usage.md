@@ -7,15 +7,16 @@
 |------|-------|-----|-------|------|
 | 2025-12-09 | - | - | 0.5 | Forked from i3, housekeeping, strategy discussion |
 | 2025-12-09 | - | - | 2.0 | Implemented Weekly Strategist + Daily Executor architecture |
+| 2025-12-09 | - | - | 0.5 | First end-to-end test (strategist + executor) |
 
-**Week Total: 2.5 / 40 hours**
+**Week Total: 3.0 / 40 hours**
 
 ### claude-agent-sdk Usage
 | Date | Input Tokens | Output Tokens | Task |
 |------|--------------|---------------|------|
-| - | - | - | - |
+| 2025-12-09 | ~50,000 | ~10,000 | Weekly Strategist - market research via WebSearch |
 
-**Week Total: 0 / 1,000,000 input | 0 / 1,000,000 output**
+**Week Total: ~50,000 / 1,000,000 input | ~10,000 / 1,000,000 output**
 
 ### Human Assistance Requests
 | Date | Minutes | Request | Status |

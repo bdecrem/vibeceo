@@ -39,11 +39,12 @@ def run_once(agent: DriftAgent) -> dict:
 
 
 def run_loop(agent: DriftAgent):
-    """Run trading loop during market hours."""
+    """Run trading loop 24/7 - stocks during market hours, crypto after hours."""
     print("\n" + "=" * 60)
     print("DRIFT - CONTINUOUS TRADING MODE")
     print("=" * 60)
     print(f"Interval: {SCAN_INTERVAL_MINUTES} minutes")
+    print("Stocks: Market hours | Crypto: 24/7")
     print("Press Ctrl+C to stop")
     print("=" * 60)
 
@@ -52,14 +53,18 @@ def run_loop(agent: DriftAgent):
     try:
         while True:
             market = get_market_status()
+            cycle_count += 1
 
             if market["is_open"]:
-                cycle_count += 1
-                print(f"\n--- Cycle {cycle_count} ---")
-                run_once(agent)
+                # Market open: scan stocks
+                print(f"\n--- Cycle {cycle_count} (stocks) ---")
+                result = agent.run_cycle(crypto_only=False)
             else:
-                print(f"\n[{datetime.now(ET).strftime('%H:%M:%S ET')}] "
-                      f"Market closed ({market['weekday']}). Waiting...")
+                # Market closed: scan crypto only
+                print(f"\n--- Cycle {cycle_count} (crypto) ---")
+                result = agent.run_cycle(crypto_only=True)
+
+            print(f"[{datetime.now(ET).strftime('%H:%M:%S ET')}] {result['status']}: {result['message']}")
 
             # Wait for next cycle
             time.sleep(SCAN_INTERVAL_MINUTES * 60)

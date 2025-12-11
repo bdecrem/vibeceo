@@ -158,6 +158,58 @@ Break-even: ~2.3% monthly return. Achievable for swing trading.
 
 ---
 
+## 2025-12-10: Ready to Run - Full System Tested
+
+**What happened:** Completed all implementation and testing. Drift is ready for live paper trading.
+
+**Session accomplishments:**
+
+1. **Fixed web search** - Switched from placeholder to Anthropic's native `web_search_20250305` tool. Research mode now does real web searches ($0.01/search).
+
+2. **Added crypto support** - BTC/USD and ETH/USD trade 24/7 when stock market is closed. Fixed Alpaca client to handle crypto (different `time_in_force`, separate data client, symbol format detection).
+
+3. **Fixed crypto order issues:**
+   - `time_in_force` must be GTC for crypto (not DAY)
+   - Positions return as `BTCUSD` but orders use `BTC/USD`
+   - Updated `_is_crypto()` to handle both formats
+
+4. **Added $100 budget cap** - `MAX_PORTFOLIO_VALUE = 100` limits how much the agent can deploy, even if account has more.
+
+5. **Added deployment-seeking behavior:**
+   - During market hours: if cash >50% of budget, actively looks for entry opportunities
+   - Checks SPY for market regime - warns if market down >2%
+   - After hours (crypto): passive mode, only acts on triggers
+   - Never blindly buys into a crash
+
+6. **Created integration test** - `test_all.py` covers account access, prices, crypto detection, buy/sell. Run after changes.
+
+**Current config:**
+- Budget: $100
+- Position size: $10-$50
+- Watchlist: 23 stocks + 2 crypto (BTC, ETH)
+- Scan interval: 15 minutes
+- Min confidence to trade: 55%
+
+**Files created/modified:**
+- `agent.py` - Added crypto_only mode, seek_deployment logic, market regime check
+- `config.py` - Added MAX_PORTFOLIO_VALUE, CRYPTO_WATCHLIST, adjusted position sizes
+- `trading/alpaca_client.py` - Added crypto data client, fixed buy/sell for crypto
+- `test_all.py` - Integration test suite
+- `test_research.py`, `test_trade.py`, `test_sell.py` - Manual test scripts
+
+**To run:**
+```bash
+cd incubator/i3-2
+./venv/bin/python run.py --loop
+```
+
+**Next steps:**
+- Run paper test overnight/through market hours
+- Monitor for any issues
+- If stable, consider switching to live with real $100
+
+---
+
 ## 2025-12-10: Phase 1 Implementation Complete
 
 **What happened**: Built and tested the full v1 implementation. Drift can now run.
