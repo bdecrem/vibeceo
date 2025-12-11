@@ -1,0 +1,82 @@
+# i5 Configuration
+
+project:
+  name: "i5"
+  description: "Daily Research Intelligence Podcast"
+
+sources:
+  arxiv:
+    enabled: true
+    categories:
+      - cs.AI
+      - cs.LG
+      - cs.CL
+      - cs.SE
+      - stat.ML
+      - cs.IR
+      - cs.HC
+    daily_limit: 200
+
+  hackernews:
+    enabled: true
+    min_score: 10
+    keywords:
+      - arxiv
+      - paper
+      - research
+
+  reddit:
+    enabled: true
+    subreddits:
+      - MachineLearning
+      - LocalLLaMA
+      - artificial
+    min_upvotes: 20
+
+  backlog:
+    enabled: true
+    daily_sample: 50
+    database_path: "data/backlog.db"
+
+screening:
+  stage1:
+    model: "claude-haiku"
+    pass_rate_target: 0.15
+
+  stage2:
+    model: "claude-sonnet"
+    pass_rate_target: 0.30
+
+selection:
+  daily_picks: 4
+  backup_count: 4
+  max_per_category: 2
+
+  scoring_weights:
+    stage2_score: 0.4
+    source_engagement: 0.3
+    recency: 0.1
+    diversity: 0.2
+
+generation:
+  script_model: "claude-sonnet"
+
+audio:
+  provider: "elevenlabs"
+  intro_music: "assets/intro.mp3"
+  outro_music: "assets/outro.mp3"
+
+publishing:
+  podcast_host: "transistor"
+  publish_time: "06:00"
+  timezone: "America/Los_Angeles"
+
+  twitter:
+    enabled: true
+    clips_per_episode: 4
+    clip_duration_sec: 75
+
+review:
+  enabled: true
+  timeout_hours: 2
+  auto_publish_on_timeout: false
