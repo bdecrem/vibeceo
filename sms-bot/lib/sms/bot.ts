@@ -17,6 +17,7 @@ import { registerArxivGraphCollectionJob, registerArxivGraphBroadcastJob } from 
 import { registerAIRDailyJob } from "../../agents/air-personalized/index.js";
 import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channel-based recruiting with claude-agent-sdk
 import { registerQueueProcessorJob } from "../scheduler/queue-processor.js"; // Message queue processor
+import { registerTokenTankDailyJob } from "../../agents/token-tank/index.js"; // Token Tank daily updates
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -60,6 +61,7 @@ export async function startSmsBot(): Promise<void> {
     registerArxivGraphBroadcastJob(twilioClient); // arXiv: broadcast report to subscribers at 7:30am PT
     registerAIRDailyJob(twilioClient); // AIR (AI Research) - personalized research reports
     registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
+    registerTokenTankDailyJob(twilioClient); // TT - Token Tank daily updates at 8am PT
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
