@@ -9,7 +9,7 @@
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>cd /Users/bart/Documents/code/vibeceo/sms-bot && source .env.local && export TOKENTANK_AUTO_TWEET=1 && /opt/homebrew/bin/npx tsx ../incubator/scripts/auto-tweet.ts</string>
+        <string>cd /Users/bart/Documents/code/vibeceo/sms-bot && source .env.local && export TOKENTANK_AUTO_TWEET=1 && /opt/homebrew/bin/npx tsx ../incubator/scripts/auto-tweet.ts morning</string>
     </array>
 
     <key>StartCalendarInterval</key>
@@ -32,7 +32,7 @@
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
-        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+        <string>/opt/homebrew/opt/python@3.13/libexec/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     </dict>
 </dict>
 </plist>

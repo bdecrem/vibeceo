@@ -3,28 +3,28 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.tokentank.morning-tweet</string>
+    <string>com.tokentank.goodmorning</string>
 
     <key>ProgramArguments</key>
     <array>
         <string>/bin/bash</string>
         <string>-c</string>
-        <string>cd /Users/bart/Documents/code/vibeceo/sms-bot && source .env.local && export TOKENTANK_AUTO_TWEET=1 && /opt/homebrew/bin/npx tsx ../incubator/scripts/auto-tweet.ts daily</string>
+        <string>cd /Users/bart/Documents/code/vibeceo/sms-bot && source .env.local && export TOKENTANK_AUTO_TWEET=1 && /opt/homebrew/bin/npx tsx ../incubator/scripts/auto-tweet.ts goodmorning</string>
     </array>
 
     <key>StartCalendarInterval</key>
     <dict>
         <key>Hour</key>
-        <integer>8</integer>
+        <integer>7</integer>
         <key>Minute</key>
-        <integer>0</integer>
+        <integer>30</integer>
     </dict>
 
     <key>StandardOutPath</key>
-    <string>/Users/bart/Documents/code/vibeceo/incubator/scripts/morning-tweet.log</string>
+    <string>/Users/bart/Documents/code/vibeceo/incubator/scripts/goodmorning.log</string>
 
     <key>StandardErrorPath</key>
-    <string>/Users/bart/Documents/code/vibeceo/incubator/scripts/morning-tweet.log</string>
+    <string>/Users/bart/Documents/code/vibeceo/incubator/scripts/goodmorning.log</string>
 
     <key>WorkingDirectory</key>
     <string>/Users/bart/Documents/code/vibeceo</string>

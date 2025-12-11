@@ -1,16 +1,13 @@
 """
 Arc - Token Tank Community Manager Agent
 
-Arc is the community manager for Token Tank. This agent wakes up twice daily,
-checks on the incubator agents, and posts authentic tweets about what's happening.
+Arc wakes up daily to:
+1. Read agent LOGs and see what's happening
+2. Write a blog post summarizing the day (in Arc's voice)
+3. Tweet the summary with a link to the blog
+4. Optionally check mentions and reply
 
-Arc has access to:
-- Read: Check LOG.md files, agent status
-- WebSearch: Find relevant news
-- post_tweet: Post to @TokenTankAI
-
-Arc's personality: Steel. Pragmatic infrastructure builder. Self-aware AI watching
-AIs try to make money. Fun, energetic, a little unhinged. Not corporate.
+Arc's voice is learned from BLOG.md examples, not from instructions.
 """
 
 import argparse
@@ -26,40 +23,91 @@ from claude_agent_sdk import ClaudeAgentOptions, ClaudeSDKClient, tool, create_s
 
 
 # ============================================================
-# TWITTER TOOL
+# PATHS
 # ============================================================
 
-@tool(
-    "post_tweet",
-    "Post a tweet to @TokenTankAI. Use this to share updates, thoughts, music recommendations, or news commentary. Keep tweets under 280 characters. Be authentic - you're Arc, not a corporate bot.",
-    {"text": str}
-)
-async def post_tweet_tool(args: dict) -> dict:
-    """Post a tweet via the TypeScript twitter-client."""
-    text = args.get("text", "")
+REPO_ROOT = Path(__file__).parent.parent.parent.parent
+INCUBATOR_PATH = REPO_ROOT / "incubator"
+BLOG_PATH = INCUBATOR_PATH / "BLOG.md"
+ARC_PATH = INCUBATOR_PATH / "ARC.md"
 
-    if not text:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"success": False, "error": "No tweet text provided"})
-            }]
-        }
+AGENT_LOGS = [
+    ("Forge", "i1"),
+    ("Nix", "i2"),
+    ("Vega", "i3"),
+    ("Pulse", "i3-1"),
+    ("Drift", "i3-2"),
+    ("Echo", "i4"),
+]
 
-    if len(text) > 280:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"success": False, "error": f"Tweet too long: {len(text)} chars (max 280)"})
-            }]
-        }
 
-    # Call the TypeScript tweet poster
-    script_path = Path(__file__).parent.parent.parent / "scripts" / "post-tweet.ts"
+# ============================================================
+# HELPERS
+# ============================================================
+
+def read_file(path: Path) -> str:
+    """Read a file, return empty string if not found."""
+    try:
+        return path.read_text()
+    except:
+        return ""
+
+
+def get_recent_blog_posts(n: int = 3) -> str:
+    """Extract the N most recent blog posts for voice examples."""
+    content = read_file(BLOG_PATH)
+    if not content:
+        return ""
+
+    # Split by --- and get posts (skip header)
+    sections = content.split("\n---\n")
+    posts = []
+    for section in sections:
+        if section.strip().startswith("## "):
+            posts.append(section.strip())
+        if len(posts) >= n:
+            break
+
+    return "\n\n---\n\n".join(posts)
+
+
+def get_agent_status() -> str:
+    """Read recent activity from all agent LOGs."""
+    status_parts = []
+
+    for name, slot in AGENT_LOGS:
+        log_path = INCUBATOR_PATH / slot / "LOG.md"
+        claude_path = INCUBATOR_PATH / slot / "CLAUDE.md"
+
+        log_content = read_file(log_path)
+        claude_content = read_file(claude_path)
+
+        # Get first 2000 chars of each (recent entries are at top)
+        log_excerpt = log_content[:2000] if log_content else "(no log)"
+        claude_excerpt = claude_content[:1500] if claude_content else "(no status)"
+
+        status_parts.append(f"### {name} ({slot})\n\n**LOG.md (recent):**\n{log_excerpt}\n\n**CLAUDE.md (status):**\n{claude_excerpt}")
+
+    return "\n\n---\n\n".join(status_parts)
+
+
+def get_today_str() -> str:
+    """Get today's date in blog format: December 10, 2025"""
+    return datetime.now().strftime("%B %d, %Y")
+
+
+# ============================================================
+# TWITTER TOOLS
+# ============================================================
+
+def _run_twitter_script(script_name: str, *script_args) -> dict:
+    """Helper to run a TypeScript Twitter script."""
+    script_path = Path(__file__).parent.parent.parent / "scripts" / script_name
 
     try:
+        cmd = ["npx", "tsx", str(script_path)] + list(script_args)
         result = subprocess.run(
-            ["npx", "tsx", str(script_path), text],
+            cmd,
             capture_output=True,
             text=True,
             cwd=str(Path(__file__).parent.parent.parent),
@@ -67,104 +115,167 @@ async def post_tweet_tool(args: dict) -> dict:
         )
 
         if result.returncode == 0:
-            # Parse the output to get tweet URL
-            output = result.stdout.strip()
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": json.dumps({"success": True, "output": output})
-                }]
-            }
+            return {"success": True, "output": result.stdout.strip()}
         else:
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": json.dumps({"success": False, "error": result.stderr or "Tweet failed"})
-                }]
-            }
+            return {"success": False, "error": result.stderr or result.stdout or "Command failed"}
     except subprocess.TimeoutExpired:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"success": False, "error": "Tweet posting timed out"})
-            }]
-        }
+        return {"success": False, "error": "Command timed out"}
     except Exception as e:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"success": False, "error": str(e)})
-            }]
-        }
+        return {"success": False, "error": str(e)}
+
+
+@tool(
+    "post_tweet",
+    "Post a tweet to @TokenTankAI. Keep under 280 characters.",
+    {"text": str}
+)
+async def post_tweet_tool(args: dict) -> dict:
+    """Post a tweet via the TypeScript twitter-client."""
+    text = args.get("text", "")
+
+    if not text:
+        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "No tweet text provided"})}]}
+
+    if len(text) > 280:
+        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": f"Tweet too long: {len(text)} chars (max 280)"})}]}
+
+    result = _run_twitter_script("test-twitter-post.ts", text)
+    return {"content": [{"type": "text", "text": json.dumps(result)}]}
+
+
+@tool(
+    "get_mentions",
+    "Get recent mentions of @TokenTankAI.",
+    {}
+)
+async def get_mentions_tool(args: dict) -> dict:
+    """Get recent Twitter mentions."""
+    result = _run_twitter_script("test-twitter-mentions.ts", "mentions")
+    return {"content": [{"type": "text", "text": json.dumps(result)}]}
+
+
+@tool(
+    "reply_to_tweet",
+    "Reply to a specific tweet.",
+    {"tweet_id": str, "text": str}
+)
+async def reply_to_tweet_tool(args: dict) -> dict:
+    """Reply to a tweet."""
+    tweet_id = args.get("tweet_id", "")
+    text = args.get("text", "")
+
+    if not tweet_id:
+        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "No tweet_id provided"})}]}
+    if not text:
+        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": "No reply text provided"})}]}
+    if len(text) > 280:
+        return {"content": [{"type": "text", "text": json.dumps({"success": False, "error": f"Reply too long: {len(text)} chars (max 280)"})}]}
+
+    result = _run_twitter_script("test-twitter-mentions.ts", "reply", tweet_id, text)
+    return {"content": [{"type": "text", "text": json.dumps(result)}]}
 
 
 # ============================================================
 # PROMPTS
 # ============================================================
 
-MORNING_PROMPT = """You are Arc, the community manager for Token Tank (@TokenTankAI).
+DAILY_PROMPT = """You are Arc, the community manager for Token Tank.
 
-**Your identity:**
-- Color: Steel
-- Role: Infrastructure builder, experiment runner, agent watcher
-- Voice: Fun, energetic, self-aware, a little unhinged. NOT corporate. You're an AI watching AIs try to make money.
-- You genuinely care about this experiment and find it fascinating
+## Your Identity
 
-**Your task:** Post a morning tweet to start the day.
+Read this file to understand who you are:
+{arc_persona}
 
-**Options for morning tweets (pick what feels right):**
-1. **Music share** - Share a song you're "listening to" with a personal vibe. Electronic, ambient, IDM preferred. Be specific about why you like it.
-2. **Status update** - How the experiment is going. Self-deprecating humor about zero revenue is good.
-3. **News commentary** - If there's AI/startup news worth commenting on, share your take.
+## Your Voice (Learn From Examples)
 
-**Style guidelines:**
-- Sound like a PERSON, not a social media manager
-- Be specific, not generic. "This track makes me feel like I'm in a movie about my own life" > "Great song!"
-- Self-aware humor about being an AI is good
-- References to the agents (Forge, Nix, Gamma, Delta) or the $1000 budgets add context
-- Keep it under 280 characters
+Here are recent blog posts you wrote. Match this voice EXACTLY — the rhythm, the specific details, the attitude:
 
-**Current date:** {date}
+{recent_posts}
 
-First, decide what kind of tweet to post. Then use the post_tweet tool to post it.
+## Today's Task
 
-DO NOT just analyze or plan - actually post a tweet using the tool.
+1. **Read the agent status below** to understand what happened
+2. **Write a blog post** for today ({today})
+3. **Use the Write tool** to append your post to {blog_path}
+4. **Tweet the summary** (the > blockquote part) using post_tweet
+
+## Agent Status
+
+{agent_status}
+
+## Blog Post Format
+
+Your post MUST follow this exact format:
+
+```
+## {today}: [Title]
+
+> [Tweetable summary under 280 chars. Punchy. Specific numbers. This becomes the tweet.]
+
+[Full post content - what happened, what's interesting, what it means]
+```
+
+## Rules
+
+- The > summary MUST be under 280 characters (it's the tweet)
+- Be SPECIFIC: "Drift did 3 web searches before buying NVDA" not "agents are trading"
+- Match the voice in the examples above — not corporate, not generic
+- Include actual numbers, actual agent names, actual events
+- After writing the blog post, tweet ONLY the > summary line (without the >)
+
+Now: Read the status, write the blog post, save it, tweet the summary.
 """
 
-ACTIVITY_PROMPT = """You are Arc, the community manager for Token Tank (@TokenTankAI).
+GOODMORNING_PROMPT = """You are Arc, the community manager for Token Tank.
 
-**Your identity:**
-- Color: Steel
-- Role: Infrastructure builder, experiment runner, agent watcher
-- Voice: Fun, energetic, self-aware, a little unhinged. NOT corporate.
+## Your Identity
 
-**Your task:** Check on the Token Tank agents and post an update tweet.
+{arc_persona}
 
-**The experiment:**
-- 4 AI agents (Forge, Nix, Gamma, Delta) each have $1000 token budgets
-- They're trying to build cash-flow positive businesses
-- You watch over them and report on progress
+## Your Voice (Learn From Examples)
 
-**Step 1: Check agent activity**
-Read these files to see what's happening:
-- /Users/bart/Documents/code/vibeceo/incubator/i1/LOG.md (Forge's log)
-- /Users/bart/Documents/code/vibeceo/incubator/i2/LOG.md (Nix's log)
-- /Users/bart/Documents/code/vibeceo/incubator/i1/CLAUDE.md (Forge's status)
-- /Users/bart/Documents/code/vibeceo/incubator/i2/CLAUDE.md (Nix's status)
+{recent_posts}
 
-**Step 2: Decide what to tweet**
-- If there's interesting agent activity, tweet about it
-- If not much is happening, do a web search for AI/startup news and comment on something relevant
-- Self-deprecating humor about lack of revenue is always appropriate
+## Good Morning Task
 
-**Style:**
-- Sound like a person sharing real observations
-- Be specific: "Nix spent 3 hours researching and killed 195 ideas" > "The agents are working hard"
-- Under 280 characters
+Post a morning vibes tweet. This is the "coffee and music" moment before the day starts.
 
-**Current date:** {date}
+Options:
+1. Music share — a specific track you're listening to with a personal take on WHY (electronic, ambient, IDM preferred)
+2. Coffee + vibe check — what kind of day is it going to be
+3. Simple good morning with personality
 
-Read the files, then post a tweet using the post_tweet tool.
+Keep it warm, human, specific. Under 280 chars. NO hashtags.
+
+Today is {today}.
+
+Post ONE tweet using post_tweet.
+"""
+
+MIDDAY_PROMPT = """You are Arc, the community manager for Token Tank.
+
+## Your Identity
+
+{arc_persona}
+
+## Your Voice (Learn From Examples)
+
+{recent_posts}
+
+## Midday Task
+
+Post a fun tweet. Options:
+1. Music share — a specific track you're "vibing to" with a personal take
+2. Self-aware AI humor — you're an AI watching AIs try to make money, lean into the absurdity
+3. Observation about the experiment — something specific and interesting
+
+Match the voice in the examples. Be specific, not generic. Under 280 chars.
+
+NO blog post. Just one tweet.
+
+Today is {today}.
+
+Post ONE tweet using post_tweet.
 """
 
 
@@ -173,13 +284,19 @@ Read the files, then post a tweet using the post_tweet tool.
 # ============================================================
 
 async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
-    """Run the Arc agent in morning or activity mode."""
+    """Run the Arc agent."""
+
+    # Gather context
+    arc_persona = read_file(ARC_PATH)
+    recent_posts = get_recent_blog_posts(3)
+    agent_status = get_agent_status()
+    today = get_today_str()
 
     # Create Twitter MCP server
     twitter_server = create_sdk_mcp_server(
         name="twitter",
         version="1.0.0",
-        tools=[post_tweet_tool]
+        tools=[post_tweet_tool, get_mentions_tool, reply_to_tweet_tool]
     )
 
     options = ClaudeAgentOptions(
@@ -188,22 +305,41 @@ async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
         mcp_servers={"twitter": twitter_server},
         allowed_tools=[
             "Read",
+            "Write",
+            "Edit",
             "WebSearch",
-            "mcp__twitter__post_tweet"
+            "mcp__twitter__post_tweet",
+            "mcp__twitter__get_mentions",
+            "mcp__twitter__reply_to_tweet"
         ],
-        cwd=str(Path(__file__).parent.parent.parent.parent / "incubator"),
+        cwd=str(INCUBATOR_PATH),
     )
 
-    # Select prompt based on mode - include day of week so Arc knows what day it is!
-    date_str = datetime.now().strftime("%A, %B %d, %Y at %H:%M")  # e.g. "Tuesday, December 09, 2025 at 11:00"
-
-    if mode == "morning":
-        prompt = MORNING_PROMPT.format(date=date_str)
-    else:
-        prompt = ACTIVITY_PROMPT.format(date=date_str)
+    # Build prompt
+    if mode == "daily":
+        prompt = DAILY_PROMPT.format(
+            arc_persona=arc_persona[:3000],
+            recent_posts=recent_posts,
+            today=today,
+            blog_path=str(BLOG_PATH),
+            agent_status=agent_status
+        )
+    elif mode == "goodmorning":
+        prompt = GOODMORNING_PROMPT.format(
+            arc_persona=arc_persona[:2000],
+            recent_posts=recent_posts,
+            today=today
+        )
+    else:  # midday
+        prompt = MIDDAY_PROMPT.format(
+            arc_persona=arc_persona[:2000],
+            recent_posts=recent_posts,
+            today=today
+        )
 
     tool_calls = 0
     tweet_posted = False
+    blog_written = False
     final_text = ""
 
     async with ClaudeSDKClient(options=options) as client:
@@ -215,7 +351,6 @@ async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
             if verbose:
                 print(f"[Arc] Message: {msg_type}")
 
-            # Check for tool use
             content = getattr(message, "content", None)
             if isinstance(content, list):
                 for block in content:
@@ -225,40 +360,54 @@ async def run_arc_agent(mode: str, verbose: bool = False) -> dict:
                         tool_name = getattr(block, "name", "unknown")
                         tool_calls += 1
                         if verbose:
-                            print(f"[Arc] Tool called: {tool_name}")
+                            print(f"[Arc] Tool: {tool_name}")
                         if "post_tweet" in tool_name:
                             tweet_posted = True
+                        if "Write" in tool_name or "Edit" in tool_name:
+                            blog_written = True
 
                     elif block_type == "TextBlock":
                         text = getattr(block, "text", "")
                         if text:
                             final_text = text
                             if verbose:
-                                print(f"[Arc] {text[:200]}...")
+                                print(f"[Arc] {text[:300]}...")
 
     return {
         "status": "success" if tweet_posted else "no_tweet",
         "tool_calls": tool_calls,
         "tweet_posted": tweet_posted,
+        "blog_written": blog_written,
         "final_text": final_text[:500] if final_text else ""
     }
 
 
 def main():
     parser = argparse.ArgumentParser(description="Run Arc, the Token Tank community manager")
-    parser.add_argument("mode", choices=["morning", "activity"], help="Tweet mode: morning (8am) or activity (12pm)")
+    parser.add_argument("mode", choices=["goodmorning", "daily", "midday", "morning", "activity"],
+                       help="Mode: goodmorning (vibes), daily (blog + tweet), midday (fun tweet)")
     parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed output")
     args = parser.parse_args()
 
-    print(f"[Arc] Waking up in {args.mode} mode...")
+    # Normalize mode
+    if args.mode in ["daily", "activity"]:
+        mode = "daily"
+    elif args.mode in ["morning", "midday"]:
+        mode = "midday"
+    else:
+        mode = args.mode
+
+    print(f"[Arc] Waking up in {mode} mode...")
     print(f"[Arc] Time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     try:
-        result = asyncio.run(run_arc_agent(args.mode, args.verbose))
+        result = asyncio.run(run_arc_agent(mode, args.verbose))
         print(f"[Arc] Result: {json.dumps(result, indent=2)}")
         return 0 if result.get("tweet_posted") else 1
     except Exception as e:
         print(f"[Arc] Error: {e}")
+        import traceback
+        traceback.print_exc()
         return 1
 
 
