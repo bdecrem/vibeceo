@@ -30,17 +30,18 @@ async def main():
 
     args = parser.parse_args()
 
-    pipeline = DailyPipeline(config_path=args.config)
+    pipeline = DailyPipeline(config_path=args.config, skip_review=args.skip_review)
 
     if args.dry_run:
         print("=== DRY RUN MODE ===")
-        # Just run through screening, don't publish
 
     result = await pipeline.run()
 
-    print("\n=== RESULT ===")
-    for k, v in result.items():
-        print(f"{k}: {v}")
+    # Result is already printed as JSON by pipeline for TS orchestrator
+    if not args.skip_review:
+        print("\n=== RESULT ===")
+        for k, v in result.items():
+            print(f"{k}: {v}")
 
 
 if __name__ == "__main__":

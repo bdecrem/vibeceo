@@ -4,6 +4,53 @@
 
 ---
 
+## 2025-12-11: Quantitative Triggers + News Reactivity
+
+**What happened:** Major overhaul of the scanning system. Drift was too passive - scanning 30+ stocks but returning "all stable" every time. Researched best practices, implemented quantitative pre-screening and news-reactive scanning.
+
+**The problem:** The old scan asked the LLM "is anything interesting?" but gave it no quantitative data to answer that question. It had position P&L and headlines, but no RSI, no price changes, no technical signals. No wonder it found nothing.
+
+**Research conducted:**
+- Swing trading entry signals (Schwab, Connors RSI-2 strategy)
+- LLM trading bot performance (TradingAgents framework, Alpha Arena competition)
+- Academic quant research (multi-indicator approaches, overnight vs intraday returns)
+
+**Key insight:** Quantitative triggers should find WHAT to research. LLM should decide WHETHER to trade.
+
+**Changes made:**
+
+| Component | Change |
+|-----------|--------|
+| `config.py` | Added NEWS_MONITOR_LIST (40 extra stocks), quantitative thresholds (RSI_OVERSOLD=20, PULLBACK=-2%, BREAKOUT=3%) |
+| `utils/technicals.py` | New module: RSI-2 calculation, SMA, price changes, trigger screening |
+| `agent.py _light_scan` | Rewritten: 3-stage process (quant screen → position check → news scan) |
+| `agent.py _scan_news_movers` | New: monitors 40+ stocks for news-driven moves outside core watchlist |
+| `agent.py _extract_json` | Fixed to handle nested JSON (was only grabbing first object) |
+
+**New scan flow:**
+```
+Every 15 min:
+├── Stage 1: Calculate RSI-2, price changes for 23 watchlist stocks
+│   └── Flag: oversold (RSI<20), pullbacks, breakouts, support tests
+├── Stage 2: Check existing positions for exit triggers
+│   └── Flag: profit targets (>5%), stop checks (>3% loss)
+├── Stage 3: News-reactive scan of 40+ additional stocks
+│   └── Flag: stocks in news with >5% moves
+└── LLM picks top 1-3 triggers worth deep research
+```
+
+**Test results:** First scan found 3 triggers (NVDA RSI-2=0, NFLX -8.6%, UBER RSI-2=18). Previously would have returned "all stable."
+
+**Also fixed:**
+- Budget cap: $500 (was $100)
+- Position sizes: $25-75 (was $10-50)
+- Budget enforcement in `_execute_buy`
+- SMS notifications work (tested)
+
+**Ready for:** 24-hour paper trading test, then $500 real money deployment.
+
+---
+
 ## 2025-12-10: The Reasoning Trader - Full Proposal Summary
 
 **The Reasoning Trader** is a $1,000 swing trading agent that does what rule-based bots can't: it researches before it trades. Every 15 minutes it runs a light scan; when something looks interesting, it enters "research mode" - running 3-5 web searches on news, analyst sentiment, sector context, and social chatter to build a real thesis with sources and confidence levels. It holds 8-12 stock positions for 1-5 days, avoids the PDT rule by defaulting to overnight holds, and costs about $23/month to operate (mostly LLM inference). The bet: depth of analysis beats speed of execution, and even if it doesn't work, every trade is documented enough to know *why* it failed.

@@ -7,9 +7,13 @@ Generates two-voice scripts with Venture and Scrappy takes.
 import asyncio
 from pathlib import Path
 from typing import List, Dict, Any
+import sys
 
-# TODO: pip install anthropic
-# import anthropic
+# Add parent for config import
+sys.path.insert(0, str(Path(__file__).parent.parent.parent))
+import config
+
+import anthropic
 
 
 # Load prompts
@@ -19,7 +23,7 @@ PROMPTS_DIR = Path(__file__).parent.parent.parent / "prompts"
 async def generate(
     papers: List[Dict[str, Any]],
     date: str,
-    config: Dict[str, Any]
+    generation_config: Dict[str, Any] = None
 ) -> str:
     """
     Generate full episode script from selected papers.
@@ -27,28 +31,30 @@ async def generate(
     Args:
         papers: List of 4 selected papers with analysis
         date: Episode date (YYYY-MM-DD)
-        config: Configuration dict
+        generation_config: Optional configuration dict (uses config.py defaults if not provided)
 
     Returns:
         Full episode script with voice markers
     """
-    model = config["generation"]["script_model"]
+    model = config.SCRIPT_MODEL
+    if generation_config and "generation" in generation_config:
+        model = generation_config["generation"].get("script_model", model)
 
     # Load all prompts
-    with open(PROMPTS_DIR / "script_generation/episode_template.md") as f:
+    with open(PROMPTS_DIR / "script_generation" / "episode_template.md") as f:
         template_prompt = f.read()
 
-    with open(PROMPTS_DIR / "personas/intro_voice.md") as f:
+    with open(PROMPTS_DIR / "personas" / "intro_voice.md") as f:
         intro_prompt = f.read()
 
-    with open(PROMPTS_DIR / "personas/venture_take.md") as f:
+    with open(PROMPTS_DIR / "personas" / "venture_take.md") as f:
         venture_prompt = f.read()
 
-    with open(PROMPTS_DIR / "personas/scrappy_take.md") as f:
+    with open(PROMPTS_DIR / "personas" / "scrappy_take.md") as f:
         scrappy_prompt = f.read()
 
     # Build system prompt
-    system_prompt = f"""You are generating a podcast episode script.
+    system_prompt = f"""You are generating a podcast episode script for Tokenshots - a daily show about AI/ML research with an entrepreneurial lens.
 
 {template_prompt}
 
@@ -72,7 +78,7 @@ async def generate(
 
 **Abstract:** {paper.get('abstract', 'N/A')}
 
-**Score:** {paper.get('score', 'N/A')}
+**Score:** {paper.get('score', paper.get('stage2_score', 'N/A'))}
 **Desperate User:** {paper.get('desperate_user', 'TBD')}
 **Obvious Business:** {paper.get('obvious_business', 'TBD')}
 **Tags:** {paper.get('stage1_tags', [])}
@@ -80,26 +86,29 @@ async def generate(
 ---
 """
 
-    # TODO: Implement actual Claude API call
-    # client = anthropic.Anthropic()
-    #
-    # response = client.messages.create(
-    #     model="claude-3-5-sonnet-20241022",
-    #     max_tokens=8000,
-    #     system=system_prompt,
-    #     messages=[{
-    #         "role": "user",
-    #         "content": f"Generate the full episode script for these papers:\n\n{papers_context}"
-    #     }]
-    # )
-    #
-    # return response.content[0].text
+    if config.VERBOSE:
+        print(f"[script] Generating episode script using {model}")
+        print(f"[script] Papers: {[p['title'][:50] for p in papers]}")
 
-    print(f"[script] Would generate episode script using {model}")
-    print(f"[script] Papers: {[p['title'][:50] for p in papers]}")
+    # Call Claude API
+    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
 
-    # Return placeholder script
-    return generate_placeholder_script(papers, date)
+    response = client.messages.create(
+        model=model,
+        max_tokens=8000,
+        system=system_prompt,
+        messages=[{
+            "role": "user",
+            "content": f"Generate the full episode script for these papers:\n\n{papers_context}"
+        }]
+    )
+
+    script = response.content[0].text
+
+    if config.VERBOSE:
+        print(f"[script] Generated {len(script)} characters")
+
+    return script
 
 
 def generate_placeholder_script(papers: List[Dict[str, Any]], date: str) -> str:
@@ -164,7 +173,7 @@ async def regenerate_segment(
     paper: Dict[str, Any],
     segment_type: str,
     feedback: str,
-    config: Dict[str, Any]
+    generation_config: Dict[str, Any] = None
 ) -> str:
     """
     Regenerate a specific segment with feedback.
@@ -173,10 +182,43 @@ async def regenerate_segment(
         paper: Paper dict
         segment_type: "venture" or "scrappy"
         feedback: Human feedback for improvement
-        config: Configuration dict
+        generation_config: Optional configuration dict
 
     Returns:
         Regenerated segment text
     """
-    # TODO: Implement regeneration with feedback
-    pass
+    model = config.SCRIPT_MODEL
+
+    # Load the appropriate persona
+    persona_file = "venture_take.md" if segment_type == "venture" else "scrappy_take.md"
+    with open(PROMPTS_DIR / "personas" / persona_file) as f:
+        persona_prompt = f.read()
+
+    system_prompt = f"""You are regenerating a single segment for a podcast episode.
+
+{persona_prompt}
+
+Generate ONLY the segment content (no voice markers). Keep it to ~120 words, spoken naturally.
+"""
+
+    user_prompt = f"""Paper: {paper['title']}
+
+Abstract: {paper.get('abstract', 'N/A')}
+
+Desperate User: {paper.get('desperate_user', 'TBD')}
+Obvious Business: {paper.get('obvious_business', 'TBD')}
+
+Feedback on previous version: {feedback}
+
+Generate an improved {segment_type} take incorporating this feedback."""
+
+    client = anthropic.Anthropic(api_key=config.ANTHROPIC_API_KEY)
+
+    response = client.messages.create(
+        model=model,
+        max_tokens=500,
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_prompt}]
+    )
+
+    return response.content[0].text

@@ -335,5 +335,704 @@
     "action": "research_triggered",
     "timestamp": "2025-12-11T14:16:56.130360-05:00",
     "timestamp_human": "02:16 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95791.5,
+    "position_count": 2,
+    "findings": "Tech selling creating oversold conditions in quality names while momentum names getting extended",
+    "triggers": [
+      "NVDA",
+      "AMD",
+      "UBER"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T14:19:03.481415-05:00",
+    "timestamp_human": "02:19 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 extreme oversold + near 20-day MA support in AI leader",
+    "searches": [
+      {
+        "query": "NVDA news December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings December 2024"
+      },
+      {
+        "query": "AI chip sector Oracle earnings selloff December 2024"
+      },
+      {
+        "query": "NVDA CES 2025 Jensen Huang keynote January"
+      },
+      {
+        "query": "NVDA stock price today technical levels December 11 2024"
+      }
+    ],
+    "findings": "Oracle earnings triggered AI sector selloff, creating oversold conditions; Overwhelming analyst consensus: 99 Buy vs 0 Sell ratings with $258 target; CES 2025 keynote Jan 6 as major catalyst - Huang historically delivers; Strong Q4 guidance of $37.5B revenue, up 17% sequentially; H200 China export approval provides revenue upside optionality; RSI 57 with technical support near current levels around $180",
+    "decision": "buy",
+    "confidence": 75,
+    "thesis": "Despite Oracle-induced AI sector selloff creating RSI-2 extreme oversold conditions near 20-day MA support, NVDA presents a compelling swing trade opportunity. The 99-0 analyst buy/sell ratio with $258 average target represents 42% upside, while CES 2025 keynote on Jan 6 serves as near-term catalyst. Recent H200 China export approval adds revenue upside, and Q4 guidance of $37.5B revenue shows continued growth momentum. Technical oversold conditions in the AI sector leader with strong fundamental backdrop create asymmetric risk/reward for swing traders.",
+    "timestamp": "2025-12-11T14:19:54.927468-05:00",
+    "timestamp_human": "02:19 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "NVDA",
+    "notional": 25.0,
+    "price": 180.535,
+    "confidence": 75,
+    "thesis": "Despite Oracle-induced AI sector selloff creating RSI-2 extreme oversold conditions near 20-day MA support, NVDA presents a compelling swing trade opportunity. The 99-0 analyst buy/sell ratio with $258 average target represents 42% upside, while CES 2025 keynote on Jan 6 serves as near-term catalyst. Recent H200 China export approval adds revenue upside, and Q4 guidance of $37.5B revenue shows continued growth momentum. Technical oversold conditions in the AI sector leader with strong fundamental backdrop create asymmetric risk/reward for swing traders.",
+    "stop_loss": 171.50824999999998,
+    "target": 194.9778,
+    "order_id": "5f2f2889-5e41-444c-b670-3ac8fb5e1a71",
+    "timestamp": "2025-12-11T14:19:56.048660-05:00",
+    "timestamp_human": "02:19 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 extreme oversold + shallow pullback in semiconductor cycle",
+    "searches": [
+      {
+        "query": "AMD news December 2024"
+      },
+      {
+        "query": "AMD analyst ratings price targets 2025"
+      },
+      {
+        "query": "semiconductor industry outlook January 2025"
+      },
+      {
+        "query": "AMD stock performance December 2024 RSI oversold"
+      }
+    ],
+    "findings": "AMD down 45% from highs, RSI-2 at extreme oversold 27.8; Analyst consensus Buy rating with $285 average price target; Semiconductor industry projected 11.2% growth in 2025; AI now top revenue driver for semiconductor companies; AMD outsold Intel 3:1 in December CPU sales on Amazon; Strong data center revenue growth of 122% YoY in Q3",
+    "decision": "buy",
+    "confidence": 75,
+    "thesis": "AMD presents an excellent oversold bounce setup with RSI-2 at extreme levels during a shallow pullback in a strong semiconductor upcycle. The 45% decline has created an asymmetric risk/reward opportunity supported by bullish analyst consensus (avg PT $285), strong CPU market share gains against Intel, booming AI demand driving data center growth, and positive 2025 industry outlook with AI becoming the top revenue driver. Technical oversold conditions suggest imminent bounce potential.",
+    "timestamp": "2025-12-11T14:20:45.634418-05:00",
+    "timestamp_human": "02:20 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "AMD",
+    "notional": 25.0,
+    "price": 220.13,
+    "confidence": 75,
+    "thesis": "AMD presents an excellent oversold bounce setup with RSI-2 at extreme levels during a shallow pullback in a strong semiconductor upcycle. The 45% decline has created an asymmetric risk/reward opportunity supported by bullish analyst consensus (avg PT $285), strong CPU market share gains against Intel, booming AI demand driving data center growth, and positive 2025 industry outlook with AI becoming the top revenue driver. Technical oversold conditions suggest imminent bounce potential.",
+    "stop_loss": 209.12349999999998,
+    "target": 237.74040000000002,
+    "order_id": "48455dd5-14f5-4a71-9e57-cb8c311b1e24",
+    "timestamp": "2025-12-11T14:20:46.670722-05:00",
+    "timestamp_human": "02:20 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "UBER",
+    "trigger": "RSI-2 at 18.4 oversold in profitable growth name with strong fundamentals",
+    "searches": [
+      {
+        "query": "UBER news December 2024"
+      },
+      {
+        "query": "UBER analyst ratings upgrades December 2024"
+      },
+      {
+        "query": "rideshare gig economy sector trends December 2024"
+      },
+      {
+        "query": "UBER stock price technical analysis RSI oversold December 2024"
+      }
+    ],
+    "findings": "Record Q4 2024: Strongest quarter ever with 44% Adjusted EBITDA growth; Analyst consensus: Strong Buy with $108.94 target (30% upside); Technical: RSI-2 at 18.4 - extreme oversold territory; Capital returns: $1.5B share buyback program initiated; Sector tailwinds: 13.7% CAGR growth projected through 2030; Management confidence: Called stock 'undervalued' despite strong fundamentals",
+    "decision": "buy",
+    "confidence": 85,
+    "thesis": "UBER presents an exceptional swing trade opportunity with RSI-2 at extreme oversold levels (18.4) following record Q4 2024 results showing 44% Adjusted EBITDA growth and 18% Gross Bookings growth. Strong analyst consensus (Strong Buy, $108.94 target, 30% upside), aggressive $1.5B share buyback, robust sector growth (13.7% CAGR), and management's confidence in being 'undervalued' create a compelling mean reversion setup in a fundamentally sound market leader.",
+    "timestamp": "2025-12-11T14:21:34.970420-05:00",
+    "timestamp_human": "02:21 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "UBER",
+    "notional": 75,
+    "price": 84.855,
+    "confidence": 85,
+    "thesis": "UBER presents an exceptional swing trade opportunity with RSI-2 at extreme oversold levels (18.4) following record Q4 2024 results showing 44% Adjusted EBITDA growth and 18% Gross Bookings growth. Strong analyst consensus (Strong Buy, $108.94 target, 30% upside), aggressive $1.5B share buyback, robust sector growth (13.7% CAGR), and management's confidence in being 'undervalued' create a compelling mean reversion setup in a fundamentally sound market leader.",
+    "stop_loss": 80.61225,
+    "target": 91.64340000000001,
+    "order_id": "6e04214d-886b-40cc-92f5-00457dbc9b99",
+    "timestamp": "2025-12-11T14:21:36.128334-05:00",
+    "timestamp_human": "02:21 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95792.03,
+    "position_count": 5,
+    "findings": "Tech weakness creating oversold conditions in quality names, but extreme RSI-2 readings need context verification",
+    "triggers": [
+      "NVDA",
+      "AMD",
+      "NFLX"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T14:36:46.657595-05:00",
+    "timestamp_human": "02:36 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 is extreme oversold in AI leader, but need to verify if this is data error or genuine capitulation",
+    "searches": [
+      {
+        "query": "NVDA stock news today December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "Oracle earnings AI spending concerns NVDA sector selloff"
+      },
+      {
+        "query": "RSI technical indicator 0.0 reading data error stock analysis"
+      }
+    ],
+    "findings": "RSI-2 at 0.0 is mathematically valid extreme oversold reading, not data error; Oracle earnings miss triggered AI sector selloff due to capex spending concerns; AI trade fatigue emerging as investors question ROI timing on massive investments; Strong analyst consensus remains with 99 buy ratings and $258 average price target; Technical support at $175-$181 level with next major floor at $155; Oracle's $50B capex guidance intensified AI bubble concerns across sector",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "The RSI-2 at 0.0 represents legitimate extreme oversold conditions following Oracle's earnings-induced AI sector selloff, but given my limited PDT trades and existing small profitable position, holding is optimal. While the technical setup suggests a potential oversold bounce from current levels around $181, the Oracle-triggered 'AI trade fatigue' concerns about massive capex spending without immediate returns create near-term headwinds. Strong analyst consensus (99 buy vs 1 hold ratings, $258 average target) and NVDA's dominant AI infrastructure position support medium-term bullish thesis, but sector rotation risks persist until clearer ROI visibility emerges from hyperscaler spending.",
+    "timestamp": "2025-12-11T14:37:46.950674-05:00",
+    "timestamp_human": "02:37 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 plus testing 20-day MA in semiconductor space - compelling if confirmed",
+    "searches": [
+      {
+        "query": "AMD news December 2024"
+      },
+      {
+        "query": "AMD analyst ratings January 2025"
+      },
+      {
+        "query": "semiconductor sector RSI oversold January 2025"
+      },
+      {
+        "query": "AMD MI325X supply constraints January 2025"
+      },
+      {
+        "query": "AMD technical analysis 20 day moving average January 2025"
+      }
+    ],
+    "findings": "AMD down 45% from highs, -13.8% past month vs -2% S&P 500; Strong CPU sales: 63,100 vs Intel's 19,300 on Amazon December; Analysts bullish: 76 Buy, 23 Hold, 0 Sell ratings, $285 avg target; AI strategy failing: MI325X rejected by Microsoft, scalability issues vs Nvidia; Technical: RSI 33.6 oversold but Strong Sell on moving averages; Semiconductor sector showing oversold RSI conditions broadly",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "Despite compelling RSI-2 oversold conditions and 20-day MA test creating a classic swing setup, AMD faces critical AI strategy headwinds with MI325X market rejection, Microsoft's disappointment, and scalability limitations versus Nvidia. While CPU business remains strong and analyst sentiment bullish, the broken AI narrative that drove the stock to highs creates too much fundamental uncertainty. Technical oversold readings in a deteriorating story often lead to further downside. Better to wait for signs the AI strategy is stabilizing before catching this falling knife.",
+    "timestamp": "2025-12-11T14:38:44.268446-05:00",
+    "timestamp_human": "02:38 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NFLX",
+    "trigger": "Down 8.67% in 5 days with RSI-2 at 28 suggests potential overreaction in streaming leader",
+    "searches": [
+      {
+        "query": "NFLX Netflix news December 2024"
+      },
+      {
+        "query": "NFLX analyst ratings December 2024"
+      },
+      {
+        "query": "Netflix Warner Bros acquisition $82.7 billion December 2024"
+      },
+      {
+        "query": "streaming sector trends competition December 2024"
+      }
+    ],
+    "findings": "Q4 revenue up 15% with 427M subscribers; Strong buy consensus $130-135 targets; $82.7B Warner Bros acquisition creating content moat; Market panic over debt concerns despite strong cash flow; Streaming sector growing 18.5% CAGR to $2.66T by 2032",
+    "decision": "buy",
+    "confidence": 85,
+    "thesis": "Netflix's 8.67% decline represents classic overreaction to transformational Warner Bros acquisition. Core fundamentals are pristine with 15% revenue growth, 61% profit growth, and expanding margins. The $82.7B acquisition creates unassailable content moat combining HBO prestige, Warner's century of IP, and DC Universe. While debt increases substantially, $7.4B operating cash flow provides cushion and management targets reasonable 2x EBITDA leverage. Trading at $100 vs $130-135 analyst consensus with overwhelming buy ratings suggests genuine opportunity. RSI-2 at 28 in secular growth leader with ad-tier momentum screams oversold bounce potential.",
+    "timestamp": "2025-12-11T14:39:33.624731-05:00",
+    "timestamp_human": "02:39 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "NFLX",
+    "notional": 75,
+    "price": 94.155,
+    "confidence": 85,
+    "thesis": "Netflix's 8.67% decline represents classic overreaction to transformational Warner Bros acquisition. Core fundamentals are pristine with 15% revenue growth, 61% profit growth, and expanding margins. The $82.7B acquisition creates unassailable content moat combining HBO prestige, Warner's century of IP, and DC Universe. While debt increases substantially, $7.4B operating cash flow provides cushion and management targets reasonable 2x EBITDA leverage. Trading at $100 vs $130-135 analyst consensus with overwhelming buy ratings suggests genuine opportunity. RSI-2 at 28 in secular growth leader with ad-tier momentum screams oversold bounce potential.",
+    "stop_loss": 89.44725,
+    "target": 101.68740000000001,
+    "order_id": "a4afea5a-5139-45b1-b325-696f59bad471",
+    "timestamp": "2025-12-11T14:39:35.158469-05:00",
+    "timestamp_human": "02:39 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95791.68,
+    "position_count": 6,
+    "findings": "Tech selloff creating oversold conditions in quality names, but extreme RSI-2 readings need verification",
+    "triggers": [
+      "NVDA",
+      "AMD",
+      "META"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T14:54:46.144328-05:00",
+    "timestamp_human": "02:54 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 is suspicious - need to verify if this is data error or genuine crash worth investigating",
+    "searches": [
+      {
+        "query": "NVDA stock news today December 2024"
+      },
+      {
+        "query": "Oracle earnings NVDA stock selloff December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings upgrades downgrades December 2024"
+      },
+      {
+        "query": "semiconductor sector AI stocks today Oracle impact"
+      },
+      {
+        "query": "Trump China NVDA H200 chip sales approval December 2024"
+      }
+    ],
+    "findings": "RSI-2 at 0.0 reflects genuine extreme oversold conditions from Oracle earnings contagion; Oracle revenue miss ($16.06B vs $16.21B expected) triggered sector-wide AI bubble fears; Trump approved H200 China sales with 25% US government revenue share - major catalyst; Analyst consensus remains overwhelmingly bullish: 99 buy ratings, $258 average target; NVDA maintains 90%+ market share in AI training GPUs with CUDA moat; Technical support at $175-180 range provides favorable entry point",
+    "decision": "buy",
+    "confidence": 82,
+    "thesis": "Extreme RSI-2 oversold condition (0.0) presents high-conviction contrarian opportunity. Oracle's earnings miss triggered sector-wide AI spending fears, creating temporary sentiment shock unrelated to NVDA's fundamentals. Trump's H200 China approval adds billions in potential revenue. Strong analyst support (99 buy ratings, $258 average target vs ~$180 current price) and dominant AI infrastructure position (90%+ market share) support recovery. Technical support near $175-180 provides favorable risk/reward with 35%+ upside to analyst targets.",
+    "timestamp": "2025-12-11T14:55:49.503544-05:00",
+    "timestamp_human": "02:55 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 paired with -0.37% from 20-day MA - another potential data anomaly or significant event to research",
+    "searches": [
+      {
+        "query": "AMD stock news today December 2024"
+      },
+      {
+        "query": "AMD RSI technical analysis December 2024"
+      },
+      {
+        "query": "semiconductor industry outlook December 2024"
+      },
+      {
+        "query": "HSBC AMD downgrade January 2025"
+      }
+    ],
+    "findings": "HSBC rare double downgrade from Buy to Reduce, price target slashed to $110; Technical indicators showing Strong Sell with RSI around 33-37; AMD down 45% from peak, facing competitive pressure from Nvidia; Semiconductor sector hitting record highs but AMD lagging; Most analysts still bullish with 43% upside implied by consensus",
+    "decision": "sell",
+    "confidence": 75,
+    "thesis": "Multiple negative catalysts converging: HSBC's rare double downgrade citing competitive weakness vs Nvidia, technical breakdown with Strong Sell signals, and deceleration in growth expectations. While sector fundamentals remain strong and most analysts are bullish, near-term headwinds including lukewarm MI325 reception and delayed competitive AI rack solutions until late 2025 create significant risk. Taking profits on small position while preserving day trades for clearer opportunities.",
+    "timestamp": "2025-12-11T14:56:35.205230-05:00",
+    "timestamp_human": "02:56 PM ET"
+  },
+  {
+    "type": "exit",
+    "symbol": "AMD",
+    "qty": 0.113505264,
+    "entry_price": 220.166,
+    "exit_price": 220.2756,
+    "pnl": 0.01244,
+    "pnl_pct": 0.04977991196479,
+    "reason": "Multiple negative catalysts converging: HSBC's rare double downgrade citing competitive weakness vs Nvidia, technical breakdown with Strong Sell signals, and deceleration in growth expectations. While sector fundamentals remain strong and most analysts are bullish, near-term headwinds including lukewarm MI325 reception and delayed competitive AI rack solutions until late 2025 create significant risk. Taking profits on small position while preserving day trades for clearer opportunities.",
+    "thesis_grade": null,
+    "lessons": null,
+    "order_id": null,
+    "was_day_trade": true,
+    "timestamp": "2025-12-11T14:56:36.451164-05:00",
+    "timestamp_human": "02:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 18.1 in a quality mega-cap - more believable oversold signal worth investigating",
+    "searches": [
+      {
+        "query": "META stock news December 2024"
+      },
+      {
+        "query": "META analyst ratings December 2024 price target"
+      },
+      {
+        "query": "tech sector AI stocks performance December 2024"
+      },
+      {
+        "query": "META December 2024 recent news developments stock"
+      },
+      {
+        "query": "META AI news internal rift December 2024"
+      }
+    ],
+    "findings": "Q4 2024 beat with 21% revenue growth and 49% net income growth; Strong Buy consensus from 43 analysts with $820+ average price target; Tech/AI sector remained strong in 2024 despite H2 volatility; Strategic metaverse budget cuts (~$4-6B) being redirected to AI; Internal AI strategy tensions but new Avocado model could drive revenue",
+    "decision": "buy",
+    "confidence": 78,
+    "thesis": "META represents a compelling swing trade with RSI-2 oversold signal (18.1) in a quality mega-cap that just delivered exceptional Q4 results (21% revenue growth, 48% operating margins, $52B free cash flow). Strategic pivot from metaverse to AI infrastructure shows improved capital discipline, while strong analyst consensus (96% buy ratings, $820+ average target) and reasonable valuation (P/E ~29) support upside potential. Internal AI tensions, while concerning, reflect healthy strategic debate in a rapidly evolving landscape where META's scale and financial strength provide competitive advantages.",
+    "timestamp": "2025-12-11T14:57:28.600109-05:00",
+    "timestamp_human": "02:57 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "META",
+    "notional": 40.0,
+    "price": 647.7149999999999,
+    "confidence": 78,
+    "thesis": "META represents a compelling swing trade with RSI-2 oversold signal (18.1) in a quality mega-cap that just delivered exceptional Q4 results (21% revenue growth, 48% operating margins, $52B free cash flow). Strategic pivot from metaverse to AI infrastructure shows improved capital discipline, while strong analyst consensus (96% buy ratings, $820+ average target) and reasonable valuation (P/E ~29) support upside potential. Internal AI tensions, while concerning, reflect healthy strategic debate in a rapidly evolving landscape where META's scale and financial strength provide competitive advantages.",
+    "stop_loss": 615.3292499999999,
+    "target": 699.5322,
+    "order_id": "596f00cd-6877-4e41-855b-6ade460d1888",
+    "timestamp": "2025-12-11T14:57:29.918658-05:00",
+    "timestamp_human": "02:57 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95791.51,
+    "position_count": 6,
+    "findings": "Tech getting hammered with multiple quality names hitting extreme oversold levels - classic reversal setup territory",
+    "triggers": [
+      "NVDA",
+      "AMD",
+      "META"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T15:12:41.460445-05:00",
+    "timestamp_human": "03:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 is nuclear oversold + testing 20MA - this is AI king getting crushed, potential dead cat bounce",
+    "searches": [
+      {
+        "query": "NVDA news today December 2024"
+      },
+      {
+        "query": "Oracle earnings AI overspending concerns December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings December 2024"
+      },
+      {
+        "query": "Trump H200 China export approval NVDA December 2024"
+      }
+    ],
+    "findings": "Oracle earnings triggered AI sector selloff with cloud revenue miss and $15B capex increase; NVDA fell 3.5%+ on AI overspending fears despite strong Q3 results; 39 analysts maintain Strong Buy rating with $248.64 average target (36% upside); Trump approved H200 exports to China but Beijing may restrict access; RSI-2 at 0.0 represents nuclear oversold technical extreme",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "Oracle's earnings created sector-wide AI overspending fears that hit NVDA despite strong fundamentals. The RSI-2 at 0.0 represents extreme oversold conditions rarely seen, but with existing position and PDT constraints, holding makes most sense. The selloff appears overdone given NVDA's record revenues, strong analyst support (39 Strong Buys, $248 avg target), and the mixed but potentially positive H200 China export approval. Oracle's $15B capex hike and cloud miss triggered algorithmic selling across AI names, creating opportunity for patient holders.",
+    "timestamp": "2025-12-11T15:13:26.058983-05:00",
+    "timestamp_human": "03:13 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 AND nearly kissing 20MA (-0.07%) - semiconductor getting obliterated, mean reversion candidate",
+    "searches": [
+      {
+        "query": "AMD news today December 2024"
+      },
+      {
+        "query": "AMD analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "semiconductor sector selloff December 2024"
+      },
+      {
+        "query": "Amazon AWS AMD AI accelerator demand weak December 2024"
+      },
+      {
+        "query": "AMD mean reversion technical analysis December 2024"
+      }
+    ],
+    "findings": "Bank of America downgraded AMD from Buy to Neutral, cutting price target to $155; Amazon AWS stated insufficient demand for AMD AI accelerators on cloud platform; Semiconductor sector experiencing broad selloff despite record 2024 industry sales; Technical setup shows extreme oversold conditions but fundamental headwinds persist; Multiple analysts remain constructive long-term but near-term challenges mounting",
+    "decision": "pass",
+    "confidence": 65,
+    "thesis": "While AMD presents a textbook mean reversion setup with RSI-2 at 0.0 and proximity to 20MA support, the recent Amazon AWS revelation about insufficient demand for AMD's AI accelerators represents a fundamental headwind that outweighs the technical opportunity. The semiconductor sector is experiencing broad-based selling pressure, and AMD's AI accelerator adoption challenges suggest the downtrend may have further to run despite oversold conditions. With only 2 day trades remaining, the risk-reward doesn't justify entry when fundamental catalysts are working against the technical setup.",
+    "timestamp": "2025-12-11T15:14:22.066508-05:00",
+    "timestamp_human": "03:14 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 9.4 in mega-cap tech - not as extreme as semis but still compelling oversold bounce play",
+    "searches": [
+      {
+        "query": "META Facebook recent news December 2024"
+      },
+      {
+        "query": "META analyst ratings price targets December 2024"
+      },
+      {
+        "query": "mega cap tech stocks selloff December 2024 sector rotation"
+      },
+      {
+        "query": "RSI oversold bounce strategy META technical analysis"
+      }
+    ],
+    "findings": "Meta AI approaching 600M MAU with strong Q1 2025 guidance; Overwhelming analyst support: 72 Buy vs 1 Sell, $820+ avg PT; Tech sector rotation ongoing - growth stocks down 5% in 2025; RSI-2 at 9.4 historically strong bounce setup; AI infrastructure spending concerns weighing on sentiment",
+    "decision": "hold",
+    "confidence": 65,
+    "thesis": "While the RSI-2 at 9.4 presents a statistically compelling oversold bounce opportunity supported by strong fundamentals (600M+ Meta AI users, solid Q1 guidance) and overwhelming analyst bullishness ($820+ average PT, 72 Buy vs 1 Sell), the broader mega-cap tech sector rotation creates significant headwind. META's strong AI positioning differentiates it from pure-play semiconductor names, but the sector-wide skepticism about AI monetization timelines and infrastructure spending concerns create execution risk. Current position should be held given small unrealized loss (-0.15%) and strong technical setup, but adding exposure requires confirmation of sector stabilization.",
+    "timestamp": "2025-12-11T15:15:09.591457-05:00",
+    "timestamp_human": "03:15 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95791.41,
+    "position_count": 6,
+    "findings": "Tech getting hammered with extreme oversold readings - classic bounce setup if broader market cooperates",
+    "triggers": [
+      "NVDA",
+      "META",
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T15:30:21.574906-05:00",
+    "timestamp_human": "03:30 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 is nuclear oversold + testing 20MA - AI darling rarely stays down this hard",
+    "searches": [
+      {
+        "query": "NVDA news December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings December 2024"
+      },
+      {
+        "query": "Oracle earnings AI spending December 2024"
+      },
+      {
+        "query": "China H200 chip approval NVDA December 2024"
+      },
+      {
+        "query": "CES 2025 NVDA Jensen Huang keynote January"
+      }
+    ],
+    "findings": "39 analysts Strong Buy consensus with $248.64 average target (+35% upside); Oracle earnings triggered AI overspending fears affecting entire sector; Trump approved H200 China exports but Beijing may limit access like H20; Blackwell now in production with Q4-Q1 ramp critical for 2025; Nuclear oversold RSI-2 at 20MA support with small existing position",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "Nuclear oversold RSI-2 at 20MA support creates compelling risk/reward despite Oracle-induced AI spending fears. Strong analyst consensus (39 Strong Buys, $248 target), Blackwell production ramp, H200 China approval, and successful CES launches provide multiple reacceleration catalysts. Oracle concerns appear overdone for the AI infrastructure leader - position sizing allows riding through volatility while maintaining exposure to strongest secular growth theme.",
+    "timestamp": "2025-12-11T15:31:07.718673-05:00",
+    "timestamp_human": "03:31 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 6.1 screaming oversold in mega-cap - these don't stay buried long",
+    "searches": [
+      {
+        "query": "META stock news December 2024"
+      },
+      {
+        "query": "META analyst ratings upgrades downgrades December 2024"
+      },
+      {
+        "query": "tech sector selloff December 2024 Magnificent 7"
+      },
+      {
+        "query": "META AI spending concerns December 2024"
+      },
+      {
+        "query": "META Q1 2025 earnings date guidance"
+      }
+    ],
+    "findings": "Q4 2024 massive earnings beat: $48.4B revenue (+21% YoY), $20.8B net income (+49% YoY); 43 analysts consensus 'Strong Buy' with $820.91 average target (+26% upside); Magnificent Seven down 16-25% from highs after December selloff, creating oversold conditions; Operating margin improved to 48% vs 41% prior year, demonstrating operational leverage; Meta AI scaling to 1B+ monthly users, AI-driven ad improvements boosting conversion 5%; Moody's upgraded to Aa3 citing strong execution and improved profitability; Daily active people grew 5% YoY to 3.35B users, ad pricing power intact (+14% YoY)",
+    "decision": "buy",
+    "confidence": 85,
+    "thesis": "META presents a compelling oversold opportunity in a quality mega-cap. The RSI-2 at 6.1 signals extreme short-term pessimism disconnected from robust fundamentals - just crushed Q4 with $48.4B revenue (+21% YoY) and $20.8B net income (+49% YoY). Strong analyst consensus at $820.91 target (+26% upside) with December tech selloff creating artificial downward pressure. The ad engine remains dominant with 3.35B daily users, 48% operating margins, and AI monetization accelerating. This oversold signal offers asymmetric risk/reward entry into a franchise trading below intrinsic value.",
+    "timestamp": "2025-12-11T15:32:19.922598-05:00",
+    "timestamp_human": "03:32 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 matching NVDA's pain - semiconductor sector washout could mean quick reversal",
+    "searches": [
+      {
+        "query": "AMD stock news December 2024"
+      },
+      {
+        "query": "AMD analyst downgrades December 2024"
+      },
+      {
+        "query": "semiconductor sector performance December 2024"
+      },
+      {
+        "query": "RSI technical indicators oversold stocks today"
+      }
+    ],
+    "findings": "AMD down 45% from highs, lost $140B in value; Multiple analyst downgrades citing NVIDIA competition concerns; AI revenue expectations lowered to $7B vs street estimates; Semiconductor sector strong with 19% growth in 2024; RSI-2 at 0.0 indicates extreme oversold conditions",
+    "decision": "buy",
+    "confidence": 65,
+    "thesis": "Extreme oversold conditions (RSI-2 at 0.0) present a short-term mean reversion opportunity despite recent analyst downgrades. While fundamental headwinds exist around AI competition with NVIDIA, the technical setup suggests excessive selling pressure that could lead to a bounce. The broader semiconductor sector remains strong with 2025 growth projections of $697B (+11%), providing sector tailwinds. This is a tactical trade targeting oversold relief rather than a fundamental turnaround play.",
+    "timestamp": "2025-12-11T15:33:04.560937-05:00",
+    "timestamp_human": "03:33 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "AMD",
+    "notional": 25,
+    "price": 220.17,
+    "confidence": 65,
+    "thesis": "Extreme oversold conditions (RSI-2 at 0.0) present a short-term mean reversion opportunity despite recent analyst downgrades. While fundamental headwinds exist around AI competition with NVIDIA, the technical setup suggests excessive selling pressure that could lead to a bounce. The broader semiconductor sector remains strong with 2025 growth projections of $697B (+11%), providing sector tailwinds. This is a tactical trade targeting oversold relief rather than a fundamental turnaround play.",
+    "stop_loss": 209.1615,
+    "target": 237.7836,
+    "order_id": "e10c6066-4f1c-444c-9942-ad9a01d0e63e",
+    "timestamp": "2025-12-11T15:33:05.904239-05:00",
+    "timestamp_human": "03:33 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95791.49,
+    "position_count": 7,
+    "findings": "Tech getting hammered with quality names hitting extreme oversold levels - classic bounce setup territory",
+    "triggers": [
+      "NVDA",
+      "AMD",
+      "META"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-11T15:48:15.887786-05:00",
+    "timestamp_human": "03:48 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 is nuclear oversold in the AI king - either dead cat bounce or major reversal incoming",
+    "searches": [
+      {
+        "query": "NVDA news today recent"
+      },
+      {
+        "query": "NVDA analyst ratings upgrades downgrades December 2024"
+      },
+      {
+        "query": "AI chip sector competition Google quantum chip threat"
+      },
+      {
+        "query": "Oracle earnings AI spending concerns impact December 2024"
+      }
+    ],
+    "findings": "Oracle earnings triggered AI trade fatigue selling NVDA down 2.16%; Analyst sentiment extremely bullish: 99 Buy vs 1 Hold ratings, $236-258 price targets; Google's Willow quantum chip 13,000x faster than supercomputers, Meta considering TPU switch; NVDA reported record $57B revenue +62% YoY but faces competitive threats; RSI-2 at 0.0 is nuclear oversold suggesting reversal potential",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "Despite nuclear oversold RSI-2 reading suggesting strong reversal potential, Oracle's earnings have triggered legitimate 'AI trade fatigue' concerns that could persist near-term. While analyst sentiment remains overwhelmingly bullish (99 Buy ratings) and fundamentals are strong (62% YoY revenue growth), competitive threats from Google's quantum/TPU advances and Meta's potential switching create uncertainty. The small existing position (-0.11%) should be held to capture any mean reversion bounce while limiting additional risk exposure until sector sentiment stabilizes and we see how quantum/TPU competition evolves.",
+    "timestamp": "2025-12-11T15:49:08.312085-05:00",
+    "timestamp_human": "03:49 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.0 plus kissing 20-day MA - semiconductor royalty at extreme technical levels",
+    "searches": [
+      {
+        "query": "AMD news December 2025"
+      },
+      {
+        "query": "AMD analyst ratings upgrades December 2025"
+      },
+      {
+        "query": "semiconductor sector AI chips December 2025"
+      },
+      {
+        "query": "AMD stock technical analysis RSI oversold December 2025"
+      }
+    ],
+    "findings": "Record Q3 revenue of $9.2B up 36% YoY with strong AI GPU momentum; Transformational OpenAI partnership for up to 6GW deployment worth tens of billions; Strong analyst consensus with Buy rating and 25-35% average price targets above current levels; Semiconductor sector expected to grow 15% in 2025 with AI chips leading at >30% in 2026; Extreme technical oversold conditions with RSI-2 at 0.0 creating contrarian opportunity; Geopolitical risks from China export restrictions already impacted 2025 by $1.5B revenue",
+    "decision": "buy",
+    "confidence": 75,
+    "thesis": "AMD presents a compelling contrarian opportunity at extreme technical levels. The RSI-2 at 0.0 and price kissing the 20-day MA creates an exceptional risk/reward setup for a semiconductor royalty with transformational AI positioning. Despite near-term technical weakness, the fundamental thesis remains intact with record revenues growing 36% YoY, the transformational OpenAI partnership worth 'tens of billions,' and validation through major hyperscaler deployments. The sector backdrop is extraordinarily strong with 15% growth expected in 2025 and AI chips driving >30% growth in 2026. Wall Street consensus remains bullish with average targets 25-35% above current levels. While geopolitical risks around China exports create headwinds, the current technical oversold condition in a fundamentally strong AI infrastructure leader represents an asymmetric opportunity for swing traders.",
+    "timestamp": "2025-12-11T15:50:01.138514-05:00",
+    "timestamp_human": "03:50 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 11.6 in a stock that's been a momentum monster - oversold bounce candidate if no fundamental crater",
+    "searches": [
+      {
+        "query": "META recent news December 2024"
+      },
+      {
+        "query": "META analyst ratings upgrades downgrades January 2025"
+      },
+      {
+        "query": "tech sector social media AI stocks market sentiment December 2024"
+      },
+      {
+        "query": "META headwinds concerns regulatory issues 2025"
+      }
+    ],
+    "findings": "Strong Q4 2024: 21% revenue growth, 5% user growth, AI assistant nearing 600M users; Overwhelmingly bullish analyst sentiment: 83% Strong Buy ratings, $746 average price target; AI in social media market growing at 28.53% CAGR, META leading with GenAI ad tools; Major regulatory headwinds: EU DMA fines up to 5% daily revenue, FTC antitrust trial risk; Reality Labs burning $4-5B quarterly, over $60B total losses since 2020; RSI-2 at 11.6 indicates extreme technical oversold condition for bounce",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "Despite strong Q4 earnings (21% revenue growth, solid user metrics, AI momentum with 600M MAU) and bullish analyst sentiment (83% Strong Buy ratings, $746 average PT), significant regulatory headwinds create near-term volatility. EU fines could reach 5% of daily revenue, Reality Labs continues burning $4-5B quarterly, and FTC antitrust trial threatens structural breakup. However, RSI-2 at 11.6 suggests oversold bounce potential. With existing tiny position ($40), holding makes sense to capture technical rebound while avoiding adding risk given regulatory uncertainties and limited day trades remaining.",
+    "timestamp": "2025-12-11T15:50:52.539456-05:00",
+    "timestamp_human": "03:50 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95792.02,
+    "position_count": 7,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-11T16:05:54.461237-05:00",
+    "timestamp_human": "04:05 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95793.03,
+    "position_count": 7,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-11T16:20:56.335465-05:00",
+    "timestamp_human": "04:20 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95792.89,
+    "position_count": 7,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-11T16:35:58.429940-05:00",
+    "timestamp_human": "04:35 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95793.08,
+    "position_count": 7,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-11T16:51:00.356564-05:00",
+    "timestamp_human": "04:51 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 95792.94,
+    "position_count": 7,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-11T17:06:02.170691-05:00",
+    "timestamp_human": "05:06 PM ET"
   }
 ]

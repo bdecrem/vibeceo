@@ -5,3 +5,4 @@ pyyaml>=6.0.0
 python-dotenv>=1.0.0
 pydub>=0.25.0
 feedgen>=1.0.0
+arxiv>=2.0.0
