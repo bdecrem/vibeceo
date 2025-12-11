@@ -1,0 +1,33 @@
+# ElevenLabs Voice Configuration
+
+voices:
+  intro:
+    voice_id: "josh"  # Clear, welcoming
+    settings:
+      stability: 0.6
+      similarity_boost: 0.75
+      style: 0.1
+      use_speaker_boost: true
+    description: "Opens and closes the episode"
+
+  venture:
+    voice_id: "josh"  # Or alternative expansive voice
+    settings:
+      stability: 0.5
+      similarity_boost: 0.75
+      style: 0.15
+      use_speaker_boost: true
+    description: "The Venture Take - billion dollar framing"
+
+  scrappy:
+    voice_id: "callum"  # More energy, different texture
+    settings:
+      stability: 0.4
+      similarity_boost: 0.75
+      style: 0.2
+      use_speaker_boost: true
+    description: "The Scrappy Take - weekend build energy"
+
+audio_settings:
+  output_format: "mp3_44100_128"
+  model_id: "eleven_multilingual_v2"
