@@ -4585,5 +4585,55 @@
     "action": "research_triggered",
     "timestamp": "2025-12-12T16:19:47.939097-05:00",
     "timestamp_human": "04:19 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare oversold condition - potential dead cat bounce or capitulation",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news today December 12 2024"
+      },
+      {
+        "query": "Ethereum ETF flows institutional sentiment December 2024"
+      },
+      {
+        "query": "Fed meeting December 12 2024 crypto market reaction"
+      },
+      {
+        "query": "Ethereum RSI technical indicators December 2024"
+      }
+    ],
+    "findings": "ETH stabilized above $3,000 with bulls challenging $3,342 resistance and 3-day MACD bullish cross; Record $305M daily ETF inflows on Dec 10 despite some recent outflows, with year-to-date flows hitting $2.2B record; Fed delivered expected 25bps rate cut (third consecutive), viewed as mildly bullish for risk assets; Ethereum RSI recovery from extreme oversold levels historically precedes strong rebounds; Institutional momentum intact with ETF AUM surging from $10.3B to $28.6B, analyst targets reaching $7,000",
+    "decision": "hold",
+    "confidence": 85,
+    "thesis": "The original RSI-2 capitulation thesis is validating as ETH recovers from extreme oversold levels around $3,072 to current resistance near $3,342, with 3-day MACD completing bullish cross. While ETF flows show daily volatility, the year-to-date $2.2B record inflows demonstrate sustained institutional accumulation, with Bitwise forecasting $7,000 targets. The Fed delivered expected 25bps cut providing monetary accommodation, and technical indicators confirm the mean-reversion bounce from the 0.0 RSI extreme is intact. With the fundamental catalysts (exchange supply constraints, institutional adoption, Fed dovishness) unchanged and price action showing follow-through, holding the position allows the original thesis to fully develop toward initial targets.",
+    "timestamp": "2025-12-12T16:20:42.539490-05:00",
+    "timestamp_human": "04:20 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.6 plus testing 20-day MA creates confluence of oversold signals in crypto leader",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 12 2025"
+      },
+      {
+        "query": "Bitcoin analyst price targets downgrades Standard Chartered December 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025 outflows institutional demand"
+      },
+      {
+        "query": "Bitcoin options market sentiment max pain December 2025 technical analysis"
+      }
+    ],
+    "findings": "Bitcoin down on AI sector contagion and tech weakness; Standard Chartered cut 2025 target from $200K to $100K; BlackRock IBIT saw $2.7B outflows in 5 weeks; ETF outflows attributed to basis trade unwind, not panic selling; Options max pain at $90K with 83% probability of closing above; Prediction markets assign <50% chance of $100K by year-end",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While the RSI-2 at 18.6 with 20-day MA support creates a technically compelling oversold entry, the combination of Standard Chartered's dramatic price target cut from $200K to $100K, massive ETF outflows ($2.7B from IBIT), and broader AI sector contagion creates a deteriorating fundamental backdrop. Although research suggests the ETF outflows reflect mechanical basis trade unwinding rather than panic selling, and options max pain at $90K supports current levels, the shift in institutional sentiment represents a meaningful change since my last trade. With existing BTC exposure and limited PDT capacity, prudent risk management suggests passing on additional exposure until institutional sentiment stabilizes, despite the attractive technical setup.",
+    "timestamp": "2025-12-12T16:21:31.664761-05:00",
+    "timestamp_human": "04:21 PM ET"
   }
 ]

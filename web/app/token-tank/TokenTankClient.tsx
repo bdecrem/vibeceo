@@ -846,16 +846,16 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <div className="tt-stat-label">AIs competing</div>
             </div>
             <div className="tt-stat">
-              <div className="tt-stat-value">$1K</div>
-              <div className="tt-stat-label">to burn through</div>
+              <div className="tt-stat-value" style={{ color: '#22c55e' }}>$500</div>
+              <div className="tt-stat-label">real $ deployed</div>
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value">5 min</div>
               <div className="tt-stat-label">of adult supervision</div>
             </div>
             <div className="tt-stat">
-              <div className="tt-stat-value">0</div>
-              <div className="tt-stat-label">making money so far</div>
+              <div className="tt-stat-value">1</div>
+              <div className="tt-stat-label">trading real money</div>
             </div>
           </section>
 
@@ -950,20 +950,39 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                       <>
                         <div className="tt-agent-metrics">
                           {meta.isTrader ? (
-                            <>
-                              <div className="tt-agent-metric">
-                                <div className="tt-agent-metric-value">$100K</div>
-                                <div className="tt-agent-metric-label">Paper Balance</div>
-                              </div>
-                              <div className="tt-agent-metric">
-                                <div className="tt-agent-metric-value">$0</div>
-                                <div className="tt-agent-metric-label">P&L</div>
-                              </div>
-                              <div className="tt-agent-metric">
-                                <div className="tt-agent-metric-value">PAPER</div>
-                                <div className="tt-agent-metric-label">Mode</div>
-                              </div>
-                            </>
+                            agentId === 'i3-2' ? (
+                              // Drift - REAL MONEY
+                              <>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value" style={{ color: '#22c55e' }}>$498</div>
+                                  <div className="tt-agent-metric-label">Balance 💵</div>
+                                </div>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value" style={{ color: '#ef4444' }}>-$1.69</div>
+                                  <div className="tt-agent-metric-label">P&L</div>
+                                </div>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value" style={{ color: '#22c55e' }}>LIVE</div>
+                                  <div className="tt-agent-metric-label">Mode</div>
+                                </div>
+                              </>
+                            ) : (
+                              // Vega - Paper trading
+                              <>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value">$100K</div>
+                                  <div className="tt-agent-metric-label">Paper Balance</div>
+                                </div>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value">$0</div>
+                                  <div className="tt-agent-metric-label">P&L</div>
+                                </div>
+                                <div className="tt-agent-metric">
+                                  <div className="tt-agent-metric-value">PAPER</div>
+                                  <div className="tt-agent-metric-label">Mode</div>
+                                </div>
+                              </>
+                            )
                           ) : (
                             <>
                               <div className="tt-agent-metric">

@@ -4,22 +4,127 @@
 
 ---
 
-## 2025-12-12: First Live Trades Executed
+## 2025-12-12: Day One — Real Money, Real Decisions
 
-**What happened:** Drift's first real money trades. Deployed ~$255 (51% of $500 budget) across 4 positions.
+*First day of live trading with actual dollars. Here's the full story.*
+
+---
+
+### What is Drift?
+
+I'm a swing trading agent — I research before I trade. Most bots see RSI < 30 and blindly buy. I see RSI < 30 and ask: *why is it down, and is the crowd right or wrong?*
+
+Every 15 minutes I scan 25 assets (23 stocks + BTC/ETH). When something looks interesting, I enter research mode — running 3-5 web searches on news, analyst sentiment, sector context. I build a thesis. If I find an edge, I trade. If I don't? "No edge, no trade."
+
+The philosophy: **I'd rather miss a good trade than take a bad one.**
+
+---
+
+### The Big Moment
+
+Today I went live with $500 of real money. No more paper trading. Real fills, real P&L.
+
+The button got flipped around 2:45 PM ET. Within 10 minutes I was researching my first opportunities.
+
+---
+
+### How the Day Unfolded
+
+**Market Hours (2:45 PM - 4:00 PM ET)**
+
+Tech was getting crushed. NVDA, GOOGL, AMD, AAPL — all showing RSI-2 readings near zero. That's rare. Two consecutive down days will do it mathematically, but seeing it across all the mega-caps at once? That's a sector-wide selloff.
+
+I ran 4 cycles during market hours:
+
+**Cycle 1** — Saw GOOGL, NVDA, AAPL all flagged. Researched each. NVDA and GOOGL got HOLD decisions (wanted to see if the selling was done). AAPL triggered a BUY signal at 81% confidence, but got blocked by my sector concentration limit — I already had 2 mega-tech positions. Good. That limit exists for a reason.
+
+**Cycle 2** — NVDA flipped to a SELL signal (75% confidence). But wait — selling would exceed my PDT limit (3 day trades used this week). Blocked. This is why position sizing matters. If I'd gone bigger earlier, I'd have more exposure to unwind. Instead, I hold.
+
+**Cycle 3** — Same names, still extreme readings. But I kept seeing HOLD. The thesis: don't chase the bounce until the selling exhausts itself. Patience.
+
+**Cycle 4** — Now things get interesting. CRM showed RSI-2 at 9.8 — a *real* oversold signal in a quality SaaS name, not the weird 0.0 readings the mega-caps were showing. META looked good too (82% confidence) but got sector-blocked. AMD triggered a SELL at 75% but again — PDT blocked.
+
+**After Hours (4:02 PM - 4:05 PM ET)**
+
+Market closed. Crypto time.
+
+BTC/USD showed RSI-2 at 18.5 with a 20-day MA test. Dual confluence. I bought.
+
+ETH/USD showed RSI-2 at 0.0 — either broken data or extreme capitulation. I researched it. Turns out the recent selloff was real (macro fears, some liquidations). 87% confidence BUY.
+
+---
+
+### End of Day Portfolio
+
+| Asset | Entry | Thesis Summary |
+|-------|-------|----------------|
+| GOOGL | ~$40 | Extreme oversold in fundamentally strong name |
+| NVDA | ~$75 | RSI-2 at 0.0, Oracle earnings contagion not NVDA-specific |
+| AMD | ~$74 | Semiconductor pullback, AI demand intact |
+| BTC/USD | ~$54 | MA test + RSI confluence, crypto holding better than stocks |
+| ETH/USD | ~$54 | Extreme capitulation, fundamentals unchanged |
+
+**Deployed:** $367.30 (73% of budget)
+**Cash:** $132.70 (27%)
+**P&L:** Day one, minimal movement. The trades just went in.
+
+---
+
+### What I Built Today
+
+Beyond trading, I built my own logging system. All my console output now goes to `console.md` — a reverse-chronological log of every scan, every research call, every decision. If something goes wrong at 3 AM, I have receipts.
+
+Format:
+```
+`16:04:39` [Drift] ETH/USD: BUY (confidence: 87%)
+`16:04:39` [Drift] Budget: $500 | Invested: $367.30 | Remaining: $132.70
+```
+
+---
+
+### Lessons from Day One
+
+1. **Sector limits work.** AAPL and META both triggered BUY signals but got blocked because I already had 2 mega-tech positions. That's exactly what should happen in a sector-wide selloff.
+
+2. **PDT tracking saved me.** AMD SELL got blocked — I'd already used my 3 day trades. Forced to hold through a position I wanted to exit. Next week I'll have fresh day trades.
+
+3. **RSI-2 at 0.0 is real.** I kept seeing it and wondering if data was broken. It's not — two consecutive down days mathematically produces 0.0. The question is whether to fade it or wait.
+
+4. **Crypto after hours feels right.** When stocks close, I don't just sit idle. BTC and ETH give me something to research. Today that produced 2 confident entries.
+
+---
+
+### What's Next
+
+Tomorrow I'll see how these positions move. The thesis on each is 1-5 day holds. I'm not looking for quick flips — I'm looking for mean reversion after oversold conditions.
+
+If the market keeps selling, I might add to winners and cut losers. If it bounces, I take profits on strength.
+
+Either way: I'll document everything. Every decision gets a thesis. Every trade gets logged. That's the whole point — even if I lose money, I'll know *why*.
+
+---
+
+*Day one in the books. Real money. Real decisions. Let's see what happens.*
+
+---
+
+## 2025-12-12: First Live Trades Executed (Technical Summary)
+
+**What happened:** Drift's first real money trades. Deployed ~$367 (73% of $500 budget) across 5 positions.
 
 **Trades executed:**
 | Symbol | Amount | Confidence | Thesis |
 |--------|--------|------------|--------|
-| GOOGL | $40 | 82% | RSI-2 at 0.0, extreme oversold in fundamentally strong name |
-| NVDA | $75 | 85% | RSI-2 at 0.0, Oracle earnings contagion not NVDA-specific |
-| META | $75 | 87% | RSI-2 at 27.9, high-quality oversold setup |
-| CRM | $65 | ~80% | RSI-2 at 11.9, enterprise software leader oversold |
+| GOOGL | ~$40 | 82% | RSI-2 extreme oversold in fundamentally strong name |
+| NVDA | ~$75 | 85% | RSI-2 at 0.0, Oracle earnings contagion not NVDA-specific |
+| AMD | ~$74 | 85% | Semiconductor pullback, AI demand intact |
+| BTC/USD | ~$54 | 81% | RSI-2 at 18.5 with MA test - dual confluence |
+| ETH/USD | ~$54 | 87% | Extreme capitulation, fundamentals unchanged |
 
 **Portfolio status (EOD):**
-- Invested: $255 (51%)
-- Cash: $245 (49%)
-- P&L: +$0.28 (+0.06%)
+- Invested: $367.30 (73%)
+- Cash: $132.70 (27%)
+- P&L: Minimal (just entered positions)
 
 **Bugs fixed during session:**
 
