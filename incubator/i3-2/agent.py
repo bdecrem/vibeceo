@@ -53,6 +53,7 @@ from trading.alpaca_client import AlpacaClient, is_market_open, get_market_statu
 from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
 from utils.technicals import get_technical_signals, screen_for_triggers
+from utils.logger import log
 
 # Try to import anthropic for API calls
 try:
@@ -131,7 +132,7 @@ class DriftAgent:
             MEMORY_FILE.write_text(new_content)
         except Exception as e:
             if VERBOSE:
-                print(f"[Drift] Memory write error: {e}")
+                log(f"[Drift] Memory write error: {e}")
 
     def run_cycle(self, crypto_only: bool = False) -> dict:
         """
@@ -158,8 +159,9 @@ class DriftAgent:
                     "message": f"Stock market closed. Time: {market['current_time_et']}",
                     "actions": [],
                 }
-            active_watchlist = WATCHLIST
-            mode = "stocks"
+            # Scan stocks AND crypto during market hours
+            active_watchlist = WATCHLIST + CRYPTO_WATCHLIST
+            mode = "stocks+crypto"
 
             # During market hours, check if we should seek deployment
             positions = self.alpaca.get_positions()
@@ -168,9 +170,9 @@ class DriftAgent:
             seek_deployment = budget_remaining > MAX_PORTFOLIO_VALUE * 0.5  # Seek if >50% budget available
 
         if VERBOSE:
-            print(f"[Drift] Scanning {mode}: {len(active_watchlist)} assets")
+            log(f"[Drift] Scanning {mode}: {len(active_watchlist)} assets")
             if seek_deployment:
-                print(f"[Drift] Cash >50% of budget - actively seeking entry opportunities")
+                log(f"[Drift] Cash >50% of budget - actively seeking entry opportunities")
 
         # Step 1: Light scan
         scan_result = self._light_scan(watchlist=active_watchlist, seek_deployment=seek_deployment)
@@ -234,7 +236,7 @@ class DriftAgent:
 
             # ========== STAGE 1: Quantitative screening on watchlist ==========
             if VERBOSE:
-                print(f"[Drift] Stage 1: Quantitative screening {len(watchlist)} symbols...")
+                log(f"[Drift] Stage 1: Quantitative screening {len(watchlist)} symbols...")
 
             watchlist_signals = {}
             for symbol in watchlist:
@@ -249,7 +251,7 @@ class DriftAgent:
                         all_triggers.extend(triggers)
                 except Exception as e:
                     if VERBOSE:
-                        print(f"[Drift] Error getting data for {symbol}: {e}")
+                        log(f"[Drift] Error getting data for {symbol}: {e}")
 
             # ========== STAGE 2: Check positions for exit triggers ==========
             for pos in positions:
@@ -275,7 +277,7 @@ class DriftAgent:
 
             # ========== STAGE 3: News-reactive scan for movers outside watchlist ==========
             if seek_deployment and VERBOSE:
-                print(f"[Drift] Stage 3: News-reactive scan...")
+                log(f"[Drift] Stage 3: News-reactive scan...")
 
             news_triggers = self._scan_news_movers(watchlist)
             all_triggers.extend(news_triggers)
@@ -339,7 +341,7 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
             )
 
             if VERBOSE:
-                print(f"[Drift] Scan complete: {len(result.get('triggers', []))} triggers to research")
+                log(f"[Drift] Scan complete: {len(result.get('triggers', []))} triggers to research")
 
             return result
 
@@ -397,7 +399,7 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
 
         except Exception as e:
             if VERBOSE:
-                print(f"[Drift] News scan error: {e}")
+                log(f"[Drift] News scan error: {e}")
 
         return news_triggers
 
@@ -411,7 +413,7 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
         reason = trigger.get("reason", "")
 
         if VERBOSE:
-            print(f"\n[Drift] Researching {symbol}: {reason}")
+            log(f"\n[Drift] Researching {symbol}: {reason}")
 
         # Get current position info if we hold it
         position = self.alpaca.get_position(symbol)
@@ -500,7 +502,7 @@ Respond with your research process, then final JSON:
         )
 
         if VERBOSE:
-            print(f"[Drift] {symbol}: {result.get('decision', 'pass').upper()} "
+            log(f"[Drift] {symbol}: {result.get('decision', 'pass').upper()} "
                   f"(confidence: {result.get('confidence', 0)}%)")
             print(f"        Thesis: {result.get('thesis', '')[:150]}...")
 
@@ -516,7 +518,7 @@ Respond with your research process, then final JSON:
         # Check confidence threshold
         if confidence < MIN_CONFIDENCE_TO_TRADE:
             if VERBOSE:
-                print(f"[Drift] {symbol}: Confidence {confidence}% below threshold, skipping")
+                log(f"[Drift] {symbol}: Confidence {confidence}% below threshold, skipping")
             return {"status": "skipped", "reason": "Low confidence"}
 
         if decision == "buy":
@@ -542,7 +544,7 @@ Respond with your research process, then final JSON:
         sector_count = sum(1 for p in positions if SECTOR_MAP.get(p["symbol"], "unknown") == target_sector)
         if sector_count >= MAX_POSITIONS_PER_SECTOR:
             if VERBOSE:
-                print(f"[Drift] SECTOR LIMIT: {symbol} blocked - already have {sector_count} {target_sector} positions")
+                log(f"[Drift] SECTOR LIMIT: {symbol} blocked - already have {sector_count} {target_sector} positions")
             return {"status": "skipped", "reason": f"Sector '{target_sector}' at max ({MAX_POSITIONS_PER_SECTOR} positions)"}
 
         # Calculate position size based on confidence and budget remaining
@@ -553,7 +555,7 @@ Respond with your research process, then final JSON:
             return {"status": "skipped", "reason": f"Budget exhausted (${MAX_PORTFOLIO_VALUE} deployed)"}
 
         if VERBOSE:
-            print(f"[Drift] Budget: ${MAX_PORTFOLIO_VALUE} | Invested: ${current_invested:.2f} | Remaining: ${budget_remaining:.2f}")
+            log(f"[Drift] Budget: ${MAX_PORTFOLIO_VALUE} | Invested: ${current_invested:.2f} | Remaining: ${budget_remaining:.2f}")
 
         size = get_position_size(confidence, budget_remaining)
 
@@ -610,7 +612,7 @@ Respond with your research process, then final JSON:
         approved, pdt_reason = self.pdt.approve_sell(symbol)
         if not approved:
             if VERBOSE:
-                print(f"[Drift] {symbol}: {pdt_reason}")
+                log(f"[Drift] {symbol}: {pdt_reason}")
             return {"status": "blocked", "reason": pdt_reason}
 
         # Check if it's a day trade
@@ -699,7 +701,7 @@ Respond with your research process, then final JSON:
             )
             return response.content[0].text
         except Exception as e:
-            print(f"[Drift] LLM error: {e}")
+            log(f"[Drift] LLM error: {e}")
             return "{}"
 
     def _call_llm_with_tools(self, prompt: str) -> str:
@@ -735,7 +737,7 @@ Respond with your research process, then final JSON:
                 if hasattr(usage, 'server_tool_use'):
                     searches = getattr(usage.server_tool_use, 'web_search_requests', 0)
                     if searches > 0:
-                        print(f"[Drift] Web searches performed: {searches}")
+                        log(f"[Drift] Web searches performed: {searches}")
 
             # Handle pause_turn (long-running turn was paused)
             if response.stop_reason == "pause_turn":
@@ -760,7 +762,7 @@ Respond with your research process, then final JSON:
             return final_text
 
         except Exception as e:
-            print(f"[Drift] Research error: {e}")
+            log(f"[Drift] Research error: {e}")
             return "{}"
 
     def _extract_json(self, text: str) -> dict:

@@ -947,8 +947,8 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
 
           {retiredAgents.length > 0 && (
             <>
-              <div className="tt-dashboard-header" style={{ marginTop: '48px' }}>
-                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div className="tt-dashboard-header" style={{ marginTop: '48px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                   <span style={{ opacity: 0.6 }}>🫗</span> Retired
                 </h2>
                 <p style={{ opacity: 0.7 }}>Not (necessarily) failures — just not needed right now.</p>

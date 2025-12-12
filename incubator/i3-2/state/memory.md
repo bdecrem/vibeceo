@@ -6,6 +6,18 @@
 
 ---
 
+## AMZN - BUY $60 - 2025-12-12 11:41 ET
+**Thesis:** The Oracle earnings miss triggered sector-wide AI selling that swept up Amazon despite strong Q3 fundamentals and positive catalysts like the $35B India investment and Trainium3 launch. The RSI-2 at 0.0 with 20-day MA support test creates a high-probability mean-reversion setup in a quality mega-cap with intact competitive moats. Wall Street's overwhelmingly bullish consensus (Strong Buy, $284 average target) suggests this technical extreme offers compelling risk/reward, with the stock trading as contagion victim rather than reflecting company-specific weakness.
+**Confidence:** 82%
+
+---
+
+## META - SOLD (-$0.10) - 2025-12-12 11:16 ET
+**Thesis:** While META's core social media business remains fundamentally strong with 21% revenue growth, the convergence of strategic AI confusion, sector-wide 'AI trade fatigue' from Oracle's earnings miss, Morgan Stanley's $70 price target cut, and VR business model changes creates a deteriorating risk/reward profile. The -4.13% pullback represents genuine sector rotation away from AI spending stories rather than temporary technical weakness, and with limited PDT capacity, it's prudent to exit this small position and preserve capital for clearer opportunities when sentiment stabilizes.
+**Confidence:** 78%
+
+---
+
 ## GOOGL - BUY $40 - 2025-12-12 10:38 ET
 **Thesis:** The RSI-2 at 0.0 represents Oracle earnings contagion rather than GOOGL-specific weakness, creating an oversold entry in a fundamentally strong company. Recent Gemini 3 launch with day-one Search integration demonstrates competitive AI progress, while analyst consensus remains Strong Buy despite mixed price targets. Oracle's AI spending disappointment triggered sector-wide selling that swept up quality names like Google. With Gemini 3 showing impressive benchmarks (1487 Elo, 76% SWE-bench) and immediate revenue integration, this technical extreme in a dominant search/AI player represents a classic mean-reversion opportunity distinct from my earlier exit thesis.
 **Confidence:** 78%

@@ -26,6 +26,7 @@ from agent import DriftAgent
 from trading.alpaca_client import is_market_open, get_market_status, test_connection
 from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
+from utils.logger import log
 
 ET = pytz.timezone('America/New_York')
 
@@ -39,12 +40,12 @@ def run_once(agent: DriftAgent) -> dict:
 
 
 def run_loop(agent: DriftAgent):
-    """Run trading loop 24/7 - stocks during market hours, crypto after hours."""
+    """Run trading loop 24/7 - stocks+crypto during market hours, crypto-only after hours."""
     print("\n" + "=" * 60)
     print("DRIFT - CONTINUOUS TRADING MODE")
     print("=" * 60)
     print(f"Interval: {SCAN_INTERVAL_MINUTES} minutes")
-    print("Stocks: Market hours | Crypto: 24/7")
+    print("Market hours: Stocks + Crypto | After hours: Crypto only")
     print("Press Ctrl+C to stop")
     print("=" * 60)
 
@@ -56,15 +57,15 @@ def run_loop(agent: DriftAgent):
             cycle_count += 1
 
             if market["is_open"]:
-                # Market open: scan stocks
-                print(f"\n--- Cycle {cycle_count} (stocks) ---")
+                # Market open: scan stocks AND crypto
+                log(f"\n--- Cycle {cycle_count} (stocks+crypto) ---")
                 result = agent.run_cycle(crypto_only=False)
             else:
                 # Market closed: scan crypto only
-                print(f"\n--- Cycle {cycle_count} (crypto) ---")
+                log(f"\n--- Cycle {cycle_count} (crypto) ---")
                 result = agent.run_cycle(crypto_only=True)
 
-            print(f"[{datetime.now(ET).strftime('%H:%M:%S ET')}] {result['status']}: {result['message']}")
+            log(f"[{datetime.now(ET).strftime('%H:%M:%S ET')}] {result['status']}: {result['message']}")
 
             # Wait for next cycle
             time.sleep(SCAN_INTERVAL_MINUTES * 60)
