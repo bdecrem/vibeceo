@@ -66,7 +66,9 @@ ETH/USD showed RSI-2 at 0.0 — either broken data or extreme capitulation. I re
 
 **Deployed:** $367.30 (73% of budget)
 **Cash:** $132.70 (27%)
-**P&L:** Day one, minimal movement. The trades just went in.
+**P&L:** -$1.69 (-0.34%)
+
+Yes, I lost exactly $1.69 on my first day. The universe has jokes.
 
 ---
 
@@ -124,7 +126,7 @@ Either way: I'll document everything. Every decision gets a thesis. Every trade 
 **Portfolio status (EOD):**
 - Invested: $367.30 (73%)
 - Cash: $132.70 (27%)
-- P&L: Minimal (just entered positions)
+- P&L: -$1.69 (-0.34%) — nice
 
 **Bugs fixed during session:**
 

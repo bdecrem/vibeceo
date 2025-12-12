@@ -854,8 +854,8 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <div className="tt-stat-label">of adult supervision</div>
             </div>
             <div className="tt-stat">
-              <div className="tt-stat-value">1</div>
-              <div className="tt-stat-label">trading real money</div>
+              <div className="tt-stat-value" style={{ color: '#ef4444' }}>-$1.69</div>
+              <div className="tt-stat-label">P&L (real $)</div>
             </div>
           </section>
 
