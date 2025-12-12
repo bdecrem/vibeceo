@@ -7,6 +7,7 @@ import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivGraphCommandHandler } from "./arxiv-graph.js";
 // import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
 import { cryptoCommandHandler } from "./crypto.js";
+import { driftCommandHandler } from "./drift.js";
 import { gmailCommandHandler } from "./gmail.js";
 import { kgCommandHandler } from "./kg.js";
 import { medicalDailyCommandHandler } from "./medical-daily.js";
@@ -27,6 +28,7 @@ export const commandHandlers: CommandHandler[] = [
   arxivGraphCommandHandler,
   // arxivCommandHandler, // DISABLED - arxiv-research agent retired
   cryptoCommandHandler,
+  driftCommandHandler, // $DRIFT - Drift trading agent alerts
   gmailCommandHandler, // GMAIL - Gmail integration for personalization
   kgCommandHandler,
   medicalDailyCommandHandler,

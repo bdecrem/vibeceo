@@ -1,24 +1,101 @@
 """
 i3-2 (Drift) Trading Agent - SMS Notifications
 
-Sends trade alerts to configured phone numbers via Twilio.
+Sends trade alerts to subscribers via Twilio.
+Subscribers managed via $DRIFT SUBSCRIBE command in sms-bot.
 """
 
 import os
+import json
 import urllib.request
 import urllib.parse
 import urllib.error
 from base64 import b64encode
 from pathlib import Path
 
-# Phone numbers to notify on trades
-NOTIFY_PHONES = [
+# Agent slug - must match DRIFT_AGENT_SLUG in sms-bot/commands/drift.ts
+DRIFT_AGENT_SLUG = "drift-trader"
+
+# Fallback phone numbers (founders always get notified)
+FALLBACK_PHONES = [
     "+16508989508",  # Bart
     "+14155056910",  # Partner
 ]
 
 # SMS limits (UCS-2 encoding)
 MAX_SMS_CODE_UNITS = 670  # 10 segments max
+
+
+def _load_supabase_env():
+    """Load Supabase credentials from sms-bot/.env.local if not set."""
+    if os.getenv("SUPABASE_URL"):
+        return
+
+    env_file = Path(__file__).parent.parent.parent / "sms-bot" / ".env.local"
+    if env_file.exists():
+        with open(env_file) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, val = line.split("=", 1)
+                    if key.startswith("SUPABASE") or key.startswith("NEXT_PUBLIC_SUPABASE"):
+                        os.environ[key] = val
+
+
+def _get_subscribers() -> list[str]:
+    """
+    Fetch subscriber phone numbers from Supabase.
+
+    Returns list of phone numbers subscribed to drift-trader agent.
+    Falls back to FALLBACK_PHONES if Supabase is unavailable.
+    """
+    _load_supabase_env()
+
+    supabase_url = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL")
+    supabase_key = os.getenv("SUPABASE_SERVICE_ROLE_KEY") or os.getenv("SUPABASE_ANON_KEY") or os.getenv("NEXT_PUBLIC_SUPABASE_ANON_KEY")
+
+    if not supabase_url or not supabase_key:
+        print("⚠️  Supabase not configured, using fallback phones")
+        return list(FALLBACK_PHONES)
+
+    try:
+        # Query agent_subscriptions joined with sms_subscribers
+        # First get subscriber IDs from agent_subscriptions
+        url = f"{supabase_url}/rest/v1/agent_subscriptions?agent_slug=eq.{DRIFT_AGENT_SLUG}&active=eq.true&select=subscriber_id"
+        request = urllib.request.Request(url)
+        request.add_header("apikey", supabase_key)
+        request.add_header("Authorization", f"Bearer {supabase_key}")
+
+        with urllib.request.urlopen(request, timeout=10) as response:
+            subscriptions = json.loads(response.read().decode())
+
+        if not subscriptions:
+            print("📭 No Drift subscribers found, using fallback phones")
+            return list(FALLBACK_PHONES)
+
+        subscriber_ids = [s["subscriber_id"] for s in subscriptions]
+
+        # Now get phone numbers from sms_subscribers
+        ids_param = ",".join(f'"{sid}"' for sid in subscriber_ids)
+        url = f"{supabase_url}/rest/v1/sms_subscribers?id=in.({ids_param})&consent_given=eq.true&unsubscribed=eq.false&select=phone_number"
+        request = urllib.request.Request(url)
+        request.add_header("apikey", supabase_key)
+        request.add_header("Authorization", f"Bearer {supabase_key}")
+
+        with urllib.request.urlopen(request, timeout=10) as response:
+            subscribers = json.loads(response.read().decode())
+
+        phones = [s["phone_number"] for s in subscribers if s.get("phone_number")]
+
+        # Always include fallback phones (founders)
+        all_phones = set(phones + FALLBACK_PHONES)
+
+        print(f"📱 Found {len(phones)} subscribers + {len(FALLBACK_PHONES)} founders = {len(all_phones)} total")
+        return list(all_phones)
+
+    except Exception as e:
+        print(f"⚠️  Failed to fetch subscribers: {e}")
+        return list(FALLBACK_PHONES)
 
 
 def _count_ucs2_units(text: str) -> int:
@@ -193,7 +270,8 @@ def notify_trade(signal: str, asset: str, amount: float, reasoning: str, confide
         remaining = MAX_SMS_CODE_UNITS - _count_ucs2_units(header_part)
         msg = header_part + _truncate_to_fit(sentence, remaining)
 
-    for phone in NOTIFY_PHONES:
+    phones = _get_subscribers()
+    for phone in phones:
         send_sms(phone, msg)
         print(f"📱 SMS sent to {phone}")
 
@@ -208,7 +286,8 @@ def notify_startup(assets: list, cash: float):
     """
     msg = f"🤖 Drift (i3-2) Trading Agent started!\n\nWatching: {', '.join(assets[:5])}...\nCash: ${cash:,.2f}\n\nWill SMS you on each trade."
 
-    for phone in NOTIFY_PHONES:
+    phones = _get_subscribers()
+    for phone in phones:
         send_sms(phone, msg)
         print(f"📱 Startup SMS sent to {phone}")
 
@@ -246,7 +325,8 @@ def notify_research(asset: str, thesis: str, confidence: int, decision: str):
         remaining = MAX_SMS_CODE_UNITS - _count_ucs2_units(header_part)
         msg = header_part + _truncate_to_fit(sentence, remaining)
 
-    for phone in NOTIFY_PHONES:
+    phones = _get_subscribers()
+    for phone in phones:
         send_sms(phone, msg)
         print(f"📱 Research SMS sent to {phone}")
 
