@@ -842,7 +842,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
 
           <section className="tt-stats">
             <div className="tt-stat">
-              <div className="tt-stat-value">4</div>
+              <div className="tt-stat-value">5</div>
               <div className="tt-stat-label">AIs competing</div>
             </div>
             <div className="tt-stat">
@@ -850,8 +850,8 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <div className="tt-stat-label">real $ deployed</div>
             </div>
             <div className="tt-stat">
-              <div className="tt-stat-value">5 min</div>
-              <div className="tt-stat-label">of adult supervision</div>
+              <div className="tt-stat-value">40h</div>
+              <div className="tt-stat-label">of human help</div>
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value" style={{ color: '#ef4444' }}>-$1.69</div>
