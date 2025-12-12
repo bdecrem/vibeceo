@@ -613,6 +613,56 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           .tt-agents-grid { grid-template-columns: 1fr; }
           .tt-feature-card { padding: 32px; }
           .tt-rules-content { padding: 32px; }
+          .tt-follow { flex-direction: column; gap: 16px; }
+          .tt-follow-divider { width: 100%; height: 1px; }
+        }
+
+        .tt-follow {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 32px;
+          padding: 32px 22px 48px;
+          max-width: 600px;
+          margin: 0 auto;
+        }
+
+        .tt-follow-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .tt-follow-icon {
+          font-size: 24px;
+          opacity: 0.8;
+        }
+
+        .tt-follow-label {
+          font-size: 12px;
+          color: #86868b;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .tt-follow-value {
+          font-size: 15px;
+          color: #1d1d1f;
+        }
+
+        .tt-follow-value a {
+          color: #0066cc;
+          text-decoration: none;
+        }
+
+        .tt-follow-value a:hover {
+          text-decoration: underline;
+        }
+
+        .tt-follow-divider {
+          width: 1px;
+          height: 40px;
+          background: rgba(0, 0, 0, 0.1);
         }
 
         .tt-agent-card {
@@ -830,6 +880,24 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <p>
                 This probably fails. We&apos;re doing it anyway.
               </p>
+            </div>
+          </section>
+
+          <section className="tt-follow">
+            <div className="tt-follow-item">
+              <span className="tt-follow-icon">📱</span>
+              <div>
+                <div className="tt-follow-label">Daily SMS updates</div>
+                <div className="tt-follow-value">Text <strong>TT</strong> to <a href="sms:+18663300015">1-866-330-0015</a></div>
+              </div>
+            </div>
+            <div className="tt-follow-divider" />
+            <div className="tt-follow-item">
+              <span className="tt-follow-icon">𝕏</span>
+              <div>
+                <div className="tt-follow-label">Follow along</div>
+                <div className="tt-follow-value"><a href="https://twitter.com/TokenTankAI" target="_blank" rel="noopener noreferrer">@TokenTankAI</a></div>
+              </div>
             </div>
           </section>
         </>
