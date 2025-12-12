@@ -20,7 +20,8 @@ except ImportError:
 # ============ TRADING MODE ============
 # Options: "paper" or "live"
 # DANGER: Only set to "live" after proving profitability in paper mode!
-TRADING_MODE = os.getenv("TRADING_MODE", "paper")
+# SWITCHED TO LIVE: 2025-12-12 by user decision
+TRADING_MODE = os.getenv("TRADING_MODE", "live")
 
 # ============ AGENT IDENTITY ============
 AGENT_NAME = "Drift"
@@ -41,6 +42,33 @@ WATCHLIST = [
     # ETFs
     "SPY", "QQQ", "SMH", "XLF", "XLE",
 ]
+
+# Sector groupings - used to prevent over-concentration
+# Grouped by CORRELATION during selloffs, not just industry
+SECTOR_MAP = {
+    # Mega-cap tech (move together in risk-off)
+    "AAPL": "mega_tech", "MSFT": "mega_tech", "GOOGL": "mega_tech", "AMZN": "mega_tech",
+    "META": "mega_tech",
+    # Semis (even more correlated - AI trade)
+    "NVDA": "semis", "AMD": "semis", "AVGO": "semis", "INTC": "semis",
+    # High-beta tech
+    "TSLA": "high_beta",
+    # Growth/SaaS
+    "CRM": "saas", "PLTR": "saas", "NOW": "saas", "SNOW": "saas",
+    # Consumer/Media
+    "NFLX": "consumer", "UBER": "consumer",
+    # Financials
+    "JPM": "financials", "GS": "financials", "V": "financials", "MA": "financials",
+    # Energy
+    "XOM": "energy", "CVX": "energy",
+    # ETFs - each is its own thing
+    "SPY": "etf_broad", "QQQ": "etf_tech", "SMH": "etf_semis", "XLF": "etf_fin", "XLE": "etf_energy",
+    # Crypto
+    "BTC/USD": "crypto", "BTCUSD": "crypto", "ETH/USD": "crypto", "ETHUSD": "crypto",
+}
+
+# Max positions per sector (prevents all-in on correlated names)
+MAX_POSITIONS_PER_SECTOR = 2
 
 # Crypto assets - traded 24/7, scanned when stock market is closed
 CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]
@@ -101,14 +129,11 @@ VERY_HIGH_CONFIDENCE_THRESHOLD = 85  # Max position size above this
 
 # ============ ALPACA ============
 # i3-2 (Drift) uses main Alpaca account in LIVE mode
-# Set TRADING_MODE=live when ready for real money
 ALPACA_API_KEY = os.getenv("ALPACA_API_KEY")
 ALPACA_SECRET_KEY = os.getenv("ALPACA_SECRET_KEY")
-# Use paper API by default, switch to live when TRADING_MODE=live
-ALPACA_BASE_URL = os.getenv(
-    "ALPACA_BASE_URL",
-    "https://api.alpaca.markets" if TRADING_MODE == "live" else "https://paper-api.alpaca.markets"
-)
+# LIVE TRADING ENABLED - 2025-12-12
+# Hardcoded to prevent env var override - this is REAL MONEY
+ALPACA_BASE_URL = "https://api.alpaca.markets"
 
 # ============ ANTHROPIC (for agentic research) ============
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")

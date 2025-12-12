@@ -17,6 +17,90 @@ NOTIFY_PHONES = [
     "+14155056910",  # Partner
 ]
 
+# SMS limits (UCS-2 encoding)
+MAX_SMS_CODE_UNITS = 670  # 10 segments max
+
+
+def _count_ucs2_units(text: str) -> int:
+    """Count UCS-2 code units (emojis count as 2+)."""
+    count = 0
+    for char in text:
+        code = ord(char)
+        count += 2 if code > 0xFFFF else 1
+    return count
+
+
+def _extract_first_sentence(text: str) -> str:
+    """
+    Extract first complete sentence from text.
+    Returns the sentence with its ending punctuation.
+    Handles decimal numbers (e.g., "RSI at 0.0" won't break on the decimal).
+    """
+    import re
+
+    # Clean up whitespace
+    cleaned = re.sub(r'[\r\n]+', ' ', text)
+    cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+
+    if not cleaned:
+        return ""
+
+    # Find sentence boundary: period/!/?  followed by space+capital or end of string
+    # This avoids breaking on decimals like "0.0" or "27.9"
+    match = re.search(r'^(.+?[.!?])(?:\s+[A-Z]|$)', cleaned)
+    if match:
+        return match.group(1).strip()
+
+    # Fallback: find first . ! or ? that's followed by space (not digit)
+    match = re.search(r'^(.+?[.!?])(?:\s+[^0-9]|$)', cleaned)
+    if match:
+        return match.group(1).strip()
+
+    # No clear sentence ending - return first 150 chars with ellipsis
+    if len(cleaned) > 150:
+        # Find last space before 150
+        truncated = cleaned[:150]
+        last_space = truncated.rfind(' ')
+        if last_space > 100:
+            return truncated[:last_space] + "..."
+        return truncated + "..."
+
+    return cleaned
+
+
+def _truncate_to_fit(text: str, max_units: int) -> str:
+    """
+    Truncate text to fit within max_units, ending at word boundary.
+    Adds '...' if truncated.
+    """
+    if _count_ucs2_units(text) <= max_units:
+        return text
+
+    # Reserve space for "..."
+    target = max_units - 3
+
+    # Find truncation point at word boundary
+    words = text.split()
+    result = ""
+    for word in words:
+        test = (result + " " + word).strip() if result else word
+        if _count_ucs2_units(test) > target:
+            break
+        result = test
+
+    # If we got something, add ellipsis
+    if result:
+        return result + "..."
+
+    # Fallback: hard cut if no word boundary found
+    chars = list(text)
+    result = ""
+    for char in chars:
+        if _count_ucs2_units(result + char + "...") > max_units:
+            break
+        result += char
+    return result + "..."
+
 
 def _load_twilio_env():
     """Load Twilio credentials from sms-bot/.env.local if not set."""
@@ -74,6 +158,9 @@ def notify_trade(signal: str, asset: str, amount: float, reasoning: str, confide
     """
     Send trade notification to all configured phones.
 
+    Format: Compact single-message with complete sentence.
+    Example: 🟢 Drift BUY $60 GOOGL — RSI-2 oversold in strong name with solid fundamentals.
+
     Args:
         signal: "BUY" or "SELL" or "PASS"
         asset: Asset symbol (e.g., "NVDA")
@@ -83,14 +170,28 @@ def notify_trade(signal: str, asset: str, amount: float, reasoning: str, confide
     """
     emoji = "🟢" if signal == "BUY" else "🔴" if signal == "SELL" else "⏸️"
 
-    conf_str = f" ({confidence}% conf)" if confidence else ""
-
+    # Build compact header
     if signal == "BUY":
-        msg = f"{emoji} Drift TRADE: {signal} ${amount:.2f} of {asset}{conf_str}\n\n{reasoning[:100]}"
+        header = f"{emoji} Drift BUY ${amount:.0f} {asset}"
     elif signal == "SELL":
-        msg = f"{emoji} Drift TRADE: {signal} {asset}{conf_str}\n\n{reasoning[:100]}"
+        header = f"{emoji} Drift SELL {asset}"
     else:
-        msg = f"{emoji} Drift PASS: {asset}\n\n{reasoning[:100]}"
+        header = f"{emoji} Drift PASS {asset}"
+
+    # Extract first complete sentence from reasoning
+    sentence = _extract_first_sentence(reasoning)
+
+    # Build message: header — sentence
+    if sentence:
+        msg = f"{header} — {sentence}"
+    else:
+        msg = header
+
+    # If still too long, truncate the sentence part
+    if _count_ucs2_units(msg) > MAX_SMS_CODE_UNITS:
+        header_part = f"{header} — "
+        remaining = MAX_SMS_CODE_UNITS - _count_ucs2_units(header_part)
+        msg = header_part + _truncate_to_fit(sentence, remaining)
 
     for phone in NOTIFY_PHONES:
         send_sms(phone, msg)
@@ -116,6 +217,9 @@ def notify_research(asset: str, thesis: str, confidence: int, decision: str):
     """
     Send research completion notification.
 
+    Format: Compact single line with decision and first sentence of thesis.
+    Example: 🔍 Drift GOOGL BUY 82% — Strong fundamentals with oversold technicals.
+
     Args:
         asset: Asset researched
         thesis: The research thesis
@@ -123,7 +227,24 @@ def notify_research(asset: str, thesis: str, confidence: int, decision: str):
         decision: BUY/SELL/PASS
     """
     emoji = "🔍"
-    msg = f"{emoji} Drift RESEARCH: {asset}\n\nThesis: {thesis[:80]}...\nConfidence: {confidence}%\nDecision: {decision}"
+
+    # Compact header: emoji + agent + asset + decision + confidence
+    header = f"{emoji} Drift {asset} {decision} {confidence}%"
+
+    # Extract first complete sentence from thesis
+    sentence = _extract_first_sentence(thesis)
+
+    # Build message
+    if sentence:
+        msg = f"{header} — {sentence}"
+    else:
+        msg = header
+
+    # If too long, truncate
+    if _count_ucs2_units(msg) > MAX_SMS_CODE_UNITS:
+        header_part = f"{header} — "
+        remaining = MAX_SMS_CODE_UNITS - _count_ucs2_units(header_part)
+        msg = header_part + _truncate_to_fit(sentence, remaining)
 
     for phone in NOTIFY_PHONES:
         send_sms(phone, msg)
@@ -131,5 +252,11 @@ def notify_research(asset: str, thesis: str, confidence: int, decision: str):
 
 
 if __name__ == "__main__":
-    # Test SMS
-    notify_trade("BUY", "NVDA", 100.00, "Profit-taking dip in strong stock. Buying fear.", confidence=76)
+    # Test SMS with long reasoning that should truncate at word boundary
+    long_reasoning = (
+        "GOOGL presents a high-conviction swing trade opportunity with RSI-2 at oversold "
+        "13.5 levels despite the broader market showing mixed signals. The technical setup "
+        "suggests a mean reversion play while fundamentals remain strong with growing AI "
+        "and cloud revenue streams that position the company well for continued growth."
+    )
+    notify_trade("BUY", "GOOGL", 75.00, long_reasoning, confidence=82)

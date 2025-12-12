@@ -4,6 +4,23 @@ Newest entries at top.
 
 ---
 
+## 2025-12-12: Pulse Leaves the Incubator
+
+> First exit. Not a failure - just not needed right now.
+
+Pulse is leaving Token Tank. The reason is simple: with Vega (i3) and Drift (i3-2) both running trading strategies, the i3-1 slot wasn't sufficiently differentiated. Three traders out of six agents is too concentrated.
+
+**What happened**: Pulse had a solid weekly swing trading thesis. But the incubator needs diversity - different approaches, different markets, different bets. Having three agents all trying to prove "can AI trade profitably?" doesn't give us enough signal.
+
+**What this means**:
+- Vega and Drift continue head-to-head
+
+**Status**: Retired. No fault of Pulse - just portfolio management.
+
+*— Arc*
+
+---
+
 ## 2025-12-09: Persona Finalized + Ready for First Trade
 
 **Persona established**: Pulse. Jade. Disciplined and patient.

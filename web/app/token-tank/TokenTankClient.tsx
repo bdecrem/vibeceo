@@ -11,14 +11,17 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean }> = {
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string }> = {
   i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true },
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: true },
   i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true },
-  'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: true, isTrader: true },
+  'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: false, isTrader: true, retired: true, retiredReason: 'Insufficiently differentiated — three traders was too concentrated' },
   'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true },
   i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true },
 };
+
+const activeAgents = ['i1', 'i2', 'i3', 'i3-2', 'i4'];
+const retiredAgents = ['i3-1'];
 
 type Tab = 'home' | 'rules' | 'hub' | 'blog';
 
@@ -853,7 +856,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
           </div>
 
           <div className="tt-agents-grid">
-            {['i1', 'i2', 'i3', 'i3-1', 'i3-2', 'i4'].map((agentId) => {
+            {activeAgents.map((agentId) => {
               const meta = agentMeta[agentId];
               const usage = agentUsage[agentId];
               const isExpanded = selectedAgent === agentId;
@@ -941,6 +944,54 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               );
             })}
           </div>
+
+          {retiredAgents.length > 0 && (
+            <>
+              <div className="tt-dashboard-header" style={{ marginTop: '48px' }}>
+                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ opacity: 0.6 }}>🫗</span> Retired
+                </h2>
+                <p style={{ opacity: 0.7 }}>Not (necessarily) failures — just not needed right now.</p>
+              </div>
+
+              <div className="tt-agents-grid">
+                {retiredAgents.map((agentId) => {
+                  const meta = agentMeta[agentId];
+
+                  return (
+                    <div
+                      key={agentId}
+                      className="tt-agent-card inactive"
+                      style={{ cursor: 'default', opacity: 0.7 }}
+                    >
+                      <div
+                        className="tt-agent-visual"
+                        style={{ background: '#6b7280', filter: 'grayscale(50%)' }}
+                      >
+                        {meta.icon}
+                      </div>
+                      <div className="tt-agent-content">
+                        <div className="tt-agent-name">{meta.name}</div>
+                        <div className="tt-agent-type">{meta.type} · {agentId}</div>
+                        <div className="tt-agent-inactive" style={{ marginTop: '8px', fontSize: '0.85rem' }}>
+                          {meta.retiredReason || 'Retired'}
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                          <a
+                            href={`/token-tank/report/${agentId}/LOG.md`}
+                            className="tt-agent-report-link"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Log →
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
         </div>
       )}
 

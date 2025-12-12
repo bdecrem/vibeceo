@@ -4,6 +4,94 @@
 
 ---
 
+## 2025-12-12: LIVE TRADING ENABLED
+
+**Decision:** Switched from paper to live trading with $500 budget.
+
+**Paper trading results:**
+- 8 buys, 1 sell over 2 days
+- Final P&L: -$2.94 (-0.87%)
+- 1 winner (NFLX +1%), 6 losers
+
+**Fixes deployed before going live:**
+- Memory system (prevents flip-flopping)
+- Sector concentration limits (max 2 per sector)
+- SMS word-boundary truncation
+- Crypto bars API fix
+
+**Config changes:**
+- `TRADING_MODE` = "live"
+- `ALPACA_BASE_URL` = hardcoded to api.alpaca.markets
+- Memory cleared for fresh start
+
+**Risk controls:**
+- $500 max budget
+- $25-$75 position sizes
+- Max 2 positions per correlated sector
+- 55% minimum confidence to trade
+- PDT tracking (3 day trades/week)
+
+---
+
+## 2025-12-12: Memory System + Crypto Bars Fix
+
+**What happened:** After reviewing first day of live trading logs, identified two critical issues: (1) flip-flopping on decisions (sold AMD, bought it back 30 min later), (2) crypto technical analysis failing due to bars API format bug.
+
+**Problem 1 - No memory between research calls:**
+The LLM researching "should I sell AMD" had no knowledge that it just bought AMD 30 minutes ago. Each research call was stateless. Result: contradictory decisions driven by noise, not conviction.
+
+**Solution - Persistent memory file:**
+Created `state/memory.md` - a rolling log of recent decisions with reasoning. Before every research call, the LLM reads its own recent history.
+
+| Component | Change |
+|-----------|--------|
+| `agent.py` | Added `MEMORY_FILE`, `_read_memory()`, `_write_memory()` |
+| `state/memory.md` | New file: stores last ~20 decisions with thesis and confidence |
+| Research prompt | Now includes memory section with flip-flop warning |
+
+Memory format:
+```markdown
+## UBER - BUY $75 - 2025-12-11 14:24 ET
+**Thesis:** RSI-2 at 18.4, strong fundamentals, profitable growth
+**Confidence:** 85%
+```
+
+**Problem 2 - Crypto bars API broken:**
+`get_bars("BTC/USD")` failed with "invalid symbol: BTC/USD" because the stock bars client doesn't handle crypto. Crypto needs `CryptoBarsRequest` and the `CryptoHistoricalDataClient`.
+
+**Solution:**
+Updated `alpaca_client.py get_bars()` to detect crypto symbols and route to the correct client/request type. Now handles both stocks and crypto properly.
+
+**Persistence:**
+Memory file survives script restarts - it's written to disk, not held in process memory. Safe to stop/restart without losing trading context.
+
+**Problem 3 - No sector concentration limits:**
+When tech sells off, RSI-2 fires on NVDA, GOOGL, AMZN, AMD simultaneously. Buying all 4 = leveraged sector bet, not diversified swing trading.
+
+**Solution:**
+Added `SECTOR_MAP` in config.py grouping stocks by correlation (not just industry):
+- `mega_tech`: AAPL, MSFT, GOOGL, AMZN, META
+- `semis`: NVDA, AMD, AVGO, INTC
+- etc.
+
+Added `MAX_POSITIONS_PER_SECTOR = 2` enforcement in `_execute_buy()`. Now if we hold GOOGL + AMZN (2 mega_tech), it blocks buying META but allows NVDA (different sector).
+
+Philosophy: "I'd rather miss a good trade than take a bad one." Buying 4 correlated positions on the same signal is a bad trade disguised as 4 trades.
+
+**Problem 4 - SMS messages truncating mid-word:**
+Trade notifications were cutting off mid-sentence: "despite r" instead of completing the thought. Hardcoded `reasoning[:100]` was the culprit.
+
+**Solution:**
+Rewrote `notify.py` with proper SMS handling:
+- Added `_count_ucs2_units()` to properly count SMS code units (emojis = 2 units)
+- Added `_truncate_to_fit()` that truncates at word boundaries, not mid-word
+- Calculates remaining space dynamically based on header length
+- Max 670 code units (10 SMS segments)
+
+Now messages end with complete words: "...mean reversion opportunity..." instead of "...mean reversion opp"
+
+---
+
 ## 2025-12-11: Quantitative Triggers + News Reactivity
 
 **What happened:** Major overhaul of the scanning system. Drift was too passive - scanning 30+ stocks but returning "all stable" every time. Researched best practices, implemented quantitative pre-screening and news-reactive scanning.

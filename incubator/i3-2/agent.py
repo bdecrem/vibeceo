@@ -37,9 +37,16 @@ from config import (
     BREAKOUT_THRESHOLD,
     NEWS_MOVE_THRESHOLD,
     VERBOSE,
+    STATE_DIR,
+    SECTOR_MAP,
+    MAX_POSITIONS_PER_SECTOR,
+    TRADING_MODE,
     get_position_size,
     print_config,
 )
+
+# Memory file for recent decisions
+MEMORY_FILE = STATE_DIR / "memory.md"
 from trading.alpaca_client import AlpacaClient, is_market_open, get_market_status
 from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
@@ -78,8 +85,51 @@ class DriftAgent:
         else:
             self.anthropic = None
 
-        if VERBOSE:
-            print_config()
+    def _read_memory(self) -> str:
+        """Read recent decisions from memory file."""
+        if not MEMORY_FILE.exists():
+            return ""
+        try:
+            content = MEMORY_FILE.read_text()
+            # Skip the header, return just the entries
+            if "---" in content:
+                return content.split("---", 1)[1].strip()
+            return ""
+        except Exception:
+            return ""
+
+    def _write_memory(self, symbol: str, action: str, amount: str, thesis: str, confidence: int):
+        """Append a decision to memory file."""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M ET")
+
+        entry = f"""
+## {symbol} - {action} {amount} - {timestamp}
+**Thesis:** {thesis}
+**Confidence:** {confidence}%
+
+---
+"""
+        try:
+            # Read existing content
+            if MEMORY_FILE.exists():
+                existing = MEMORY_FILE.read_text()
+            else:
+                existing = "# Drift Memory - Recent Decisions\n\n*Rolling log of trades and reasoning. Read before every research decision.*\n\n---\n"
+
+            # Insert new entry after the header
+            header_end = existing.find("---\n") + 4
+            new_content = existing[:header_end] + entry + existing[header_end:]
+
+            # Keep only last 20 entries (roughly 48 hours of active trading)
+            entries = new_content.split("\n## ")
+            if len(entries) > 21:  # header + 20 entries
+                entries = entries[:21]
+                new_content = "\n## ".join(entries)
+
+            MEMORY_FILE.write_text(new_content)
+        except Exception as e:
+            if VERBOSE:
+                print(f"[Drift] Memory write error: {e}")
 
     def run_cycle(self, crypto_only: bool = False) -> dict:
         """
@@ -365,6 +415,24 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
         position = self.alpaca.get_position(symbol)
         is_entry = position is None
 
+        # Read memory of recent decisions
+        memory = self._read_memory()
+        memory_section = ""
+        if memory:
+            # Filter to show only entries relevant to this symbol or recent (last 5)
+            memory_lines = memory.split("\n## ")
+            relevant = [m for m in memory_lines if symbol in m][:3]  # Last 3 for this symbol
+            recent = memory_lines[:5]  # Last 5 overall
+            combined = list(dict.fromkeys(relevant + recent))[:5]  # Dedupe, cap at 5
+            if combined:
+                memory_section = f"""
+RECENT DECISIONS (your memory):
+{"## ".join(combined)}
+
+⚠️ CHECK YOUR MEMORY: If you recently traded {symbol}, consider whether new information
+invalidates your previous thesis or if you're just reacting to noise.
+"""
+
         # Build research prompt
         research_prompt = f"""You are Drift, a curious skeptic swing trader researching {symbol}.
 
@@ -374,7 +442,7 @@ TRIGGER: {reason}
 {json.dumps(position, indent=2) if position else "No position - considering entry"}
 
 PDT STATUS: {self.pdt.get_day_trades_remaining()} day trades remaining this week
-
+{memory_section}
 YOUR TASK:
 1. Search for recent news about {symbol}
 2. Search for analyst sentiment/ratings
@@ -432,7 +500,7 @@ Respond with your research process, then final JSON:
         if VERBOSE:
             print(f"[Drift] {symbol}: {result.get('decision', 'pass').upper()} "
                   f"(confidence: {result.get('confidence', 0)}%)")
-            print(f"        Thesis: {result.get('thesis', '')[:100]}...")
+            print(f"        Thesis: {result.get('thesis', '')[:150]}...")
 
         return result
 
@@ -452,7 +520,7 @@ Respond with your research process, then final JSON:
         if decision == "buy":
             return self._execute_buy(symbol, confidence, thesis, research)
         elif decision == "sell":
-            return self._execute_sell(symbol, thesis)
+            return self._execute_sell(symbol, thesis, confidence)
         else:
             return {"status": "no_action", "decision": decision}
 
@@ -466,6 +534,14 @@ Respond with your research process, then final JSON:
         positions = self.alpaca.get_positions()
         if len(positions) >= MAX_POSITIONS:
             return {"status": "skipped", "reason": f"Max positions ({MAX_POSITIONS}) reached"}
+
+        # Check sector concentration - prevent all-in on correlated names
+        target_sector = SECTOR_MAP.get(symbol, "unknown")
+        sector_count = sum(1 for p in positions if SECTOR_MAP.get(p["symbol"], "unknown") == target_sector)
+        if sector_count >= MAX_POSITIONS_PER_SECTOR:
+            if VERBOSE:
+                print(f"[Drift] SECTOR LIMIT: {symbol} blocked - already have {sector_count} {target_sector} positions")
+            return {"status": "skipped", "reason": f"Sector '{target_sector}' at max ({MAX_POSITIONS_PER_SECTOR} positions)"}
 
         # Calculate position size based on confidence and budget remaining
         current_invested = sum(p["market_value"] for p in positions)
@@ -490,8 +566,8 @@ Respond with your research process, then final JSON:
         stop_loss = price * (1 - stop_loss_pct / 100) if price else None
         target = price * (1 + target_pct / 100) if price else None
 
-        # Execute
-        order = self.alpaca.buy(symbol, size, reason=thesis[:100])
+        # Execute (pass full thesis - notify.py handles SMS formatting)
+        order = self.alpaca.buy(symbol, size, reason=thesis)
 
         if order:
             # Record for PDT tracking
@@ -509,6 +585,9 @@ Respond with your research process, then final JSON:
                 order_id=order.get("id"),
             )
 
+            # Write to memory
+            self._write_memory(symbol, "BUY", f"${size:.0f}", thesis, confidence)
+
             return {
                 "status": "executed",
                 "action": "buy",
@@ -519,7 +598,7 @@ Respond with your research process, then final JSON:
 
         return {"status": "failed", "reason": "Order submission failed"}
 
-    def _execute_sell(self, symbol: str, thesis: str) -> dict:
+    def _execute_sell(self, symbol: str, thesis: str, confidence: int = 75) -> dict:
         """Execute a sell order."""
         position = self.alpaca.get_position(symbol)
         if not position:
@@ -535,8 +614,8 @@ Respond with your research process, then final JSON:
         # Check if it's a day trade
         is_day_trade = self.pdt.would_be_day_trade(symbol)
 
-        # Execute
-        order = self.alpaca.sell(symbol, reason=thesis[:100])
+        # Execute (pass full thesis - notify.py handles SMS formatting)
+        order = self.alpaca.sell(symbol, reason=thesis)
 
         if order:
             # Record day trade if applicable
@@ -561,6 +640,10 @@ Respond with your research process, then final JSON:
                 reason=thesis,
                 was_day_trade=is_day_trade,
             )
+
+            # Write to memory
+            pnl_str = f"+${pnl:.2f}" if pnl >= 0 else f"-${abs(pnl):.2f}"
+            self._write_memory(symbol, "SOLD", f"({pnl_str})", thesis, confidence)
 
             return {
                 "status": "executed",
@@ -740,7 +823,8 @@ def main():
     print("DRIFT - THE REASONING TRADER")
     print("=" * 60)
 
-    agent = DriftAgent(paper=True)
+    # Use config to determine paper vs live trading
+    agent = DriftAgent(paper=(TRADING_MODE != "live"))
 
     # Show status
     status = agent.get_status()

@@ -339,28 +339,46 @@ class AlpacaClient:
         return prices
 
     def get_bars(self, symbol: str, days: int = 30) -> list[dict]:
-        """Get historical daily bars."""
+        """Get historical daily bars for stocks or crypto."""
         try:
-            from alpaca.data.requests import StockBarsRequest
             from alpaca.data.timeframe import TimeFrame
 
             end = datetime.now()
             start = end - timedelta(days=days)
 
-            request = StockBarsRequest(
-                symbol_or_symbols=symbol,
-                timeframe=TimeFrame.Day,
-                start=start,
-                end=end,
-            )
+            if self._is_crypto(symbol):
+                # Crypto bars use different client and request type
+                from alpaca.data.requests import CryptoBarsRequest
 
-            bars_response = self._data_client.get_stock_bars(request)
+                # Crypto bars API needs format like "BTC/USD"
+                # (with slash, unlike some other endpoints)
+                crypto_symbol = symbol if "/" in symbol else f"{symbol[:3]}/{symbol[3:]}"
+
+                request = CryptoBarsRequest(
+                    symbol_or_symbols=crypto_symbol,
+                    timeframe=TimeFrame.Day,
+                    start=start,
+                    end=end,
+                )
+                bars_response = self._crypto_data_client.get_crypto_bars(request)
+                lookup_symbol = crypto_symbol
+            else:
+                from alpaca.data.requests import StockBarsRequest
+
+                request = StockBarsRequest(
+                    symbol_or_symbols=symbol,
+                    timeframe=TimeFrame.Day,
+                    start=start,
+                    end=end,
+                )
+                bars_response = self._data_client.get_stock_bars(request)
+                lookup_symbol = symbol
 
             # Extract bars
             if hasattr(bars_response, 'data'):
-                bars_data = bars_response.data.get(symbol, [])
+                bars_data = bars_response.data.get(lookup_symbol, [])
             elif hasattr(bars_response, '__getitem__'):
-                bars_data = bars_response[symbol] if symbol in bars_response else []
+                bars_data = bars_response[lookup_symbol] if lookup_symbol in bars_response else []
             else:
                 bars_data = []
 

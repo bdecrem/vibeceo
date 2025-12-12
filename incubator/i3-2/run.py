@@ -21,7 +21,7 @@ import pytz
 # Add current directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from config import SCAN_INTERVAL_MINUTES, VERBOSE, print_config
+from config import SCAN_INTERVAL_MINUTES, VERBOSE, TRADING_MODE, print_config
 from agent import DriftAgent
 from trading.alpaca_client import is_market_open, get_market_status, test_connection
 from utils.pdt_tracker import PDTTracker
@@ -160,14 +160,10 @@ def main():
         run_tests()
         return
 
-    # Initialize agent
-    paper = not args.live
+    # Initialize agent - use config to determine paper vs live
+    paper = (TRADING_MODE != "live")
     if not paper:
-        print("\n⚠️  WARNING: LIVE TRADING MODE ⚠️")
-        confirm = input("Type 'LIVE' to confirm: ")
-        if confirm != "LIVE":
-            print("Cancelled.")
-            return
+        print("\n⚠️  LIVE TRADING MODE - REAL MONEY ⚠️")
 
     agent = DriftAgent(paper=paper)
 
