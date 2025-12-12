@@ -1012,7 +1012,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                                 className="tt-agent-report-link"
                                 onClick={(e) => e.stopPropagation()}
                               >
-                                Get alerts →
+                                Trade alerts (SMS) →
                               </a>
                             </>
                           )}
