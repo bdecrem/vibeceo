@@ -135,3 +135,13 @@
 `15:48:10` [Drift] AMD: SELL (confidence: 75%)
 `15:48:10` [Drift] AMD: BLOCKED: Would exceed PDT limit (3/3 used)
 `15:48:10` [15:48:10 ET] completed: Processed 3 triggers, 2 actions
+
+## 2025-12-12
+
+
+--- Cycle 1 (crypto) ---
+`16:02:32` [Drift] Scanning crypto: 2 assets
+`16:02:33` [Drift] Stage 1: Quantitative screening 2 symbols...
+`16:02:39` [Drift] Scan complete: 2 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.5 with MA test - dual confluence in established crypto

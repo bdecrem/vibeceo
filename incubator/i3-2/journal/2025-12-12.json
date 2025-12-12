@@ -4480,5 +4480,18 @@
     "thesis": "While the RSI-2 at 0.1 represents a technical extreme, the fundamental thesis has been materially undermined by Amazon's explicit statement that customer demand for AMD's AI accelerators is insufficient for AWS deployment. This validates competitive concerns about AMD's software ecosystem vs. Nvidia's CUDA dominance and represents company-specific weakness rather than sector contagion. Combined with multiple recent analyst downgrades, revenue estimate cuts, and the stock's 45% decline since spring, the risk/reward has deteriorated significantly. With limited PDT capacity remaining, it's prudent to exit and preserve capital for clearer opportunities when the competitive landscape stabilizes.",
     "timestamp": "2025-12-12T15:48:10.261518-05:00",
     "timestamp_human": "03:48 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.34,
+    "position_count": 5,
+    "findings": "Crypto showing extreme oversold conditions, but that ETH RSI-2 at 0.0 looks suspicious",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T16:02:39.227747-05:00",
+    "timestamp_human": "04:02 PM ET"
   }
 ]

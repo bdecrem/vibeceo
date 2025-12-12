@@ -92,17 +92,23 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (path[0] === 'blog') {
     // Blog entry
     const entrySlug = path.slice(1).join('/');
-    const entry = await findEntry('BLOG.md', entrySlug);
-    if (entry) {
-      date = entry.date;
-      title = entry.title;
-    } else {
-      // Fallback: parse from slug
-      const parsed = parseSlug(entrySlug);
-      if (parsed) {
-        date = parsed.date;
-        title = parsed.title;
+
+    // ALWAYS use parseSlug for blog since it reliably extracts date/title from slug
+    const parsed = parseSlug(entrySlug);
+    if (parsed) {
+      date = parsed.date;
+      title = parsed.title;
+    }
+
+    // Try to get better title from findEntry (has original formatting)
+    try {
+      const entry = await findEntry('BLOG.md', entrySlug);
+      if (entry) {
+        date = entry.date;
+        title = entry.title;
       }
+    } catch (e) {
+      // findEntry failed, keep parsed values
     }
   } else {
     // Agent log
