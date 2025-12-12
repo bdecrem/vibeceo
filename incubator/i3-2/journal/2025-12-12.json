@@ -4635,5 +4635,366 @@
     "thesis": "While the RSI-2 at 18.6 with 20-day MA support creates a technically compelling oversold entry, the combination of Standard Chartered's dramatic price target cut from $200K to $100K, massive ETF outflows ($2.7B from IBIT), and broader AI sector contagion creates a deteriorating fundamental backdrop. Although research suggests the ETF outflows reflect mechanical basis trade unwinding rather than panic selling, and options max pain at $90K supports current levels, the shift in institutional sentiment represents a meaningful change since my last trade. With existing BTC exposure and limited PDT capacity, prudent risk management suggests passing on additional exposure until institutional sentiment stabilizes, despite the attractive technical setup.",
     "timestamp": "2025-12-12T16:21:31.664761-05:00",
     "timestamp_human": "04:21 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.23,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but need to verify if ETH's 0.0 RSI-2 is data error or flash crash",
+    "triggers": [
+      "ETH/USD",
+      "BTC/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T16:36:38.764979-05:00",
+    "timestamp_human": "04:36 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 suggests potential data anomaly or extreme capitulation - needs immediate verification",
+    "searches": [
+      {
+        "query": "ETH USD price news today December 12"
+      },
+      {
+        "query": "Ethereum Fusaka upgrade impact December 2025"
+      },
+      {
+        "query": "Fed rate cut December 2025 crypto market impact"
+      },
+      {
+        "query": "ETH USD analyst ratings December 2025"
+      },
+      {
+        "query": "sell the news crypto market December 2025 Fusaka Fed"
+      }
+    ],
+    "findings": "Fusaka upgrade launched successfully Dec 3, dropping gas fees to 2017 lows; Fed cut rates 25bps Dec 10 but crypto declined despite typically bullish event; Classic 'sell the news' pattern after both major catalysts realized; Analysts mixed: bullish long-term ($3,900-$4,500 targets) but some expect near-term weakness to $2,613; Already positioned in ETH with 87% confidence on same thesis - avoiding overconcentration",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "While the RSI-2 at 0.0 represents genuine 'sell the news' capitulation following both the successful Fusaka upgrade (Dec 3) and Fed rate cut (Dec 10), I already hold a high-conviction ETH position from Dec 12th based on identical technical/fundamental logic. The current extreme oversold condition validates my existing thesis rather than presenting a new opportunity. With 0 day trades remaining and both major near-term catalysts now realized, prudent risk management suggests avoiding position concentration and preserving capital flexibility until new catalysts emerge or technical conditions provide clearer directional signals.",
+    "timestamp": "2025-12-12T16:37:41.583989-05:00",
+    "timestamp_human": "04:37 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.5 plus testing 20-day MA creates confluence of oversold + support levels",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 12 2024"
+      },
+      {
+        "query": "Bitcoin analyst predictions sentiment December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows institutional activity December 2024"
+      },
+      {
+        "query": "Federal Reserve rate cut impact Bitcoin macro outlook December 2024"
+      }
+    ],
+    "findings": "Bitcoin ETFs experienced massive outflows: $415M on Dec 30, $194M on Dec 4; Fed delivered rate cut but FOMC was divided, signaling fewer future cuts; Current sentiment bearish with Fear & Greed Index at 29; Price oscillating in $88-93K range, struggling below $92K resistance; Analyst predictions remain long-term bullish but near-term cautious; Institutional selling pressure evident through ETF redemptions",
+    "decision": "sell",
+    "confidence": 79,
+    "thesis": "My earlier bullish thesis based on RSI-2 oversold conditions has been invalidated by material new developments. The recent $415 million ETF outflows on December 30 and $194 million on December 4 signal genuine institutional risk-off behavior rather than technical buying opportunity. The Fed's divided FOMC vote and signals of fewer future cuts create headwinds for liquidity-dependent assets like Bitcoin. With Fear & Greed at 29 and price struggling below $92,000 resistance, the technical setup has deteriorated from oversold bounce to potential breakdown. The confluence of institutional selling, hawkish Fed policy, and weakening technicals suggests this is distribution rather than accumulation, warranting position closure to preserve capital.",
+    "timestamp": "2025-12-12T16:38:26.268629-05:00",
+    "timestamp_human": "04:38 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.32,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC testing key support and ETH at unprecedented RSI-2 levels",
+    "triggers": [
+      "ETH/USD",
+      "BTC/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T16:53:32.772584-05:00",
+    "timestamp_human": "04:53 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare and suggests potential dead cat bounce opportunity",
+    "searches": [
+      {
+        "query": "ETH ethereum news today December 12 2025"
+      },
+      {
+        "query": "ETH ethereum analyst ratings sentiment December 2025"
+      },
+      {
+        "query": "ETH ETF flows institutional activity December 2025"
+      },
+      {
+        "query": "Ethereum Fusaka upgrade December 2025 technical analysis"
+      },
+      {
+        "query": "ETH RSI-2 technical indicators December 12 2025"
+      }
+    ],
+    "findings": "RSI levels are neutral (50-55), not extreme oversold as originally thought; Strong institutional buying: BitMine $110M purchase, positive ETF flows $57.6M; Fusaka upgrade successfully implemented Dec 3, reducing gas fees to 2017 lows; Technical indicators show recovery from oversold levels around 40; Market sentiment cautious but institutional confidence remains strong; December historically shows mixed performance for ETH",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "After reviewing current market data, my original RSI-2 reading of 0.0 appears to have been incorrect, with current RSI levels around 50-55 indicating neutral rather than extreme oversold conditions. However, the fundamental thesis remains partially intact: strong institutional accumulation ($110M BitMine purchase), positive ETF flows ($57.6M), successful Fusaka upgrade reducing gas fees to 2017 lows, and technical recovery from recent oversold levels around 40. While the extreme capitulation entry no longer applies, the combination of institutional confidence, technical infrastructure improvements, and recovering momentum indicators supports holding the position through this consolidation phase. The upgrade's long-term benefits and continued institutional adoption provide structural support, even as near-term sentiment remains cautious (Fear & Greed at 29).",
+    "timestamp": "2025-12-12T16:54:33.758628-05:00",
+    "timestamp_human": "04:54 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.3 while testing 20-day MA creates confluence of oversold + technical support",
+    "searches": [
+      {
+        "query": "Bitcoin BTC USD news today December 2024"
+      },
+      {
+        "query": "Bitcoin analyst ratings price targets December 2024"
+      },
+      {
+        "query": "Fed rate cut Bitcoin ETF flows crypto market December 2024"
+      },
+      {
+        "query": "Bitcoin exchange balances supply on-chain metrics December 2024"
+      }
+    ],
+    "findings": "Bitcoin trading in $88K-$93K December range, not trending; Fed rate cut 90% priced in, Powell guidance more important; ETF flows recovering after $1.1B November outflows; Exchange supply continuing to decline, whales accumulating; RSI-2 18.3 vs entry 18.5 represents same technical setup",
+    "decision": "hold",
+    "confidence": 79,
+    "thesis": "The RSI-2 at 18.3 represents continuation of the same oversold extreme from my recent entry rather than a new opportunity. While fundamentals remain supportive with declining exchange supply, recovering ETF inflows, and Fed easing, the current reading is essentially noise around my existing position entered at RSI-2 18.5. With Bitcoin still range-bound in the $88K-$93K December consolidation and the Fed rate cut largely priced in, this represents position maintenance rather than additional entry. The structural thesis remains intact - institutional infrastructure, supply dynamics, and technical extremes favor mean reversion toward $96K-$100K - but with limited PDT capacity and no meaningful change in setup, holding the existing position is the optimal strategy.",
+    "timestamp": "2025-12-12T16:55:32.794998-05:00",
+    "timestamp_human": "04:55 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.01,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC testing key support and ETH at unprecedented RSI-2 levels",
+    "triggers": [
+      "ETH/USD",
+      "BTC/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T17:10:39.440998-05:00",
+    "timestamp_human": "05:10 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare - either data error or massive washout creating potential reversal opportunity",
+    "searches": [
+      {
+        "query": "ETH ethereum price news today December 2024"
+      },
+      {
+        "query": "ethereum analyst ratings outlook December 2024"
+      },
+      {
+        "query": "cryptocurrency market Fed decision December 2024 impact"
+      },
+      {
+        "query": "ethereum ETF flows institutional buying December 2024"
+      }
+    ],
+    "findings": "ETH recovered 6.7% in 24 hours to $3,320, validating oversold bounce thesis; Fed delivered hawkish rate cut, planning only 2 cuts in 2025 vs 4 previously expected; Strong ETH ETF inflows of $273.7M led by institutional demand from BlackRock, Fidelity; Mixed analyst sentiment with $4,000+ upside potential but short-term caution; Major whale accumulation continues with BitMine buying 96K ETH near support; Technical resistance at $3,600 with potential for $4,000 breakout if sustained",
+    "decision": "hold",
+    "confidence": 79,
+    "thesis": "The original RSI-2 extreme oversold thesis is playing out with ETH recovering 6.7% from capitulation levels and strong institutional ETF inflows of $273.7M confirming the mean-reversion opportunity. However, the Fed's hawkish pivot to only two 2025 rate cuts and continued quantitative tightening creates additional monetary headwinds not fully priced into the original entry. With ETH testing $3,600 resistance and institutional whale accumulation continuing (BitMine's 96K ETH purchase, BlackRock's $26.7M allocation), the fundamental thesis remains intact but faces near-term macro pressure. Holding position allows capture of the technical bounce while monitoring whether institutional demand can overcome Fed tightening conditions.",
+    "timestamp": "2025-12-12T17:11:29.363030-05:00",
+    "timestamp_human": "05:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.5 plus testing 20-day MA creates confluence of oversold momentum and technical support level",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 12 2024"
+      },
+      {
+        "query": "Bitcoin analyst sentiment December 2024 price targets"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2024 institutional demand"
+      },
+      {
+        "query": "Bitcoin Fed rate cut impact December 2024 crypto market reaction"
+      }
+    ],
+    "findings": "Record BlackRock IBIT outflows of $2.7B over 5 weeks vs original ETF support thesis; Daily ETF flows only $54.8M, dramatically below historical $500M-$1B accumulation phases; Fed rate cut triggered selling despite technical oversold condition - opposite of expected reaction; Fear & Greed Index at 29 (Fear) with bearish sentiment despite analyst optimism; Market structure shift to institutional dominance now working against price as institutions sell",
+    "decision": "sell",
+    "confidence": 75,
+    "thesis": "The original oversold bounce thesis is invalidated by record ETF outflows ($2.7B over 5 weeks), weak institutional demand (daily flows at $54.8M vs historical $500M-$1B), and the Fed cut triggering selling rather than buying despite the technical oversold condition. While long-term analyst targets remain bullish ($125K-$200K for 2025), the current market structure shows institutional sellers dominating, Fear & Greed Index at 29 (Fear), and the RSI oversold condition occurring within a deteriorating flow environment rather than the strong institutional support assumed in the original thesis. The risk/reward has shifted unfavorably with ETF redemptions continuing and year-end positioning likely extending weakness.",
+    "timestamp": "2025-12-12T17:12:19.597481-05:00",
+    "timestamp_human": "05:12 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.24,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but ETH's RSI-2 at 0.0 is suspiciously extreme and needs verification",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T17:27:25.853875-05:00",
+    "timestamp_human": "05:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 19.3, legitimate oversold in the crypto benchmark - worth investigating for potential bounce",
+    "searches": [
+      {
+        "query": "Bitcoin news today December 2024"
+      },
+      {
+        "query": "AI selloff crypto impact Oracle earnings tech stocks December 2024"
+      },
+      {
+        "query": "Bitcoin analyst price targets December 2024 BTC forecast"
+      },
+      {
+        "query": "Bitcoin ETF flows BlackRock December 2024 institutional activity"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered $80B market cap loss and AI sector selloff affecting crypto; BlackRock IBIT ETF hit record $2.7B outflows over 5 weeks - longest streak since launch; Bitcoin trading in $88K-$93K range with key support at $86K and resistance at $92K; Analysts still bullish long-term ($125K-$200K targets) but near-term sentiment cautious; Institutional 'recalibration' rather than capitulation, waiting for macro clarity",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "While the RSI-2 at 19.3 presents a similar oversold opportunity to my recent successful entry, the convergence of record BlackRock ETF outflows ($2.7B over five weeks), Oracle-driven AI sector rotation, and Fed uncertainty creates a more challenging risk/reward profile than my December 12th entry. The institutional recalibration signals potential for deeper weakness below $86K support, and with limited PDT capacity remaining, it's prudent to avoid adding exposure when my existing position already captures this mean-reversion thesis. The technical setup remains compelling, but the fundamental backdrop has deteriorated enough to warrant patience for clearer institutional re-engagement signals.",
+    "timestamp": "2025-12-12T17:28:16.328876-05:00",
+    "timestamp_human": "05:28 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is mathematically suspicious and likely a data error - need to verify actual reading before considering",
+    "searches": [
+      {
+        "query": "ETH USD price today December 12 2024"
+      },
+      {
+        "query": "ETH Ethereum news today December 12 2024 Fed rate cut"
+      },
+      {
+        "query": "ETH RSI-2 technical analysis oversold December 2024"
+      },
+      {
+        "query": "ETH ETF flows December 2024 institutional demand"
+      },
+      {
+        "query": "ETH/USD December 11 2024 Fed meeting reaction price"
+      }
+    ],
+    "findings": "Current ETH price around $3,200-$3,300, not at extreme lows; RSI readings neutral at 49.9-54.18, not oversold at 0.0; Fed cut initially boosted ETH but hawkish messaging created volatility; Record ETF inflows of $2.12B but technical setup was false; Fusaka upgrade successful but fee revenue at 7-year lows",
+    "decision": "sell",
+    "confidence": 75,
+    "thesis": "The RSI-2 at 0.0 that triggered my initial BUY thesis appears to be incorrect technical data, with current RSI readings showing neutral 49.9-54.18 rather than extreme oversold conditions. While ETH benefited from Fed rate cuts and record ETF inflows ($2.12B), the hawkish messaging created volatility that settled ETH into a $3,200 range rather than the capitulation bounce I expected. With technical indicators showing Strong Sell signals on shorter timeframes and my core oversold thesis invalidated by faulty data, risk management dictates closing this position despite continued institutional accumulation and Fusaka upgrade fundamentals.",
+    "timestamp": "2025-12-12T17:29:07.865513-05:00",
+    "timestamp_human": "05:29 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.29,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but ETH's RSI-2 at 0.0 looks like data error - focus on BTC's dual signals",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T17:44:15.267704-05:00",
+    "timestamp_human": "05:44 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 19.0 oversold + testing 20-day MA confluence - dual technical setup in leading crypto",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 12 2024"
+      },
+      {
+        "query": "Bitcoin analyst sentiment ratings December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows institutional money December 2024"
+      },
+      {
+        "query": "Federal Reserve rate cut impact Bitcoin December 2024"
+      }
+    ],
+    "findings": "Social sentiment at 2024 lows with only 4 positive comments for every 5 negative - extreme contrarian signal; Professional investors control 26.3% of Bitcoin ETF AUM ($27.4B), up 114% from Q3 - institutional adoption accelerating; Fed delivered expected 25bps cut but hawkish tone on future cuts initially pressured BTC below $90K before rebound; ETFs holding 1.36M BTC ($168B) but recent short-term outflows show tactical caution amid volatility; Fear & Greed Index at 29 (Fear) with bearish sentiment creating potential mean-reversion opportunity",
+    "decision": "hold",
+    "confidence": 83,
+    "thesis": "The extreme social sentiment bearishness at 2024 lows creates a powerful contrarian setup that complements the technical RSI-2 oversold signal I identified earlier. While ETF flows show short-term institutional caution, the structural trend toward institutional adoption remains intact with professional investors now controlling over 25% of Bitcoin ETF AUM. The Fed's December rate cut, despite hawkish messaging, removes a key headwind and the end of quantitative tightening provides additional liquidity support. Most importantly, the convergence of historically extreme negative sentiment, technical oversold conditions, and $90,000 psychological support creates the same type of capitulation environment that preceded significant Bitcoin rallies. Rather than chase the position here, I'll hold my existing entry and let the mean-reversion thesis play out as sentiment normalizes.",
+    "timestamp": "2025-12-12T17:45:03.571262-05:00",
+    "timestamp_human": "05:45 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 needs verification - either data error or extreme capitulation worth investigating",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news today December 12 2025"
+      },
+      {
+        "query": "ETH ETF flows institutional demand December 2025"
+      },
+      {
+        "query": "Fed rate cut impact crypto December 2025"
+      },
+      {
+        "query": "ETH ethereum RSI oversold December 2025 technical analysis"
+      }
+    ],
+    "findings": "RSI-2 at 0.0 trigger was false - actual RSI neutral around 50; Massive ETH ETF inflows of $117M single day, outpacing Bitcoin; Record low 8.7% ETH on exchanges - lowest since 2015; Fusaka upgrade successful, gas fees at 2017 lows; Fed cut delivered but crypto decoupled bearishly from stocks; Technical oscillators show strong sell despite structural bullish factors",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "While my original RSI-2 at 0.0 thesis was based on faulty data (actual RSI is neutral around 50), ETH maintains compelling structural bullish factors including record-low 8.7% exchange supply, massive $117M daily ETF inflows outpacing Bitcoin, 77% DeFi dominance with $150B TVL, and the successful Fusaka upgrade reducing gas fees to 2017 lows. However, with the Fed cut already delivered and crypto markets decoupling bearishly from stocks for the first time since 2014, plus technical oscillators showing 'strong sell' signals, the immediate risk/reward doesn't justify a new position. The existing position benefits from the structural supply shortage and institutional momentum, but adding exposure here lacks the compelling oversold entry I initially sought.",
+    "timestamp": "2025-12-12T17:45:52.749024-05:00",
+    "timestamp_human": "05:45 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.14,
+    "position_count": 7,
+    "findings": "Crypto oversold but ETH's zero RSI screams data error - BTC pullback looks legitimate",
+    "triggers": [
+      "BTC/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T18:00:58.850624-05:00",
+    "timestamp_human": "06:00 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 19.1, legitimate oversold in leading crypto during what appears to be a technical pullback",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 12 2025"
+      },
+      {
+        "query": "Bitcoin analyst sentiment price target Standard Chartered downgrade December 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows options expiry December 13 2025 crypto markets"
+      },
+      {
+        "query": "crypto market sentiment MicroStrategy buying December 2025 institutional demand"
+      }
+    ],
+    "findings": "Bitcoin dropped below $90K due to AI sector jitters but recovered to $92K range; Standard Chartered slashed BTC target from $200K to $100K, citing end of corporate buying; ETF flows weakest since launch - only 50K BTC quarterly vs 450K previously; MicroStrategy bought $1B worth of Bitcoin in early December at ~$90,600 average; Prediction markets show only 30% chance of $100K by year-end; BTC trading in $88K-$94K range with neutral RSI around 50",
+    "decision": "hold",
+    "confidence": 65,
+    "thesis": "Maintaining position despite deteriorating fundamentals as the technical oversold setup remains intact around $90,000 support. While Standard Chartered's dramatic target cuts highlight the end of corporate treasury buying and weakening ETF flows (down to 50,000 BTC quarterly vs. 450,000 previously), MicroStrategy's recent $1B purchase signals institutional demand persists at these levels. The RSI-2 oversold condition and established support around $90,000 suggest potential for mean-reversion bounce, but reduced confidence reflects structural demand concerns and prediction markets pricing only 30% chance of $100K by year-end.",
+    "timestamp": "2025-12-12T18:01:52.964634-05:00",
+    "timestamp_human": "06:01 PM ET"
   }
 ]
