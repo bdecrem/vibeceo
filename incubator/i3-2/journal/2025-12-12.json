@@ -4086,5 +4086,43 @@
     "thesis": "While META's core business fundamentals remain strong with 21% revenue growth and analyst consensus remains bullish, the deteriorating AI strategy narrative has intensified since my earlier exit. Oracle's earnings disappointment triggered sector-wide concerns about AI spending ROI that validate my previous thesis about 'AI trade fatigue.' Morgan Stanley's price target cut to $750 and the internal confusion around the Avocado vs Llama strategy represent genuine execution risks rather than temporary sentiment. The RSI-2 at 24.9 is also less compelling than typical oversold setups. With sector rotation away from AI spending stories gaining momentum and my PDT constraints, it's prudent to avoid re-entry until the AI strategy clarifies and sector sentiment stabilizes.",
     "timestamp": "2025-12-12T14:49:52.205444-05:00",
     "timestamp_human": "02:49 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.1 in semiconductor space - close to NVDA but slightly less extreme reading worth investigating",
+    "searches": [
+      {
+        "query": "AMD news today December 2024"
+      },
+      {
+        "query": "AMD analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "AMD Amazon AWS AI accelerator demand weak"
+      },
+      {
+        "query": "semiconductor sector AI selloff December 2024"
+      }
+    ],
+    "findings": "Amazon AWS stated insufficient demand for AMD AI accelerators, triggering selloff; Bank of America downgraded AMD from Buy to Neutral, cut price target to $155; Broad semiconductor sector weakness with AI-related selling pressure; AMD raised AI accelerator revenue guidance to $5B, up from $4.5B; Strong Q3 fundamentals with record revenue and data center growth; RSI-2 at 0.1 represents extreme technical oversold condition",
+    "decision": "buy",
+    "confidence": 85,
+    "thesis": "The RSI-2 at 0.1 represents Amazon earnings contagion rather than AMD-specific weakness, creating an oversold entry in a fundamentally strong semiconductor leader. While AWS's comments about insufficient demand for AMD's AI accelerators triggered the selloff and analyst downgrades, AMD's core business remains robust with record Q3 revenue, raised AI accelerator guidance to $5B, and growing enterprise adoption across Microsoft, Meta, and Oracle. The technical extreme mirrors successful mean-reversion setups in GOOGL and CRM, where sector-wide AI selling created opportunities in quality names trading on sentiment rather than fundamentals. With AMD still capturing meaningful AI market share and maintaining strong data center growth, this represents a classic oversold bounce opportunity in a competitive AI player.",
+    "timestamp": "2025-12-12T14:50:36.509737-05:00",
+    "timestamp_human": "02:50 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "AMD",
+    "notional": 75,
+    "price": 211.875,
+    "confidence": 85,
+    "thesis": "The RSI-2 at 0.1 represents Amazon earnings contagion rather than AMD-specific weakness, creating an oversold entry in a fundamentally strong semiconductor leader. While AWS's comments about insufficient demand for AMD's AI accelerators triggered the selloff and analyst downgrades, AMD's core business remains robust with record Q3 revenue, raised AI accelerator guidance to $5B, and growing enterprise adoption across Microsoft, Meta, and Oracle. The technical extreme mirrors successful mean-reversion setups in GOOGL and CRM, where sector-wide AI selling created opportunities in quality names trading on sentiment rather than fundamentals. With AMD still capturing meaningful AI market share and maintaining strong data center growth, this represents a classic oversold bounce opportunity in a competitive AI player.",
+    "stop_loss": 201.28125,
+    "target": 228.82500000000002,
+    "order_id": "2f034dd8-3f65-49cc-b175-eebe66b1fb17",
+    "timestamp": "2025-12-12T14:50:38.513958-05:00",
+    "timestamp_human": "02:50 PM ET"
   }
 ]

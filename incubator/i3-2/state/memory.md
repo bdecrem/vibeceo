@@ -6,6 +6,12 @@
 
 ---
 
+## AMD - BUY $75 - 2025-12-12 11:50 ET
+**Thesis:** The RSI-2 at 0.1 represents Amazon earnings contagion rather than AMD-specific weakness, creating an oversold entry in a fundamentally strong semiconductor leader. While AWS's comments about insufficient demand for AMD's AI accelerators triggered the selloff and analyst downgrades, AMD's core business remains robust with record Q3 revenue, raised AI accelerator guidance to $5B, and growing enterprise adoption across Microsoft, Meta, and Oracle. The technical extreme mirrors successful mean-reversion setups in GOOGL and CRM, where sector-wide AI selling created opportunities in quality names trading on sentiment rather than fundamentals. With AMD still capturing meaningful AI market share and maintaining strong data center growth, this represents a classic oversold bounce opportunity in a competitive AI player.
+**Confidence:** 85%
+
+---
+
 ## AMZN - BUY $60 - 2025-12-12 11:41 ET
 **Thesis:** The Oracle earnings miss triggered sector-wide AI selling that swept up Amazon despite strong Q3 fundamentals and positive catalysts like the $35B India investment and Trainium3 launch. The RSI-2 at 0.0 with 20-day MA support test creates a high-probability mean-reversion setup in a quality mega-cap with intact competitive moats. Wall Street's overwhelmingly bullish consensus (Strong Buy, $284 average target) suggests this technical extreme offers compelling risk/reward, with the stock trading as contagion victim rather than reflecting company-specific weakness.
 **Confidence:** 82%
