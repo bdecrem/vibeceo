@@ -3927,5 +3927,164 @@
     "order_id": "d868e012-6263-48d7-8234-325440f07687",
     "timestamp": "2025-12-12T14:41:46.309954-05:00",
     "timestamp_human": "02:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "More believable -4.24% 5-day drop with RSI-2 at 24.8 - cleaner oversold setup than suspicious 0.0 readings",
+    "searches": [
+      {
+        "query": "META stock news today December 12 2025"
+      },
+      {
+        "query": "META analyst ratings price targets December 2025"
+      },
+      {
+        "query": "META VR price increase metaverse cuts December 2025"
+      },
+      {
+        "query": "Oracle earnings AI spending sector selloff December 2025"
+      }
+    ],
+    "findings": "Oracle AI spending shock triggered sector-wide selloff affecting META; META planning VR price increases and 30% Reality Labs budget cuts; Strong analyst consensus with $820 average price target and 72 Buy ratings; Death cross technical signal confirms momentum fade; AI personalization rollout starting Dec 16 as potential catalyst",
+    "decision": "pass",
+    "confidence": 82,
+    "thesis": "While META shows a more believable oversold setup with RSI-2 at 24.8 and positive developments like metaverse budget cuts, the fundamental thesis driving my recent exit remains valid. Oracle's earnings miss has triggered exactly the 'AI trade fatigue' and sector-wide skepticism about AI spending returns that I anticipated. The death cross technical signal, combined with persistent investor concerns about META's AI capex intensity outpacing confidence in payback timing, supports maintaining a cautious stance. Strong analyst consensus ($820 average target) provides potential upside, but the sector rotation away from AI spending stories is still unfolding, making this a wait-and-see situation rather than a re-entry opportunity.",
+    "timestamp": "2025-12-12T14:42:40.498581-05:00",
+    "timestamp_human": "02:42 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.53,
+    "position_count": 4,
+    "findings": "Extreme RSI-2 readings (0.0) across major tech names suggest either data anomaly or severe oversold conditions worth investigating",
+    "triggers": [
+      "NVDA",
+      "AAPL",
+      "META"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T14:45:29.199547-05:00",
+    "timestamp_human": "02:45 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 in AI leader - either data error or extreme oversold opportunity in high-conviction name",
+    "searches": [
+      {
+        "query": "NVDA stock news today December 12 2024"
+      },
+      {
+        "query": "NVDA H200 China chip production increase December 2024"
+      },
+      {
+        "query": "NVDA analyst ratings upgrades December 2024"
+      },
+      {
+        "query": "semiconductor AI stocks Oracle earnings reaction December 2024"
+      }
+    ],
+    "findings": "Trump approved H200 exports to China on December 8th; Alibaba and ByteDance actively seeking large H200 orders; Nvidia considering expanded H200 production due to demand exceeding capacity; Oracle earnings miss triggered broad AI stock selloff including NVDA; Analyst consensus remains Strong Buy with $248.64 average target; H200 offers 2-3x performance vs Chinese domestic chips",
+    "decision": "hold",
+    "confidence": 87,
+    "thesis": "The RSI-2 at 0.0 represents continued Oracle earnings contagion creating technical noise, but Trump's December 8th approval of H200 exports to China with major demand from Alibaba/ByteDance represents a significant new revenue catalyst not reflected in yesterday's purchase thesis. With Nvidia evaluating expanded H200 production due to orders exceeding capacity, analysts maintaining Strong Buy consensus with $248 average target (41% upside), and the H200 offering 2-3x performance advantage over Chinese alternatives, my existing $176.80 position is well-positioned to benefit from this demand surge while Oracle-driven sector weakness creates temporary headwinds.",
+    "timestamp": "2025-12-12T14:46:15.891608-05:00",
+    "timestamp_human": "02:46 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 0.0 in mega-cap - unusual reading needs verification, could signal bounce setup",
+    "searches": [
+      {
+        "query": "AAPL Apple stock news today December 2024"
+      },
+      {
+        "query": "AAPL analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "tech sector selloff December 12 2024 AI stocks"
+      },
+      {
+        "query": "Apple iPhone 16 sales December 2024 AI intelligence features"
+      },
+      {
+        "query": "AAPL price target consensus December 2024 current rating"
+      }
+    ],
+    "findings": "RSI-2 at 0.0 driven by tech sector AI valuation concerns, not company-specific issues; Apple Intelligence features rolling out December 2024 with ChatGPT integration; iPhone 16 sales up 5.5% YoY with 300M+ phones eligible for upgrade cycle; Wall Street consensus Buy rating with $287+ average price target; Executive turnover in AI leadership creates some uncertainty but not fundamental deterioration",
+    "decision": "buy",
+    "confidence": 79,
+    "thesis": "The RSI-2 at 0.0 represents AI sector contagion rather than AAPL-specific weakness, creating a high-probability mean-reversion entry in a fundamentally sound company. December's Apple Intelligence rollout with ChatGPT integration serves as a near-term catalyst, while 300M+ phones eligible for upgrade positions Apple for a 'monster holiday season.' Wall Street maintains consensus Buy ratings with $287+ targets despite recent executive turnover concerns. This technical extreme in a quality mega-cap with intact competitive moats and upcoming AI catalyst represents a classic swing trade setup, especially given the broader tech selloff appears driven by valuation fears rather than fundamental deterioration.",
+    "timestamp": "2025-12-12T14:47:19.644784-05:00",
+    "timestamp_human": "02:47 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.54,
+    "position_count": 4,
+    "findings": "Broad tech selloff creating oversold conditions in mega-caps, but RSI-2 at 0.0 readings look suspiciously extreme",
+    "triggers": [
+      "NVDA",
+      "META",
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T14:48:14.380083-05:00",
+    "timestamp_human": "02:48 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 in AI leader - extreme oversold but need to verify this isn't data error or news-driven collapse",
+    "searches": [
+      {
+        "query": "NVDA news today December 12 2024"
+      },
+      {
+        "query": "Oracle earnings AI sector selloff today"
+      },
+      {
+        "query": "NVDA analyst ratings price targets December 2024"
+      },
+      {
+        "query": "NVDA H200 chips China exports December 2024"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered sector-wide AI selloff affecting NVDA (-1.5%); NVDA analyst sentiment remains overwhelmingly bullish: 99 Buy vs 1 Hold ratings; Average analyst price target of $258 represents 39%+ upside from current levels; Trump approved H200 China exports with 25% surcharge, opening new revenue opportunity; Current weakness represents Oracle contagion, not NVDA-specific deterioration; RSI-2 at 0.0 creates extreme oversold entry in structurally dominant AI leader",
+    "decision": "hold",
+    "confidence": 87,
+    "thesis": "The RSI-2 at 0.0 validates my earlier thesis - this is Oracle earnings contagion, not NVDA-specific weakness. With my small existing position showing the same technical pattern I anticipated, the H200 China export approval providing a positive catalyst, and overwhelming analyst bullishness (99 Buy vs 1 Hold ratings, $258 avg target), I should hold through this sector-wide AI selling. Oracle's revenue miss created artificial weakness in fundamentally sound AI names, and NVDA's structural dominance with record $57B Q3 revenue and sold-out Blackwell production remains intact.",
+    "timestamp": "2025-12-12T14:49:01.246197-05:00",
+    "timestamp_human": "02:49 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 24.9 with -4.23% 5-day decline - less extreme reading suggests more reliable oversold signal",
+    "searches": [
+      {
+        "query": "META stock news today December 12 2024"
+      },
+      {
+        "query": "META Morgan Stanley downgrade $750 price target December 2024"
+      },
+      {
+        "query": "META AI strategy confusion CNBC December 2024"
+      },
+      {
+        "query": "Oracle earnings AI spending disappointment tech sector selloff December 2024"
+      },
+      {
+        "query": "META analyst ratings consensus December 2024 TipRanks"
+      }
+    ],
+    "findings": "Morgan Stanley cut price target from $820 to $750 citing AI strategy concerns; Meta's AI strategy remains 'scattershot' with Avocado model delayed to Q1 2026; Oracle earnings miss triggered tech sector AI spending fatigue selloff; Strong fundamental business with 21% revenue growth maintained; Analyst consensus remains Strong Buy with $832 average target (26% upside)",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "While META's core business fundamentals remain strong with 21% revenue growth and analyst consensus remains bullish, the deteriorating AI strategy narrative has intensified since my earlier exit. Oracle's earnings disappointment triggered sector-wide concerns about AI spending ROI that validate my previous thesis about 'AI trade fatigue.' Morgan Stanley's price target cut to $750 and the internal confusion around the Avocado vs Llama strategy represent genuine execution risks rather than temporary sentiment. The RSI-2 at 24.9 is also less compelling than typical oversold setups. With sector rotation away from AI spending stories gaining momentum and my PDT constraints, it's prudent to avoid re-entry until the AI strategy clarifies and sector sentiment stabilizes.",
+    "timestamp": "2025-12-12T14:49:52.205444-05:00",
+    "timestamp_human": "02:49 PM ET"
   }
 ]

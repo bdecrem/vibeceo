@@ -1,7 +1,7 @@
 """
 Console logger for Drift trading agent.
 
-Logs all [Drift] messages to daily .md files for review.
+Logs all [Drift] messages to a single console.md file.
 """
 
 import os
@@ -11,47 +11,46 @@ import pytz
 
 ET = pytz.timezone('America/New_York')
 
-# Log directory
-LOG_DIR = Path(__file__).parent.parent / "logs"
-LOG_DIR.mkdir(exist_ok=True)
-
-
-def _get_log_file() -> Path:
-    """Get today's log file path."""
-    today = datetime.now(ET).strftime("%Y-%m-%d")
-    return LOG_DIR / f"{today}.md"
+# Single log file
+LOG_FILE = Path(__file__).parent.parent / "console.md"
 
 
 def _ensure_header():
     """Ensure log file has header."""
-    log_file = _get_log_file()
-    if not log_file.exists():
-        today = datetime.now(ET).strftime("%Y-%m-%d")
-        with open(log_file, "w") as f:
-            f.write(f"# Drift Console Log - {today}\n\n")
+    if not LOG_FILE.exists():
+        with open(LOG_FILE, "w") as f:
+            f.write("# Drift Console Log\n\n*Continuous log of all trading activity.*\n\n---\n\n")
 
+
+_last_logged_date = None
 
 def log(message: str):
     """
-    Print message and append to daily log file.
+    Print message and append to console.md log file.
 
     Args:
         message: Message to log (will be printed and written to file)
     """
+    global _last_logged_date
+
     # Always print to console
     print(message)
 
     # Append to log file
     try:
         _ensure_header()
-        log_file = _get_log_file()
-        timestamp = datetime.now(ET).strftime("%H:%M:%S")
+        now = datetime.now(ET)
+        today = now.strftime("%Y-%m-%d")
+        timestamp = now.strftime("%H:%M:%S")
 
-        with open(log_file, "a") as f:
+        with open(LOG_FILE, "a") as f:
+            # Add date header when date changes
+            if _last_logged_date != today:
+                f.write(f"\n## {today}\n\n")
+                _last_logged_date = today
+
             # Add timestamp prefix for [Drift] messages
-            if message.startswith("[Drift]") or message.startswith("---"):
-                f.write(f"`{timestamp}` {message}\n")
-            elif message.startswith("["):
+            if message.startswith("[Drift]") or message.startswith("---") or message.startswith("["):
                 f.write(f"`{timestamp}` {message}\n")
             else:
                 f.write(f"{message}\n")

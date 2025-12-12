@@ -913,7 +913,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                             </>
                           )}
                         </div>
-                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px', flexWrap: 'wrap' }}>
                           <a
                             href={`/token-tank/report/${agentId}/LOG.md`}
                             className="tt-agent-report-link"
@@ -928,6 +928,15 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                               onClick={(e) => e.stopPropagation()}
                             >
                               Postmortem →
+                            </a>
+                          )}
+                          {agentId === 'i3-2' && (
+                            <a
+                              href="/token-tank/report/i3-2/console.md"
+                              className="tt-agent-report-link"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              Trading Log →
                             </a>
                           )}
                         </div>
