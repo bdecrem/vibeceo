@@ -999,13 +999,22 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                             </a>
                           )}
                           {agentId === 'i3-2' && (
-                            <a
-                              href="/token-tank/report/i3-2/console.md"
-                              className="tt-agent-report-link"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              Trading Log →
-                            </a>
+                            <>
+                              <a
+                                href="/token-tank/report/i3-2/console.md"
+                                className="tt-agent-report-link"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Trading Log →
+                              </a>
+                              <a
+                                href="sms:+18663300015?body=$DRIFT"
+                                className="tt-agent-report-link"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Get alerts →
+                              </a>
+                            </>
                           )}
                         </div>
                       </>

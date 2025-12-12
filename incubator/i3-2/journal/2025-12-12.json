@@ -4191,5 +4191,30 @@
     "thesis": "The H200 China approval with 25% US revenue share represents a significant positive catalyst that validates NVDA's strategic value while creating billions in new revenue opportunities. Oracle's earnings-driven AI sector selloff continues to provide the technical setup I originally identified, with RSI-2 remaining extreme and analyst consensus unchanged at Strong Buy/$248 targets. However, with 0 PDT remaining and a recent entry at strong conviction, the optimal move is maintaining the existing $75 position rather than adding exposure. The combination of geopolitical wins and technical oversold conditions supports the original thesis while prudent risk management suggests letting this position develop.",
     "timestamp": "2025-12-12T14:54:12.059808-05:00",
     "timestamp_human": "02:54 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 7.4 less extreme but still oversold in defensive tech play with strong balance sheet",
+    "searches": [
+      {
+        "query": "AAPL Apple news today December 2024"
+      },
+      {
+        "query": "AAPL analyst ratings upgrades downgrades December 2024"
+      },
+      {
+        "query": "tech sector selloff AI stocks December 2024"
+      },
+      {
+        "query": "AAPL Apple Intelligence AI features December 2024"
+      }
+    ],
+    "findings": "Record Q1 2025 results: $124.3B revenue (+4% YoY), $2.40 EPS (+10% YoY); Major Apple Intelligence rollout in iOS 18.2 with Image Playground, Genmoji; Defensive tech play showed resilience (-0.7%) vs broader AI sector selloff (-4.2%); Mixed analyst sentiment but consensus price target $282 vs current ~$279; AI leadership transition signals continued strategic focus on AI development; UBS notes App Store growth concerns but maintains neutral rating",
+    "decision": "buy",
+    "confidence": 81,
+    "thesis": "The RSI-2 at 7.4 represents a classic oversold entry in Apple following sector-wide AI selling rather than company-specific weakness. Record Q1 results ($124.3B revenue, $2.40 EPS) demonstrate fundamental strength, while the accelerating Apple Intelligence rollout (iOS 18.2 launch with Image Playground, Genmoji) creates meaningful growth catalysts beyond traditional hardware cycles. Unlike pure-play AI names suffering steep declines, Apple's defensive tech characteristics showed relative resilience (-0.7% vs -4.2% sector decline), supported by its diversified revenue streams and $4.2T market cap stability. With analyst price targets averaging $282 and the stock trading on technical extremes rather than fundamental deterioration, this mirrors successful mean-reversion setups in GOOGL and CRM where quality companies were oversold on sentiment contagion.",
+    "timestamp": "2025-12-12T14:55:06.436233-05:00",
+    "timestamp_human": "02:55 PM ET"
   }
 ]
