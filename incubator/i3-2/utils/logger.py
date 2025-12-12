@@ -1,7 +1,7 @@
 """
 Console logger for Drift trading agent.
 
-Logs all [Drift] messages to a single console.md file.
+Logs all [Drift] messages to a single console.md file in reverse chronological order.
 """
 
 import os
@@ -13,47 +13,71 @@ ET = pytz.timezone('America/New_York')
 
 # Single log file
 LOG_FILE = Path(__file__).parent.parent / "console.md"
+HEADER = "# Drift Console Log\n\n*Continuous log of all trading activity. Newest entries at top.*\n\n---\n"
 
 
-def _ensure_header():
-    """Ensure log file has header."""
+def _ensure_file():
+    """Ensure log file exists with header."""
     if not LOG_FILE.exists():
         with open(LOG_FILE, "w") as f:
-            f.write("# Drift Console Log\n\n*Continuous log of all trading activity.*\n\n---\n\n")
+            f.write(HEADER)
 
 
-_last_logged_date = None
+_current_date_in_file = None
 
 def log(message: str):
     """
-    Print message and append to console.md log file.
+    Print message and prepend to console.md log file (reverse chronological).
 
     Args:
         message: Message to log (will be printed and written to file)
     """
-    global _last_logged_date
+    global _current_date_in_file
 
     # Always print to console
     print(message)
 
-    # Append to log file
+    # Prepend to log file
     try:
-        _ensure_header()
+        _ensure_file()
         now = datetime.now(ET)
         today = now.strftime("%Y-%m-%d")
         timestamp = now.strftime("%H:%M:%S")
 
-        with open(LOG_FILE, "a") as f:
-            # Add date header when date changes
-            if _last_logged_date != today:
-                f.write(f"\n## {today}\n\n")
-                _last_logged_date = today
+        # Build the new line
+        if message.startswith("[Drift]") or message.startswith("---") or message.startswith("["):
+            new_line = f"`{timestamp}` {message}\n"
+        else:
+            new_line = f"{message}\n"
 
-            # Add timestamp prefix for [Drift] messages
-            if message.startswith("[Drift]") or message.startswith("---") or message.startswith("["):
-                f.write(f"`{timestamp}` {message}\n")
-            else:
-                f.write(f"{message}\n")
+        # Read existing content
+        content = LOG_FILE.read_text()
+
+        # Find where to insert (after header ---)
+        header_end = content.find("---\n") + 4
+        before = content[:header_end]
+        after = content[header_end:]
+
+        # Check if today's date header exists in file
+        today_header = f"## {today}"
+        if today_header not in content:
+            # New day - add date header
+            new_line = f"\n{today_header}\n\n" + new_line
+            _current_date_in_file = today
+        else:
+            # Same day - insert after the date header
+            date_pos = after.find(today_header)
+            if date_pos >= 0:
+                # Find end of date header line
+                newline_after_date = after.find("\n\n", date_pos) + 2
+                insert_point = header_end + newline_after_date
+                before = content[:insert_point]
+                after = content[insert_point:]
+
+        # Write back with new content
+        with open(LOG_FILE, "w") as f:
+            f.write(before + new_line + after)
+
     except Exception as e:
         # Don't crash if logging fails
         pass

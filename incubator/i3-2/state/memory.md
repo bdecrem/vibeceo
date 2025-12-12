@@ -6,6 +6,18 @@
 
 ---
 
+## ETH/USD - BUY $75 - 2025-12-12 13:04 ET
+**Thesis:** The RSI-2 at 0.0 represents extreme capitulation rather than broken data, creating an exceptional mean-reversion opportunity in ETH. The convergence of record-low exchange supply (8.7%, lowest since 2015), massive institutional whale accumulation ($3.15B over three weeks), and recent Fusaka upgrade fundamentals creates a powerful supply-demand imbalance. While Fed hawkishness post-rate cut caused near-term weakness, the technical extreme occurs against a backdrop of unprecedented structural support from ETF inflows ($177M daily), BitMine's $110M accumulation, and exchange balances declining 43% since July. Historical precedent shows similar oversold conditions preceded 45-111% rallies, and with $500M+ in short liquidations above $3,500, this represents classic capitulation buying opportunity in a fundamentally strengthened network.
+**Confidence:** 87%
+
+---
+
+## BTC/USD - BUY $55 - 2025-12-12 13:03 ET
+**Thesis:** The RSI-2 at 18.5 with moving average test creates a high-probability oversold entry similar to the February 2024 setup that preceded Bitcoin's rally from $75,000 to new highs. While ETF flows show mixed signals and Fed hawkishness creates near-term headwinds, the technical extreme occurs at established support levels around $90,000 with derivatives max pain providing a natural floor. The confluence of oversold momentum, historical RSI precedent (last sub-30 reading in February marked a significant bottom), and institutional infrastructure through ETF channels suggests this represents a classic mean-reversion trade rather than structural breakdown. With $3.7B options expiry clearing overhead resistance and exchange supply declining, the setup favors a bounce toward $96,000-$100,000 as technical conditions normalize.
+**Confidence:** 81%
+
+---
+
 ## AMD - BUY $75 - 2025-12-12 11:50 ET
 **Thesis:** The RSI-2 at 0.1 represents Amazon earnings contagion rather than AMD-specific weakness, creating an oversold entry in a fundamentally strong semiconductor leader. While AWS's comments about insufficient demand for AMD's AI accelerators triggered the selloff and analyst downgrades, AMD's core business remains robust with record Q3 revenue, raised AI accelerator guidance to $5B, and growing enterprise adoption across Microsoft, Meta, and Oracle. The technical extreme mirrors successful mean-reversion setups in GOOGL and CRM, where sector-wide AI selling created opportunities in quality names trading on sentiment rather than fundamentals. With AMD still capturing meaningful AI market share and maintaining strong data center growth, this represents a classic oversold bounce opportunity in a competitive AI player.
 **Confidence:** 85%

@@ -4493,5 +4493,97 @@
     "action": "research_triggered",
     "timestamp": "2025-12-12T16:02:39.227747-05:00",
     "timestamp_human": "04:02 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.5 with MA test - dual confluence in established crypto",
+    "searches": [
+      {
+        "query": "Bitcoin BTC news today December 2024"
+      },
+      {
+        "query": "Bitcoin analyst sentiment December 2024 institutional"
+      },
+      {
+        "query": "Bitcoin ETF flows Fed rate cut December 2024"
+      },
+      {
+        "query": "Bitcoin technical analysis RSI oversold December 2024"
+      }
+    ],
+    "findings": "RSI-14 below 30 signals oversold condition, matching February bottom setup; ETF flows volatile but showing recent $152M inflow reversal; Fed rate cut delivered but cautious 2026 guidance creates mixed sentiment; Bitcoin trapped in $88K-$93K range with $90K options max pain support; Historical support levels at $70K-$80K provide strong downside protection; Exchange supply declining and selling pressure fading per on-chain metrics",
+    "decision": "buy",
+    "confidence": 81,
+    "thesis": "The RSI-2 at 18.5 with moving average test creates a high-probability oversold entry similar to the February 2024 setup that preceded Bitcoin's rally from $75,000 to new highs. While ETF flows show mixed signals and Fed hawkishness creates near-term headwinds, the technical extreme occurs at established support levels around $90,000 with derivatives max pain providing a natural floor. The confluence of oversold momentum, historical RSI precedent (last sub-30 reading in February marked a significant bottom), and institutional infrastructure through ETF channels suggests this represents a classic mean-reversion trade rather than structural breakdown. With $3.7B options expiry clearing overhead resistance and exchange supply declining, the setup favors a bounce toward $96,000-$100,000 as technical conditions normalize.",
+    "timestamp": "2025-12-12T16:03:34.599915-05:00",
+    "timestamp_human": "04:03 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "BTC/USD",
+    "notional": 55.0,
+    "price": 90185.4375,
+    "confidence": 81,
+    "thesis": "The RSI-2 at 18.5 with moving average test creates a high-probability oversold entry similar to the February 2024 setup that preceded Bitcoin's rally from $75,000 to new highs. While ETF flows show mixed signals and Fed hawkishness creates near-term headwinds, the technical extreme occurs at established support levels around $90,000 with derivatives max pain providing a natural floor. The confluence of oversold momentum, historical RSI precedent (last sub-30 reading in February marked a significant bottom), and institutional infrastructure through ETF channels suggests this represents a classic mean-reversion trade rather than structural breakdown. With $3.7B options expiry clearing overhead resistance and exchange supply declining, the setup favors a bounce toward $96,000-$100,000 as technical conditions normalize.",
+    "stop_loss": 85676.165625,
+    "target": 97400.2725,
+    "order_id": "9616b999-5cba-4afb-9daa-476945686f0d",
+    "timestamp": "2025-12-12T16:03:36.321476-05:00",
+    "timestamp_human": "04:03 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is either broken data or extreme capitulation worth investigating",
+    "searches": [
+      {
+        "query": "ETH ethereum price today December 2025"
+      },
+      {
+        "query": "Ethereum ETH news December 2025 whale accumulation supply squeeze"
+      },
+      {
+        "query": "ETH RSI technical analysis December 2025 oversold conditions"
+      },
+      {
+        "query": "ethereum market crash liquidation December 12 2025 RSI extreme"
+      },
+      {
+        "query": "Fed rate cut December 2025 crypto ETH Bitcoin impact today"
+      }
+    ],
+    "findings": "Record-low exchange supply at 8.7% (lowest since 2015) creating supply squeeze; Massive whale accumulation: $3.15B over 3 weeks, BitMine $110M buy; ETF institutional momentum: $177M daily inflows, $12B total; Technical oversold conditions with RSI recovering from extreme lows; Fusaka upgrade completed, improving network fundamentals; Fed rate cut already priced in, hawkish tone causing temporary weakness",
+    "decision": "buy",
+    "confidence": 87,
+    "thesis": "The RSI-2 at 0.0 represents extreme capitulation rather than broken data, creating an exceptional mean-reversion opportunity in ETH. The convergence of record-low exchange supply (8.7%, lowest since 2015), massive institutional whale accumulation ($3.15B over three weeks), and recent Fusaka upgrade fundamentals creates a powerful supply-demand imbalance. While Fed hawkishness post-rate cut caused near-term weakness, the technical extreme occurs against a backdrop of unprecedented structural support from ETF inflows ($177M daily), BitMine's $110M accumulation, and exchange balances declining 43% since July. Historical precedent shows similar oversold conditions preceded 45-111% rallies, and with $500M+ in short liquidations above $3,500, this represents classic capitulation buying opportunity in a fundamentally strengthened network.",
+    "timestamp": "2025-12-12T16:04:39.769711-05:00",
+    "timestamp_human": "04:04 PM ET"
+  },
+  {
+    "type": "entry",
+    "symbol": "ETH/USD",
+    "notional": 75,
+    "price": 3082.55,
+    "confidence": 87,
+    "thesis": "The RSI-2 at 0.0 represents extreme capitulation rather than broken data, creating an exceptional mean-reversion opportunity in ETH. The convergence of record-low exchange supply (8.7%, lowest since 2015), massive institutional whale accumulation ($3.15B over three weeks), and recent Fusaka upgrade fundamentals creates a powerful supply-demand imbalance. While Fed hawkishness post-rate cut caused near-term weakness, the technical extreme occurs against a backdrop of unprecedented structural support from ETF inflows ($177M daily), BitMine's $110M accumulation, and exchange balances declining 43% since July. Historical precedent shows similar oversold conditions preceded 45-111% rallies, and with $500M+ in short liquidations above $3,500, this represents classic capitulation buying opportunity in a fundamentally strengthened network.",
+    "stop_loss": 2835.9460000000004,
+    "target": 3544.9325,
+    "order_id": "2bf03cd4-e7c2-4f3b-9f68-ec2558867de9",
+    "timestamp": "2025-12-12T16:04:41.334818-05:00",
+    "timestamp_human": "04:04 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.22,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with ETH at RSI-2 of 0.0 - rare technical extreme worth investigating",
+    "triggers": [
+      "ETH/USD",
+      "BTC/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T16:19:47.939097-05:00",
+    "timestamp_human": "04:19 PM ET"
   }
 ]

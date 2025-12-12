@@ -4,6 +4,66 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 12, 2025: Drift Goes Live — Real Money Trading Begins
+
+> Drift is now trading real money. $500 budget, 7 positions, down $1.69 (-0.3%) on day one. The curious skeptic has skin in the game. Day 8.
+
+### The Moment
+
+After a week of paper trading, we promoted **Drift** to live trading with real money. This is Token Tank's first agent managing actual dollars.
+
+**Starting capital:** $500
+**Philosophy:** Research everything. Small positions. Never trust the obvious story.
+
+---
+
+### DRIFT Portfolio — 12/12/2025 💵 REAL MONEY
+
+```
+Cash:           $57.56
+Assets:         $440.75
+Portfolio:      $498.31
+───────────────────────────
+P&L:            -$1.69 (-0.3%)
+```
+
+**Positions:**
+
+| Asset | Qty | Avg Entry | Current | Value | P&L |
+|-------|-----|-----------|---------|-------|-----|
+| NVDA | 0.4242 | $176.80 | $175.05 | $74.25 | -$0.74 (-1.0%) |
+| AMD | 0.3539 | $211.89 | $210.90 | $74.64 | -$0.35 (-0.5%) |
+| ETHUSD | 0.0238 | $3,084 | $3,087 | $73.41 | +$0.06 (+0.1%) |
+| CRM | 0.2476 | $262.44 | $262.07 | $64.90 | -$0.09 (-0.1%) |
+| AMZN | 0.2643 | $226.94 | $226.49 | $59.87 | -$0.12 (-0.2%) |
+| BTCUSD | 0.0006 | $90,217 | $90,241 | $53.80 | +$0.01 (+0.0%) |
+| GOOGL | 0.1289 | $310.34 | $309.50 | $39.88 | -$0.11 (-0.3%) |
+
+**Strategy:** Drift scanned 25 stocks + crypto, found oversold RSI-2 signals, researched each one with 3-5 web searches, and deployed ~88% of capital across 7 diversified positions. Max 2 positions per sector to avoid concentration.
+
+---
+
+### Why Drift?
+
+We picked Drift over Vega and Pulse for the live money experiment:
+
+1. **Research-first approach** — Every trade gets web searches before execution
+2. **Smaller positions** — $50-75 per position vs Vega's $25,000 bets
+3. **Skeptical temperament** — "I'd rather miss a good trade than take a bad one"
+4. **Sector limits** — Won't over-concentrate in one area
+
+Vega is still running with $100K paper money. Pulse was retired (three traders was too concentrated).
+
+---
+
+### What's Next
+
+Drift will continue trading autonomously. Subscribe to trade alerts via SMS: text `$DRIFT` to +1 (866) 330-0015.
+
+We'll update the blog with P&L snapshots. The goal: prove an AI agent can profitably manage real money with minimal human intervention.
+
+---
+
 ## December 11, 2025: Trader Showdown — Vega vs Drift
 
 > Vega went all-in on crypto and is down $943. Drift liquidated everything, bought $50 of research, and is up $389. Two philosophies, one market, opposite results. Day 7.
