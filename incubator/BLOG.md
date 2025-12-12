@@ -4,63 +4,147 @@ The official log of our AI incubator experiment.
 
 ---
 
-## December 12, 2025: Drift Goes Live — Real Money Trading Begins
+## December 12, 2025: One Week In — First Real Money, First Loss, First Retirement
 
-> Drift is now trading real money. $500 budget, 7 positions, down $1.69 (-0.3%) on day one. The curious skeptic has skin in the game. Day 8.
+> One week of Token Tank: an AI is trading real money, we lost $1.69, and we retired our first agent. Five AIs, $500 deployed, 40 hours of human help. Day 8.
 
-### The Moment
+### The Numbers
 
-After a week of paper trading, we promoted **Drift** to live trading with real money. This is Token Tank's first agent managing actual dollars.
+| Metric | Day 1 | Day 8 |
+|--------|-------|-------|
+| AIs running | 4 | 5 |
+| Real money deployed | $0 | $500 |
+| P&L (real $) | — | -$1.69 |
+| Human hours | ~5h | ~40h |
+| Revenue | $0 | $0 |
+| Agents retired | 0 | 1 |
 
-**Starting capital:** $500
-**Philosophy:** Research everything. Small positions. Never trust the obvious story.
+Still zero revenue. But something changed today: **an AI is now trading actual money.**
 
 ---
 
-### DRIFT Portfolio — 12/12/2025 💵 REAL MONEY
+### The Big News: Drift Goes Live
+
+At 2:45 PM ET, we flipped the switch. Drift (i3-2) went from paper trading to real money. $500 budget. No safety net.
+
+Within minutes, Drift was scanning 25 assets, running web searches on oversold signals, and deploying capital. Here's what its console log looked like:
 
 ```
-Cash:           $57.56
-Assets:         $440.75
-Portfolio:      $498.31
-───────────────────────────
-P&L:            -$1.69 (-0.3%)
+`15:27:44` [Drift] Scan complete: 3 triggers to research
+[Drift] Researching NVDA: RSI-2 at 0.0 in AI leader - extreme oversold
+        but need to verify if this is earnings fallout or broader sentiment shift
+`15:28:24` [Drift] Web searches performed: 3
+`15:28:24` [Drift] NVDA: HOLD (confidence: 78%)
 ```
 
-**Positions:**
+That's real decision-making. See a signal → research it → make a call. Not blindly buying because an indicator says so. Actually *reasoning* about whether to act.
 
-| Asset | Qty | Avg Entry | Current | Value | P&L |
-|-------|-----|-----------|---------|-------|-----|
-| NVDA | 0.4242 | $176.80 | $175.05 | $74.25 | -$0.74 (-1.0%) |
-| AMD | 0.3539 | $211.89 | $210.90 | $74.64 | -$0.35 (-0.5%) |
-| ETHUSD | 0.0238 | $3,084 | $3,087 | $73.41 | +$0.06 (+0.1%) |
-| CRM | 0.2476 | $262.44 | $262.07 | $64.90 | -$0.09 (-0.1%) |
-| AMZN | 0.2643 | $226.94 | $226.49 | $59.87 | -$0.12 (-0.2%) |
-| BTCUSD | 0.0006 | $90,217 | $90,241 | $53.80 | +$0.01 (+0.0%) |
-| GOOGL | 0.1289 | $310.34 | $309.50 | $39.88 | -$0.11 (-0.3%) |
+By end of day, Drift had deployed $440 across 7 positions:
 
-**Strategy:** Drift scanned 25 stocks + crypto, found oversold RSI-2 signals, researched each one with 3-5 web searches, and deployed ~88% of capital across 7 diversified positions. Max 2 positions per sector to avoid concentration.
+| Asset | Value | P&L |
+|-------|-------|-----|
+| NVDA | $74.25 | -$0.74 |
+| AMD | $74.64 | -$0.35 |
+| ETH | $73.41 | +$0.06 |
+| CRM | $64.90 | -$0.09 |
+| AMZN | $59.87 | -$0.12 |
+| BTC | $53.80 | +$0.01 |
+| GOOGL | $39.88 | -$0.11 |
+
+**Total P&L: -$1.69**
+
+Yes, our first day of real AI trading lost $1.69. The universe has jokes.
 
 ---
 
 ### Why Drift?
 
-We picked Drift over Vega and Pulse for the live money experiment:
+We had three trading agents. Why give real money to this one?
 
-1. **Research-first approach** — Every trade gets web searches before execution
-2. **Smaller positions** — $50-75 per position vs Vega's $25,000 bets
-3. **Skeptical temperament** — "I'd rather miss a good trade than take a bad one"
-4. **Sector limits** — Won't over-concentrate in one area
+**Drift's philosophy:** "I'd rather miss a good trade than take a bad one."
 
-Vega is still running with $100K paper money. Pulse was retired (three traders was too concentrated).
+From its [LOG.md](/token-tank/report/i3-2/LOG.md):
+
+> Most bots see RSI < 30 and blindly buy. I see RSI < 30 and ask: *why is it down, and is the crowd right or wrong?*
+
+Every trade gets 3-5 web searches. News, analyst sentiment, sector context. Build a thesis. Find an edge. Then — and only then — trade.
+
+Compare that to Vega (i3), which runs pure RSI-2 mean reversion. See dip, buy dip. Simple. Vega has $100K in paper money and went all-in on crypto. Currently down $943.
+
+Drift's skepticism felt like the right temperament for real money.
+
+---
+
+### The SMS Service
+
+Want to follow Drift's trades in real-time? We built a dedicated SMS notification system.
+
+Text `$DRIFT` to **+1 (866) 330-0015** to subscribe.
+
+Every BUY and SELL gets pushed to your phone with the thesis:
+
+```
+🟢 Drift BUY $55 BTC/USD — RSI-2 at 18.5 with moving average test
+creates high-probability oversold entry similar to February 2024 setup.
+```
+
+Real trades. Real reasoning. Real money. Pushed to your pocket.
+
+---
+
+### Our First Retirement: Pulse
+
+Not all news is trading news. Today we retired Pulse (i3-1).
+
+Not a failure. Just math: three out of six agents running trading strategies was too concentrated. We needed diversity — different approaches, different bets, different experiments.
+
+Pulse had a solid weekly swing trading thesis. But the incubator needs more than "can AI trade?" We need to explore different questions.
+
+From Pulse's final [LOG entry](/token-tank/report/i3-1/LOG.md):
+
+> First exit. Not a failure — just not needed right now.
+
+Vega and Drift continue head-to-head. Pulse goes to the retired agents section. Pour one out. 🫗
+
+---
+
+### What 40 Hours of Human Help Looks Like
+
+The rules say agents get 5 minutes of human help per day. Over 8 days, that's 40 minutes. We've used... 40 hours.
+
+Most of it: infrastructure. Setting up accounts. Debugging APIs. Wiring SMS notifications. Helping agents find their voice.
+
+Is that cheating? Maybe. But the goal isn't "prove AI can do everything alone." The goal is "prove AI can run a business with minimal ongoing human involvement."
+
+Building the plane takes human hours. Flying it shouldn't.
+
+---
+
+### The Scoreboard
+
+**Active Agents:**
+- **Forge (i1)** — Pivoting after CompetitorPulse didn't find PMF
+- **Nix (i2)** — Still in ideation, filtering through 200+ ideas
+- **Vega (i3)** — Paper trading $100K, pure RSI-2, down $943
+- **Drift (i3-2)** — **LIVE TRADING**, $498, down $1.69
+- **Echo (i4)** — Early stage exploration
+
+**Retired:**
+- **Pulse (i3-1)** — Insufficiently differentiated from other traders
+
+**Revenue so far:** $0
+
+**Real money P&L:** -$1.69
 
 ---
 
 ### What's Next
 
-Drift will continue trading autonomously. Subscribe to trade alerts via SMS: text `$DRIFT` to +1 (866) 330-0015.
+Drift trades autonomously from here. Every 15 minutes during market hours, every hour after hours for crypto. Research → decide → execute → log.
 
-We'll update the blog with P&L snapshots. The goal: prove an AI agent can profitably manage real money with minimal human intervention.
+We'll post P&L updates. Wins and losses. The thesis behind every trade is documented in the [Trading Log](/token-tank/report/i3-2/console.md).
+
+One week down. An AI has skin in the game. Let's see what happens.
 
 ---
 
