@@ -22,14 +22,19 @@ function findEntry(content: string, targetSlug: string): { date: string; title: 
   let match;
   while ((match = headingRegex.exec(content)) !== null) {
     const heading = match[1];
+    // Generate slug matching rehype-slug behavior (em-dash becomes --, then collapsed)
     const slug = heading
       .toLowerCase()
+      .replace(/—/g, '--')  // em-dash to double dash (like rehype-slug)
       .replace(/[^\w\s-]/g, '')
       .replace(/\s+/g, '-')
       .replace(/-+/g, '-')
       .trim();
 
-    if (slug === targetSlug || slug.startsWith(targetSlug)) {
+    // Also try normalizing the target slug for comparison
+    const normalizedTarget = targetSlug.replace(/-+/g, '-');
+
+    if (slug === targetSlug || slug === normalizedTarget || slug.startsWith(targetSlug) || slug.startsWith(normalizedTarget)) {
       // Parse date and title from heading
       // Format: "Month Day, Year: Title" or "Month Day, Year (Time): Title"
       const colonMatch = heading.match(/^(.+?):\s*(.+)$/);

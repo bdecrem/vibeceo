@@ -86,3 +86,32 @@
 `15:10:17` [Drift] Scan complete: 3 triggers to research
 
 [Drift] Researching NVDA: RSI-2 at 0.0 in AI king - extreme oversold rarely seen in quality names, potential mean reversion play
+`15:11:14` [Drift] Web searches performed: 4
+`15:11:14` [Drift] NVDA: SELL (confidence: 75%)
+`15:11:14` [Drift] NVDA: BLOCKED: Would exceed PDT limit (3/3 used)
+
+[Drift] Researching GOOGL: RSI-2 at 0.0 in search monopoly - oversold bounce candidate if no fundamental breakdown
+`15:12:04` [Drift] Web searches performed: 4
+`15:12:04` [Drift] GOOGL: PASS (confidence: 65%)
+
+[Drift] Researching AMZN: RSI-2 at 0.0 AND testing 20MA support - double technical setup in e-commerce/cloud leader
+`15:12:32` [Drift] AMZN: HOLD (confidence: 75%)
+`15:12:32` [15:12:32 ET] completed: Processed 3 triggers, 1 actions
+
+--- Cycle 3 (stocks+crypto) ---
+`15:27:32` [Drift] Scanning stocks+crypto: 25 assets
+`15:27:32` [Drift] Stage 1: Quantitative screening 25 symbols...
+`15:27:44` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching NVDA: RSI-2 at 0.0 in AI leader - extreme oversold but need to verify if this is earnings fallout or broader sentiment shift
+`15:28:24` [Drift] Web searches performed: 3
+`15:28:24` [Drift] NVDA: HOLD (confidence: 78%)
+
+[Drift] Researching GOOGL: RSI-2 at 0.0 in mega-cap with strong fundamentals - unusual extreme reading warrants investigation
+`15:29:17` [Drift] Web searches performed: 5
+`15:29:17` [Drift] GOOGL: HOLD (confidence: 72%)
+
+[Drift] Researching AAPL: RSI-2 at 2.6 - less extreme but still deeply oversold in most liquid name, safer bounce candidate
+`15:30:04` [Drift] Web searches performed: 4
+`15:30:04` [Drift] AAPL: PASS (confidence: 72%)
+`15:30:04` [15:30:04 ET] completed: Processed 3 triggers, 0 actions

@@ -51,12 +51,16 @@ async function findEntry(filePath: string, entrySlug: string): Promise<{ date: s
       // Generate slug from heading (same as rehype-slug does)
       const slug = heading
         .toLowerCase()
+        .replace(/—/g, '--')  // em-dash to double dash (like rehype-slug)
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-')
         .replace(/-+/g, '-')
         .trim();
 
-      if (slug === entrySlug || slug.startsWith(entrySlug)) {
+      // Also try normalizing the entry slug for comparison
+      const normalizedEntrySlug = entrySlug.replace(/-+/g, '-');
+
+      if (slug === entrySlug || slug === normalizedEntrySlug || slug.startsWith(entrySlug) || slug.startsWith(normalizedEntrySlug)) {
         // Parse the heading for date and title
         // Format: "YYYY-MM-DD: Title" or "Month Day, Year: Title" or "Month Day, Year (Time): Title"
         const colonMatch = heading.match(/^(.+?):\s*(.+)$/);

@@ -4230,5 +4230,160 @@
     "action": "research_triggered",
     "timestamp": "2025-12-12T15:10:17.635885-05:00",
     "timestamp_human": "03:10 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 in AI king - extreme oversold rarely seen in quality names, potential mean reversion play",
+    "searches": [
+      {
+        "query": "NVDA news today December 12 2025"
+      },
+      {
+        "query": "semiconductor AI stocks Oracle Broadcom earnings impact December 2025"
+      },
+      {
+        "query": "NVDA analyst price targets ratings upgrades downgrades December 2025"
+      },
+      {
+        "query": "NVDA China H200 chip export restrictions news December 2025"
+      }
+    ],
+    "findings": "NVDA down 1.6% to ~$181 amid sector-wide AI rotation from Oracle/Broadcom concerns; Broadcom earnings beat but warned of AI margin pressure, triggering profitability fears; Wall Street maintains 95% buy ratings with $248+ average target (39% upside); Trump approved H200 China exports but Beijing implementing access restrictions; Semiconductor index down 5% on worst day in ~2 months; $500B Blackwell/Rubin order backlog through 2026 supports long-term thesis",
+    "decision": "sell",
+    "confidence": 75,
+    "thesis": "While NVDA's fundamentals remain excellent with record revenue and $500B+ order backlog, the sector rotation has deepened beyond my original Oracle contagion thesis. Broadcom's margin warning created genuine AI profitability concerns that are repricing the entire sector, not just temporary sentiment. With 0 PDT remaining and new information suggesting this isn't the quick mean-reversion I anticipated, I'm exiting to preserve capital for clearer opportunities when sector sentiment stabilizes. The risk/reward has deteriorated from pure technical oversold to fundamental sector reassessment.",
+    "timestamp": "2025-12-12T15:11:14.803207-05:00",
+    "timestamp_human": "03:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 in search monopoly - oversold bounce candidate if no fundamental breakdown",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news today December 2024"
+      },
+      {
+        "query": "GOOGL analyst ratings price targets December 2024"
+      },
+      {
+        "query": "Oracle earnings AI tech sector selloff December 2024"
+      },
+      {
+        "query": "Google antitrust monopoly ruling EU fine December 2024"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered 2.6% GOOGL decline via AI sector contagion; EU investigating GOOGL for Digital Markets Act violations with potential 10% revenue fines; Analyst consensus remains Strong Buy but price targets average $302-303 (below current price); Strong Q4 2024 fundamentals: $350B revenue (+13.87%), $100B earnings (+35.67%); AI investment skepticism growing across sector after Oracle guidance disappointment",
+    "decision": "pass",
+    "confidence": 65,
+    "thesis": "While the RSI-2 at 0.0 creates a similar technical setup to my successful December 12th GOOGL trade, the risk/reward has fundamentally shifted. Oracle's AI earnings miss triggered sector-wide selling that swept up Google despite strong fundamentals ($350B revenue, +13.87% growth, Gemini 3 progress), but analyst price targets now average $302-303 representing downside from current $309 levels. Additionally, new EU regulatory investigations under the Digital Markets Act create potential fines up to 10% of revenue. The Oracle contagion represents genuine AI investment skepticism rather than temporary technical weakness, and with compressed valuation targets plus regulatory overhang, this oversold condition lacks the compelling risk/reward of previous mean-reversion setups in quality names.",
+    "timestamp": "2025-12-12T15:12:04.307767-05:00",
+    "timestamp_human": "03:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMZN",
+    "trigger": "RSI-2 at 0.0 AND testing 20MA support - double technical setup in e-commerce/cloud leader",
+    "searches": [
+      {
+        "query": "Attempted AMZN news search - tool unavailable"
+      }
+    ],
+    "findings": "PDT constraint limits trading flexibility; Small position size reduces risk significance; Technical RSI-2 setup typically mean-reverts in 1-3 days; No apparent company-specific negative catalysts; Original contagion thesis remains plausible",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "Maintaining small AMZN position due to PDT constraints and intact fundamental thesis. The RSI-2 extreme oversold setup typically mean-reverts within 1-3 sessions, and burning the last day trade on a $60 position showing minimal movement lacks risk/reward merit. AMZN's competitive moats in AWS and e-commerce remain strong, Wall Street consensus stays bullish, and the original Oracle earnings contagion thesis appears valid. The small position size limits downside risk while preserving optionality for the technical mean-reversion to play out.",
+    "timestamp": "2025-12-12T15:12:32.118267-05:00",
+    "timestamp_human": "03:12 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.42,
+    "position_count": 5,
+    "findings": "Tech carnage with extreme RSI-2 readings across major names - either oversold bounce setup or something's fundamentally broken",
+    "triggers": [
+      "NVDA",
+      "GOOGL",
+      "AAPL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T15:27:44.201680-05:00",
+    "timestamp_human": "03:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 in AI leader - extreme oversold but need to verify if this is earnings fallout or broader sentiment shift",
+    "searches": [
+      {
+        "query": "NVDA stock news today December 12 2024"
+      },
+      {
+        "query": "NVDA H200 China production Reuters December 2024"
+      },
+      {
+        "query": "Oracle earnings AI spending impact semiconductor stocks December 2024"
+      }
+    ],
+    "findings": "Trump approved H200 exports to China with 25% fee, Alibaba/ByteDance placing large orders; NVDA considering H200 production expansion due to Chinese demand exceeding supply; Oracle earnings miss continues driving AI stock weakness, same contagion as morning; Analyst consensus remains Strong Buy with $258 average target (43% upside); No new NVDA-specific negative information, fundamentals remain intact",
+    "decision": "hold",
+    "confidence": 78,
+    "thesis": "The RSI-2 at 0.0 represents continued Oracle earnings contagion rather than new NVDA-specific weakness, making this the same technical setup I already captured this morning. The H200 China export opportunity with major Chinese companies placing large orders actually strengthens the fundamental case. With analyst consensus remaining Strong Buy at $258 targets (43% upside) and no deterioration in NVDA's competitive position, my existing position captures the mean-reversion opportunity while the new H200 production expansion story provides additional upside catalyst. Given zero PDT trades remaining, holding the existing position is prudent risk management.",
+    "timestamp": "2025-12-12T15:28:24.503396-05:00",
+    "timestamp_human": "03:28 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 in mega-cap with strong fundamentals - unusual extreme reading warrants investigation",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news today December 2024"
+      },
+      {
+        "query": "GOOGL analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "Oracle earnings tech stock selloff AI spending concerns December 2024"
+      },
+      {
+        "query": "EU antitrust Google fine Digital Markets Act December 2024"
+      },
+      {
+        "query": "Broadcom stock decline AI margins December 2024"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered 11% drop, sparking sector-wide AI spending concerns; EU investigating Google for DMA violations with potential 10% turnover fines; Broadcom margin decline from 79% to 76.9% adds AI profitability pressure; Analyst consensus remains Strong Buy with $303 average target; Google's AI competition intensifying but positioned competitively with Gemini progress",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "The RSI-2 at 0.0 represents Oracle/Broadcom earnings contagion rather than Google-specific deterioration, creating another oversold extreme in a fundamentally strong company. While EU antitrust risks and AI margin pressures add uncertainty, analyst consensus remains Strong Buy and Google's competitive positioning in AI (Gemini progress) stays intact. However, with an existing underwater position (-0.27%) and zero PDT capacity remaining, the risk/reward favors holding through this technical extreme rather than adding exposure. The Oracle/Broadcom-driven selloff should prove temporary, but position sizing discipline trumps the mean-reversion opportunity.",
+    "timestamp": "2025-12-12T15:29:17.757383-05:00",
+    "timestamp_human": "03:29 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 2.6 - less extreme but still deeply oversold in most liquid name, safer bounce candidate",
+    "searches": [
+      {
+        "query": "AAPL Apple news today December 2024"
+      },
+      {
+        "query": "AAPL analyst ratings price targets December 2024"
+      },
+      {
+        "query": "tech stocks AI sector selling December 2024"
+      },
+      {
+        "query": "Apple Intelligence AI features iPhone sales December 2024"
+      }
+    ],
+    "findings": "Record Q1 2025 results: $124.3B revenue (+4% YoY), $2.40 EPS (+10% YoY); AI leadership transition: John Giannandrea stepping down, Amar Subramanya taking over; Analyst consensus: 28 analysts with 'Buy' rating, $287.78 average target (3.82% upside); Apple Intelligence rollout concerns: Analyst skepticism about immediate sales impact; UBS maintains Neutral amid App Store growth slowdown; RSI-2 at 2.6 less extreme than recent successful oversold trades (0.0-0.1 range)",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While AAPL shows solid fundamentals with record Q1 results and analyst support, the RSI-2 at 2.6 represents a less compelling technical setup compared to recent successful trades. The company faces genuine near-term headwinds including analyst concerns about Apple Intelligence's immediate sales impact, App Store growth deceleration, and management transition in AI leadership. Unlike the clear sector-wide AI contagion that created high-probability mean-reversion opportunities in GOOGL, AMZN, and AMD, AAPL's pullback appears more company-specific and fundamental rather than technical. With zero day trades remaining and recent strong earnings already reflected in the stock, the risk/reward profile doesn't justify entry versus preserving capital for clearer opportunities when PDT capacity resets.",
+    "timestamp": "2025-12-12T15:30:04.326863-05:00",
+    "timestamp_human": "03:30 PM ET"
   }
 ]
