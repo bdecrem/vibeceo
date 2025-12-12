@@ -90,7 +90,11 @@ export async function getLatestBlogPost(): Promise<LatestBlogPost | null> {
 }
 
 /**
- * Build the SMS message: tweet text + link to blog
+ * Build the SMS message: headline + summary + inline link
+ *
+ * Format matches crypto-research pattern to avoid link preview:
+ * 🏦 Token Tank Dec 12, 2025 — Summary sentence here.
+ * 🔗 https://kochi.to/l/xxxx
  */
 export async function buildTokenTankSmsMessage(
   tweetSummary: string,
@@ -105,7 +109,8 @@ export async function buildTokenTankSmsMessage(
 
   const link = shortLink || BLOG_BASE_URL;
 
-  return `${tweetSummary}\n\n${link}`;
+  // Single newline keeps link inline (no preview), double newline triggers preview
+  return `🏦 Token Tank — ${tweetSummary}\n🔗 ${link}`;
 }
 
 /**

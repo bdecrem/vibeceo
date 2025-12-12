@@ -3555,5 +3555,94 @@
     "thesis": "The RSI-2 at 0.0 represents Oracle earnings contagion and broader tech rotation rather than AMZN-specific weakness, creating an oversold entry in a fundamentally dominant company. Amazon maintains Strong Buy consensus from 47 analysts with $284+ average price target (25%+ upside), while recent positive coverage from Guggenheim ($300 target) and strong Q4 fundamentals (11% revenue growth, 95% earnings growth) support the quality thesis. The 2-week-old employee AI letter represents <0.1% of workforce and doesn't materially impact business prospects. With Oracle's AI spending fears triggering sector-wide selling similar to previous successful mean-reversion trades in NVDA/GOOGL, this technical extreme in the e-commerce/cloud leader with intact competitive moats represents a classic swing opportunity.",
     "timestamp": "2025-12-12T13:40:47.120986-05:00",
     "timestamp_human": "01:40 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 500.44,
+    "position_count": 4,
+    "findings": "Seeing extreme oversold readings across major tech names - either data error or massive selloff worth investigating",
+    "triggers": [
+      "GOOGL",
+      "NVDA",
+      "CRM"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T13:55:58.103516-05:00",
+    "timestamp_human": "01:55 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 is extreme oversold in mega-cap quality stock - need to verify if real or data glitch",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news today December 12 2024"
+      },
+      {
+        "query": "Oracle earnings miss AI spending concerns tech selloff today"
+      },
+      {
+        "query": "GOOGL Google analyst ratings price targets December 2024"
+      },
+      {
+        "query": "GOOGL technical analysis RSI oversold December 12 2024"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered broad tech selloff including Google (-2.4%); EU antitrust headlines on Google but likely market overreaction; Strong Buy analyst consensus (63 Buy, 13 Hold, 0 Sell) but limited upside to targets; RSI-2 trigger appears false - current RSI ~70 (overbought), not 0.0 (oversold); Technical indicators mixed with moving averages showing Strong Sell signals",
+    "decision": "hold",
+    "confidence": 65,
+    "thesis": "The RSI-2 trigger of 0.0 appears to be a data error as current readings show RSI around 70. While Oracle's earnings miss created sector-wide selling pressure affecting Google, the company maintains Strong Buy analyst consensus and the regulatory headlines appear to be noise rather than fundamental deterioration. However, with mixed technical signals, limited upside potential based on analyst targets, and my recent whipsaw pattern in this name, it's prudent to hold the small existing position rather than add size. The Oracle contagion should prove temporary, but with only 1% upside to analyst targets and 1 day trade remaining, patience is warranted until clearer technical setup emerges.",
+    "timestamp": "2025-12-12T13:56:47.834427-05:00",
+    "timestamp_human": "01:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 0.0 in AI leader - if legitimate, could be major opportunity given stock's fundamental strength",
+    "searches": [
+      {
+        "query": "NVDA news today December 12 2025"
+      },
+      {
+        "query": "Oracle earnings AI spending impact December 2025"
+      },
+      {
+        "query": "Broadcom earnings AI infrastructure December 2025"
+      },
+      {
+        "query": "NVDA analyst ratings price targets December 2025"
+      }
+    ],
+    "findings": "Oracle's $50B capex guidance (vs $35B previous) triggered sector-wide AI bubble concerns; Broadcom earnings showed strong AI growth but margin pressure concerns; NVDA analyst consensus remains 'Strong Buy' (39/41 analysts) with $248+ targets; Company has $500B AI chip backlog for 2025-2026 providing revenue visibility; Recent H200 China approval could add $25-30B annual revenue; Current weakness is Oracle contagion, not NVDA-specific fundamental issues",
+    "decision": "hold",
+    "confidence": 82,
+    "thesis": "Oracle earnings contagion has created sector-wide AI bubble fears that don't reflect NVDA's specific fundamentals. The company maintains its AI infrastructure dominance with a $500B chip backlog, 95% analyst buy ratings, and $248+ average price targets implying 39% upside. While Oracle struggles with AI spending monetization, NVDA benefits as the arms dealer getting paid upfront for AI infrastructure. Current weakness represents sentiment-driven selling rather than fundamental deterioration - my original mean-reversion thesis remains intact with the stock now even more oversold.",
+    "timestamp": "2025-12-12T13:57:38.664044-05:00",
+    "timestamp_human": "01:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "CRM",
+    "trigger": "RSI-2 at 16.3 is more believable oversold level - enterprise software leader potentially oversold",
+    "searches": [
+      {
+        "query": "CRM Salesforce news December 2024"
+      },
+      {
+        "query": "CRM Salesforce analyst ratings December 2024"
+      },
+      {
+        "query": "enterprise software sector trends December 2024"
+      },
+      {
+        "query": "enterprise software stocks selling pressure December 2024"
+      }
+    ],
+    "findings": "Strong Q3 results with 8% revenue growth and expanding margins; Agentforce AI platform showing strong adoption momentum; Overwhelming analyst bullish consensus with 31% average upside targets; Enterprise software sector growing at 12%+ CAGR through 2030; Sector facing headwinds from AI disruption narrative and rotation pressure; Multiple analyst price target increases following earnings beat",
+    "decision": "hold",
+    "confidence": 78,
+    "thesis": "The original oversold thesis at RSI-2 11.9 has played out successfully, validating CRM's resilience as an enterprise software leader. While current RSI-2 at 16.3 shows continued oversold conditions, the risk/reward has shifted less favorably after recent analyst upgrades and price target increases post-Q3 earnings. With overwhelming bullish consensus (80%+ buy ratings), $324+ average price targets, and strong Agentforce AI momentum, the fundamental thesis remains intact. However, broader software sector headwinds from AI disruption fears and my existing profitable position suggest holding rather than adding. The 12.1% enterprise software sector CAGR tailwinds support long-term value, but near-term volatility from sector rotation warrants patience over aggressive accumulation.",
+    "timestamp": "2025-12-12T13:58:30.569900-05:00",
+    "timestamp_human": "01:58 PM ET"
   }
 ]

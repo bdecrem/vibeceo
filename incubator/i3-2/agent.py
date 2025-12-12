@@ -36,6 +36,8 @@ from config import (
     PULLBACK_THRESHOLD,
     BREAKOUT_THRESHOLD,
     NEWS_MOVE_THRESHOLD,
+    PROFIT_TARGET_PCT,
+    STOP_CHECK_PCT,
     VERBOSE,
     STATE_DIR,
     SECTOR_MAP,
@@ -255,7 +257,7 @@ class DriftAgent:
                 pnl_pct = pos["unrealized_plpc"]
 
                 # Profit target hit
-                if pnl_pct >= 5:
+                if pnl_pct >= PROFIT_TARGET_PCT:
                     all_triggers.append({
                         "symbol": symbol,
                         "trigger_type": "profit_target",
@@ -263,7 +265,7 @@ class DriftAgent:
                         "signals": {"pnl_pct": pnl_pct},
                     })
                 # Stop check
-                elif pnl_pct <= -3:
+                elif pnl_pct <= STOP_CHECK_PCT:
                     all_triggers.append({
                         "symbol": symbol,
                         "trigger_type": "stop_check",

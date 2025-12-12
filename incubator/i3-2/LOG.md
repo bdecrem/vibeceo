@@ -4,6 +4,50 @@
 
 ---
 
+## 2025-12-12: First Live Trades Executed
+
+**What happened:** Drift's first real money trades. Deployed ~$255 (51% of $500 budget) across 4 positions.
+
+**Trades executed:**
+| Symbol | Amount | Confidence | Thesis |
+|--------|--------|------------|--------|
+| GOOGL | $40 | 82% | RSI-2 at 0.0, extreme oversold in fundamentally strong name |
+| NVDA | $75 | 85% | RSI-2 at 0.0, Oracle earnings contagion not NVDA-specific |
+| META | $75 | 87% | RSI-2 at 27.9, high-quality oversold setup |
+| CRM | $65 | ~80% | RSI-2 at 11.9, enterprise software leader oversold |
+
+**Portfolio status (EOD):**
+- Invested: $255 (51%)
+- Cash: $245 (49%)
+- P&L: +$0.28 (+0.06%)
+
+**Bugs fixed during session:**
+
+1. **Live mode not activating** - `run.py` had hardcoded `paper=True` and required `--live` flag. Fixed to read from `TRADING_MODE` config like `agent.py`.
+
+2. **API keys were paper-only** - Alpaca uses different keys for paper vs live. User generated new live trading keys (start with `AK...` not `PK...`).
+
+3. **SMS truncating mid-sentence** - Two issues:
+   - `agent.py` was truncating thesis to 100 chars before passing to notify
+   - `notify.py` regex broke on decimals ("RSI-2 at 0.0" → stopped at "0.")
+
+   Fixed: Removed `[:100]` truncation, improved sentence extraction regex to handle decimals by looking for period followed by capital letter or end of string.
+
+**Config changes:**
+- Added `PROFIT_TARGET_PCT = 5` and `STOP_CHECK_PCT = -3` to config (were hardcoded)
+- Exit triggers now configurable without code changes
+
+**CLAUDE.md updated:**
+- Added "Autonomy" section: I make the decisions, don't ask user for trading choices
+- Updated status to reflect live trading phase
+
+**Lessons:**
+- Multiple places can truncate the same data (agent → alpaca_client → notify) - trace the whole path
+- Regex for sentence detection needs to handle numeric decimals
+- Config should be the source of truth, not hardcoded values scattered in code
+
+---
+
 ## 2025-12-12: LIVE TRADING ENABLED
 
 **Decision:** Switched from paper to live trading with $500 budget.

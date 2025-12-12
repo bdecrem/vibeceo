@@ -113,6 +113,10 @@ MAX_STOP_LOSS_PCT = 8  # Never set stop wider than this
 DAILY_LOSS_LIMIT_PCT = 5  # Stop trading if down 5% in a day
 WEEKLY_LOSS_LIMIT_PCT = 10  # Reduce size if down 10% in a week
 
+# ============ EXIT TRIGGERS ============
+PROFIT_TARGET_PCT = 5  # Review position when up this much
+STOP_CHECK_PCT = -3  # Review position when down this much (thesis check)
+
 # ============ PDT MANAGEMENT ============
 MAX_DAY_TRADES_PER_WEEK = 3  # PDT rule: max 3 day trades per 5 business days
 DAY_TRADE_RESERVE = 1  # Always keep 1 day trade for emergencies
