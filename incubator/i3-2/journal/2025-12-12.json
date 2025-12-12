@@ -4385,5 +4385,100 @@
     "thesis": "While AAPL shows solid fundamentals with record Q1 results and analyst support, the RSI-2 at 2.6 represents a less compelling technical setup compared to recent successful trades. The company faces genuine near-term headwinds including analyst concerns about Apple Intelligence's immediate sales impact, App Store growth deceleration, and management transition in AI leadership. Unlike the clear sector-wide AI contagion that created high-probability mean-reversion opportunities in GOOGL, AMZN, and AMD, AAPL's pullback appears more company-specific and fundamental rather than technical. With zero day trades remaining and recent strong earnings already reflected in the stock, the risk/reward profile doesn't justify entry versus preserving capital for clearer opportunities when PDT capacity resets.",
     "timestamp": "2025-12-12T15:30:04.326863-05:00",
     "timestamp_human": "03:30 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.38,
+    "position_count": 5,
+    "findings": "Tech bloodbath with extreme RSI-2 readings - but zero values look suspicious, need data verification",
+    "triggers": [
+      "CRM",
+      "META",
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T15:45:16.461518-05:00",
+    "timestamp_human": "03:45 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "CRM",
+    "trigger": "RSI-2 at 9.8 shows genuine oversold condition in quality SaaS name - most trustworthy signal",
+    "searches": [
+      {
+        "query": "Salesforce CRM news December 2024"
+      },
+      {
+        "query": "Salesforce CRM analyst ratings December 2024"
+      },
+      {
+        "query": "CRM Salesforce RSI technical analysis December 2024"
+      },
+      {
+        "query": "software SaaS sector selloff December 2024"
+      },
+      {
+        "query": "tech AI sector decline December 2024 Oracle earnings"
+      }
+    ],
+    "findings": "Q3 earnings beat with 8% revenue growth and 190bps margin expansion; Agentforce shows strong traction with 3,000+ paid customers in 90 days; Multiple analyst price target raises post-earnings (JPM to $380, MS to $405, Scotia to $440); Buy consensus among 35 analysts with average $324 target (31% upside); Oracle earnings miss created AI sector contagion but CRM differentiated by profitable growth; RSI around 31 suggests oversold conditions but not extreme levels; SaaS sector facing funding headwinds but CRM positioned as quality leader",
+    "decision": "hold",
+    "confidence": 80,
+    "thesis": "While the original RSI-2 oversold trigger may have been based on intraday extremes not reflected in current readings, the fundamental thesis remains strong. CRM's Q3 earnings beat with 8% revenue growth, 190bps margin expansion, and explosive Agentforce adoption (3,000+ customers in 90 days) validates the AI transformation story. Post-earnings analyst enthusiasm with multiple price target raises to $440+ and Buy consensus with 31% upside potential supports the position. Oracle's AI spending concerns created sector contagion, but CRM's profitable growth model and established market position differentiate it from infrastructure plays. With no PDT capacity and the position already slightly profitable, holding through the Agentforce 2.0 launch (Dec 17) maximizes the risk-adjusted opportunity in this quality SaaS leader.",
+    "timestamp": "2025-12-12T15:46:16.677568-05:00",
+    "timestamp_human": "03:46 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "META",
+    "trigger": "RSI-2 at 25.1 with -4.22% 5-day drop - less extreme but believable oversold setup",
+    "searches": [
+      {
+        "query": "META stock news today December 2024"
+      },
+      {
+        "query": "META Morgan Stanley price target cut December 2024"
+      },
+      {
+        "query": "META VR price increase news December 2024"
+      },
+      {
+        "query": "Oracle earnings AI spending impact tech stocks December 2024"
+      }
+    ],
+    "findings": "Morgan Stanley cut price target to $750 but maintains Overweight rating; Internal memo reveals VR price increases for business sustainability; Oracle AI spending miss created sector-wide contagion; Q4 2024 results strong with 21% revenue growth and 5% user growth; Analyst consensus remains Strong Buy with $818 average target",
+    "decision": "buy",
+    "confidence": 82,
+    "thesis": "The RSI-2 at 25.1 represents Oracle earnings contagion rather than META-specific weakness, creating an oversold entry opportunity in a fundamentally dominant company. META's Q4 results showed 21% revenue growth, 5% user growth, and strong engagement metrics, while analyst consensus remains Strong Buy with $818 average target (26% upside). The VR price increase memo demonstrates business discipline rather than desperation, and Morgan Stanley maintains Overweight despite target cut. Oracle's AI spending miss triggered sector-wide selling that swept up quality names like META trading on sentiment rather than company fundamentals, creating classic mean-reversion setup in social media leader with intact competitive moats.",
+    "timestamp": "2025-12-12T15:47:08.136547-05:00",
+    "timestamp_human": "03:47 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.1 technically oversold, but need to verify if this is real selling or data glitch",
+    "searches": [
+      {
+        "query": "AMD news today December 2024"
+      },
+      {
+        "query": "AMD analyst ratings downgrades December 2024"
+      },
+      {
+        "query": "Amazon AWS AMD AI accelerator demand weak December 2024"
+      },
+      {
+        "query": "semiconductor AI chip sector December 2024"
+      },
+      {
+        "query": "\"AMD stock\" December 2024 today news"
+      }
+    ],
+    "findings": "Amazon AWS explicitly states insufficient customer demand for AMD's AI accelerators; Bank of America and HSBC issued significant downgrades citing competitive weakness; AMD raised 2024 AI revenue guidance to $5B but faces software ecosystem challenges; Broader AI semiconductor market growing 15%+ but gains concentrated among few players; Stock down 45% from spring peaks with multiple analyst estimate cuts",
+    "decision": "sell",
+    "confidence": 75,
+    "thesis": "While the RSI-2 at 0.1 represents a technical extreme, the fundamental thesis has been materially undermined by Amazon's explicit statement that customer demand for AMD's AI accelerators is insufficient for AWS deployment. This validates competitive concerns about AMD's software ecosystem vs. Nvidia's CUDA dominance and represents company-specific weakness rather than sector contagion. Combined with multiple recent analyst downgrades, revenue estimate cuts, and the stock's 45% decline since spring, the risk/reward has deteriorated significantly. With limited PDT capacity remaining, it's prudent to exit and preserve capital for clearer opportunities when the competitive landscape stabilizes.",
+    "timestamp": "2025-12-12T15:48:10.261518-05:00",
+    "timestamp_human": "03:48 PM ET"
   }
 ]

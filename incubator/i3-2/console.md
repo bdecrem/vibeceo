@@ -115,3 +115,23 @@
 `15:30:04` [Drift] Web searches performed: 4
 `15:30:04` [Drift] AAPL: PASS (confidence: 72%)
 `15:30:04` [15:30:04 ET] completed: Processed 3 triggers, 0 actions
+
+--- Cycle 4 (stocks+crypto) ---
+`15:45:04` [Drift] Scanning stocks+crypto: 25 assets
+`15:45:05` [Drift] Stage 1: Quantitative screening 25 symbols...
+`15:45:16` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching CRM: RSI-2 at 9.8 shows genuine oversold condition in quality SaaS name - most trustworthy signal
+`15:46:16` [Drift] Web searches performed: 5
+`15:46:16` [Drift] CRM: HOLD (confidence: 80%)
+
+[Drift] Researching META: RSI-2 at 25.1 with -4.22% 5-day drop - less extreme but believable oversold setup
+`15:47:08` [Drift] Web searches performed: 4
+`15:47:08` [Drift] META: BUY (confidence: 82%)
+`15:47:08` [Drift] SECTOR LIMIT: META blocked - already have 2 mega_tech positions
+
+[Drift] Researching AMD: RSI-2 at 0.1 technically oversold, but need to verify if this is real selling or data glitch
+`15:48:10` [Drift] Web searches performed: 5
+`15:48:10` [Drift] AMD: SELL (confidence: 75%)
+`15:48:10` [Drift] AMD: BLOCKED: Would exceed PDT limit (3/3 used)
+`15:48:10` [15:48:10 ET] completed: Processed 3 triggers, 2 actions
