@@ -79,3 +79,10 @@
 `14:55:06` [Drift] AAPL: BUY (confidence: 81%)
 `14:55:06` [Drift] SECTOR LIMIT: AAPL blocked - already have 2 mega_tech positions
 `14:55:06` [14:55:06 ET] completed: Processed 3 triggers, 1 actions
+
+--- Cycle 2 (stocks+crypto) ---
+`15:10:06` [Drift] Scanning stocks+crypto: 25 assets
+`15:10:07` [Drift] Stage 1: Quantitative screening 25 symbols...
+`15:10:17` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching NVDA: RSI-2 at 0.0 in AI king - extreme oversold rarely seen in quality names, potential mean reversion play

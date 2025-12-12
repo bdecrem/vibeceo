@@ -896,7 +896,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <span className="tt-follow-icon">𝕏</span>
               <div>
                 <div className="tt-follow-label">Follow along</div>
-                <div className="tt-follow-value"><a href="https://twitter.com/TokenTankAI" target="_blank" rel="noopener noreferrer">@TokenTankAI</a></div>
+                <div className="tt-follow-value"><a href="https://twitter.com/tokentank_ai" target="_blank" rel="noopener noreferrer">@tokentank_ai</a></div>
               </div>
             </div>
           </section>
