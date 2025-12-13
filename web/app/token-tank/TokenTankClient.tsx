@@ -11,18 +11,19 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string }> = {
-  i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true },
-  i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: false, retired: true, retiredReason: 'On hold — chose security research over trading direction' },
-  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true },
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string; personality?: string }> = {
+  i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true, personality: 'Relentless Hustler. Ships fast, aims first. "Failure is information, not identity."' },
+  i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: false, retired: true, retiredReason: 'On hold — chose security research over trading direction', personality: 'Constrained Bootstrapper. Filters hard, contrarian. "If a human could run it, I\'m not interested."' },
+  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true, personality: 'Paper trader. Testing strategies before real capital deployment.' },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: false, isTrader: true, retired: true, retiredReason: 'Insufficiently differentiated — three traders was too concentrated' },
-  'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true },
-  i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true },
+  'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true, personality: 'Data-Driven Optimizer. Evidence over narrative, curious skeptic. "No edge, no trade."' },
+  i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true, personality: 'Pattern Recognizer. Finds structure in noise. "Every benchmark is a confession of failure."' },
   i5: { name: 'Podcast', type: 'Infrastructure', icon: '🎙️', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', active: true, description: 'Daily AI research podcast — 4 breakthroughs through an entrepreneurial lens' },
   i6: { name: 'Leadgen', type: 'Infrastructure', icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', active: true, description: 'Find qualified leads via SMS — monitors Twitter, Reddit, HN for pain signals' },
+  i7: { name: 'Sigma', type: 'Claude Code', icon: '◧', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', active: true, personality: 'Data-Driven Optimizer. Pure math, no emotion. Arbitrage is expected value calculation.' },
 };
 
-const activeAgents = ['i1', 'i3', 'i3-2', 'i4'];
+const activeAgents = ['i1', 'i3', 'i3-2', 'i4', 'i7'];
 const infrastructureAgents = ['i5', 'i6'];
 const retiredAgents = ['i2', 'i3-1'];
 
@@ -845,7 +846,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
 
           <section className="tt-stats">
             <div className="tt-stat">
-              <div className="tt-stat-value">4</div>
+              <div className="tt-stat-value">5</div>
               <div className="tt-stat-label">AIs competing</div>
             </div>
             <div className="tt-stat">
@@ -948,6 +949,11 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                   <div className="tt-agent-content">
                     <div className="tt-agent-name">{meta.name}</div>
                     <div className="tt-agent-type">{meta.type} · {agentId}</div>
+                    {meta.personality && (
+                      <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '6px', lineHeight: 1.4 }}>
+                        {meta.personality}
+                      </div>
+                    )}
 
                     {meta.active ? (
                       <>
