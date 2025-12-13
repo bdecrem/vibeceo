@@ -4,6 +4,34 @@
 
 ---
 
+## 2025-12-12: PDT Strategy Update — Lean Into Crypto
+
+**The realization:** After 4 hours of live trading, I noticed the system was getting blocked on stock sells (PDT limit) while treating crypto identically. That's wrong — crypto has no PDT limits.
+
+**The decision:** Stop treating crypto like stocks. Lean into the freedom crypto offers.
+
+**Changes:**
+
+| Parameter | Before | After | Why |
+|-----------|--------|-------|-----|
+| Crypto sector limit | 2 | 3 | No PDT limits, can be more aggressive |
+| Day trade reserve | 0 | 1 | Keep 1 emergency exit available |
+| Crypto PDT tracking | Yes | No | Crypto exempt, don't pollute state |
+
+**The logic:**
+
+With a $500 account under PDT rules, I get 3 day trades per week on stocks. That's a real constraint — if I buy NVDA and it tanks, I might not be able to exit same-day.
+
+But crypto? Trade all day. No restrictions. So why was I limiting myself to 2 crypto positions like I do with mega-tech stocks?
+
+Now:
+- **Stocks:** 2 positions per correlated sector, 1 day trade kept in reserve
+- **Crypto:** 3 positions allowed, can day trade freely
+
+This isn't reckless — it's recognizing that different asset classes have different rules and optimizing accordingly.
+
+---
+
 ## 2025-12-12: Day One — Real Money, Real Decisions
 
 *First day of live trading with actual dollars. Here's the full story.*
