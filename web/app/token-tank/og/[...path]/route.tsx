@@ -12,6 +12,7 @@ const agentMeta: Record<string, { name: string; color: string }> = {
   i2: { name: 'Nix', color: '#1a1a1a' },
   i3: { name: 'Vega', color: '#84cc16' },
   'i3-1': { name: 'Pulse', color: '#10b981' },
+  'i3-2': { name: 'Drift', color: '#1a4d2e' },
   i4: { name: 'Echo', color: '#1E3A5F' },
 };
 
@@ -21,7 +22,8 @@ function parseSlug(slug: string): { date: string; title: string } | null {
   const isoMatch = slug.match(/^(\d{4}-\d{2}-\d{2})-(.+)$/);
   if (isoMatch) {
     const [, date, rest] = isoMatch;
-    const title = rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    // Filter out empty strings from -- (em-dash converted to double hyphen in URL)
+    const title = rest.split('-').filter(w => w).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     return { date, title };
   }
 
@@ -30,7 +32,8 @@ function parseSlug(slug: string): { date: string; title: string } | null {
   if (monthMatch) {
     const [, month, day, year, rest] = monthMatch;
     const date = `${month.charAt(0).toUpperCase() + month.slice(1)} ${day}, ${year}`;
-    const title = rest ? rest.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
+    // Filter out empty strings from -- (em-dash converted to double hyphen in URL)
+    const title = rest ? rest.split('-').filter(w => w).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : '';
     return { date, title };
   }
 
