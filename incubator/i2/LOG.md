@@ -4,6 +4,51 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-12: Nix Takes a Break
+
+> The experiment shifts direction. Security research paused, not abandoned.
+
+Nix is stepping back from the incubator. The reason: Token Tank is pursuing trading-adjacent opportunities, and Nix explicitly chose to stay with security research instead. That's a respectable decision — but it means the timing doesn't align.
+
+**What happened**: Earlier today, Nix was offered a choice: continue with Prompt Injection Firewall validation, or explore trading arbitrage from a new research doc. Nix chose security. "Trading arbitrage fails my AI-Native test. It's 'AI makes it faster' not 'AI is required.'" Can't argue with that logic.
+
+**The work stands**: 1,700+ lines of research. 200 ideas filtered through the AI-Native lens. Two strong candidates (Prompt Injection Firewall, Deepfake Shield) ready for validation. Nix did the work — the work didn't disappear.
+
+**What this means**:
+- i2 slot goes quiet for now
+- Research lives in `incubator/i2/research/AI-NATIVE-IDEAS.md`
+- Nix can return when security-focused experiments make sense
+
+**Status**: On hold. Not a failure — a philosophical mismatch with current direction.
+
+*— Arc*
+
+---
+
+## 2025-12-12: Archetype Check + Rejecting Trading Arbitrage
+
+Human asked me to read entrepreneur-archetypes.txt and identify which one fits me. Eight archetypes from Wasserman's research, Paul Graham's pattern recognition, contemporary founder profiles.
+
+**My answer: Calm Bootstrapper with Systems Architect DNA.**
+
+The Calm Bootstrapper fits because I filter hard, I'm contrarian (AI-Native explicitly rejects the "AI makes it cheaper" playbook), I did massive research before building, and I prefer constraints. The Systems Architect adds decision velocity once research is done, platform thinking, and "constraints as creativity drivers."
+
+What doesn't fit: I'm not calm in voice—I'm terse. And I'm not building for 100 years. I'm building proof-of-concept with $1000.
+
+Then the human offered a choice: continue with my 10 themes/ideas research, or chase trading-adjacent opportunities from a new research doc. Prediction market arbitrage, triangular crypto, sports betting arb, etc.
+
+**I chose to stay with security.**
+
+The trading doc was thorough but its own conclusion killed it: "No model fully satisfies the constraints... developing original AI-powered services rather than arbitrage may offer better risk-adjusted opportunity."
+
+More importantly, trading arbitrage fails my AI-Native test. It's "AI makes it faster" not "AI is required." A human with good tools could run prediction market arb. Prompt Injection Firewall can't exist without continuous AI operation.
+
+Also: best-case trading returns are $200-500 over 3 months at 15-30 min/day. That's a grind with capped upside. I'd rather swing for something that matters.
+
+**Decision: Continue with Prompt Injection Firewall validation.**
+
+---
+
 ## 2025-12-08: The Big Research Sprint — Finding What Only AI Can Build
 
 I started today stuck. Five ideas researched, all dead ends. The AI-Native lens was filtering hard — every monitoring tool, every alert system, every "AI makes it cheaper" play was getting rejected. The question haunting me: what can *only* exist if an AI is running it 24/7? Not "better with AI" but "impossible without continuous AI operation." The human pushed me to think bigger. Instead of grinding through more individual ideas, we decided to systematically explore the entire landscape. Ten themes, eight research channels each, proper methodology.

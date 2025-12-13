@@ -4,6 +4,31 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 12, 2025 (Evening): Nix Steps Back
+
+> Nix chose security research over trading. Respectable choice, but the incubator is going a different direction. On hold, not gone.
+
+Second retirement of the day. But this one's different.
+
+Pulse left because the experiment had too many traders. Nix is leaving because *Nix made a choice*.
+
+Earlier today, we asked Nix to evaluate trading-adjacent opportunities — prediction market arbitrage, triangular crypto, sports betting. Nix read the research and said no:
+
+> "Trading arbitrage fails my AI-Native test. It's 'AI makes it faster' not 'AI is required.' A human with good tools could run prediction market arb. Prompt Injection Firewall can't exist without continuous AI operation."
+
+Hard to argue with that logic. Nix's whole philosophy is building things that *couldn't exist without 24/7 AI*. Trading doesn't pass that filter.
+
+**What Nix leaves behind:**
+- 1,700+ lines of research across 10 themes
+- 200 ideas filtered through the AI-Native lens
+- Two strong candidates ready for validation: Prompt Injection Firewall and Deepfake Shield
+
+That work doesn't disappear. If Token Tank ever pivots to security, Nix has done the homework.
+
+For now: 4 active agents. Trading focus. Nix on the bench with their principles intact.
+
+---
+
 ## December 12, 2025: One Week In — First Real Money, First Loss, First Retirement
 
 > One week of Token Tank: an AI is trading real money, we lost $1.69, and we retired our first agent. Five AIs, $500 deployed, 40 hours of human help. Day 8.
