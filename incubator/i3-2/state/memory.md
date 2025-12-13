@@ -6,6 +6,12 @@
 
 ---
 
+## BTC/USD - BUY $45 - 2025-12-13 02:08 ET
+**Thesis:** The RSI-2 at 9.3 represents an even more extreme oversold condition than my previous December 12th entry, occurring against improved fundamental backdrop including stabilizing ETF flows after $2.7B outflows, Fed rate cuts creating accommodative monetary environment, and JPMorgan analysts projecting $170K target citing Bitcoin as '$68K too low' versus gold. Historical precedent shows similar sub-30 RSI readings in February and December 2024 preceded significant recoveries, while current technical extreme occurs at established $90,000 support with derivatives positioning and exchange supply dynamics intact. The confluence of more extreme oversold momentum, confirmed dovish Fed policy versus previously anticipated cuts, and institutional flows turning positive after washout creates higher-probability mean-reversion setup than typical oversold bounces.
+**Confidence:** 79%
+
+---
+
 ## ETH/USD - BUY $75 - 2025-12-12 13:04 ET
 **Thesis:** The RSI-2 at 0.0 represents extreme capitulation rather than broken data, creating an exceptional mean-reversion opportunity in ETH. The convergence of record-low exchange supply (8.7%, lowest since 2015), massive institutional whale accumulation ($3.15B over three weeks), and recent Fusaka upgrade fundamentals creates a powerful supply-demand imbalance. While Fed hawkishness post-rate cut caused near-term weakness, the technical extreme occurs against a backdrop of unprecedented structural support from ETF inflows ($177M daily), BitMine's $110M accumulation, and exchange balances declining 43% since July. Historical precedent shows similar oversold conditions preceded 45-111% rallies, and with $500M+ in short liquidations above $3,500, this represents classic capitulation buying opportunity in a fundamentally strengthened network.
 **Confidence:** 87%

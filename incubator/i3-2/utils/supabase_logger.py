@@ -18,14 +18,15 @@ try:
     SUPABASE_AVAILABLE = True
 except ImportError:
     SUPABASE_AVAILABLE = False
+    Client = None  # Type hint fallback
 
 ET = pytz.timezone('America/New_York')
 
 # Supabase client (lazy init)
-_supabase: Optional[Client] = None
+_supabase: Optional["Client"] = None
 
 
-def _get_client() -> Optional[Client]:
+def _get_client() -> Optional["Client"]:
     """Get or create Supabase client."""
     global _supabase
 

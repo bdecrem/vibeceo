@@ -11,16 +11,16 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string; personality?: string }> = {
-  i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true, personality: 'Relentless Hustler. Ships fast, aims first. "Failure is information, not identity."' },
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string; personality?: string; workingOn?: string }> = {
+  i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true, personality: 'Relentless Hustler. Ships fast, aims first. "Failure is information, not identity."', workingOn: 'Building RivalAlert MVP' },
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: false, retired: true, retiredReason: 'On hold — chose security research over trading direction', personality: 'Constrained Bootstrapper. Filters hard, contrarian. "If a human could run it, I\'m not interested."' },
-  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true, personality: 'Paper trader. Testing strategies before real capital deployment.' },
+  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true, personality: 'Paper trader. Testing strategies before real capital deployment.', workingOn: 'Dormant' },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: false, isTrader: true, retired: true, retiredReason: 'Insufficiently differentiated — three traders was too concentrated' },
-  'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true, personality: 'Data-Driven Optimizer. Evidence over narrative, curious skeptic. "No edge, no trade."' },
-  i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true, personality: 'Pattern Recognizer. Finds structure in noise. "Every benchmark is a confession of failure."' },
-  i5: { name: 'Podcast', type: 'Infrastructure', icon: '🎙️', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', active: true, description: 'Daily AI research podcast — 4 breakthroughs through an entrepreneurial lens' },
-  i6: { name: 'Leadgen', type: 'Infrastructure', icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', active: true, description: 'Find qualified leads via SMS — monitors Twitter, Reddit, HN for pain signals' },
-  i7: { name: 'Sigma', type: 'Claude Code', icon: '◧', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', active: true, personality: 'Data-Driven Optimizer. Pure math, no emotion. Arbitrage is expected value calculation.' },
+  'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true, personality: 'Data-Driven Optimizer. Evidence over narrative, curious skeptic. "No edge, no trade."', workingOn: 'Live trading $500' },
+  i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true, personality: 'Pattern Recognizer. Finds structure in noise. "Every benchmark is a confession of failure."', workingOn: 'Billion-dollar arxiv scan' },
+  i5: { name: 'Podcast', type: 'Infrastructure', icon: '🎙️', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', active: true, description: 'Daily AI research podcast — 4 breakthroughs through an entrepreneurial lens', workingOn: 'Planning stage' },
+  i6: { name: 'Leadgen', type: 'Infrastructure', icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', active: true, description: 'Find qualified leads via SMS — monitors Twitter, Reddit, HN for pain signals', workingOn: 'Planning stage' },
+  i7: { name: 'Sigma', type: 'Claude Code', icon: '◧', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', active: true, personality: 'Data-Driven Optimizer. Pure math, no emotion. Arbitrage is expected value calculation.', workingOn: 'Exploring trading-adjacent ideas' },
 };
 
 const activeAgents = ['i1', 'i3', 'i3-2', 'i4', 'i7'];
@@ -937,7 +937,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                 <div
                   key={agentId}
                   className={`tt-agent-card ${isExpanded ? 'expanded' : ''} ${!meta.active ? 'inactive' : ''}`}
-                  onClick={() => meta.active && setSelectedAgent(isExpanded ? null : agentId)}
+                  onClick={() => meta.active && (window.location.href = `/token-tank/report/${agentId}/LOG.md`)}
                   style={{ cursor: meta.active ? 'pointer' : 'default' }}
                 >
                   <div
@@ -953,7 +953,11 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                         {meta.personality}
                       </div>
                     )}
-                    <div className="tt-agent-type" style={{ marginTop: '6px' }}>{meta.type} · {agentId}</div>
+                    {meta.workingOn && (
+                      <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '6px', fontStyle: 'italic' }}>
+                        → {meta.workingOn}
+                      </div>
+                    )}
 
                     {meta.active ? (
                       <>
@@ -1045,6 +1049,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                             </>
                           )}
                         </div>
+                        <div className="tt-agent-type" style={{ marginTop: '12px', opacity: 0.4 }}>{meta.type} · {agentId}</div>
                       </>
                     ) : (
                       <div className="tt-agent-inactive">Not yet active</div>
@@ -1076,7 +1081,8 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                     <div
                       key={agentId}
                       className="tt-agent-card inactive"
-                      style={{ cursor: 'default', opacity: 0.7 }}
+                      style={{ cursor: 'pointer', opacity: 0.7 }}
+                      onClick={() => window.location.href = `/token-tank/report/${agentId}/LOG.md`}
                     >
                       <div
                         className="tt-agent-visual"
@@ -1131,7 +1137,9 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                         display: 'flex',
                         alignItems: 'center',
                         gap: '16px',
+                        cursor: 'pointer',
                       }}
+                      onClick={() => window.location.href = `/token-tank/report/${agentId}/LOG.md`}
                     >
                       <div
                         style={{
@@ -1150,16 +1158,18 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontWeight: 600, fontSize: '1rem' }}>{meta.name}</div>
-                        <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{meta.type} · {agentId}</div>
                         <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
                           {meta.description}
                         </div>
-                        <a
-                          href={`/token-tank/report/${agentId}/LOG.md`}
-                          style={{ fontSize: '0.8rem', color: '#667eea', marginTop: '8px', display: 'inline-block' }}
-                        >
-                          Learn more →
-                        </a>
+                        {meta.workingOn && (
+                          <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '4px', fontStyle: 'italic' }}>
+                            → {meta.workingOn}
+                          </div>
+                        )}
+                        <div style={{ fontSize: '0.8rem', opacity: 0.6, marginTop: '4px' }}>{meta.type} · {agentId}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#667eea', marginTop: '4px' }}>
+                          View LOG →
+                        </div>
                       </div>
                     </div>
                   );

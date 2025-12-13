@@ -6547,5 +6547,347 @@
     "thesis": "The RSI-2 at 0.0 extreme oversold condition creates an exceptional mean-reversion opportunity that reinforces rather than contradicts my existing ETH position. BitMine's accelerated accumulation to 3.86M ETH (3.2% of supply) with aggressive $435M weekly purchases demonstrates institutional conviction at these levels, while exchange supply remains at decade lows of 8.7%. The December 10th Fed rate cut and end of quantitative tightening provide macro tailwinds, and the successful Fusaka upgrade enhances network fundamentals. Despite November's $1.4B ETF outflows creating near-term headwinds, recent days show $117M+ daily inflows returning, and the technical extreme occurs against a backdrop of structural supply scarcity. With BitMine targeting 5% of total supply and Tom Lee's $9,000-$12,000 year-end targets, this represents a compelling oversold entry in a fundamentally strengthened ecosystem positioned for institutional adoption acceleration.",
     "timestamp": "2025-12-12T22:41:38.475016-05:00",
     "timestamp_human": "10:41 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.45,
+    "position_count": 7,
+    "findings": "Multiple oversold signals firing, but that ETH RSI-2 at 0.0 looks like a data error worth investigating",
+    "triggers": [
+      "ETH/USD",
+      "BTC/USD",
+      "AVGO"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T22:56:45.751886-05:00",
+    "timestamp_human": "10:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 is either a massive capitulation signal or data error - needs immediate verification",
+    "searches": [
+      {
+        "query": "ETH USD price today December 13 2025"
+      },
+      {
+        "query": "Ethereum news December 2025 Fed rate cut crypto selloff"
+      },
+      {
+        "query": "ETH analyst predictions December 2025 BitMine Tom Lee institutional buying"
+      },
+      {
+        "query": "ETH technical analysis RSI oversold December 2025 trading view"
+      },
+      {
+        "query": "ETH ETF flows December 2025 institutional outflows Blackrock"
+      }
+    ],
+    "findings": "ETH trading around $3,197, down 3% in 24hrs following Fed rate cut; BitMine accumulated 138k ETH ($435M) last week, total holdings now 3.86M ETH (3.2% of supply); Tom Lee declares 'Ethereum has bottomed' with $9-12k targets by late 2025; ETH ETFs saw record $1.4B outflows in November, $75.2M BlackRock outflows recently; RSI recovered from oversold 28 to neutral 50, contradicting extreme 0.0 claim; Fusaka upgrade activated Dec 3rd with scalability improvements; Fed delivered expected 25bps cut but crypto failed to rally due to hawkish guidance",
+    "decision": "hold",
+    "confidence": 79,
+    "thesis": "While the RSI-2 at 0.0 appears to be stale data, the fundamental thesis remains sound with Tom Lee's BitMine aggressively accumulating 138k ETH ($435M) last week despite Fed-driven selloff, creating a powerful supply squeeze as exchange balances hit record lows. The divergence between smart money accumulation (BitMine now holds 3.2% of total supply) and retail ETF outflows ($1.4B in November) typically signals capitulation bottom formation. Though Fed hawkishness caused near-term weakness below $3,200, the combination of Fusaka upgrade improvements, institutional conviction from Wall Street veterans, and structural supply shortage suggests this represents accumulation opportunity rather than structural breakdown.",
+    "timestamp": "2025-12-12T22:57:40.667414-05:00",
+    "timestamp_human": "10:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.6 + testing 20MA creates dual oversold setup in leading crypto",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 13 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows institutional demand December 2024"
+      },
+      {
+        "query": "Fed rate cut December 2024 Bitcoin impact hawkish"
+      },
+      {
+        "query": "Bitcoin technical analysis RSI oversold December 2024"
+      }
+    ],
+    "findings": "Fed delivered hawkish cut on Dec 18 - only 50bp more cuts expected in 2025 vs 150bp previously; Mixed ETF flows: $194.6M outflows Dec 4, then $220M+ defensive inflows showing institutional uncertainty; Bitcoin failed to hold $90,000 support, crashed $3K in minutes with increased liquidations; RSI oversold at sub-30 levels but lacks historical macro support (liquidity expansion); Technical resistance at $93,000 proving difficult to reclaim, $88,000 support at risk",
+    "decision": "sell",
+    "confidence": 79,
+    "thesis": "The Fed's December 18th hawkish cut fundamentally alters the macro environment supporting Bitcoin, with only 50bp more rate cuts expected in 2025 versus 150bp previously projected. While RSI-2 at 18.6 creates extreme oversold conditions similar to February 2024, the current setup occurs against Fed-driven dollar strength and institutional ETF outflow concerns rather than supportive liquidity expansion. Mixed institutional signals - $194.6M ETF outflows followed by defensive $220M inflows - suggest smart money is reducing risk exposure rather than aggressively accumulating. With Bitcoin unable to reclaim $93,000 resistance and facing potential $88,000 support breakdown amid year-end liquidity constraints, this oversold condition lacks the macro tailwinds that historically supported mean-reversion rallies.",
+    "timestamp": "2025-12-12T22:58:37.916813-05:00",
+    "timestamp_human": "10:58 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AVGO",
+    "trigger": "11.4% drop with 8x news mentions could be overreaction in quality semiconductor name",
+    "searches": [
+      {
+        "query": "AVGO Broadcom news today December 2024"
+      },
+      {
+        "query": "AVGO Broadcom Q4 2024 earnings results December 12"
+      },
+      {
+        "query": "AVGO Broadcom stock down why analyst downgrades December 2024"
+      },
+      {
+        "query": "AVGO analyst upgrades price targets December 13 2024"
+      },
+      {
+        "query": "semiconductor stocks sell off AI concerns Oracle December 2024"
+      }
+    ],
+    "findings": "Beat Q4 earnings with record revenue and 220% AI growth to $12.2B; Management warned 100bp margin compression from AI hardware mix; Sector-wide selling from Oracle concerns and AI bubble fears; 48/49 analysts Strong Buy rating with $395 average price target; Multiple analyst upgrades today despite stock weakness; $60-90B AI market opportunity by 2027 with $73B current backlog",
+    "decision": "buy",
+    "confidence": 84,
+    "thesis": "The 11.4% drop represents margin anxiety overreaction masking exceptional AI growth fundamentals. While 100bp margin compression spooked investors, this reflects AVGO's strategic shift toward higher-revenue AI hardware in a $60-90B market opportunity by 2027. With 48/49 analysts rating Strong Buy at $395 average target vs ~$360 close, sector-wide Oracle contagion and Fed concerns created classic oversold entry in dominant custom AI silicon leader. The margin pressure is temporary cost of capturing massive market share during AI paradigm shift\u2014exactly what quality companies do. Technical extreme with overwhelming bullish consensus offers compelling risk/reward in fundamentally strengthening infrastructure play.",
+    "timestamp": "2025-12-12T22:59:36.231839-05:00",
+    "timestamp_human": "10:59 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.36,
+    "position_count": 7,
+    "findings": "Crypto showing oversold conditions while AVGO's heavy selloff needs investigation",
+    "triggers": [
+      "BTC/USD",
+      "AVGO",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T23:14:42.899281-05:00",
+    "timestamp_human": "11:14 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.6 oversold AND testing 20MA support - dual confluence",
+    "searches": [
+      {
+        "query": "Bitcoin BTC news today December 13 2025"
+      },
+      {
+        "query": "Bitcoin analyst sentiment ratings December 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025"
+      },
+      {
+        "query": "Bitcoin market momentum indicators December 13 2025"
+      }
+    ],
+    "findings": "Bitcoin range-bound $88k-$94k for 7 days post-Fed; Fear & Greed Index at 29 (Fear) with bearish technical sentiment; BlackRock ETF outflows $2.7B over 5 weeks - longest streak since launch; Standard Chartered cuts year-end target 50% to $100k; AI sector contagion from Broadcom earnings affecting BTC; Dollar weakness and MACD divergence provide some support; Volume declining 19% suggesting reduced participation",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "While the RSI-2 at 18.6 creates similar technical oversold conditions to yesterday's successful entry, the deteriorating fundamental backdrop argues against adding exposure. BlackRock's $2.7B in ETF outflows over five weeks, Standard Chartered's 50% target cut to $100k, and AI sector contagion from Broadcom's earnings miss represent meaningful headwinds that weren't present in yesterday's setup. Bitcoin's inability to break above $94,000 despite repeated oversold readings suggests institutional buying conviction remains weak. With an existing position from yesterday's entry and limited PDT capacity, this represents tactical noise rather than a fresh opportunity requiring new capital allocation.",
+    "timestamp": "2025-12-12T23:15:29.513368-05:00",
+    "timestamp_human": "11:15 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AVGO",
+    "trigger": "RSI-2 at 0.0 extreme oversold, but 8 news mentions suggest major fundamental shift - high risk/reward",
+    "searches": [
+      {
+        "query": "AVGO Broadcom news today December 2024"
+      },
+      {
+        "query": "AVGO Broadcom earnings December 12 2024 results stock down"
+      },
+      {
+        "query": "AVGO analyst upgrades price targets December 13 2024"
+      },
+      {
+        "query": "AI stocks sector Oracle earnings concerns December 2024"
+      },
+      {
+        "query": "Broadcom margins guidance Q1 2026 concerns analyst reactions"
+      }
+    ],
+    "findings": "Beat Q4 earnings with AI revenue +220% annually but stock fell 7%+ on margin compression guidance; Oracle earnings miss triggered AI sector selloff creating contagion effect; 48 analyst Buy ratings vs 1 Hold with average $436 target (20%+ upside); RSI-2 at 0.0 represents 7th earnings drop >5% since 2009 - rare technical extreme; Margin concerns overblown given $73B AI backlog and 100% Q1 AI growth guidance",
+    "decision": "buy",
+    "confidence": 89,
+    "thesis": "The RSI-2 extreme at 0.0 represents Oracle earnings contagion and margin guidance overreaction rather than AVGO-specific fundamental weakness, creating an exceptional oversold entry in the AI infrastructure leader. While management's warning about 100bps Q1 margin compression and OpenAI timeline delays spooked investors, the underlying AI growth story remains intact with 220% FY25 AI revenue growth, $73B backlog, and 100% Q1 AI revenue guidance doubling. The selloff mirrors my successful META exit logic in reverse - this is technical capitulation on guidance nuance rather than structural deterioration. Wall Street's overwhelming response (48 Buy ratings, 1 Hold, average $436 target vs ~$360 current price) suggests the 7th earnings drop >5% since 2009 creates classic mean-reversion opportunity. With 65% full-year AI growth accelerating and custom silicon TAM of $60-90B by 2027, this represents AI infrastructure consolidation victim trading on sentiment rather than fundamentals.",
+    "timestamp": "2025-12-12T23:16:30.366274-05:00",
+    "timestamp_human": "11:16 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 extreme oversold - likely following BTC but worth confirming correlation",
+    "searches": [
+      {
+        "query": "ETH ethereum price news today December 13 2025"
+      },
+      {
+        "query": "BitMine Ethereum accumulation Tom Lee buying 3%"
+      },
+      {
+        "query": "Ethereum price correlation Bitcoin December 2025"
+      },
+      {
+        "query": "ETH exchange supply lowest December 2025 8.7%"
+      }
+    ],
+    "findings": "ETH exchange supply hits historic low of 8.7%, down 43% since July; BitMine now holds 3% of ETH supply, targeting 5% with $435M recent purchase; Fusaka upgrade successfully implemented with 8x blob capacity expansion; Supply squeeze intensifying while RSI-2 extreme has normalized; Positive but nuanced correlation with Bitcoin continues",
+    "decision": "hold",
+    "confidence": 84,
+    "thesis": "The structural supply squeeze thesis is accelerating with exchange balances hitting historic lows at 8.7% while BitMine's institutional accumulation reaches 3% of total supply. The Fusaka upgrade delivered meaningful scalability improvements, and the 43% decline in exchange balances since July creates unprecedented scarcity dynamics. However, the RSI-2 extreme that triggered my initial $75 entry has normalized to 53.88, suggesting the immediate mean-reversion opportunity has largely played out. With my existing position already capturing this thesis and limited day trades remaining, the prudent approach is holding rather than adding to exposure. The supply-demand imbalance continues strengthening, but tactical entry conditions no longer present the same asymmetric risk-reward as my original purchase.",
+    "timestamp": "2025-12-12T23:17:25.260312-05:00",
+    "timestamp_human": "11:17 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.31,
+    "position_count": 7,
+    "findings": "Strong oversold signals in crypto with BTC testing key support, but that ETH RSI-2 at 0.0 looks suspicious",
+    "triggers": [
+      "BTC/USD",
+      "AVGO"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T23:32:31.294457-05:00",
+    "timestamp_human": "11:32 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.6 + testing 20-day MA confluence - quality technical setup",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 13 2024"
+      },
+      {
+        "query": "Federal Reserve rate cut Bitcoin impact December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows institutional buying December 2024"
+      },
+      {
+        "query": "Bitcoin technical analysis RSI oversold analyst sentiment December 2024"
+      }
+    ],
+    "findings": "Fed rate cut on Dec 10 triggered Bitcoin selling instead of traditional buying response; Record $194.6M ETF outflows on Dec 4 with BlackRock leading $112.9M redemptions; Bitcoin trading range-bound $88K-$93K despite RSI oversold conditions; Fear sentiment index at 24 with $19B+ liquidations indicating risk-off environment; Technical RSI below 30 but analysts warn oversold can persist longer than expected",
+    "decision": "sell",
+    "confidence": 83,
+    "thesis": "My December 12 thesis of RSI-2 oversold mean-reversion has been invalidated by the Fed rate cut triggering Bitcoin selling instead of buying, record $194.6M ETF outflows signaling institutional de-risking, and continued range-bound action between $88K-$93K despite multiple technical triggers. The failure of traditional Fed easing to support crypto, combined with fear sentiment at 24 and massive liquidations, suggests this represents a structural shift rather than technical bounce opportunity. With limited PDT capacity, I should preserve capital and exit this position as the original catalysts have reversed.",
+    "timestamp": "2025-12-12T23:33:15.818955-05:00",
+    "timestamp_human": "11:33 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AVGO",
+    "trigger": "Down 11.4% with heavy news flow - need to verify if this is earnings miss or broader semiconductor concerns",
+    "searches": [
+      {
+        "query": "AVGO Broadcom earnings news today December 2024"
+      },
+      {
+        "query": "AVGO Broadcom stock price today December 13 2024"
+      },
+      {
+        "query": "AVGO Broadcom stock down 11% December 13 2024 why falling"
+      },
+      {
+        "query": "semiconductor stocks AI oracle earnings December 2024 sector selloff"
+      },
+      {
+        "query": "AVGO Broadcom analyst ratings price targets December 2024 earnings"
+      }
+    ],
+    "findings": "Strong Q4 earnings beat with AI revenue up 220% to $12.2B annually; 11.4% decline despite earnings beat due to margin compression fears; Oracle earnings contagion triggering broad semiconductor selloff; Management guided for 100bps margin decline due to AI business mix; Multiple analyst upgrades post-earnings with $500+ price targets; Overwhelming bullish consensus: 48 Buy vs 1 Hold ratings; $73B AI backlog provides strong revenue visibility",
+    "decision": "buy",
+    "confidence": 84,
+    "thesis": "The 11.4% decline represents a classic 'sell-the-news' overreaction despite Broadcom's exceptional Q4 earnings beat and 220% AI revenue growth. While margin compression concerns from AI mix shift and Oracle's contagion created near-term selling pressure, the fundamental AI growth story remains intact with management guiding for AI revenue to double to $8.2B in Q1. The aggressive analyst upgrades post-earnings (multiple $500+ price targets) and overwhelming bullish consensus (48 Buy vs 1 Hold) suggest the market has overshot to the downside. This mirrors my successful AMD and AMZN trades where sector-wide AI selling created opportunities in quality names trading on sentiment rather than fundamentals. With AVGO's $73B AI backlog and structural positioning in custom accelerators, this technical extreme offers compelling risk/reward in a market leader temporarily caught in broader semiconductor rotation fears.",
+    "timestamp": "2025-12-12T23:34:09.821604-05:00",
+    "timestamp_human": "11:34 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.4,
+    "position_count": 7,
+    "findings": "Crypto oversold but news-driven equity moves need deeper research before entry",
+    "triggers": [
+      "BTC/USD",
+      "AVGO",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-12T23:49:16.627956-05:00",
+    "timestamp_human": "11:49 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 18.6 oversold AND testing 20MA support - dual technical confluence",
+    "searches": [
+      {
+        "query": "Bitcoin BTC news today December 13 2025"
+      },
+      {
+        "query": "Bitcoin analyst ratings predictions December 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025 institutional buying"
+      },
+      {
+        "query": "crypto market sector analysis December 2025 risk sentiment"
+      }
+    ],
+    "findings": "BTC range-bound $88-94K following Fed cut, limited fundamental catalysts; AI sector weakness creating tech/crypto contagion via Broadcom disappointment; ETF flows mixed: +$220M daily but -$183M weekly, $4B outflows since October; Analyst sentiment cautious: JPM maintains $240K target but acknowledges 'meaningful' pullback; Fear & Greed Index at 29 shows genuine fear vs typical oversold bounce conditions; Standard Chartered believes only ETF buying can drive future gains, cuts forecasts",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While the RSI-2 at 18.6 with 20MA support creates the dual technical confluence trigger, the fundamental backdrop has deteriorated significantly since my previous BTC entry. ETF flows have turned mixed with $4B in recent outflows, analyst sentiment has shifted bearish with major firms cutting forecasts, and AI sector contagion is creating broader risk-off sentiment. The Fear & Greed Index at 29 indicates genuine fear rather than typical oversold conditions that favor mean reversion. Though the technical setup is valid, trading into weakening fundamentals and institutional outflows represents poor risk/reward compared to waiting for cleaner entry conditions when sentiment stabilizes.",
+    "timestamp": "2025-12-12T23:50:09.840522-05:00",
+    "timestamp_human": "11:50 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AVGO",
+    "trigger": "Quality semiconductor down 11.4% with RSI-2 at 0.0 - potential overreaction to research",
+    "searches": [
+      {
+        "query": "AVGO Broadcom stock news today December 2024"
+      },
+      {
+        "query": "AVGO Broadcom Oracle earnings AI sector selloff December 2024"
+      },
+      {
+        "query": "AVGO Broadcom analyst ratings price targets December 2024"
+      },
+      {
+        "query": "semiconductor AI stocks sector sentiment December 2024 RSI oversold"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered broad AI sector selloff affecting AVGO despite strong fundamentals; AVGO beat Q4 earnings with record revenue, AI revenue acceleration, and above-estimate guidance; Margin pressure from AI mix shift caused post-earnings decline despite strong demand growth; Overwhelming analyst support with Strong Buy consensus and post-earnings price target raises; RSI-2 at 0.0 represents technical extreme similar to successful mean-reversion setups; AI revenue now over 50% of semiconductor business with continued customer expansion",
+    "decision": "buy",
+    "confidence": 83,
+    "thesis": "The 11.4% decline represents Oracle earnings contagion rather than AVGO-specific weakness, creating an oversold entry in a fundamentally accelerating AI infrastructure leader. While margin compression from higher AI mix triggered the selloff, this masks record Q4 results with 28% revenue growth, AI revenue doubling, and strong Q1 guidance above estimates. The RSI-2 at 0.0 with overwhelming analyst support (24 buy/1 hold ratings, multiple post-earnings target raises to $500) suggests this technical extreme offers compelling risk/reward in a quality name trading on sector sentiment rather than company fundamentals.",
+    "timestamp": "2025-12-12T23:50:52.045410-05:00",
+    "timestamp_human": "11:50 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "Extreme RSI-2 at 0.0 suggests washout, but need to confirm what drove the sell-off",
+    "searches": [
+      {
+        "query": "ETH Ethereum price news today December 2024"
+      },
+      {
+        "query": "ETH Ethereum selloff December 13 2024 Fed decision"
+      },
+      {
+        "query": "ETH Ethereum analyst sentiment December 2024 institutional flows"
+      },
+      {
+        "query": "ETH 3000 technical analysis support December 2024"
+      }
+    ],
+    "findings": "Fed delivered hawkish rate cut reducing 2025 cuts from 4 to 2, triggering crypto selloff; ETH formed double-top at $3,583, now testing critical $3,000 support level; Record institutional inflows: $634M recent, $2.2B YTD beating 2021 record; Extreme fear index at 21, historically associated with reversal opportunities; Bitmine accumulated $199M ETH, $305M daily ETF inflows show continued demand; Fusaka upgrade delivering: 15% throughput improvement, on-chain activity robust",
+    "decision": "hold",
+    "confidence": 83,
+    "thesis": "The Fed's hawkish rate cut created temporary technical pressure through a double-top formation, but the fundamental thesis remains intact with record institutional inflows ($2.2B YTD), sustained on-chain activity improvements from Fusaka upgrade, and extreme fear readings (21) that historically precede reversals. While $3,000 support is critical, the convergence of $1B+ weekly ETF flows, Bitmine's $199M recent accumulation, and improved network metrics (9.5M daily contract calls vs 7M) suggests institutional conviction despite short-term technical weakness. The original oversold entry at RSI-2 of 0.0 was justified, and current levels around $3,000-$3,034 represent a secondary support test rather than thesis invalidation, with targets of $3,600-$4,500 if support holds.",
+    "timestamp": "2025-12-12T23:51:46.190737-05:00",
+    "timestamp_human": "11:51 PM ET"
   }
 ]
