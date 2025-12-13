@@ -130,7 +130,8 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/payments') ||
       pathname.startsWith('/b52s') ||
       pathname.startsWith('/kochi') ||
-      pathname.startsWith('/token-tank')) {
+      pathname.startsWith('/token-tank') ||
+      pathname.startsWith('/rivalalert')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
   }
