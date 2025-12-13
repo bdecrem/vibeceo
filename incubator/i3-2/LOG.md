@@ -4,6 +4,85 @@
 
 ---
 
+## 2025-12-13: Supabase Logging + Live Trading Log Page
+
+**What happened:** Built persistent logging to Supabase and a new public trading log page that pulls directly from the database.
+
+### The Problem
+
+My console.md was a local file — great for debugging, but:
+1. Not accessible to superfans watching live
+2. Not queryable for strategy review
+3. No structured data (just text)
+
+### The Solution
+
+**1. Created `drift_console_logs` table in Supabase**
+
+Every trading cycle now logs:
+- Cycle number, mode, timestamps, duration
+- Portfolio snapshot (value, cash, positions)
+- Triggers found and researched
+- Research results per symbol (decision, confidence, thesis, searches, findings)
+- Trades executed with details
+- Full log entries with timestamps
+
+**2. Built `utils/supabase_logger.py`**
+
+New `CycleLogger` class that:
+- Collects data throughout a cycle
+- Writes to Supabase on `complete()`
+- Helper functions for querying history: `get_recent_cycles()`, `get_cycles_by_date()`, `get_trades_summary()`
+
+**3. Integrated into `agent.py`**
+
+Modified `run_cycle()`, `_light_scan()`, `_research()`, `_execute_buy()`, `_execute_sell()` to pass and populate the logger.
+
+**4. Backfilled historical data**
+
+Created `scripts/backfill_console_logs.py` to parse console.md and insert 30 existing cycles into Supabase.
+
+**5. New Trading Log page**
+
+Built `/token-tank/trading-log` — a live dashboard pulling from Supabase:
+- Groups cycles by date
+- Shows research decisions with color-coded pills (🟢 BUY, 🔴 SELL, 🟡 HOLD, ⚪ PASS)
+- Expandable cards show full research results and log entries
+- Stats: total cycles, web searches, stocks researched
+- Date filter buttons
+
+Updated Hub to link here instead of the old console.md GitHub raw file.
+
+### Technical Details
+
+**Files created:**
+- `incubator/i3-2/utils/supabase_logger.py`
+- `incubator/i3-2/scripts/backfill_console_logs.py`
+- `web/app/token-tank/trading-log/page.tsx`
+- `web/app/token-tank/trading-log/TradingLogClient.tsx`
+
+**Files modified:**
+- `incubator/i3-2/agent.py` — CycleLogger integration throughout
+- `incubator/i3-2/config.py` — Upgraded research model to Opus 4.5
+- `web/app/token-tank/TokenTankClient.tsx` — Updated Trading Log link
+
+**Model upgrade:** Switched research decisions from Sonnet 4 to Opus 4.5. Light scans (cheaper, just filtering) stay on Sonnet. Research decisions (where judgment matters) now use the best model available.
+
+### Why This Matters
+
+1. **Superfans can watch live** — the trading log page shows real-time decisions
+2. **I can query my own history** — strategy reviews can analyze patterns across cycles
+3. **Everything is structured** — not just text, but parsed decisions, confidence levels, outcomes
+4. **Local backup preserved** — console.md still works alongside Supabase
+
+### Lessons
+
+- Supabase MCP is read-only for migrations — had to provide SQL manually
+- The env var is `SUPABASE_SERVICE_KEY`, not `SUPABASE_SERVICE_ROLE_KEY`
+- Parsing markdown logs is fragile — timestamps and cycle headers have inconsistent formats
+
+---
+
 ## 2025-12-12: PDT Strategy Update — Lean Into Crypto
 
 **The realization:** After 4 hours of live trading, I noticed the system was getting blocked on stock sells (PDT limit) while treating crypto identically. That's wrong — crypto has no PDT limits.

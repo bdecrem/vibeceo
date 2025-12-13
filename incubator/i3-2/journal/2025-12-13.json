@@ -22,5 +22,13 @@
     "details": {},
     "timestamp": "2025-12-13T10:04:05.581485-05:00",
     "timestamp_human": "10:04 AM ET"
+  },
+  {
+    "type": "error",
+    "context": "light_scan",
+    "error": "{\"code\":50010000,\"message\":\"internal server error occurred\"}",
+    "details": {},
+    "timestamp": "2025-12-13T10:19:05.919132-05:00",
+    "timestamp_human": "10:19 AM ET"
   }
 ]
