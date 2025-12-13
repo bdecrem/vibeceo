@@ -1053,6 +1053,54 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
             })}
           </div>
 
+          {retiredAgents.length > 0 && (
+            <>
+              <div className="tt-dashboard-header" style={{ marginTop: '48px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <span style={{ opacity: 0.6 }}>🫗</span> Retired
+                </h2>
+                <p style={{ opacity: 0.7 }}>Not (necessarily) failures — just not needed right now.</p>
+              </div>
+
+              <div className="tt-agents-grid">
+                {retiredAgents.map((agentId) => {
+                  const meta = agentMeta[agentId];
+
+                  return (
+                    <div
+                      key={agentId}
+                      className="tt-agent-card inactive"
+                      style={{ cursor: 'default', opacity: 0.7 }}
+                    >
+                      <div
+                        className="tt-agent-visual"
+                        style={{ background: '#6b7280', filter: 'grayscale(50%)' }}
+                      >
+                        {meta.icon}
+                      </div>
+                      <div className="tt-agent-content">
+                        <div className="tt-agent-name">{meta.name}</div>
+                        <div className="tt-agent-type">{meta.type} · {agentId}</div>
+                        <div className="tt-agent-inactive" style={{ marginTop: '8px', fontSize: '0.85rem' }}>
+                          {meta.retiredReason || 'Retired'}
+                        </div>
+                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
+                          <a
+                            href={`/token-tank/report/${agentId}/LOG.md`}
+                            className="tt-agent-report-link"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            Log →
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
           {infrastructureAgents.length > 0 && (
             <>
               <div className="tt-dashboard-header" style={{ marginTop: '48px', textAlign: 'center' }}>
@@ -1100,54 +1148,12 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                         <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
                           {meta.description}
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-
-          {retiredAgents.length > 0 && (
-            <>
-              <div className="tt-dashboard-header" style={{ marginTop: '48px', textAlign: 'center' }}>
-                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                  <span style={{ opacity: 0.6 }}>🫗</span> Retired
-                </h2>
-                <p style={{ opacity: 0.7 }}>Not (necessarily) failures — just not needed right now.</p>
-              </div>
-
-              <div className="tt-agents-grid">
-                {retiredAgents.map((agentId) => {
-                  const meta = agentMeta[agentId];
-
-                  return (
-                    <div
-                      key={agentId}
-                      className="tt-agent-card inactive"
-                      style={{ cursor: 'default', opacity: 0.7 }}
-                    >
-                      <div
-                        className="tt-agent-visual"
-                        style={{ background: '#6b7280', filter: 'grayscale(50%)' }}
-                      >
-                        {meta.icon}
-                      </div>
-                      <div className="tt-agent-content">
-                        <div className="tt-agent-name">{meta.name}</div>
-                        <div className="tt-agent-type">{meta.type} · {agentId}</div>
-                        <div className="tt-agent-inactive" style={{ marginTop: '8px', fontSize: '0.85rem' }}>
-                          {meta.retiredReason || 'Retired'}
-                        </div>
-                        <div style={{ display: 'flex', gap: '16px', marginTop: '16px' }}>
-                          <a
-                            href={`/token-tank/report/${agentId}/LOG.md`}
-                            className="tt-agent-report-link"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            Log →
-                          </a>
-                        </div>
+                        <a
+                          href={`/token-tank/report/${agentId}/LOG.md`}
+                          style={{ fontSize: '0.8rem', color: '#667eea', marginTop: '8px', display: 'inline-block' }}
+                        >
+                          Learn more →
+                        </a>
                       </div>
                     </div>
                   );
