@@ -42,6 +42,7 @@ from config import (
     STATE_DIR,
     SECTOR_MAP,
     MAX_POSITIONS_PER_SECTOR,
+    MAX_CRYPTO_POSITIONS,
     TRADING_MODE,
     get_position_size,
     print_config,
@@ -540,12 +541,14 @@ Respond with your research process, then final JSON:
             return {"status": "skipped", "reason": f"Max positions ({MAX_POSITIONS}) reached"}
 
         # Check sector concentration - prevent all-in on correlated names
+        # Crypto gets more slots since no PDT limits
         target_sector = SECTOR_MAP.get(symbol, "unknown")
+        sector_limit = MAX_CRYPTO_POSITIONS if target_sector == "crypto" else MAX_POSITIONS_PER_SECTOR
         sector_count = sum(1 for p in positions if SECTOR_MAP.get(p["symbol"], "unknown") == target_sector)
-        if sector_count >= MAX_POSITIONS_PER_SECTOR:
+        if sector_count >= sector_limit:
             if VERBOSE:
                 log(f"[Drift] SECTOR LIMIT: {symbol} blocked - already have {sector_count} {target_sector} positions")
-            return {"status": "skipped", "reason": f"Sector '{target_sector}' at max ({MAX_POSITIONS_PER_SECTOR} positions)"}
+            return {"status": "skipped", "reason": f"Sector '{target_sector}' at max ({sector_limit} positions)"}
 
         # Calculate position size based on confidence and budget remaining
         current_invested = sum(p["market_value"] for p in positions)

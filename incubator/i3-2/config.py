@@ -69,6 +69,7 @@ SECTOR_MAP = {
 
 # Max positions per sector (prevents all-in on correlated names)
 MAX_POSITIONS_PER_SECTOR = 2
+MAX_CRYPTO_POSITIONS = 3  # Crypto gets more slots since no PDT limits
 
 # Crypto assets - traded 24/7, scanned when stock market is closed
 CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]

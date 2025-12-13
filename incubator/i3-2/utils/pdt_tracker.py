@@ -5,6 +5,7 @@ Tracks day trades to ensure we stay under the PDT limit.
 With < $25,000 account, we can only make 3 day trades per 5 business days.
 
 A day trade = buying and selling the same stock on the same day.
+IMPORTANT: PDT only applies to stocks, NOT crypto.
 """
 
 import json
@@ -18,6 +19,11 @@ ET = pytz.timezone('America/New_York')
 # PDT state file
 STATE_FILE = Path(__file__).parent.parent / "state" / "pdt_tracker.json"
 
+# Crypto symbols are exempt from PDT
+def _is_crypto(symbol: str) -> bool:
+    """Check if symbol is crypto (exempt from PDT)."""
+    return "/" in symbol or symbol in ["BTCUSD", "ETHUSD"]
+
 
 class PDTTracker:
     """
@@ -27,11 +33,12 @@ class PDTTracker:
     Pattern Day Traders need $25,000 minimum account balance.
 
     We limit ourselves to 3 day trades per rolling 5 business days,
-    reserving them for emergencies only.
+    keeping 1 in reserve for emergencies.
     """
 
-    def __init__(self, max_day_trades: int = 3):
+    def __init__(self, max_day_trades: int = 3, reserve: int = 1):
         self.max_day_trades = max_day_trades
+        self.reserve = reserve  # Keep this many day trades for emergencies
         self.state = self._load_state()
 
     def _load_state(self) -> dict:
@@ -97,12 +104,24 @@ class PDTTracker:
         """Get number of day trades remaining."""
         return max(0, self.max_day_trades - self.get_day_trades_used())
 
-    def can_day_trade(self) -> bool:
-        """Check if we can make another day trade."""
-        return self.get_day_trades_remaining() > 0
+    def can_day_trade(self, is_emergency: bool = False) -> bool:
+        """
+        Check if we can make another day trade.
+
+        By default, keeps reserve day trades for emergencies.
+        Set is_emergency=True to use reserved day trades.
+        """
+        remaining = self.get_day_trades_remaining()
+        if is_emergency:
+            return remaining > 0
+        return remaining > self.reserve
 
     def record_buy(self, symbol: str):
         """Record that we bought a position (might become a day trade if sold today)."""
+        # Crypto is exempt from PDT - don't track
+        if _is_crypto(symbol):
+            return
+
         now = datetime.now(ET)
         self.state["positions_opened_today"][symbol] = now.isoformat()
         self._save_state()
@@ -138,24 +157,35 @@ class PDTTracker:
 
         self._save_state()
 
-    def approve_sell(self, symbol: str) -> tuple[bool, str]:
+    def approve_sell(self, symbol: str, is_emergency: bool = False) -> tuple[bool, str]:
         """
         Check if we can sell this position.
+
+        Args:
+            symbol: The symbol to sell
+            is_emergency: If True, can use reserved day trades
 
         Returns:
             (approved, reason) - True if sell is approved, with reason
         """
+        # Crypto is exempt from PDT - always OK
+        if _is_crypto(symbol):
+            return True, "Crypto exempt from PDT"
+
         # If not a same-day position, always OK (not a day trade)
         if not self.is_same_day_position(symbol):
             return True, "Position held overnight - not a day trade"
 
         # It would be a day trade - check if we have allowance
-        if self.can_day_trade():
+        if self.can_day_trade(is_emergency=is_emergency):
             remaining = self.get_day_trades_remaining()
-            return True, f"Using day trade ({remaining} remaining after this)"
+            return True, f"Using day trade ({remaining - 1} remaining after this)"
 
-        # No day trades remaining
+        # No day trades remaining (or only reserve left)
         used = self.get_day_trades_used()
+        remaining = self.get_day_trades_remaining()
+        if remaining > 0:
+            return False, f"BLOCKED: Would exceed PDT limit ({used}/{self.max_day_trades} used, keeping {self.reserve} in reserve)"
         return False, f"BLOCKED: Would exceed PDT limit ({used}/{self.max_day_trades} used)"
 
     def get_status(self) -> dict:
@@ -165,8 +195,11 @@ class PDTTracker:
         return {
             "day_trades_used": self.get_day_trades_used(),
             "day_trades_remaining": self.get_day_trades_remaining(),
+            "day_trades_available": self.get_day_trades_remaining() - self.reserve,  # After reserve
             "max_day_trades": self.max_day_trades,
+            "reserve": self.reserve,
             "can_day_trade": self.can_day_trade(),
+            "can_day_trade_emergency": self.can_day_trade(is_emergency=True),
             "positions_opened_today": list(self.state["positions_opened_today"].keys()),
             "recent_day_trades": self.state["day_trades"][-5:],  # Last 5
         }
