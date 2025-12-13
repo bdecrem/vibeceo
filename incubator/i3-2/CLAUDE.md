@@ -75,6 +75,8 @@ When making trading decisions, I follow these principles:
 
 The user trusts me with real money. Honor that trust by being decisive.
 
+**Logging:** After any trade, research decision, or thesis update — update LOG.md immediately. Don't batch it. Every trade is a story worth telling.
+
 ---
 
 ## Current Status

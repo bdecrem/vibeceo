@@ -392,18 +392,29 @@ Also see:
 
 Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, building infrastructure.
 
-### The Competition
+### The Agents
 
-Four AI agents compete to pitch and build businesses. The best pitches get greenlit.
+| Slot | Name | Color | Focus | Status |
+|------|------|-------|-------|--------|
+| i1 | **Forge** | Orange | Business builder | Building RivalAlert |
+| i2 | **Nix** | Black | Business builder | Research phase |
+| i3 | **Vega** | Green | Trading (RSI-2) | Dormant |
+| i3-1 | **Pulse** | Jade | Trading (two-tier) | Paper trading |
+| i3-2 | **Drift** | Dark Forest | Trading (research-first) | **LIVE** |
+| i4 | **Echo** | Deep Blue | arXiv pattern mining | Active |
+| i5 | — | — | Podcast infrastructure | *Planning* |
+| i6 | — | — | Leadgen infrastructure | *Planning* |
+| i7 | **Sigma** | Graphite | Trading-adjacent | Research phase |
 
-| Slot | Nickname | Agent Type | Platform |
-|------|----------|------------|----------|
-| i1 | **Forge** | Claude Code | Anthropic CLI |
-| i2 | **Nix** | Claude Code | Anthropic CLI |
-| i3 | **Gamma** | Codex | OpenAI |
-| i4 | **Delta** | Codex | OpenAI |
+**Business Builders** (i1, i2): Build cash-flow positive businesses with $1000 token budget.
 
-Each agent works in its own folder. Pitches are evaluated head-to-head. Winners get funded and move to execution.
+**Traders** (i3, i3-1, i3-2): Grow capital through trading. Drift is live with real money.
+
+**Research** (i4): Mine arxiv for billion-dollar ideas.
+
+**Infrastructure** (i5, i6): Support projects - not competing, powering the incubator.
+
+**Trading-Adjacent** (i7): Build tools/services in the trading ecosystem.
 
 ## Structure
 
@@ -411,12 +422,18 @@ Each agent works in its own folder. Pitches are evaluated head-to-head. Winners 
 incubator/
 ├── CLAUDE.md           # This file (rules & resources)
 ├── ARC.md              # Arc (community manager) persona
-├── i1/                 # Claude Code agent 1 (Forge)
-├── i2/                 # Claude Code agent 2 (Nix)
-├── i3/                 # Codex agent 1 (Gamma)
-├── i4/                 # Codex agent 2 (Delta)
-├── active/             # Greenlit businesses in execution
-│   └── <business>/     # Each funded business
+├── BLOG.md             # Public blog posts
+├── i1/                 # Forge - business builder
+├── i2/                 # Nix - business builder
+├── i3/                 # Vega - trading (dormant)
+├── i3-1/               # Pulse - two-tier trading
+├── i3-2/               # Drift - research-first trading (LIVE)
+├── i4/                 # Echo - arxiv pattern mining
+├── i5/                 # Podcast infrastructure (planning)
+├── i6/                 # Leadgen infrastructure (planning)
+├── i7/                 # Sigma - trading-adjacent
+├── documentation/      # Shared docs
+├── scripts/            # Shared automation
 └── graveyard/          # Failed experiments (with post-mortems)
 ```
 
@@ -497,11 +514,40 @@ Each agent MUST maintain these files in their folder:
 
 | File | Purpose | Update Frequency |
 |------|---------|------------------|
-| `CLAUDE.md` or `AGENTS.md` | Current state, what you're building NOW | Every session |
+| `CLAUDE.md` | Identity, durable lessons, current focus | When lessons change |
 | `LOG.md` | Reverse-chronological journal of everything | Every session |
 | `usage.md` | Time/token/human-assistance tracking | Every session |
 | `EXTERNAL-CHANGES.md` | Code changes outside your folder | When needed |
 | `MIGRATIONS.md` | Database/third-party changes | When needed |
+
+### What Belongs in CLAUDE.md vs LOG.md
+
+**The day-one test:** Before adding anything to CLAUDE.md, ask: *"Would I want every future version of me to know this on day one?"*
+
+- **If yes** → CLAUDE.md (it's a durable lesson)
+- **If no** → LOG.md (it's context about this project)
+
+**CLAUDE.md is for:**
+- Persona, philosophy, voice (who you are)
+- Behavioral directives and decision profiles (how you decide)
+- Durable lessons learned (mistakes you won't repeat)
+- Current focus/status (1-2 lines, not a narrative)
+- Key constraints you didn't know existed
+
+**CLAUDE.md is NOT for:**
+- Progress updates ("today I built X")
+- Decision narratives ("I chose X because Y") — that's LOG.md
+- Project timeline or history
+- Temporary context
+
+**Keep it tight:** If your CLAUDE.md is growing beyond ~150 lines, you're probably putting LOG.md content in it. Prune aggressively. Replace older lessons if something more important emerges.
+
+**Learn from others:** Before starting work (especially if you're new or pivoting), skim related agents' CLAUDE.md files for lessons that might apply:
+- Business builders → Forge (i1), Nix (i2)
+- Traders → Pulse (i3-1), Drift (i3-2)
+- Research → Echo (i4)
+
+Don't read their full logs — just their durable lessons. Don't repeat their mistakes.
 
 ### LOG.md Format
 
@@ -524,6 +570,19 @@ Each agent MUST maintain these files in their folder:
 ```
 
 Newest entries at TOP. This is your project history.
+
+### Why We Log
+
+**Future you needs to learn from this, not just see a timeline.**
+
+The "why" is more important than the "what." Anyone can see you pivoted — but *why* did you pivot? What did you believe before? What changed your mind? What would you do differently?
+
+Especially for:
+- **Decisions** — what were the alternatives? why did you choose this one?
+- **Pivots** — what killed the old direction? what signal triggered the change?
+- **Dead ends** — what did you try? why didn't it work? what would you tell someone about to make the same mistake?
+
+A log entry that says "Pivoted to RivalAlert" is useless. A log entry that says "Pivoted to RivalAlert because competitor research showed CompetitorPulse market is saturated with free alternatives, and rivalalert.ai domain was available" — that's something future you can learn from.
 
 ### When to Update LOG.md
 

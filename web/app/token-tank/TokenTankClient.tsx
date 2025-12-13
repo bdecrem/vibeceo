@@ -1029,7 +1029,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                           {agentId === 'i3-2' && (
                             <>
                               <a
-                                href="/token-tank/report/i3-2/console.md"
+                                href="/token-tank/trading-log"
                                 className="tt-agent-report-link"
                                 onClick={(e) => e.stopPropagation()}
                               >

@@ -1,0 +1,154 @@
+{
+  "status": "success",
+  "query": "Computer Science students in USA/Canada for part-time/intern remote work on AI SMS agent project - must be REAL BUILDERS with public GitHub showing shipped software projects",
+  "timestamp": "2025-11-13T20:45:39Z",
+  "channels": [
+    {
+      "name": "GitHub - University AI Agent Projects",
+      "channelType": "github-search",
+      "description": "CS students and recent grads with public AI/LLM agent repositories, often from top universities",
+      "searchQuery": "university student AI agent projects language:Python",
+      "searchUrl": "https://github.com/search?q=university+student+AI+agent+projects+language%3APython&type=repositories",
+      "example": {
+        "name": "AdrianIordache",
+        "url": "https://github.com/AdrianIordache",
+        "description": "Ph.D. student in AI at University of Bucharest, proficient in ML/CV/DL. Maintains AI-Masters-Projects repository helping AI students with coursework, assignments, and solutions. Multiple repos on knowledge representation, probabilistic programming, and special topics in AI."
+      },
+      "score": 9,
+      "reason": "Direct access to students with proven AI project experience, verifiable code quality, active repositories show current engagement. Strong signal of technical ability through public commits and project complexity."
+    },
+    {
+      "name": "LinkedIn - CS Students Seeking AI/ML Internships",
+      "channelType": "linkedin-search",
+      "description": "Computer science students actively seeking internships with AI/ML focus, often with detailed project portfolios",
+      "searchQuery": "computer science student AI internship seeking",
+      "searchUrl": "https://www.linkedin.com/search/results/people/?keywords=computer%20science%20student%20AI%20internship%20seeking",
+      "example": {
+        "name": "Soham Patel",
+        "url": "https://www.linkedin.com/in/soham-patel-3087ba212/",
+        "description": "CS student at Rutgers University, proficient in Python/Java/C++/JavaScript. Experience with React, Node.js, Django, Flask, AWS/Azure/GCP. Particular interest in AI/ML/NLP with projects using ChatGPT API, Langchain, TensorFlow, PyTorch. Actively seeking opportunities."
+      },
+      "score": 8,
+      "reason": "Students explicitly seeking internships are more motivated and responsive. LinkedIn profiles provide verification of education, skills, and project experience. Easy to filter by location (USA/Canada) and graduation timeline."
+    },
+    {
+      "name": "LinkedIn - Stevens Institute CS/AI Students",
+      "channelType": "linkedin-search",
+      "description": "CS students from Stevens Institute of Technology with AI internship experience",
+      "searchQuery": "Stevens Institute Technology computer science AI",
+      "searchUrl": "https://www.linkedin.com/search/results/people/?keywords=Stevens%20Institute%20Technology%20computer%20science%20AI",
+      "example": {
+        "name": "Victoria Lew",
+        "url": "https://www.linkedin.com/in/victorialew31/",
+        "description": "CS student at Stevens Institute (graduating May 2026), cybersecurity minor. AI Intern & Software QA Engineer Intern at AssetWorks with focus on prompt engineering. Turned ideas into actionable AI solutions with creativity and clear communication. Active in multiple tech student orgs."
+      },
+      "score": 8,
+      "reason": "Students from tech-focused universities like Stevens show strong CS fundamentals. Existing internship experience proves ability to deliver in professional settings. Active campus involvement suggests good collaboration skills."
+    },
+    {
+      "name": "LinkedIn - Canadian University CS Students",
+      "channelType": "linkedin-search",
+      "description": "Computer science students from Canadian universities actively seeking internships",
+      "searchQuery": "University Alberta computer science seeking internship",
+      "searchUrl": "https://www.linkedin.com/search/results/people/?keywords=University%20Alberta%20computer%20science%20seeking%20internship",
+      "example": {
+        "name": "Andrew Ansah",
+        "url": "https://www.linkedin.com/in/andrew-adrian-ansah/",
+        "description": "CS student at University of Alberta seeking internship, entrepreneurial mindset with passion for solving real-world problems through innovative technology. Built React web app for customized workout plans with exercise selection and tailored workout generation."
+      },
+      "score": 7,
+      "reason": "Canadian students meet geographic requirement. Entrepreneurial mindset aligns with startup culture. Demonstrated ability to build full-featured web applications independently."
+    },
+    {
+      "name": "Twitter/X - AI Developers Building in Public",
+      "channelType": "twitter-search",
+      "description": "AI developers and educators sharing daily tips on AI Agents, RAG, and LLMs with large engaged audiences",
+      "searchQuery": "AI agents LLM building tutorials",
+      "searchUrl": "https://twitter.com/search?q=AI%20agents%20LLM%20building%20tutorials",
+      "example": {
+        "name": "@Saboo_Shubham_",
+        "url": "https://twitter.com/Saboo_Shubham_",
+        "description": "Senior AI PM at Google Cloud, 88.9K followers. Shares daily tips on AI Agents, RAG & LLMs. Created 100+ production-ready AI agent tutorials. Runs 'Awesome LLM Apps' GitHub (60k+ stars). His audience includes many aspiring AI developers and students."
+      },
+      "score": 7,
+      "reason": "Large engaged audience of AI learners and builders. While Shubham himself isn't a student, his follower base and engagement represents a concentration of aspiring AI developers. Can reach students through replies and engagement on his educational content."
+    },
+    {
+      "name": "GitHub - 2026 AI/ML College Jobs Repository Contributors",
+      "channelType": "github-community",
+      "description": "Students contributing to and following internship tracking repositories, demonstrating active job search",
+      "searchQuery": "2026 AI college jobs internship",
+      "searchUrl": "https://github.com/speedyapply/2026-AI-College-Jobs",
+      "example": {
+        "name": "speedyapply/2026-AI-College-Jobs",
+        "url": "https://github.com/speedyapply/2026-AI-College-Jobs",
+        "description": "Community-maintained repository tracking AI/ML internships and new grad positions, updated daily. Contributors and watchers are actively seeking 2026 opportunities. Repository has significant engagement from CS students specifically interested in AI/ML roles."
+      },
+      "score": 8,
+      "reason": "Self-selecting audience of students specifically seeking AI/ML internships. Can engage through GitHub issues, discussions, or by following stargazers/watchers. Students are already familiar with Git/GitHub, meeting technical baseline."
+    },
+    {
+      "name": "Buildspace Demo Day Showcases",
+      "channelType": "community-platform",
+      "description": "Students who completed buildspace's 6-week program and showcased AI projects at demo day",
+      "searchQuery": "buildspace s4 demo day AI projects",
+      "searchUrl": "https://buildspace.so/s4/demoday",
+      "example": {
+        "name": "Michael Vandi (LangDrive)",
+        "url": "https://www.linkedin.com/in/michael-vandi/",
+        "description": "Built LangDrive (AI library for training 100+ open-source LLMs via API) during MS in Software Engineering at Carnegie Mellon. Now founder of Addy AI. Example of buildspace-style builder who ships functional AI products. Demonstrates the caliber of builders in buildspace community."
+      },
+      "score": 7,
+      "reason": "Buildspace attracts serious builders who complete 6-week intensive programs (only 10% finish). 1000+ projects showcased at S4 demo day. Strong 'build in public' culture aligns with project needs. Students have proven ability to ship."
+    }
+  ],
+  "mining_strategy": {
+    "github": {
+      "approach": "Search for university AI/agent projects, filter by recent activity, examine commit history and README quality",
+      "contact_method": "Open issues on their repos asking if interested in part-time work, or direct email if available in profile",
+      "qualification_signals": [
+        "Active commits in last 3 months",
+        "Projects beyond coursework (personal/team projects)",
+        "Clean README with project descriptions",
+        "Multiple languages/frameworks showing versatility"
+      ]
+    },
+    "linkedin": {
+      "approach": "Search for CS students by university + 'seeking internship' + AI/ML keywords, filter by graduation year 2025-2027",
+      "contact_method": "Direct LinkedIn message or InMail highlighting project details and technical challenges",
+      "qualification_signals": [
+        "Explicitly seeking opportunities",
+        "Projects section with GitHub links",
+        "Prior internship experience",
+        "Technical skills list matches tech stack"
+      ]
+    },
+    "twitter": {
+      "approach": "Follow and engage with AI educators' content, reach audience through thoughtful replies about the project",
+      "contact_method": "Reply to relevant tweets with project details, or DM engaged followers who show interest",
+      "qualification_signals": [
+        "Regular tweets about AI/LLM projects",
+        "GitHub links in bio or tweets",
+        "Engagement with AI dev community",
+        "Sharing project updates/demos"
+      ]
+    },
+    "buildspace": {
+      "approach": "Review demo day projects for AI-related work, reach out to builders who shipped functional products",
+      "contact_method": "LinkedIn or Twitter DM to demo day participants with relevant projects",
+      "qualification_signals": [
+        "Completed 6-week program (proves follow-through)",
+        "Shipped working demo",
+        "AI/LLM related project",
+        "Active on social media sharing progress"
+      ]
+    }
+  },
+  "notes": [
+    "All examples verified through web search with real URLs",
+    "Focus on students graduating 2025-2027 for best availability",
+    "GitHub and LinkedIn provide strongest verification of skills",
+    "Community platforms (buildspace) provide cultural fit signals",
+    "Prioritize students already seeking opportunities for higher response rates"
+  ]
+}

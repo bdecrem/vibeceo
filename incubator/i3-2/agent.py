@@ -30,6 +30,7 @@ from config import (
     MIN_CONFIDENCE_TO_TRADE,
     SCAN_INTERVAL_MINUTES,
     RESEARCH_MODEL,
+    SCAN_MODEL,
     MAX_RESEARCH_SEARCHES,
     RSI_OVERSOLD,
     RSI_OVERBOUGHT,
@@ -55,6 +56,7 @@ from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
 from utils.technicals import get_technical_signals, screen_for_triggers
 from utils.logger import log
+from utils.supabase_logger import CycleLogger
 
 # Try to import anthropic for API calls
 try:
@@ -135,12 +137,13 @@ class DriftAgent:
             if VERBOSE:
                 log(f"[Drift] Memory write error: {e}")
 
-    def run_cycle(self, crypto_only: bool = False) -> dict:
+    def run_cycle(self, crypto_only: bool = False, cycle_number: int = 1) -> dict:
         """
         Run one trading cycle.
 
         Args:
             crypto_only: If True, only scan crypto assets (for after-hours trading)
+            cycle_number: Cycle number for logging (default 1)
 
         Returns dict with cycle results.
         """
@@ -170,43 +173,72 @@ class DriftAgent:
             budget_remaining = MAX_PORTFOLIO_VALUE - current_invested
             seek_deployment = budget_remaining > MAX_PORTFOLIO_VALUE * 0.5  # Seek if >50% budget available
 
+        # Initialize Supabase cycle logger
+        cycle_logger = CycleLogger(cycle_number=cycle_number, mode=mode)
+
+        # Capture portfolio snapshot
+        try:
+            account = self.alpaca.get_account()
+            positions = self.alpaca.get_positions()
+            cycle_logger.set_portfolio_snapshot(
+                portfolio_value=account["portfolio_value"],
+                cash=account["cash"],
+                positions=positions,
+            )
+        except Exception as e:
+            cycle_logger.add_entry(f"Error getting portfolio snapshot: {e}")
+
         if VERBOSE:
             log(f"[Drift] Scanning {mode}: {len(active_watchlist)} assets")
             if seek_deployment:
                 log(f"[Drift] Cash >50% of budget - actively seeking entry opportunities")
 
+        cycle_logger.add_entry(f"Scanning {mode}: {len(active_watchlist)} assets")
+        if seek_deployment:
+            cycle_logger.add_entry("Cash >50% of budget - actively seeking entry opportunities")
+
         # Step 1: Light scan
-        scan_result = self._light_scan(watchlist=active_watchlist, seek_deployment=seek_deployment)
+        scan_result = self._light_scan(watchlist=active_watchlist, seek_deployment=seek_deployment, cycle_logger=cycle_logger)
 
         # Step 2: Check for triggers
         triggers = scan_result.get("triggers", [])
+        cycle_logger.set_triggers_found(len(triggers))
 
         if not triggers:
+            cycle_logger.add_entry("No triggers found - all stable")
+            cycle_logger.complete(status="no_action", message=scan_result.get("summary", "All stable"))
             return {
                 "status": "no_action",
                 "message": scan_result.get("summary", "All stable"),
                 "actions": [],
             }
 
+        cycle_logger.add_entry(f"Found {len(triggers)} triggers to research")
+
         # Step 3: Research each trigger
         actions = []
         for trigger in triggers:
-            research_result = self._research(trigger)
+            research_result = self._research(trigger, cycle_logger=cycle_logger)
 
             if research_result.get("decision") in ["buy", "sell"]:
                 # Step 4: Execute
-                execution = self._execute(research_result)
+                execution = self._execute(research_result, cycle_logger=cycle_logger)
                 actions.append(execution)
+
+        # Complete the cycle log
+        message = f"Processed {len(triggers)} triggers, {len(actions)} actions"
+        cycle_logger.add_entry(message)
+        cycle_logger.complete(status="completed", message=message)
 
         return {
             "status": "completed",
-            "message": f"Processed {len(triggers)} triggers, {len(actions)} actions",
+            "message": message,
             "triggers": triggers,
             "actions": actions,
             "cycle_time_seconds": (datetime.now() - cycle_start).total_seconds(),
         }
 
-    def _light_scan(self, watchlist: list = None, seek_deployment: bool = False) -> dict:
+    def _light_scan(self, watchlist: list = None, seek_deployment: bool = False, cycle_logger: CycleLogger = None) -> dict:
         """
         Quantitative + News-reactive scan.
 
@@ -217,6 +249,7 @@ class DriftAgent:
         Args:
             watchlist: List of symbols to scan. Defaults to WATCHLIST.
             seek_deployment: If True, actively look for entry opportunities
+            cycle_logger: Optional CycleLogger instance for Supabase logging
         """
         if watchlist is None:
             watchlist = WATCHLIST
@@ -341,6 +374,12 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
                 triggers=[t.get("symbol", "") for t in result.get("triggers", [])],
             )
 
+            # Log to Supabase
+            if cycle_logger:
+                cycle_logger.add_entry(f"Scan summary: {result.get('summary', 'N/A')}")
+                for t in result.get("triggers", []):
+                    cycle_logger.add_entry(f"Trigger: {t.get('symbol', '?')} - {t.get('reason', 'N/A')}")
+
             if VERBOSE:
                 log(f"[Drift] Scan complete: {len(result.get('triggers', []))} triggers to research")
 
@@ -348,6 +387,8 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
 
         except Exception as e:
             self.journal.log_error("light_scan", str(e))
+            if cycle_logger:
+                cycle_logger.add_entry(f"Scan error: {e}")
             return {"summary": f"Scan error: {e}", "triggers": [], "all_stable": True}
 
     def _scan_news_movers(self, exclude_symbols: list) -> list:
@@ -404,11 +445,15 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
 
         return news_triggers
 
-    def _research(self, trigger: dict) -> dict:
+    def _research(self, trigger: dict, cycle_logger: CycleLogger = None) -> dict:
         """
         Deep research on a triggered symbol.
 
         This is where we go agentic - using WebSearch to investigate.
+
+        Args:
+            trigger: Trigger dict with symbol and reason
+            cycle_logger: Optional CycleLogger instance for Supabase logging
         """
         symbol = trigger.get("symbol", "")
         reason = trigger.get("reason", "")
@@ -502,6 +547,17 @@ Respond with your research process, then final JSON:
             thesis=result.get("thesis", ""),
         )
 
+        # Log to Supabase
+        if cycle_logger:
+            cycle_logger.add_research(symbol, result)
+            searches_count = len(result.get("searches_performed", []))
+            if searches_count > 0:
+                cycle_logger.add_web_searches(searches_count)
+            cycle_logger.add_entry(
+                f"Research {symbol}: {result.get('decision', 'pass').upper()} "
+                f"(confidence: {result.get('confidence', 0)}%) - {result.get('thesis', '')[:100]}..."
+            )
+
         if VERBOSE:
             log(f"[Drift] {symbol}: {result.get('decision', 'pass').upper()} "
                   f"(confidence: {result.get('confidence', 0)}%)")
@@ -509,7 +565,7 @@ Respond with your research process, then final JSON:
 
         return result
 
-    def _execute(self, research: dict) -> dict:
+    def _execute(self, research: dict, cycle_logger: CycleLogger = None) -> dict:
         """Execute a trade decision."""
         symbol = research.get("symbol")
         decision = research.get("decision")
@@ -520,19 +576,23 @@ Respond with your research process, then final JSON:
         if confidence < MIN_CONFIDENCE_TO_TRADE:
             if VERBOSE:
                 log(f"[Drift] {symbol}: Confidence {confidence}% below threshold, skipping")
+            if cycle_logger:
+                cycle_logger.add_entry(f"Skipped {symbol}: confidence {confidence}% below threshold")
             return {"status": "skipped", "reason": "Low confidence"}
 
         if decision == "buy":
-            return self._execute_buy(symbol, confidence, thesis, research)
+            return self._execute_buy(symbol, confidence, thesis, research, cycle_logger=cycle_logger)
         elif decision == "sell":
-            return self._execute_sell(symbol, thesis, confidence)
+            return self._execute_sell(symbol, thesis, confidence, cycle_logger=cycle_logger)
         else:
             return {"status": "no_action", "decision": decision}
 
-    def _execute_buy(self, symbol: str, confidence: int, thesis: str, research: dict) -> dict:
+    def _execute_buy(self, symbol: str, confidence: int, thesis: str, research: dict, cycle_logger: CycleLogger = None) -> dict:
         """Execute a buy order."""
         # Check if we already hold it
         if self.alpaca.get_position(symbol):
+            if cycle_logger:
+                cycle_logger.add_entry(f"Skipped {symbol} buy: already holding position")
             return {"status": "skipped", "reason": "Already holding position"}
 
         # Check position count
@@ -595,6 +655,15 @@ Respond with your research process, then final JSON:
             # Write to memory
             self._write_memory(symbol, "BUY", f"${size:.0f}", thesis, confidence)
 
+            # Log to Supabase
+            if cycle_logger:
+                cycle_logger.add_trade("buy", symbol, size, {
+                    "status": "executed",
+                    "order_id": order.get("id"),
+                    "price": price,
+                })
+                cycle_logger.add_entry(f"EXECUTED BUY: {symbol} ${size:.2f} @ ${price:.2f}")
+
             return {
                 "status": "executed",
                 "action": "buy",
@@ -603,12 +672,16 @@ Respond with your research process, then final JSON:
                 "order_id": order.get("id"),
             }
 
+        if cycle_logger:
+            cycle_logger.add_entry(f"FAILED: {symbol} buy order submission failed")
         return {"status": "failed", "reason": "Order submission failed"}
 
-    def _execute_sell(self, symbol: str, thesis: str, confidence: int = 75) -> dict:
+    def _execute_sell(self, symbol: str, thesis: str, confidence: int = 75, cycle_logger: CycleLogger = None) -> dict:
         """Execute a sell order."""
         position = self.alpaca.get_position(symbol)
         if not position:
+            if cycle_logger:
+                cycle_logger.add_entry(f"Skipped {symbol} sell: no position to sell")
             return {"status": "skipped", "reason": "No position to sell"}
 
         # Check PDT
@@ -616,6 +689,8 @@ Respond with your research process, then final JSON:
         if not approved:
             if VERBOSE:
                 log(f"[Drift] {symbol}: {pdt_reason}")
+            if cycle_logger:
+                cycle_logger.add_entry(f"Blocked {symbol} sell: {pdt_reason}")
             return {"status": "blocked", "reason": pdt_reason}
 
         # Check if it's a day trade
@@ -652,6 +727,16 @@ Respond with your research process, then final JSON:
             pnl_str = f"+${pnl:.2f}" if pnl >= 0 else f"-${abs(pnl):.2f}"
             self._write_memory(symbol, "SOLD", f"({pnl_str})", thesis, confidence)
 
+            # Log to Supabase
+            if cycle_logger:
+                cycle_logger.add_trade("sell", symbol, position["market_value"], {
+                    "status": "executed",
+                    "order_id": order.get("id"),
+                    "pnl": pnl,
+                    "pnl_pct": pnl_pct,
+                })
+                cycle_logger.add_entry(f"EXECUTED SELL: {symbol} {pnl_str} ({pnl_pct:+.1f}%)")
+
             return {
                 "status": "executed",
                 "action": "sell",
@@ -661,6 +746,8 @@ Respond with your research process, then final JSON:
                 "order_id": order.get("id"),
             }
 
+        if cycle_logger:
+            cycle_logger.add_entry(f"FAILED: {symbol} sell order submission failed")
         return {"status": "failed", "reason": "Order submission failed"}
 
     def _build_scan_context(self, account: dict, positions: list, pdt_status: dict) -> str:
@@ -692,13 +779,13 @@ Respond with your research process, then final JSON:
         return "\n".join(lines)
 
     def _call_llm(self, prompt: str, max_tokens: int = 1000) -> str:
-        """Call LLM without tools (for light scan)."""
+        """Call LLM without tools (for light scan). Uses cheaper SCAN_MODEL."""
         if not self.anthropic:
             return "{}"
 
         try:
             response = self.anthropic.messages.create(
-                model=RESEARCH_MODEL,
+                model=SCAN_MODEL,
                 max_tokens=max_tokens,
                 messages=[{"role": "user", "content": prompt}],
             )

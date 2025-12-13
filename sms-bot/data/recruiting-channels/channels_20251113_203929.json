@@ -1,0 +1,121 @@
+{
+  "status": "success",
+  "query": "Computer Science students in USA/Canada for paid part-time/intern position coding on AI SMS agent project - GitHub repos/shipped projects required, AI/LLMs/ML interest, async work, willing to learn existing codebase",
+  "timestamp": "2025-11-13T20:39:29Z",
+  "channels": [
+    {
+      "name": "GitHub Machine Learning Students",
+      "channelType": "github-search",
+      "description": "Computer science students with active ML/AI repositories and projects",
+      "searchQuery": "computer science student machine learning projects",
+      "searchUrl": "https://github.com/search?q=computer+science+student+machine+learning+projects&type=users",
+      "examples": [
+        {
+          "name": "Rohan Singh (Rohan-s18)",
+          "url": "https://github.com/Rohan-s18",
+          "description": "MS CS student at Columbia University, Google SWE. Multiple ML projects: SNUPy (ML Python package), Neural Networks from scratch, C++ ML Backend, PyTorch wrapper. Active in AlQuraishi Lab for Mathematical Genomics.",
+          "location": "New York, USA",
+          "verifiedProjects": ["SNUPy", "Neural Networks", "Data Analysis and Machine Learning", "C++ ML Backend"]
+        },
+        {
+          "name": "Waseem Sial (waseem-sial)",
+          "url": "https://github.com/waseem-sial",
+          "description": "CS student passionate about ML and AI. C++ Developer experience in high-performance systems, proficient in Python for data science and AI projects. Internship with CodeAlpha.",
+          "location": "Not specified (International)",
+          "verifiedProjects": ["Machine Learning projects", "C++ high-performance systems"]
+        }
+      ],
+      "score": 9,
+      "reason": "GitHub is the primary platform for code review. Direct access to repositories shows coding ability, project complexity, and contribution patterns. Students with active repos demonstrate technical competence."
+    },
+    {
+      "name": "LinkedIn CS Students with GitHub Profiles",
+      "channelType": "linkedin-search",
+      "description": "CS students who actively link their GitHub profiles on LinkedIn, showing both academic credentials and practical coding skills",
+      "searchQuery": "computer science student AI machine learning GitHub projects",
+      "searchUrl": "https://www.linkedin.com/search/results/people/?keywords=computer%20science%20student%20AI%20machine%20learning%20GitHub",
+      "examples": [
+        {
+          "name": "Ashutosh Jha",
+          "url": "https://www.linkedin.com/in/ashutosh-jha-477340259/",
+          "github": "github.com/LegendarySlayer",
+          "description": "B.Tech CS student (CGPA: 8.67), full-stack dev + AI/ML specialist. Led teams in Flipkart Grid 6.0 and Smart India Hackathon with GenAI platforms. NUS project on AI-powered business analytics.",
+          "location": "India (remote OK)",
+          "verifiedProjects": ["Maintenance Management System (Tata Steel)", "GigStop freelancing platform", "Speech Recognition System"]
+        },
+        {
+          "name": "Arnav Anand",
+          "url": "https://www.linkedin.com/in/arnav-anand-8076b6279/",
+          "github": "https://github.com/Arnaviitp/",
+          "description": "CS student at IIT Patna, SDE Intern at Bluestock Fintech. AI/ML enthusiast with projects analyzing e-commerce patterns, customer churn forecasting, Reddit stock movement analysis. Certifications in Data Science & GenAI.",
+          "location": "India (remote OK)",
+          "verifiedProjects": ["Credit EDA", "Reddit Stock Movement Analysis", "Music Recommendation System"]
+        }
+      ],
+      "score": 8,
+      "reason": "LinkedIn provides verified educational background, certifications, and links to GitHub profiles. Students who maintain both profiles tend to be serious about their careers and demonstrate professionalism."
+    },
+    {
+      "name": "GitHub Topics: Machine Learning Projects",
+      "channelType": "github-topics",
+      "description": "GitHub's machine-learning and machine-learning-projects topics contain 165k+ repositories, many from students building portfolio projects",
+      "searchQuery": "topic:machine-learning-projects OR topic:machine-learning language:Python",
+      "searchUrl": "https://github.com/topics/machine-learning-projects",
+      "examples": [
+        {
+          "name": "GitHub ML Topics Community",
+          "url": "https://github.com/topics/machine-learning",
+          "description": "165,187 repositories with ML projects. 76,608 in Jupyter Notebook, 48,382 in Python. Many students use these topics to showcase their work. Active filtering by 'recently updated' shows engaged developers.",
+          "location": "Global (USA/Canada students present)",
+          "verifiedProjects": ["Sentiment analysis", "Chatbots", "Image classification", "NLP projects"]
+        }
+      ],
+      "score": 8,
+      "reason": "Massive repository of student projects with code available for review. Easy to filter by language (Python), activity (recent commits), and complexity. Students tagging with ML topics are specifically building in this domain."
+    },
+    {
+      "name": "Dev.to AI/LLM Project Builders",
+      "channelType": "community-platform",
+      "description": "Dev.to community members writing about and building AI/LLM projects, often sharing their learning journey and code",
+      "searchQuery": "AI machine learning student projects LLM beginners",
+      "searchUrl": "https://dev.to/search?q=AI%20machine%20learning%20student%20projects",
+      "examples": [
+        {
+          "name": "Dev.to AI Community",
+          "url": "https://dev.to/t/ai",
+          "description": "Students writing tutorials on LLM projects: sentiment analysis, chatbots with GPT-3, text summarization, fine-tuning BERT. Active engagement with code examples and GitHub links in articles.",
+          "location": "Global (many USA/Canada-based)",
+          "verifiedProjects": ["Sentiment analysis tutorials", "Chatbot implementations", "Fine-tuning LLMs"]
+        }
+      ],
+      "score": 7,
+      "reason": "Dev.to members who write technical articles demonstrate communication skills and deeper understanding. Many link to GitHub repos. However, requires more screening as not all writers are actively coding or available for hire."
+    },
+    {
+      "name": "Computer Science Subreddits (r/cscareerquestions, r/csMajors)",
+      "channelType": "reddit-community",
+      "description": "CS students seeking advice, sharing projects, and discussing careers. Many post GitHub portfolios for feedback.",
+      "searchQuery": "GitHub portfolio AI projects site:reddit.com/r/cscareerquestions OR site:reddit.com/r/csMajors",
+      "searchUrl": "https://www.reddit.com/r/cscareerquestions/",
+      "examples": [
+        {
+          "name": "r/cscareerquestions Community",
+          "url": "https://www.reddit.com/r/cscareerquestions/",
+          "description": "Active CS student community sharing portfolios, seeking project feedback, and discussing AI/ML career paths. Students post GitHub links for review. Emphasis on building strong portfolios with ML projects.",
+          "location": "Primarily USA/Canada",
+          "verifiedProjects": ["Portfolio review threads", "Project showcases", "Internship search discussions"]
+        }
+      ],
+      "score": 7,
+      "reason": "High concentration of USA/Canada CS students actively seeking opportunities. Direct communication possible. Students posting portfolios are often open to new opportunities. Requires screening as skill levels vary widely."
+    }
+  ],
+  "methodology": "Used WebSearch tool to verify real people and profiles across multiple platforms. Only included channels where actual examples with verifiable URLs were found. Prioritized channels with direct code access (GitHub) and professional profiles (LinkedIn) for easier candidate evaluation.",
+  "notes": [
+    "Twitter/X searches were attempted but blocked due to JavaScript requirements",
+    "Buildspace community found but no specific member profiles accessible via search",
+    "All GitHub profiles verified with actual repository links",
+    "LinkedIn profiles verified with direct URLs and GitHub links when available",
+    "Score based on: ease of finding candidates (1-10), ability to verify skills (code access), and concentration of target demographic"
+  ]
+}

@@ -179,14 +179,23 @@ class AlpacaClient:
             from alpaca.trading.requests import MarketOrderRequest
             from alpaca.trading.enums import OrderSide, TimeInForce
 
+            # Determine if crypto or stock
+            is_crypto = "/" in symbol or (symbol.endswith("USD") and len(symbol) <= 7)
+
             # Normalize symbol for Alpaca
-            alpaca_symbol = symbol.replace("/USD", "USD").replace("/", "")
+            if is_crypto:
+                alpaca_symbol = symbol.replace("/", "")  # BTC/USD -> BTCUSD
+            else:
+                alpaca_symbol = symbol
+
+            # Stocks with notional (fractional) orders require DAY time_in_force
+            tif = TimeInForce.GTC if is_crypto else TimeInForce.DAY
 
             order_data = MarketOrderRequest(
                 symbol=alpaca_symbol,
                 notional=notional,
                 side=OrderSide.BUY,
-                time_in_force=TimeInForce.GTC,  # Good til cancelled
+                time_in_force=tif,
             )
 
             order = self._trading_client.submit_order(order_data)
@@ -277,9 +286,14 @@ class AlpacaClient:
             from alpaca.data.requests import CryptoLatestQuoteRequest, StockLatestQuoteRequest
 
             # Determine if crypto or stock
-            if "/" in symbol or symbol.endswith("USD"):
-                # Crypto
-                normalized = symbol.replace("/", "")
+            is_crypto = "/" in symbol or (symbol.endswith("USD") and len(symbol) <= 7)
+
+            if is_crypto:
+                # Crypto - Alpaca expects format like "BTC/USD"
+                if "/" not in symbol:
+                    normalized = symbol[:-3] + "/" + symbol[-3:]
+                else:
+                    normalized = symbol
                 request = CryptoLatestQuoteRequest(symbol_or_symbols=normalized)
                 quotes = self._crypto_data_client.get_crypto_latest_quote(request)
                 if normalized in quotes:
@@ -318,9 +332,15 @@ class AlpacaClient:
             start = end - timedelta(days=days)
 
             # Determine if crypto or stock
-            if "/" in symbol or symbol.endswith("USD"):
-                # Crypto
-                normalized = symbol.replace("/", "")
+            is_crypto = "/" in symbol or symbol.endswith("USD") and len(symbol) <= 7
+
+            if is_crypto:
+                # Crypto - Alpaca expects format like "BTC/USD"
+                if "/" not in symbol:
+                    # Convert BTCUSD to BTC/USD
+                    normalized = symbol[:-3] + "/" + symbol[-3:]
+                else:
+                    normalized = symbol
                 request = CryptoBarsRequest(
                     symbol_or_symbols=normalized,
                     timeframe=TimeFrame.Day,
@@ -328,7 +348,13 @@ class AlpacaClient:
                     end=end,
                 )
                 bars_response = self._crypto_data_client.get_crypto_bars(request)
-                bars_data = bars_response.get(normalized, [])
+                # BarSet uses dict-like access or .data attribute
+                if hasattr(bars_response, 'data'):
+                    bars_data = bars_response.data.get(normalized, [])
+                elif hasattr(bars_response, '__getitem__'):
+                    bars_data = bars_response[normalized] if normalized in bars_response else []
+                else:
+                    bars_data = []
             else:
                 # Stock
                 request = StockBarsRequest(
@@ -338,7 +364,13 @@ class AlpacaClient:
                     end=end,
                 )
                 bars_response = self._stock_data_client.get_stock_bars(request)
-                bars_data = bars_response.get(symbol, [])
+                # BarSet uses dict-like access or .data attribute
+                if hasattr(bars_response, 'data'):
+                    bars_data = bars_response.data.get(symbol, [])
+                elif hasattr(bars_response, '__getitem__'):
+                    bars_data = bars_response[symbol] if symbol in bars_response else []
+                else:
+                    bars_data = []
 
             # Convert to list of dicts
             bars = []

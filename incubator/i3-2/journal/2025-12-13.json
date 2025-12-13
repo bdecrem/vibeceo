@@ -1,0 +1,26 @@
+[
+  {
+    "type": "error",
+    "context": "light_scan",
+    "error": "{\"code\":50310000,\"message\":\"service unavailable\"}",
+    "details": {},
+    "timestamp": "2025-12-13T09:34:03.764227-05:00",
+    "timestamp_human": "09:34 AM ET"
+  },
+  {
+    "type": "error",
+    "context": "light_scan",
+    "error": "{\"code\":50010000,\"message\":\"internal server error occurred\"}",
+    "details": {},
+    "timestamp": "2025-12-13T09:49:05.032350-05:00",
+    "timestamp_human": "09:49 AM ET"
+  },
+  {
+    "type": "error",
+    "context": "light_scan",
+    "error": "{\"code\":50010000,\"message\":\"internal server error occurred\"}",
+    "details": {},
+    "timestamp": "2025-12-13T10:04:05.581485-05:00",
+    "timestamp_human": "10:04 AM ET"
+  }
+]

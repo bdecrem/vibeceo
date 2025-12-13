@@ -1,0 +1,116 @@
+{
+  "status": "success",
+  "query": "Community Manager student interns (50% Computer Science, 50% other majors) for Kochi.to AI SMS assistant platform - 10 hours/week at $35/hour, remote, immediate start. Must demonstrate community passion through student club leadership roles, 500+ engaged social media followers, or active participation in tech/AI Discord/Reddit communities. Need startup hustle mentality, genuine excitement about AI/tech, and ability to engage audiences across platforms. 80% candidates from USA/Canada universities.",
+  "channels": [
+    {
+      "name": "LinkedIn - CS Student Club Presidents & Community Leaders",
+      "channelType": "linkedin-search",
+      "description": "Computer Science students with demonstrated club leadership at North American universities",
+      "searchQuery": "\"computer science student\" OR \"CS student\" \"club president\" OR \"community lead\" university",
+      "example": {
+        "name": "Bosco Ng",
+        "url": "https://www.linkedin.com/in/bosco-ng-03122a201/",
+        "description": "Tech Director @ COMPSA at Queen's University, leading 13-member tech team building digital tools for 1,800+ students. Second-year CS student with demonstrated community leadership."
+      },
+      "score": 9,
+      "reason": "High concentration of students with proven club leadership experience at major universities. Strong overlap with community management skills and tech passion."
+    },
+    {
+      "name": "LinkedIn - Microsoft/Google Student Ambassadors",
+      "channelType": "linkedin-search",
+      "description": "Student ambassadors from Microsoft Learn and Google DSC programs with community building experience",
+      "searchQuery": "\"Microsoft Student Ambassador\" OR \"Google DSC\" OR \"Campus Ambassador\" university student",
+      "example": {
+        "name": "Sandro Speth",
+        "url": "https://www.linkedin.com/in/sandro-speth/",
+        "description": "Gold Microsoft Learn Student Ambassador and head of BaWü Hub at University of Stuttgart. Research assistant who organizes student community events and tours across Germany."
+      },
+      "score": 9,
+      "reason": "Student ambassadors are pre-vetted for community engagement skills and have experience representing tech brands to student audiences. Perfect alignment with community management role requirements."
+    },
+    {
+      "name": "LinkedIn - Hackathon Organizers",
+      "channelType": "linkedin-search",
+      "description": "Students who organize major hackathons and tech events at universities",
+      "searchQuery": "\"Hack the North\" OR \"hackathon organizer\" student university Waterloo",
+      "example": {
+        "name": "Ian Korovinsky",
+        "url": "https://www.linkedin.com/in/ian-korovinsky/",
+        "description": "Co-Director at Hack the North (Canada's largest hackathon) and Software Engineering student at UWaterloo. Organizes events for 1000+ participants and has strong GitHub presence with AI/ML projects."
+      },
+      "score": 10,
+      "reason": "Hackathon organizers have proven ability to build and engage large tech communities. Direct experience with event management, social media promotion, and tech audience engagement."
+    },
+    {
+      "name": "LinkedIn - University Student Association Leaders",
+      "channelType": "linkedin-search",
+      "description": "Students involved in Punjab/Asian/International student associations with tech interests",
+      "searchQuery": "\"student association\" \"computer science\" OR \"CS student\" UBC university community",
+      "example": {
+        "name": "Rehnoor Saini",
+        "url": "https://www.linkedin.com/in/rehnoor/",
+        "description": "Fourth-year CS student at UBC Vancouver with experience at UBC Punjab Students Association. Demonstrates community engagement across cultural and technical student groups."
+      },
+      "score": 7,
+      "reason": "Students who bridge cultural and technical communities show strong community engagement skills. May need to verify tech/AI passion level on case-by-case basis."
+    },
+    {
+      "name": "TikTok - College Tech Content Creators",
+      "channelType": "tiktok-search",
+      "description": "College students creating educational content about scholarships, tech, and student success",
+      "searchQuery": "college student tech education content creator",
+      "example": {
+        "name": "Gabriella Carter (@growingwithgabby)",
+        "url": "https://www.tiktok.com/@growingwithgabby",
+        "description": "Princeton graduate with 240K TikTok followers. Built Growing with Gabby community helping 450+ students secure $500K+ in scholarships. Demonstrates strong community building and social media engagement skills."
+      },
+      "score": 8,
+      "reason": "TikTok creators with large followings have proven ability to engage and grow audiences. Shows entrepreneurial mindset and passion for helping student communities. May need CS/tech background verification."
+    },
+    {
+      "name": "GitHub - Campus Expert Program Alumni",
+      "channelType": "github-search",
+      "description": "GitHub Campus Experts - student leaders building tech communities at universities",
+      "searchQuery": "\"GitHub Campus Expert\" student university profile",
+      "example": {
+        "name": "Harsh Chhabra",
+        "url": "https://github.com/harshchhabra37",
+        "description": "Founder @codefloworg, Google DSC Lead, Gold Microsoft Learn Student Ambassador, AWS Community Builder, Postman Student Leader. Multiple community leadership roles demonstrate exceptional community management skills."
+      },
+      "score": 10,
+      "reason": "Campus Experts are pre-selected for community leadership abilities (50 selected from 5000+ applicants). They run campus tech events, maintain open source projects, and have proven track records building inclusive student communities."
+    },
+    {
+      "name": "Discord - Learn AI Together Community",
+      "channelType": "discord-community",
+      "description": "85K+ member AI learning community with active student moderators and contributors",
+      "searchQuery": "Discord Learn AI Together student moderators",
+      "example": {
+        "name": "Learn AI Together Discord",
+        "url": "https://discord.com/invite/learnaitogether",
+        "description": "85,912-member AI community with active student moderators. Features technical Q&A, tutorials, study groups, and project collaboration. Mine for active moderators and frequent contributors with university affiliations."
+      },
+      "score": 8,
+      "reason": "Discord moderators in tech/AI communities demonstrate community management skills and passion for AI. Active contributors likely have strong engagement abilities. Need to identify individual students who moderate or are highly active."
+    },
+    {
+      "name": "LinkedIn - HackNC & Regional Hackathon Winners",
+      "channelType": "linkedin-search",
+      "description": "Students who won hackathon tracks and demonstrated team collaboration on tech projects",
+      "searchQuery": "\"HackNC\" OR \"hackathon winner\" student \"North Carolina\" OR \"NC State\" university",
+      "example": {
+        "name": "Preeti Joshi",
+        "url": "https://www.linkedin.com/in/preeti-joshi-289b8b292/",
+        "description": "CS Student at NC State University. Team won 1st Place in Retro Tech Track at HackNC 2025 building Slacker Tracker (full-stack productivity tool with AI chatbot). Shows tech skills and team collaboration."
+      },
+      "score": 7,
+      "reason": "Hackathon winners demonstrate technical skills and passion for building. Regional hackathons at USA universities are good talent pools. May need to verify community management interest and social media presence."
+    }
+  ],
+  "metadata": {
+    "generated_at": "2025-11-16T07:51:50Z",
+    "total_channels": 8,
+    "verification_method": "web_search",
+    "notes": "All examples verified through WebSearch with actual LinkedIn, GitHub, TikTok, and Discord profiles. Each candidate demonstrates community leadership through club presidency, student ambassador programs, hackathon organizing, content creation, or Discord moderation. Focus on USA/Canada universities as specified in requirements."
+  }
+}

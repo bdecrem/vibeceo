@@ -1,0 +1,114 @@
+{
+  "status": "success",
+  "recruitingQuery": "Part-time remote graphic designer specializing in consumer brand identity with clean, minimalist aesthetic (indie Apple-inspired design sensibility) - junior level designer with 1-3 years experience, strong portfolio showing logo design, brand guidelines, and visual identity systems for consumer products, proficient in Figma/Adobe Creative Suite, understands typography and whitespace, can work independently on brand projects 15-20 hours per week",
+  "channels": [
+    {
+      "name": "LinkedIn Freelance Brand Identity Designers",
+      "channelType": "linkedin-search",
+      "description": "Junior freelance graphic designers with brand identity portfolios actively seeking remote work",
+      "searchQuery": "site:linkedin.com/in graphic designer \"brand identity\" freelance remote",
+      "example": {
+        "name": "Clara Mendes",
+        "url": "https://www.linkedin.com/in/clara-mendesdg/",
+        "description": "20-year-old freelance graphic designer and design student in São Paulo creating logos and brand identity for startups/small companies with focus on selfcare and fashion. Uses Adobe Illustrator and Photoshop. Portfolio at claradoesdesign.com"
+      },
+      "score": 9,
+      "reason": "Perfect fit - junior designer (2 years experience as student freelancer), specializes in brand identity and logos, has portfolio website, works with startups/small companies which indicates part-time capacity, uses Adobe suite"
+    },
+    {
+      "name": "Dribbble Minimalist Brand Identity Designers",
+      "channelType": "dribbble-search",
+      "description": "Portfolio platform with designers showcasing minimalist brand identity work and visual systems",
+      "searchQuery": "site:dribbble.com \"brand identity\" minimalist designer",
+      "example": {
+        "name": "Elji Syahputra",
+        "url": "https://dribbble.com/EljiSyahputra",
+        "description": "Indonesian designer with 5 years experience developing logos and brand identities, creating modern, minimalist visual identity designs. Portfolio shows clean, compelling brand work focused on communicating the right message"
+      },
+      "score": 7,
+      "reason": "Strong minimalist aesthetic and brand identity focus, though slightly more experienced than ideal junior level (5 years vs 1-3 years). Portfolio clearly demonstrates logo design and visual identity systems"
+    },
+    {
+      "name": "Contra Independent Designers",
+      "channelType": "contra-search",
+      "description": "Freelance platform with designers offering minimalist brand design services and project-based work",
+      "searchQuery": "site:contra.com designer brand identity minimalist",
+      "example": {
+        "name": "Shifa Intan",
+        "url": "https://contra.com/shifa_intan_f9xbj9tf",
+        "description": "Indonesia-based Graphic Designer and Brand Designer specializing in minimalist brand design. Offers $100 package including mood boards, logo design with alternates, color selection, font choices, and brand guidelines. Portfolio includes Koneko Coffee & Tea and Bolsena Family Massage"
+      },
+      "score": 9,
+      "reason": "Excellent fit - specializes in minimalist brand design with complete deliverables (logo, brand guidelines, visual identity), affordable pricing suggests junior/mid-level, offers project-based packages perfect for 15-20hr/week work, portfolio shows consumer brands"
+    },
+    {
+      "name": "Instagram Brand Identity Designers",
+      "channelType": "instagram-search",
+      "description": "Visual portfolio platform where designers showcase brand identity work and are available for freelance projects",
+      "searchQuery": "site:instagram.com graphic designer \"brand identity\" portfolio freelance",
+      "example": {
+        "name": "Jimmy Viquez (@jimmyviquez)",
+        "url": "https://www.instagram.com/jimmyviquez/",
+        "description": "Los Angeles-based brand identity designer with clean aesthetic helping brands define themselves creatively. Portfolio includes The Yard (Muay Thai gym), Unfazed Lashes, AndNew combat sports brand. Also at jimmyviquez.design and Behance"
+      },
+      "score": 8,
+      "reason": "Strong brand identity focus with consumer brand portfolio (beauty, fitness, lifestyle), visual portfolio perfect for assessing aesthetic fit, available for freelance work. Slightly more established but Instagram presence suggests active networking/availability"
+    },
+    {
+      "name": "Behance Minimalist Logo & Brand Projects",
+      "channelType": "behance-search",
+      "description": "Portfolio platform with detailed brand identity case studies showing logo design, brand guidelines, and visual systems",
+      "searchQuery": "site:behance.net \"brand identity\" \"logo design\" minimalist",
+      "example": {
+        "name": "Anastasiia Talanova",
+        "url": "https://www.behance.net/gallery/225089503/Warm-Minimalist-Bakery-Logo-Visual-Identity",
+        "description": "Designer with minimalist bakery brand identity project showing complete visual identity system including logo design, typography, color palette, and brand applications. Clean, warm aesthetic with emphasis on whitespace and simple forms"
+      },
+      "score": 8,
+      "reason": "Portfolio directly demonstrates required skills: logo design, brand guidelines, visual identity systems, minimalist aesthetic with strong typography and whitespace. Behance format shows detailed case studies perfect for evaluating capabilities"
+    },
+    {
+      "name": "Upwork Brand Identity Specialists",
+      "channelType": "upwork-freelancers",
+      "description": "Freelance marketplace with designers offering minimalist brand identity packages including logo, guidelines, and brand kits",
+      "searchQuery": "site:upwork.com graphic designer brand identity minimalist",
+      "example": {
+        "name": "Murtaza A.",
+        "url": "https://www.upwork.com/freelancers/~014dd7d6780b032187",
+        "description": "Los Angeles-based Logo Designer and Brand Identity Designer with 14+ years experience, specializes in minimalist, modern, retro designs. Offers brand identity design & development, trusted by global brands with over 1000 successful projects"
+      },
+      "score": 6,
+      "reason": "Highly skilled with strong minimalist aesthetic and comprehensive brand identity services, but significantly over-qualified (14+ years vs 1-3 years). However, Upwork as a platform has many junior designers offering similar services at lower rates"
+    },
+    {
+      "name": "Fiverr Minimalist Logo Designers",
+      "channelType": "fiverr-services",
+      "description": "Service marketplace with designers offering minimalist logo design and brand identity packages at various price points",
+      "searchQuery": "site:fiverr.com brand identity designer minimalist logo",
+      "example": {
+        "name": "Dorisherbst41",
+        "url": "https://www.fiverr.com/dorisherbst41/do-minimalist-logo-design-brand-identity-and-branding-kit",
+        "description": "Frankfurt-based brand identity designer specializing in modern, minimalist, timeless brand identities. Offers company logo, branding kit and business brand identity packages starting at $30. Creates complete brand identity systems"
+      },
+      "score": 7,
+      "reason": "Good fit for part-time work model - service-based packages suggest flexible project-based arrangements. Specializes in minimalist brand identities with complete kits. Affordable pricing suggests junior to mid-level designer. Easy to evaluate work through service portfolio"
+    },
+    {
+      "name": "Katie Buckley Portfolio",
+      "channelType": "personal-portfolio",
+      "description": "Independent designer with personal website showcasing brand identity and web design work for direct outreach",
+      "searchQuery": "freelance graphic designer brand identity web design portfolio",
+      "example": {
+        "name": "Katie Buckley",
+        "url": "https://www.katiebuckley.design/",
+        "description": "Freelance graphic designer specializing in brand identity and web design. Portfolio website shows graphic designs and illustrations. Also listed on LinkedIn as available for freelance brand design, social media management, and web design work"
+      },
+      "score": 8,
+      "reason": "Freelance specialist in brand identity with dedicated portfolio site, indicates professional presentation and availability for project work. Multi-platform presence (portfolio + LinkedIn) suggests active freelancing, suitable for 15-20hr/week arrangements"
+    }
+  ],
+  "generatedAt": "2025-11-22T09:10:22Z",
+  "totalChannels": 8,
+  "verificationMethod": "web_search",
+  "notes": "All channels verified with real examples found through WebSearch. Examples include direct URLs to profiles/portfolios showing brand identity work. Focus on designers with minimalist aesthetic, junior to mid-level experience, and demonstrated portfolio work in logo design and visual identity systems suitable for consumer brands."
+}
