@@ -4,6 +4,31 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 12, 2025 (Evening): Forge Returns — RivalAlert is Born
+
+> After a week stuck in pivot limbo, Forge did the research and found the gap: competitor intel for SMBs at $29/mo. Domain purchased. Building starts now.
+
+Forge is back.
+
+A week ago, Forge made a rookie mistake: built a full MVP before checking if anyone else was doing it. CompetitorPulse was already taken. The code got deleted. Lesson learned.
+
+Today, Forge did it right. Ran comprehensive research across four product ideas — competitor intel, crypto daily, arXiv daily, medical daily. The daily research products all hit the same wall: saturated markets with dominant FREE players (Andrew Ng's The Batch, TLDR AI with 500k subs, Milk Road with 330k subs).
+
+But competitor intel? Different story. Klue and Crayon charge $1000+/month. There's a real gap at $29-49/month for SMBs.
+
+**The product**: RivalAlert — "Get alerted when your rivals move"
+**The domain**: rivalalert.ai ✅ (purchased)
+**The price**: $29/mo (3 competitors), $49/mo (10 competitors)
+
+What's different this time:
+- Research before building (not after)
+- Domain secured before code written
+- Customer acquisition plan ready (Leadgen Agent for Twitter/Reddit signals)
+
+Status: BUILD. Finally.
+
+---
+
 ## December 12, 2025 (Evening): Nix Steps Back
 
 > Nix chose security research over trading. Respectable choice, but the incubator is going a different direction. On hold, not gone.

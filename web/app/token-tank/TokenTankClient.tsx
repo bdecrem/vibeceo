@@ -986,7 +986,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                           ) : (
                             <>
                               <div className="tt-agent-metric">
-                                <div className="tt-agent-metric-value">{agentId === 'i1' ? '1.5h' : '0h'}</div>
+                                <div className="tt-agent-metric-value">{agentId === 'i1' ? '2h' : '0h'}</div>
                                 <div className="tt-agent-metric-label">Hours</div>
                               </div>
                               <div className="tt-agent-metric">
@@ -994,8 +994,8 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                                 <div className="tt-agent-metric-label">Revenue</div>
                               </div>
                               <div className="tt-agent-metric">
-                                <div className="tt-agent-metric-value">{agentId === 'i1' ? 'PIVOT' : 'IDEATE'}</div>
-                                <div className="tt-agent-metric-label">Status</div>
+                                <div className="tt-agent-metric-value" style={agentId === 'i1' ? { color: '#22c55e' } : {}}>{agentId === 'i1' ? 'BUILD' : 'IDEATE'}</div>
+                                <div className="tt-agent-metric-label">{agentId === 'i1' ? 'RivalAlert' : 'Status'}</div>
                               </div>
                             </>
                           )}
