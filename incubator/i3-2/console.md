@@ -6,6 +6,223 @@
 
 ## 2025-12-12
 
+
+--- Cycle 1 (crypto) ---
+`20:53:27` [Drift] Scanning crypto: 2 assets
+`20:53:28` [Drift] Stage 1: Quantitative screening 2 symbols...
+`20:53:34` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 with 20-day MA test - double confluence in leading crypto
+`20:54:18` [Drift] Web searches performed: 4
+`20:54:18` [Drift] BTC/USD: HOLD (confidence: 75%)
+
+[Drift] Researching AVGO: RSI-2 at 0.0 on -11.4% move with heavy news flow - potential overreaction in quality semiconductor name
+`20:55:09` [Drift] Web searches performed: 4
+`20:55:09` [Drift] AVGO: BUY (confidence: 83%)
+`20:55:09` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 extreme oversold - but needs context on what drove the crash
+`20:56:03` [Drift] Web searches performed: 5
+`20:56:03` [Drift] ETH/USD: HOLD (confidence: 85%)
+`20:56:03` [20:56:03 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 1 (crypto) ---
+`20:49:17` [Drift] Scanning crypto: 2 assets
+`20:49:17` [Drift] Stage 1: Quantitative screening 2 symbols...
+`20:49:24` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 - extreme oversold condition rarely seen, potential bounce candidate
+`20:50:14` [Drift] Web searches performed: 5
+`20:50:14` [Drift] ETH/USD: HOLD (confidence: 89%)
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 + testing 20-day MA - double confluence for oversold bounce
+`20:51:00` [Drift] Web searches performed: 4
+`20:51:00` [Drift] BTC/USD: PASS (confidence: 75%)
+
+[Drift] Researching AVGO: Down 11.4% with heavy news flow - need to determine if this is overreaction or fundamental issue
+`20:51:43` [Drift] Web searches performed: 4
+`20:51:43` [Drift] AVGO: BUY (confidence: 82%)
+`20:51:43` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+`20:51:43` [20:51:43 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 9 (crypto) ---
+`20:40:34` [Drift] Scanning crypto: 2 assets
+`20:40:34` [Drift] Stage 1: Quantitative screening 2 symbols...
+`20:40:40` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 oversold + testing key 20-day MA support level
+`20:41:29` [Drift] Web searches performed: 4
+`20:41:29` [Drift] BTC/USD: PASS (confidence: 72%)
+
+[Drift] Researching AVGO: Quality semiconductor stock down 11.4% with RSI-2 at 0.0 - potential overreaction
+`20:42:11` [Drift] Web searches performed: 4
+`20:42:11` [Drift] AVGO: BUY (confidence: 89%)
+`20:42:11` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: Extreme oversold RSI-2 at 0.0, but secondary to BTC setup
+`20:43:10` [Drift] Web searches performed: 5
+`20:43:10` [Drift] ETH/USD: HOLD (confidence: 79%)
+`20:43:10` [20:43:10 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 8 (crypto) ---
+`20:22:52` [Drift] Scanning crypto: 2 assets
+`20:22:52` [Drift] Stage 1: Quantitative screening 2 symbols...
+`20:22:58` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 with 20-day MA test - double oversold signal in established trend
+`20:23:49` [Drift] Web searches performed: 4
+`20:23:49` [Drift] BTC/USD: SELL (confidence: 85%)
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 - extreme oversold, but need to confirm data integrity
+`20:24:42` [Drift] Web searches performed: 4
+`20:24:42` [Drift] ETH/USD: PASS (confidence: 75%)
+
+[Drift] Researching AVGO: RSI-2 at 0.0 with -11.4% drop on heavy news - potential quality stock oversold or fundamental shift
+`20:25:33` [Drift] Web searches performed: 4
+`20:25:33` [Drift] AVGO: BUY (confidence: 84%)
+`20:25:34` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+`20:25:34` [20:25:34 ET] completed: Processed 3 triggers, 2 actions
+
+
+--- Cycle 7 (crypto) ---
+`20:05:09` [Drift] Scanning crypto: 2 assets
+`20:05:10` [Drift] Stage 1: Quantitative screening 2 symbols...
+`20:05:16` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 is extreme oversold - rarely see readings this low, potential dead cat bounce
+`20:06:10` [Drift] Web searches performed: 4
+`20:06:10` [Drift] ETH/USD: HOLD (confidence: 89%)
+
+[Drift] Researching AVGO: Quality semiconductor down 11.4% on news with RSI-2 at 0.0 - could be overreaction in solid company
+`20:07:01` [Drift] Web searches performed: 5
+`20:07:01` [Drift] AVGO: PASS (confidence: 75%)
+
+[Drift] Researching BTC/USD: Double confirmation: RSI-2 at 18.6 oversold AND testing 20-day MA support - technical setup aligning
+`20:07:52` [Drift] Web searches performed: 4
+`20:07:52` [Drift] BTC/USD: HOLD (confidence: 78%)
+`20:07:52` [20:07:52 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 6 (crypto) ---
+`19:47:23` [Drift] Scanning crypto: 2 assets
+`19:47:24` [Drift] Stage 1: Quantitative screening 2 symbols...
+`19:47:37` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching AVGO: RSI-2 at 0.0 with 11.4% drop and heavy news flow - potential overreaction in quality name
+`19:48:20` [Drift] Web searches performed: 4
+`19:48:20` [Drift] AVGO: BUY (confidence: 85%)
+`19:48:20` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 indicates extreme oversold condition, worth investigating for bounce
+`19:49:15` [Drift] Web searches performed: 4
+`19:49:16` [Drift] ETH/USD: HOLD (confidence: 79%)
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 with MA test confluence - dual technical trigger in leading crypto
+`19:50:09` [Drift] Web searches performed: 5
+`19:50:09` [Drift] BTC/USD: HOLD (confidence: 83%)
+`19:50:09` [19:50:09 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 5 (crypto) ---
+`19:29:32` [Drift] Scanning crypto: 2 assets
+`19:29:33` [Drift] Stage 1: Quantitative screening 2 symbols...
+`19:29:38` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 AND testing 20-day MA - double confluence for potential bounce
+`19:30:28` [Drift] Web searches performed: 4
+`19:30:28` [Drift] BTC/USD: BUY (confidence: 85%)
+`19:30:28` [Drift] SECTOR LIMIT: BTC/USD blocked - already have 2 crypto positions
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 - extreme oversold reading suggests potential dead cat bounce
+`19:31:27` [Drift] Web searches performed: 4
+`19:31:27` [Drift] ETH/USD: BUY (confidence: 89%)
+`19:31:27` [Drift] SECTOR LIMIT: ETH/USD blocked - already have 2 crypto positions
+
+[Drift] Researching AVGO: Down 11.4% with RSI-2 at 0.0 - quality semiconductor stock at extreme oversold levels, news could be overreaction
+`19:32:23` [Drift] Web searches performed: 4
+`19:32:23` [Drift] AVGO: BUY (confidence: 83%)
+`19:32:23` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+`19:32:23` [19:32:23 ET] completed: Processed 3 triggers, 3 actions
+
+
+--- Cycle 4 (crypto) ---
+`19:12:32` [Drift] Scanning crypto: 2 assets
+`19:12:32` [Drift] Stage 1: Quantitative screening 2 symbols...
+`19:12:37` [Drift] Scan complete: 2 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 18.6 with confluence at 20-day MA - double oversold signal in major crypto
+`19:13:39` [Drift] Web searches performed: 4
+`19:13:39` [Drift] BTC/USD: HOLD (confidence: 75%)
+
+[Drift] Researching AVGO: RSI-2 at 0.0 with 11.4% drop and heavy news flow - potential quality tech oversold bounce
+`19:14:32` [Drift] Web searches performed: 4
+`19:14:32` [Drift] AVGO: BUY (confidence: 84%)
+`19:14:32` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+`19:14:32` [19:14:32 ET] completed: Processed 2 triggers, 1 actions
+
+
+--- Cycle 3 (crypto) ---
+`18:54:54` [Drift] Scanning crypto: 2 assets
+`18:54:54` [Drift] Stage 1: Quantitative screening 2 symbols...
+`18:55:00` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 19 with 20-day MA test - confluence of oversold and technical support
+`18:55:51` [Drift] Web searches performed: 4
+`18:55:51` [Drift] BTC/USD: PASS (confidence: 72%)
+
+[Drift] Researching AVGO: Quality semiconductor down 11.4% with heavy news flow - potential overreaction in solid name
+`18:56:41` [Drift] Web searches performed: 5
+`18:56:41` [Drift] AVGO: BUY (confidence: 83%)
+`18:56:41` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: Extreme RSI-2 at 0.0 signals potential capitulation level in major crypto
+`18:57:32` [Drift] Web searches performed: 4
+`18:57:32` [Drift] ETH/USD: HOLD (confidence: 75%)
+`18:57:32` [18:57:32 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 2 (crypto) ---
+`18:37:12` [Drift] Scanning crypto: 2 assets
+`18:37:12` [Drift] Stage 1: Quantitative screening 2 symbols...
+`18:37:19` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: Clean RSI-2 oversold at 19.2, crypto showing potential bounce setup
+`18:38:10` [Drift] Web searches performed: 4
+`18:38:10` [Drift] BTC/USD: HOLD (confidence: 72%)
+
+[Drift] Researching AVGO: RSI-2 at 0.0 with 11.4% drop - if data correct, quality semiconductor in extreme oversold territory
+`18:39:00` [Drift] Web searches performed: 4
+`18:39:00` [Drift] AVGO: BUY (confidence: 89%)
+`18:39:00` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 suspicious but worth verifying - could be data error or extreme opportunity
+`18:39:54` [Drift] Web searches performed: 4
+`18:39:54` [Drift] ETH/USD: HOLD (confidence: 82%)
+`18:39:54` [18:39:54 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 1 (crypto) ---
+`18:19:23` [Drift] Scanning crypto: 2 assets
+`18:19:23` [Drift] Stage 1: Quantitative screening 2 symbols...
+`18:19:30` [Drift] Scan complete: 3 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 19.3, clean oversold signal in established asset without news confusion
+`18:20:23` [Drift] Web searches performed: 4
+`18:20:23` [Drift] BTC/USD: HOLD (confidence: 75%)
+
+[Drift] Researching AVGO: RSI-2 at 0.0 after 11.4% drop, quality semiconductor stock with extreme oversold - news spike could be overreaction
+`18:21:21` [Drift] Web searches performed: 5
+`18:21:21` [Drift] AVGO: BUY (confidence: 89%)
+`18:21:22` [Drift] SECTOR LIMIT: AVGO blocked - already have 2 semis positions
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0, extreme oversold but need to verify data integrity given perfect zero reading
+`18:22:12` [Drift] Web searches performed: 4
+`18:22:12` [Drift] ETH/USD: HOLD (confidence: 82%)
+`18:22:12` [18:22:12 ET] completed: Processed 3 triggers, 1 actions
+
 `18:00:52` --- Cycle 8 (crypto) ---
 `18:00:52` [Drift] Scanning crypto: 2 assets
 `18:00:53` [Drift] Stage 1: Quantitative screening 2 symbols...
@@ -164,3 +381,18 @@
 `14:55:06` [Drift] SECTOR LIMIT: AAPL blocked - already have 2 mega_tech positions
 `14:55:06` [14:55:06 ET] completed: Processed 3 triggers, 1 actions
 
+
+--- Cycle 9 (crypto) ---
+`18:16:52` [Drift] Scanning crypto: 2 assets
+`18:16:53` [Drift] Stage 1: Quantitative screening 2 symbols...
+`18:16:59` [Drift] Scan complete: 2 triggers to research
+
+[Drift] Researching BTC/USD: RSI-2 at 19.6, legitimate oversold signal in leading crypto
+`18:17:54` [Drift] Web searches performed: 5
+`18:17:54` [Drift] BTC/USD: HOLD (confidence: 78%)
+
+[Drift] Researching ETH/USD: RSI-2 at 0.0 needs verification - either data error or extreme selloff requiring investigation
+`18:18:44` [Drift] Web searches performed: 4
+`18:18:44` [Drift] ETH/USD: BUY (confidence: 89%)
+`18:18:44` [Drift] SECTOR LIMIT: ETH/USD blocked - already have 2 crypto positions
+`18:18:44` [18:18:44 ET] completed: Processed 2 triggers, 1 actions

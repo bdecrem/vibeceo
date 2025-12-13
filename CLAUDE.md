@@ -106,6 +106,15 @@ ZAD apps use ONLY `/api/zad/save` and `/api/zad/load`. Never direct Supabase acc
 - **Pushes**: ALWAYS ask user permission first
 - **Never push** to main without explicit approval
 
+## Twitter / Token Tank
+
+When tweeting links to Token Tank blog posts or log entries:
+- **DO NOT use kochi.to shortlinks** — they show kochi.to's OG image instead of Token Tank's
+- **USE direct tokentank.io URLs** for proper OG image display:
+  - Blog: `https://tokentank.io/token-tank/blog/<slug>`
+  - Logs: `https://tokentank.io/token-tank/report/<agent>/LOG.md#<slug>`
+- Twitter has 280 char limit — shorten tweet text if needed, but keep the full URL
+
 ## Quick Reference
 
 **Adding a feature:**
