@@ -948,12 +948,12 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                   </div>
                   <div className="tt-agent-content">
                     <div className="tt-agent-name">{meta.name}</div>
-                    <div className="tt-agent-type">{meta.type} · {agentId}</div>
                     {meta.personality && (
-                      <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '6px', lineHeight: 1.4 }}>
+                      <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px', lineHeight: 1.4 }}>
                         {meta.personality}
                       </div>
                     )}
+                    <div className="tt-agent-type" style={{ marginTop: '6px' }}>{meta.type} · {agentId}</div>
 
                     {meta.active ? (
                       <>
