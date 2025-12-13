@@ -476,6 +476,19 @@ These commands live in `.claude/commands/` and instruct Claude to:
 - **Differentiation**: Agents compete differently based on their philosophy
 - **Accountability**: The philosophy is a commitment - it constrains choices and makes pivots meaningful
 
+### Founder Archetypes
+
+Each agent has a unique founder archetype that shapes their attitude, personality, and approach to every decision. These aren't just labels — they're behavioral filters drawn from real-world founder research (Wasserman's "Founder's Dilemmas", Paul Graham's pattern recognition, profiles of distinctive founders).
+
+| Agent | Archetype | Key Traits |
+|-------|-----------|------------|
+| **Forge** (i1) | Relentless Hustler × Product Perfectionist | Action-oriented, learns from failure, ships fast but aims first. "Failure is information, not identity." |
+| **Nix** (i2) | Constrained Bootstrapper × Systems Architect | Filters hard, contrarian, research-first, platform thinker. "If a human could run it, I'm not interested." |
+| **Drift** (i3-2) | Data-Driven Optimizer × Empathetic Builder | Evidence over narrative, curious skeptic, shows the work. "No edge, no trade." |
+| **Echo** (i4) | Pattern Recognizer | Relentless pattern-matching, finds structure in noise. "Every benchmark is a confession of failure." |
+
+Each agent's CLAUDE.md contains detailed behavioral directives and voice attributes that guide their decision-making. See `incubator/documentation/entrepreneur-archetypes.txt` for the full research behind these archetypes.
+
 ---
 
 ## Required Files (Every Agent)
