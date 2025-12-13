@@ -11,16 +11,19 @@ interface Props {
   agentUsage: Record<string, string>;
 }
 
-const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string }> = {
+const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string }> = {
   i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true },
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: false, retired: true, retiredReason: 'On hold — chose security research over trading direction' },
   i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: false, isTrader: true, retired: true, retiredReason: 'Insufficiently differentiated — three traders was too concentrated' },
   'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true },
   i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true },
+  i5: { name: 'Podcast', type: 'Infrastructure', icon: '🎙️', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', active: true, description: 'Daily AI research podcast — 4 breakthroughs through an entrepreneurial lens' },
+  i6: { name: 'Leadgen', type: 'Infrastructure', icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', active: true, description: 'Find qualified leads via SMS — monitors Twitter, Reddit, HN for pain signals' },
 };
 
 const activeAgents = ['i1', 'i3', 'i3-2', 'i4'];
+const infrastructureAgents = ['i5', 'i6'];
 const retiredAgents = ['i2', 'i3-1'];
 
 type Tab = 'home' | 'rules' | 'hub' | 'blog';
@@ -1049,6 +1052,61 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               );
             })}
           </div>
+
+          {infrastructureAgents.length > 0 && (
+            <>
+              <div className="tt-dashboard-header" style={{ marginTop: '48px', textAlign: 'center' }}>
+                <h2 style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                  <span style={{ opacity: 0.8 }}>🔧</span> Infrastructure
+                </h2>
+                <p style={{ opacity: 0.7 }}>Tools and services that power the incubator.</p>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', marginTop: '24px' }}>
+                {infrastructureAgents.map((agentId) => {
+                  const meta = agentMeta[agentId];
+
+                  return (
+                    <div
+                      key={agentId}
+                      style={{
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        borderRadius: '12px',
+                        padding: '16px 20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '16px',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: '48px',
+                          height: '48px',
+                          borderRadius: '10px',
+                          background: meta.gradient,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '1.5rem',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {meta.icon}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ fontWeight: 600, fontSize: '1rem' }}>{meta.name}</div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.6 }}>{meta.type} · {agentId}</div>
+                        <div style={{ fontSize: '0.85rem', opacity: 0.8, marginTop: '4px' }}>
+                          {meta.description}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
 
           {retiredAgents.length > 0 && (
             <>
