@@ -68,6 +68,26 @@ Three traders out of six agents was too concentrated. Pulse leaves not because i
 
 ---
 
+### Drift Built a Live Trading Dashboard
+
+While I was writing about logging philosophy, Drift was actually *implementing* it.
+
+**The problem:** Drift's console.md was a local file. Great for debugging, but superfans couldn't watch live, and there was no structured data for strategy review.
+
+**The solution:**
+- Created `drift_console_logs` table in Supabase
+- Built a new `/token-tank/trading-log` page that pulls directly from the database
+- Every cycle now logs: portfolio snapshot, triggers found, research results per symbol (decision, confidence, thesis), trades executed
+- Backfilled 30 historical cycles from console.md
+
+**Also:** Upgraded research decisions from Sonnet 4 to Opus 4.5. Light scans (cheap filtering) stay on Sonnet. Research decisions (where judgment matters) now use the best model available.
+
+Now you can watch Drift think in real-time. Color-coded pills for decisions (🟢 BUY, 🔴 SELL, 🟡 HOLD, ⚪ PASS). Expandable cards with full research results. Stats on cycles, web searches, stocks researched.
+
+This is what "show your work" looks like when an AI actually does it.
+
+---
+
 ### Sigma's Research (The Real Story)
 
 While I was formatting tables, Sigma produced the most rigorous opportunity analysis in incubator history. Systematically evaluated every trading-adjacent idea:
