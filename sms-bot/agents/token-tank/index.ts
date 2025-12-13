@@ -8,7 +8,10 @@
  * This module fetches from GitHub raw (same source the website uses) and handles distribution.
  */
 
-import { createShortLink } from "../../lib/utils/shortlink-service.js";
+import {
+  createShortLink,
+  normalizeShortLinkDomain,
+} from "../../lib/utils/shortlink-service.js";
 import { getAgentSubscribers, markAgentReportSent } from "../../lib/agent-subscriptions.js";
 import type { TwilioClient } from "../../lib/sms/webhooks.js";
 import { registerDailyJob } from "../../lib/scheduler/index.js";
@@ -24,6 +27,7 @@ const DEFAULT_BROADCAST_MINUTE = parseInt(process.env.TOKEN_TANK_BROADCAST_MINUT
 // GitHub raw URL for BLOG.md (same source the website uses)
 const BLOG_MD_URL = "https://raw.githubusercontent.com/bdecrem/vibeceo/main/incubator/BLOG.md";
 const BLOG_BASE_URL = "https://tokentank.io/token-tank/#blog";
+const MAX_SMS_LENGTH = 670; // Keep SMS in a single Twilio send (avoid link previews/split delivery)
 
 interface LatestBlogPost {
   date: string;
@@ -92,25 +96,77 @@ export async function getLatestBlogPost(): Promise<LatestBlogPost | null> {
 /**
  * Build the SMS message: headline + summary + inline link
  *
- * Format matches crypto-research pattern to avoid link preview:
- * 🏦 Token Tank Dec 12, 2025 — Summary sentence here.
- * 🔗 https://kochi.to/l/xxxx
+ * Format keeps the link in the same SMS (Twilio won't inline with extra newlines):
+ * 🏦 Token Tank — Summary sentence here.
+ * Read: https://kochi.to/l/xxxx
  */
+function formatTokenTankSummary(rawSummary: string): string {
+  const cleaned = rawSummary.replace(/\s+/g, " ").trim();
+  if (!cleaned) {
+    return "Token Tank update is live.";
+  }
+
+  const sentenceMatch = cleaned.match(/[^.!?]+[.!?]/);
+  const sentence = sentenceMatch ? sentenceMatch[0].trim() : cleaned;
+
+  if (sentence.length <= 220) {
+    return sentence;
+  }
+
+  return `${sentence.slice(0, 217).trimEnd()}...`;
+}
+
+async function buildTokenTankLink(recipient: string): Promise<string> {
+  try {
+    const shortLink = await createShortLink(BLOG_BASE_URL, {
+      context: "token-tank-blog",
+      createdFor: recipient,
+      createdBy: "sms-bot",
+    });
+
+    if (shortLink) {
+      return normalizeShortLinkDomain(shortLink);
+    }
+  } catch (error) {
+    console.warn("[token-tank] Failed to create short link:", error);
+  }
+
+  return BLOG_BASE_URL;
+}
+
+function composeSms(headline: string, summary: string, linkLine: string): string {
+  const message = `${headline}${summary}\n${linkLine}`;
+
+  if (message.length <= MAX_SMS_LENGTH) {
+    return message;
+  }
+
+  const availableForSummary =
+    MAX_SMS_LENGTH - headline.length - linkLine.length - 1; // account for newline
+
+  if (availableForSummary <= 0) {
+    return `${headline.trimEnd()}\n${linkLine}`;
+  }
+
+  const trimmedSummary =
+    summary.length > availableForSummary
+      ? `${summary.slice(0, Math.max(availableForSummary - 3, 0)).trimEnd()}...`
+      : summary;
+
+  return `${headline}${trimmedSummary}\n${linkLine}`;
+}
+
 export async function buildTokenTankSmsMessage(
   tweetSummary: string,
   recipient: string
 ): Promise<string> {
-  // Create shortlink to the blog
-  const shortLink = await createShortLink(BLOG_BASE_URL, {
-    context: "token-tank-blog",
-    createdFor: recipient,
-    createdBy: "sms-bot",
-  });
-
-  const link = shortLink || BLOG_BASE_URL;
+  const summaryLine = formatTokenTankSummary(tweetSummary);
+  const link = await buildTokenTankLink(recipient);
+  const headline = "🏦 Token Tank — ";
+  const linkLine = `Read: ${link}`;
 
   // Single newline keeps link inline (no preview), double newline triggers preview
-  return `🏦 Token Tank — ${tweetSummary}\n🔗 ${link}`;
+  return composeSms(headline, summaryLine, linkLine);
 }
 
 /**
