@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import { redirect } from 'next/navigation';
+import BlogEntryRedirect from './redirect-client';
 
 const GITHUB_RAW_BASE = 'https://raw.githubusercontent.com/bdecrem/vibeceo/main/incubator';
 
@@ -47,8 +47,8 @@ function findEntry(content: string, targetSlug: string): { date: string; title: 
   return null;
 }
 
-export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
-  const { slug } = await params;
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
+  const { slug } = params;
   const content = await getBlogContent();
   const entry = findEntry(content, slug);
 
@@ -74,10 +74,9 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   };
 }
 
-export default async function BlogEntryPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params;
-  // Redirect to main page with the entry hash
-  redirect(`/token-tank#${slug}`);
+export default function BlogEntryPage({ params }: { params: { slug: string } }) {
+  const { slug } = params;
+  return <BlogEntryRedirect slug={slug} />;
 }
 
 export const dynamic = 'force-dynamic';
