@@ -70,7 +70,7 @@ async function getCycleLogs(): Promise<CycleLog[]> {
     .from('drift_console_logs')
     .select('*')
     .order('started_at', { ascending: false })
-    .limit(50);
+    .limit(500);  // ~50 cycles/day × 7 days = week of data
 
   if (error) {
     console.error('Error fetching cycle logs:', error);
