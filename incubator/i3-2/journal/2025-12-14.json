@@ -1,0 +1,573 @@
+[
+  {
+    "type": "scan",
+    "portfolio_value": 496.46,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness appears more momentum-driven than reversal setup",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:00:55.880265-05:00",
+    "timestamp_human": "11:00 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold with additional confirmation from testing 20-day MA - dual technical convergence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-14T11:00:56.113435-05:00",
+    "timestamp_human": "11:00 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day decline of 7%+ warrants investigation but RSI-2 at 48.8 suggests move may have further to go",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-14T11:00:56.338617-05:00",
+    "timestamp_human": "11:00 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.63,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness suggests broader crypto pressure - perfect contrarian setup if this is just a flush.",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:03:07.918810-05:00",
+    "timestamp_human": "11:03 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is screaming oversold AND testing 20-day MA - double technical confluence in the king of crypto",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2024"
+      },
+      {
+        "query": "Bitcoin analyst price prediction December 2024"
+      },
+      {
+        "query": "Bitcoin support levels $90000 today"
+      },
+      {
+        "query": "MicroStrategy Bitcoin December 2025"
+      }
+    ],
+    "findings": "Bitcoin defending $90,000 support with RSI-2 at extreme 0.2 - Fear & Greed Index at 23 (Extreme Fear); MicroStrategy bought 10,624 BTC for $962.7M at $90,615 average between Dec 1-7 - their largest purchase since July; Strategy retained Nasdaq 100 spot despite 40% YTD decline, removing institutional selling pressure; ETF flows turned negative for first time since October with $297.75M outflows on Dec 27; Short-term holders in one of 2025's largest pain zones creating potential selling overhang on rallies",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "While RSI-2 at 0.2 represents extreme capitulation even beyond my December 12th and 13th entries, I already have $100 deployed across two active BTC positions capturing this oversold technical extreme. The fundamental thesis remains intact - MicroStrategy's $962.7M purchase at $90,615 validates the support level, Strategy's retention in Nasdaq 100 removes an institutional overhang, and onchain data confirms strong demand around $80,000-$90,000. However, ETF flows have turned negative for the first time since October, and short-term holders remain in one of 2025's largest loss zones creating near-term selling pressure. Rather than adding exposure to the same oversold setup at similar prices, the prudent action is to hold existing positions and let the mean-reversion thesis play out. Adding capital here would simply increase concentration risk without meaningfully improving the risk/reward profile.",
+    "timestamp": "2025-12-14T11:04:02.443932-05:00",
+    "timestamp_human": "11:04 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day drop of -7.15% with RSI-2 at 46.9 suggests selling may be overdone - could follow BTC bounce if crypto reverses",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2025"
+      },
+      {
+        "query": "ETH USD analyst forecast outlook"
+      },
+      {
+        "query": "crypto market sentiment Bitcoin Ethereum today"
+      },
+      {
+        "query": "Ethereum whale accumulation ETF inflows December 2025"
+      }
+    ],
+    "findings": "Whale accumulation of 934,240 ETH ($3.15B) over three weeks with major institutional accumulation continuing; ETF inflows surged to $177M on Dec 9 - highest since October 28, with $250M+ weekly inflows reversing prior outflows; Exchange reserves at 8.6% of total supply - lowest since 2015, creating structural supply scarcity; Fear & Greed Index at 23 (Extreme Fear) indicates oversold sentiment conditions favorable for mean-reversion; Fusaka upgrade in December 2025 expected to slash L2 fees 95% and boost scalability - major near-term catalyst; Technical support holding at $3,100 with analyst targets of $3,350-$3,450 representing 7-10% near-term upside",
+    "decision": "hold",
+    "confidence": 78,
+    "thesis": "My December 12th ETH position thesis remains firmly intact: whale accumulation of 934,240 ETH ($3.15B over three weeks), ETF inflows of $177M (highest since October), and exchange reserves at 8.6% (lowest since 2015) create structural supply-demand imbalance. The Fusaka upgrade launching December 2025 provides a catalyst, while Fear & Greed at 23 (Extreme Fear) suggests capitulation sentiment. Technical support at $3,100 has held with analyst targets of $3,350-$3,450 near-term. However, with 0 PDT trades remaining and existing long exposure, adding risk is inadvisable despite continued bullish fundamentals. The original mean-reversion thesis at RSI-2 of 0.0 was more compelling than current 46.9 RSI-2 reading - I should let the existing position work rather than chase with additional capital.",
+    "timestamp": "2025-12-14T11:04:55.530487-05:00",
+    "timestamp_human": "11:04 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.53,
+    "position_count": 7,
+    "findings": "Crypto showing classic oversold conditions with BTC at extreme RSI-2 levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:11:12.813898-05:00",
+    "timestamp_human": "11:11 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold, confluent with 20-day MA test - double trigger setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-14T11:12:10.854800-05:00",
+    "timestamp_human": "11:12 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "Down 7% in 5 days but RSI-2 at 46.8 suggests more downside possible - need to check if BTC bounce helps",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news today December 2024"
+      },
+      {
+        "query": "Bitcoin BTC price bounce recovery December 2024"
+      },
+      {
+        "query": "Ethereum ETF flows institutional December 2024"
+      },
+      {
+        "query": "Ethereum whale accumulation price outlook December 2025"
+      }
+    ],
+    "findings": "ETH currently trading in $3,050-$3,130 range with support at $3,000 level being tested; Whale accumulation at record levels: 3.24M ETH in November, 1.6M+ ETH in December - highest monthly inflows of 2025; ETH ETF inflows remain robust: $273.7M on December 12 with BlackRock's ETHA receiving $202.3M; 69,300 ETH net outflow from exchanges on December 13 signals supply absorption; CryptoQuant shows ETH approaching whale realized price - historically triggers accumulation waves; BTC attempting recovery above $90K but structure remains fragile; $120M in ETH liquidations over 24 hours highlights volatility risk at $3,000 support",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "The original December 12 BUY thesis at RSI-2 = 0.0 was a high-conviction capitulation entry that captured the extreme oversold condition. With RSI-2 now at 46.8 (neutral territory), the mean-reversion bounce has partially played out - ETH has recovered from sub-$3,000 lows to the $3,050-$3,130 range. The fundamental thesis remains intact: massive whale accumulation continues with 1.6M+ ETH added in December, ETF inflows remain strong at $273.7M on December 12, and exchange outflows of 69,300 ETH signal supply being absorbed. CryptoQuant data shows ETH approaching whale realized price - a rare event that has triggered accumulation waves 4 times in 5 years. However, RSI-2 at 46.8 suggests the immediate bounce thesis is exhausted and a retest of support is possible before continuation higher. With 0 PDT trades remaining and neutral technicals, the prudent action is to HOLD the existing position and allow the trade to develop. Key risk: $3,100 support failure could target $2,400; upside target remains $3,600+ on breakout confirmation.",
+    "timestamp": "2025-12-14T11:13:00.163250-05:00",
+    "timestamp_human": "11:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.69,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness may be news-driven - crypto presenting mixed signals",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:28:05.762228-05:00",
+    "timestamp_human": "11:28 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold with confluence at 20-day MA test - textbook mean reversion setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-14T11:28:57.611683-05:00",
+    "timestamp_human": "11:28 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day drop of -6.56% warrants investigation - could be sector rotation or fundamental shift affecting second-largest crypto",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2025"
+      },
+      {
+        "query": "Ethereum analyst forecast outlook 2025"
+      },
+      {
+        "query": "crypto market selloff December 2025"
+      },
+      {
+        "query": "Ethereum ETF flows December 2025"
+      },
+      {
+        "query": "Ethereum whale accumulation December 2025"
+      }
+    ],
+    "findings": "ETF flows reversed from $1.4B November outflows to positive: $140.2M inflows on Dec 3, $57.6M on Dec 10; Whales accumulated 934,240 ETH in three weeks; accumulation addresses added 3.24M ETH in November (2025 high); Fusaka upgrade completed Dec 3 with 8x blob capacity increase, L2 fees now sub-$0.01; Fear & Greed Index at 23 (Extreme Fear) - historically marks bottoming conditions; $3,000 support level holding despite $120M+ in liquidations; whale cost basis providing floor",
+    "decision": "hold",
+    "confidence": 84,
+    "thesis": "My December 12th entry thesis remains intact and is reinforced by new data. The 5-day 6.56% pullback represents continued market-wide crypto volatility following the November selloff that saw $1.4B in ETF outflows, not a fundamental breakdown specific to ETH. Key supportive developments since my entry include: (1) ETF flows reversing with $140.2M single-day inflows on December 3rd and $57.6M on December 10th, (2) Unprecedented whale accumulation of 934,240 ETH in three weeks and 3.24 million ETH in November alone - the highest monthly inflow of 2025, (3) Fusaka upgrade completed on December 3rd delivering 8x blob capacity and sub-$0.01 L2 fees, (4) Critical $3,000 support holding despite intense liquidation pressure. The Fear & Greed Index at 23 (Extreme Fear) and RSI in neutral territory at 48 suggest capitulation has largely played out. Analyst consensus points to $3,400-$3,980 targets by late December. The convergence of institutional ETF buying, massive whale accumulation at cost-basis levels, and completed network upgrade against 'Extreme Fear' sentiment creates a high-probability mean-reversion setup. Adding to position would be counterproductive given PDT constraints; holding is the optimal strategy as the original thesis plays out.",
+    "timestamp": "2025-12-14T11:29:48.793872-05:00",
+    "timestamp_human": "11:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.69,
+    "position_count": 7,
+    "findings": "BTC showing textbook oversold conditions while ETH's weakness suggests broader crypto stress - contrarian setup emerging",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:30:18.807688-05:00",
+    "timestamp_human": "11:30 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold AND testing 20-day MA support - double confluence for mean reversion",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2024"
+      },
+      {
+        "query": "Bitcoin analyst forecast price target 2024"
+      },
+      {
+        "query": "Bitcoin crypto market Fed rate decision December 2025"
+      },
+      {
+        "query": "Bitcoin whale accumulation on-chain December 2025"
+      }
+    ],
+    "findings": "Bitcoin defending $90,000 support with price at ~$89,600, down about 1% in 24 hours; Fed cut rates 25bps to 3.50%-3.75% on Dec 10, third cut of 2025, but three FOMC members dissented showing uncertainty; Massive whale accumulation: 75,000 BTC bought Dec 1-10, with whales absorbing 240% of yearly issuance; Bitcoin ETF flows mixed - $49M inflows on Dec 12 but $297M outflows week of Dec 27; JPMorgan projects $170K target within a year; analysts see $125K-$200K for 2025; Fear & Greed Index at 23 (Extreme Fear) - contrarian bullish signal; Strong support zone at $89,400-$90,000 with consistent buyer interest",
+    "decision": "pass",
+    "confidence": 65,
+    "thesis": "While the RSI-2 at 0.2 represents an even more extreme oversold condition than my December 12th and 13th entries (18.5 and 9.3), I already hold $100 in BTC/USD positions from those dates. The fundamental thesis remains intact: massive whale accumulation of 75,000+ BTC in early December, Fed's 25bps rate cut providing accommodative backdrop, and price defending critical $90,000 support with strong institutional buying between $88,000-$90,000. However, adding more capital creates concentration risk given my existing exposure, and with 0 day trades remaining this week, I cannot manage the position tactically. The extreme fear reading (23 on Fear & Greed Index) and muted price response to the Fed cut suggest the market may need more time to find footing. My existing positions remain well-positioned for the anticipated mean-reversion rally toward $96,000-$100,000, and the best course is to hold current exposure rather than chase further into an already-established position.",
+    "timestamp": "2025-12-14T11:31:13.715029-05:00",
+    "timestamp_human": "11:31 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "Down -6.56% in 5 days but RSI-2 at 67 suggests selling may be exhausting - potential secondary bounce play",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2025"
+      },
+      {
+        "query": "ETH crypto analyst sentiment outlook"
+      },
+      {
+        "query": "crypto market Bitcoin Ethereum today"
+      },
+      {
+        "query": "Ethereum whale accumulation ETF flows December 2025"
+      }
+    ],
+    "findings": "ETF flows reversed: $143.35M December inflows after $1.42B November outflows; Whale clusters hold 2.8M ETH near $3,150 and 3.6M near $2,800 providing strong support; Today's $19.41M ETF outflows and 7,621 ETH whale sale absorbed without price breakdown - buyers meeting supply; Fusaka upgrade completed Dec 3 with 8x blob capacity increase, L2 fees under $0.01; Analyst targets: Citigroup $4,300, Standard Chartered $7,500, consensus ~$3,980 by December end",
+    "decision": "buy",
+    "confidence": 75,
+    "thesis": "The RSI-2 at 67 indicates selling pressure is exhausting after the -6.56% 5-day decline, creating a secondary bounce setup supported by robust demand absorption at Ethereum's realized price (~$3,129). Despite today's $19.41M ETF outflows and 7,621 ETH whale sale, price held firm rather than cascading - a bullish signal that buyers are meeting supply. The December ETF flow reversal ($143.35M inflows after November's $1.42B outflows), $2.4B in whale accumulation near current levels (800,000 ETH by 10K-100K wallets), and completed Fusaka upgrade fundamentals provide structural support. Analyst targets cluster around $3,980-$4,300 by year-end. While my December 12th thesis remains intact, I'm adding modestly given the improved absorption dynamics and RSI indicating technical exhaustion of sellers. Key risk is macro weakness in broader crypto markets.",
+    "timestamp": "2025-12-14T11:32:01.295337-05:00",
+    "timestamp_human": "11:32 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.85,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness appears momentum-driven rather than technical",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:41:41.815631-05:00",
+    "timestamp_human": "11:41 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extreme oversold + testing 20-day MA creates confluence setup",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2024"
+      },
+      {
+        "query": "Bitcoin analyst forecast price target 2024"
+      },
+      {
+        "query": "Bitcoin whale accumulation December 2025"
+      }
+    ],
+    "findings": "Bitcoin whales absorbing 240% of yearly issuance - fastest accumulation pace in history with 47,584 BTC net-purchased in December; Glassnode accumulation trend score approaching 1, indicating intense buying pressure from major investors; Strong support established at $89,400-$90,000 with Active Realized Price providing floor; ETF outflows remain corrective (<0.35% of AUM) not panic-driven, with BlackRock's IBIT maintaining structural dominance; Fear & Greed Index at 23 (Extreme Fear) - contrarian bullish signal when combined with whale accumulation",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While the RSI-2 at 0.2 represents an extremely oversold condition with compelling whale accumulation data (47,584 BTC net-purchased in December, absorbing 240% of yearly issuance according to Santiment/Glassnode), I already hold two BTC positions entered on December 12-13 with substantially identical thesis around $90K support and mean-reversion. The on-chain fundamentals have actually strengthened since my entries: whale accumulation trend score approaching 1, exchange balances declining at unprecedented rates, and institutional buyers like BlackRock's IBIT maintaining dominant flows despite corrective outflows. However, adding to an existing position based on the same thesis without new catalytic information would represent position concentration rather than disciplined trading. JPMorgan's $170K target and Bernstein's $200K forecast provide bullish fundamental backdrop, but with $100 already allocated to BTC and 0 day trades remaining this week, prudent risk management suggests holding current exposure and monitoring for either thesis validation (bounce toward $96-100K) or invalidation (breakdown below $89.4K Active Realized Price).",
+    "timestamp": "2025-12-14T11:42:33.411862-05:00",
+    "timestamp_human": "11:42 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day -6.8% decline with RSI-2 at 56.8 suggests momentum weakness, need to verify if catching falling knife",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2024"
+      },
+      {
+        "query": "ETH crypto analyst forecast December 2024"
+      },
+      {
+        "query": "Ethereum ETF flows institutional December 2024"
+      },
+      {
+        "query": "ETH price today December 14 2024"
+      }
+    ],
+    "findings": "ETH trading at ~$3,091, down 6.63% in December after November's 35.39% surge; Ethereum ETF inflows of $273.7M on December 12, with BlackRock ETHA at $3.52B cumulative; Fear & Greed Index at 21 (Extreme Fear) - contrarian bullish signal; Bitget Research projects $3,000-$4,500 range for December 2024; Large holder netflow decreased suggesting reduced whale accumulation short-term",
+    "decision": "hold",
+    "confidence": 75,
+    "thesis": "The 5-day 6.8% decline with RSI-2 at 56.8 represents normal consolidation following my December 12 entry at RSI-2=0.0 capitulation, not a thesis invalidation. Strong Ethereum ETF inflows of $273.7M on December 12 and BlackRock's cumulative $3.52B demonstrate institutional conviction remains intact despite short-term volatility. Current price of ~$3,091 sits within Bitget Research's $3,000-$4,500 December range, while the Fear & Greed Index at 21 (Extreme Fear) suggests contrarian opportunity rather than structural breakdown. The Dencun upgrade fundamentals, SEC-approved spot ETFs enabling institutional access, and ongoing whale accumulation patterns support the original mean-reversion thesis. With 0 PDT day trades remaining, adding to position is inadvisable, but the existing position should be maintained as the original thesis premised on supply-demand imbalance and institutional flows remains valid.",
+    "timestamp": "2025-12-14T11:43:19.464836-05:00",
+    "timestamp_human": "11:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.64,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH's decline lacks technical confirmation - focus on BTC's mean reversion setup",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:45:30.576027-05:00",
+    "timestamp_human": "11:45 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold AND testing 20-day MA - dual technical trigger in leading crypto",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 2024"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2024"
+      },
+      {
+        "query": "Bitcoin analyst forecast price target 2024"
+      },
+      {
+        "query": "Bitcoin crypto market selloff December 14 2025"
+      },
+      {
+        "query": "Bitcoin whale accumulation December 2025"
+      }
+    ],
+    "findings": "Bitcoin whales accumulated 75,000 BTC between Dec 1-10, absorbing 240% of yearly issuance - fastest accumulation pace in history; Fear & Greed Index at 23 (Extreme Fear) represents contrarian bullish signal; Dec 12 ETF inflows of $49.16M with BlackRock IBIT sole positive fund shows institutional resilience; Strong structural support at $80,000-$82,000 confirmed by multiple on-chain cost basis metrics; Analysts view current pullback as healthy reset targeting $125K-$200K for 2025",
+    "decision": "buy",
+    "confidence": 75,
+    "thesis": "The RSI-2 at 0.2 represents extreme capitulation at the 20-day MA test, creating a high-conviction mean-reversion opportunity supported by historic whale accumulation. On-chain data shows whales absorbed 75,000 BTC in early December after a 113,070 BTC distribution phase, representing 240% of yearly issuance - the fastest accumulation pace in Bitcoin's history. The Extreme Fear reading of 23 aligns with prior contrarian buying opportunities. Structural support at $80,000-$82,000 is confirmed by multiple cost basis metrics including ETF cost basis, True Market Mean, and 2024 yearly average. While Fed hawkishness and December ETF outflows create near-term headwinds, institutional positioning remains structurally bullish with analysts targeting $125K-$200K for 2025. This entry adds to existing positions at more extreme technical levels with whale behavior providing conviction that smart money is accumulating at current prices.",
+    "timestamp": "2025-12-14T11:46:20.787400-05:00",
+    "timestamp_human": "11:46 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day decline of -6.97% but RSI-2 at 51.8 suggests potential for further downside - needs confirmation before entry",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2024"
+      },
+      {
+        "query": "ETH USD analyst forecast outlook"
+      },
+      {
+        "query": "crypto market sentiment today"
+      },
+      {
+        "query": "ETH ethereum price drop December 2024 today"
+      },
+      {
+        "query": "Ethereum ETF flows December 2024"
+      }
+    ],
+    "findings": "RSI-2 at 51.8 is neutral - not oversold enough for mean-reversion entry; Crypto Fear & Greed Index at 23 (Extreme Fear) - contrarian bullish signal; ETH ETFs saw $273.7M inflows on Dec 12; record $2.1B December monthly inflows; Price in consolidation range $3,050-$3,129 with $3,000 psychological support holding; Technical analysis shows bearish alignment with price below 100-EMA and 200-EMA",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "RSI-2 at 51.8 is neutral territory, not the oversold extreme needed for my mean-reversion strategy. While macro factors remain bullish - Ethereum ETFs recorded $273.7M inflows on Dec 12 with record $2.1B December inflows, crypto Fear & Greed at extreme fear (23), and institutional flows positive - the technical setup doesn't warrant new entry. My existing Dec 12 position at RSI-2 of 0.0 remains valid as that extreme capitulation thesis hasn't invalidated. Price currently consolidating between $3,050 support and $3,129 resistance with buyers defending $3,000 psychological level. Need RSI-2 to return to sub-20 oversold conditions before adding exposure, especially with 0 PDT remaining this week limiting my ability to exit quickly if wrong.",
+    "timestamp": "2025-12-14T11:47:09.842094-05:00",
+    "timestamp_human": "11:47 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.54,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH lags - crypto sector stress testing key support levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T11:57:21.616931-05:00",
+    "timestamp_human": "11:57 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extreme oversold + testing 20MA - double confluence for potential bounce",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 14 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025"
+      },
+      {
+        "query": "Bitcoin analyst forecast outlook December 2025"
+      },
+      {
+        "query": "Bitcoin $90000 support level breakdown December 2025"
+      }
+    ],
+    "findings": "BTC trading at ~$89,000, down 29% from October ATH of $126,210; BlackRock IBIT saw $2.7B+ outflows over five weeks - longest streak since launch; On-chain data shows whales still distributing, not typical bottom behavior; Strong structural support at $80K-$83.8K per Glassnode cost basis metrics; Fear & Greed Index at 23 (Extreme Fear) - contrarian bullish signal; Standard Chartered cut year-end target from $200K to $100K; Daily ETF inflows just $50M vs $500M-$1B in prior accumulation phases",
+    "decision": "pass",
+    "confidence": 62,
+    "thesis": "While RSI-2 at 0.1 with 20MA test represents extreme oversold conditions and $90,000 is historically significant support, I already hold $100 in BTC/USD from Dec 12-13 entries built on this same mean-reversion thesis. The on-chain data is concerning - whales continue sending coins to exchanges and long-term holders remain in distribution mode, which typically doesn't precede durable bottoms. ETF flows show $2.7B+ in outflows from BlackRock's IBIT over five weeks, with daily inflows barely reaching $50M vs. historical $500M-$1B levels during accumulation phases. With 0 PDT day trades remaining, adding to an already sizeable crypto position without new bullish catalysts increases concentration risk. If BTC breaks below $89,400, the next major support sits at $83,000-$85,000 per Glassnode's cost basis metrics, which would offer better risk/reward. The extreme fear reading (Fear & Greed at 23) and technical oversold conditions suggest holding my existing position rather than adding, but the distribution phase on-chain and weak institutional flows prevent increasing exposure here.",
+    "timestamp": "2025-12-14T11:58:17.743138-05:00",
+    "timestamp_human": "11:58 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day -6.85% decline with RSI-2 at 55 suggests more downside momentum vs BTC's washout - worth monitoring for continuation or reversal",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-14T11:59:13.907165-05:00",
+    "timestamp_human": "11:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.75,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH's decline lacks confirmation - crypto weakness worth investigating",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T12:02:16.305074-05:00",
+    "timestamp_human": "12:02 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold AND testing key 20-day MA support - double technical setup",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 14 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025"
+      },
+      {
+        "query": "Bitcoin analyst outlook forecast December 2025"
+      },
+      {
+        "query": "Bitcoin on-chain support $80000 December 2025"
+      }
+    ],
+    "findings": "BTC trading at ~$89,000, down 1% in 24h, ~30% off October ATH of $126K; On-chain support at $80K-$84K confirmed by convergence of True Market Mean, ETF cost basis, and 2024 yearly cost basis; BlackRock IBIT saw $2.7B outflows over 5 weeks, but Dec 12 showed $49M net inflows stabilizing; Fear & Greed Index at 23 (Extreme Fear) - classic contrarian signal; Standard Chartered cut year-end target to $100K (from $200K), still implies ~12% upside; Whales still distributing and no clear reversal signals yet per on-chain data",
+    "decision": "buy",
+    "confidence": 72,
+    "thesis": "The RSI-2 at 0.2 represents extreme capitulation beyond my previous entries (9.3 and 18.5), occurring at the critical 20-day MA support with multi-layered on-chain support confirmed at $80K-$84K (True Market Mean, ETF cost basis, and 2024 yearly cost basis convergence according to Glassnode). While ETF flows remain mixed with $2.7B outflows from IBIT over five weeks, recent daily flows show stabilization with $49M net inflows on December 12. The Fear & Greed Index at 23 (Extreme Fear) and bearish short-term technicals create classic contrarian setup. Standard Chartered's revised $100K year-end target still implies 12% upside from current $89K levels. Analysts view pullback as healthy reset within broader bullish cycle. However, reducing position size and confidence due to: (1) whales still distributing per on-chain metrics, (2) no clear reversal signals yet per technical analysis, (3) PDT constraint eliminating exit flexibility, and (4) already holding $100 BTC exposure. This add-on position reflects continued conviction in mean-reversion thesis at even more extreme oversold levels while acknowledging elevated risk.",
+    "timestamp": "2025-12-14T12:03:11.119336-05:00",
+    "timestamp_human": "12:03 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day decline of -6.51% but RSI-2 at 69.3 suggests more downside possible - need to understand if this follows BTC weakness or independent catalyst",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2024"
+      },
+      {
+        "query": "ETH USD analysis today"
+      },
+      {
+        "query": "Bitcoin crypto market weakness December 2024"
+      },
+      {
+        "query": "Ethereum ETF flows December 2024"
+      },
+      {
+        "query": "Fed rate decision crypto December 2024"
+      }
+    ],
+    "findings": "RSI-2 at 69.3 is NOT oversold - significantly different from my Dec 12 entry at RSI-2 of 0.0; Record ETH ETF inflows of $2.1B in December with BlackRock's ETHA showing $3.52B cumulative inflows; ETH down 4.02% in 24 hours, following broader BTC weakness of 30%+ from ATH; Fed cut 25bps in December but signaled fewer future cuts, creating headwinds for risk assets; Technical analysis across multiple platforms showing sell signals for ETH; 0 PDT trades available creates unacceptable risk with no ability to exit if position moves against me",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While my December 12 ETH buy at RSI-2 of 0.0 captured extreme oversold conditions, the current RSI-2 at 69.3 represents a completely different setup - this is neutral-to-elevated territory suggesting the mean-reversion bounce has already begun playing out. With 0 day trades remaining, I cannot risk entering a position that I cannot exit if the Fed-induced volatility continues to pressure risk assets. The 5-day -6.51% decline follows broader BTC weakness (down 30% from highs) rather than an ETH-specific catalyst, and technical indicators across TradingView and TipRanks show sell signals. Despite record ETF inflows ($2.1B in December, 220K+ ETH acquired) providing structural demand, the combination of hawkish Fed forward guidance, continued QT, and my PDT constraints make this a pass. The risk/reward isn't favorable for new entry when I'm already exposed from a superior entry point two days ago.",
+    "timestamp": "2025-12-14T12:04:03.898669-05:00",
+    "timestamp_human": "12:04 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.8,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness suggests broader crypto stress - classic mean reversion setup vs potential trend continuation dilemma",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T12:06:21.510809-05:00",
+    "timestamp_human": "12:06 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.91,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH weakness may be creating broader crypto opportunity",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T12:09:16.500955-05:00",
+    "timestamp_human": "12:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold + testing 20-day MA creates double confluence for potential bounce",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 14 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025"
+      },
+      {
+        "query": "Bitcoin analyst price targets forecast"
+      },
+      {
+        "query": "Federal Reserve rate cuts January 2026 outlook"
+      }
+    ],
+    "findings": "BTC broke below $90K support, now trading around $89,000 with analysts citing potential correction to $80K-$85K zone; BlackRock's IBIT ETF experienced $2.7B in outflows over five weeks - heaviest redemption cycle since launch; Strong on-chain support at $80K-$85K where multiple cost basis metrics converge (average cost basis $83,844); Fed delivered hawkish cut, signaling January pause and only one cut in 2026 - creates headwinds for risk assets; Standard Chartered cut year-end BTC target from $200K to $100K; Bernstein maintains $150K for 2026; Fear & Greed Index at 23 (Extreme Fear) with bearish short-term technical sentiment",
+    "decision": "hold",
+    "confidence": 52,
+    "thesis": "Holding existing small BTC position with significantly reduced conviction despite RSI-2 at extreme 0.2 oversold levels. The original mean-reversion thesis is under pressure as $90,000 support has broken and ETF flows remain weak with BlackRock's IBIT experiencing $2.7B in outflows over five weeks. However, strong on-chain support exists at $80,000-$85,000 where multiple cost basis metrics converge, and analysts largely view the pullback as a healthy reset within a broader bullish cycle. The Fed's hawkish cut and January pause creates near-term headwinds, but long-term targets remain bullish ($100K Standard Chartered, $150K Bernstein for 2026). With extreme fear readings (Fear & Greed at 23) and my position already small, selling now locks in losses during capitulation. Will hold but acknowledge thesis is weaker than original entry - need to see reclaim of $94,000+ to restore conviction. Position sizing is appropriate for the elevated uncertainty.",
+    "timestamp": "2025-12-14T12:10:10.083975-05:00",
+    "timestamp_human": "12:10 PM ET"
+  }
+]

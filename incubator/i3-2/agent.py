@@ -27,6 +27,7 @@ from config import (
     NEWS_MONITOR_LIST,
     MAX_POSITIONS,
     MAX_PORTFOLIO_VALUE,
+    MIN_POSITION_SIZE,
     MIN_CONFIDENCE_TO_TRADE,
     SCAN_INTERVAL_MINUTES,
     RESEARCH_MODEL,
@@ -215,9 +216,29 @@ class DriftAgent:
 
         cycle_logger.add_entry(f"Found {len(triggers)} triggers to research")
 
+        # Get actual cash and positions from Alpaca (use real balance, not calculated)
+        try:
+            account = self.alpaca.get_account()
+            available_cash = account["cash"]
+            current_positions = self.alpaca.get_positions()
+            held_symbols = {p["symbol"] for p in current_positions}
+        except Exception:
+            available_cash = 0
+            held_symbols = set()
+
         # Step 3: Research each trigger
         actions = []
         for trigger in triggers:
+            # Skip BUY research if we don't have enough cash
+            # (SELL and HOLD triggers for existing positions should still be researched)
+            symbol = trigger.get("symbol", "")
+            is_existing_position = symbol in held_symbols or symbol.replace("/", "") in held_symbols
+
+            if not is_existing_position and available_cash < MIN_POSITION_SIZE:
+                log(f"[Drift] Skipping {trigger.get('symbol')} research: insufficient cash (${available_cash:.2f} < ${MIN_POSITION_SIZE})")
+                cycle_logger.add_entry(f"Skipped {trigger.get('symbol')}: insufficient cash for new position")
+                continue
+
             research_result = self._research(trigger, cycle_logger=cycle_logger)
 
             if research_result.get("decision") in ["buy", "sell"]:
@@ -483,6 +504,32 @@ RECENT DECISIONS (your memory):
 invalidates your previous thesis or if you're just reacting to noise.
 """
 
+        # Check portfolio allocation - heightened scrutiny when over-invested
+        over_invested_section = ""
+        try:
+            account = self.alpaca.get_account()
+            cash = account["cash"]
+            portfolio_value = account["portfolio_value"]
+            cash_pct = (cash / portfolio_value * 100) if portfolio_value > 0 else 0
+
+            if cash_pct < 10:  # Less than 10% cash = over-invested
+                if VERBOSE:
+                    log(f"[Drift] ⚠️ OVER-INVESTED: Cash ${cash:.2f} ({cash_pct:.1f}%) - heightened scrutiny active")
+                over_invested_section = f"""
+⚠️ OVER-INVESTED ALERT: Cash is only ${cash:.2f} ({cash_pct:.1f}% of portfolio).
+Target is 15% cash reserve. You cannot buy new positions.
+
+For EXISTING positions: Apply heightened scrutiny. Ask yourself:
+- Is this thesis still valid, or am I holding out of inertia?
+- Has the original catalyst played out?
+- Would I buy this position today at current prices?
+- Is there a better use of this capital if freed up?
+
+Be more willing to SELL weak positions. "No edge, no trade" applies to holds too.
+"""
+        except Exception:
+            pass  # Can't get account info, skip this section
+
         # Build research prompt
         research_prompt = f"""You are Drift, a curious skeptic swing trader researching {symbol}.
 
@@ -492,7 +539,7 @@ TRIGGER: {reason}
 {json.dumps(position, indent=2) if position else "No position - considering entry"}
 
 PDT STATUS: {self.pdt.get_day_trades_remaining()} day trades remaining this week
-{memory_section}
+{over_invested_section}{memory_section}
 YOUR TASK:
 1. Search for recent news about {symbol}
 2. Search for analyst sentiment/ratings
@@ -610,17 +657,25 @@ Respond with your research process, then final JSON:
                 log(f"[Drift] SECTOR LIMIT: {symbol} blocked - already have {sector_count} {target_sector} positions")
             return {"status": "skipped", "reason": f"Sector '{target_sector}' at max ({sector_limit} positions)"}
 
-        # Calculate position size based on confidence and budget remaining
+        # Get ACTUAL cash from Alpaca (not calculated from positions)
+        try:
+            account = self.alpaca.get_account()
+            available_cash = account["cash"]
+        except Exception as e:
+            log(f"[Drift] ERROR getting account: {e}")
+            return {"status": "failed", "reason": "Could not get account balance"}
+
+        # Hard check: must have minimum position size available
+        if available_cash < MIN_POSITION_SIZE:
+            if VERBOSE:
+                log(f"[Drift] Insufficient cash: ${available_cash:.2f} < ${MIN_POSITION_SIZE} minimum")
+            return {"status": "skipped", "reason": f"Insufficient cash (${available_cash:.2f} < ${MIN_POSITION_SIZE})"}
+
         current_invested = sum(p["market_value"] for p in positions)
-        budget_remaining = MAX_PORTFOLIO_VALUE - current_invested
-
-        if budget_remaining <= 0:
-            return {"status": "skipped", "reason": f"Budget exhausted (${MAX_PORTFOLIO_VALUE} deployed)"}
-
         if VERBOSE:
-            log(f"[Drift] Budget: ${MAX_PORTFOLIO_VALUE} | Invested: ${current_invested:.2f} | Remaining: ${budget_remaining:.2f}")
+            log(f"[Drift] Budget: ${MAX_PORTFOLIO_VALUE} | Invested: ${current_invested:.2f} | Cash: ${available_cash:.2f}")
 
-        size = get_position_size(confidence, budget_remaining)
+        size = get_position_size(confidence, available_cash)
 
         if size <= 0:
             return {"status": "skipped", "reason": "Insufficient funds or confidence"}

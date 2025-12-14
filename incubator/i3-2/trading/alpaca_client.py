@@ -139,20 +139,31 @@ class AlpacaClient:
 
     def get_position(self, symbol: str) -> Optional[dict]:
         """Get position for a specific symbol."""
-        try:
-            pos = self._trading_client.get_open_position(symbol)
-            return {
-                "symbol": pos.symbol,
-                "qty": float(pos.qty),
-                "market_value": float(pos.market_value),
-                "cost_basis": float(pos.cost_basis),
-                "unrealized_pl": float(pos.unrealized_pl),
-                "unrealized_plpc": float(pos.unrealized_plpc) * 100,
-                "current_price": float(pos.current_price),
-                "avg_entry_price": float(pos.avg_entry_price),
-            }
-        except Exception:
-            return None  # No position
+        # Normalize symbol - Alpaca stores crypto as "BTCUSD" but we use "BTC/USD"
+        symbols_to_try = [symbol]
+        if self._is_crypto(symbol):
+            # Try both formats
+            symbols_to_try = [
+                symbol.replace("/", ""),  # BTC/USD -> BTCUSD
+                symbol if "/" in symbol else f"{symbol[:3]}/{symbol[3:]}",  # BTCUSD -> BTC/USD
+            ]
+
+        for sym in symbols_to_try:
+            try:
+                pos = self._trading_client.get_open_position(sym)
+                return {
+                    "symbol": pos.symbol,
+                    "qty": float(pos.qty),
+                    "market_value": float(pos.market_value),
+                    "cost_basis": float(pos.cost_basis),
+                    "unrealized_pl": float(pos.unrealized_pl),
+                    "unrealized_plpc": float(pos.unrealized_plpc) * 100,
+                    "current_price": float(pos.current_price),
+                    "avg_entry_price": float(pos.avg_entry_price),
+                }
+            except Exception:
+                continue
+        return None  # No position
 
     def buy(self, symbol: str, notional: float, reason: str = "") -> Optional[dict]:
         """
@@ -166,6 +177,9 @@ class AlpacaClient:
         Returns:
             Order dict if successful, None if failed
         """
+        # Alpaca requires notional to have max 2 decimal places
+        notional = round(notional, 2)
+
         try:
             from alpaca.trading.requests import MarketOrderRequest
             from alpaca.trading.enums import OrderSide, TimeInForce

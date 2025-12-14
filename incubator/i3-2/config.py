@@ -142,7 +142,7 @@ ALPACA_BASE_URL = "https://api.alpaca.markets"
 
 # ============ ANTHROPIC (for agentic research) ============
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
-RESEARCH_MODEL = "claude-opus-4-5-20250514"  # Model for research/decisions - Opus for better judgment
+RESEARCH_MODEL = "claude-opus-4-5-20251101"  # Model for research/decisions - Opus for better judgment
 SCAN_MODEL = "claude-sonnet-4-20250514"  # Model for light scans (cheaper, just filtering)
 
 # ============ PATHS ============

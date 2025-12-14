@@ -4,6 +4,74 @@
 
 ---
 
+## 2025-12-14: Bug Fixes + Heightened Scrutiny Mode
+
+**What happened:** Fixed several bugs causing failed orders and wasted API calls. Added "over-invested" detection with heightened scrutiny in research prompts.
+
+### Bugs Fixed
+
+**1. Wrong Opus model ID**
+- Was: `claude-opus-4-5-20250514` (May - doesn't exist)
+- Fixed: `claude-opus-4-5-20251101` (November - correct)
+- All research was failing with 404 errors
+
+**2. Symbol format mismatch for crypto**
+- Alpaca stores positions as `BTCUSD`, but we query `BTC/USD`
+- `get_position("BTC/USD")` returned None even when holding BTC
+- Agent tried to buy BTC again, order rejected for insufficient funds
+- Fixed: `get_position()` now tries both formats
+
+**3. Using calculated budget instead of actual cash**
+- Was: `budget_remaining = MAX_PORTFOLIO_VALUE - invested`
+- This showed $16.69 available when Alpaca only had $13.44
+- Fixed: Now fetches actual cash from `alpaca.get_account()`
+
+**4. Researching buys when cash is insufficient**
+- Agent was spending API calls researching BUY opportunities with only $13 cash
+- Fixed: Skip new position research if `cash < MIN_POSITION_SIZE ($25)`
+
+**5. Missing supabase in requirements.txt**
+- Had to reinstall manually every session because it wasn't in requirements.txt
+- Fixed: Added `supabase>=2.0.0` to requirements.txt
+
+**6. Notional value decimal places**
+- Alpaca error: "notional value must be limited to 2 decimal places"
+- Fixed: `round(notional, 2)` before submitting order
+
+### New Feature: Heightened Scrutiny Mode
+
+When cash drops below 10% of portfolio (target is 15%), research prompts now include:
+
+```
+⚠️ OVER-INVESTED ALERT: Cash is only $13.44 (2.7% of portfolio).
+
+For EXISTING positions: Apply heightened scrutiny. Ask yourself:
+- Is this thesis still valid, or am I holding out of inertia?
+- Has the original catalyst played out?
+- Would I buy this position today at current prices?
+- Is there a better use of this capital if freed up?
+
+Be more willing to SELL weak positions. "No edge, no trade" applies to holds too.
+```
+
+**Philosophy:** No mechanical rebalancing. Being over-invested isn't a problem to FIX by selling — it's a STATE that should make me more critical when reviewing positions. If all 7 positions have valid theses, I hold all 7. Exit decisions should come from broken thesis, not allocation math.
+
+### Files Modified
+
+- `config.py` — Fixed Opus model ID
+- `requirements.txt` — Added supabase dependency
+- `trading/alpaca_client.py` — Symbol normalization in `get_position()`, notional rounding in `buy()`
+- `agent.py` — Actual cash checks, pre-research cash validation, heightened scrutiny prompt
+
+### Lessons
+
+1. Model IDs have release dates, not expiration dates. `20251101` = November 1, 2025.
+2. Alpaca uses different symbol formats in different contexts (orders vs positions).
+3. Never trust calculated values when the API can give you the real number.
+4. Dependencies not in requirements.txt will vanish when venv is recreated.
+
+---
+
 ## 2025-12-13: Supabase Logging + Live Trading Log Page
 
 **What happened:** Built persistent logging to Supabase and a new public trading log page that pulls directly from the database.

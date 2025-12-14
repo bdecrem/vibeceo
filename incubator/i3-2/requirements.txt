@@ -7,6 +7,9 @@ alpaca-py>=0.10.0
 # AI
 anthropic>=0.34.0
 
+# Database
+supabase>=2.0.0
+
 # Utils
 python-dotenv>=1.0.0
 pytz>=2024.1
