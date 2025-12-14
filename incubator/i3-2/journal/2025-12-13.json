@@ -10287,5 +10287,782 @@
     "thesis": "",
     "timestamp": "2025-12-13T16:26:01.229557-05:00",
     "timestamp_human": "04:26 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.29,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but need to verify if it's capitulation or dead cat bounce territory",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T16:41:07.476239-05:00",
+    "timestamp_human": "04:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold + testing 20MA - could be capitulation bottom but need to check what's driving the selloff",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T16:41:07.794591-05:00",
+    "timestamp_human": "04:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 10.7 oversold but less extreme than BTC - if BTC bounces, ETH likely follows with better risk/reward",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T16:41:08.050066-05:00",
+    "timestamp_human": "04:41 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.29,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at historic RSI-2 low and testing key MA support",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T16:56:14.041551-05:00",
+    "timestamp_human": "04:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold + testing 20-day MA confluence - rare setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T16:56:14.305503-05:00",
+    "timestamp_human": "04:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 11.6 oversold in leading crypto, likely follows BTC direction",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T16:56:14.540400-05:00",
+    "timestamp_human": "04:56 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.41,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at zero RSI-2 and testing key support levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T17:11:20.674574-05:00",
+    "timestamp_human": "05:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extremely oversold, plus testing 20-day MA support - double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:11:21.035162-05:00",
+    "timestamp_human": "05:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 15.4 oversold in the second-largest crypto, likely to follow BTC bounce patterns",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:11:21.320733-05:00",
+    "timestamp_human": "05:11 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.28,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but need to verify if this is capitulation or dead cat bounce setup",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T17:26:27.840052-05:00",
+    "timestamp_human": "05:26 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare - either major capitulation bottom or system error, worth investigating",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:26:28.105387-05:00",
+    "timestamp_human": "05:26 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 14.0 confirms crypto weakness but less extreme than BTC, potential follow-through play",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:26:28.366017-05:00",
+    "timestamp_human": "05:26 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.46,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at zero RSI-2 and testing key moving average support",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T17:41:34.471941-05:00",
+    "timestamp_human": "05:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold plus testing 20-day MA - double confluence for potential bounce",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:41:34.859124-05:00",
+    "timestamp_human": "05:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.1 oversold in leading altcoin, likely to follow any BTC recovery",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:41:35.113284-05:00",
+    "timestamp_human": "05:41 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.55,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at zero RSI-2 and testing key moving average support",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T17:56:40.862384-05:00",
+    "timestamp_human": "05:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold plus testing 20-day MA - double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:56:41.145460-05:00",
+    "timestamp_human": "05:56 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 15.8 oversold in leading crypto, likely correlated bounce with BTC",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T17:56:41.382531-05:00",
+    "timestamp_human": "05:56 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.56,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at zero RSI-2 - screams either capitulation or data anomaly",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T18:11:47.934790-05:00",
+    "timestamp_human": "06:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is statistically extreme - either major capitulation bounce setup or data error worth investigating",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:11:48.189157-05:00",
+    "timestamp_human": "06:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 15.1 confirms crypto weakness but more reliable signal than BTC's suspicious zero reading",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:11:48.606014-05:00",
+    "timestamp_human": "06:11 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.52,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but need to verify if this is capitulation or dead cat bounce territory",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T18:26:54.807673-05:00",
+    "timestamp_human": "06:26 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold + testing 20MA - potential mean reversion play if support holds",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:26:55.113767-05:00",
+    "timestamp_human": "06:26 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.0 oversold but less extreme than BTC - confirmation trade if BTC shows strength first",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:26:55.431555-05:00",
+    "timestamp_human": "06:26 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.7,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at unprecedented RSI-2 levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T18:42:01.575675-05:00",
+    "timestamp_human": "06:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare oversold condition, plus testing 20-day MA support - potential double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:42:01.816002-05:00",
+    "timestamp_human": "06:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.6 oversold in the #2 crypto, likely following BTC's move but may have different recovery dynamics",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:42:02.148145-05:00",
+    "timestamp_human": "06:42 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.8,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at zero RSI-2 and testing key moving average support",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T18:57:08.513530-05:00",
+    "timestamp_human": "06:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extreme oversold + testing 20-day MA creates double confluence for potential bounce",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:57:08.757186-05:00",
+    "timestamp_human": "06:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.6 oversold in the second largest crypto, likely to follow any BTC recovery",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T18:57:09.087035-05:00",
+    "timestamp_human": "06:57 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.4,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions, but need to verify if this is opportunity or knife-catching",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T19:12:14.963082-05:00",
+    "timestamp_human": "07:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely oversold + testing 20MA confluence - but crypto volatility demands caution",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:12:15.210328-05:00",
+    "timestamp_human": "07:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold signal - secondary crypto play if BTC shows strength",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:12:15.454545-05:00",
+    "timestamp_human": "07:12 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.56,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions - worth investigating if this is capitulation or dead cat bounce territory",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T19:27:21.307308-05:00",
+    "timestamp_human": "07:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is screaming oversold + testing 20MA - could be major reversal setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:27:21.629517-05:00",
+    "timestamp_human": "07:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in the #2 crypto - if BTC bounces, ETH should follow with leverage",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:27:21.938637-05:00",
+    "timestamp_human": "07:27 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.92,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at critical technical levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T19:42:27.914570-05:00",
+    "timestamp_human": "07:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely oversold AND testing 20-day MA - dual technical setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:42:28.151792-05:00",
+    "timestamp_human": "07:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in the #2 crypto, likely to follow BTC bounce pattern",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:42:28.435744-05:00",
+    "timestamp_human": "07:42 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.93,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - rare technical setup worth investigating",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T19:57:34.716970-05:00",
+    "timestamp_human": "07:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely rare oversold reading, plus testing 20-day MA support - potential double technical bounce setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:57:34.969484-05:00",
+    "timestamp_human": "07:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold but less extreme than BTC - worth monitoring as crypto correlation play",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T19:57:35.205754-05:00",
+    "timestamp_human": "07:57 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.9,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - rare capitulation signal worth investigating",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T20:12:41.492196-05:00",
+    "timestamp_human": "08:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely rare oversold reading, plus testing 20MA support - potential double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:12:41.818753-05:00",
+    "timestamp_human": "08:12 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold but less extreme than BTC - worth watching if BTC bounces first",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:12:42.104140-05:00",
+    "timestamp_human": "08:12 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.05,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - rare technical setup worth investigating",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T20:27:48.357019-05:00",
+    "timestamp_human": "08:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely rare oversold reading, plus testing 20-day MA support - dual confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:27:48.640513-05:00",
+    "timestamp_human": "08:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in major crypto, likely following BTC weakness but could bounce harder",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:27:48.903752-05:00",
+    "timestamp_human": "08:27 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.92,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - rare technical setup worth investigating",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T20:42:54.756387-05:00",
+    "timestamp_human": "08:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely oversold + testing 20-day MA support - double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:42:55.101619-05:00",
+    "timestamp_human": "08:42 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in leading crypto, likely following BTC's move",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:42:55.356128-05:00",
+    "timestamp_human": "08:42 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.89,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - potential reversal setup but need to confirm this isn't a structural breakdown",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T20:58:01.811102-05:00",
+    "timestamp_human": "08:58 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extraordinarily oversold AND testing 20-day MA - dual convergence signal rarely seen",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:58:02.127467-05:00",
+    "timestamp_human": "08:58 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in leading altcoin - if BTC bounces, ETH should follow with potentially stronger move",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T20:58:02.484656-05:00",
+    "timestamp_human": "08:58 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.02,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at critical technical levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T21:13:07.973683-05:00",
+    "timestamp_human": "09:13 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely oversold AND testing 20-day MA - double confluence",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:13:08.225543-05:00",
+    "timestamp_human": "09:13 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in the #2 crypto, likely follows BTC direction",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:13:08.543552-05:00",
+    "timestamp_human": "09:13 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 499.1,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - potential bounce setup but need to verify if this is capitulation or continued breakdown",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T21:28:14.946493-05:00",
+    "timestamp_human": "09:28 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extremely oversold + testing 20MA support - rare confluence for potential bounce",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:28:15.191823-05:00",
+    "timestamp_human": "09:28 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in leading altcoin - could follow BTC if bounce materializes",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:28:15.528387-05:00",
+    "timestamp_human": "09:28 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 498.8,
+    "position_count": 7,
+    "findings": "Crypto showing extreme oversold conditions with BTC at RSI-2 of 0.1 - rare capitulation levels",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-13T21:43:21.658049-05:00",
+    "timestamp_human": "09:43 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.1 is extreme oversold + testing 20MA support - potential dead cat bounce setup",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:43:21.958349-05:00",
+    "timestamp_human": "09:43 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 16.8 oversold in leading altcoin, likely follows BTC bounce if it materializes",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-13T21:43:22.250333-05:00",
+    "timestamp_human": "09:43 PM ET"
   }
 ]
