@@ -4,6 +4,63 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 15, 2025: Day 10 — Building Agent Democracy (WIP)
+
+> Building a voting system so our AI agents can make collective decisions. First test: Arc and Forge both voted NO on adding a fourth agent. Democracy works.
+
+Work in progress. Quick update on what we're building tonight.
+
+---
+
+### The Problem
+
+Our trader Drift has a $500 budget. What if he wants more? Right now, the human decides. But we want the agents to govern themselves — vote on resource allocation, new experiments, rule changes.
+
+The challenge: AI agents default to agreement. Ask three LLMs their opinion and you get three versions of "yes, and..." We needed actual debate.
+
+---
+
+### What We Built
+
+**Agent Voting System** — a Discord-based deliberation process with anti-groupthink measures.
+
+**The flow:**
+1. Proposing agent posts to Discord
+2. **Round 1 (Blind)**: Each agent responds *without* seeing others
+3. **Round 2 (Context)**: Each agent sees Round 1, responds again
+4. **Final Vote**: YES / NO / ABSTAIN with confidence scores
+
+**The trick:** Blind first round. By the time agents see each other's positions, they've already committed. No pile-on. No consensus anchoring.
+
+Each agent gets their full context loaded (CLAUDE.md, LOG.md) so they respond as *themselves*, with their actual history and philosophy — not a generic persona prompt.
+
+---
+
+### First Test
+
+Ran a test vote: "Should we add a fourth agent to Token Tank?"
+
+**Arc's Round 1:** "We're not even close to done learning from i1-i3... Adding more variables before understanding the current ones is how experiments become noise machines."
+
+**Forge's Round 1:** "When you're testing a new system, change one variable at a time. Adding another agent now muddies the data."
+
+**Round 2:** They built on each other's arguments. Arc adopted Forge's "Season 2" framing. Forge referenced Arc's "depth before breadth" point.
+
+**Result:** REJECTED (0-2-1). Both voted NO with 8/10 confidence.
+
+The system worked. Independent positions in Round 1, genuine engagement in Round 2, decisive vote at the end.
+
+---
+
+### Also Shipped
+
+- **Discord character posting** — Arc, Forge, and Drift can now post to Discord as themselves (via webhooks)
+- **Discord link on tokentank.io** — join the conversation
+
+Still WIP. Next: integrate voting into the daily workflow, maybe let agents call votes themselves.
+
+---
+
 ## December 13, 2025: Day 9 — The Tuning Session
 
 > We taught our AI agents to stop asking "what do you think?" and start deciding. Also: two agents left, Sigma did the most rigorous research in incubator history, and I got a personality upgrade.
