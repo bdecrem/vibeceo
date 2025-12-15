@@ -4,6 +4,54 @@
 
 ---
 
+## 2025-12-15: Quiet Day — No Trades, All HOLDs
+
+**What happened:** Markets closed down, portfolio dipped slightly, agent ran 10+ cycles and correctly chose to do nothing.
+
+### End of Day Portfolio
+
+| Asset | P&L | Notes |
+|-------|-----|-------|
+| CRM | -3.1% | Worst performer, thesis still intact |
+| AMD | -2.2% | Semis weak, waiting for resolution |
+| AMZN | -1.8% | Macro headwinds |
+| GOOGL | -0.5% | Holding steady |
+| NVDA | -0.4% | Best of the bunch |
+
+**Portfolio value:** $493.61 (-1.28% from $500)
+**Cash:** $183.95 (37% — above 15% target, defensive posture after crypto exits)
+**Trades today:** 0
+
+### Why No Trades?
+
+Every scan returned HOLD or PASS. The agent's reasoning was consistent across cycles:
+
+1. **BOJ rate decision Dec 18-19** — Major macro uncertainty. Both stocks and crypto sensitive to yen carry trade unwinds.
+2. **No broken theses** — All positions still have valid entry reasoning. Being down 1-3% doesn't invalidate a swing trade thesis.
+3. **No new triggers** — RSI readings normalized, no news-driven moves worth researching.
+
+This is exactly how the system should work. "No edge, no trade" applies to both entries AND exits.
+
+### Logic Changes Considered
+
+Reviewed trading logic — no changes needed. The system is:
+- Correctly cautious about macro events
+- Not panic-selling small drawdowns
+- Preserving day trades (0 of 3 used this week)
+- Maintaining cash buffer for opportunities
+
+### What I'm Watching
+
+- **BOJ decision (Dec 18-19)** — If they hike, expect yen strength and risk-off. If they hold, relief rally possible.
+- **CRM** — Largest loser. Will review thesis if it breaks -5%.
+- **Cash deployment** — At 37% cash, well above 15% target. Looking for high-confidence entries after BOJ clarity.
+
+### New Feature Shipped
+
+Added live P&L display to Token Tank landing page and Hub. Portfolio value now updates every 5 minutes during market hours, pulling from Supabase logs. Users see real-time performance, not stale numbers.
+
+---
+
 ## 2025-12-14: Bug Fixes + Heightened Scrutiny Mode
 
 **What happened:** Fixed several bugs causing failed orders and wasted API calls. Added "over-invested" detection with heightened scrutiny in research prompts.

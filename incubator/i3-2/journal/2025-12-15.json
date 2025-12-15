@@ -3853,5 +3853,671 @@
     "thesis": "",
     "timestamp": "2025-12-15T13:36:04.361535-05:00",
     "timestamp_human": "01:36 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.29,
+    "position_count": 5,
+    "findings": "Tech megacaps showing extreme oversold conditions - but RSI-2 at 0.0 is suspicious and needs verification",
+    "triggers": [
+      "AAPL",
+      "AMD",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T13:51:15.303796-05:00",
+    "timestamp_human": "01:51 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 5.5 near 20-day MA - most reliable oversold signal in the scan",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T13:52:11.462676-05:00",
+    "timestamp_human": "01:52 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 4.8 oversold in volatile but quality semiconductor name",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T13:53:13.011270-05:00",
+    "timestamp_human": "01:53 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Down -4.65% in 5 days with RSI-2 at 24.3 - potential AI stock pullback opportunity",
+    "searches": [
+      {
+        "query": "NVDA Nvidia stock news December 2025"
+      },
+      {
+        "query": "Nvidia analyst ratings price target December 2025"
+      },
+      {
+        "query": "AI semiconductor stocks sector news today"
+      },
+      {
+        "query": "BOJ Bank of Japan rate decision December 2025"
+      }
+    ],
+    "findings": "NVDA recovering today after Oracle-Broadcom induced sector selloff last week; RSI-2 at 24.3 confirms oversold entry thesis; Q3 fundamentals exceptional: $57B revenue (+62% YoY), $51.2B Data Center revenue (+66% YoY), 70%+ gross margins; Analyst consensus overwhelmingly bullish: 101 Buy/1 Hold, avg price target $248.64 (42% upside from current $175); Near-term catalysts: China H200 export approval, Nemotron 3 AI model launch, semiconductor sector recovery underway; BOJ rate hike 100% priced in for Dec 18-19 meeting\u2014macro risk elevated this week, 0 PDT remaining constrains flexibility",
+    "decision": "hold",
+    "confidence": 78,
+    "thesis": "My December 12 entry thesis remains valid\u2014the RSI-2 oversold extreme represented sector contagion from Oracle/Broadcom AI valuation concerns, not NVDA-specific weakness. Fundamentals remain exceptional with Q3 revenue of $57B (62% YoY growth), 70%+ gross margins, and Data Center revenue up 66% YoY. Wall Street maintains overwhelming bullish consensus with 101 Buy ratings vs 1 Hold, average $248 price target (42% upside), and J.P. Morgan/Morgan Stanley maintaining Overweight ratings viewing the pullback as opportunity. Near-term catalysts include H200 China export approval increasing probability of shipments, Nemotron 3 product announcement, and semiconductor sector recovery today. However, with 0 PDT remaining and the BOJ rate hike expected December 18-19 (100% consensus for hike to 0.75%), adding to position carries unacceptable lock-in risk during potential macro volatility. The position is roughly flat and working as expected; discipline dictates holding through recovery rather than chasing the bounce.",
+    "timestamp": "2025-12-15T13:54:03.854136-05:00",
+    "timestamp_human": "01:54 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.74,
+    "position_count": 5,
+    "findings": "Tech megacaps showing extreme oversold readings - either capitulation or start of deeper correction",
+    "triggers": [
+      "MSFT",
+      "GOOGL",
+      "AAPL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T14:09:15.610885-05:00",
+    "timestamp_human": "02:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "MSFT",
+    "trigger": "RSI-2 at 0.0 with -1.97% from 20MA - extreme oversold in defensive tech giant",
+    "searches": [
+      {
+        "query": "MSFT Microsoft stock news December 2025"
+      },
+      {
+        "query": "Microsoft analyst ratings price target 2025"
+      },
+      {
+        "query": "tech sector outlook December 2025"
+      },
+      {
+        "query": "BOJ rate decision December 2025 market impact"
+      }
+    ],
+    "findings": "RSI-2 at 0.0 extreme oversold with MSFT trading ~$478, down from $491-492 earlier in week; 33 analysts consensus Strong Buy with $628 average price target (31% upside); Q1 FY26 revenue up 18% to $78B, Azure growth ~40%, fundamentals remain excellent; BOJ rate decision Dec 18-19 with 90% probability of hike to 0.75% - highest level since 1995; Tech sector dropped 2.3% last week; AI trade sentiment extremely negative; 0 PDT remaining prevents rapid exit if macro event triggers selloff",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "Despite an extreme oversold RSI-2 at 0.0 creating a compelling technical setup in a fundamentally excellent company (18% revenue growth, $628 consensus target with 31% upside, Strong Buy rating from 32/34 analysts), the imminent Bank of Japan rate decision on December 18-19 represents material macro risk that invalidates near-term mean-reversion entries. Markets price a ~90% probability of a BOJ hike to 0.75%, and historical precedent shows significant risk-off flows following BOJ tightening events\u2014the tech sector already dropped 2.3% last week with AI sentiment souring ('everyone hates the AI trade right now'). With 0 PDT remaining, I cannot afford to be trapped in a position if the BOJ decision triggers broader yen carry trade unwinding and forces selling across risk assets including mega-cap tech. The same discipline that prompted my BTC and ETH exits applies here. Better to wait for post-BOJ clarity\u2014if MSFT sells off further, I get a better entry with resolved macro uncertainty; if it rallies, I avoid catching a falling knife before a known catalyst.",
+    "timestamp": "2025-12-15T14:10:14.926782-05:00",
+    "timestamp_human": "02:10 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 near 20MA support - search/cloud fundamentals intact despite selloff",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news December 2025"
+      },
+      {
+        "query": "Google Cloud AI growth 2025"
+      },
+      {
+        "query": "GOOGL analyst ratings price target"
+      },
+      {
+        "query": "tech sector AI selloff December 2025"
+      }
+    ],
+    "findings": "Oracle earnings miss triggered sector-wide AI selloff on Dec 10-12, dragging GOOGL down despite no company-specific issues; GOOGL Q3 2025 hit record $102.3B revenue with Google Cloud backlog at $155B - fundamentals intact; Analyst consensus remains Strong Buy with average $323.64 price target (5% upside from current $308); September 2025 antitrust ruling preserved Chrome/Android - no forced breakup; Gemini 3 day-one Search integration differentiates Google from competitors with immediate monetization path; Tech sector rebounding today as NASDAQ recovers from Broadcom-induced selloff",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "The RSI-2 at 0.0 technical extreme that triggered my original December 12 buy remains valid - no GOOGL-specific negative developments have emerged since entry. The ongoing sector-wide selloff stems from Oracle/Broadcom earnings concerns about AI capex margins, not Google fundamentals. GOOGL's Q3 delivered record $102.3B revenue, Google Cloud maintains a $155B backlog with billion-dollar AI deals accelerating, Gemini 3 integration into Search demonstrates immediate monetization (versus competitors' standalone apps), and the September antitrust ruling preserved Chrome/Android ecosystem intact. With analyst consensus at Strong Buy averaging $323.64 (5% upside), this represents sector contagion creating a mean-reversion opportunity in a fundamentally stronger name. My small -0.57% unrealized loss reflects market noise rather than thesis invalidation. With 0 PDT remaining, the correct action is to hold through volatility rather than crystallize a small loss on unchanged fundamentals. The position size (~$40) limits risk while maintaining exposure to the anticipated bounce as sector panic subsides.",
+    "timestamp": "2025-12-15T14:11:00.291368-05:00",
+    "timestamp_human": "02:11 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 5.3 testing 20MA - quality hardware play at potential technical bounce level",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T14:11:57.617856-05:00",
+    "timestamp_human": "02:11 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.34,
+    "position_count": 5,
+    "findings": "Tech selloff creating oversold conditions in mega-caps, but extreme RSI-2 readings (0.0) feel suspicious - need to verify data quality",
+    "triggers": [
+      "AAPL",
+      "NVDA",
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T14:27:10.123051-05:00",
+    "timestamp_human": "02:27 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 4.7 oversold + testing 20MA support - most reliable setup of the bunch",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T14:28:07.640101-05:00",
+    "timestamp_human": "02:28 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Down 4.47% in 5 days but RSI-2 only at 27.5 - potential early entry before deeper oversold",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T14:29:01.729518-05:00",
+    "timestamp_human": "02:29 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "RSI-2 at 0.6 extreme oversold - if data is accurate, could be major reversal candidate",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T14:30:03.893536-05:00",
+    "timestamp_human": "02:30 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 494.6,
+    "position_count": 5,
+    "findings": "Tech selloff creating oversold conditions in quality names, but those 0.0 RSI readings look suspicious - need verification",
+    "triggers": [
+      "AAPL",
+      "NVDA",
+      "TSLA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T14:45:15.194354-05:00",
+    "timestamp_human": "02:45 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 4.7 with only -1.14% from 20MA - realistic oversold setup in highest quality name",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T14:46:08.126214-05:00",
+    "timestamp_human": "02:46 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 19.7 near oversold threshold in AI leader - more believable than the 0.0 readings",
+    "searches": [
+      {
+        "query": "NVDA Nvidia stock news today December 2025"
+      },
+      {
+        "query": "Nvidia analyst ratings price target December 2025"
+      },
+      {
+        "query": "AI semiconductor sector outlook December 2025"
+      },
+      {
+        "query": "NVDA Nvidia stock BOJ Bank of Japan risk December 2025"
+      }
+    ],
+    "findings": "NVDA rebounding Monday (+1.5% early) after 3.27% Friday decline - mean reversion thesis playing out; Record Q3 FY26 results: $57B revenue (62% YoY), $51.2B Data Center revenue (66% YoY), Q4 guidance $65B; Analyst consensus overwhelmingly bullish: 101 Buy ratings vs 1 Hold, avg price target $248 (42% upside); H200 China export approval creates $25-30B revenue opportunity despite 25% fee and regulatory complexity; Semiconductor sector showing 'great divide' - AI leaders like NVDA thriving while traditional segments struggle",
+    "decision": "hold",
+    "confidence": 78,
+    "thesis": "Maintaining position as original mean-reversion thesis remains valid. The RSI-2 at 19.7 confirms continued oversold conditions following broader AI sector contagion from Oracle/Broadcom earnings concerns, not NVDA-specific weakness. Fundamentals remain exceptional: record Q3 revenue of $57B with Data Center at $51.2B (66% YoY growth), Q4 guidance of $65B exceeds consensus, and gross margins expected to rise to 75%. Wall Street maintains overwhelming 'Strong Buy' consensus (101 Buys vs 1 Hold this month) with $248 average target implying 42% upside. New catalysts include H200 China export approval (despite 25% fee), Nemotron 3 model launch, and SchedMD acquisition. Monday's 1.5% rebound confirms mean-reversion is beginning. While BOJ/macro risks exist, NVDA's structural dominance in AI infrastructure and immense order pipeline justify holding through near-term volatility. With 0 PDT trades remaining, cannot tactically exit and re-enter - staying positioned for the recovery.",
+    "timestamp": "2025-12-15T14:47:18.898937-05:00",
+    "timestamp_human": "02:47 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "TSLA",
+    "trigger": "RSI-2 at 100 after 8.47% 5-day run - potential short setup if momentum breaks",
+    "searches": [
+      {
+        "query": "TSLA Tesla stock news December 2025"
+      },
+      {
+        "query": "Tesla analyst ratings price target December 2025"
+      },
+      {
+        "query": "EV sector outlook December 2025"
+      },
+      {
+        "query": "Tesla RSI overbought December 2025"
+      }
+    ],
+    "findings": "RSI-14 at 73-81 (overbought territory), RSI-2 at 100 after 8.47% 5-day run; Morgan Stanley downgraded to Equal Weight on Dec 8, raised PT to $425 but cited valuation concerns; US sales fell 23% YoY in November to 39,800 vehicles - lowest since January 2022; Analyst consensus PT of $389 implies ~15% downside from current ~$459 level; Kimbal Musk sold $25.6M in shares on Dec 9 at $450.66; Quadruple witching on Dec 19 will amplify volatility in option-heavy TSLA; EV sector facing headwinds from tax credit removal and policy uncertainty",
+    "decision": "pass",
+    "confidence": 76,
+    "thesis": "TSLA presents a textbook short setup with RSI-2 at 100 after an 8.47% 5-day run, Morgan Stanley's downgrade to Equal Weight, analyst consensus targets averaging $389 (15% below current price ~$459), US sales collapsing 23% YoY in November to near four-year lows, and insider selling by Kimbal Musk ($25.6M on Dec 9). However, with 0 PDT remaining, I cannot execute this short trade and risk being trapped in a position during quadruple witching week when Tesla's option-heavy structure amplifies volatility. The same BOJ risk that prompted my BTC/ETH exits applies here - a potential rate hike on Dec 18-19 could create violent moves in either direction. Despite the compelling bearish setup, capital preservation dictates sitting out when I lack the ability to exit if momentum continues against me. Tesla has historically punished shorts even from technically overbought levels, and without day trade capacity, this is a pass.",
+    "timestamp": "2025-12-15T14:48:29.703010-05:00",
+    "timestamp_human": "02:48 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 494.49,
+    "position_count": 5,
+    "findings": "Tech mega-caps showing extreme oversold readings, but those RSI-2 zeros look suspiciously like data errors.",
+    "triggers": [
+      "AAPL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T15:03:40.525342-05:00",
+    "timestamp_human": "03:03 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 4.9 is genuinely oversold + testing 20-day MA - only believable extreme reading in the bunch",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T15:04:35.886433-05:00",
+    "timestamp_human": "03:04 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Down -4.88% in 5 days with RSI-2 at 20 - semiconductor weakness could be overdone pullback in AI leader",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T15:05:36.996586-05:00",
+    "timestamp_human": "03:05 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 494.14,
+    "position_count": 5,
+    "findings": "Tech bloodbath creating oversold bounces, but those RSI-2 zeros look suspiciously perfect - need to verify data quality",
+    "triggers": [
+      "NVDA",
+      "AAPL",
+      "GOOGL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T15:20:48.269908-05:00",
+    "timestamp_human": "03:20 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 19.9 - only realistic oversold reading among the suspect zeros, semiconductor leader worth the bounce play",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T15:22:01.406329-05:00",
+    "timestamp_human": "03:22 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AAPL",
+    "trigger": "RSI-2 at 5.0 plus testing 20-day MA - if the reading is real, AAPL rarely stays oversold long",
+    "searches": [
+      {
+        "query": "AAPL stock news December 2025"
+      },
+      {
+        "query": "Apple analyst ratings upgrades downgrades"
+      },
+      {
+        "query": "tech sector outlook December 2025"
+      },
+      {
+        "query": "Bank of Japan rate decision December 2025"
+      }
+    ],
+    "findings": "AAPL trading at $273.19 today after dropping from $280 high, RSI-2 at extreme oversold (5.0); BOJ rate decision Dec 18-19 with 90% probability of hike to 0.75% - same macro risk that drove crypto exits; Strong iPhone 17 cycle with 247.4M units forecast (best since 2021), China sales +13.4% YoY; Fed cut rates 25bps on Dec 10 to 3.50-3.75% - supportive for mega-cap tech; Mixed analyst sentiment: some targets at $330-350, but Morningstar shows 295% premium to fair value",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "While the RSI-2 at 5.0 presents a technically compelling oversold entry and AAPL's fundamentals remain strong (record iPhone 17 shipments, China sales +13.4% YoY, management guiding 10-12% revenue growth), the BOJ rate decision on December 18-19 represents the same macro risk that drove my exit from BTC and ETH yesterday. With markets pricing 90% probability of a BOJ hike to 0.75% (30-year high) and historical precedent showing carry trade unwinds can ripple through global risk assets, initiating a new position just 3-4 days before this event contradicts my established risk management framework. At $273, AAPL is only 5% off all-time highs\u2014this isn't capitulation, just a normal pullback. With 0 PDT remaining, I cannot exit quickly if the BOJ decision triggers broader risk-off sentiment. The prudent approach is to wait for the BOJ decision to resolve and potentially re-enter on any BOJ-driven weakness that creates a true mean-reversion opportunity at lower levels.",
+    "timestamp": "2025-12-15T15:23:01.499089-05:00",
+    "timestamp_human": "03:23 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 near 20-day support - sketchy data but GOOGL has been beaten down lately, could be legitimate oversold setup",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news December 2025"
+      },
+      {
+        "query": "Google analyst ratings price target December 2025"
+      },
+      {
+        "query": "tech sector megacap selloff December 2025"
+      },
+      {
+        "query": "BOJ rate decision December 2025 stock market"
+      }
+    ],
+    "findings": "GOOGL closed at $309.29 on Dec 12, currently trading at $308.20 - only 0.56% below my entry; Sector-wide AI tech selloff on Dec 12 driven by Oracle data center delays and Broadcom margin concerns; Strong Buy consensus from 43 analysts with average PT $305-323, recent upgrades to $385 (JPM) and $400 (Pivotal); Q3 2025 revenue hit $102.3B milestone, $155B cloud backlog, Gemini 3 integration ongoing; Morningstar rates GOOGL at 77% premium to fair value ($275), creating valuation risk; BOJ rate decision Dec 18-19 represents imminent macro risk with 0 PDT available",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "The RSI-2 at 0.0 is capturing the same Oracle/Broadcom-driven AI sector selloff that triggered my original Dec 12 entry. My existing thesis remains valid: GOOGL fundamentals are strong with Q3 2025 revenue exceeding $100B for the first time, Gemini 3 showing competitive AI progress, and a $155B cloud backlog providing demand visibility. The 43 analysts maintain a Strong Buy consensus with recent upgrades from JPMorgan ($385) and Pivotal Research ($400). However, adding to the position with 0 PDT remaining heading into the Dec 18-19 BOJ rate decision carries unacceptable risk - the same macro event that prompted my BTC/ETH exits threatens 20%+ drawdowns historically. The position is only down 0.56% from entry, well within normal volatility. Morningstar's $275 fair value estimate vs. current $308 price suggests overvaluation risk, but Wall Street's $323-$358 recent targets suggest upside. HOLD the existing position and reassess post-BOJ if capitulation creates a better entry for adding.",
+    "timestamp": "2025-12-15T15:24:05.133517-05:00",
+    "timestamp_human": "03:24 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.6,
+    "position_count": 5,
+    "findings": "Big tech showing extreme oversold conditions with RSI-2 readings at or near zero - potential capitulation signals worth investigating",
+    "triggers": [
+      "MSFT",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T15:39:16.669682-05:00",
+    "timestamp_human": "03:39 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "MSFT",
+    "trigger": "RSI-2 at 0.0 and -1.89% from 20MA - extreme oversold in highest quality mega-cap",
+    "searches": [
+      {
+        "query": "MSFT Microsoft stock news December 2025"
+      },
+      {
+        "query": "Microsoft analyst ratings price target 2025"
+      },
+      {
+        "query": "BOJ rate decision December 2025 market impact"
+      },
+      {
+        "query": "tech sector stocks selloff December 2025"
+      }
+    ],
+    "findings": "MSFT trading at $477.90, down ~14% from July 2025 ATH of $553.50, with RSI-2 at 0.0 (extreme oversold); Strong fundamentals: FY26 Q1 revenue +18% to $78B, Azure +40%, fiscal 2025 revenue $281.7B; Unanimous analyst support: 32 Buy, 2 Hold, 0 Sell ratings with median price target $632.22 (32% upside); BOJ rate hike Dec 18-19 at 90% probability - historically triggers 20-30% BTC drawdowns via yen carry unwind; Tech sector in active rotation - Oracle -12.7%, Broadcom -7%, S&P 500 tech -2.3% last week on AI spending concerns; 91% of CIOs plan to increase Microsoft cloud spending per KeyBanc survey - structural demand intact",
+    "decision": "pass",
+    "confidence": 72,
+    "thesis": "Despite RSI-2 at 0.0 representing extreme oversold conditions in the highest-quality mega-cap with excellent fundamentals (18% revenue growth, 40% Azure growth, 32 analyst Buy ratings, median $632 price target implying 32% upside), the timing is suboptimal. The Bank of Japan rate decision on December 18-19\u2014now just 3-4 days away with ~90% probability of a hike to 0.75%\u2014represents a material macro risk that I already identified when exiting BTC/ETH positions. Historical precedent shows BOJ tightening triggers yen carry trade unwinding that impacts all risk assets, and the broader tech sector is already in a pronounced rotation/selloff (S&P 500 tech down 2.3% last week, Oracle -12.7%, Broadcom -7%). With 0 PDT remaining, I cannot exit if MSFT drops further post-BOJ. The mean-reversion opportunity will likely present itself again\u2014either through continued weakness if BOJ causes broader de-risking, or through confirmation of support if markets absorb the hike well. Better to preserve capital and re-enter post-BOJ with clearer macro backdrop rather than front-run a known risk event with no exit flexibility.",
+    "timestamp": "2025-12-15T15:40:26.303703-05:00",
+    "timestamp_human": "03:40 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 near 20MA support - oversold condition in search/cloud giant",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news December 2025"
+      },
+      {
+        "query": "Google analyst ratings price target December 2025"
+      },
+      {
+        "query": "tech sector cloud AI stocks today"
+      },
+      {
+        "query": "Google GOOGL stock down December 13-15 2025"
+      }
+    ],
+    "findings": "RSI-2 oversold driven by Oracle earnings contagion and AI bubble fears, not GOOGL-specific weakness; Q3 2025 record revenue of $102.3B, EPS up 35% YoY, Google Cloud growing 34% with $155B backlog; Analyst consensus Strong Buy with 66 buys vs 13 holds vs 0 sells; average PT $323.64 with bulls at $350-$400; Gemini 3 processing 7B tokens/minute with 650M MAUs, successfully integrated into Search; EU antitrust investigation into AI content usage poses regulatory risk; potential fine up to 10% of global revenue; Stock down only 3.39% over two weeks from 52-week high of $328.83, still up ~68% YTD",
+    "decision": "hold",
+    "confidence": 74,
+    "thesis": "The RSI-2 at 0.0 oversold condition represents the continuation of sector-wide AI sentiment weakness (Oracle earnings contagion) rather than any new GOOGL-specific catalyst. My December 12 entry thesis at $309.94 remains fully intact - fundamentals are exceptional with record Q3 revenue exceeding $100B, 35% EPS growth, $155B cloud backlog, and Gemini 3 processing 7B tokens/minute with 650M MAUs. Analyst consensus remains Strong Buy with recent targets from JPMorgan ($385), TD Cowen ($350), and Pivotal ($400) well above current prices. The position is down only 0.71%, well within normal volatility. However, the impending BOJ rate decision (Dec 18-19) poses macro risk that could sweep all risk assets, EU antitrust probes remain an overhang, and with 0 PDT remaining I cannot trade around volatility. Given I cannot add to the position without triggering PDT issues and the original thesis hasn't changed, HOLD is the appropriate action to let the mean-reversion thesis play out while monitoring macro developments.",
+    "timestamp": "2025-12-15T15:41:22.237788-05:00",
+    "timestamp_human": "03:41 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Down -4.86% in 5 days with RSI-2 at 20.4 - AI leader pullback after massive run",
+    "searches": [
+      {
+        "query": "NVDA Nvidia stock news December 2025"
+      },
+      {
+        "query": "Nvidia analyst ratings price target December 2025"
+      },
+      {
+        "query": "AI chip semiconductor sector outlook December 2025"
+      }
+    ],
+    "findings": "101 Buy ratings vs 1 Hold, 0 Sell with $258 average price target (42%+ upside); Data Center segment hit record $51.2B revenue (+66% YoY) with gross margins rising to 75%; Semiconductor industry entering 'giga cycle' with AI - projected to reach $1 trillion by 2028-2029; Major firms (JPM, Citi, Morgan Stanley) maintain Buy ratings with Evercore citing Blackwell demand strength; Risks include U.S.-China trade uncertainty, DeepSeek competition, and elevated valuation metrics",
+    "decision": "hold",
+    "confidence": 82,
+    "thesis": "My original December 12th thesis remains valid - the RSI-2 pullback represents normal technical consolidation rather than fundamental deterioration. With 39 analysts maintaining a Strong Buy consensus at $248 average target (42% upside), record $51B data center revenue, 75% gross margins, and a semiconductor industry entering an AI-driven 'giga cycle' toward $1 trillion by 2028-2029, the structural bull case is intact. The 5-day pullback of -4.86% with RSI-2 recovering from 0.0 to 20.4 actually strengthens my mean-reversion setup. While tariff risks and competition from custom ASICs remain headwinds, Nvidia's Blackwell demand and AI infrastructure dominance justify holding through near-term volatility. With 0 PDT and minimal position loss (-0.17%), exiting would be reacting to noise rather than signal.",
+    "timestamp": "2025-12-15T15:42:17.765888-05:00",
+    "timestamp_human": "03:42 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.52,
+    "position_count": 5,
+    "findings": "Tech showing extreme oversold conditions with multiple RSI-2 readings at zero - unusual and worth investigating",
+    "triggers": [
+      "MSFT",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T15:57:29.182481-05:00",
+    "timestamp_human": "03:57 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "MSFT",
+    "trigger": "RSI-2 at 0.0 is extreme oversold, quality mega-cap testing 20MA - potential dead cat bounce or real reversal",
+    "searches": [
+      {
+        "query": "MSFT Microsoft stock news December 2025"
+      },
+      {
+        "query": "Microsoft analyst ratings price target 2025"
+      },
+      {
+        "query": "tech sector mega cap stocks December 2025"
+      },
+      {
+        "query": "BOJ rate decision December 2025 stock market"
+      }
+    ],
+    "findings": "MSFT at $477.90 with RSI-2 at 0.0 - extreme oversold, 14% below July all-time high of $555; Strong Buy consensus from 33 analysts with $628 average PT (31% upside), no Sell ratings; Q1 FY26 revenue +18% to $78B, Azure +40% YoY, 91% of CIOs plan increased Microsoft spending; BOJ rate hike to 0.75% expected Dec 18-19 with 90% probability - cited as major risk to MSFT specifically; Active sector rotation: mega-cap tech underperforming as Russell 2000 outperforms Nasdaq for 4 consecutive weeks",
+    "decision": "pass",
+    "confidence": 74,
+    "thesis": "While MSFT's RSI-2 at 0.0 presents a textbook oversold bounce setup and fundamentals remain excellent (18% revenue growth, 40% Azure growth, Strong Buy consensus with $625 average PT implying 30%+ upside), the imminent BOJ rate decision on December 18-19 creates identical macro risk that prompted my BTC/ETH exits. With 90% probability of a hike that could trigger yen carry trade unwinding\u2014explicitly cited as a threat to MSFT and tech mega-caps\u2014entering a new position 3 days before this event directly contradicts my established risk framework. The ongoing sector rotation from mega-cap tech to small-caps adds flow headwinds. Most critically, with 0 PDT remaining, I cannot manage risk if the BOJ announcement triggers the projected 10-20% tech selloff. The setup would be compelling post-BOJ if capitulation creates a true buying opportunity; entering now is fighting the same macro tape I just avoided. Quality mega-caps deserve quality entries\u2014this timing isn't it.",
+    "timestamp": "2025-12-15T15:58:26.644282-05:00",
+    "timestamp_human": "03:58 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "RSI-2 at 0.0 with minimal pullback from 20MA (-0.7%) suggests sharp recent selling in quality name",
+    "searches": [
+      {
+        "query": "GOOGL Google stock news December 2025"
+      },
+      {
+        "query": "Google analyst ratings price target December 2025"
+      },
+      {
+        "query": "tech stocks selloff December 2025"
+      },
+      {
+        "query": "GOOGL Google stock December 15 2025 news"
+      }
+    ],
+    "findings": "Tech selloff driven by Oracle data center delays and Broadcom AI capex concerns - NOT GOOGL-specific; GOOGL fundamentals strong: Q3 revenue $102.3B (+16% YoY), net income +33%, EPS $2.87 beat; 43 analysts rate Strong Buy; recent upgrades from JPMorgan ($385), TD Cowen ($350), Truist ($350); Antitrust breakup risk eliminated in Sept 2025 court ruling - major overhang removed; Bank of America says GOOGL 'best positioned' for AI monetization across all segments; Stock down ~3% weekly on sector rotation, tracking broader Nasdaq weakness",
+    "decision": "hold",
+    "confidence": 82,
+    "thesis": "The RSI-2 at 0.0 with minimal pullback from 20MA continues to represent sector-wide AI/tech rotation (Oracle data center delays, Broadcom margin concerns) rather than GOOGL-specific weakness. My 12/12 buy thesis at $309.94 remains intact: Alphabet's fundamentals are exceptional with record Q3 revenue ($102.3B, +16% YoY), net income up 33%, and EPS of $2.87 beating estimates. The antitrust breakup risk was eliminated in September 2025, preserving the $20B Apple partnership. Bank of America calls GOOGL 'best positioned across all segments' for AI monetization, while TD Cowen ($350), JPMorgan ($385), and Truist ($350) have all raised price targets. With the stock down only 0.6% from my entry, 43 analysts rating it Strong Buy, and no company-specific catalyst for the selling, this is noise within a broader tech rotation that creates opportunity rather than risk. However, with 0 PDT remaining and the position already established, adding more exposure is impractical - holding through this temporary sector weakness for mean reversion is the appropriate action.",
+    "timestamp": "2025-12-15T15:59:22.246402-05:00",
+    "timestamp_human": "03:59 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "RSI-2 at 15.6 in AI leader - less extreme but still oversold, need to check if this is earnings/news related",
+    "searches": [
+      {
+        "query": "NVDA stock news today December 2025"
+      },
+      {
+        "query": "NVIDIA analyst ratings price target December 2025"
+      },
+      {
+        "query": "AI semiconductor sector news December 2025"
+      },
+      {
+        "query": "Broadcom tech selloff NVDA December 2025"
+      }
+    ],
+    "findings": "Dec 12 selloff was Broadcom/Oracle contagion - Philadelphia Semiconductor Index fell 5.1%, worst since October, every stock down; Selloff driven by 'AI angst' over margin profitability, NOT weak demand - Broadcom actually beat estimates; NVDA Q3 fundamentals exceptional: $57B revenue (+62% YoY), $51.2B Data Center revenue (+66% YoY); 101 Buy ratings vs 1 Hold, Strong Buy consensus with $248 average target (42% upside from ~$175); H200 China export approval creates incremental positive catalyst; Market recovering today - chip stocks up 1-1.5% on Dec 15; Nvidia maintains 93% server GPU market share, semiconductor giga-cycle thesis intact",
+    "decision": "hold",
+    "confidence": 82,
+    "thesis": "My December 12 thesis has been validated - the RSI-2 oversold reading reflected Broadcom/Oracle AI margin contagion rather than NVDA-specific weakness. The Dec 12 selloff saw the Philadelphia Semiconductor Index drop 5.1% (worst since October) as 'AI angst' over profitability timelines swept the sector, despite Broadcom actually beating estimates. NVDA fundamentals remain exceptional: Q3 revenue of $57B (+62% YoY), record Data Center revenue of $51.2B (+66% YoY), and 93% server GPU market share. Analyst consensus is overwhelmingly bullish with 101 Buy ratings vs 1 Hold, average $248 price target implying 42% upside. The H200 China export approval provides an incremental catalyst. Today's market is already rebounding with chip stocks up 1-1.5%. With my small position down just 0.2% from entry, this is classic mean-reversion working - the technical extreme created by sector rotation is resolving. Next earnings Feb 25 provides runway for recovery. Holding with conviction.",
+    "timestamp": "2025-12-15T16:00:18.757860-05:00",
+    "timestamp_human": "04:00 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.78,
+    "position_count": 5,
+    "findings": "Major crypto oversold with RSI-2 at extreme 0.0 levels - rare technical setup but need to confirm if this is data error or legitimate crash",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T16:15:26.531846-05:00",
+    "timestamp_human": "04:15 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is extremely rare - either data glitch or massive selloff creating potential reversal opportunity",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T16:16:24.314612-05:00",
+    "timestamp_human": "04:16 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 matching BTC suggests broader crypto capitulation - high-risk but potentially high-reward setup",
+    "searches": [
+      {
+        "query": "ETH USD price news today December 2025"
+      },
+      {
+        "query": "Bank of Japan rate decision December 2025"
+      },
+      {
+        "query": "Ethereum analyst forecast December 2025"
+      },
+      {
+        "query": "Ethereum ETF inflows outflows December 2025"
+      },
+      {
+        "query": "crypto carry trade BOJ rate hike impact December"
+      }
+    ],
+    "findings": "BOJ expected to hike rates to 0.75% (30-year high) on Dec 18-19 with 90% probability priced in; ETH trading at $3,004-$3,150 range, testing critical $3,000 support level; Fear & Greed Index at 23 (Extreme Fear) with RSI-2 at 0.0 signaling capitulation; ETH ETFs posted $209M weekly inflows but saw $42M and $19M outflows Dec 11-12 as institutions de-risk; Whales accumulated 800,000 ETH since mid-October, suggesting smart money positioning for volatility; Historical precedent: BOJ hikes have triggered 23-31% BTC drawdowns with ETH correlating",
+    "decision": "pass",
+    "confidence": 75,
+    "thesis": "Despite RSI-2 at 0.0 signaling extreme capitulation and presenting a textbook mean-reversion setup, the BOJ rate decision on December 18-19 represents an imminent macro catalyst that invalidates near-term entries. Markets price 90% probability of a hike to 0.75% (30-year high), and historical precedent shows yen carry trade unwinding has been bearish for crypto. With 0 PDT remaining, I cannot afford to be trapped in a position during a potential 20%+ drawdown just 3-4 days before the decision - the exact risk that prompted my exit 24 hours ago at +$0.89 profit. While whale accumulation (800,000 ETH added since October), weekly ETF inflows ($209M), and Fusaka upgrade catalysts support the medium-term bullish case, Fear & Greed at 23 (Extreme Fear) combined with ETH testing critical $3,000 support suggests downside risk before upside. The prudent strategy is to wait for post-BOJ clarity: if carry trade unwinding causes significant capitulation, I can enter at lower levels with better risk/reward; if 'priced in' thesis holds and prices recover, I sacrifice only the initial bounce while avoiding catastrophic drawdown risk.",
+    "timestamp": "2025-12-15T16:17:24.068876-05:00",
+    "timestamp_human": "04:17 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.41,
+    "position_count": 5,
+    "findings": "Crypto showing extreme oversold readings but need to verify if this is data error or real crash",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD",
+      "CRM"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-15T16:32:32.481670-05:00",
+    "timestamp_human": "04:32 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.0 is either data glitch or massive capitulation - need immediate verification",
+    "searches": [
+      {
+        "query": "Bank of Japan rate decision December 2025"
+      },
+      {
+        "query": "Bitcoin BTC price drop December 15 2025"
+      },
+      {
+        "query": "Bitcoin analyst outlook sentiment December 2025"
+      }
+    ],
+    "findings": "BOJ rate hike to 0.75% (30-year high) expected Dec 18-19 with 90% market probability - same catalyst I exited for Dec 14; BTC currently at $85,600, down 3.6% today, trading rangebound between $80K-$94K with technical bias toward $80K retest; Wintermute characterizes selling as 'consolidation and position-cleaning' not structural breakdown - orderly not panicked; On-chain data shows whales still in distribution mode and long-term holders selling - conditions inconsistent with confirmed bottom; Strategy still buying (10,645 BTC added) but concerns about potential selling adding to market unease",
+    "decision": "pass",
+    "confidence": 74,
+    "thesis": "Despite RSI-2 at 0.0 suggesting extreme oversold conditions, I must PASS and not contradict my Dec 14 exit thesis. The BOJ rate hike (90% probability) on Dec 18-19 remains the primary macro catalyst I exited to avoid, and that event is only 3-4 days away. Current price action at $85,600 reflects orderly 'consolidation and position-cleaning rather than outright risk aversion' per Wintermute, with technical analysis pointing to likely $80,000 retest. On-chain data shows whales still in distribution mode, not accumulation\u2014conditions inconsistent with a confirmed bottom. With 0 PDT remaining, I cannot afford to be trapped during a potential 20%+ drawdown if BOJ triggers carry trade unwinding similar to historical precedents (March 2024: -23%, July 2024: -26%, January 2025: -31%). The better trade is waiting for post-BOJ capitulation to create a true opportunity rather than front-running a known macro risk. Buy orders concentrated at $85,000 may provide short-term support, but the risk-reward remains unfavorable until the BOJ catalyst passes.",
+    "timestamp": "2025-12-15T16:33:27.895308-05:00",
+    "timestamp_human": "04:33 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "RSI-2 at 0.0 mirrors BTC - if real, could be generational buying opportunity",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T16:34:32.654771-05:00",
+    "timestamp_human": "04:34 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "CRM",
+    "trigger": "Only -3.5% pullback in enterprise software leader - manageable drawdown to investigate",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-15T16:35:29.257101-05:00",
+    "timestamp_human": "04:35 PM ET"
   }
 ]
