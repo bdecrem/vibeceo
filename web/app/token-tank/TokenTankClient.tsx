@@ -939,9 +939,13 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
             </div>
             <div className="tt-stat">
               <div className="tt-stat-value" style={{ color: driftPortfolio && driftPortfolio.totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
-                {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : ''}$${driftPortfolio.totalPnl.toFixed(2)}` : '...'}
+                {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : '-'}$${Math.abs(driftPortfolio.totalPnl).toFixed(2)}` : '...'}
               </div>
-              <div className="tt-stat-label">P&L (real $)</div>
+              <div className="tt-stat-label">
+                {driftPortfolio?.lastUpdated
+                  ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`
+                  : 'P&L (real $)'}
+              </div>
             </div>
           </section>
 
@@ -1056,9 +1060,13 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                                 </div>
                                 <div className="tt-agent-metric">
                                   <div className="tt-agent-metric-value" style={{ color: driftPortfolio && driftPortfolio.totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
-                                    {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : ''}$${driftPortfolio.totalPnl.toFixed(2)}` : '...'}
+                                    {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : '-'}$${Math.abs(driftPortfolio.totalPnl).toFixed(2)}` : '...'}
                                   </div>
-                                  <div className="tt-agent-metric-label">P&L</div>
+                                  <div className="tt-agent-metric-label">
+                                    {driftPortfolio?.lastUpdated
+                                      ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`
+                                      : 'P&L'}
+                                  </div>
                                 </div>
                                 <div className="tt-agent-metric">
                                   <div className="tt-agent-metric-value" style={{ color: '#22c55e' }}>LIVE</div>
