@@ -116,22 +116,33 @@ function formatTokenTankSummary(rawSummary: string): string {
   return `${sentence.slice(0, 217).trimEnd()}...`;
 }
 
-async function buildTokenTankLink(recipient: string): Promise<string> {
+// Cached shortlink for the current broadcast (one per broadcast, not per-recipient)
+let cachedBroadcastLink: string | null = null;
+
+async function getOrCreateBroadcastLink(): Promise<string> {
+  if (cachedBroadcastLink) {
+    return cachedBroadcastLink;
+  }
+
   try {
     const shortLink = await createShortLink(BLOG_BASE_URL, {
       context: "token-tank-blog",
-      createdFor: recipient,
-      createdBy: "sms-bot",
+      createdBy: "token-tank-agent",
     });
 
     if (shortLink) {
-      return normalizeShortLinkDomain(shortLink);
+      cachedBroadcastLink = normalizeShortLinkDomain(shortLink);
+      return cachedBroadcastLink;
     }
   } catch (error) {
     console.warn("[token-tank] Failed to create short link:", error);
   }
 
   return BLOG_BASE_URL;
+}
+
+function clearBroadcastLinkCache(): void {
+  cachedBroadcastLink = null;
 }
 
 function composeSms(headline: string, summary: string, linkLine: string): string {
@@ -157,15 +168,14 @@ function composeSms(headline: string, summary: string, linkLine: string): string
 }
 
 export async function buildTokenTankSmsMessage(
-  tweetSummary: string,
-  recipient: string
+  tweetSummary: string
 ): Promise<string> {
   const summaryLine = formatTokenTankSummary(tweetSummary);
-  const link = await buildTokenTankLink(recipient);
+  const link = await getOrCreateBroadcastLink();
   const headline = "🏦 Token Tank — ";
-  const linkLine = `Read: ${link}`;
+  // Inline link format (like arXiv) avoids rich preview card
+  const linkLine = `Read more: ${link}`;
 
-  // Single newline keeps link inline (no preview), double newline triggers preview
   return composeSms(headline, summaryLine, linkLine);
 }
 
@@ -194,6 +204,9 @@ export async function broadcastTokenTankUpdate(
   twilioClient: TwilioClient,
   sendSms: (to: string, message: string, client: TwilioClient) => Promise<any>
 ): Promise<{ sent: number; failed: number }> {
+  // Clear cached link to ensure fresh shortlink for this broadcast
+  clearBroadcastLinkCache();
+
   const subscribers = await getAgentSubscribers(TOKEN_TANK_AGENT_SLUG);
 
   if (subscribers.length === 0) {
@@ -207,16 +220,14 @@ export async function broadcastTokenTankUpdate(
     return { sent: 0, failed: 0 };
   }
 
+  // Build message once for all subscribers (same shortlink for everyone)
+  const message = await buildTokenTankSmsMessage(post.tweetSummary);
+
   let sent = 0;
   let failed = 0;
 
   for (const subscriber of subscribers) {
     try {
-      const message = await buildTokenTankSmsMessage(
-        post.tweetSummary,
-        subscriber.phone_number
-      );
-
       await sendSms(subscriber.phone_number, message, twilioClient);
       await markAgentReportSent(subscriber.phone_number, TOKEN_TANK_AGENT_SLUG);
       sent++;

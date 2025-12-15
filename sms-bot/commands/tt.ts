@@ -54,10 +54,7 @@ async function handleLatest(context: CommandContext): Promise<boolean> {
       return true;
     }
 
-    const message = await buildTokenTankSmsMessage(
-      latest.tweetSummary,
-      context.normalizedFrom
-    );
+    const message = await buildTokenTankSmsMessage(latest.tweetSummary);
 
     await sendSmsResponse(from, message, twilioClient);
   } catch (error) {
