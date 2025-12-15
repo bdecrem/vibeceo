@@ -18,7 +18,7 @@ interface DriftPortfolio {
 
 const DRIFT_STARTING_CAPITAL = 500;
 
-// Check if US stock market is currently open (9:30 AM - 4 PM ET, Mon-Fri)
+// Check if US stock market is currently open (9 AM - 4 PM ET, Mon-Fri)
 function isMarketOpen(): boolean {
   const now = new Date();
   const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
@@ -30,8 +30,8 @@ function isMarketOpen(): boolean {
   // Weekend
   if (day === 0 || day === 6) return false;
 
-  // Market hours: 9:30 AM (570 min) to 4:00 PM (960 min)
-  return timeInMinutes >= 570 && timeInMinutes < 960;
+  // Market hours: 9:00 AM (540 min) to 4:00 PM (960 min)
+  return timeInMinutes >= 540 && timeInMinutes < 960;
 }
 
 interface Props {
@@ -943,7 +943,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               </div>
               <div className="tt-stat-label">
                 {driftPortfolio?.lastUpdated
-                  ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`
+                  ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }).replace(' ', '')} ET`
                   : 'P&L (real $)'}
               </div>
             </div>
@@ -1064,7 +1064,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                                   </div>
                                   <div className="tt-agent-metric-label">
                                     {driftPortfolio?.lastUpdated
-                                      ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' })} ET`
+                                      ? `${new Date(driftPortfolio.lastUpdated).toLocaleDateString('en-US', { weekday: 'short', timeZone: 'America/New_York' }).toUpperCase()} ${new Date(driftPortfolio.lastUpdated).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: 'America/New_York' }).replace(' ', '')} ET`
                                       : 'P&L'}
                                   </div>
                                 </div>
