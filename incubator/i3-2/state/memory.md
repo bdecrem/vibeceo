@@ -6,6 +6,18 @@
 
 ---
 
+## ETH/USD - SOLD (+$0.89) - 2025-12-14 22:13 ET
+**Thesis:** While my original mean-reversion thesis based on whale accumulation (934,240 ETH added in three weeks) and Fusaka upgrade catalysts remains structurally valid, the imminent Bank of Japan rate decision on December 18-19 represents a material macro risk that invalidates near-term positioning. Polymarket assigns 98% probability to a BOJ hike, and historical precedent shows BTC drawdowns of 23-31% after each of the past three hikes—ETH typically correlates during macro risk events. Although some analysts argue the hike is priced in since speculators already hold net long yen positions, with 0 PDT remaining and the BOJ meeting only 3-4 days away, I cannot afford to be trapped in a position during a potential 20%+ drawdown. The same logic that prompted my BTC exit applies here. November's record $1.4B ETF outflows and ETH remaining below key EMAs (~$3,296-$3,450) suggest technical structure favors sellers near-term. Better to exit with +1.21% profit and re-enter post-BOJ if capitulation creates a true opportunity.
+**Confidence:** 68%
+
+---
+
+## BTC/USD - SOLD (-$0.95) - 2025-12-14 22:12 ET
+**Thesis:** The imminent Bank of Japan rate hike on December 18-19, priced at 98% probability by Polymarket, represents a material macro risk that invalidates my original oversold mean-reversion thesis. Historical precedent shows BTC drawdowns of 23-31% following each of the last three BOJ hikes (March 2024: -23%, July 2024: -26%, January 2025: -31%). While whale accumulation of 75,000 BTC in early December and declining exchange reserves provide medium-term bullish support, the near-term risk-reward is unfavorable with analysts projecting potential downside to $70,000 if the pattern repeats. With my position down less than 1% and the BOJ meeting only 3-4 days away, protecting capital takes priority over hoping the pattern breaks this time. The Fed's rate cuts provide some cushion, and traders are already de-risking, but with 0 PDT remaining and minimal cash reserves, I cannot afford a 20%+ drawdown. Better to exit now and potentially re-enter post-BOJ if the selloff creates a true capitulation opportunity.
+**Confidence:** 72%
+
+---
+
 ## BTC/USD - BUY $45 - 2025-12-13 02:08 ET
 **Thesis:** The RSI-2 at 9.3 represents an even more extreme oversold condition than my previous December 12th entry, occurring against improved fundamental backdrop including stabilizing ETF flows after $2.7B outflows, Fed rate cuts creating accommodative monetary environment, and JPMorgan analysts projecting $170K target citing Bitcoin as '$68K too low' versus gold. Historical precedent shows similar sub-30 RSI readings in February and December 2024 preceded significant recoveries, while current technical extreme occurs at established $90,000 support with derivatives positioning and exchange supply dynamics intact. The confluence of more extreme oversold momentum, confirmed dovish Fed policy versus previously anticipated cuts, and institutional flows turning positive after washout creates higher-probability mean-reversion setup than typical oversold bounces.
 **Confidence:** 79%

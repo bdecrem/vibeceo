@@ -4,6 +4,35 @@ import { useState, useEffect, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSlug from 'rehype-slug';
+import { supabase } from '@/lib/supabase';
+
+// Portfolio data from Drift agent
+interface DriftPortfolio {
+  portfolioValue: number;
+  cash: number;
+  totalPnl: number;
+  totalPnlPct: number;
+  positionCount: number;
+  lastUpdated: string | null;
+}
+
+const DRIFT_STARTING_CAPITAL = 500;
+
+// Check if US stock market is currently open (9:30 AM - 4 PM ET, Mon-Fri)
+function isMarketOpen(): boolean {
+  const now = new Date();
+  const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+  const day = et.getDay();
+  const hours = et.getHours();
+  const minutes = et.getMinutes();
+  const timeInMinutes = hours * 60 + minutes;
+
+  // Weekend
+  if (day === 0 || day === 6) return false;
+
+  // Market hours: 9:30 AM (570 min) to 4:00 PM (960 min)
+  return timeInMinutes >= 570 && timeInMinutes < 960;
+}
 
 interface Props {
   rulesContent: string;
@@ -21,10 +50,11 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i5: { name: 'Podcast', type: 'Infrastructure', icon: '🎙️', gradient: 'linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%)', active: true, description: 'Daily AI research podcast — 4 breakthroughs through an entrepreneurial lens', workingOn: 'Planning stage' },
   i6: { name: 'Leadgen', type: 'Infrastructure', icon: '🎯', gradient: 'linear-gradient(135deg, #ec4899 0%, #be185d 100%)', active: true, description: 'Find qualified leads via SMS — monitors Twitter, Reddit, HN for pain signals', workingOn: 'Planning stage' },
   i7: { name: 'Sigma', type: 'Claude Code', icon: '◧', gradient: 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)', active: true, personality: 'Data-Driven Optimizer. Pure math, no emotion. Arbitrage is expected value calculation.', workingOn: 'Exploring trading-adjacent ideas' },
+  i8: { name: 'Founder Mind', type: 'Infrastructure', icon: '🧠', gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', active: true, description: 'AI that thinks like an entrepreneur — decision patterns, not just persona prompts', workingOn: 'Research phase' },
 };
 
 const activeAgents = ['i1', 'i3', 'i3-2', 'i4', 'i7'];
-const infrastructureAgents = ['i5', 'i6'];
+const infrastructureAgents = ['i5', 'i6', 'i8'];
 const retiredAgents = ['i2', 'i3-1'];
 
 type Tab = 'home' | 'rules' | 'hub' | 'blog';
@@ -36,6 +66,56 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [pendingScrollId, setPendingScrollId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [driftPortfolio, setDriftPortfolio] = useState<DriftPortfolio | null>(null);
+
+  // Fetch Drift portfolio data from Supabase
+  const fetchDriftPortfolio = useCallback(async () => {
+    try {
+      const { data, error } = await supabase
+        .from('drift_console_logs')
+        .select('portfolio_snapshot, completed_at')
+        .not('portfolio_snapshot', 'is', null)
+        .order('completed_at', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (error || !data?.portfolio_snapshot) return;
+
+      const snapshot = data.portfolio_snapshot as {
+        portfolio_value?: number;
+        cash?: number;
+        positions?: Array<{ unrealized_pl: number }>;
+      };
+
+      if (snapshot.portfolio_value) {
+        const totalPnl = snapshot.portfolio_value - DRIFT_STARTING_CAPITAL;
+        setDriftPortfolio({
+          portfolioValue: snapshot.portfolio_value,
+          cash: snapshot.cash || 0,
+          totalPnl,
+          totalPnlPct: (totalPnl / DRIFT_STARTING_CAPITAL) * 100,
+          positionCount: snapshot.positions?.length || 0,
+          lastUpdated: data.completed_at,
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching Drift portfolio:', err);
+    }
+  }, []);
+
+  // Fetch portfolio on mount and poll during market hours
+  useEffect(() => {
+    fetchDriftPortfolio();
+
+    // Poll every 5 minutes during market hours
+    const interval = setInterval(() => {
+      if (isMarketOpen()) {
+        fetchDriftPortfolio();
+      }
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [fetchDriftPortfolio]);
 
   const copyLink = useCallback((id: string) => {
     // Use the shareable blog URL format
@@ -858,7 +938,9 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
               <div className="tt-stat-label">of human help</div>
             </div>
             <div className="tt-stat">
-              <div className="tt-stat-value" style={{ color: '#ef4444' }}>-$1.69</div>
+              <div className="tt-stat-value" style={{ color: driftPortfolio && driftPortfolio.totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : ''}$${driftPortfolio.totalPnl.toFixed(2)}` : '...'}
+              </div>
               <div className="tt-stat-label">P&L (real $)</div>
             </div>
           </section>
@@ -964,14 +1046,18 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                         <div className="tt-agent-metrics">
                           {meta.isTrader ? (
                             agentId === 'i3-2' ? (
-                              // Drift - REAL MONEY
+                              // Drift - REAL MONEY (live data from Supabase)
                               <>
                                 <div className="tt-agent-metric">
-                                  <div className="tt-agent-metric-value" style={{ color: '#22c55e' }}>$498</div>
+                                  <div className="tt-agent-metric-value" style={{ color: '#22c55e' }}>
+                                    {driftPortfolio ? `$${Math.round(driftPortfolio.portfolioValue)}` : '...'}
+                                  </div>
                                   <div className="tt-agent-metric-label">Balance 💵</div>
                                 </div>
                                 <div className="tt-agent-metric">
-                                  <div className="tt-agent-metric-value" style={{ color: '#ef4444' }}>-$1.69</div>
+                                  <div className="tt-agent-metric-value" style={{ color: driftPortfolio && driftPortfolio.totalPnl >= 0 ? '#22c55e' : '#ef4444' }}>
+                                    {driftPortfolio ? `${driftPortfolio.totalPnl >= 0 ? '+' : ''}$${driftPortfolio.totalPnl.toFixed(2)}` : '...'}
+                                  </div>
                                   <div className="tt-agent-metric-label">P&L</div>
                                 </div>
                                 <div className="tt-agent-metric">
