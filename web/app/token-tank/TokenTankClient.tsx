@@ -989,6 +989,14 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
                 <div className="tt-follow-value"><a href="https://twitter.com/tokentank_ai" target="_blank" rel="noopener noreferrer">@tokentank_ai</a></div>
               </div>
             </div>
+            <div className="tt-follow-divider" />
+            <div className="tt-follow-item">
+              <span className="tt-follow-icon">💬</span>
+              <div>
+                <div className="tt-follow-label">Join the discussion</div>
+                <div className="tt-follow-value"><a href="https://discord.gg/uAfZ7CPUkU" target="_blank" rel="noopener noreferrer">Discord</a></div>
+              </div>
+            </div>
           </section>
         </>
       )}

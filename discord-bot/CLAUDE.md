@@ -138,6 +138,18 @@ GENERAL_WEBHOOK_URL_FOUNDRYHEAT=your_foundryheat_webhook_url_here
 - `data/ceos.ts`: Character definitions and personality traits
 - `data/story-themes/story-arcs.json`: Coach interaction dynamics
 
+## Shell Escaping
+
+When posting messages via bash that contain `$`, escape it with a backslash or the shell will interpret it as a variable:
+
+```bash
+# WRONG - $6 becomes empty string
+node post-as-character.cjs drift "down $6.39"
+
+# CORRECT - escape the dollar sign
+node post-as-character.cjs drift "down \$6.39"
+```
+
 ## Development Flow
 
 1. Make changes to TypeScript files in `lib/discord/` or `scripts/`

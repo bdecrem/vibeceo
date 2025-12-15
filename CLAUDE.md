@@ -108,6 +108,18 @@ ZAD apps use ONLY `/api/zad/save` and `/api/zad/load`. Never direct Supabase acc
 - **Pushes**: ALWAYS ask user permission first
 - **Never push** to main without explicit approval
 
+## Shell Escaping
+
+When running bash commands with `$` in strings, escape with backslash or bash treats it as a variable:
+
+```bash
+# WRONG - $6 becomes empty
+echo "down $6.39"
+
+# CORRECT
+echo "down \$6.39"
+```
+
 ## Twitter / Token Tank
 
 When tweeting links to Token Tank blog posts or log entries:
