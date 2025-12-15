@@ -45,7 +45,9 @@ cd sms-bot && npm run dev:reroute:v2
 
 ### Build & Deploy
 - **Build SMS bot**: `cd sms-bot && npm run build`
-- **Deployment**: Push to GitHub → Railway auto-deploys
+- **Build website**: `cd web && npm run build`
+- **Deployment**: Push to GitHub → Railway auto-deploys (NOT Vercel)
+- **Railway services**: `sms-bot` (port 3030), `web` (port 3000)
 - **NEVER** start/stop/build services without user permission
 
 ## Essential Documentation

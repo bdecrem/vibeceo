@@ -42,7 +42,7 @@ yarn-error.log*
 # Neo4j credentials
 **/neo4j.txt
 
-# vercel
+# Local Vercel cache (project deploys on Railway, not Vercel)
 .vercel
 
 # typescript
