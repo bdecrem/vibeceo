@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
     const { data: links, error } = await supabase
       .from('cs_content')
-      .select('id, url, domain, posted_by_name, notes, posted_at')
+      .select('id, url, domain, posted_by_name, notes, posted_at, comments')
       .order('posted_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
