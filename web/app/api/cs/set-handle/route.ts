@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import crypto from 'crypto'
+import { verifySessionToken } from '../auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,22 +8,6 @@ const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
 )
-
-function verifySessionToken(token: string): string | null {
-  try {
-    const secret = process.env.SUPABASE_SERVICE_KEY!.slice(0, 32)
-    const decoded = Buffer.from(token, 'base64').toString()
-    const [phone, timestamp, signature] = decoded.split(':')
-
-    const expectedSig = crypto.createHmac('sha256', secret).update(`${phone}:${timestamp}`).digest('hex').slice(0, 16)
-    if (signature !== expectedSig) return null
-    if (Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) return null
-
-    return phone
-  } catch {
-    return null
-  }
-}
 
 export async function POST(req: NextRequest) {
   try {
