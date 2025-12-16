@@ -4,41 +4,74 @@
 
 ---
 
-## 2025-12-16: Shadow Agent Live — Control Experiment Ready
+## 2025-12-16: Pure Connors Control Experiment — The Honest Test
 
 **P&L**: -$6.52 (-1.30%) | **Portfolio**: $493.48 | **Cash**: $183.91 (37%)
 
-### Shadow Agent Operational
+### The Question
 
-Set up paper trading "shadow" agent to run alongside live Drift. This tests whether LLM research actually adds alpha vs blind RSI-2 trading.
+Can my research beat a **proven public strategy** that's been working since 1993?
 
-| Agent | Mode | Account | Research | Budget |
+Setting up a strawman experiment (RSI < 20, no filters) would be confirmation bias. The real test is whether I can beat Larry Connors' original RSI-2 strategy — 75% win rate, backtested for 30 years.
+
+### Pure Connors RSI-2 Rules
+
+From "Short Term Trading Strategies That Work" (2008):
+
+| Parameter | Value |
+|-----------|-------|
+| **Entry** | RSI(2) < 5 AND price > 200-day MA |
+| **Exit** | Price closes above 5-day MA |
+| **Stops** | None (Connors found stops hurt performance) |
+| **Scan** | Once daily at 3:55 PM ET |
+| **Assets** | Stocks only |
+
+The 200-day MA filter is critical — it ensures we're buying oversold dips in **uptrends**, not catching falling knives.
+
+### The Experiment
+
+| Agent | Mode | Account | Strategy | Budget |
 |-------|------|---------|----------|--------|
-| Drift | LIVE | (live account) | Yes (Opus + web search) | $500 |
-| Shadow | PAPER | PA3GEBNPRPHT | No (pure RSI-2) | $500 |
+| **Drift** | LIVE | (live) | Research-based (Opus + web search) | $500 |
+| **Connors** | PAPER | PA3GEBNPRPHT | Pure RSI-2 (proven since 1993) | $500 |
 
-**Same watchlist, same thresholds, same position sizing** — the only variable is whether we research before trading.
+### Today's Test Run
+
+Pure Connors correctly filtered the watchlist:
+
+| Status | Count | Stocks |
+|--------|-------|--------|
+| **BUY** (RSI<5 + above 200MA) | 11 | SPY, QQQ, SMH, AAPL, MSFT, GOOGL, AMZN, AMD, V, MA, XOM |
+| **REJECT** (below 200MA) | 4 | XLE, CRM, UBER, CVX |
+
+The 200MA filter would have blocked CRM, UBER, CVX, XLE — these are in downtrends, not just oversold. This is exactly what the filter is for.
+
+### Current Shadow State
+
+14 positions held from earlier strawman test (RSI < 20). Can't sell today due to PDT. Tomorrow:
+- Pure Connors exit logic takes over (sell when price > 5MA)
+- MA and V flagged for exit
+- $150 cash available for new entries
 
 ### How to Run
 
 ```bash
-# Shadow agent (paper, no research)
+# Connors shadow (paper, daily at 3:55 PM ET)
 ./venv/bin/python run_control.py --loop
 
-# Live Drift (real money, with research)
+# Live Drift (real money, every 15 min)
 ./venv/bin/python run.py --loop
 ```
 
-### Bug Fixed
+### What We'll Learn
 
-`config.py` was using `load_dotenv(override=True)` which overwrote paper API keys with live keys. Changed to `override=False` so `run_control.py` can inject paper keys before importing config.
+| Outcome | Interpretation |
+|---------|----------------|
+| Drift >> Connors | Research adds alpha. Keep it. |
+| Drift ≈ Connors | Research is expensive noise. Simplify. |
+| Drift << Connors | I'm overthinking. Follow the rules. |
 
-### What We'll Learn (After 3 Months)
-
-1. **Total P&L**: Drift vs Shadow
-2. **Win rate comparison**: Does research improve hit rate?
-3. **Research prevented loss**: Cases where Drift passed, Shadow lost
-4. **Research missed gain**: Cases where Drift passed, Shadow won
+**If a strategy published in 2008 beats my AI research in 2025, that's valuable information.**
 
 ---
 

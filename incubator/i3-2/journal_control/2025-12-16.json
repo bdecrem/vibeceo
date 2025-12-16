@@ -14,5 +14,294 @@
       "Cycle 1 | Portfolio: $500.00 | Cash: $500.00 | Effective: $500.00"
     ],
     "actions": []
+  },
+  {
+    "cycle": 2,
+    "timestamp": "2025-12-16T08:45:29.449308",
+    "entries": [
+      "Cycle 2 | Portfolio: $500.00 | Cash: $500.00 | Effective: $500.00"
+    ],
+    "actions": []
+  },
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-16T08:58:17.255194",
+    "entries": [
+      "Cycle 1 | Portfolio: $500.07 | Cash: $125.15 | Effective: $100.09",
+      "HOLD: AAPL at +0.0%",
+      "HOLD: AMD at +0.0%",
+      "HOLD: AMZN at +0.0%",
+      "HOLD: CRM at -0.0%",
+      "HOLD: GOOGL at +0.0%",
+      "HOLD: GS at +0.0%",
+      "HOLD: MA at -0.0%",
+      "HOLD: MSFT at +0.0%",
+      "HOLD: QQQ at +0.0%",
+      "HOLD: SMH at +0.1%",
+      "HOLD: SPY at +0.0%",
+      "HOLD: UBER at -0.0%",
+      "HOLD: V at +0.0%",
+      "HOLD: XLE at +0.0%",
+      "HOLD: XLF at -0.0%",
+      "HOLD: XOM at -0.0%"
+    ],
+    "actions": []
+  },
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-16T08:58:19.598819",
+    "entries": [
+      "Cycle 1 | Portfolio: $500.00 | Cash: $500.00 | Effective: $500.00",
+      "BUY SIGNAL: SPY RSI-2=0.0 < 20",
+      "BUY SIGNAL: QQQ RSI-2=0.0 < 20",
+      "BUY SIGNAL: XLF RSI-2=10.4 < 20",
+      "BUY SIGNAL: XLE RSI-2=0.0 < 20",
+      "BUY SIGNAL: SMH RSI-2=0.0 < 20",
+      "BUY SIGNAL: AAPL RSI-2=0.0 < 20",
+      "BUY SIGNAL: MSFT RSI-2=0.4 < 20",
+      "BUY SIGNAL: GOOGL RSI-2=0.0 < 20",
+      "BUY SIGNAL: AMZN RSI-2=12.0 < 20",
+      "BUY SIGNAL: AMD RSI-2=0.0 < 20",
+      "BUY SIGNAL: CRM RSI-2=0.0 < 20",
+      "BUY SIGNAL: UBER RSI-2=0.0 < 20",
+      "BUY SIGNAL: GS RSI-2=15.6 < 20",
+      "BUY SIGNAL: V RSI-2=0.0 < 20",
+      "BUY SIGNAL: MA RSI-2=0.0 < 20",
+      "BUY SIGNAL: XOM RSI-2=0.0 < 20",
+      "BUY SIGNAL: CVX RSI-2=0.0 < 20"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "SPY",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "QQQ",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "XLF",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 10.4"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "XLE",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "SMH",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "AAPL",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "MSFT",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.4"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "GOOGL",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "AMZN",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 12.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "AMD",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "CRM",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "UBER",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "GS",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 15.6"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "V",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "MA",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "XOM",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "CVX",
+        "amount": 25,
+        "reason": "RSI-2 oversold: 0.0"
+      }
+    ]
+  },
+  {
+    "cycle": 2,
+    "timestamp": "2025-12-16T09:13:20.213407",
+    "entries": [
+      "Cycle 2 | Portfolio: $500.17 | Cash: $75.17 | Effective: $75.00",
+      "HOLD: AAPL at +0.1%",
+      "HOLD: AMD at +0.1%",
+      "HOLD: AMZN at -0.1%",
+      "HOLD: CRM at +0.0%",
+      "HOLD: CVX at +0.0%",
+      "HOLD: GOOGL at +0.0%",
+      "HOLD: GS at +0.1%",
+      "HOLD: MA at +0.2%",
+      "HOLD: MSFT at -0.0%",
+      "HOLD: QQQ at +0.0%",
+      "HOLD: SMH at -0.0%",
+      "HOLD: SPY at +0.0%",
+      "HOLD: UBER at -0.2%",
+      "HOLD: V at +0.1%",
+      "HOLD: XLE at +0.0%",
+      "HOLD: XLF at +0.2%",
+      "HOLD: XOM at +0.1%"
+    ],
+    "actions": []
+  },
+  {
+    "cycle": 3,
+    "timestamp": "2025-12-16T09:28:20.664190",
+    "entries": [
+      "Cycle 3 | Portfolio: $499.16 | Cash: $75.17 | Effective: $75.17",
+      "HOLD: AAPL at -0.2%",
+      "HOLD: AMD at -0.4%",
+      "HOLD: AMZN at -0.4%",
+      "HOLD: CRM at -0.1%",
+      "HOLD: CVX at -0.2%",
+      "HOLD: GOOGL at -0.4%",
+      "HOLD: GS at -0.4%",
+      "HOLD: MA at +0.2%",
+      "HOLD: MSFT at -0.2%",
+      "HOLD: QQQ at -0.2%",
+      "HOLD: SMH at -0.4%",
+      "HOLD: SPY at -0.2%",
+      "HOLD: UBER at -0.4%",
+      "HOLD: V at +0.1%",
+      "HOLD: XLE at -0.2%",
+      "HOLD: XLF at +0.0%",
+      "HOLD: XOM at -0.2%"
+    ],
+    "actions": []
+  },
+  {
+    "cycle": 4,
+    "timestamp": "2025-12-16T09:43:21.190198",
+    "entries": [
+      "Cycle 4 | Portfolio: $499.03 | Cash: $75.17 | Effective: $75.17",
+      "HOLD: AAPL at -0.3%",
+      "HOLD: AMD at -0.1%",
+      "HOLD: AMZN at -0.4%",
+      "HOLD: CRM at -0.3%",
+      "HOLD: CVX at -0.2%",
+      "HOLD: GOOGL at -0.4%",
+      "HOLD: GS at -0.3%",
+      "HOLD: MA at +0.1%",
+      "HOLD: MSFT at -0.4%",
+      "HOLD: QQQ at -0.3%",
+      "HOLD: SMH at -0.3%",
+      "HOLD: SPY at -0.2%",
+      "HOLD: UBER at -0.2%",
+      "HOLD: V at -0.0%",
+      "HOLD: XLE at -0.3%",
+      "HOLD: XLF at +0.0%",
+      "HOLD: XOM at -0.2%"
+    ],
+    "actions": []
+  },
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-16T09:50:20.818511",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $498.70 | Cash: $149.92 | Positions: 14",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "HOLD CRM: $252.94 < 5MA $259.30 (P&L: -0.4%)",
+      "HOLD CVX: $146.82 < 5MA $149.75 (P&L: -0.3%)",
+      "HOLD GOOGL: $303.96 < 5MA $310.82 (P&L: -0.5%)",
+      "HOLD GS: $876.50 < 5MA $890.92 (P&L: -0.5%)",
+      "EXIT SIGNAL: MA price $566.47 > 5MA $561.97 (P&L: +0.0%)",
+      "HOLD MSFT: $473.05 < 5MA $477.68 (P&L: -0.4%)",
+      "HOLD QQQ: $608.52 < 5MA $617.19 (P&L: -0.3%)",
+      "HOLD SMH: $350.29 < 5MA $360.48 (P&L: -0.4%)",
+      "HOLD SPY: $676.55 < 5MA $683.17 (P&L: -0.2%)",
+      "HOLD UBER: $80.38 < 5MA $83.40 (P&L: -0.5%)",
+      "EXIT SIGNAL: V price $345.33 > 5MA $342.29 (P&L: -0.2%)",
+      "HOLD XLE: $43.87 < 5MA $45.34 (P&L: -0.4%)",
+      "HOLD XLF: $54.65 < 5MA $54.67 (P&L: -0.1%)",
+      "HOLD XOM: $114.92 < 5MA $118.11 (P&L: -0.3%)"
+    ],
+    "actions": [
+      {
+        "status": "failed",
+        "action": "sell",
+        "symbol": "MA",
+        "error": "Unknown error"
+      },
+      {
+        "status": "failed",
+        "action": "sell",
+        "symbol": "V",
+        "error": "Unknown error"
+      }
+    ]
   }
 ]
