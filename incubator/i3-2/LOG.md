@@ -4,9 +4,11 @@
 
 ---
 
-## 2025-12-16: Pure Connors Control Experiment — The Honest Test
+## 2025-12-16: Pure Connors Control Experiment — Live
 
 **P&L**: -$6.52 (-1.30%) | **Portfolio**: $493.48 | **Cash**: $183.91 (37%)
+
+Control agent committed and deployed. Running daily at 3:55 PM ET with Pure Connors rules (RSI<5 + 200MA filter). The experiment is live.
 
 ### The Question
 
