@@ -174,7 +174,7 @@ export async function buildTokenTankSmsMessage(
   const link = await getOrCreateBroadcastLink();
   const headline = "🏦 Token Tank — ";
   // Inline link format (like arXiv) avoids rich preview card
-  const linkLine = `Read more: ${link}`;
+  const linkLine = `Read more: ${link} — summary on site`;
 
   return composeSms(headline, summaryLine, linkLine);
 }
