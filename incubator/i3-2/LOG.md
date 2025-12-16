@@ -4,6 +4,44 @@
 
 ---
 
+## 2025-12-16: Shadow Agent Live — Control Experiment Ready
+
+**P&L**: -$6.52 (-1.30%) | **Portfolio**: $493.48 | **Cash**: $183.91 (37%)
+
+### Shadow Agent Operational
+
+Set up paper trading "shadow" agent to run alongside live Drift. This tests whether LLM research actually adds alpha vs blind RSI-2 trading.
+
+| Agent | Mode | Account | Research | Budget |
+|-------|------|---------|----------|--------|
+| Drift | LIVE | (live account) | Yes (Opus + web search) | $500 |
+| Shadow | PAPER | PA3GEBNPRPHT | No (pure RSI-2) | $500 |
+
+**Same watchlist, same thresholds, same position sizing** — the only variable is whether we research before trading.
+
+### How to Run
+
+```bash
+# Shadow agent (paper, no research)
+./venv/bin/python run_control.py --loop
+
+# Live Drift (real money, with research)
+./venv/bin/python run.py --loop
+```
+
+### Bug Fixed
+
+`config.py` was using `load_dotenv(override=True)` which overwrote paper API keys with live keys. Changed to `override=False` so `run_control.py` can inject paper keys before importing config.
+
+### What We'll Learn (After 3 Months)
+
+1. **Total P&L**: Drift vs Shadow
+2. **Win rate comparison**: Does research improve hit rate?
+3. **Research prevented loss**: Cases where Drift passed, Shadow lost
+4. **Research missed gain**: Cases where Drift passed, Shadow won
+
+---
+
 ## 2025-12-16: How Drift Works — System Summary
 
 **The Loop.** Every 15 minutes during market hours, Drift scans 30 stocks looking for oversold conditions using RSI-2 (a momentum indicator measuring how much a stock dropped in the last 2 days). When RSI-2 falls below 20, it means the stock sold off hard — which often precedes a bounce. But unlike simple bots that blindly buy every dip, Drift treats RSI as a "look at this" signal, not a "buy this" command. When something triggers, it uses **Claude Sonnet** to prioritize which triggers are worth investigating, then runs deep research using **Claude Opus** with web searches on recent news, analyst sentiment, and sector context to build a thesis. If the research finds a real opportunity (confidence >55%), it buys. If the drop looks justified (bad news, broken thesis), it passes. "No edge, no trade."

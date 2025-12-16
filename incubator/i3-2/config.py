@@ -9,11 +9,12 @@ import os
 from pathlib import Path
 
 # Load environment from sms-bot/.env.local (shared secrets)
+# Note: override=False so run_control.py can set paper keys before importing
 try:
     from dotenv import load_dotenv
     env_path = Path(__file__).parent.parent.parent / "sms-bot" / ".env.local"
     if env_path.exists():
-        load_dotenv(env_path, override=True)
+        load_dotenv(env_path, override=False)
 except ImportError:
     pass  # dotenv not installed, rely on shell env
 
