@@ -111,6 +111,7 @@ def get_technical_signals(bars: list[dict]) -> dict:
     # Add moving averages if we have enough data
     sma_20 = calculate_sma(closes, 20)
     sma_50 = calculate_sma(closes, 50)
+    sma_200 = calculate_sma(closes, 200)
 
     if sma_20:
         signals["sma_20"] = round(sma_20, 2)
@@ -119,6 +120,11 @@ def get_technical_signals(bars: list[dict]) -> dict:
     if sma_50:
         signals["sma_50"] = round(sma_50, 2)
         signals["vs_sma_50"] = round(((current_price - sma_50) / sma_50) * 100, 2)
+
+    if sma_200:
+        signals["sma_200"] = round(sma_200, 2)
+        signals["vs_sma_200"] = round(((current_price - sma_200) / sma_200) * 100, 2)
+        signals["above_200ma"] = current_price > sma_200
 
     return signals
 
@@ -143,15 +149,25 @@ def screen_for_triggers(symbol: str, signals: dict, thresholds: dict) -> list[di
     rsi = signals.get("rsi_2")
     change_5d = signals.get("change_5d")
     vs_sma_20 = signals.get("vs_sma_20")
+    above_200ma = signals.get("above_200ma", True)  # Default True if no data
+
+    # Check if trend filter is required
+    require_uptrend = thresholds.get("REQUIRE_UPTREND", False)
 
     # Oversold bounce setup
     if rsi is not None and rsi < thresholds.get("RSI_OVERSOLD", 20):
-        triggers.append({
-            "symbol": symbol,
-            "trigger_type": "oversold",
-            "reason": f"RSI-2 at {rsi} (oversold < {thresholds.get('RSI_OVERSOLD', 20)})",
-            "signals": signals,
-        })
+        # Apply 200MA trend filter if enabled
+        if require_uptrend and not above_200ma:
+            # Skip - stock is in downtrend (below 200MA)
+            # This prevents catching falling knives
+            pass
+        else:
+            triggers.append({
+                "symbol": symbol,
+                "trigger_type": "oversold",
+                "reason": f"RSI-2 at {rsi} (oversold < {thresholds.get('RSI_OVERSOLD', 20)})",
+                "signals": signals,
+            })
 
     # Pullback in potential uptrend
     if change_5d is not None and change_5d < thresholds.get("PULLBACK_THRESHOLD", -2.0):

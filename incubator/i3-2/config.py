@@ -112,6 +112,12 @@ PULLBACK_THRESHOLD = -2.0  # Down this much in 5 days = pullback candidate
 BREAKOUT_THRESHOLD = 3.0   # Up this much on high volume = breakout candidate
 NEWS_MOVE_THRESHOLD = 5.0  # Stock moved this much = news-driven, research it
 
+# ============ TREND FILTER ============
+# Only buy oversold stocks that are in UPTRENDS (above 200MA)
+# This is from Connors RSI-2 - prevents catching falling knives
+REQUIRE_UPTREND = True     # If True, only buy when price > 200MA
+UPTREND_MA_PERIOD = 200    # Use 200-day MA as trend filter
+
 # ============ PORTFOLIO LIMITS ============
 MAX_PORTFOLIO_VALUE = 500  # Total budget agent can use
 MAX_POSITIONS = 12  # Max simultaneous positions

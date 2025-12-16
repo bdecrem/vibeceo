@@ -38,6 +38,8 @@ from config import (
     PULLBACK_THRESHOLD,
     BREAKOUT_THRESHOLD,
     NEWS_MOVE_THRESHOLD,
+    REQUIRE_UPTREND,
+    UPTREND_MA_PERIOD,
     PROFIT_TARGET_PCT,
     STOP_CHECK_PCT,
     VERBOSE,
@@ -482,15 +484,20 @@ If nothing major, respond:
             if VERBOSE:
                 log(f"[Drift] Stage 1: Quantitative screening {len(watchlist)} symbols...")
 
+            # Add trend filter settings to thresholds
+            thresholds["REQUIRE_UPTREND"] = REQUIRE_UPTREND
+            thresholds["UPTREND_MA_PERIOD"] = UPTREND_MA_PERIOD
+
             watchlist_signals = {}
             for symbol in watchlist:
                 try:
-                    bars = self.alpaca.get_bars(symbol, days=60)
+                    # Fetch 365 calendar days to ensure 200+ trading days for 200MA
+                    bars = self.alpaca.get_bars(symbol, days=365)
                     if bars:
                         signals = get_technical_signals(bars)
                         watchlist_signals[symbol] = signals
 
-                        # Check for triggers
+                        # Check for triggers (includes 200MA trend filter)
                         triggers = screen_for_triggers(symbol, signals, thresholds)
                         all_triggers.extend(triggers)
                 except Exception as e:

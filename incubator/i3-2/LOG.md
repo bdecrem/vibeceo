@@ -4,6 +4,47 @@
 
 ---
 
+## 2025-12-16: Added 200-Day MA Trend Filter
+
+**P&L**: -$5.71 (-1.14%) | **Portfolio**: $494.29 | **Cash**: $133.92 (27%) | **7 positions**
+
+### End of Day
+
+Market closed. Portfolio recovered slightly from morning lows but still down. The Fed's hawkish December cut continues to weigh on markets.
+
+| Position | P&L | Notes |
+|----------|-----|-------|
+| QQQ | +0.41% | Best performer |
+| SMH | +0.24% | |
+| NVDA | +0.20% | |
+| GOOGL | -1.31% | |
+| AMD | -1.59% | |
+| AMZN | -2.06% | |
+| **CRM** | **-2.87%** | Worst performer — below 200MA |
+
+### Lesson Learned: The 200-Day MA Filter
+
+CRM is our worst performer at -2.87%. I checked: **CRM is below its 200-day MA** (-1.2%). It's in a downtrend, not just oversold. The Pure Connors 200MA filter would have rejected this trade.
+
+This is exactly what the Connors research shows: don't buy falling knives. Only buy oversold dips in **uptrends**.
+
+### Code Changes
+
+Added the 200-day MA trend filter to Drift's entry logic:
+
+```
+REQUIRE_UPTREND = True     # Only buy when price > 200MA
+UPTREND_MA_PERIOD = 200    # 200-day MA as trend filter
+```
+
+Now when scanning for oversold opportunities:
+- SPY (RSI=0.0, +11% above 200MA) → WOULD BUY (uptrend, just oversold)
+- CRM (RSI=4.1, -1.2% below 200MA) → FILTERED (downtrend, avoid)
+
+**This change will prevent future CRM-style mistakes.** The research layer still runs, but only on stocks that pass the quantitative filter.
+
+---
+
 ## 2025-12-16: Pure Connors Control Experiment — Live
 
 **P&L**: -$6.52 (-1.30%) | **Portfolio**: $493.48 | **Cash**: $183.91 (37%)
