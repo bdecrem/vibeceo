@@ -121,7 +121,10 @@ class ControlAgent:
                     pnl_pct = pos["unrealized_plpc"]
                     log_entries.append(f"EXIT SIGNAL: {symbol} price ${current_price:.2f} > 5MA ${sma_5:.2f} (P&L: {pnl_pct:+.1f}%)")
                     result = self._execute_sell(symbol, f"Connors exit: price > 5-day MA")
-                    actions.append(result)
+                    if result.get("status") == "executed":
+                        actions.append(result)
+                    else:
+                        log_entries.append(f"SELL BLOCKED {symbol}: {result.get('error', 'Unknown')}")
                 else:
                     pnl_pct = pos["unrealized_plpc"]
                     log_entries.append(f"HOLD {symbol}: ${current_price:.2f} < 5MA ${sma_5:.2f} (P&L: {pnl_pct:+.1f}%)")
@@ -242,6 +245,15 @@ class ControlAgent:
         try:
             order = self.alpaca.sell(symbol, reason=reason)
             if order:
+                # Check if it's an error response
+                if order.get("status") == "error":
+                    error_msg = order.get("error", "Unknown error")
+                    # Simplify PDT errors
+                    if "pattern day trading" in error_msg.lower():
+                        error_msg = "PDT protection"
+                    print(f"[Connors] SELL BLOCKED {symbol}: {error_msg}")
+                    return {"status": "failed", "action": "sell", "symbol": symbol, "error": error_msg}
+
                 print(f"[Connors] SELL {symbol} - {reason}")
                 return {
                     "status": "executed",

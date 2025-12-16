@@ -274,7 +274,8 @@ class AlpacaClient:
 
         except Exception as e:
             print(f"[Drift] ERROR selling {symbol}: {e}")
-            return None
+            # Return error dict so caller knows what went wrong
+            return {"status": "error", "symbol": symbol, "error": str(e)}
 
     def _is_crypto(self, symbol: str) -> bool:
         """Check if symbol is a crypto asset."""
