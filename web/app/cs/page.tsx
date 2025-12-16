@@ -232,23 +232,13 @@ export default function CSPage() {
           <h1 className="cs-title">CS</h1>
           <p className="cs-subtitle">Link Feed</p>
         </div>
-        <div className="cs-header-right">
-          {auth.token ? (
-            <div className="cs-user">
-              <span className="cs-handle">@{auth.handle}</span>
-              <button onClick={handleLogout} className="cs-logout">Logout</button>
-            </div>
-          ) : (
-            <button onClick={() => setModal('phone')} className="cs-login-btn">
-              Sign in to comment
-            </button>
-          )}
-        </div>
+        {auth.token && (
+          <div className="cs-header-right">
+            <span className="cs-logged-in">signed in as <strong>{auth.handle}</strong></span>
+            <button onClick={handleLogout} className="cs-logout">logout</button>
+          </div>
+        )}
       </header>
-
-      <div className="cs-cta">
-        <p>Text <strong>CS SUBSCRIBE</strong> to <a href="sms:+18663300015">+1 (866) 330-0015</a> to join</p>
-      </div>
 
       {links.length === 0 ? (
         <div className="cs-empty">
@@ -329,7 +319,11 @@ export default function CSPage() {
       )}
 
       <footer className="cs-footer">
-        <p>Share links: <code>CS &lt;url&gt;</code> | <a href="https://kochi.to">Kochi.to</a></p>
+        <p>
+          <a href="sms:+18663300015&body=CS%20SUBSCRIBE">Subscribe via SMS</a>
+          <span className="cs-footer-sep">&middot;</span>
+          <a href="https://kochi.to">Kochi.to</a>
+        </p>
       </footer>
 
       {/* Auth Modal */}
@@ -442,54 +436,31 @@ const styles = `
     margin: 0;
   }
 
-  .cs-user {
+  .cs-header-right {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: #888;
   }
 
-  .cs-handle {
-    font-size: 0.9rem;
-    color: #1565c0;
-    font-weight: 500;
+  .cs-logged-in {
+    color: #888;
+  }
+
+  .cs-logged-in strong {
+    color: #555;
   }
 
   .cs-logout {
-    font-size: 0.8rem;
     color: #888;
     background: none;
     border: none;
     cursor: pointer;
-    text-decoration: underline;
   }
 
-  .cs-login-btn {
-    font-size: 0.85rem;
-    color: #fff;
-    background: #1565c0;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-
-  .cs-login-btn:hover {
-    background: #1976d2;
-  }
-
-  .cs-cta {
-    background: #fff8e1;
-    border: 1px solid #ffe082;
-    border-radius: 6px;
-    padding: 0.75rem 1rem;
-    margin-bottom: 1.5rem;
-    font-size: 0.9rem;
-    color: #5d4037;
-  }
-
-  .cs-cta a {
+  .cs-logout:hover {
     color: #1565c0;
-    text-decoration: none;
   }
 
   .cs-loading, .cs-error, .cs-empty {
@@ -747,8 +718,17 @@ const styles = `
   }
 
   .cs-footer a {
-    color: #1565c0;
+    color: #888;
     text-decoration: none;
+  }
+
+  .cs-footer a:hover {
+    color: #1565c0;
+  }
+
+  .cs-footer-sep {
+    margin: 0 0.5rem;
+    color: #ccc;
   }
 
   @media (max-width: 480px) {
