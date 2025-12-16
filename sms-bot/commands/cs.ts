@@ -18,6 +18,7 @@ import {
 import { getSubscriber } from "../lib/subscribers.js";
 import { supabase } from "../lib/supabase.js";
 import { sendSmsResponse, setPendingCS } from "../lib/sms/handlers.js";
+import { fetchAndSummarizeLink } from "../lib/cs-content-fetcher.js";
 import type { TwilioClient } from "../lib/sms/webhooks.js";
 import type { CommandContext, CommandHandler } from "./types.js";
 import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
@@ -137,22 +138,31 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
     const domain = extractDomain(url);
 
     // Store in database
-    const { error } = await supabase.from("cs_content").insert({
-      subscriber_id: subscriberId,
-      posted_by_phone: normalizedFrom,
-      posted_by_name: posterName,
-      url,
-      domain,
-      notes,
-      posted_at: new Date().toISOString(),
-    });
+    const { data: inserted, error } = await supabase
+      .from("cs_content")
+      .insert({
+        subscriber_id: subscriberId,
+        posted_by_phone: normalizedFrom,
+        posted_by_name: posterName,
+        url,
+        domain,
+        notes,
+        posted_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
 
-    if (error) {
+    if (error || !inserted) {
       console.error("[cs] Failed to store URL:", error);
       await sendSms(from, "Could not save link. Try again later.", twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
+
+    // Fetch and summarize content asynchronously (don't await)
+    fetchAndSummarizeLink(inserted.id, url).catch((err) => {
+      console.error("[cs] Background content fetch failed:", err);
+    });
 
     // Broadcast to subscribers
     const { sent } = await broadcastNewLink(

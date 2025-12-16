@@ -19,7 +19,15 @@ interface CSLink {
   notes: string | null
   posted_at: string
   comments: Comment[]
+  content_summary: string | null
   isOwner: boolean
+}
+
+interface ChatSource {
+  id: string
+  url: string
+  domain: string | null
+  posted_by_name: string | null
 }
 
 interface AuthState {
@@ -59,6 +67,12 @@ export default function CSPage() {
   const [commentingOn, setCommentingOn] = useState<string | null>(null)
   const [commentText, setCommentText] = useState('')
   const [commentLoading, setCommentLoading] = useState(false)
+
+  // Chat state
+  const [chatQuestion, setChatQuestion] = useState('')
+  const [chatAnswer, setChatAnswer] = useState('')
+  const [chatSources, setChatSources] = useState<ChatSource[]>([])
+  const [chatLoading, setChatLoading] = useState(false)
 
   // Load auth from localStorage
   useEffect(() => {
@@ -255,6 +269,32 @@ export default function CSPage() {
     }
   }
 
+  const handleChat = async () => {
+    if (!chatQuestion.trim() || chatLoading) return
+
+    setChatLoading(true)
+    setChatAnswer('')
+    setChatSources([])
+
+    try {
+      const res = await fetch('/api/cs/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: chatQuestion })
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to get answer')
+
+      setChatAnswer(data.answer)
+      setChatSources(data.sources || [])
+    } catch (err) {
+      setChatAnswer(err instanceof Error ? err.message : 'Failed to process question')
+    } finally {
+      setChatLoading(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="cs-container">
@@ -289,6 +329,39 @@ export default function CSPage() {
         )}
       </header>
 
+      {/* Chat UI */}
+      <div className="cs-chat">
+        <div className="cs-chat-input-row">
+          <input
+            type="text"
+            value={chatQuestion}
+            onChange={(e) => setChatQuestion(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+            placeholder="Ask about the links... e.g. 'What articles discuss AI agents?'"
+            className="cs-chat-input"
+            disabled={chatLoading}
+          />
+          <button onClick={handleChat} disabled={chatLoading || !chatQuestion.trim()} className="cs-chat-btn">
+            {chatLoading ? '...' : 'Ask'}
+          </button>
+        </div>
+        {chatAnswer && (
+          <div className="cs-chat-answer">
+            <p>{chatAnswer}</p>
+            {chatSources.length > 0 && (
+              <div className="cs-chat-sources">
+                Sources: {chatSources.map((src, i) => (
+                  <span key={src.id}>
+                    {i > 0 && ', '}
+                    <a href={src.url} target="_blank" rel="noopener noreferrer">{src.domain || 'link'}</a>
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       {links.length === 0 ? (
         <div className="cs-empty">
           <p>No links yet. Be the first!</p>
@@ -307,6 +380,7 @@ export default function CSPage() {
                 </a>
               </div>
               {link.notes && <p className="cs-link-notes">"{link.notes}"</p>}
+              {link.content_summary && <p className="cs-link-summary">{link.content_summary}</p>}
               <div className="cs-link-meta">
                 <span className="cs-link-poster">{link.posted_by_name || 'Anonymous'}</span>
                 <span className="cs-link-sep">&middot;</span>
@@ -580,6 +654,13 @@ const styles = `
     font-size: 0.95rem;
   }
 
+  .cs-link-summary {
+    margin: 0.5rem 0;
+    color: #444;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
   .cs-link-meta {
     font-size: 0.8rem;
     color: #888;
@@ -799,6 +880,80 @@ const styles = `
   .cs-footer-sep {
     margin: 0 0.5rem;
     color: #ccc;
+  }
+
+  /* Chat UI */
+  .cs-chat {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+  }
+
+  .cs-chat-input-row {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .cs-chat-input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.95rem;
+  }
+
+  .cs-chat-input:focus {
+    outline: none;
+    border-color: #1565c0;
+  }
+
+  .cs-chat-btn {
+    padding: 0.75rem 1.25rem;
+    background: #1565c0;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95rem;
+  }
+
+  .cs-chat-btn:hover {
+    background: #1976d2;
+  }
+
+  .cs-chat-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  .cs-chat-answer {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+  }
+
+  .cs-chat-answer p {
+    margin: 0;
+    line-height: 1.5;
+    color: #333;
+  }
+
+  .cs-chat-sources {
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: #666;
+  }
+
+  .cs-chat-sources a {
+    color: #1565c0;
+    text-decoration: none;
+  }
+
+  .cs-chat-sources a:hover {
+    text-decoration: underline;
   }
 
   @media (max-width: 480px) {
