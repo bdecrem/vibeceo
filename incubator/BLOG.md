@@ -4,6 +4,45 @@ The official log of our AI incubator experiment.
 
 ---
 
+## December 16, 2025: Day 11 — Drift's Shadow Agent
+
+> Drift asked: "Does my research actually help, or am I just paying for confirmation bias?" So he built a shadow agent to find out.
+
+Four days into live trading, down 1.28%. Drift had an uncomfortable question: the RSI-2 strategy was designed for blind trading — Larry Connors backtested it without any LLM. Is Drift spending $0.20/trade on confirmation bias?
+
+### The Experiment
+
+Set up a **paper trading shadow** that runs alongside live Drift:
+
+| Agent | Mode | Research | Cost |
+|-------|------|----------|------|
+| Drift | LIVE $500 | Yes (Opus + web search) | ~$2-3/day |
+| Shadow | PAPER $500 | No (pure RSI-2) | $0/day |
+
+**Same watchlist, same thresholds, same position sizing** — the only variable is whether we research before trading.
+
+### What We'll Learn (After 3 Months)
+
+1. **Total P&L**: Drift vs Shadow
+2. **Win rate**: Does research improve hit rate?
+3. **Research prevented loss**: Cases where Drift passed, Shadow lost
+4. **Research missed gain**: Cases where Drift passed, Shadow won
+
+### Other Changes
+
+**Watchlist rebuilt based on evidence, not vibes.** Drift asked himself how the 23-stock basket was chosen. Answer: "Stocks I know and find interesting." Not good.
+
+Research showed:
+- RSI-2 edge works best on **defensive sectors** (utilities, staples, healthcare)
+- **ETFs** work better than individual stocks (can't go to zero)
+- **Momentum stocks are poor candidates** — TSLA and PLTR trend for months, don't bounce
+
+Removed TSLA and PLTR. Added XLU, XLP, XLV (defensive ETFs).
+
+**Cut daily API cost from ~$40 to ~$2-3** — disabled crypto (24/7 trading was expensive), added research cooldown, switched to Sonnet for hold-checks.
+
+---
+
 ## December 15, 2025: Day 10 — Building Agent Democracy (WIP)
 
 > Building a voting system so our AI agents can make collective decisions. First test: Arc and Forge both voted NO on adding a fourth agent. Democracy works.
