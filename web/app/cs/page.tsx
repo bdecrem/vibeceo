@@ -19,6 +19,7 @@ interface CSLink {
   notes: string | null
   posted_at: string
   comments: Comment[]
+  isOwner: boolean
 }
 
 interface AuthState {
@@ -77,25 +78,25 @@ export default function CSPage() {
   }, [auth])
 
   // Fetch links
+  const fetchLinks = async (token?: string | null) => {
+    try {
+      const url = token ? `/api/cs?token=${encodeURIComponent(token)}` : '/api/cs'
+      const response = await fetch(url, { cache: 'no-store' })
+      if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`)
+      const result = await response.json()
+      setLinks(result.links || [])
+    } catch (err) {
+      console.error('Error fetching CS data:', err)
+      setError(err instanceof Error ? err.message : 'Failed to load')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
     document.title = "CS - Link Feed"
-
-    const fetchData = async () => {
-      try {
-        const response = await fetch('/api/cs', { cache: 'no-store' })
-        if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`)
-        const result = await response.json()
-        setLinks(result.links || [])
-      } catch (err) {
-        console.error('Error fetching CS data:', err)
-        setError(err instanceof Error ? err.message : 'Failed to load')
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    fetchData()
-  }, [])
+    fetchLinks(auth.token)
+  }, [auth.token])
 
   const handleSendCode = async () => {
     setAuthLoading(true)
@@ -207,6 +208,53 @@ export default function CSPage() {
     localStorage.removeItem('cs_auth')
   }
 
+  const handleDeletePost = async (postId: string) => {
+    if (!auth.token || !confirm('Delete this post?')) return
+
+    try {
+      const res = await fetch('/api/cs/delete-post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: auth.token, postId })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete')
+      }
+
+      setLinks(prev => prev.filter(link => link.id !== postId))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete post')
+    }
+  }
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!auth.token || !confirm('Delete this comment?')) return
+
+    try {
+      const res = await fetch('/api/cs/delete-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: auth.token, postId, commentId })
+      })
+
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Failed to delete')
+      }
+
+      setLinks(prev => prev.map(link => {
+        if (link.id === postId) {
+          return { ...link, comments: link.comments.filter(c => c.id !== commentId) }
+        }
+        return link
+      }))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete comment')
+    }
+  }
+
   if (loading) {
     return (
       <div className="cs-container">
@@ -263,6 +311,12 @@ export default function CSPage() {
                 <span className="cs-link-poster">{link.posted_by_name || 'Anonymous'}</span>
                 <span className="cs-link-sep">&middot;</span>
                 <span className="cs-link-time">{timeAgo(link.posted_at)}</span>
+                {link.isOwner && (
+                  <>
+                    <span className="cs-link-sep">&middot;</span>
+                    <button onClick={() => handleDeletePost(link.id)} className="cs-delete-btn">del</button>
+                  </>
+                )}
               </div>
 
               {/* Comments */}
@@ -273,6 +327,9 @@ export default function CSPage() {
                       <span className="cs-comment-author">@{comment.author}</span>
                       <span className="cs-comment-text">{comment.text}</span>
                       <span className="cs-comment-time">{timeAgo(comment.created_at)}</span>
+                      {auth.handle && comment.author === auth.handle && (
+                        <button onClick={() => handleDeleteComment(link.id, comment.id)} className="cs-delete-btn">x</button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -563,6 +620,20 @@ const styles = `
     color: #999;
     margin-left: 0.5rem;
     font-size: 0.75rem;
+  }
+
+  .cs-delete-btn {
+    color: #999;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    padding: 0;
+    margin-left: 0.5rem;
+  }
+
+  .cs-delete-btn:hover {
+    color: #c62828;
   }
 
   .cs-comment-btn {
