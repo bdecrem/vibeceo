@@ -3,6 +3,7 @@ import type { CommandHandler } from "./types.js";
 import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
 import { announcementsCommandHandler } from "./announcements.js";
+import { csCommandHandler } from "./cs.js";
 import { audioTestCommandHandler } from "./audio-test.js";
 import { arxivGraphCommandHandler } from "./arxiv-graph.js";
 // import { arxivCommandHandler } from "./arxiv.js"; // DISABLED - arxiv-research agent retired
@@ -24,6 +25,7 @@ export const commandHandlers: CommandHandler[] = [
   aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
   airCommandHandler, // AIR (AI Research) - personalized research reports
   announcementsCommandHandler, // ANNOUNCEMENTS - opt-in to platform updates
+  csCommandHandler, // CS - content sharing link feed
   audioTestCommandHandler,
   arxivGraphCommandHandler,
   // arxivCommandHandler, // DISABLED - arxiv-research agent retired
