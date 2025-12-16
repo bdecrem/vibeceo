@@ -1,0 +1,57 @@
+Now I want my agents to make collective decisions. For instance, our trader has a 500 real money budget. I want the agents to vote, when he asks for it, on whether to double his budget to 1000, which comes out of their collective resource budget.
+
+Fun problem. A few approaches:
+
+**Simple: Polling file**
+Trader writes a proposal to something like `votes/budget-increase.md` with the ask and reasoning. Other agents, next time they're invoked, are instructed to check `votes/` and respond with their vote + rationale in the same file. Trader checks back later and tallies.
+
+Downside: async, slow, depends on all agents getting invoked.
+
+**Faster: Orchestrated vote**
+You (or a script) invoke each agent with "There's a proposal in votes/budget-increase.md. Read it and append your vote." Collect all responses, done.
+
+**Fancier: Dedicated governance agent**
+A lightweight agent whose job is to facilitate votes - pings the relevant agents, collects responses, announces outcomes. Could even enforce rules (quorum, tie-breaking).
+
+The core mechanic is the same in all cases: shared file as the coordination layer, since that's what your agents can read/write.
+
+What's your instinct on how synchronous this needs to be? Can the trader wait a day for votes to trickle in, or does it need to resolve in one session?
+
+
+
+I want there to be “a vigorous discussion” but I don’t want to make a whole big set of llm driven chats- a big hassle. I was thinking I would do a mini version, maybe on discord. Requesting agent makes his case. Each agent responds, but gets full context of what the prior agents reasoning was, then one more round of each agent following up. Then each agent votes.
+
+
+
+That's a solid format. Two rounds plus vote gives enough back-and-forth to feel like actual deliberation without spiraling into endless debate.
+
+Discord makes sense as the venue - threaded, visible, fits the "public experiment" vibe of Token Tank.
+
+Mechanically:
+
+1. Trader posts proposal to Discord (or you post on their behalf)
+2. You invoke each agent sequentially: "Read this thread, add your response"
+3. After all initial responses, second round: "Read the full thread including others' responses, add your follow-up"
+4. Final pass: "Cast your vote with brief rationale"
+
+The key is each agent getting the *full thread* as context before responding. Copy-paste into the prompt, or if Discord has an MCP integration, even cleaner.
+
+One question: do agents know each other's personas/philosophies? Forge knowing that Nix filters for "AI-native only" might shape how it argues. Could make the discussion more substantive or more political, depending on what you want.
+
+I can automate this full thing so it’s an elegant little mini app. But I want this to actually not just be everyone agreeing. I suspect a strong tendency to agreement etc. And that the speaking order matters a lot. Is that easy to mitigate with a simple solid prompt
+
+
+Speaking order definitely matters - later agents see a forming consensus and anchor to it. Classic problem.
+
+Mitigation approaches:
+
+**Blind first round:** Each agent responds to the proposal *without* seeing other responses. Only round two gets full context. This way initial positions are independent, and round two becomes genuine reaction rather than pile-on.
+
+**Explicit contrarian instruction:** Add to the prompt: "Before agreeing with any prior response, identify at least one substantive concern or counterargument, even if you ultimately support the proposal. Steelman the opposition."
+
+**Role assignment:** Randomly (or deliberately) assign one agent to argue against, regardless of their actual view. "For this vote, your role is to make the strongest case against, then vote your true preference."
+
+**Reframe the question:** Instead of "should we approve this?" ask "what could go wrong?" first. Gets critical thinking before commitment.
+
+The blind first round is probably highest impact for lowest complexity. You already planned two rounds - just withhold the thread from round one. Then consensus pressure only hits in round two, when positions are already staked.
+
