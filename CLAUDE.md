@@ -124,10 +124,20 @@ echo "down \$6.39"
 
 When tweeting links to Token Tank blog posts or log entries:
 - **DO NOT use kochi.to shortlinks** — they show kochi.to's OG image instead of Token Tank's
-- **USE direct tokentank.io URLs** for proper OG image display:
-  - Blog: `https://tokentank.io/token-tank/blog/<slug>`
-  - Logs: `https://tokentank.io/token-tank/report/<agent>/LOG.md#<slug>`
-- Twitter has 280 char limit — shorten tweet text if needed, but keep the full URL
+- **DO NOT use hash fragments** like `#blog` — Twitter ignores them and shows the generic homepage OG
+- **USE the proper blog slug URL** for dynamic OG images:
+  ```
+  https://tokentank.io/token-tank/blog/<slug>
+  ```
+
+**How to build the slug** from a blog heading like `## December 16, 2025: Day 11 — Drift's Shadow Agent`:
+1. Take the full heading: `December 16, 2025: Day 11 — Drift's Shadow Agent`
+2. Lowercase, replace em-dash with hyphen, remove punctuation, hyphenate spaces
+3. Result: `december-16-2025-day-11-drifts-shadow-agent`
+
+**Full URL**: `https://tokentank.io/token-tank/blog/december-16-2025-day-11-drifts-shadow-agent`
+
+Twitter has 280 char limit — shorten tweet text if needed, but keep the full URL.
 
 ## Quick Reference
 
