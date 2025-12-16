@@ -17,7 +17,7 @@ import {
 } from "../lib/agent-subscriptions.js";
 import { getSubscriber } from "../lib/subscribers.js";
 import { supabase } from "../lib/supabase.js";
-import { sendSmsResponse } from "../lib/sms/handlers.js";
+import { sendSmsResponse, setPendingCS } from "../lib/sms/handlers.js";
 import type { TwilioClient } from "../lib/sms/webhooks.js";
 import type { CommandContext, CommandHandler } from "./types.js";
 import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
@@ -26,9 +26,14 @@ const CS_PREFIX = "CS";
 export const CS_AGENT_SLUG = "cs";
 
 interface ParsedCSCommand {
-  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP";
+  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING";
   url?: string;
   notes?: string;
+}
+
+// Strip surrounding quotes from a URL
+function stripQuotes(url: string): string {
+  return url.replace(/^["']|["']$/g, "");
 }
 
 function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand {
@@ -36,7 +41,7 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
   const afterPrefixUpper = afterPrefix.toUpperCase();
 
   // Check for subcommands
-  if (!afterPrefix || afterPrefixUpper === "HELP") {
+  if (afterPrefixUpper === "HELP") {
     return { subcommand: "HELP" };
   }
   if (afterPrefixUpper === "SUBSCRIBE" || afterPrefixUpper === "SUB") {
@@ -49,12 +54,18 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
     return { subcommand: "LIST" };
   }
 
-  // Check for URL
-  const urlMatch = afterPrefix.match(/https?:\/\/[^\s]+/i);
+  // If just "CS" with nothing after, wait for URL follow-up (iMessage splitting)
+  if (!afterPrefix) {
+    return { subcommand: "PENDING" };
+  }
+
+  // Check for URL (may be wrapped in quotes)
+  const urlMatch = afterPrefix.match(/["']?(https?:\/\/[^\s"']+)["']?/i);
   if (urlMatch) {
-    const url = urlMatch[0];
+    const url = stripQuotes(urlMatch[1]);
     // Everything after the URL is notes
-    const afterUrl = afterPrefix.substring(afterPrefix.indexOf(url) + url.length).trim();
+    const urlEndIndex = afterPrefix.indexOf(urlMatch[0]) + urlMatch[0].length;
+    const afterUrl = afterPrefix.substring(urlEndIndex).trim();
     return {
       subcommand: "POST",
       url,
@@ -305,9 +316,21 @@ export const csCommandHandler: CommandHandler = {
         return handlePost(context, parsed.url!, parsed.notes);
       case "LIST":
         return handleList(context);
+      case "PENDING":
+        // Just "CS" received - wait up to 30s for URL follow-up (iMessage splitting)
+        setPendingCS(context.normalizedFrom);
+        await context.updateLastMessageDate(context.normalizedFrom);
+        return true; // Handled, no response - silently waiting
       case "HELP":
       default:
         return handleHelp(context);
     }
   },
 };
+
+/**
+ * Handle a pending CS post - called from handlers.ts when URL arrives after "CS"
+ */
+export async function handlePendingCSPost(context: CommandContext, url: string): Promise<boolean> {
+  return handlePost(context, url);
+}

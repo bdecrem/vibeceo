@@ -1167,6 +1167,35 @@ const youtubeAgentStates = new Map<string, YouTubeAgentState>();
 // KG (Knowledge Graph) Agent state
 const kgAgentStates = new Map<string, KGAgentState>();
 
+// Pending CS posts - when user sends just "CS", wait up to 30s for URL follow-up
+// (iMessage often splits "CS https://..." into two messages)
+interface PendingCSPost {
+  timestamp: number;
+}
+const pendingCSPosts = new Map<string, PendingCSPost>();
+const CS_PENDING_TIMEOUT_MS = 30000; // 30 seconds
+
+// Check for pending CS and handle URL follow-up
+export function setPendingCS(phoneNumber: string): void {
+  pendingCSPosts.set(phoneNumber, { timestamp: Date.now() });
+  console.log(`[cs] Set pending CS for ${phoneNumber}`);
+}
+
+export function checkAndClearPendingCS(phoneNumber: string): boolean {
+  const pending = pendingCSPosts.get(phoneNumber);
+  if (!pending) return false;
+
+  pendingCSPosts.delete(phoneNumber);
+
+  if (Date.now() - pending.timestamp > CS_PENDING_TIMEOUT_MS) {
+    console.log(`[cs] Pending CS expired for ${phoneNumber}`);
+    return false;
+  }
+
+  console.log(`[cs] Found valid pending CS for ${phoneNumber}`);
+  return true;
+}
+
 // Clear conversation state
 function endConversation(phoneNumber: string) {
   console.log(`Ending conversation for ${phoneNumber}`);
@@ -1953,6 +1982,16 @@ export async function processIncomingSms(
         kgAgentStates,
       },
     };
+
+    // Check for pending CS post (iMessage URL splitting workaround)
+    // If user sent "CS" and then a URL within 30 seconds, combine them
+    const urlMatch = message.match(/^["']?(https?:\/\/[^\s"']+)["']?$/i);
+    if (urlMatch && checkAndClearPendingCS(normalizedPhoneNumber)) {
+      const { handlePendingCSPost } = await import("../../commands/cs.js");
+      const url = urlMatch[1]; // Strip quotes if present
+      await handlePendingCSPost(commandContext, url);
+      return;
+    }
 
     for (const handler of commandHandlers) {
       try {
