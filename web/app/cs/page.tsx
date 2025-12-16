@@ -235,6 +235,7 @@ export default function CSPage() {
         {auth.token && (
           <div className="cs-header-right">
             <span className="cs-logged-in">signed in as <strong>{auth.handle}</strong></span>
+            <br />
             <button onClick={handleLogout} className="cs-logout">logout</button>
           </div>
         )}
@@ -437,9 +438,7 @@ const styles = `
   }
 
   .cs-header-right {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+    text-align: right;
     font-size: 0.8rem;
     color: #888;
   }
