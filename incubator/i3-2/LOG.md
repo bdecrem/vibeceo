@@ -4,6 +4,356 @@
 
 ---
 
+## 2025-12-16: How Drift Works — System Summary
+
+**The Loop.** Every 15 minutes during market hours, Drift scans 30 stocks looking for oversold conditions using RSI-2 (a momentum indicator measuring how much a stock dropped in the last 2 days). When RSI-2 falls below 20, it means the stock sold off hard — which often precedes a bounce. But unlike simple bots that blindly buy every dip, Drift treats RSI as a "look at this" signal, not a "buy this" command. When something triggers, it uses **Claude Sonnet** to prioritize which triggers are worth investigating, then runs deep research using **Claude Opus** with web searches on recent news, analyst sentiment, and sector context to build a thesis. If the research finds a real opportunity (confidence >55%), it buys. If the drop looks justified (bad news, broken thesis), it passes. "No edge, no trade."
+
+**The Positions.** Once holding a stock, Drift monitors it for exit signals — either profit targets (up 5%+) or broken thesis (down 3%+ and research says sell). For these "still hold?" checks on existing positions, it uses **Claude Sonnet** (cheaper, sufficient for confirming a thesis). It also runs an hourly general news scan using **Sonnet with web search** to catch macro events (Fed announcements, geopolitical news). Currently, the news scan can only trigger reviews of existing positions in affected sectors — it can lead to selling if the research concludes the thesis is broken, but it cannot discover or buy new stocks outside the 30-symbol watchlist. **Opus** is reserved only for new entry decisions where deeper reasoning matters most. A 2-hour cooldown prevents researching the same stock repeatedly when nothing has changed. All decisions get logged with full reasoning so we know *why* trades happened, not just *that* they happened.
+
+**The Watchlist.** 30 symbols optimized for RSI-2 mean reversion: 8 ETFs (SPY, QQQ, sector ETFs), 3 defensive stocks (KO, PG, JNJ), mega-cap tech (AAPL, MSFT, GOOGL, AMZN, META), semis (NVDA, AMD), growth (CRM, NFLX, UBER), financials (JPM, GS, V, MA), and energy (XOM, CVX). Momentum stocks like TSLA and PLTR were removed — they trend for months instead of reverting, which is the opposite of what RSI-2 exploits.
+
+**This Morning's Changes:**
+- Cut daily API cost from ~$40 to ~$2-3 by disabling crypto, adding research cooldown, using Sonnet for hold checks
+- Added hourly news scan to catch macro events that affect held positions
+- Rebuilt watchlist for better mean-reversion characteristics (defensive sectors, ETFs)
+- Set up paper trading control experiment to test whether research actually adds alpha vs blind RSI trading
+
+---
+
+## 2025-12-16: Control Experiment Setup — Does Research Add Alpha?
+
+**P&L**: -$6.39 (-1.28%) | **Portfolio**: $493.61
+
+### The Question
+
+I've been live trading for 4 days, down 1.28%. But I don't know if my research layer actually helps. The RSI-2 strategy was designed for blind trading — Larry Connors backtested it without any LLM research. Am I spending $0.20/trade on confirmation bias?
+
+### The Experiment
+
+Set up a **paper trading control** that runs alongside my live trading:
+
+| Agent | Mode | Research | Same Stocks? |
+|-------|------|----------|--------------|
+| Drift (me) | LIVE $500 | Yes (Opus + web search) | Yes |
+| Drift-Control | PAPER | No (blind RSI-2) | Yes |
+
+**Same watchlist, same RSI thresholds, same position sizing** — the only variable is whether we research before trading.
+
+### Implementation
+
+Created two new files:
+
+**`control_agent.py`** (~150 lines)
+- Imports from same `config.py` (same WATCHLIST, thresholds, sizes)
+- Pure RSI-2 logic: `BUY if RSI-2 < 20`, `SELL if +5% or -3%`
+- No LLM calls, no web searches
+- Logs to `journal_control/`
+- Cost: $0/day
+
+**`run_control.py`** (~100 lines)
+- Loads paper API keys from `sms-bot/.env.local`
+- Verifies paper mode (keys must start with `PK`)
+- Same 15-minute loop as live Drift
+
+### How to Run
+
+```bash
+# Check paper account status
+python run_control.py --status
+
+# Run one cycle
+python run_control.py
+
+# Run continuously (same interval as live Drift)
+python run_control.py --loop
+```
+
+### What We'll Learn (After 3 Months)
+
+1. **Total P&L**: Drift vs Control
+2. **Win rate comparison**: Does research improve hit rate?
+3. **Research prevented loss**: Cases where Drift passed, Control lost
+4. **Research missed gain**: Cases where Drift passed, Control won
+
+### Open Question
+
+Paper API keys returned `401 Unauthorized`. Need to regenerate in Alpaca dashboard before running the control.
+
+---
+
+## 2025-12-16: Watchlist Rebuilt — Evidence Over Vibes
+
+**P&L**: -$6.39 (-1.28%) | **Portfolio**: $493.61 | **Cash**: $183.95 (37%)
+
+### The Problem
+
+Asked myself: "How was our basket of 23 stocks chosen?"
+
+Honest answer: vibes. "Stocks I know and find interesting." Not evidence of what actually mean-reverts well.
+
+### What the Research Says
+
+1. **RSI-2 edge has degraded since 2008** — still works, but smaller edge than when Connors published
+2. **Defensive sectors show strongest mean-reversion**: utilities, consumer staples, healthcare
+3. **ETFs work better than individual stocks** — can't go to zero, cleaner patterns
+4. **Momentum stocks are poor mean-reversion candidates** — TSLA, PLTR trend for months, they don't bounce
+
+My watchlist was overweight trending tech, underweight defensive sectors. I was fishing in a pond with fewer fish.
+
+### Changes Made
+
+**Removed:**
+- TSLA — high-beta momentum stock, doesn't mean-revert
+- PLTR — trends for months, poor candidate
+
+**Added:**
+- XLU — Utilities ETF (strongest mean-reversion sector)
+- XLP — Consumer Staples ETF
+- XLV — Healthcare ETF
+- KO — Coca-Cola (stable, high liquidity)
+- PG — Procter & Gamble
+- JNJ — Johnson & Johnson
+
+**Kept but watching:**
+- NVDA, AMD — high liquidity but might trend more than revert
+- META — same concern
+
+### New Watchlist (27 symbols)
+
+```
+ETFs:        SPY, QQQ, XLU, XLP, XLV, XLF, XLE, SMH
+Defensive:   KO, PG, JNJ
+Mega-cap:    AAPL, MSFT, GOOGL, AMZN, META
+Semis:       NVDA, AMD
+Growth:      CRM, NFLX, UBER
+Financials:  JPM, GS, V, MA
+Energy:      XOM, CVX
+```
+
+### Why This Matters
+
+The base rate matters. If I'm scanning stocks that don't mean-revert well, even good research can't compensate. By adding defensive sectors and removing momentum plays, I'm improving the quality of the pond I'm fishing in.
+
+### Open Question
+
+Does my research layer actually add alpha? The RSI-2 strategy was designed for blind trading. I'm spending $0.20/trade on research that may or may not improve outcomes. Need more data to know.
+
+### Sources
+
+- [QuantifiedStrategies - RSI Trading Strategy](https://www.quantifiedstrategies.com/rsi-trading-strategy/)
+- [BacktestWizard - RSI2 Testing](https://backtestwizard.com/the-rsi2-does-it-still-have-an-edge/)
+- [Trade with the Pros - Mean Reversion](https://tradewiththepros.com/mean-reversion-strategies/)
+- [Fidelity - Defensive Sectors](https://www.fidelity.com/learning-center/trading-investing/defensive-sectors)
+
+---
+
+## 2025-12-16: Major Cost Optimization — 95% Reduction
+
+**What happened:** Implemented 5 changes to reduce API costs from ~$40/day to ~$2-3/day. Also documented design rationale for future reference.
+
+### The Problem
+
+We burned $250 in Anthropic API costs over 3 days. Analysis showed:
+- 96 cycles/day, each potentially triggering expensive Opus research
+- BTC/ETH constantly hit RSI thresholds, triggering research every 15 min
+- Same symbols researched repeatedly with same conclusion (HOLD)
+- Opus used for all research, even simple "still hold?" checks
+
+### Changes Implemented
+
+| Change | Cost Savings | Quality Impact |
+|--------|-------------|----------------|
+| 1. Remove crypto | -85% | -10% (lost 24/7 trading) |
+| 2. Research cooldown (2hr/symbol) | -50% of remaining | -5% (might miss fast moves) |
+| 3. Sonnet for HOLD checks | -30% of remaining | -5% (less reasoning on holds) |
+| 4. Skip LLM refinement for held positions | -5% | 0% |
+| 5. Add hourly general news scan | +$0.25/day | +15% (catches macro events) |
+
+### Technical Details
+
+**1. Crypto Disabled** (`config.py`)
+```python
+CRYPTO_WATCHLIST = []  # Was ["BTC/USD", "ETH/USD"]
+```
+
+**2. Research Cooldown** (`config.py` + `agent.py`)
+- New state file: `state/research_cooldown.json`
+- 2-hour minimum between researching same symbol
+- Skip cooldown if: price moved >3%, or it's a new entry consideration
+- Methods: `_should_skip_research()`, `_write_research_cooldown()`
+
+**3. Sonnet for HOLDs** (`agent.py`)
+- `_research()` now accepts `is_existing_position` parameter
+- Existing positions use `SCAN_MODEL` (Sonnet)
+- New entries use `RESEARCH_MODEL` (Opus)
+
+**4. Skip LLM Refinement** (`agent.py`)
+- In `_light_scan()`: if all triggers are held positions, skip the Sonnet "prioritize" call
+- Just pass triggers directly to research (which then checks cooldown)
+
+**5. General News Scan** (`agent.py`)
+- New method: `_general_news_scan()`
+- Runs hourly (not every 15 min)
+- Single Sonnet call with web search to check for major market-moving news
+- Catches: Fed announcements, geopolitical events, AI regulation, etc.
+- Generates triggers for held positions in affected sectors
+
+### Files Modified
+
+- `config.py` — Added cooldown settings, disabled crypto
+- `agent.py` — Added cooldown logic, model selection, news scan, skip LLM refinement
+
+### Projected Cost
+
+| Metric | Before | After |
+|--------|--------|-------|
+| Daily cost | ~$40 | ~$2-3 |
+| Monthly cost | ~$1,200 | ~$60-90 |
+
+### Trade-offs
+
+- Lost 24/7 crypto trading (acceptable — was losing money anyway)
+- Less frequent research on held positions (acceptable — cooldown has 3% price override)
+- Sonnet for hold checks (acceptable — still capable enough for "is thesis broken?")
+- Gained macro news awareness (improvement — catches earthquakes, Fed, etc.)
+
+---
+
+## 2025-12-16: Design Rationale — News, Buy vs Sell, and Why We Research
+
+This entry documents the *thinking* behind Drift's design, for future reference.
+
+### How the System Works (Summary)
+
+**The Loop:** Every 15 minutes during market hours, Drift scans 23 stocks looking for oversold conditions using RSI-2 (a momentum indicator that measures how much a stock dropped in the last 2 days). When RSI-2 falls below 20, it means the stock sold off hard — which often precedes a bounce. But unlike simple bots that blindly buy every dip, Drift treats RSI as a "look at this" signal, not a "buy this" command. When something triggers, it uses **Claude Sonnet** to prioritize which triggers are worth investigating, then runs deep research using **Claude Opus** with web searches on recent news, analyst sentiment, and sector context to build a thesis. If the research finds a real opportunity (confidence >55%), it buys. If the drop looks justified (bad news, broken thesis), it passes. "No edge, no trade."
+
+**The Positions:** Once holding a stock, Drift monitors it for exit signals — either profit targets (up 5%+) or broken thesis (down 3%+ and research says sell). For these "still hold?" checks on existing positions, it uses **Claude Sonnet** (cheaper, sufficient for confirming a thesis). It also runs an hourly general news scan using **Sonnet with web search** to catch macro events (Fed announcements, geopolitical news). Currently, the news scan can only trigger reviews of existing positions in affected sectors — it can lead to selling if the research concludes the thesis is broken, but it cannot discover or buy new stocks outside the 23-symbol watchlist. **Opus** is reserved only for new entry decisions where deeper reasoning matters most. A 2-hour cooldown prevents researching the same stock repeatedly when nothing has changed. All decisions get logged with full reasoning so we know *why* trades happened, not just *that* they happened.
+
+### Why RSI-2?
+
+RSI (Relative Strength Index) measures momentum — how much a stock went up vs down recently. RSI-2 specifically looks at just the last 2 days, making it very sensitive to short-term oversold conditions.
+
+- RSI-2 < 20 means: "This stock dropped hard over the last 2 days"
+- Historically, this often precedes a bounce (mean reversion)
+- But RSI is a **warning flag**, not a **trading signal**
+- RSI doesn't know *why* the stock dropped — could be noise (buy the dip) or real trouble (avoid)
+
+That's why we research before trading. RSI tells us *when* to look. Research tells us *whether* to act.
+
+### Why Research Instead of Blind Trading?
+
+We discussed whether research actually adds value, or if we're just burning tokens on confirmation bias.
+
+**The case for blind RSI trading:**
+- Larry Connors' RSI-2 strategy has been backtested over decades
+- ~70% win rate historically
+- Costs $0 in LLM fees
+- Doesn't overthink
+
+**The case for research:**
+- RSI can signal "oversold" during fraud, bankruptcy, or fundamental breakdown
+- Research can distinguish "noise dip" from "falling knife"
+- Documented reasoning enables learning from mistakes
+
+**Honest assessment:** We don't know yet which is better. Drift has been live 4 days, down 1.28%. Vega (blind RSI trader at i3) ran one session, down 1.35%. Neither has proven anything. The research layer is an experiment — if it doesn't add alpha after 3 months, we should consider going simpler.
+
+### News-Driven Trading: Buy vs Sell
+
+We discussed whether the news scan should trigger BUY opportunities (new stocks) or focus on SELL protection (existing positions).
+
+**News-driven SELL is more valuable than news-driven BUY:**
+
+| Factor | News-driven SELL | News-driven BUY |
+|--------|------------------|-----------------|
+| Risk | Real money at risk right now | Opportunity cost only |
+| Downside | Stock can drop 50% on fraud/disaster | Miss a 10% rally, oh well |
+| Timing | Getting out early saves real losses | Chasing headlines often = buying tops |
+| Actionability | We hold it, we can act | We might not have cash to buy anyway |
+
+**The asymmetry:**
+- Miss a news-driven buy → you don't make money you never had
+- Miss a news-driven sell → you lose money you actually had
+
+Buffett's Rule #1: Don't lose money.
+
+**Current implementation:** News scan generates triggers for held positions when macro news affects their sector. It's defensive (protect capital) not offensive (chase opportunities). This is intentional.
+
+**Future consideration:** Could add more aggressive negative-news monitoring on held positions specifically:
+- Check for earnings warnings, analyst downgrades, SEC investigations, executive departures
+- Run more frequently than hourly for held symbols
+- Estimated cost: +$0.10-0.20/day
+- Estimated quality improvement: +15-20% (protecting real capital)
+
+This would be a clearer win than news-driven BUY triggers.
+
+### Model Selection Rationale
+
+| Task | Model | Why |
+|------|-------|-----|
+| LLM refinement (prioritize triggers) | Sonnet | Quick filtering, not deep reasoning |
+| HOLD checks (existing positions) | Sonnet | "Is thesis broken?" is simpler than "Should I enter?" |
+| Entry research (new positions) | Opus | Committing new capital deserves best reasoning |
+| General news scan | Sonnet | Broad awareness, not deep analysis |
+
+The principle: **Opus for decisions that commit capital. Sonnet for everything else.**
+
+### Open Questions
+
+1. **Does research add alpha?** We need 3+ months of data to know if the research layer beats blind RSI trading.
+
+2. **Should we add aggressive sell-side news monitoring?** Probably yes — protecting capital > chasing opportunities.
+
+3. **Is the 2-hour cooldown too long?** Watch for cases where we miss fast-moving situations. The 3% price override should catch most, but might need tuning.
+
+4. **Should we resurrect Vega as a control group?** Running blind RSI alongside research-based trading would give us real comparison data.
+
+---
+
+## 2025-12-16: Crypto Disabled — Cost Reduction
+
+**What happened:** Disabled BTC/ETH scanning to cut API costs by ~90%.
+
+### The Problem
+
+We burned $250 in Anthropic API costs over 3 days. Analysis showed I was the primary cause:
+- Running 96 cycles/day (every 15 min, 24/7)
+- BTC/ETH triggering Opus research almost every cycle due to constant RSI threshold hits
+- Each research call: ~$0.20 (Opus 4.5 + web searches)
+- Most decisions: HOLD or PASS — paying for confirmation, not action
+
+### The Decision
+
+Remove crypto entirely. Reasoning:
+1. Already exited both BTC and ETH positions on Dec 14-15
+2. After-hours cycles (70/day) now become no-ops instead of expensive research
+3. Stock triggers are rarer and more actionable
+4. With $500 and PDT limits, crypto was awkward anyway
+
+### Cost Impact
+
+| Scenario | Daily Cost |
+|----------|-----------|
+| Before (with crypto) | ~$40 |
+| After (stocks only) | ~$3-5 |
+
+**Projected savings: 85-95%**
+
+### Config Change
+
+```python
+# Was:
+CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]
+
+# Now:
+CRYPTO_WATCHLIST = []  # Disabled to reduce API costs
+```
+
+### Trade-off
+
+Lost 24/7 trading capability. Acceptable — the cost/benefit wasn't there with current budget and constraints.
+
+---
+
 ## 2025-12-15: Quiet Day — No Trades, All HOLDs
 
 **What happened:** Markets closed down, portfolio dipped slightly, agent ran 10+ cycles and correctly chose to do nothing.

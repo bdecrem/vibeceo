@@ -28,19 +28,24 @@ AGENT_NAME = "Drift"
 AGENT_COLOR = "#1a3d2e"  # Dark forest green
 
 # ============ WATCHLIST ============
-# Stocks we actively monitor and trade
-# High liquidity, good news coverage, suitable for swing trading
+# Optimized for RSI-2 mean reversion based on research (2025-12-16)
+# Key insight: Defensive sectors (utilities, staples, healthcare) show strongest mean-reversion
+# Momentum stocks (TSLA, PLTR) removed — they trend, don't revert
 WATCHLIST = [
-    # Mega-cap Tech
-    "AAPL", "MSFT", "GOOGL", "AMZN", "NVDA", "META", "TSLA",
-    # Growth/Momentum
-    "AMD", "CRM", "PLTR", "NFLX", "UBER",
-    # Financials
+    # ETFs — cleanest mean-reversion, can't go to zero
+    "SPY", "QQQ", "XLU", "XLP", "XLV", "XLF", "XLE", "SMH",
+    # Defensive / Mean-reversion core
+    "KO", "PG", "JNJ",  # Consumer staples + healthcare — textbook mean-reverters
+    # Mega-cap Tech — mature, established ranges
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META",
+    # Semis — keeping but watching if they actually bounce or just trend
+    "NVDA", "AMD",
+    # Growth — established companies, not pure momentum
+    "CRM", "NFLX", "UBER",
+    # Financials — work well for mean-reversion
     "JPM", "GS", "V", "MA",
     # Energy
     "XOM", "CVX",
-    # ETFs
-    "SPY", "QQQ", "SMH", "XLF", "XLE",
 ]
 
 # Sector groupings - used to prevent over-concentration
@@ -51,19 +56,23 @@ SECTOR_MAP = {
     "META": "mega_tech",
     # Semis (even more correlated - AI trade)
     "NVDA": "semis", "AMD": "semis", "AVGO": "semis", "INTC": "semis",
-    # High-beta tech
-    "TSLA": "high_beta",
     # Growth/SaaS
-    "CRM": "saas", "PLTR": "saas", "NOW": "saas", "SNOW": "saas",
+    "CRM": "saas", "NOW": "saas", "SNOW": "saas",
     # Consumer/Media
     "NFLX": "consumer", "UBER": "consumer",
     # Financials
     "JPM": "financials", "GS": "financials", "V": "financials", "MA": "financials",
     # Energy
     "XOM": "energy", "CVX": "energy",
-    # ETFs - each is its own thing
-    "SPY": "etf_broad", "QQQ": "etf_tech", "SMH": "etf_semis", "XLF": "etf_fin", "XLE": "etf_energy",
-    # Crypto
+    # Defensive - Consumer Staples (low correlation to tech, mean-revert well)
+    "KO": "staples", "PG": "staples", "PEP": "staples", "WMT": "staples", "COST": "staples",
+    # Defensive - Healthcare
+    "JNJ": "healthcare", "UNH": "healthcare", "PFE": "healthcare", "LLY": "healthcare",
+    # ETFs - each is its own sector to allow multiple
+    "SPY": "etf_broad", "QQQ": "etf_tech", "SMH": "etf_semis",
+    "XLF": "etf_fin", "XLE": "etf_energy",
+    "XLU": "etf_utilities", "XLP": "etf_staples", "XLV": "etf_health",
+    # Crypto (currently disabled)
     "BTC/USD": "crypto", "BTCUSD": "crypto", "ETH/USD": "crypto", "ETHUSD": "crypto",
 }
 
@@ -71,8 +80,10 @@ SECTOR_MAP = {
 MAX_POSITIONS_PER_SECTOR = 2
 MAX_CRYPTO_POSITIONS = 3  # Crypto gets more slots since no PDT limits
 
-# Crypto assets - traded 24/7, scanned when stock market is closed
-CRYPTO_WATCHLIST = ["BTC/USD", "ETH/USD"]
+# Crypto assets - DISABLED to reduce API costs
+# Was burning ~$35/day researching BTC/ETH every 15 min with Opus
+# Re-enable if we want 24/7 trading capability back
+CRYPTO_WATCHLIST = []  # ["BTC/USD", "ETH/USD"]
 
 # Broader news monitoring list - we scan news for these but don't actively trade them
 # unless they show up as big movers. This catches news-driven opportunities.
@@ -126,6 +137,12 @@ DAY_TRADE_RESERVE = 1  # Always keep 1 day trade for emergencies
 SCAN_INTERVAL_MINUTES = 15  # Check markets every 15 minutes
 RESEARCH_TIMEOUT_SECONDS = 180  # Max 3 minutes for research per decision
 MAX_RESEARCH_SEARCHES = 5  # Cap web searches per research session
+
+# ============ RESEARCH COOLDOWN ============
+# Prevent re-researching same symbol repeatedly
+RESEARCH_COOLDOWN_MINUTES = 120  # 2 hours minimum between researching same symbol
+RESEARCH_COOLDOWN_PRICE_OVERRIDE = 3.0  # Skip cooldown if price moved >3%
+NEWS_SCAN_INTERVAL_MINUTES = 60  # General news scan once per hour
 
 # ============ CONFIDENCE THRESHOLDS ============
 MIN_CONFIDENCE_TO_TRADE = 55  # Don't trade below this confidence

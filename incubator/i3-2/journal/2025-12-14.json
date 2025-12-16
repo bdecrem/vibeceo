@@ -571,56 +571,15 @@
     "timestamp_human": "12:10 PM ET"
   },
   {
-    "type": "scan",
-    "portfolio_value": 496.55,
-    "position_count": 7,
-    "findings": "Crypto showing extreme oversold conditions with BTC at historic RSI-2 lows",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T14:56:00.921896-05:00",
-    "timestamp_human": "02:56 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - potential dead cat bounce opportunity",
-    "searches": [
-      {
-        "query": "Bitcoin BTC price news today December 14 2024"
-      },
-      {
-        "query": "Bitcoin ETF flows December 2024"
-      },
-      {
-        "query": "Bitcoin analyst forecast outlook December 2024"
-      },
-      {
-        "query": "Michael Saylor Bitcoin purchase December 2024"
-      }
-    ],
-    "findings": "BTC trading at ~$89,000 after breaking $90K support; technicals suggest $80K-$85K correction possible; Bitcoin ETFs saw first weekly net outflows in December ($297.75M on Dec 27), though this is corrective not panic-driven; Strategy (MicroStrategy) holds 660,624 BTC worth ~$60B, continuing purchases at $90K levels; Whale wallets accumulating $88K-$90K signaling this is rebalancing window not reversal trend; Fear & Greed Index at 23 (Extreme Fear) with reduced on-chain selling pressure per CryptoQuant; Long-term analyst targets remain $125K-$200K for 2025 from Bernstein, Tom Lee, Standard Chartered",
-    "decision": "hold",
-    "confidence": 62,
-    "thesis": "Despite RSI-2 at 0.1 showing extreme oversold conditions, the break below $90,000 support and technical signals pointing to a likely correction toward $80,000-$85,000 means the original mean-reversion thesis needs adjustment. However, this appears to be a flow-based pullback rather than fundamental unwind - CryptoQuant reports reduced selling pressure, whale wallets are accumulating between $88K-$90K, and institutional custody accounts show steady BTC accumulation despite ETF outflows. With Strategy/MicroStrategy holding 660,624 BTC and continuing purchases at current levels, plus long-term analyst targets of $125K-$200K, selling into extreme fear at current prices would crystallize losses prematurely. Given PDT restrictions (0 day trades), over-invested status (only 2.7% cash), and the mixed technical picture, the prudent path is to hold current position while not adding exposure. If price reaches $80K support, that would present a higher-conviction re-entry or averaging opportunity with better risk/reward.",
-    "timestamp": "2025-12-14T14:57:00.110707-05:00",
-    "timestamp_human": "02:57 PM ET"
-  },
-  {
     "type": "research",
     "symbol": "ETH/USD",
-    "trigger": "6.8% pullback may offer follow-through play if BTC bounces, but RSI-2 at 57 suggests less immediate mean reversion",
+    "trigger": "5-day drop of -6.71% with RSI-2 at 60 suggests momentum may continue down - need to check if this is crypto contagion or ETH-specific",
     "searches": [
       {
         "query": "Ethereum ETH price news December 2024"
       },
       {
-        "query": "ETH USD analyst outlook December 2024"
-      },
-      {
-        "query": "Bitcoin BTC price today December 14"
+        "query": "crypto market Bitcoin Ethereum correlation today"
       },
       {
         "query": "Ethereum ETF flows December 2024"
@@ -629,229 +588,155 @@
         "query": "Fed rate decision crypto impact December 2024"
       }
     ],
-    "findings": "Ethereum ETFs saw record $2.6B inflows in December with 8 consecutive weeks of net inflows - strong institutional demand; ETH down 12.18% over past month but current technical sentiment is bearish with Fear & Greed at 21 (Extreme Fear); BTC struggling at $90K support - if it breaks below could test $88K-89K, impacting ETH correlation; Post-Fed December rate cut caused $675M in crypto liquidations including $100M+ ETH longs; VanEck forecasts $6,000 ETH cycle top in 2025 - longer-term outlook remains bullish",
+    "findings": "December 2024 ETH down 6.63% month-to-date with broader crypto weakness; ETH ETFs recorded $2.1B in December inflows despite price decline - institutional demand strong; BitMine purchased another 23,637 ETH (~$73M) signaling continued institutional accumulation; Fed December rate cut (25bps to 4.25-4.5%) triggered $675M in crypto liquidations including $100M+ in ETH; BTC-ETH 3-month correlation at 0.32 confirms this is crypto-wide contagion not ETH-specific; $3,500 is key resistance with $1B+ short liquidations above that level; VanEck projects $6,000 ETH cycle top during 2025",
     "decision": "hold",
-    "confidence": 62,
-    "thesis": "The original capitulation thesis from December 12 has partially played out - ETH stabilized and the position is marginally profitable (+0.49%). While the extreme RSI-2 catalyst is exhausted (now at 57), record institutional ETF inflows of $2.6B in December and VanEck's $6,000 price target provide continued fundamental support. However, BTC testing critical $90K support, post-Fed hawkish sentiment creating headwinds, and technical indicators showing bearish conditions with the Fear & Greed Index at 21 (Extreme Fear) create near-term uncertainty. The supply-demand thesis from whale accumulation and low exchange balances remains intact. With PDT restrictions preventing tactical exits and over-invested position constraining new capital, holding through this consolidation makes sense - but this is no longer a high-conviction swing setup, just an acceptable hold with modest upside potential if BTC bounces.",
-    "timestamp": "2025-12-14T14:57:46.197091-05:00",
-    "timestamp_human": "02:57 PM ET"
+    "confidence": 55,
+    "thesis": "The original RSI-2 at 0.0 mean-reversion thesis has not played out as expected, with RSI now at 60 and the 5-day drop of -6.71% indicating continued downward momentum rather than the bounce I anticipated. However, this appears to be broader crypto contagion rather than ETH-specific weakness - the Fed's December rate cut still triggered $675M in liquidations despite being accommodative on paper, and both BTC and ETH are trending down. The long-term fundamentals remain compelling: Ethereum ETFs recorded $2.1B in inflows during December (nearly double November), institutional accumulation continues with BitMine adding another $73M in ETH, and VanEck projects $6,000 ETH by 2025. Given the tiny position size ($73.62), minimal unrealized gain ($0.28), and intact long-term thesis despite failed short-term timing, the risk/reward of selling into weakness doesn't justify locking in a wash. The $3,500 resistance remains the key level with $1B in short liquidations above it. I'll hold for the broader crypto thesis but acknowledge my timing edge has evaporated.",
+    "timestamp": "2025-12-14T12:11:01.856583-05:00",
+    "timestamp_human": "12:11 PM ET"
   },
   {
     "type": "scan",
-    "portfolio_value": 498.57,
+    "portfolio_value": 496.24,
     "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH demonstrates multi-signal confluence at support levels",
+    "findings": "BTC showing extreme oversold conditions while ETH weakness appears more structural - crypto oversold bounce setup developing",
     "triggers": [
       "BTC/USD",
       "ETH/USD"
     ],
     "action": "research_triggered",
-    "timestamp": "2025-12-14T21:31:43.996225-05:00",
-    "timestamp_human": "09:31 PM ET"
+    "timestamp": "2025-12-14T12:45:30.813193-05:00",
+    "timestamp_human": "12:45 PM ET"
   },
   {
     "type": "research",
     "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - rare signal suggesting potential bounce",
+    "trigger": "RSI-2 at 0.2 is extremely oversold AND testing 20-day MA support - dual technical trigger in established asset",
     "searches": [],
     "findings": "",
     "decision": "pass",
     "confidence": 0,
     "thesis": "",
-    "timestamp": "2025-12-14T21:32:41.664891-05:00",
-    "timestamp_human": "09:32 PM ET"
+    "timestamp": "2025-12-14T12:46:26.735913-05:00",
+    "timestamp_human": "12:46 PM ET"
   },
   {
     "type": "research",
     "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% pullback + testing 20-day MA + RSI approaching oversold",
+    "trigger": "5-day decline of -7.06% with RSI-2 at 49.3 suggests continued weakness - need to assess if this is crypto contagion or ETH-specific issues",
     "searches": [
       {
-        "query": "Ethereum ETH price news December 2025"
+        "query": "Ethereum ETH price news December 2024"
       },
       {
-        "query": "ETH crypto analyst forecast December 2025"
+        "query": "crypto market decline today December 2024"
+      },
+      {
+        "query": "Ethereum ETF flows institutional December 2024"
+      },
+      {
+        "query": "Ethereum smart money whale accumulation December 2024"
+      }
+    ],
+    "findings": "Decline is Fed-driven crypto contagion, not ETH-specific - Powell cut rate outlook from 4 to 2 cuts in 2025; ETH ETF inflows remain robust: $273.7M on Dec 12, BlackRock ETHA with $3.52B cumulative inflows; Smart whales aggressively accumulating - BitcoinOG increased ETH long to $280M with $16M unrealized profit; Price holding above critical $3,150 support level with upside target of $3,600-$3,800; Grayscale notes this is a normal pullback in bull market - December CSMI declined 6% giving back 15% of November gains",
+    "decision": "hold",
+    "confidence": 72,
+    "thesis": "The 5-day decline reflects broad crypto market contagion from Fed hawkishness reducing expected 2025 rate cuts from 4 to 2, not ETH-specific weakness. My original mean-reversion thesis remains intact: the RSI-2 extreme has normalized as expected, ETF flows remain positive ($273.7M on Dec 12, with BlackRock's ETHA showing $3.52B cumulative inflows), and smart money whales are aggressively accumulating - notably BitcoinOG scaling to $280M in ETH longs. The position is essentially at breakeven (-0.09%), trading above critical $3,150 support with potential to retest $3,600-$3,800. With 0 day trades remaining, selling would lock in a negligible loss and sacrifice upside from confirmed institutional conviction. The Fed reaction is already priced in; holding allows the accumulation thesis to play out.",
+    "timestamp": "2025-12-14T12:47:17.148200-05:00",
+    "timestamp_human": "12:47 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 496.3,
+    "position_count": 7,
+    "findings": "BTC showing extreme oversold conditions while ETH's decline appears more measured - crypto weakness creating potential mean reversion setups",
+    "triggers": [
+      "BTC/USD",
+      "ETH/USD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-14T13:02:23.663367-05:00",
+    "timestamp_human": "01:02 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "BTC/USD",
+    "trigger": "RSI-2 at 0.2 is extremely oversold AND testing 20-day MA support - dual technical confluence",
+    "searches": [
+      {
+        "query": "Bitcoin BTC price news today December 14 2025"
+      },
+      {
+        "query": "Bitcoin ETF flows December 2025"
+      },
+      {
+        "query": "Bitcoin analyst forecast outlook 2025"
+      },
+      {
+        "query": "Bitcoin on-chain support $90000 level December 2025"
+      }
+    ],
+    "findings": "BlackRock's IBIT experienced $2.7B in redemptions over five weeks - longest outflow streak since launch; Daily ETF inflows remain weak at $49-55M vs. historical $500M-$1B needed for rallies; Standard Chartered cut year-end BTC target from $200K to $100K, calling environment a 'cold breeze'; On-chain support at $80,000-$84,000 remains intact with True Market Mean and ETF cost basis providing floor; Fear & Greed Index at 23 (Extreme Fear) indicates cautious market sentiment; No technical reversal signals yet - analysts suggest $80,000-$85,000 correction still possible",
+    "decision": "hold",
+    "confidence": 58,
+    "thesis": "Despite RSI-2 remaining at extreme oversold levels (0.2) with 20-day MA support being tested, the thesis for a mean-reversion bounce is weakening. BlackRock's IBIT has seen $2.7B in outflows over five weeks - its heaviest redemption cycle since launch - while ETF flows remain inconsistent with just $49-55M daily inflows versus the $500M-$1B historically needed to power rallies. Standard Chartered cut their year-end target from $200K to $100K citing weakening demand. However, on-chain support at $80,000-$84,000 remains structurally intact with True Market Mean and ETF cost basis providing a floor, and the position is small enough (-1.7% unrealized loss) that panic selling into a PDT restriction makes little sense. The original thesis of mean-reversion from oversold extremes hasn't been fully invalidated, but the lack of ETF flow conviction and no technical reversal signals warrant reduced confidence and close monitoring for any breakdown below $89,000 support.",
+    "timestamp": "2025-12-14T13:03:19.650790-05:00",
+    "timestamp_human": "01:03 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "ETH/USD",
+    "trigger": "5-day -7% decline with RSI-2 still neutral at 49.3 suggests controlled selling, not panic",
+    "searches": [
+      {
+        "query": "Ethereum ETH price news December 2024"
+      },
+      {
+        "query": "Ethereum analyst outlook forecast December 2024"
       },
       {
         "query": "crypto market sentiment Bitcoin Ethereum today"
       },
       {
-        "query": "Ethereum whale accumulation ETF flows December 2025"
+        "query": "Ethereum ETF flows December 2024"
       }
     ],
-    "findings": "Fear & Greed Index at 21 (Extreme Fear) - historically a buying opportunity signal; ETH ETF inflows surged to $177M on Dec 9, highest since October 28; AUM up 28% since Nov 21 to $21.5B; Whale clusters holding 2.8M ETH at $3,150 and 3.6M ETH at $2,800 create strong support layers; Fusaka upgrade (Dec 3) implemented successfully, enabling 100K+ TPS through L2s; Price holding at realized price (~$3,129) despite selling pressure demonstrates demand absorption; Analyst consensus targets $3,348-$3,450 in next 2-4 weeks representing ~7-10% upside",
+    "findings": "Fear & Greed Index dropped to 21 (Extreme Fear) on December 14, indicating capitulation sentiment; Ethereum ETFs saw record $2.1B inflows in December, nearly doubling November's investment; BitMine purchased 23,637 ETH ($73M) showing continued institutional accumulation; ETH trading below all major EMAs (50-day at $3,307, 200-day at $3,455) - bearish technical structure; Over $1B in short liquidations above $3,500 creates asymmetric upside on breakout; December 2024 ETH down 6.63% from open at $3,598 to current ~$3,083",
     "decision": "hold",
-    "confidence": 79,
-    "thesis": "My December 12th thesis remains valid with improving fundamentals. The -7.72% pullback to 20-day MA with RSI approaching oversold creates continued mean-reversion opportunity. Key supports: ETH holding at realized price (~$3,129) despite $19.41M ETF outflows and 7,621 ETH whale sales demonstrates strong demand absorption - a bullish signal. Whale clusters at $3,150 (2.8M ETH) and $2,800 (3.6M ETH) provide structural support. The Fusaka upgrade (Dec 3rd) already implemented, ETF AUM up 28% since Nov 21 ($21.5B), and extreme fear reading (21) historically precedes recoveries. Analyst consensus targets $3,348-$3,450 near-term. However, I'm reducing confidence from original 87% to 79% given: 1) PDT restrictions prevent tactical exits, 2) cash position dangerously low at 2.7%, and 3) broader crypto market showing indecision with BTC struggling below $100K. Position is slightly profitable (+1.65%), thesis intact with improved ETF flow confirmation, but risk management warrants cautious hold rather than adding to over-allocated position.",
-    "timestamp": "2025-12-14T21:33:26.725239-05:00",
-    "timestamp_human": "09:33 PM ET"
+    "confidence": 62,
+    "thesis": "The original RSI-2 capitulation thesis has partially resolved (0 \u2192 49.3), but my position remains nearly breakeven. Record December ETF inflows of $2.1B, continued institutional accumulation (BitMine adding $73M), and $1B+ in short liquidations above $3,500 provide structural support. However, the Fear & Greed Index at 21 (Extreme Fear) and ETH trading below all major EMAs ($3,307 50-day, $3,455 200-day) signals persistent bearish bias. The controlled -7% decline with neutral RSI suggests orderly accumulation rather than panic - a constructive setup for eventual mean reversion. With PDT restrictions and severe cash shortage, I'll hold this small position but acknowledge the extreme oversold catalyst has expired. Key invalidation: daily close below $3,000 support.",
+    "timestamp": "2025-12-14T13:04:11.858873-05:00",
+    "timestamp_human": "01:04 PM ET"
   },
   {
     "type": "scan",
-    "portfolio_value": 497.86,
+    "portfolio_value": 496.5,
     "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH faces multi-day pressure at key technical level",
+    "findings": "BTC showing extreme oversold conditions with multiple confluent signals - worth investigating despite crypto volatility",
     "triggers": [
       "BTC/USD",
       "ETH/USD"
     ],
     "action": "research_triggered",
-    "timestamp": "2025-12-14T21:48:32.881169-05:00",
-    "timestamp_human": "09:48 PM ET"
+    "timestamp": "2025-12-14T13:19:17.759903-05:00",
+    "timestamp_human": "01:19 PM ET"
   },
   {
     "type": "research",
     "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - rarely see readings this low, potential mean reversion setup",
-    "searches": [
-      {
-        "query": "Bitcoin BTC price news today December 2025"
-      },
-      {
-        "query": "Bitcoin ETF flows December 2025"
-      },
-      {
-        "query": "Bitcoin analyst outlook forecast"
-      },
-      {
-        "query": "crypto market sentiment Bitcoin support levels December 2025"
-      }
-    ],
-    "findings": "BlackRock IBIT has $2.7B outflows over 5 weeks - longest negative streak since launch; Fear & Greed Index at 21 (Extreme Fear) with bearish technical sentiment; Standard Chartered cut 2025 year-end target from $200K to $100K citing 'cold breeze'; Glassnode metrics showing parallels to early 2022 bear market conditions; $89,000-$90,400 support zone holding with accumulating demand; Fed hawkish pivot - rate pause likely in January, only 2 cuts expected in 2026",
-    "decision": "hold",
-    "confidence": 58,
-    "thesis": "The RSI-2 at 0.1 represents genuine extreme oversold conditions, but research reveals deteriorating structural support that weakens my original mean-reversion thesis. BlackRock's IBIT has experienced $2.7 billion in outflows over five weeks - its worst cycle since launch - while Glassnode's on-chain metrics now resemble early 2022 bear market conditions. Standard Chartered slashed their year-end target from $200K to $100K, and the Fed's hawkish pivot hints at a January rate pause rather than continued cuts. However, the $89,000-$90,000 support zone is holding with buyer interest, max pain mechanics around $90K could provide a floor into December expiries, and my existing position is small (-1.1% P&L). With 0 PDT trades remaining and cash reserves critically low at 2.7%, liquidating at current levels would crystallize losses during maximum pessimism. I'm holding but applying heightened scrutiny - if price breaks below $86,000 or ETF outflows accelerate further, I'll need to reassess whether this consolidation becomes structural breakdown.",
-    "timestamp": "2025-12-14T21:49:30.223861-05:00",
-    "timestamp_human": "09:49 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% 5-day decline, testing 20-day MA support, and RSI-2 approaching oversold territory",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2025"
-      },
-      {
-        "query": "Ethereum analyst forecast outlook"
-      },
-      {
-        "query": "crypto market sentiment December 2025"
-      },
-      {
-        "query": "Ethereum ETF inflows December 2025"
-      }
-    ],
-    "findings": "Ethereum ETF inflows hit 6-week high at $177.64M daily, outpacing Bitcoin ETFs; Fear & Greed Index at 23 (Extreme Fear) - contrarian opportunity intact; Analysts forecast 10% upside to ~$3,980 by late December 2025; Institutional rotation from BTC to ETH confirmed by ETF flow patterns; Fusaka upgrade deployed Dec 3, reducing L2 fees by ~95%; 20-EMA (~$3,122) providing support at current levels",
-    "decision": "hold",
-    "confidence": 72,
-    "thesis": "The original December 12 mean-reversion thesis is validating: ETH/USD has recovered from RSI-2 extremes to neutral territory (~48 RSI) while the position shows +1.28% unrealized gains. Critical thesis validation comes from ETF inflows hitting six-week highs at $177M daily, with Ethereum outpacing Bitcoin inflows - confirming the institutional rotation narrative. The Fusaka upgrade has been deployed, reducing L2 fees significantly. While broader crypto sentiment remains in 'Extreme Fear' (Fear & Greed at 23), this represents continued mean-reversion opportunity rather than thesis invalidation. Analyst consensus targets $3,400-$3,980 by late December. With PDT restrictions limiting flexibility and cash reserves already depleted, holding this working thesis makes more sense than premature profit-taking on a position that has structural tailwinds intact.",
-    "timestamp": "2025-12-14T21:50:21.590144-05:00",
-    "timestamp_human": "09:50 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 497.8,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH presents a multi-layered setup at support",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T22:05:29.828576-05:00",
-    "timestamp_human": "10:05 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - rare signal that often marks short-term bottoms",
+    "trigger": "RSI-2 at 0.2 (extreme oversold) + testing 20-day MA creates double confluence for potential bounce",
     "searches": [],
     "findings": "",
     "decision": "pass",
     "confidence": 0,
     "thesis": "",
-    "timestamp": "2025-12-14T22:06:25.658734-05:00",
-    "timestamp_human": "10:06 PM ET"
+    "timestamp": "2025-12-14T13:20:17.024282-05:00",
+    "timestamp_human": "01:20 PM ET"
   },
   {
     "type": "research",
     "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% pullback + testing 20MA support + RSI-2 at 36.5 showing momentum shift",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2024"
-      },
-      {
-        "query": "Ethereum ETH analyst forecast December 2024"
-      },
-      {
-        "query": "crypto market sentiment Bitcoin ETH today"
-      },
-      {
-        "query": "Ethereum ETH ETF flows December 2024"
-      }
-    ],
-    "findings": "December 2024 ETH ETF net inflows exceeded $2.6 billion - strongest month on record; Fear & Greed Index at 21 (Extreme Fear) - historically signals buying opportunity; Current ETH news sentiment positive at 82/100 based on 41 recent articles; Whales accumulated ~1M ETH ($3.1B) recently, showing institutional demand not speculation; VanEck forecasts $6,000 ETH cycle top in 2025; $3,500 resistance would liquidate $1B in shorts; ETH down 6.63% month-to-date in December, but original RSI-2 extreme entry thesis intact",
-    "decision": "hold",
-    "confidence": 72,
-    "thesis": "The existing ETH position from December 12th continues to validate its mean-reversion thesis. The RSI-2 has recovered from 0.0 (extreme capitulation at entry) to 36.5, demonstrating the anticipated bounce is in progress. Institutional support remains robust with December ETF inflows exceeding $2.6 billion and whale accumulation of ~1M ETH ($3.1B). While the current -7.72% pullback and 20MA test presents technical stress, the Fear & Greed Index at 21 (Extreme Fear) historically signals buying opportunities rather than structural breakdown. With 0 day trades remaining and only $13.44 cash available, the prudent action is to hold and let the thesis play out rather than panic-sell into fear or attempt unavailable trades. The position maintains a slight unrealized gain (+1.21%) and the original entry point ($3,084) offers better risk/reward than current trigger levels.",
-    "timestamp": "2025-12-14T22:07:16.109658-05:00",
-    "timestamp_human": "10:07 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 498.07,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH presents a less compelling setup",
-    "triggers": [
-      "BTC/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T22:22:23.360420-05:00",
-    "timestamp_human": "10:22 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - rare signal that warrants immediate research despite crypto volatility",
-    "searches": [],
-    "findings": "",
-    "decision": "pass",
-    "confidence": 0,
-    "thesis": "",
-    "timestamp": "2025-12-14T22:23:23.494059-05:00",
-    "timestamp_human": "10:23 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 497.88,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH faces technical pressure at key support levels",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T22:38:29.541043-05:00",
-    "timestamp_human": "10:38 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - potential mean reversion play in leading crypto",
-    "searches": [],
-    "findings": "",
-    "decision": "pass",
-    "confidence": 0,
-    "thesis": "",
-    "timestamp": "2025-12-14T22:39:26.059469-05:00",
-    "timestamp_human": "10:39 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Double confluence: -7.72% selloff AND testing 20-day MA support with RSI-2 at 36.5 - classic pullback setup",
+    "trigger": "5-day decline of -6.72% with RSI-2 at 59.8 suggests momentum selling may be overdone",
     "searches": [
       {
         "query": "Ethereum ETH price news December 2024"
@@ -860,242 +745,17 @@
         "query": "ETH crypto analyst forecast outlook"
       },
       {
-        "query": "crypto market selloff December 2024"
+        "query": "Bitcoin crypto market sentiment today"
       },
       {
-        "query": "ETH ETF flows December 2024"
-      },
-      {
-        "query": "Ethereum on-chain supply exchange whale activity"
+        "query": "ETH Ethereum ETF flows December 2024"
       }
     ],
-    "findings": "Record $2.1B ETF inflows in December 2024, nearly doubling November; 8 consecutive weeks of positive flows; Whales accumulated 934,240 ETH ($3.15B) in 3 weeks while retail sold 1,041 ETH - massive divergence; Exchange reserves at 8.6% of supply - lowest since Ethereum's 2015 debut; Fear & Greed Index at 21 (Extreme Fear) - classic capitulation sentiment; $1B+ in short liquidations stacked above $3,500 creates squeeze potential",
-    "decision": "hold",
-    "confidence": 88,
-    "thesis": "The -7.72% selloff and 20-day MA test represents healthy consolidation rather than thesis invalidation. My original entry thesis has strengthened: December saw record $2.1B ETF inflows (nearly doubling November), whales accumulated 934K+ ETH ($3.15B) while retail sold, and exchange reserves hit 8.6% (lowest since 2015). The price is holding at realized price levels - historically a bullish inflection point that precedes expansions. With $1B+ in short liquidations above $3,500 and Fear & Greed at 21 (Extreme Fear), the asymmetric risk/reward favors holding. VanEck's $6,000 cycle target and analyst consensus around $4,000+ for 2025 support patience. The Fed hawkishness is already priced in; the underlying institutional conviction (whales rotating BTC\u2192ETH, 8 consecutive weeks of ETF inflows) signals this pullback is noise, not signal. Unrealized P&L +1.16% with thesis intact - selling would be reactive, not strategic.",
-    "timestamp": "2025-12-14T22:40:19.709242-05:00",
-    "timestamp_human": "10:40 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 497.68,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold condition while ETH tests key support with moderate weakness",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T22:55:25.738912-05:00",
-    "timestamp_human": "10:55 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - rare signal in major crypto",
-    "searches": [],
-    "findings": "",
-    "decision": "pass",
-    "confidence": 0,
-    "thesis": "",
-    "timestamp": "2025-12-14T22:56:27.323541-05:00",
-    "timestamp_human": "10:56 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Testing 20-day MA support after 7.7% pullback - potential bounce setup",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2025"
-      },
-      {
-        "query": "ETH crypto analyst outlook December 2025"
-      },
-      {
-        "query": "cryptocurrency market sentiment today"
-      },
-      {
-        "query": "Ethereum ETF inflows December 2025"
-      },
-      {
-        "query": "ETH whale accumulation institutional buying December 2025"
-      }
-    ],
-    "findings": "Fear & Greed Index at 21-23 (Extreme Fear) - contrarian bullish signal; Ethereum ETF inflows hit 6-week high at $177.64M, outpacing Bitcoin ETFs; Whale accumulation addresses received 3.24M ETH in November (highest monthly 2025) and 1.6M ETH in December; Exchange supply at 8.6% - lowest since 2015, reducing sell-side pressure; Fusaka upgrade completed Dec 3 with 8x blob capacity increase - bullish catalyst intact; Analysts target $3,350-$3,450 range over next 2-4 weeks with $3,100 as key support",
+    "findings": "December 2024 ETH ETF inflows exceeded $2.6B - a record month with 8 consecutive weeks of net positive flows; Fear & Greed Index at 21 (Extreme Fear) despite strong institutional buying - contrarian signal; Analyst consensus targets $4,054 average for 2025 with VanEck projecting $6,000 cycle top; Over $1B in short positions would liquidate above $3,500 resistance; Whales accumulating aggressively - one group spent $456M, another sold 24,000 BTC ($2.59B) to buy ETH",
     "decision": "hold",
     "confidence": 72,
-    "thesis": "The original mean-reversion thesis from December 12th remains valid with the position showing modest gains (+1.05%). Extreme Fear sentiment (21-23 on Fear/Greed Index) combined with record whale accumulation (3.24M ETH in November, 1.6M ETH in December so far) and resumption of strong ETF inflows ($117-177M daily) supports continued holding. The Fusaka upgrade completed successfully on Dec 3, exchange supply at historic lows (8.6%), and technical RSI now neutral (~48) from prior 0.0 extreme all confirm the capitulation thesis while suggesting upside remains. Price is testing 20-day MA support near $3,100-3,122, which analysts identify as the key level to hold for bullish continuation toward $3,350-$3,450 targets. Given over-invested status preventing new buys and the thesis still intact without clear invalidation signals, holding through this consolidation remains the prudent choice rather than selling into extreme fear sentiment when institutions are actively accumulating.",
-    "timestamp": "2025-12-14T22:57:20.378228-05:00",
-    "timestamp_human": "10:57 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 497.9,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH faces multiple bearish confluences",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T23:12:26.397758-05:00",
-    "timestamp_human": "11:12 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 - extreme oversold, potential mean reversion play",
-    "searches": [],
-    "findings": "",
-    "decision": "pass",
-    "confidence": 0,
-    "thesis": "",
-    "timestamp": "2025-12-14T23:13:25.624228-05:00",
-    "timestamp_human": "11:13 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% decline, testing 20MA, RSI approaching oversold - setup developing",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2024"
-      },
-      {
-        "query": "ETH crypto analyst outlook December 2024"
-      },
-      {
-        "query": "crypto market sentiment today"
-      },
-      {
-        "query": "Ethereum ETF inflows December 2024"
-      },
-      {
-        "query": "ETH price drop today December 2024"
-      }
-    ],
-    "findings": "Fear & Greed Index at 21 (Extreme Fear) - classic contrarian accumulation signal; Record $2B ETF inflows in December 2024, nearly doubling November's $1.1B; BlackRock's ETHA dominated with $1.4B inflows, Fidelity's FETH added $752M; MVRV ratio shows ETH approaching extreme undervaluation vs BTC - last seen February 2020; $1B+ short liquidations stacked above $3,500 resistance - potential squeeze catalyst; VanEck projects $6,000 ETH cycle top for 2025",
-    "decision": "hold",
-    "confidence": 82,
-    "thesis": "HOLD existing position. The triple confluence trigger (-7.72% decline, 20MA test, RSI oversold) validates rather than invalidates my original thesis from December 12th. Record December ETF inflows of $2B (nearly doubling November's $1.1B), with BlackRock's ETHA capturing $1.4B, demonstrate unprecedented institutional conviction precisely as retail panics (Fear & Greed at 21 'Extreme Fear'). The MVRV ratio shows ETH approaching 'extreme undervalued territory' vs BTC, last seen in February 2020 before major rallies. My original entry at $3,084 remains sound with position in slight profit (+1.05%). While constrained from adding (over-invested at 2.7% cash), selling would be premature given: thesis strengthened by improved fundamentals, $1B+ in short liquidations stacked above $3,500 creating upside catalyst, and VanEck's $6,000 cycle target. The current weakness represents macro noise (Fed hawkishness, year-end volatility) against a backdrop of historic institutional accumulation. No edge in exiting a valid thesis during capitulation.",
-    "timestamp": "2025-12-14T23:14:16.363194-05:00",
-    "timestamp_human": "11:14 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 497.53,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH presents multiple confluent bearish signals worth investigating",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T23:29:25.907997-05:00",
-    "timestamp_human": "11:29 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extremely oversold - need to check if this is capitulation or dead cat bounce setup",
-    "searches": [
-      {
-        "query": "Bitcoin BTC price news today December 2025"
-      },
-      {
-        "query": "Bitcoin ETF flows December 2025"
-      },
-      {
-        "query": "Bitcoin analyst forecast outlook December 2025"
-      },
-      {
-        "query": "Bitcoin support levels short squeeze December 15 2025"
-      }
-    ],
-    "findings": "BlackRock IBIT has experienced $2.7B in redemptions over 5 weeks - worst outflow streak since launch; ETF daily net flows at only $54.8M vs $500M-$1B needed for prior accumulation phases; Fear & Greed Index at 21 (Extreme Fear) with bearish technical sentiment; On-chain: Exchange Whale Ratio at 0.53 indicates whales still preparing to sell, not accumulate; Key support at $89,400 (Active Realized Price) currently holding; Short liquidation leverage 50% higher than longs - short squeeze potential exists; Standard Chartered cut year-end target from $200K to $100K citing 'cold breeze' environment",
-    "decision": "hold",
-    "confidence": 55,
-    "thesis": "RSI-2 at 0.1 represents genuine capitulation-level oversold conditions at critical $89,400 Active Realized Price support, but this is NOT a high-conviction hold. My original thesis of ETF flow stabilization has been INVALIDATED - BlackRock's IBIT has seen $2.7B in outflows over five weeks, the worst since launch. On-chain data shows whales in distribution mode with Exchange Whale Ratio elevated at 0.53, and long-term holders still selling. However, with 0 PDT trades remaining and the position showing only -1.09% loss sitting exactly at a major support level, selling here would crystallize a loss at technical support while short positioning remains elevated (50% more shorts than longs). The extreme fear (21 on F&G Index) and defensive derivatives positioning could fuel a snap-back rally if support holds. This is a reluctant hold based on inability to re-enter if wrong - NOT because the fundamental setup has improved. Would re-evaluate immediately if price breaks below $89,000 on volume.",
-    "timestamp": "2025-12-14T23:30:26.487864-05:00",
-    "timestamp_human": "11:30 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% 5-day drop, testing 20MA support, RSI approaching oversold - classic mean reversion setup if support holds",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2024"
-      },
-      {
-        "query": "ETH crypto analyst sentiment outlook"
-      },
-      {
-        "query": "cryptocurrency market conditions December 2024"
-      },
-      {
-        "query": "Ethereum ETH ETF inflows December 2024"
-      }
-    ],
-    "findings": "ETH ETFs hit record $2.1B inflows in December 2024, nearly double November's $1.1B - led by BlackRock ETHA ($1.4B) and Fidelity FETH ($752M); Fear & Greed Index at 21 (Extreme Fear) - historically these levels precede major price rebounds; Critical support at $3,050 - closes below invalidate bullish thesis and could trigger drop to $2,900; VanEck forecasts $6,000 ETH cycle top in 2025; Standard Chartered targets $7,500; Citigroup sees $4,300; Fed hawkish signals from mid-December meeting caused broad crypto pullback - macro headwind persists; ETH underperformed BTC in 2024 (55% vs 120% YTD) and faces growing Solana competition",
-    "decision": "hold",
-    "confidence": 72,
-    "thesis": "Original mean-reversion thesis remains valid with even stronger institutional backing - December ETH ETFs saw record $2.1B inflows (nearly double November's $1.1B), with BlackRock's ETHA attracting $1.4B and cumulative AUM now at $12B representing 3%+ of ETH market cap. The Fear & Greed Index at 21 (Extreme Fear) historically precedes major rebounds, and ETH is testing 20MA support near my $3,084 entry. While ETH has underperformed BTC and faces Solana competition, the critical $3,050 support level holds, and my original capitulation-buying thesis is validated by accelerating institutional flows. VanEck projects $6,000 cycle top, Standard Chartered targets $7,500 for 2025. Small position (~$74) with minimal unrealized gain (+$0.60) warrants patience rather than premature exit. Key invalidation: consistent closes below $3,050 would signal thesis failure and trigger sell.",
-    "timestamp": "2025-12-14T23:31:23.456672-05:00",
-    "timestamp_human": "11:31 PM ET"
-  },
-  {
-    "type": "scan",
-    "portfolio_value": 498.18,
-    "position_count": 7,
-    "findings": "BTC showing extreme oversold conditions while ETH faces multiple technical pressures - crypto weakness creating potential contrarian setups",
-    "triggers": [
-      "BTC/USD",
-      "ETH/USD"
-    ],
-    "action": "research_triggered",
-    "timestamp": "2025-12-14T23:46:31.156735-05:00",
-    "timestamp_human": "11:46 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "BTC/USD",
-    "trigger": "RSI-2 at 0.1 is extreme oversold - historically these levels produce strong bounces in crypto",
-    "searches": [],
-    "findings": "",
-    "decision": "pass",
-    "confidence": 0,
-    "thesis": "",
-    "timestamp": "2025-12-14T23:47:26.110224-05:00",
-    "timestamp_human": "11:47 PM ET"
-  },
-  {
-    "type": "research",
-    "symbol": "ETH/USD",
-    "trigger": "Triple confluence: -7.72% pullback, testing 20-day MA, and approaching oversold - multiple support levels aligning",
-    "searches": [
-      {
-        "query": "Ethereum ETH price news December 2025"
-      },
-      {
-        "query": "ETH crypto analyst forecast outlook"
-      },
-      {
-        "query": "cryptocurrency market sentiment December 2025"
-      },
-      {
-        "query": "ETH whale accumulation December 2025"
-      },
-      {
-        "query": "Ethereum ETF flows December 2025"
-      }
-    ],
-    "findings": "Fear & Greed Index at Extreme Fear (21-23), historically a contrarian buying signal; Whale accumulation of 934,240 ETH (~$3.15B) over three weeks while retail sells; 248,711 ETH ($766M) withdrawn from exchanges Dec 9-14, indicating hodling intent; ETF flows turning positive after $1.4B November outflows - $177M inflow Dec 9; 20-day EMA (~$3,122) acting as support with analysts targeting $3,400-$3,980 December; Fusaka upgrade scheduled for December providing fundamental catalyst",
-    "decision": "hold",
-    "confidence": 81,
-    "thesis": "The original mean-reversion thesis remains intact and strengthened. Extreme Fear readings (21-23), unprecedented whale accumulation ($3.15B in 3 weeks, 934,240 ETH), and declining exchange reserves ($766M+ withdrawn Dec 9-14) create powerful supply-demand imbalance. The -7.72% pullback testing the 20-day MA (~$3,122) represents technical confluence rather than thesis invalidation. ETF flows turned positive recently ($177M on Dec 9, $57.6M on Dec 10) after November's record outflows, suggesting institutional re-engagement. The Fusaka upgrade catalyst remains ahead. Historical precedent shows similar whale/retail divergence patterns preceded 20-50% rebounds. Position is +1.13% profitable at $3,118 vs. $3,084 entry. Cannot add due to cash constraints (2.7% vs. 15% target), but holding is appropriate as the setup continues to develop per thesis expectations.",
-    "timestamp": "2025-12-14T23:48:22.213247-05:00",
-    "timestamp_human": "11:48 PM ET"
+    "thesis": "My December 12th entry thesis at RSI-2=0.0 remains valid and has actually strengthened with December 2024 ETF inflows exceeding $2.6B (record month), representing eight consecutive weeks of institutional accumulation. The current 5-day decline of -6.72% with RSI-2 at 59.8 reflects normal profit-taking rather than structural breakdown - the Fear & Greed Index at 21 (Extreme Fear) creates a contrarian backdrop while record institutional flows continue. Whales have accumulated $456M in single transactions and VanEck targets $6,000 for 2025. However, I'm severely over-invested with only 2.7% cash (vs 15% target) and with 0 day trades remaining, prudent risk management dictates holding this profitable position rather than adding. The $3,500 resistance level remains key - a break above would trigger $1B+ in short liquidations. Thesis intact but position sizing demands patience.",
+    "timestamp": "2025-12-14T13:21:06.972261-05:00",
+    "timestamp_human": "01:21 PM ET"
   }
 ]

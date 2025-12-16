@@ -46,12 +46,19 @@ from config import (
     MAX_POSITIONS_PER_SECTOR,
     MAX_CRYPTO_POSITIONS,
     TRADING_MODE,
+    RESEARCH_COOLDOWN_MINUTES,
+    RESEARCH_COOLDOWN_PRICE_OVERRIDE,
+    NEWS_SCAN_INTERVAL_MINUTES,
     get_position_size,
     print_config,
 )
 
 # Memory file for recent decisions
 MEMORY_FILE = STATE_DIR / "memory.md"
+# Research cooldown tracking
+RESEARCH_COOLDOWN_FILE = STATE_DIR / "research_cooldown.json"
+# Last general news scan
+NEWS_SCAN_FILE = STATE_DIR / "last_news_scan.json"
 from trading.alpaca_client import AlpacaClient, is_market_open, get_market_status
 from utils.pdt_tracker import PDTTracker
 from utils.journal import TradeJournal
@@ -138,6 +145,176 @@ class DriftAgent:
             if VERBOSE:
                 log(f"[Drift] Memory write error: {e}")
 
+    def _read_research_cooldown(self) -> dict:
+        """Read research cooldown state (last research time + price per symbol)."""
+        if not RESEARCH_COOLDOWN_FILE.exists():
+            return {}
+        try:
+            return json.loads(RESEARCH_COOLDOWN_FILE.read_text())
+        except Exception:
+            return {}
+
+    def _write_research_cooldown(self, symbol: str, price: float):
+        """Record that we just researched a symbol."""
+        cooldown = self._read_research_cooldown()
+        cooldown[symbol] = {
+            "timestamp": datetime.now().isoformat(),
+            "price": price
+        }
+        # Clean up old entries (>24 hours)
+        cutoff = datetime.now().timestamp() - 86400
+        cooldown = {
+            k: v for k, v in cooldown.items()
+            if datetime.fromisoformat(v["timestamp"]).timestamp() > cutoff
+        }
+        try:
+            RESEARCH_COOLDOWN_FILE.write_text(json.dumps(cooldown, indent=2))
+        except Exception as e:
+            if VERBOSE:
+                log(f"[Drift] Cooldown write error: {e}")
+
+    def _should_skip_research(self, symbol: str, current_price: float, is_held: bool) -> tuple[bool, str]:
+        """
+        Check if we should skip research due to cooldown.
+
+        Returns (should_skip, reason)
+
+        Skip if:
+        - Researched within RESEARCH_COOLDOWN_MINUTES
+        - AND price hasn't moved > RESEARCH_COOLDOWN_PRICE_OVERRIDE %
+        - AND it's an existing position (new entries always research)
+        """
+        # Always research potential new entries
+        if not is_held:
+            return False, ""
+
+        cooldown = self._read_research_cooldown()
+        if symbol not in cooldown:
+            return False, ""
+
+        last = cooldown[symbol]
+        last_time = datetime.fromisoformat(last["timestamp"])
+        minutes_ago = (datetime.now() - last_time).total_seconds() / 60
+
+        # Cooldown expired
+        if minutes_ago >= RESEARCH_COOLDOWN_MINUTES:
+            return False, ""
+
+        # Check price change
+        last_price = last.get("price", 0)
+        if last_price > 0:
+            price_change_pct = abs(current_price - last_price) / last_price * 100
+            if price_change_pct >= RESEARCH_COOLDOWN_PRICE_OVERRIDE:
+                return False, ""
+
+        return True, f"Researched {int(minutes_ago)}min ago, price stable"
+
+    def _read_last_news_scan(self) -> Optional[datetime]:
+        """Read when we last did a general news scan."""
+        if not NEWS_SCAN_FILE.exists():
+            return None
+        try:
+            data = json.loads(NEWS_SCAN_FILE.read_text())
+            return datetime.fromisoformat(data["timestamp"])
+        except Exception:
+            return None
+
+    def _write_last_news_scan(self):
+        """Record that we just did a general news scan."""
+        try:
+            NEWS_SCAN_FILE.write_text(json.dumps({
+                "timestamp": datetime.now().isoformat()
+            }))
+        except Exception:
+            pass
+
+    def _should_do_news_scan(self) -> bool:
+        """Check if it's time for hourly general news scan."""
+        last_scan = self._read_last_news_scan()
+        if last_scan is None:
+            return True
+        minutes_ago = (datetime.now() - last_scan).total_seconds() / 60
+        return minutes_ago >= NEWS_SCAN_INTERVAL_MINUTES
+
+    def _general_news_scan(self, cycle_logger: Optional['CycleLogger'] = None) -> list:
+        """
+        Hourly scan for major market-moving news.
+
+        Catches: Fed announcements, geopolitical events, major company news
+        outside our watchlist, etc.
+
+        Returns list of news-driven triggers to research.
+        """
+        if not self._should_do_news_scan():
+            return []
+
+        if VERBOSE:
+            log("[Drift] Running hourly general news scan...")
+
+        # Use a single web search to check for major market news
+        prompt = """You are Drift, a swing trader scanning for market-moving news.
+
+Search for major financial/market news from the last 2 hours that could affect US stocks.
+
+Look for:
+- Fed/central bank announcements
+- Major geopolitical events (wars, sanctions, disasters)
+- Big tech/AI regulatory news
+- Major earnings surprises from large companies
+- Market-wide selloffs or rallies
+
+DO NOT report routine price movements or minor news.
+
+If you find something significant, respond with JSON:
+{
+    "has_major_news": true,
+    "headlines": [
+        {"topic": "Fed", "summary": "Fed signals rate cut pause", "affected_sectors": ["financials", "tech"]}
+    ]
+}
+
+If nothing major, respond:
+{"has_major_news": false, "headlines": []}
+"""
+
+        try:
+            response = self._call_llm_with_tools(prompt)
+            result = self._extract_json(response)
+
+            self._write_last_news_scan()
+
+            if result.get("has_major_news") and result.get("headlines"):
+                if cycle_logger:
+                    cycle_logger.add_entry(f"General news scan found {len(result['headlines'])} major items")
+
+                # Convert to triggers for our held positions in affected sectors
+                triggers = []
+                positions = self.alpaca.get_positions()
+                held_symbols = {p["symbol"] for p in positions}
+
+                for headline in result.get("headlines", []):
+                    affected = headline.get("affected_sectors", [])
+                    # Check if any of our positions are in affected sectors
+                    for symbol in held_symbols:
+                        sector = SECTOR_MAP.get(symbol, "unknown")
+                        if any(s.lower() in sector.lower() for s in affected):
+                            triggers.append({
+                                "symbol": symbol,
+                                "trigger_type": "macro_news",
+                                "reason": f"MACRO: {headline.get('summary', 'Major news')} - review {symbol} position",
+                            })
+
+                if VERBOSE and triggers:
+                    log(f"[Drift] News scan generated {len(triggers)} triggers")
+
+                return triggers
+
+        except Exception as e:
+            if VERBOSE:
+                log(f"[Drift] General news scan error: {e}")
+
+        return []
+
     def run_cycle(self, crypto_only: bool = False, cycle_number: int = 1) -> dict:
         """
         Run one trading cycle.
@@ -201,8 +378,11 @@ class DriftAgent:
         # Step 1: Light scan
         scan_result = self._light_scan(watchlist=active_watchlist, seek_deployment=seek_deployment, cycle_logger=cycle_logger)
 
-        # Step 2: Check for triggers
-        triggers = scan_result.get("triggers", [])
+        # Step 1b: Hourly general news scan (catches macro events)
+        news_triggers = self._general_news_scan(cycle_logger=cycle_logger)
+
+        # Step 2: Check for triggers (combine technical + news)
+        triggers = scan_result.get("triggers", []) + news_triggers
         cycle_logger.set_triggers_found(len(triggers))
 
         if not triggers:
@@ -239,7 +419,16 @@ class DriftAgent:
                 cycle_logger.add_entry(f"Skipped {trigger.get('symbol')}: insufficient cash for new position")
                 continue
 
-            research_result = self._research(trigger, cycle_logger=cycle_logger)
+            # Check research cooldown (skip if we recently researched this symbol)
+            current_price = self.alpaca.get_latest_price(symbol) or 0
+            should_skip, skip_reason = self._should_skip_research(symbol, current_price, is_existing_position)
+            if should_skip:
+                if VERBOSE:
+                    log(f"[Drift] Skipping {symbol} research: {skip_reason}")
+                cycle_logger.add_entry(f"Skipped {symbol}: {skip_reason}")
+                continue
+
+            research_result = self._research(trigger, is_existing_position=is_existing_position, cycle_logger=cycle_logger)
 
             if research_result.get("decision") in ["buy", "sell"]:
                 # Step 4: Execute
@@ -339,15 +528,33 @@ class DriftAgent:
 
             # ========== Build summary for LLM refinement ==========
             if all_triggers:
-                # Format triggers with actual data for LLM
-                trigger_summary = "\n".join([
-                    f"- {t['symbol']}: {t['reason']}" +
-                    (f" | RSI-2: {t['signals'].get('rsi_2', 'N/A')}" if 'rsi_2' in t.get('signals', {}) else "")
-                    for t in all_triggers[:10]  # Cap at 10 to not overwhelm
-                ])
+                # Check if ALL triggers are for positions we already hold
+                held_symbols = {p["symbol"] for p in positions}
+                held_symbols.update(p["symbol"].replace("/", "") for p in positions)  # Handle crypto format
+                all_held = all(
+                    t.get("symbol", "") in held_symbols or t.get("symbol", "").replace("/", "") in held_symbols
+                    for t in all_triggers
+                )
 
-                # Ask LLM to prioritize/filter
-                refine_prompt = f"""You are Drift, a curious skeptic swing trader.
+                # Skip LLM refinement if all triggers are for held positions
+                # (saves ~$0.01 per cycle, and held positions go through cooldown anyway)
+                if all_held:
+                    if VERBOSE:
+                        log(f"[Drift] All {len(all_triggers)} triggers are held positions - skipping LLM refinement")
+                    result = {
+                        "summary": f"All {len(all_triggers)} triggers are existing positions",
+                        "triggers": [{"symbol": t["symbol"], "reason": t["reason"]} for t in all_triggers[:3]],
+                    }
+                else:
+                    # Format triggers with actual data for LLM
+                    trigger_summary = "\n".join([
+                        f"- {t['symbol']}: {t['reason']}" +
+                        (f" | RSI-2: {t['signals'].get('rsi_2', 'N/A')}" if 'rsi_2' in t.get('signals', {}) else "")
+                        for t in all_triggers[:10]  # Cap at 10 to not overwhelm
+                    ])
+
+                    # Ask LLM to prioritize/filter
+                    refine_prompt = f"""You are Drift, a curious skeptic swing trader.
 
 QUANTITATIVE SCAN FOUND {len(all_triggers)} POTENTIAL TRIGGERS:
 {trigger_summary}
@@ -371,15 +578,15 @@ Respond in JSON:
 
 Be selective. Quality over quantity. If nothing is compelling, return empty triggers."""
 
-                response = self._call_llm(refine_prompt, max_tokens=400)
-                try:
-                    result = self._extract_json(response)
-                except Exception:
-                    # Fall back to raw triggers
-                    result = {
-                        "summary": f"Found {len(all_triggers)} triggers",
-                        "triggers": [{"symbol": t["symbol"], "reason": t["reason"]} for t in all_triggers[:3]],
-                    }
+                    response = self._call_llm(refine_prompt, max_tokens=400)
+                    try:
+                        result = self._extract_json(response)
+                    except Exception:
+                        # Fall back to raw triggers
+                        result = {
+                            "summary": f"Found {len(all_triggers)} triggers",
+                            "triggers": [{"symbol": t["symbol"], "reason": t["reason"]} for t in all_triggers[:3]],
+                        }
             else:
                 result = {
                     "summary": "No quantitative triggers found",
@@ -466,7 +673,7 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
 
         return news_triggers
 
-    def _research(self, trigger: dict, cycle_logger: CycleLogger = None) -> dict:
+    def _research(self, trigger: dict, is_existing_position: bool = False, cycle_logger: CycleLogger = None) -> dict:
         """
         Deep research on a triggered symbol.
 
@@ -474,10 +681,17 @@ Be selective. Quality over quantity. If nothing is compelling, return empty trig
 
         Args:
             trigger: Trigger dict with symbol and reason
+            is_existing_position: If True, use Sonnet (cheaper) for hold checks
             cycle_logger: Optional CycleLogger instance for Supabase logging
         """
         symbol = trigger.get("symbol", "")
         reason = trigger.get("reason", "")
+
+        # Choose model: Sonnet for hold checks on existing positions, Opus for entry decisions
+        use_model = SCAN_MODEL if is_existing_position else RESEARCH_MODEL
+        if VERBOSE:
+            model_name = "Sonnet" if is_existing_position else "Opus"
+            log(f"[Drift] Using {model_name} for {'HOLD check' if is_existing_position else 'entry research'}")
 
         if VERBOSE:
             log(f"\n[Drift] Researching {symbol}: {reason}")
@@ -566,8 +780,12 @@ Respond with your research process, then final JSON:
     "target_pct": 8      // for buys
 }}"""
 
-        # Call LLM with tools
-        response = self._call_llm_with_tools(research_prompt)
+        # Call LLM with tools (model chosen based on position type)
+        response = self._call_llm_with_tools(research_prompt, model=use_model)
+
+        # Record cooldown (track that we researched this symbol)
+        current_price = self.alpaca.get_latest_price(symbol) or 0
+        self._write_research_cooldown(symbol, current_price)
 
         # Parse response
         try:
@@ -849,14 +1067,21 @@ Respond with your research process, then final JSON:
             log(f"[Drift] LLM error: {e}")
             return "{}"
 
-    def _call_llm_with_tools(self, prompt: str) -> str:
+    def _call_llm_with_tools(self, prompt: str, model: str = None) -> str:
         """
         Call LLM with Anthropic's native WebSearch tool for research.
 
         Uses server-side web search - the API executes searches automatically.
+
+        Args:
+            prompt: The research prompt
+            model: Model to use (defaults to RESEARCH_MODEL)
         """
         if not self.anthropic:
             return "{}"
+
+        # Use specified model or default to RESEARCH_MODEL
+        use_model = model or RESEARCH_MODEL
 
         # Use Anthropic's native web search tool (server-side execution)
         tools = [
@@ -870,7 +1095,7 @@ Respond with your research process, then final JSON:
         try:
             # Single call - Anthropic handles web search execution server-side
             response = self.anthropic.messages.create(
-                model=RESEARCH_MODEL,
+                model=use_model,
                 max_tokens=2000,
                 tools=tools,
                 messages=[{"role": "user", "content": prompt}],
@@ -891,7 +1116,7 @@ Respond with your research process, then final JSON:
                 messages.append({"role": "assistant", "content": response.content})
 
                 continuation = self.anthropic.messages.create(
-                    model=RESEARCH_MODEL,
+                    model=use_model,
                     max_tokens=2000,
                     tools=tools,
                     messages=messages,
