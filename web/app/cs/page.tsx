@@ -15,6 +15,7 @@ interface CSLink {
   id: string
   url: string
   domain: string | null
+  title: string | null
   posted_by_name: string | null
   notes: string | null
   posted_at: string
@@ -572,12 +573,10 @@ export default function CSPage() {
           {filteredLinks.map((link) => (
             <li key={link.id} className="cs-link-item">
               <div className="cs-link-main">
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="cs-link-domain">
-                  {link.domain || new URL(link.url).hostname}
+                <a href={link.url} target="_blank" rel="noopener noreferrer" className="cs-link-title">
+                  {link.title || link.domain || new URL(link.url).hostname}
                 </a>
-                <a href={link.url} target="_blank" rel="noopener noreferrer" className="cs-link-url">
-                  {link.url}
-                </a>
+                <span className="cs-link-domain">{link.domain || new URL(link.url).hostname}</span>
               </div>
               {link.notes && <p className="cs-link-notes">"{link.notes}"</p>}
               {link.content_summary && <p className="cs-link-summary">{link.content_summary}</p>}
@@ -975,22 +974,21 @@ const styles = `
     gap: 0.25rem;
   }
 
-  .cs-link-domain {
+  .cs-link-title {
     font-size: 1.1rem;
     font-weight: 600;
     color: #1565c0;
     text-decoration: none;
+    display: block;
   }
 
-  .cs-link-domain:hover {
+  .cs-link-title:hover {
     text-decoration: underline;
   }
 
-  .cs-link-url {
+  .cs-link-domain {
     font-size: 0.8rem;
     color: #888;
-    text-decoration: none;
-    word-break: break-all;
   }
 
   .cs-link-notes {

@@ -15,6 +15,60 @@ const MAX_CONTENT_LENGTH = 5000; // chars to store
 const MAX_CONTEXT_FOR_SUMMARY = 8000; // chars to send to Claude
 
 /**
+ * Extract and clean the <title> tag from HTML
+ */
+function extractTitle(html: string, url: string): string | null {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+  if (!match) return null;
+
+  let title = match[1].trim();
+
+  // Decode HTML entities
+  title = title
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&#x2F;/g, "/");
+
+  // Remove common suffixes like " | Site Name" or " - Site Name"
+  // Split on common separators and take the first meaningful part
+  const separators = [' | ', ' - ', ' – ', ' — ', ' :: ', ' // '];
+  for (const sep of separators) {
+    if (title.includes(sep)) {
+      const parts = title.split(sep);
+      // Take first part if it's meaningful (more than 10 chars or first of 2)
+      if (parts[0].length > 10 || parts.length === 2) {
+        title = parts[0].trim();
+        break;
+      }
+    }
+  }
+
+  // Clean up LinkedIn-style titles
+  if (title.startsWith('(') && title.includes(')')) {
+    // "(2) John Doe" -> "John Doe"
+    title = title.replace(/^\(\d+\)\s*/, '');
+  }
+
+  // Skip generic/useless titles
+  const genericTitles = ['home', 'post', 'article', 'page', 'untitled', 'loading'];
+  if (genericTitles.includes(title.toLowerCase())) {
+    return null;
+  }
+
+  // Limit length
+  if (title.length > 100) {
+    title = title.slice(0, 97) + '...';
+  }
+
+  return title || null;
+}
+
+/**
  * Extract a readable title from URL slug as fallback when fetch fails
  * Returns null if slug doesn't look descriptive enough
  */
@@ -77,10 +131,8 @@ export async function fetchAndSummarizeLink(linkId: string, url: string): Promis
       const urlTitle = extractTitleFromUrl(url);
       if (urlTitle) {
         console.log(`[cs-content] Using URL-based title: ${urlTitle}`);
-        await markFetched(linkId, null, urlTitle);
-      } else {
-        await markFetched(linkId, null, null);
       }
+      await markFetched(linkId, null, null, urlTitle);
       return;
     }
 
@@ -88,33 +140,35 @@ export async function fetchAndSummarizeLink(linkId: string, url: string): Promis
     if (!contentType.includes("text/html") && !contentType.includes("text/plain")) {
       console.log(`[cs-content] Skipping non-text content: ${contentType}`);
       const urlTitle = extractTitleFromUrl(url);
-      await markFetched(linkId, null, urlTitle);
+      await markFetched(linkId, null, null, urlTitle);
       return;
     }
 
     const html = await response.text();
 
-    // 2. Extract text from HTML
+    // 2. Extract title from HTML
+    const title = extractTitle(html, url) || extractTitleFromUrl(url);
+
+    // 3. Extract text from HTML
     const text = extractText(html);
     if (!text || text.length < 50) {
       console.log(`[cs-content] Not enough text content from ${url}`);
-      const urlTitle = extractTitleFromUrl(url);
-      await markFetched(linkId, text || null, urlTitle);
+      await markFetched(linkId, text || null, null, title);
       return;
     }
 
     const contentText = text.slice(0, MAX_CONTENT_LENGTH);
 
-    // 3. Generate summary
+    // 4. Generate summary
     const summary = await generateSummary(url, text.slice(0, MAX_CONTEXT_FOR_SUMMARY));
 
-    // 4. Store in database
-    await markFetched(linkId, contentText, summary);
+    // 5. Store in database
+    await markFetched(linkId, contentText, summary, title);
     console.log(`[cs-content] Successfully processed ${url}`);
   } catch (error) {
     console.error(`[cs-content] Error processing ${url}:`, error);
     const urlTitle = extractTitleFromUrl(url);
-    await markFetched(linkId, null, urlTitle);
+    await markFetched(linkId, null, null, urlTitle);
   }
 }
 
@@ -195,15 +249,22 @@ Summary (2 sentences):`,
 async function markFetched(
   linkId: string,
   contentText: string | null,
-  contentSummary: string | null
+  contentSummary: string | null,
+  title?: string | null
 ): Promise<void> {
+  const updateData: Record<string, unknown> = {
+    content_text: contentText,
+    content_summary: contentSummary,
+    content_fetched_at: new Date().toISOString(),
+  };
+
+  if (title) {
+    updateData.title = title;
+  }
+
   const { error } = await supabase
     .from("cs_content")
-    .update({
-      content_text: contentText,
-      content_summary: contentSummary,
-      content_fetched_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", linkId);
 
   if (error) {

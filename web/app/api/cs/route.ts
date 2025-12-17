@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     const { data: links, error } = await supabase
       .from('cs_content')
-      .select('id, url, domain, posted_by_name, posted_by_phone, notes, posted_at, comments, content_summary, about_person')
+      .select('id, url, domain, title, posted_by_name, posted_by_phone, notes, posted_at, comments, content_summary, about_person')
       .or('source_type.eq.link,source_type.is.null') // Exclude documents from feed
       .order('posted_at', { ascending: false })
       .range(offset, offset + limit - 1)
@@ -52,6 +52,7 @@ export async function GET(request: NextRequest) {
       id: link.id,
       url: link.url,
       domain: link.domain,
+      title: link.title,
       posted_by_name: link.posted_by_name,
       notes: link.notes,
       posted_at: link.posted_at,
