@@ -38,6 +38,19 @@ interface AuthState {
 
 type ModalState = 'closed' | 'phone' | 'code' | 'handle'
 
+// Simple markdown parser for chat responses
+function parseMarkdown(text: string): string {
+  return text
+    // Bold: **text** or __text__
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/__(.+?)__/g, '<strong>$1</strong>')
+    // Italic: *text* or _text_
+    .replace(/\*([^*]+?)\*/g, '<em>$1</em>')
+    .replace(/_([^_]+?)_/g, '<em>$1</em>')
+    // Line breaks
+    .replace(/\n/g, '<br />')
+}
+
 function timeAgo(dateString: string): string {
   const date = new Date(dateString)
   const now = new Date()
@@ -401,7 +414,7 @@ export default function CSPage() {
           )}
           {chatAnswer && (
             <div className="cs-chat-answer">
-              <p>{chatAnswer}</p>
+              <div dangerouslySetInnerHTML={{ __html: parseMarkdown(chatAnswer) }} />
               {chatSources.length > 0 && (
                 <div className="cs-chat-sources">
                   Sources: {chatSources.map((src, i) => (
@@ -1143,13 +1156,18 @@ const styles = `
     padding: 0.75rem;
     background: #fff;
     border-radius: 8px;
-  }
-
-  .cs-chat-answer p {
-    margin: 0;
-    line-height: 1.4;
+    line-height: 1.5;
     color: #333;
     font-size: 0.85rem;
+  }
+
+  .cs-chat-answer strong {
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+
+  .cs-chat-answer em {
+    font-style: italic;
   }
 
   .cs-chat-sources {
