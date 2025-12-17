@@ -34,48 +34,56 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Question must be 3-500 characters' }, { status: 400 })
     }
 
-    // Search for relevant links using full-text search
-    // Convert question to tsquery format
-    const searchTerms = trimmedQuestion
-      .toLowerCase()
-      .replace(/[^\w\s]/g, '')
-      .split(/\s+/)
-      .filter(term => term.length > 2)
-      .slice(0, 10)
-      .join(' & ')
+    // Check if this is a broad/analytical question that should use all links
+    const broadPatterns = /\b(theme|themes|common|summary|summarize|overview|all|everything|general|trend|trends|pattern|patterns)\b/i
+    const isBroadQuestion = broadPatterns.test(trimmedQuestion)
 
     let links: CSLink[] = []
 
-    if (searchTerms) {
-      // Full-text search
-      const { data, error } = await supabase
-        .from('cs_content')
-        .select('id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text')
-        .not('content_fetched_at', 'is', null)
-        .textSearch(
-          'content_text',
-          searchTerms,
-          { type: 'websearch', config: 'english' }
-        )
-        .order('posted_at', { ascending: false })
-        .limit(10)
+    // For broad questions, just get all links with content
+    // For specific questions, try full-text search first
+    if (!isBroadQuestion) {
+      const searchTerms = trimmedQuestion
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(term => term.length > 2)
+        .slice(0, 10)
+        .join(' | ') // Use OR instead of AND for better recall
 
-      if (!error && data) {
-        links = data
+      if (searchTerms) {
+        const { data, error } = await supabase
+          .from('cs_content')
+          .select('id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text')
+          .not('content_fetched_at', 'is', null)
+          .textSearch(
+            'content_text',
+            searchTerms,
+            { type: 'websearch', config: 'english' }
+          )
+          .order('posted_at', { ascending: false })
+          .limit(10)
+
+        if (error) {
+          console.error('[cs/chat] Text search error:', error)
+        } else if (data) {
+          links = data
+        }
       }
     }
 
-    // If no full-text matches, fall back to recent links with content
+    // Fall back to recent links with content (or use for broad questions)
     if (links.length === 0) {
       const { data, error } = await supabase
         .from('cs_content')
         .select('id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text')
         .not('content_fetched_at', 'is', null)
-        .not('content_summary', 'is', null)
         .order('posted_at', { ascending: false })
         .limit(10)
 
-      if (!error && data) {
+      if (error) {
+        console.error('[cs/chat] Fallback query error:', error)
+      } else if (data) {
         links = data
       }
     }
