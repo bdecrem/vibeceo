@@ -57,12 +57,33 @@ export async function POST(req: NextRequest) {
     const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || null
     const token = createSessionToken(normalizedPhone)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       token,
       handle,
       needsHandle: !handle
     })
+
+    // Set cookie for 30 days - persists across Safari View Controller
+    response.cookies.set('cs_token', token, {
+      httpOnly: false, // Need JS access for client-side auth
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
+    })
+
+    if (handle) {
+      response.cookies.set('cs_handle', handle, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      })
+    }
+
+    return response
 
   } catch (error) {
     console.error('[cs/verify-code] Error:', error)

@@ -18,8 +18,8 @@ export function verifySessionToken(token: string): string | null {
     const expectedSig = crypto.createHmac('sha256', secret).update(`${phone}:${timestamp}`).digest('hex').slice(0, 16)
     if (signature !== expectedSig) return null
 
-    // Check expiry (24 hours)
-    if (Date.now() - parseInt(timestamp) > 24 * 60 * 60 * 1000) return null
+    // Check expiry (30 days)
+    if (Date.now() - parseInt(timestamp) > 30 * 24 * 60 * 60 * 1000) return null
 
     return phone
   } catch {

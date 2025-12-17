@@ -91,8 +91,21 @@ export default function CSPage() {
   const [chatSources, setChatSources] = useState<ChatSource[]>([])
   const [chatLoading, setChatLoading] = useState(false)
 
-  // Load auth from localStorage
+  // Load auth from cookie first, then localStorage fallback
   useEffect(() => {
+    // Try cookies first (survives Safari View Controller)
+    const cookies = document.cookie.split(';').reduce((acc, c) => {
+      const [key, val] = c.trim().split('=')
+      if (key && val) acc[key] = decodeURIComponent(val)
+      return acc
+    }, {} as Record<string, string>)
+
+    if (cookies.cs_token) {
+      setAuth({ token: cookies.cs_token, handle: cookies.cs_handle || null })
+      return
+    }
+
+    // Fallback to localStorage
     const stored = localStorage.getItem('cs_auth')
     if (stored) {
       try {
@@ -243,6 +256,9 @@ export default function CSPage() {
   const handleLogout = () => {
     setAuth({ token: null, handle: null })
     localStorage.removeItem('cs_auth')
+    // Clear cookies
+    document.cookie = 'cs_token=; path=/; max-age=0'
+    document.cookie = 'cs_handle=; path=/; max-age=0'
   }
 
   const handleDeletePost = async (postId: string) => {
@@ -477,7 +493,7 @@ export default function CSPage() {
                 <div className="cs-comments">
                   {link.comments.map((comment) => (
                     <div key={comment.id} className="cs-comment">
-                      <span className="cs-comment-author">@{comment.author}</span>
+                      <span className="cs-comment-author">{comment.author}:</span>
                       <span className="cs-comment-text">{comment.text}</span>
                       <span className="cs-comment-time">{timeAgo(comment.created_at)}</span>
                       {auth.handle && comment.author === auth.handle && (

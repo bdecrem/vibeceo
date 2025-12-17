@@ -65,7 +65,18 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, handle: cleanHandle })
+    const response = NextResponse.json({ success: true, handle: cleanHandle })
+
+    // Set handle cookie
+    response.cookies.set('cs_handle', cleanHandle, {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 30 * 24 * 60 * 60, // 30 days
+      path: '/',
+    })
+
+    return response
 
   } catch (error) {
     console.error('[cs/set-handle] Error:', error)

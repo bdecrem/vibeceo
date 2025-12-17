@@ -264,7 +264,7 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
 
       await sendSms(
         from,
-        "Subscribed! Pick a one-word handle (like 'roxi' or 'alex'):",
+        "Subscribed! Pick a handle — reply with one word (like 'roxi')",
         twilioClient
       );
     }
@@ -441,7 +441,7 @@ export async function handleCSHandleSetup(
 
     await sendSms(
       from,
-      `You're [${handle}]! Share: CS <url> — 💬 kochi.to/cs`,
+      `All set. Share links by texting CS + any URL. See the feed at kochi.to/cs 💬`,
       twilioClient
     );
   } catch (error) {
