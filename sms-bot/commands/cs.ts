@@ -249,7 +249,7 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
       // Already has a handle, just confirm
       await sendSms(
         from,
-        `Subscribed as [${existingHandle}]! Share: CS <url> — 💬 kochi.to/cs`,
+        `Welcome back, ${existingHandle}. Share links by texting CS + any URL. kochi.to/cs 💬`,
         twilioClient
       );
     } else {
