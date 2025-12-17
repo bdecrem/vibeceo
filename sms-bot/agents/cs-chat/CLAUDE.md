@@ -38,6 +38,8 @@ Web Side (web/)
 | `CS <url>` | Share a link (broadcasts to subscribers) |
 | `CS <url> your note` | Share with a comment |
 | `CS <url> person: Name` | Tag a link as being "about" someone |
+| `CS <text>` | Comment on recent link (30-min rolling window) |
+| `CS KOCHI <question>` | AI-powered Q&A — broadcasts question + answer to all |
 | `CS SUBSCRIBE` / `CS SUB` | Subscribe to broadcasts |
 | `CS UNSUBSCRIBE` / `CS UNSUB` | Unsubscribe |
 | `CS LIST` | See 5 most recent links |
@@ -46,6 +48,8 @@ Web Side (web/)
 **Special handling:**
 - LinkedIn profile URLs auto-detect `about_person` from the URL slug
 - If user just texts `CS` (no URL), waits 30s for URL follow-up (iMessage splitting workaround)
+- Comments have a 30-min rolling window — each new comment resets the timer
+- KOCHI broadcasts both the question and AI answer to all subscribers
 
 ## Database Schema
 
