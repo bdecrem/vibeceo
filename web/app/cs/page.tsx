@@ -106,7 +106,7 @@ export default function CSPage() {
     }, {} as Record<string, string>)
 
     if (cookies.cs_token) {
-      setAuth({ token: cookies.cs_token, handle: cookies.cs_handle || null })
+      setAuth({ token: cookies.cs_token, handle: cookies.cs_handle || null, isAdmin: false })
       return
     }
 
