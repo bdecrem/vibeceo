@@ -91,9 +91,11 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
     if (!aboutPerson && url.includes('linkedin.com/in/')) {
       const linkedInMatch = url.match(/linkedin\.com\/in\/([^/?]+)/);
       if (linkedInMatch) {
-        // Convert slug to readable name: john-doe -> John Doe
+        // Convert slug to readable name: john-doe-2496ba82 -> John Doe
+        // Filter out trailing numeric IDs (alphanumeric segments with digits)
         aboutPerson = linkedInMatch[1]
           .split('-')
+          .filter(word => !/\d/.test(word)) // Remove segments containing digits
           .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
       }
