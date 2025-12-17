@@ -434,9 +434,9 @@ async function handleCSComment(context: CommandContext, text: string): Promise<b
       return true;
     }
 
-    // Get user's handle
+    // Get user's handle (prefer handle, fall back to name)
     const subscriber = await getSubscriber(normalizedFrom);
-    const handle = subscriber?.personalization?.handle || "Anonymous";
+    const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || "Anonymous";
 
     // Add comment to post (same format as web comments)
     const newComment = {
@@ -474,6 +474,7 @@ async function handleCSComment(context: CommandContext, text: string): Promise<b
 
 /**
  * Handle CS KOCHI - AI-powered search, broadcast Q&A to all subscribers
+ * Also saves question and answer as comments on the most recent active post
  */
 async function handleCSKochi(context: CommandContext, question: string): Promise<boolean> {
   const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
@@ -484,11 +485,29 @@ async function handleCSKochi(context: CommandContext, question: string): Promise
     return true;
   }
 
-  // Get user's handle
+  // Get user's handle (prefer handle, fall back to name)
   const subscriber = await getSubscriber(normalizedFrom);
-  const handle = subscriber?.personalization?.handle || "Someone";
+  const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || "Someone";
 
   try {
+    // Find most recent active post to attach Q&A as comments
+    const { data: recentPosts } = await supabase
+      .from("cs_content")
+      .select("id, domain, comments, posted_at")
+      .order("posted_at", { ascending: false })
+      .limit(5);
+
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    const activePost = recentPosts?.find(post => {
+      const postTime = new Date(post.posted_at).getTime();
+      const comments = post.comments as Array<{ created_at: string }> | null;
+      const lastCommentTime = comments?.length
+        ? new Date(comments[comments.length - 1].created_at).getTime()
+        : 0;
+      const lastActivity = Math.max(postTime, lastCommentTime);
+      return lastActivity >= cutoff;
+    });
+
     // 1. Broadcast the question to all subscribers
     const questionMsg = `💭 ${handle} asks: "${question}"`;
     await broadcastToSubscribers(twilioClient, questionMsg, null);
@@ -502,7 +521,29 @@ async function handleCSKochi(context: CommandContext, question: string): Promise
       ? result.answer.substring(0, 397) + "..."
       : result.answer;
 
-    // 4. Broadcast the answer to all subscribers
+    // 4. Save Q&A as comments on active post (if one exists)
+    if (activePost) {
+      const questionComment = {
+        id: crypto.randomUUID(),
+        author: handle,
+        text: `🔍 ${question}`,
+        created_at: new Date().toISOString(),
+      };
+      const answerComment = {
+        id: crypto.randomUUID(),
+        author: "Kochi",
+        text: result.answer, // Full answer for website (not truncated)
+        created_at: new Date().toISOString(),
+      };
+
+      const existingComments = (activePost.comments as Array<unknown>) || [];
+      await supabase
+        .from("cs_content")
+        .update({ comments: [...existingComments, questionComment, answerComment] })
+        .eq("id", activePost.id);
+    }
+
+    // 5. Broadcast the answer to all subscribers
     const answerMsg = `🤖 ${answer}\n\nkochi.to/cs 💬`;
     await broadcastToSubscribers(twilioClient, answerMsg, null);
 

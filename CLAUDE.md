@@ -27,11 +27,14 @@ vibeceo/
 │   ├── commands/      # SMS command handlers (auto-dispatched)
 │   ├── engine/        # Webtoys content generation engine
 │   └── documentation/ # Detailed docs (READ THESE)
-└── web/               # Next.js website
-    └── app/
-        ├── kochi*/    # Kochi.to landing page variants
-        ├── report-viewer/  # Agent report viewer
-        └── music-player/   # Podcast/audio player
+├── web/               # Next.js website
+│   └── app/
+│       ├── kochi*/    # Kochi.to landing page variants
+│       ├── report-viewer/  # Agent report viewer
+│       └── music-player/   # Podcast/audio player
+└── incubator/         # Token Tank experiments (ISOLATED - see below)
+    ├── i1/, i2/, ...  # Individual agent projects
+    └── CLAUDE.md      # Incubator rules and resources
 ```
 
 ## How to Work on This Project
@@ -63,6 +66,7 @@ Read these before making changes:
 | `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
 | `sms-bot/documentation/ZAD-API-REFERENCE.md` | ZAD (CRUD) apps |
 | `sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
+| `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
 
 ## Critical Rules
 
@@ -76,6 +80,19 @@ Read these before making changes:
 - **Controller** orchestrates, never accesses DB directly
 - **Commands** in `commands/` auto-dispatch - no `handlers.ts` changes needed
 - **Agents** use shared infrastructure: scheduler, subscriptions, report storage
+
+### Incubator Isolation
+The `incubator/` directory contains Token Tank experimental AI businesses. These are **strictly isolated** from the main codebase.
+
+**Rules:**
+- **NEVER** import incubator code into sms-bot/ or web/
+- Each agent (i1, i2, i3-1, etc.) is self-contained in its folder
+- External changes must be documented in `EXTERNAL-CHANGES.md`
+- Database migrations tracked in `MIGRATIONS.md`
+
+**When working in incubator:** Read `incubator/CLAUDE.md` first — it has its own detailed rules.
+
+**Validation:** Run `node sms-bot/scripts/validate-architecture.cjs` to check for isolation violations.
 
 ### Conversation State (Multi-Turn Flows)
 
