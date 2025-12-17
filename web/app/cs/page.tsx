@@ -434,20 +434,23 @@ export default function CSPage() {
                   {link.url}
                 </a>
               </div>
-              {link.about_person && (
-                <span
-                  className="cs-link-person-tag"
-                  onClick={() => setSelectedPerson(link.about_person)}
-                >
-                  {link.about_person}
-                </span>
-              )}
               {link.notes && <p className="cs-link-notes">"{link.notes}"</p>}
               {link.content_summary && <p className="cs-link-summary">{link.content_summary}</p>}
               <div className="cs-link-meta">
                 <span className="cs-link-poster">{link.posted_by_name || 'Anonymous'}</span>
                 <span className="cs-link-sep">&middot;</span>
                 <span className="cs-link-time">{timeAgo(link.posted_at)}</span>
+                {link.about_person && (
+                  <>
+                    <span className="cs-link-sep">&middot;</span>
+                    <span
+                      className="cs-link-about"
+                      onClick={() => setSelectedPerson(link.about_person)}
+                    >
+                      re: {link.about_person}
+                    </span>
+                  </>
+                )}
                 {link.isOwner && (
                   <>
                     <span className="cs-link-sep">&middot;</span>
@@ -724,22 +727,14 @@ const styles = `
     line-height: 1.4;
   }
 
-  .cs-link-person-tag {
-    display: inline-block;
-    background: linear-gradient(135deg, #e8f4fd 0%, #d4e9f7 100%);
+  .cs-link-about {
     color: #1a5f8a;
-    padding: 0.2rem 0.6rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin: 0.4rem 0;
     cursor: pointer;
-    transition: all 0.15s ease;
+    font-style: italic;
   }
 
-  .cs-link-person-tag:hover {
-    background: linear-gradient(135deg, #d4e9f7 0%, #c0dbed 100%);
-    transform: scale(1.02);
+  .cs-link-about:hover {
+    text-decoration: underline;
   }
 
   .cs-filter-bar {
