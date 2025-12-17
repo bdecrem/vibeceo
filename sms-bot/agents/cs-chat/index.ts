@@ -102,8 +102,11 @@ async function processToolCall(
 export async function runCSChat(question: string): Promise<CSChatResult> {
   console.log("[CS Chat] Starting query:", question);
 
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  console.log("[CS Chat] API key check:", apiKey ? `${apiKey.substring(0, 10)}...${apiKey.substring(apiKey.length - 4)} (len=${apiKey.length})` : "MISSING");
+
   const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY,
+    apiKey,
   });
   let toolCalls = 0;
 

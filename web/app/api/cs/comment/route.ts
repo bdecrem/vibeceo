@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import crypto from 'crypto'
+import twilio from 'twilio'
 import { verifySessionToken } from '../auth'
 
 export const dynamic = 'force-dynamic'
@@ -8,6 +9,11 @@ export const dynamic = 'force-dynamic'
 const supabase = createClient(
   process.env.SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
+)
+
+const twilioClient = twilio(
+  process.env.TWILIO_ACCOUNT_SID,
+  process.env.TWILIO_AUTH_TOKEN
 )
 
 export async function POST(req: NextRequest) {
@@ -32,10 +38,10 @@ export async function POST(req: NextRequest) {
 
     const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || 'Anonymous'
 
-    // Get current link
+    // Get current link with poster info
     const { data: link, error: linkError } = await supabase
       .from('cs_content')
-      .select('comments')
+      .select('comments, posted_by_phone, posted_by_name')
       .eq('id', linkId)
       .single()
 
@@ -62,6 +68,21 @@ export async function POST(req: NextRequest) {
     if (updateError) {
       console.error('[cs/comment] Update error:', updateError)
       return NextResponse.json({ error: 'Failed to add comment' }, { status: 500 })
+    }
+
+    // Notify original poster (if not commenting on own post)
+    if (link.posted_by_phone && link.posted_by_phone !== phone) {
+      try {
+        const commenterName = handle !== 'Anonymous' ? `[${handle}]` : 'someone'
+        await twilioClient.messages.create({
+          body: `${commenterName} replied to your link — 💬 kochi.to/cs 👀`,
+          to: link.posted_by_phone,
+          from: process.env.TWILIO_PHONE_NUMBER
+        })
+      } catch (smsError) {
+        console.error('[cs/comment] Failed to send notification:', smsError)
+        // Don't fail the request if SMS fails
+      }
     }
 
     return NextResponse.json({ success: true, comment: newComment })
