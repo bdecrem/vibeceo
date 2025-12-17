@@ -1196,33 +1196,6 @@ export function checkAndClearPendingCS(phoneNumber: string): boolean {
   return true;
 }
 
-// Pending CS handle - after subscribe, wait for single-word handle
-interface PendingCSHandle {
-  timestamp: number;
-}
-const pendingCSHandles = new Map<string, PendingCSHandle>();
-const CS_HANDLE_TIMEOUT_MS = 120000; // 2 minutes to respond with handle
-
-export function setPendingCSHandle(phoneNumber: string): void {
-  pendingCSHandles.set(phoneNumber, { timestamp: Date.now() });
-  console.log(`[cs] Set pending CS handle for ${phoneNumber}`);
-}
-
-export function checkAndClearPendingCSHandle(phoneNumber: string): boolean {
-  const pending = pendingCSHandles.get(phoneNumber);
-  if (!pending) return false;
-
-  pendingCSHandles.delete(phoneNumber);
-
-  if (Date.now() - pending.timestamp > CS_HANDLE_TIMEOUT_MS) {
-    console.log(`[cs] Pending CS handle expired for ${phoneNumber}`);
-    return false;
-  }
-
-  console.log(`[cs] Found valid pending CS handle for ${phoneNumber}`);
-  return true;
-}
-
 // Clear conversation state
 function endConversation(phoneNumber: string) {
   console.log(`Ending conversation for ${phoneNumber}`);

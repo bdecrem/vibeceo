@@ -23,6 +23,10 @@ class SupabaseTools:
     """Supabase query tools for CS content."""
 
     def __init__(self):
+        # Debug: print env var status
+        print(f"[SupabaseTools] SUPABASE_URL: {'SET ('+SUPABASE_URL[:30]+'...)' if SUPABASE_URL else 'MISSING'}", file=sys.stderr)
+        print(f"[SupabaseTools] SUPABASE_SERVICE_KEY: {'SET ('+SUPABASE_SERVICE_KEY[:20]+'...)' if SUPABASE_SERVICE_KEY else 'MISSING'}", file=sys.stderr)
+
         if not all([SUPABASE_URL, SUPABASE_SERVICE_KEY]):
             missing = []
             if not SUPABASE_URL:
@@ -31,16 +35,27 @@ class SupabaseTools:
                 missing.append("SUPABASE_SERVICE_KEY")
             raise ValueError(f"Missing environment variables: {', '.join(missing)}")
 
-        self.client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+        try:
+            self.client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
+            print(f"[SupabaseTools] Client created successfully", file=sys.stderr)
+        except Exception as e:
+            print(f"[SupabaseTools] Failed to create client: {e}", file=sys.stderr)
+            raise
 
     def get_all_links(self) -> List[Dict[str, Any]]:
         """Get all links with content summaries."""
-        result = self.client.table("cs_content").select(
-            "id, url, domain, posted_by_name, notes, posted_at, content_summary"
-        ).not_.is_("content_fetched_at", "null").order(
-            "posted_at", desc=True
-        ).limit(50).execute()
-        return result.data
+        try:
+            print(f"[SupabaseTools] Querying cs_content table...", file=sys.stderr)
+            result = self.client.table("cs_content").select(
+                "id, url, domain, posted_by_name, notes, posted_at, content_summary"
+            ).not_.is_("content_fetched_at", "null").order(
+                "posted_at", desc=True
+            ).limit(50).execute()
+            print(f"[SupabaseTools] Query returned {len(result.data)} rows", file=sys.stderr)
+            return result.data
+        except Exception as e:
+            print(f"[SupabaseTools] Query error: {type(e).__name__}: {e}", file=sys.stderr)
+            raise
 
     def search_links(self, keyword: str) -> List[Dict[str, Any]]:
         """Search links by keyword in content."""

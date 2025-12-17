@@ -19,6 +19,7 @@ import { getSubscriber } from "../lib/subscribers.js";
 import { supabase } from "../lib/supabase.js";
 import { sendSmsResponse, setPendingCS } from "../lib/sms/handlers.js";
 import { fetchAndSummarizeLink } from "../lib/cs-content-fetcher.js";
+import { storeThreadState, clearThreadState, type ActiveThread } from "../lib/context-loader.js";
 import type { TwilioClient } from "../lib/sms/webhooks.js";
 import type { CommandContext, CommandHandler } from "./types.js";
 import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
@@ -100,10 +101,10 @@ async function broadcastNewLink(
     return { sent: 0, failed: 0 };
   }
 
-  const posterName = poster.name || "Someone";
+  const handle = poster.name ? `[${poster.name}]` : "[someone]";
   const message = notes
-    ? `📎 ${posterName} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
-    : `📎 ${posterName} shared: ${url} — 💬 kochi.to/cs`;
+    ? `📎 ${handle} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
+    : `📎 ${handle} shared: ${url} — 💬 kochi.to/cs`;
 
   let sent = 0;
   let failed = 0;
@@ -133,7 +134,8 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
     // Get subscriber info
     const subscriber = await getSubscriber(normalizedFrom);
     const subscriberId = subscriber?.id || null;
-    const posterName = subscriber?.personalization?.name || null;
+    // Prefer handle over name for CS posts
+    const posterHandle = subscriber?.personalization?.handle || subscriber?.personalization?.name || null;
 
     const domain = extractDomain(url);
 
@@ -143,7 +145,7 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
       .insert({
         subscriber_id: subscriberId,
         posted_by_phone: normalizedFrom,
-        posted_by_name: posterName,
+        posted_by_name: posterHandle,
         url,
         domain,
         notes,
@@ -167,7 +169,7 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
     // Broadcast to subscribers
     const { sent } = await broadcastNewLink(
       twilioClient,
-      { phone: normalizedFrom, name: posterName || undefined },
+      { phone: normalizedFrom, name: posterHandle || undefined },
       url,
       domain,
       notes
@@ -214,11 +216,33 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
       return true;
     }
 
-    await sendSms(
-      from,
-      "Subscribed to CS! You'll get links when others share them.\nShare: CS <url> — 💬 kochi.to/cs",
-      twilioClient
-    );
+    // Check if user already has a handle
+    const subscriber = await getSubscriber(normalizedFrom);
+    const existingHandle = subscriber?.personalization?.handle;
+
+    if (existingHandle) {
+      // Already has a handle, just confirm
+      await sendSms(
+        from,
+        `Subscribed as [${existingHandle}]! Share: CS <url> — 💬 kochi.to/cs`,
+        twilioClient
+      );
+    } else {
+      // Ask for handle and store thread state
+      if (subscriber?.id) {
+        await storeThreadState(subscriber.id, {
+          handler: 'cs-handle-setup',
+          topic: 'handle setup',
+          context: {},
+        });
+      }
+
+      await sendSms(
+        from,
+        "Subscribed! Pick a one-word handle (like 'roxi' or 'alex'):",
+        twilioClient
+      );
+    }
   } catch (error) {
     console.error("[cs] Error subscribing:", error);
     await sendSms(from, "Could not subscribe. Try again later.", twilioClient);
@@ -343,4 +367,63 @@ export const csCommandHandler: CommandHandler = {
  */
 export async function handlePendingCSPost(context: CommandContext, url: string): Promise<boolean> {
   return handlePost(context, url);
+}
+
+/**
+ * Handle CS handle setup - called from orchestrated-routing when user replies with handle
+ */
+export async function handleCSHandleSetup(
+  context: CommandContext,
+  activeThread: ActiveThread
+): Promise<boolean> {
+  const { from, normalizedFrom, message, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
+
+  // Extract single word (the handle)
+  const handle = message.trim().split(/\s+/)[0].replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20);
+
+  if (!handle || handle.length < 2) {
+    await sendSms(
+      from,
+      "Pick a one-word handle (2-20 letters/numbers, like 'roxi'):",
+      twilioClient
+    );
+    await updateLastMessageDate(normalizedFrom);
+    return true;
+  }
+
+  try {
+    const subscriber = await getSubscriber(normalizedFrom);
+    if (!subscriber) {
+      await sendSms(from, "Could not find your account. Try CS SUBSCRIBE again.", twilioClient);
+      return true;
+    }
+
+    // Save handle to personalization
+    const newPersonalization = { ...subscriber.personalization, handle };
+    const { error } = await supabase
+      .from('sms_subscribers')
+      .update({ personalization: newPersonalization })
+      .eq('id', subscriber.id);
+
+    if (error) {
+      console.error('[cs] Failed to save handle:', error);
+      await sendSms(from, "Could not save handle. Try again later.", twilioClient);
+      return true;
+    }
+
+    // Clear thread state
+    await clearThreadState(subscriber.id);
+
+    await sendSms(
+      from,
+      `You're [${handle}]! Share: CS <url> — 💬 kochi.to/cs`,
+      twilioClient
+    );
+  } catch (error) {
+    console.error('[cs] Error in handle setup:', error);
+    await sendSms(from, "Something went wrong. Try CS SUBSCRIBE again.", twilioClient);
+  }
+
+  await updateLastMessageDate(normalizedFrom);
+  return true;
 }
