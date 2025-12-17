@@ -54,6 +54,7 @@ export default function CSPage() {
   const [links, setLinks] = useState<CSLink[]>([])
   const [people, setPeople] = useState<string[]>([])
   const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
+  const [searchOpen, setSearchOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -338,67 +339,81 @@ export default function CSPage() {
         )}
       </header>
 
-      {/* Chat UI */}
-      <div className="cs-chat">
-        <div className="cs-chat-input-row">
-          <input
-            type="text"
-            value={chatQuestion}
-            onChange={(e) => setChatQuestion(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && handleChat()}
-            placeholder="Ask about the links... e.g. 'What articles discuss AI agents?'"
-            className="cs-chat-input"
-            disabled={chatLoading}
-          />
-          <button onClick={handleChat} disabled={chatLoading || !chatQuestion.trim()} className="cs-chat-btn">
-            {chatLoading ? '...' : 'Ask'}
-          </button>
+      {/* Filter bar with people tags and search */}
+      <div className="cs-filter-bar">
+        <div className="cs-filter-left">
+          {people.length > 0 && (
+            <>
+              <button
+                className={`cs-people-tag ${!selectedPerson ? 'cs-people-tag-active' : ''}`}
+                onClick={() => setSelectedPerson(null)}
+              >
+                All
+              </button>
+              {people.map((person) => (
+                <button
+                  key={person}
+                  className={`cs-people-tag ${selectedPerson === person ? 'cs-people-tag-active' : ''}`}
+                  onClick={() => setSelectedPerson(selectedPerson === person ? null : person)}
+                >
+                  {person}
+                </button>
+              ))}
+            </>
+          )}
         </div>
-        {chatLoading && (
-          <div className="cs-chat-thinking">
-            <div className="cs-thinking-bubble">
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
-            <span className="cs-thinking-text">Searching through links...</span>
-          </div>
-        )}
-        {chatAnswer && (
-          <div className="cs-chat-answer">
-            <p>{chatAnswer}</p>
-            {chatSources.length > 0 && (
-              <div className="cs-chat-sources">
-                Sources: {chatSources.map((src, i) => (
-                  <span key={src.id}>
-                    {i > 0 && ', '}
-                    <a href={src.url} target="_blank" rel="noopener noreferrer">{src.domain || 'link'}</a>
-                  </span>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
+        <button
+          className={`cs-search-toggle ${searchOpen ? 'cs-search-toggle-active' : ''}`}
+          onClick={() => setSearchOpen(!searchOpen)}
+          title="Search links"
+        >
+          🔍
+        </button>
       </div>
 
-      {/* People tags */}
-      {people.length > 0 && (
-        <div className="cs-people-tags">
-          <button
-            className={`cs-people-tag ${!selectedPerson ? 'cs-people-tag-active' : ''}`}
-            onClick={() => setSelectedPerson(null)}
-          >
-            All
-          </button>
-          {people.map((person) => (
-            <button
-              key={person}
-              className={`cs-people-tag ${selectedPerson === person ? 'cs-people-tag-active' : ''}`}
-              onClick={() => setSelectedPerson(selectedPerson === person ? null : person)}
-            >
-              {person}
+      {/* Expandable search */}
+      {searchOpen && (
+        <div className="cs-search-panel">
+          <div className="cs-chat-input-row">
+            <input
+              type="text"
+              value={chatQuestion}
+              onChange={(e) => setChatQuestion(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleChat()}
+              placeholder="Ask about the links..."
+              className="cs-chat-input"
+              disabled={chatLoading}
+              autoFocus
+            />
+            <button onClick={handleChat} disabled={chatLoading || !chatQuestion.trim()} className="cs-chat-btn">
+              {chatLoading ? '...' : 'Ask'}
             </button>
-          ))}
+          </div>
+          {chatLoading && (
+            <div className="cs-chat-thinking">
+              <div className="cs-thinking-bubble">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span className="cs-thinking-text">Searching...</span>
+            </div>
+          )}
+          {chatAnswer && (
+            <div className="cs-chat-answer">
+              <p>{chatAnswer}</p>
+              {chatSources.length > 0 && (
+                <div className="cs-chat-sources">
+                  Sources: {chatSources.map((src, i) => (
+                    <span key={src.id}>
+                      {i > 0 && ', '}
+                      <a href={src.url} target="_blank" rel="noopener noreferrer">{src.domain || 'link'}</a>
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -727,23 +742,31 @@ const styles = `
     transform: scale(1.02);
   }
 
-  .cs-people-tags {
+  .cs-filter-bar {
     display: flex;
-    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
-    margin-bottom: 1.5rem;
-    padding: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.5rem 0.75rem;
     background: #f8f9fa;
     border-radius: 8px;
   }
 
+  .cs-filter-left {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    flex: 1;
+  }
+
   .cs-people-tag {
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid #e0e0e0;
     color: #555;
-    padding: 0.35rem 0.75rem;
-    border-radius: 16px;
-    font-size: 0.8rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 14px;
+    font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s ease;
   }
@@ -763,6 +786,46 @@ const styles = `
     background: #145070;
     border-color: #145070;
     color: #fff;
+  }
+
+  .cs-search-toggle {
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+    opacity: 0.6;
+  }
+
+  .cs-search-toggle:hover {
+    background: #e8e8e8;
+    opacity: 1;
+  }
+
+  .cs-search-toggle-active {
+    background: #1a5f8a;
+    opacity: 1;
+  }
+
+  .cs-search-panel {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f0f7ff;
+    border-radius: 8px;
+    animation: slideDown 0.2s ease;
+  }
+
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .cs-link-meta {
@@ -987,25 +1050,17 @@ const styles = `
   }
 
   /* Chat UI */
-  .cs-chat {
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
-  }
-
   .cs-chat-input-row {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.4rem;
   }
 
   .cs-chat-input {
     flex: 1;
-    padding: 0.75rem;
+    padding: 0.5rem 0.75rem;
     border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 0.95rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
   }
 
   .cs-chat-input:focus {
@@ -1014,13 +1069,13 @@ const styles = `
   }
 
   .cs-chat-btn {
-    padding: 0.75rem 1.25rem;
+    padding: 0.5rem 1rem;
     background: #1565c0;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 0.95rem;
+    font-size: 0.85rem;
   }
 
   .cs-chat-btn:hover {
@@ -1035,11 +1090,11 @@ const styles = `
   .cs-chat-thinking {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding: 1rem;
-    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
-    border-radius: 16px 16px 16px 4px;
+    gap: 0.6rem;
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: #fff;
+    border-radius: 12px;
     animation: fadeIn 0.3s ease;
   }
 
@@ -1089,21 +1144,22 @@ const styles = `
   }
 
   .cs-chat-answer {
-    margin-top: 1rem;
-    padding: 1rem;
-    background: #f5f5f5;
-    border-radius: 4px;
+    margin-top: 0.75rem;
+    padding: 0.75rem;
+    background: #fff;
+    border-radius: 8px;
   }
 
   .cs-chat-answer p {
     margin: 0;
-    line-height: 1.5;
+    line-height: 1.4;
     color: #333;
+    font-size: 0.85rem;
   }
 
   .cs-chat-sources {
-    margin-top: 0.75rem;
-    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
     color: #666;
   }
 

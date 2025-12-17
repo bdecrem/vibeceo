@@ -14,7 +14,7 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Load environment variables - always use sms-bot/.env.local regardless of cwd
 if (!isProduction) {
   const envPath = join(smsBotRoot, '.env.local');
-  const result = dotenv.config({ path: envPath });
+  const result = dotenv.config({ path: envPath, override: true });
   if (result.error) {
     console.error(`❌ Error loading .env.local from ${envPath}:`, result.error);
     process.exit(1);
