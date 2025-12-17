@@ -35,21 +35,33 @@ export async function runCSChat(question: string): Promise<CSChatResult> {
   const pythonPath = process.env.PYTHON_BIN || "python3";
   const agentScript = path.join(PYTHON_SCRIPTS_DIR, "agent.py");
 
+  console.log("[CS Chat] Python path:", pythonPath);
+  console.log("[CS Chat] Agent script:", agentScript);
+
   // Prepare input for agent
   const agentInput = { question };
 
-  // Environment for Python process
-  const { CLAUDE_CODE_OAUTH_TOKEN: _ignoredToken, ...cleanEnv } = process.env;
+  // Environment for Python process - pass all env vars
   const sdkToken =
     process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.CLAUDE_CODE_OAUTH_TOKEN;
 
-  const env: Record<string, string | undefined> = {
-    ...cleanEnv,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    CLAUDE_CODE_OAUTH_TOKEN: sdkToken,
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-  };
+  // Build env from process.env, filtering out undefined values
+  const env: Record<string, string> = {};
+  for (const [key, value] of Object.entries(process.env)) {
+    if (value !== undefined) {
+      env[key] = value;
+    }
+  }
+
+  // Override specific values
+  if (sdkToken) {
+    env.CLAUDE_CODE_OAUTH_TOKEN = sdkToken;
+  }
+
+  // Log what we're passing (masked)
+  console.log("[CS Chat] Env check - SUPABASE_URL:", env.SUPABASE_URL ? "SET" : "MISSING");
+  console.log("[CS Chat] Env check - SUPABASE_SERVICE_KEY:", env.SUPABASE_SERVICE_KEY ? "SET" : "MISSING");
+  console.log("[CS Chat] Env check - ANTHROPIC_API_KEY:", env.ANTHROPIC_API_KEY ? "SET" : "MISSING");
 
   return new Promise((resolve, reject) => {
     const proc = spawn(
@@ -67,10 +79,8 @@ export async function runCSChat(question: string): Promise<CSChatResult> {
 
     proc.stderr.on("data", (data) => {
       stderr += data.toString();
-      // Log but don't treat as error - SDK sends debug info to stderr
-      if (process.env.CS_CHAT_DEBUG) {
-        console.error("[CS Chat Debug]:", data.toString());
-      }
+      // Always log stderr for debugging
+      console.log("[CS Chat stderr]:", data.toString().trim());
     });
 
     proc.on("close", (code) => {

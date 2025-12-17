@@ -7,19 +7,39 @@ Wraps Supabase client as in-process MCP server using create_sdk_mcp_server.
 
 import json
 import os
+import sys
 from typing import Any, Dict
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 from supabase import create_client, Client
 
+# Initialize Supabase client once at module load
+_supabase_client: Client | None = None
 
 def get_supabase() -> Client:
-    """Get Supabase client."""
+    """Get Supabase client (singleton)."""
+    global _supabase_client
+
+    if _supabase_client is not None:
+        return _supabase_client
+
     url = os.environ.get("SUPABASE_URL")
     key = os.environ.get("SUPABASE_SERVICE_KEY")
+
+    # Debug logging
+    print(f"[supabase_tools] SUPABASE_URL: {'SET' if url else 'MISSING'}", file=sys.stderr)
+    print(f"[supabase_tools] SUPABASE_SERVICE_KEY: {'SET' if key else 'MISSING'}", file=sys.stderr)
+
     if not url or not key:
-        raise ValueError("SUPABASE_URL and SUPABASE_SERVICE_KEY must be set")
-    return create_client(url, key)
+        raise ValueError(f"SUPABASE_URL={'SET' if url else 'MISSING'}, SUPABASE_SERVICE_KEY={'SET' if key else 'MISSING'}")
+
+    try:
+        _supabase_client = create_client(url, key)
+        print(f"[supabase_tools] Client created successfully", file=sys.stderr)
+        return _supabase_client
+    except Exception as e:
+        print(f"[supabase_tools] Failed to create client: {e}", file=sys.stderr)
+        raise
 
 
 @tool(

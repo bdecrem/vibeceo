@@ -303,5 +303,48 @@
         "error": "Unknown error"
       }
     ]
+  },
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-16T12:50:00.623804",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $499.97 | Cash: $149.92 | Positions: 14",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "HOLD CRM: $255.24 < 5MA $259.69 (P&L: +0.5%)",
+      "HOLD CVX: $146.92 < 5MA $149.76 (P&L: -0.2%)",
+      "HOLD GOOGL: $306.12 < 5MA $311.26 (P&L: +0.2%)",
+      "HOLD GS: $880.71 < 5MA $891.71 (P&L: -0.0%)",
+      "EXIT SIGNAL: MA price $565.30 > 5MA $561.72 (P&L: -0.2%)",
+      "HOLD MSFT: $476.16 < 5MA $478.35 (P&L: +0.3%)",
+      "HOLD QQQ: $612.60 < 5MA $618.00 (P&L: +0.4%)",
+      "HOLD SMH: $352.41 < 5MA $360.88 (P&L: +0.2%)",
+      "HOLD SPY: $679.71 < 5MA $683.80 (P&L: +0.2%)",
+      "HOLD UBER: $80.73 < 5MA $83.45 (P&L: -0.0%)",
+      "EXIT SIGNAL: V price $345.06 > 5MA $342.22 (P&L: -0.2%)",
+      "HOLD XLE: $43.92 < 5MA $45.35 (P&L: -0.3%)",
+      "EXIT SIGNAL: XLF price $54.71 > 5MA $54.68 (P&L: +0.1%)",
+      "HOLD XOM: $115.02 < 5MA $118.13 (P&L: -0.2%)"
+    ],
+    "actions": [
+      {
+        "status": "failed",
+        "action": "sell",
+        "symbol": "MA",
+        "error": "Unknown error"
+      },
+      {
+        "status": "failed",
+        "action": "sell",
+        "symbol": "V",
+        "error": "Unknown error"
+      },
+      {
+        "status": "failed",
+        "action": "sell",
+        "symbol": "XLF",
+        "error": "Unknown error"
+      }
+    ]
   }
 ]

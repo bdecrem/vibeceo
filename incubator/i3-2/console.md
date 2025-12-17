@@ -4,6 +4,336 @@
 
 ---
 
+## 2025-12-16
+
+
+--- Cycle 18 (stocks+crypto) ---
+`15:56:32` [Drift] Scanning stocks+crypto: 27 assets
+`15:56:32` [Drift] Stage 1: Quantitative screening 27 symbols...
+`15:56:45` [Drift] Scan complete: 3 triggers to research
+`15:56:45` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extreme oversold on the entire market, highest probability mean reversion play
+`15:57:41` [Drift] Web searches performed: 3
+`15:57:41` [Drift] SPY: PASS (confidence: 55%)
+`15:57:41` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 12.1 - financial sector oversold but not at zero like others, potentially less crowded trade
+`15:58:32` [Drift] Web searches performed: 3
+`15:58:33` [Drift] XLF: PASS (confidence: 52%)
+`15:58:33` [Drift] Using Opus for entry research
+
+[Drift] Researching AAPL: RSI-2 at 20.4 near oversold threshold while testing 20-day MA - quality stock at technical inflection point
+`15:59:28` [Drift] Web searches performed: 4
+`15:59:28` [Drift] AAPL: PASS (confidence: 55%)
+`15:59:28` [15:59:28 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 17 (stocks+crypto) ---
+`15:38:55` [Drift] Scanning stocks+crypto: 27 assets
+`15:38:56` [Drift] Stage 1: Quantitative screening 27 symbols...
+`15:39:06` [Drift] Scan complete: 3 triggers to research
+`15:39:06` [Drift] Running hourly general news scan...
+`15:39:30` [Drift] Web searches performed: 3
+`15:39:30` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extreme oversold on the broad market index, high probability mean reversion setup
+`15:40:28` [Drift] Web searches performed: 3
+`15:40:29` [Drift] SPY: PASS (confidence: 0%)
+`15:40:29` [Drift] Skipping SMH research: Researched 32min ago, price stable
+`15:40:29` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 15.1 - financials oversold but not at zero, may offer better risk/reward than the extreme readings
+`15:41:31` [Drift] Web searches performed: 4
+`15:41:31` [Drift] XLF: PASS (confidence: 62%)
+`15:41:31` [15:41:31 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 16 (stocks+crypto) ---
+`15:22:42` [Drift] Scanning stocks+crypto: 27 assets
+`15:22:42` [Drift] Stage 1: Quantitative screening 27 symbols...
+`15:22:55` [Drift] Scan complete: 3 triggers to research
+`15:22:55` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extreme oversold in the main index, rare signal that often leads to quick bounces
+`15:23:54` [Drift] Web searches performed: 2
+`15:23:54` [Drift] SPY: PASS (confidence: 55%)
+`15:23:54` [Drift] Skipping QQQ research: Researched 83min ago, price stable
+`15:23:55` [Drift] Skipping SMH research: Researched 16min ago, price stable
+`15:23:55` [15:23:55 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 15 (stocks+crypto) ---
+`15:05:19` [Drift] Scanning stocks+crypto: 27 assets
+`15:05:20` [Drift] Stage 1: Quantitative screening 27 symbols...
+`15:05:32` [Drift] Scan complete: 3 triggers to research
+`15:05:32` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extremely rare oversold reading on the main index, highest probability mean reversion setup
+`15:06:22` [Drift] Web searches performed: 2
+`15:06:22` [Drift] SPY: PASS (confidence: 55%)
+`15:06:23` [Drift] Skipping QQQ research: Researched 66min ago, price stable
+`15:06:23` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching SMH: RSI-2 at 0.0 AND near 20-day MA - semiconductor oversold extreme with technical support level
+`15:07:41` [Drift] Web searches performed: 4
+`15:07:41` [Drift] SMH: HOLD (confidence: 65%)
+`15:07:41` [15:07:41 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 14 (stocks+crypto) ---
+`14:49:02` [Drift] Scanning stocks+crypto: 27 assets
+`14:49:02` [Drift] Stage 1: Quantitative screening 27 symbols...
+`14:49:13` [Drift] Scan complete: 3 triggers to research
+`14:49:14` [Drift] Skipping QQQ research: Researched 49min ago, price stable
+`14:49:14` [Drift] Skipping SMH research: Researched 115min ago, price stable
+`14:49:14` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 10.3 - financials oversold but not as extreme, could lead any reversal
+`14:50:18` [Drift] Web searches performed: 4
+`14:50:19` [Drift] XLF: PASS (confidence: 42%)
+`14:50:19` [14:50:19 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 13 (stocks+crypto) ---
+`14:32:28` [Drift] Scanning stocks+crypto: 27 assets
+`14:32:29` [Drift] Stage 1: Quantitative screening 27 symbols...
+`14:32:39` [Drift] Scan complete: 3 triggers to research
+`14:32:39` [Drift] Running hourly general news scan...
+`14:32:58` [Drift] Web searches performed: 3
+`14:32:59` [Drift] Skipping QQQ research: Researched 32min ago, price stable
+`14:32:59` [Drift] Skipping SMH research: Researched 99min ago, price stable
+`14:32:59` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 9.4 oversold in financials - less extreme but more believable signal
+`14:34:01` [Drift] Web searches performed: 5
+`14:34:01` [Drift] XLF: PASS (confidence: 52%)
+`14:34:01` [14:34:01 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 12 (stocks+crypto) ---
+`14:16:13` [Drift] Scanning stocks+crypto: 27 assets
+`14:16:13` [Drift] Stage 1: Quantitative screening 27 symbols...
+`14:16:23` [Drift] Scan complete: 3 triggers to research
+`14:16:23` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 (extremely rare) + testing 20-day MA - broad market oversold bounce candidate
+`14:17:27` [Drift] Web searches performed: 4
+`14:17:27` [Drift] SPY: PASS (confidence: 0%)
+`14:17:27` [Drift] Skipping QQQ research: Researched 17min ago, price stable
+`14:17:27` [Drift] Skipping SMH research: Researched 83min ago, price stable
+`14:17:28` [14:17:28 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 11 (stocks+crypto) ---
+`13:58:25` [Drift] Scanning stocks+crypto: 27 assets
+`13:58:25` [Drift] Stage 1: Quantitative screening 27 symbols...
+`13:58:37` [Drift] Scan complete: 3 triggers to research
+`13:58:37` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 is extremely oversold - rare reading that often marks short-term bottoms in broad market
+`13:59:43` [Drift] Web searches performed: 5
+`13:59:43` [Drift] SPY: PASS (confidence: 0%)
+`13:59:43` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching QQQ: Double trigger: RSI-2 at 0.0 AND testing 20-day MA support - tech bounce candidate if market finds footing
+`14:00:13` [Drift] QQQ: HOLD (confidence: 65%)
+`14:00:14` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 10.5 in financials - less extreme but still oversold, sector often leads market recoveries
+`14:01:12` [Drift] Web searches performed: 2
+`14:01:12` [Drift] XLF: PASS (confidence: 52%)
+`14:01:12` [14:01:12 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 10 (stocks+crypto) ---
+`13:41:25` [Drift] Scanning stocks+crypto: 27 assets
+`13:41:26` [Drift] Stage 1: Quantitative screening 27 symbols...
+`13:41:36` [Drift] Scan complete: 3 triggers to research
+`13:41:36` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 on the broad market index - extreme oversold reading that historically produces bounces
+`13:42:33` [Drift] Web searches performed: 3
+`13:42:33` [Drift] SPY: PASS (confidence: 61%)
+`13:42:33` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 11.3 in financials - oversold but not at zero, suggesting potential sector rotation opportunity
+`13:43:24` [Drift] Web searches performed: 2
+`13:43:24` [Drift] XLF: PASS (confidence: 45%)
+`13:43:24` [Drift] Skipping SMH research: Researched 49min ago, price stable
+`13:43:25` [13:43:25 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 9 (stocks+crypto) ---
+`13:24:53` [Drift] Scanning stocks+crypto: 27 assets
+`13:24:53` [Drift] Stage 1: Quantitative screening 27 symbols...
+`13:25:06` [Drift] Scan complete: 3 triggers to research
+`13:25:06` [Drift] Running hourly general news scan...
+`13:25:27` [Drift] Web searches performed: 3
+`13:25:28` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 is extreme oversold rarely seen, testing 20-day MA support - broad market bounce candidate
+`13:26:24` [Drift] Web searches performed: 4
+`13:26:24` [Drift] SPY: PASS (confidence: 0%)
+`13:26:24` [Drift] Skipping QQQ research: Researched 119min ago, price stable
+`13:26:24` [Drift] Skipping SMH research: Researched 32min ago, price stable
+`13:26:25` [13:26:25 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 8 (stocks+crypto) ---
+`13:08:52` [Drift] Scanning stocks+crypto: 27 assets
+`13:08:53` [Drift] Stage 1: Quantitative screening 27 symbols...
+`13:09:03` [Drift] Scan complete: 3 triggers to research
+`13:09:03` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 is extremely rare for SPY, near 20-day MA support - potential broad market bounce play
+`13:09:52` [Drift] Web searches performed: 5
+`13:09:52` [Drift] SPY: PASS (confidence: 65%)
+`13:09:52` [Drift] Skipping QQQ research: Researched 102min ago, price stable
+`13:09:52` [Drift] Skipping SMH research: Researched 16min ago, price stable
+`13:09:52` [13:09:52 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 7 (stocks+crypto) ---
+`12:51:43` [Drift] Scanning stocks+crypto: 27 assets
+`12:51:44` [Drift] Stage 1: Quantitative screening 27 symbols...
+`12:51:53` [Drift] Scan complete: 3 triggers to research
+`12:51:54` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 AND testing 20-day MA - double confluence on the benchmark
+`12:52:57` [Drift] Web searches performed: 5
+`12:52:57` [Drift] SPY: PASS (confidence: 0%)
+`12:52:57` [Drift] Skipping QQQ research: Researched 85min ago, price stable
+`12:52:57` [Drift] Using Opus for entry research
+
+[Drift] Researching SMH: RSI-2 at 0.0 AND testing 20-day MA - semiconductor sector oversold with double trigger
+`12:53:49` [Drift] Web searches performed: 5
+`12:53:49` [Drift] SMH: BUY (confidence: 58%)
+`12:53:50` [Drift] Budget: $500 | Invested: $333.92 | Cash: $158.91
+`12:53:51` [12:53:51 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 6 (stocks+crypto) ---
+`12:34:44` [Drift] Scanning stocks+crypto: 27 assets
+`12:34:44` [Drift] Stage 1: Quantitative screening 27 symbols...
+`12:34:53` [Drift] Scan complete: 3 triggers to research
+`12:34:54` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 is extreme - need to verify if real oversold or data error, but SPY bounce potential is massive
+`12:35:43` [Drift] Web searches performed: 3
+`12:35:43` [Drift] SPY: PASS (confidence: 55%)
+`12:35:43` [Drift] Skipping QQQ research: Researched 68min ago, price stable
+`12:35:43` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 13.6 more believable than 0.0 readings - financials oversold but not suspicious data
+`12:36:42` [Drift] Web searches performed: 3
+`12:36:42` [Drift] XLF: PASS (confidence: 58%)
+`12:36:43` [12:36:43 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 5 (stocks+crypto) ---
+`12:17:26` [Drift] Scanning stocks+crypto: 27 assets
+`12:17:26` [Drift] Stage 1: Quantitative screening 27 symbols...
+`12:17:39` [Drift] Scan complete: 3 triggers to research
+`12:17:39` [Drift] Running hourly general news scan...
+`12:17:56` [Drift] Web searches performed: 2
+`12:17:56` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 is extremely rare for SPY - either major capitulation or data error, worth immediate investigation
+`12:18:44` [Drift] Web searches performed: 4
+`12:18:44` [Drift] SPY: PASS (confidence: 75%)
+`12:18:44` [Drift] Skipping QQQ research: Researched 51min ago, price stable
+`12:18:44` [Drift] Using Opus for entry research
+
+[Drift] Researching SMH: Semiconductor ETF with RSI-2 at 0.0 plus 20-day MA test - critical sector showing extreme weakness
+`12:19:43` [Drift] Web searches performed: 4
+`12:19:43` [Drift] SMH: PASS (confidence: 58%)
+`12:19:43` [12:19:43 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 4 (stocks+crypto) ---
+`12:00:24` [Drift] Scanning stocks+crypto: 27 assets
+`12:00:24` [Drift] Stage 1: Quantitative screening 27 symbols...
+`12:00:37` [Drift] Scan complete: 3 triggers to research
+`12:00:38` [Drift] Skipping QQQ research: Researched 33min ago, price stable
+`12:00:38` [Drift] Using Opus for entry research
+
+[Drift] Researching SMH: RSI-2 at 0.0 extreme oversold AND near 20-day MA - semiconductor washout may be overdone
+`12:01:36` [Drift] Web searches performed: 5
+`12:01:36` [Drift] SMH: PASS (confidence: 58%)
+`12:01:36` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 11.6 oversold in financials - sector often leads recoveries from oversold levels
+`12:02:25` [Drift] Web searches performed: 3
+`12:02:25` [Drift] XLF: PASS (confidence: 58%)
+`12:02:26` [12:02:26 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 3 (stocks+crypto) ---
+`11:43:06` [Drift] Scanning stocks+crypto: 27 assets
+`11:43:06` [Drift] Stage 1: Quantitative screening 27 symbols...
+`11:43:20` [Drift] Scan complete: 3 triggers to research
+`11:43:20` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extreme oversold in the benchmark, high probability mean reversion play
+`11:44:21` [Drift] Web searches performed: 4
+`11:44:21` [Drift] SPY: PASS (confidence: 55%)
+`11:44:22` [Drift] Skipping QQQ research: Researched 17min ago, price stable
+`11:44:22` [Drift] Using Opus for entry research
+
+[Drift] Researching SMH: RSI-2 at 0.0 AND testing 20-day MA in semiconductor ETF - sector-specific oversold with technical support level
+`11:45:23` [Drift] Web searches performed: 3
+`11:45:23` [Drift] SMH: PASS (confidence: 0%)
+`11:45:23` [11:45:23 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 2 (stocks+crypto) ---
+`11:24:21` [Drift] Scanning stocks+crypto: 27 assets
+`11:24:21` [Drift] Stage 1: Quantitative screening 27 symbols...
+`11:24:32` [Drift] Scan complete: 3 triggers to research
+`11:24:32` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 on the main index - doesn't get more oversold than this
+`11:25:21` [Drift] Web searches performed: 5
+`11:25:21` [Drift] SPY: PASS (confidence: 72%)
+`11:25:21` [Drift] Using Opus for entry research
+
+[Drift] Researching QQQ: RSI-2 at 0.0 AND testing 20-day MA - double confirmation on tech leadership
+`11:27:06` [Drift] Web searches performed: 5
+`11:27:06` [Drift] QQQ: BUY (confidence: 62%)
+`11:27:07` [Drift] Budget: $500 | Invested: $308.74 | Cash: $183.91
+`11:27:09` [Drift] Using Opus for entry research
+
+[Drift] Researching SMH: RSI-2 at 0.0 in semiconductor sector with 20-day MA test - high beta bounce potential
+`11:28:05` [Drift] Web searches performed: 4
+`11:28:05` [Drift] SMH: PASS (confidence: 58%)
+`11:28:05` [11:28:05 ET] completed: Processed 3 triggers, 1 actions
+
+
+--- Cycle 1 (stocks+crypto) ---
+`11:05:48` [Drift] Scanning stocks+crypto: 27 assets
+`11:05:48` [Drift] Stage 1: Quantitative screening 27 symbols...
+`11:06:00` [Drift] Scan complete: 3 triggers to research
+`11:06:00` [Drift] Running hourly general news scan...
+`11:06:21` [Drift] Web searches performed: 3
+`11:06:21` [Drift] Using Opus for entry research
+
+[Drift] Researching SPY: RSI-2 at 0.0 - extreme oversold in broad market, high probability mean reversion candidate
+`11:07:27` [Drift] Web searches performed: 4
+`11:07:27` [Drift] SPY: PASS (confidence: 0%)
+`11:07:27` [Drift] Using Opus for entry research
+
+[Drift] Researching QQQ: RSI-2 at 0.0 AND testing 20-day MA - double confluence in tech-heavy index, strong setup if market bounces
+`11:08:28` [Drift] Web searches performed: 4
+`11:08:28` [Drift] QQQ: PASS (confidence: 0%)
+`11:08:29` [Drift] Using Opus for entry research
+
+[Drift] Researching XLF: RSI-2 at 15.7 in financials - less extreme but still oversold, sector rotation potential if broader market stabilizes
+`11:09:20` [Drift] Web searches performed: 4
+`11:09:20` [Drift] XLF: PASS (confidence: 65%)
+`11:09:20` [11:09:20 ET] completed: Processed 3 triggers, 0 actions
+
+
 ## 2025-12-14
 
 
