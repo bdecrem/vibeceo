@@ -154,7 +154,12 @@ export default function CSPage() {
 
   useEffect(() => {
     document.title = "CS - Link Feed"
-    fetchLinks(auth.token)
+    // Only fetch links if authenticated
+    if (auth.token) {
+      fetchLinks(auth.token)
+    } else {
+      setLoading(false) // Stop loading state when not authenticated
+    }
   }, [auth.token])
 
   const handleSendCode = async () => {
@@ -389,6 +394,75 @@ export default function CSPage() {
     return (
       <div className="cs-container">
         <div className="cs-error">Could not load links. Try refreshing.</div>
+        <style jsx>{styles}</style>
+      </div>
+    )
+  }
+
+  // Show login screen if not authenticated
+  if (!auth.token) {
+    return (
+      <div className="cs-container">
+        <div className="cs-login-screen">
+          <h1 className="cs-login-title">CS</h1>
+          <p className="cs-login-subtitle">Private Link Feed</p>
+
+          {modal === 'closed' || modal === 'phone' ? (
+            <div className="cs-login-form">
+              <p className="cs-login-desc">Sign in with your phone number to access the feed.</p>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="(555) 555-5555"
+                className="cs-login-input"
+                onKeyDown={(e) => e.key === 'Enter' && phone && handleSendCode()}
+              />
+              {authError && <p className="cs-login-error">{authError}</p>}
+              <button onClick={handleSendCode} disabled={authLoading || !phone} className="cs-login-btn">
+                {authLoading ? 'Sending...' : 'Send Code'}
+              </button>
+              <p className="cs-login-hint">Not a member? Text <code>CS SUBSCRIBE</code> to +1 (866) 330-0015</p>
+            </div>
+          ) : modal === 'code' ? (
+            <div className="cs-login-form">
+              <p className="cs-login-desc">Enter the 6-digit code sent to {phone}</p>
+              <input
+                type="text"
+                value={code}
+                onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                placeholder="123456"
+                className="cs-login-input"
+                maxLength={6}
+                onKeyDown={(e) => e.key === 'Enter' && code.length === 6 && handleVerifyCode()}
+              />
+              {authError && <p className="cs-login-error">{authError}</p>}
+              <button onClick={handleVerifyCode} disabled={authLoading || code.length !== 6} className="cs-login-btn">
+                {authLoading ? 'Verifying...' : 'Verify'}
+              </button>
+              <button onClick={() => { setModal('phone'); setCode(''); setAuthError('') }} className="cs-login-link">
+                Use different number
+              </button>
+            </div>
+          ) : modal === 'handle' ? (
+            <div className="cs-login-form">
+              <p className="cs-login-desc">Choose your handle</p>
+              <input
+                type="text"
+                value={handle}
+                onChange={(e) => setHandle(e.target.value.replace(/[^a-zA-Z0-9_]/g, '').slice(0, 20))}
+                placeholder="yourhandle"
+                className="cs-login-input"
+                maxLength={20}
+                onKeyDown={(e) => e.key === 'Enter' && handle.length >= 2 && handleSetHandle()}
+              />
+              {authError && <p className="cs-login-error">{authError}</p>}
+              <button onClick={handleSetHandle} disabled={authLoading || handle.length < 2} className="cs-login-btn">
+                {authLoading ? 'Saving...' : 'Continue'}
+              </button>
+            </div>
+          ) : null}
+        </div>
         <style jsx>{styles}</style>
       </div>
     )
@@ -707,6 +781,108 @@ const styles = `
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background: #fafafa;
     min-height: 100vh;
+  }
+
+  /* Login screen */
+  .cs-login-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 80vh;
+    text-align: center;
+  }
+
+  .cs-login-title {
+    font-size: 3rem;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin: 0;
+  }
+
+  .cs-login-subtitle {
+    font-size: 1.1rem;
+    color: #666;
+    margin: 0.5rem 0 2rem 0;
+  }
+
+  .cs-login-form {
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .cs-login-desc {
+    font-size: 0.95rem;
+    color: #555;
+    margin-bottom: 1rem;
+  }
+
+  .cs-login-input {
+    width: 100%;
+    padding: 0.85rem 1rem;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+    text-align: center;
+  }
+
+  .cs-login-input:focus {
+    outline: none;
+    border-color: #1565c0;
+  }
+
+  .cs-login-error {
+    color: #c62828;
+    font-size: 0.85rem;
+    margin-bottom: 1rem;
+  }
+
+  .cs-login-btn {
+    width: 100%;
+    padding: 0.85rem;
+    background: #1565c0;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-bottom: 1rem;
+  }
+
+  .cs-login-btn:hover {
+    background: #1976d2;
+  }
+
+  .cs-login-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+
+  .cs-login-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    font-size: 0.9rem;
+    color: #1565c0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    text-decoration: underline;
+    margin-bottom: 1rem;
+  }
+
+  .cs-login-hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 1.5rem;
+  }
+
+  .cs-login-hint code {
+    background: #e8e8e8;
+    padding: 0.2rem 0.4rem;
+    border-radius: 3px;
+    font-family: 'SF Mono', Monaco, monospace;
   }
 
   .cs-header {

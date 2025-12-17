@@ -54,6 +54,22 @@ export async function POST(req: NextRequest) {
       .eq('phone_number', normalizedPhone)
       .single()
 
+    if (!subscriber) {
+      return NextResponse.json({ error: 'Not a CS member. Text "CS SUBSCRIBE" to join.' }, { status: 403 })
+    }
+
+    // Check if user is subscribed to CS agent
+    const { data: subscription } = await supabase
+      .from('agent_subscriptions')
+      .select('id')
+      .eq('subscriber_id', subscriber.id)
+      .eq('agent_slug', 'cs')
+      .single()
+
+    if (!subscription) {
+      return NextResponse.json({ error: 'Not a CS member. Text "CS SUBSCRIBE" to join.' }, { status: 403 })
+    }
+
     const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || null
     const token = createSessionToken(normalizedPhone)
 
