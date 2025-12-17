@@ -3,133 +3,120 @@
 Supabase SDK Tools for CS Chat Agent
 
 Wraps Supabase client as in-process MCP server using create_sdk_mcp_server.
+Follows the same pattern as kg-query/neo4j_sdk_tools.py.
 """
 
 import json
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 from supabase import create_client, Client
 
-# Initialize Supabase client once at module load
-_supabase_client: Client | None = None
+# Supabase configuration - get at module load time
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_KEY = os.getenv("SUPABASE_SERVICE_KEY")
 
-def get_supabase() -> Client:
-    """Get Supabase client (singleton)."""
-    global _supabase_client
 
-    if _supabase_client is not None:
-        return _supabase_client
+class SupabaseTools:
+    """Supabase query tools for CS content."""
 
-    url = os.environ.get("SUPABASE_URL")
-    key = os.environ.get("SUPABASE_SERVICE_KEY")
+    def __init__(self):
+        if not all([SUPABASE_URL, SUPABASE_SERVICE_KEY]):
+            missing = []
+            if not SUPABASE_URL:
+                missing.append("SUPABASE_URL")
+            if not SUPABASE_SERVICE_KEY:
+                missing.append("SUPABASE_SERVICE_KEY")
+            raise ValueError(f"Missing environment variables: {', '.join(missing)}")
 
-    # Debug logging
-    print(f"[supabase_tools] SUPABASE_URL: {'SET' if url else 'MISSING'}", file=sys.stderr)
-    print(f"[supabase_tools] SUPABASE_SERVICE_KEY: {'SET' if key else 'MISSING'}", file=sys.stderr)
+        self.client = create_client(SUPABASE_URL, SUPABASE_SERVICE_KEY)
 
-    if not url or not key:
-        raise ValueError(f"SUPABASE_URL={'SET' if url else 'MISSING'}, SUPABASE_SERVICE_KEY={'SET' if key else 'MISSING'}")
+    def get_all_links(self) -> List[Dict[str, Any]]:
+        """Get all links with content summaries."""
+        result = self.client.table("cs_content").select(
+            "id, url, domain, posted_by_name, notes, posted_at, content_summary"
+        ).not_.is_("content_fetched_at", "null").order(
+            "posted_at", desc=True
+        ).limit(50).execute()
+        return result.data
 
-    try:
-        _supabase_client = create_client(url, key)
-        print(f"[supabase_tools] Client created successfully", file=sys.stderr)
-        return _supabase_client
-    except Exception as e:
-        print(f"[supabase_tools] Failed to create client: {e}", file=sys.stderr)
-        raise
+    def search_links(self, keyword: str) -> List[Dict[str, Any]]:
+        """Search links by keyword in content."""
+        result = self.client.table("cs_content").select(
+            "id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text"
+        ).or_(
+            f"content_text.ilike.%{keyword}%,content_summary.ilike.%{keyword}%,notes.ilike.%{keyword}%"
+        ).not_.is_("content_fetched_at", "null").order(
+            "posted_at", desc=True
+        ).limit(20).execute()
+        return result.data
 
 
 @tool(
-    "execute_sql",
-    "Execute a SQL query on the Supabase Postgres database. Use this to search and analyze cs_content links.",
-    {"query": str}
+    "get_all_links",
+    "Get all links with their summaries - use this for broad questions about themes or patterns",
+    {}
 )
-async def execute_sql_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Execute SQL query on Supabase.
-
-    Args:
-        query: SQL query string (SELECT only for safety)
-
-    Returns:
-        Query results as JSON
-    """
-    query = args.get("query", "")
-
-    if not query:
+async def get_all_links_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    """Get all links with content summaries."""
+    try:
+        tools = SupabaseTools()
+        data = tools.get_all_links()
         return {
             "content": [{
                 "type": "text",
-                "text": json.dumps({"error": "Missing 'query' parameter"})
+                "text": json.dumps(data, indent=2, default=str)
+            }]
+        }
+    except Exception as e:
+        print(f"[supabase_tools] get_all_links error: {e}", file=sys.stderr)
+        return {
+            "content": [{
+                "type": "text",
+                "text": json.dumps({"error": str(e)}, indent=2)
             }],
             "isError": True
         }
 
-    # Safety: only allow SELECT queries
-    query_upper = query.strip().upper()
-    if not query_upper.startswith("SELECT"):
+
+@tool(
+    "search_links",
+    "Search links by keyword in content_text or content_summary",
+    {"keyword": str}
+)
+async def search_links_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    """Search links by keyword."""
+    keyword = args.get("keyword", "")
+
+    if not keyword:
         return {
             "content": [{
                 "type": "text",
-                "text": json.dumps({"error": "Only SELECT queries are allowed"})
+                "text": json.dumps({"error": "Missing 'keyword' parameter"})
             }],
             "isError": True
         }
 
     try:
-        supabase = get_supabase()
-        result = supabase.rpc("exec_sql", {"sql_query": query}).execute()
-
-        # If RPC doesn't exist, fall back to raw query via postgrest
-        if hasattr(result, 'data'):
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": json.dumps(result.data, indent=2, default=str)
-                }]
-            }
-        else:
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": json.dumps({"error": "No data returned"})
-                }],
-                "isError": True
-            }
+        tools = SupabaseTools()
+        data = tools.search_links(keyword)
+        return {
+            "content": [{
+                "type": "text",
+                "text": json.dumps(data, indent=2, default=str)
+            }]
+        }
     except Exception as e:
-        # Try direct table query as fallback
-        try:
-            return await query_cs_content_fallback(query)
-        except Exception as e2:
-            return {
-                "content": [{
-                    "type": "text",
-                    "text": json.dumps({
-                        "error": str(e),
-                        "fallback_error": str(e2),
-                        "query": query
-                    }, indent=2)
-                }],
-                "isError": True
-            }
-
-
-async def query_cs_content_fallback(query: str) -> Dict[str, Any]:
-    """Fallback: parse simple queries and use Supabase client."""
-    supabase = get_supabase()
-
-    # For simple SELECT * FROM cs_content queries, use the client directly
-    result = supabase.table("cs_content").select("*").limit(50).execute()
-
-    return {
-        "content": [{
-            "type": "text",
-            "text": json.dumps(result.data, indent=2, default=str)
-        }]
-    }
+        print(f"[supabase_tools] search_links error: {e}", file=sys.stderr)
+        return {
+            "content": [{
+                "type": "text",
+                "text": json.dumps({"error": str(e)}, indent=2)
+            }],
+            "isError": True
+        }
 
 
 @tool(
@@ -138,12 +125,7 @@ async def query_cs_content_fallback(query: str) -> Dict[str, Any]:
     {}
 )
 async def get_schema_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Get cs_content table schema.
-
-    Returns:
-        Schema description with column names and types
-    """
+    """Get cs_content table schema."""
     schema = {
         "table": "cs_content",
         "description": "Shared links with fetched content and AI summaries",
@@ -161,10 +143,8 @@ async def get_schema_tool(args: Dict[str, Any]) -> Dict[str, Any]:
             "comments": "JSONB - array of {id, author, text, created_at}"
         },
         "tips": [
-            "Use content_text for full-text search with ILIKE",
-            "Use content_summary for quick overview of what each link is about",
-            "Filter by content_fetched_at IS NOT NULL to get links with content",
-            "Order by posted_at DESC for most recent first"
+            "Use get_all_links for broad questions about themes",
+            "Use search_links with a keyword for specific topic searches"
         ]
     }
 
@@ -176,104 +156,45 @@ async def get_schema_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     }
 
 
-@tool(
-    "get_all_links",
-    "Get all links with their summaries - use this for broad questions about themes or patterns",
-    {}
-)
-async def get_all_links_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Get all links with content summaries.
-
-    Returns:
-        All links with url, domain, summary, notes, posted_by_name
-    """
-    try:
-        supabase = get_supabase()
-        result = supabase.table("cs_content").select(
-            "id, url, domain, posted_by_name, notes, posted_at, content_summary"
-        ).not_.is_("content_fetched_at", "null").order(
-            "posted_at", desc=True
-        ).limit(50).execute()
-
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps(result.data, indent=2, default=str)
-            }]
-        }
-    except Exception as e:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"error": str(e)}, indent=2)
-            }],
-            "isError": True
-        }
-
-
-@tool(
-    "search_links",
-    "Search links by keyword in content_text or content_summary",
-    {"keyword": str}
-)
-async def search_links_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Search links by keyword.
-
-    Args:
-        keyword: Search term to find in content
-
-    Returns:
-        Matching links with their content
-    """
-    keyword = args.get("keyword", "")
-
-    if not keyword:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"error": "Missing 'keyword' parameter"})
-            }],
-            "isError": True
-        }
-
-    try:
-        supabase = get_supabase()
-
-        # Search in content_text using ilike
-        result = supabase.table("cs_content").select(
-            "id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text"
-        ).or_(
-            f"content_text.ilike.%{keyword}%,content_summary.ilike.%{keyword}%,notes.ilike.%{keyword}%"
-        ).not_.is_("content_fetched_at", "null").order(
-            "posted_at", desc=True
-        ).limit(20).execute()
-
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps(result.data, indent=2, default=str)
-            }]
-        }
-    except Exception as e:
-        return {
-            "content": [{
-                "type": "text",
-                "text": json.dumps({"error": str(e)}, indent=2)
-            }],
-            "isError": True
-        }
-
-
 # Create SDK MCP server (in-process, works on Railway)
 supabase_server = create_sdk_mcp_server(
     name="supabase",
     version="1.0.0",
     tools=[
-        execute_sql_tool,
-        get_schema_tool,
         get_all_links_tool,
-        search_links_tool
+        search_links_tool,
+        get_schema_tool
     ]
 )
+
+
+def main():
+    """CLI interface for testing."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Supabase Tools CLI")
+    parser.add_argument("--test", action="store_true", help="Run test queries")
+
+    args = parser.parse_args()
+
+    if args.test:
+        print("=== Testing SupabaseTools ===")
+        print(f"SUPABASE_URL: {'SET' if SUPABASE_URL else 'MISSING'}")
+        print(f"SUPABASE_SERVICE_KEY: {'SET' if SUPABASE_SERVICE_KEY else 'MISSING'}")
+
+        try:
+            tools = SupabaseTools()
+            print("Client created successfully!")
+
+            links = tools.get_all_links()
+            print(f"Found {len(links)} links")
+            for link in links[:3]:
+                print(f"  - {link.get('domain')}: {link.get('url')[:50]}...")
+        except Exception as e:
+            print(f"Error: {e}")
+    else:
+        parser.print_help()
+
+
+if __name__ == "__main__":
+    main()

@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-CS Chat Agent - Agentic Search for Shared Links
+CS Chat Agent - Claude Agent SDK with In-Process Supabase Tools
 
-Uses Claude Agent SDK with Supabase MCP tools to answer questions
-about the CS (Content Sharing) link repository.
+Uses create_sdk_mcp_server to provide Claude with Supabase query capabilities.
+This enables true agentic behavior - Claude iteratively queries until it finds the answer.
 
-True agentic behavior - Claude decides what queries to run and
-iterates until it has enough information to answer.
+Works on Railway (in-process, no external MCP server needed).
+Follows the same pattern as kg-query/agent.py.
 """
 
 import argparse
@@ -15,10 +15,6 @@ import json
 import os
 import sys
 from typing import Any, Dict, List
-
-# Load environment
-from dotenv import load_dotenv
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), "../../.env.local"))
 
 # Import Claude Agent SDK
 try:
@@ -62,12 +58,10 @@ TOOLS AVAILABLE:
 1. **mcp__supabase__get_all_links** - Get all links with summaries (best for broad questions)
 2. **mcp__supabase__search_links** - Search by keyword in content
 3. **mcp__supabase__get_schema** - See full schema details
-4. **mcp__supabase__execute_sql** - Run custom SQL queries (SELECT only)
 
 STRATEGY:
 - For broad questions ("any themes?", "summarize everything") → use get_all_links
 - For specific questions ("articles about AI") → use search_links with keywords
-- For complex queries → use execute_sql with custom SQL
 
 USER QUESTION: {user_question}
 
@@ -86,10 +80,9 @@ Answer the question:"""
         permission_mode="acceptEdits",  # Auto-approve tool use
         mcp_servers={"supabase": supabase_server},
         allowed_tools=[
-            "mcp__supabase__execute_sql",
-            "mcp__supabase__get_schema",
             "mcp__supabase__get_all_links",
-            "mcp__supabase__search_links"
+            "mcp__supabase__search_links",
+            "mcp__supabase__get_schema"
         ],
     )
 

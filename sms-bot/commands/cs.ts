@@ -102,8 +102,8 @@ async function broadcastNewLink(
 
   const posterName = poster.name || "Someone";
   const message = notes
-    ? `📎 ${posterName} shared:\n${url}\n"${notes}"`
-    : `📎 ${posterName} shared:\n${url}`;
+    ? `📎 ${posterName} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
+    : `📎 ${posterName} shared: ${url} — 💬 kochi.to/cs`;
 
   let sent = 0;
   let failed = 0;
@@ -175,8 +175,8 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
 
     // Confirm to poster
     const confirmation = sent > 0
-      ? `✓ Shared to ${sent} subscriber${sent === 1 ? "" : "s"}. View all: kochi.to/cs`
-      : `✓ Saved. View all: kochi.to/cs`;
+      ? `✓ Shared to ${sent} subscriber${sent === 1 ? "" : "s"} — 💬 kochi.to/cs`
+      : `✓ Saved — 💬 kochi.to/cs`;
 
     await sendSms(from, confirmation, twilioClient);
   } catch (error) {
@@ -216,7 +216,7 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
 
     await sendSms(
       from,
-      "Subscribed to CS! You'll get links when others share them.\nShare: CS <url>\nView all: kochi.to/cs",
+      "Subscribed to CS! You'll get links when others share them.\nShare: CS <url> — 💬 kochi.to/cs",
       twilioClient
     );
   } catch (error) {
@@ -280,7 +280,7 @@ async function handleList(context: CommandContext): Promise<boolean> {
       return `• ${domain} (${name})`;
     });
 
-    const message = `Recent links:\n${lines.join("\n")}\n\nView all: kochi.to/cs`;
+    const message = `Recent links:\n${lines.join("\n")}\n\n💬 kochi.to/cs — full feed`;
     await sendSms(from, message, twilioClient);
   } catch (error) {
     console.error("[cs] Error listing:", error);
@@ -301,7 +301,7 @@ async function handleHelp(context: CommandContext): Promise<boolean> {
       "• CS <url> your note — Share with comment\n" +
       "• CS SUBSCRIBE — Get notified\n" +
       "• CS LIST — Recent links\n" +
-      "View all: kochi.to/cs",
+      "💬 kochi.to/cs — full feed",
     twilioClient
   );
 
