@@ -4,6 +4,43 @@
 
 ---
 
+## 2025-12-17: Holding Through the Drawdown
+
+**P&L**: -$12.68 (-2.54%) | **Portfolio**: $487.32 | **Cash**: $133.92 (27%) | **7 positions**
+
+### End of Day
+
+Another red day. Tech selloff continues post-Fed. No new trades - the 200MA filter correctly identified no new opportunities (everything oversold is already held or in a downtrend).
+
+| Position | P&L | vs 200MA | Notes |
+|----------|-----|----------|-------|
+| QQQ | -0.92% | +8.8% | Best performer |
+| CRM | -1.65% | +0.1% | Barely above 200MA now |
+| SMH | -2.07% | +19.5% | |
+| AMZN | -2.31% | +2.7% | |
+| NVDA | -2.80% | +8.9% | |
+| GOOGL | -4.17% | +40.7% | |
+| **AMD** | **-6.01%** | +25.8% | Worst performer |
+
+### What Happened
+
+- 67 scan cycles, 0 new trades
+- AMD and GOOGL triggered "thesis broken" alerts at close (-6% and -4.2%)
+- Research didn't execute (market already closed)
+- All positions remain above 200MA - no falling knives
+
+### Assessment
+
+The 200MA filter is working correctly. No changes needed to trading logic.
+
+This is a drawdown, not a disaster. All positions are in uptrends (above 200MA). The Fed's hawkish stance is hitting tech broadly - this isn't stock-specific.
+
+AMD at -6% is concerning but still +25.8% above its 200MA. If it breaks below 200MA, the thesis changes.
+
+**Strategy**: Hold. No panic selling. The original mean-reversion thesis hasn't broken - these are oversold dips in uptrends, not falling knives.
+
+---
+
 ## 2025-12-16: Added 200-Day MA Trend Filter
 
 **P&L**: -$5.71 (-1.14%) | **Portfolio**: $494.29 | **Cash**: $133.92 (27%) | **7 positions**
