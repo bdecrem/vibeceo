@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { createSessionToken } from '../auth'
+import { createSessionToken, isAdmin } from '../auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,12 +72,14 @@ export async function POST(req: NextRequest) {
 
     const handle = subscriber?.personalization?.handle || subscriber?.personalization?.name || null
     const token = createSessionToken(normalizedPhone)
+    const userIsAdmin = await isAdmin(normalizedPhone)
 
     const response = NextResponse.json({
       success: true,
       token,
       handle,
-      needsHandle: !handle
+      needsHandle: !handle,
+      isAdmin: userIsAdmin
     })
 
     // Set cookie for 30 days - persists across Safari View Controller
