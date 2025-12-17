@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
     const { data: links, error } = await supabase
       .from('cs_content')
-      .select('id, url, domain, posted_by_name, posted_by_phone, notes, posted_at, comments, content_summary')
+      .select('id, url, domain, posted_by_name, posted_by_phone, notes, posted_at, comments, content_summary, about_person')
       .order('posted_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -34,6 +34,15 @@ export async function GET(request: NextRequest) {
       console.error('Error fetching cs_content:', error)
       return NextResponse.json({ error: 'Failed to fetch links' }, { status: 500 })
     }
+
+    // Get unique people for filter tags
+    const { data: peopleData } = await supabase
+      .from('cs_content')
+      .select('about_person')
+      .not('about_person', 'is', null)
+      .order('about_person')
+
+    const uniquePeople = [...new Set((peopleData || []).map(p => p.about_person).filter(Boolean))]
 
     // Mark owned posts and strip phone from response
     const processedLinks = (links || []).map(link => ({
@@ -45,6 +54,7 @@ export async function GET(request: NextRequest) {
       posted_at: link.posted_at,
       comments: link.comments,
       content_summary: link.content_summary,
+      about_person: link.about_person,
       isOwner: userPhone ? link.posted_by_phone === userPhone : false
     }))
 
@@ -58,6 +68,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       links: processedLinks,
+      people: uniquePeople,
       pagination: {
         page,
         limit,

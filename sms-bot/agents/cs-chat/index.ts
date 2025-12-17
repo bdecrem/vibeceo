@@ -1,107 +1,198 @@
 /**
- * CS Chat Agent - TypeScript Orchestrator
+ * CS Chat Agent - Pure TypeScript Implementation
  *
- * Runs Python agent with Claude Agent SDK for agentic search
- * over the CS (Content Sharing) link repository.
- *
- * Follows the same pattern as kg-query/index.ts.
+ * Agentic search using Anthropic SDK with tool_use.
+ * No Python, no supabase-py - just TypeScript that works.
  */
 
-import { spawn } from "child_process";
-import path from "path";
-import { fileURLToPath } from "url";
+import Anthropic from "@anthropic-ai/sdk";
+import { createClient } from "@supabase/supabase-js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const SUPABASE_URL = process.env.SUPABASE_URL!;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_KEY!;
 
-// Python scripts are in source directory, not dist
-const PYTHON_SCRIPTS_DIR = __dirname.includes("/dist/")
-  ? path.join(__dirname.replace("/dist/", "/"), "../../agents/cs-chat")
-  : __dirname;
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
 
 export interface CSChatResult {
   answer: string;
   toolCalls?: number;
 }
 
+// Tool definitions for Claude
+const tools: Anthropic.Tool[] = [
+  {
+    name: "get_all_links",
+    description:
+      "Get all shared links with their summaries. Use this for broad questions about themes, patterns, or to see everything that has been shared.",
+    input_schema: {
+      type: "object" as const,
+      properties: {},
+      required: [],
+    },
+  },
+  {
+    name: "search_links",
+    description:
+      "Search links by keyword in content, summary, or notes. Use this for specific questions about particular topics.",
+    input_schema: {
+      type: "object" as const,
+      properties: {
+        keyword: {
+          type: "string",
+          description: "The keyword to search for",
+        },
+      },
+      required: ["keyword"],
+    },
+  },
+];
+
+// Tool implementations
+async function getAllLinks(): Promise<string> {
+  const { data, error } = await supabase
+    .from("cs_content")
+    .select("id, url, domain, posted_by_name, notes, posted_at, content_summary")
+    .not("content_fetched_at", "is", null)
+    .order("posted_at", { ascending: false })
+    .limit(50);
+
+  if (error) {
+    return JSON.stringify({ error: error.message });
+  }
+  return JSON.stringify(data, null, 2);
+}
+
+async function searchLinks(keyword: string): Promise<string> {
+  const { data, error } = await supabase
+    .from("cs_content")
+    .select(
+      "id, url, domain, posted_by_name, notes, posted_at, content_summary, content_text"
+    )
+    .not("content_fetched_at", "is", null)
+    .or(
+      `content_text.ilike.%${keyword}%,content_summary.ilike.%${keyword}%,notes.ilike.%${keyword}%`
+    )
+    .order("posted_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    return JSON.stringify({ error: error.message });
+  }
+  return JSON.stringify(data, null, 2);
+}
+
+// Process tool calls
+async function processToolCall(
+  name: string,
+  input: Record<string, unknown>
+): Promise<string> {
+  switch (name) {
+    case "get_all_links":
+      return getAllLinks();
+    case "search_links":
+      return searchLinks(input.keyword as string);
+    default:
+      return JSON.stringify({ error: `Unknown tool: ${name}` });
+  }
+}
+
 /**
- * Run CS chat using Claude Agent SDK
- *
- * @param question User's natural language question
- * @returns Answer and metadata
+ * Run CS chat using Anthropic SDK with tool_use
  */
 export async function runCSChat(question: string): Promise<CSChatResult> {
   console.log("[CS Chat] Starting query:", question);
 
-  // Use system Python
-  const pythonPath = process.env.PYTHON_BIN || "python3";
-  const agentScript = path.join(PYTHON_SCRIPTS_DIR, "agent.py");
+  const anthropic = new Anthropic();
+  let toolCalls = 0;
 
-  // Prepare input for agent
-  const agentInput = { question };
+  const systemPrompt = `You are a helpful assistant answering questions about a collection of shared links stored in a database.
 
-  // Provide Python process with full environment (minus default OAuth token),
-  // while explicitly supplying Anthropic credentials needed by the SDK.
-  const { CLAUDE_CODE_OAUTH_TOKEN: _ignoredToken, ...cleanEnv } = process.env;
-  const sdkToken =
-    process.env.CLAUDE_AGENT_SDK_TOKEN || process.env.CLAUDE_CODE_OAUTH_TOKEN;
-  const env: Record<string, string | undefined> = {
-    ...cleanEnv,
-    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
-    CLAUDE_CODE_OAUTH_TOKEN: sdkToken,
-    SUPABASE_URL: process.env.SUPABASE_URL,
-    SUPABASE_SERVICE_KEY: process.env.SUPABASE_SERVICE_KEY,
-  };
+DATABASE SCHEMA:
+The cs_content table contains shared links with:
+- url: The shared URL
+- domain: Extracted domain (e.g., 'github.com')
+- posted_by_name: Who shared it
+- notes: Optional comment from the sharer
+- posted_at: When it was shared
+- content_summary: AI-generated 2-sentence summary
 
-  return new Promise((resolve, reject) => {
-    const proc = spawn(
-      pythonPath,
-      [agentScript, "--input", JSON.stringify(agentInput)],
-      { env }
-    );
+STRATEGY:
+- For broad questions ("any themes?", "summarize everything") → use get_all_links
+- For specific questions ("articles about AI") → use search_links with keywords
 
-    let stdout = "";
-    let stderr = "";
+Instructions:
+1. Use the tools to find relevant information
+2. You can make multiple queries if needed
+3. Answer concisely (2-4 sentences)
+4. Cite sources by their domain or URL
+5. If nothing relevant is found, say so honestly`;
 
-    proc.stdout.on("data", (data) => {
-      stdout += data.toString();
+  // Initial request
+  let messages: Anthropic.MessageParam[] = [
+    { role: "user", content: question },
+  ];
+
+  // Agentic loop - let Claude use tools until it has an answer
+  const MAX_ITERATIONS = 5;
+  for (let i = 0; i < MAX_ITERATIONS; i++) {
+    const response = await anthropic.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: systemPrompt,
+      tools,
+      messages,
     });
 
-    proc.stderr.on("data", (data) => {
-      stderr += data.toString();
-      console.error("[CS Chat Error]:", data.toString());
-    });
-
-    proc.on("close", (code) => {
-      if (code === 0) {
-        const answer = stdout.trim();
-        if (answer) {
-          console.log("[CS Chat] Response generated successfully");
-          resolve({ answer });
-        } else {
-          console.error("[CS Chat] Empty response from agent");
-          reject(new Error("Agent returned empty response"));
-        }
-      } else {
-        console.error("[CS Chat] Process exited with code", code);
-        console.error("[CS Chat] stderr:", stderr);
-        reject(new Error(`Agent failed with code ${code}: ${stderr}`));
+    // Check if we got a final text response
+    if (response.stop_reason === "end_turn") {
+      const textBlock = response.content.find((b) => b.type === "text");
+      if (textBlock && textBlock.type === "text") {
+        console.log(`[CS Chat] Response generated (${toolCalls} tool calls)`);
+        return { answer: textBlock.text, toolCalls };
       }
-    });
+    }
 
-    proc.on("error", (error) => {
-      console.error("[CS Chat] Process error:", error);
-      reject(error);
-    });
+    // Process tool uses
+    if (response.stop_reason === "tool_use") {
+      const toolUseBlocks = response.content.filter(
+        (b) => b.type === "tool_use"
+      );
 
-    // Timeout after 2 minutes
-    const timeout = setTimeout(() => {
-      proc.kill("SIGTERM");
-      reject(new Error("Agent timeout after 120 seconds"));
-    }, 120000);
+      // Add assistant's response to messages
+      messages.push({ role: "assistant", content: response.content });
 
-    proc.on("exit", () => {
-      clearTimeout(timeout);
-    });
-  });
+      // Process each tool call and add results
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of toolUseBlocks) {
+        if (block.type === "tool_use") {
+          toolCalls++;
+          console.log(`[CS Chat] Tool call: ${block.name}`);
+          const result = await processToolCall(
+            block.name,
+            block.input as Record<string, unknown>
+          );
+          toolResults.push({
+            type: "tool_result",
+            tool_use_id: block.id,
+            content: result,
+          });
+        }
+      }
+
+      messages.push({ role: "user", content: toolResults });
+      continue;
+    }
+
+    // If we get here with text content, return it
+    const textBlock = response.content.find((b) => b.type === "text");
+    if (textBlock && textBlock.type === "text") {
+      console.log(`[CS Chat] Response generated (${toolCalls} tool calls)`);
+      return { answer: textBlock.text, toolCalls };
+    }
+  }
+
+  return {
+    answer: "Sorry, I couldn't generate a response after multiple attempts.",
+    toolCalls,
+  };
 }

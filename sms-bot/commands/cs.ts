@@ -31,6 +31,7 @@ interface ParsedCSCommand {
   subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING";
   url?: string;
   notes?: string;
+  aboutPerson?: string;
 }
 
 // Strip surrounding quotes from a URL
@@ -67,11 +68,34 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
     const url = stripQuotes(urlMatch[1]);
     // Everything after the URL is notes
     const urlEndIndex = afterPrefix.indexOf(urlMatch[0]) + urlMatch[0].length;
-    const afterUrl = afterPrefix.substring(urlEndIndex).trim();
+    let afterUrl = afterPrefix.substring(urlEndIndex).trim();
+
+    // Extract person: field (1-2 words)
+    let aboutPerson: string | undefined;
+    const personMatch = afterUrl.match(/\bperson:\s*(\S+(?:\s+\S+)?)/i);
+    if (personMatch) {
+      aboutPerson = personMatch[1].trim();
+      // Remove person: from notes
+      afterUrl = afterUrl.replace(personMatch[0], '').trim();
+    }
+
+    // Auto-detect LinkedIn profile URLs (not posts/feed)
+    if (!aboutPerson && url.includes('linkedin.com/in/')) {
+      const linkedInMatch = url.match(/linkedin\.com\/in\/([^/?]+)/);
+      if (linkedInMatch) {
+        // Convert slug to readable name: john-doe -> John Doe
+        aboutPerson = linkedInMatch[1]
+          .split('-')
+          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(' ');
+      }
+    }
+
     return {
       subcommand: "POST",
       url,
       notes: afterUrl || undefined,
+      aboutPerson,
     };
   }
 
@@ -127,7 +151,7 @@ async function broadcastNewLink(
   return { sent, failed };
 }
 
-async function handlePost(context: CommandContext, url: string, notes?: string): Promise<boolean> {
+async function handlePost(context: CommandContext, url: string, notes?: string, aboutPerson?: string): Promise<boolean> {
   const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
 
   try {
@@ -149,6 +173,7 @@ async function handlePost(context: CommandContext, url: string, notes?: string):
         url,
         domain,
         notes,
+        about_person: aboutPerson || null,
         posted_at: new Date().toISOString(),
       })
       .select("id")
@@ -347,7 +372,7 @@ export const csCommandHandler: CommandHandler = {
       case "UNSUBSCRIBE":
         return handleUnsubscribe(context);
       case "POST":
-        return handlePost(context, parsed.url!, parsed.notes);
+        return handlePost(context, parsed.url!, parsed.notes, parsed.aboutPerson);
       case "LIST":
         return handleList(context);
       case "PENDING":

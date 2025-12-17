@@ -20,6 +20,7 @@ interface CSLink {
   posted_at: string
   comments: Comment[]
   content_summary: string | null
+  about_person: string | null
   isOwner: boolean
 }
 
@@ -51,6 +52,8 @@ function timeAgo(dateString: string): string {
 
 export default function CSPage() {
   const [links, setLinks] = useState<CSLink[]>([])
+  const [people, setPeople] = useState<string[]>([])
+  const [selectedPerson, setSelectedPerson] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -99,6 +102,7 @@ export default function CSPage() {
       if (!response.ok) throw new Error(`Failed to fetch: ${response.status}`)
       const result = await response.json()
       setLinks(result.links || [])
+      setPeople(result.people || [])
     } catch (err) {
       console.error('Error fetching CS data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load')
@@ -106,6 +110,11 @@ export default function CSPage() {
       setLoading(false)
     }
   }
+
+  // Filter links by selected person
+  const filteredLinks = selectedPerson
+    ? links.filter(link => link.about_person === selectedPerson)
+    : links
 
   useEffect(() => {
     document.title = "CS - Link Feed"
@@ -362,14 +371,35 @@ export default function CSPage() {
         )}
       </div>
 
-      {links.length === 0 ? (
+      {/* People tags */}
+      {people.length > 0 && (
+        <div className="cs-people-tags">
+          <button
+            className={`cs-people-tag ${!selectedPerson ? 'cs-people-tag-active' : ''}`}
+            onClick={() => setSelectedPerson(null)}
+          >
+            All
+          </button>
+          {people.map((person) => (
+            <button
+              key={person}
+              className={`cs-people-tag ${selectedPerson === person ? 'cs-people-tag-active' : ''}`}
+              onClick={() => setSelectedPerson(selectedPerson === person ? null : person)}
+            >
+              {person}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {filteredLinks.length === 0 ? (
         <div className="cs-empty">
-          <p>No links yet. Be the first!</p>
-          <p className="cs-empty-hint">Text <code>CS https://example.com</code> to share a link</p>
+          <p>{selectedPerson ? `No links about ${selectedPerson} yet.` : 'No links yet. Be the first!'}</p>
+          {!selectedPerson && <p className="cs-empty-hint">Text <code>CS https://example.com</code> to share a link</p>}
         </div>
       ) : (
         <ul className="cs-links">
-          {links.map((link) => (
+          {filteredLinks.map((link) => (
             <li key={link.id} className="cs-link-item">
               <div className="cs-link-main">
                 <a href={link.url} target="_blank" rel="noopener noreferrer" className="cs-link-domain">
@@ -379,6 +409,14 @@ export default function CSPage() {
                   {link.url}
                 </a>
               </div>
+              {link.about_person && (
+                <span
+                  className="cs-link-person-tag"
+                  onClick={() => setSelectedPerson(link.about_person)}
+                >
+                  {link.about_person}
+                </span>
+              )}
               {link.notes && <p className="cs-link-notes">"{link.notes}"</p>}
               {link.content_summary && <p className="cs-link-summary">{link.content_summary}</p>}
               <div className="cs-link-meta">
@@ -659,6 +697,62 @@ const styles = `
     color: #444;
     font-size: 0.9rem;
     line-height: 1.4;
+  }
+
+  .cs-link-person-tag {
+    display: inline-block;
+    background: linear-gradient(135deg, #e8f4fd 0%, #d4e9f7 100%);
+    color: #1a5f8a;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    margin: 0.4rem 0;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .cs-link-person-tag:hover {
+    background: linear-gradient(135deg, #d4e9f7 0%, #c0dbed 100%);
+    transform: scale(1.02);
+  }
+
+  .cs-people-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+  }
+
+  .cs-people-tag {
+    background: #fff;
+    border: 1px solid #ddd;
+    color: #555;
+    padding: 0.35rem 0.75rem;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+
+  .cs-people-tag:hover {
+    border-color: #1a5f8a;
+    color: #1a5f8a;
+  }
+
+  .cs-people-tag-active {
+    background: #1a5f8a;
+    border-color: #1a5f8a;
+    color: #fff;
+  }
+
+  .cs-people-tag-active:hover {
+    background: #145070;
+    border-color: #145070;
+    color: #fff;
   }
 
   .cs-link-meta {
