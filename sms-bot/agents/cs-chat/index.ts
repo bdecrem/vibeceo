@@ -102,7 +102,9 @@ async function processToolCall(
 export async function runCSChat(question: string): Promise<CSChatResult> {
   console.log("[CS Chat] Starting query:", question);
 
-  const anthropic = new Anthropic();
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
   let toolCalls = 0;
 
   const systemPrompt = `You are a helpful assistant answering questions about a collection of shared links stored in a database.
