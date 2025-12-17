@@ -28,10 +28,12 @@ const CS_PREFIX = "CS";
 export const CS_AGENT_SLUG = "cs";
 
 interface ParsedCSCommand {
-  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING";
+  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING" | "COMMENT" | "KOCHI";
   url?: string;
   notes?: string;
   aboutPerson?: string;
+  text?: string;      // For COMMENT
+  question?: string;  // For KOCHI
 }
 
 // Strip surrounding quotes from a URL
@@ -55,6 +57,12 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
   }
   if (afterPrefixUpper === "LIST" || afterPrefixUpper === "RECENT") {
     return { subcommand: "LIST" };
+  }
+
+  // Check for KOCHI AI question
+  if (afterPrefixUpper.startsWith("KOCHI")) {
+    const question = afterPrefix.substring(5).trim(); // Remove "KOCHI"
+    return { subcommand: "KOCHI", question };
   }
 
   // If just "CS" with nothing after, wait for URL follow-up (iMessage splitting)
@@ -99,8 +107,8 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
     };
   }
 
-  // Default to help if no URL found
-  return { subcommand: "HELP" };
+  // No URL found - treat as comment on recent link
+  return { subcommand: "COMMENT", text: afterPrefix };
 }
 
 function extractDomain(url: string): string {
@@ -136,6 +144,42 @@ async function broadcastNewLink(
   for (const sub of subscribers) {
     // Skip the poster
     if (sub.phone_number === poster.phone) continue;
+
+    try {
+      await sendSmsResponse(sub.phone_number, message, twilioClient);
+      sent++;
+      // Rate limit
+      await new Promise((r) => setTimeout(r, 150));
+    } catch (error) {
+      console.error(`[cs] Failed to send to ${sub.phone_number}:`, error);
+      failed++;
+    }
+  }
+
+  return { sent, failed };
+}
+
+/**
+ * Broadcast a message to all CS subscribers
+ * @param excludePhone - Phone to exclude from broadcast (e.g., the sender), or null to include everyone
+ */
+async function broadcastToSubscribers(
+  twilioClient: TwilioClient,
+  message: string,
+  excludePhone: string | null
+): Promise<{ sent: number; failed: number }> {
+  const subscribers = await getAgentSubscribers(CS_AGENT_SLUG);
+
+  if (subscribers.length === 0) {
+    return { sent: 0, failed: 0 };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const sub of subscribers) {
+    // Optionally skip the sender
+    if (excludePhone && sub.phone_number === excludePhone) continue;
 
     try {
       await sendSmsResponse(sub.phone_number, message, twilioClient);
@@ -347,12 +391,125 @@ async function handleHelp(context: CommandContext): Promise<boolean> {
     from,
     "CS commands:\n" +
       "• CS <url> — Share a link\n" +
-      "• CS <url> your note — Share with comment\n" +
+      "• CS <text> — Comment on recent link\n" +
+      "• CS KOCHI <question> — Ask AI\n" +
       "• CS SUBSCRIBE — Get notified\n" +
-      "• CS LIST — Recent links\n" +
       "💬 kochi.to/cs — full feed",
     twilioClient
   );
+
+  await updateLastMessageDate(normalizedFrom);
+  return true;
+}
+
+/**
+ * Handle CS comment - add comment to most recent active post
+ */
+async function handleCSComment(context: CommandContext, text: string): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
+
+  try {
+    // Find posts with recent activity (post time or last comment within 30 mins)
+    const { data: recentPosts } = await supabase
+      .from("cs_content")
+      .select("id, url, domain, posted_by_name, posted_by_phone, comments, posted_at")
+      .order("posted_at", { ascending: false })
+      .limit(5);
+
+    // Find post with activity in last 30 mins
+    const cutoff = Date.now() - 30 * 60 * 1000;
+    const activePost = recentPosts?.find(post => {
+      const postTime = new Date(post.posted_at).getTime();
+      const comments = post.comments as Array<{ created_at: string }> | null;
+      const lastCommentTime = comments?.length
+        ? new Date(comments[comments.length - 1].created_at).getTime()
+        : 0;
+      const lastActivity = Math.max(postTime, lastCommentTime);
+      return lastActivity >= cutoff;
+    });
+
+    if (!activePost) {
+      await sendSms(from, "No recent link to comment on. Share: CS <url>", twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+
+    // Get user's handle
+    const subscriber = await getSubscriber(normalizedFrom);
+    const handle = subscriber?.personalization?.handle || "Anonymous";
+
+    // Add comment to post (same format as web comments)
+    const newComment = {
+      id: crypto.randomUUID(),
+      author: handle,
+      text: text,
+      created_at: new Date().toISOString(),
+    };
+
+    const existingComments = (activePost.comments as Array<unknown>) || [];
+    const { error } = await supabase
+      .from("cs_content")
+      .update({ comments: [...existingComments, newComment] })
+      .eq("id", activePost.id);
+
+    if (error) {
+      console.error("[cs] Failed to add comment:", error);
+      await sendSms(from, "Could not add comment. Try again.", twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+
+    // Broadcast comment to all subscribers (include the commenter)
+    const broadcastMsg = `💬 ${handle} on ${activePost.domain}: "${text}" — kochi.to/cs`;
+    await broadcastToSubscribers(twilioClient, broadcastMsg, null);
+
+  } catch (error) {
+    console.error("[cs] Error in handleCSComment:", error);
+    await sendSms(from, "Something went wrong. Try again.", twilioClient);
+  }
+
+  await updateLastMessageDate(normalizedFrom);
+  return true;
+}
+
+/**
+ * Handle CS KOCHI - AI-powered search, broadcast Q&A to all subscribers
+ */
+async function handleCSKochi(context: CommandContext, question: string): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
+
+  if (!question || question.length < 3) {
+    await sendSms(from, "CS KOCHI <question>. Example: CS KOCHI what are the themes?", twilioClient);
+    await updateLastMessageDate(normalizedFrom);
+    return true;
+  }
+
+  // Get user's handle
+  const subscriber = await getSubscriber(normalizedFrom);
+  const handle = subscriber?.personalization?.handle || "Someone";
+
+  try {
+    // 1. Broadcast the question to all subscribers
+    const questionMsg = `💭 ${handle} asks: "${question}"`;
+    await broadcastToSubscribers(twilioClient, questionMsg, null);
+
+    // 2. Run AI search
+    const { runCSChat } = await import("../agents/cs-chat/index.js");
+    const result = await runCSChat(question);
+
+    // 3. Truncate answer for SMS
+    const answer = result.answer.length > 400
+      ? result.answer.substring(0, 397) + "..."
+      : result.answer;
+
+    // 4. Broadcast the answer to all subscribers
+    const answerMsg = `🤖 ${answer}\n\nkochi.to/cs 💬`;
+    await broadcastToSubscribers(twilioClient, answerMsg, null);
+
+  } catch (error) {
+    console.error("[cs-kochi] Error:", error);
+    await sendSms(from, "Could not search. Try again.", twilioClient);
+  }
 
   await updateLastMessageDate(normalizedFrom);
   return true;
@@ -375,6 +532,10 @@ export const csCommandHandler: CommandHandler = {
         return handlePost(context, parsed.url!, parsed.notes, parsed.aboutPerson);
       case "LIST":
         return handleList(context);
+      case "COMMENT":
+        return handleCSComment(context, parsed.text!);
+      case "KOCHI":
+        return handleCSKochi(context, parsed.question || "");
       case "PENDING":
         // Just "CS" received - wait up to 30s for URL follow-up (iMessage splitting)
         setPendingCS(context.normalizedFrom);
