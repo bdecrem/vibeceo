@@ -20,7 +20,9 @@
 vibeceo/
 ├── sms-bot/           # Main Kochi logic (TypeScript + Python agents)
 │   ├── src/index.ts   # SMS listener entrypoint (port 3030)
-│   ├── lib/sms/handlers.ts  # Twilio message routing
+│   ├── lib/sms/handlers.ts  # Twilio message routing (keyword commands)
+│   ├── lib/sms/orchestrated-routing.ts  # Context-aware routing for non-keyword messages
+│   ├── lib/context-loader.ts  # Conversation state & thread management
 │   ├── agents/        # AI agents (crypto, arxiv, medical, kg-query, etc.)
 │   ├── commands/      # SMS command handlers (auto-dispatched)
 │   ├── engine/        # Webtoys content generation engine
@@ -75,8 +77,48 @@ Read these before making changes:
 - **Commands** in `commands/` auto-dispatch - no `handlers.ts` changes needed
 - **Agents** use shared infrastructure: scheduler, subscriptions, report storage
 
+### Conversation State (Multi-Turn Flows)
+
+For commands that need follow-up responses (e.g., asking user for input), use the thread state system in `lib/context-loader.ts`:
+
+```typescript
+import { storeThreadState, clearThreadState, type ActiveThread } from '../lib/context-loader.js';
+
+// 1. After asking user a question, store thread state:
+await storeThreadState(subscriberId, {
+  handler: 'my-command-setup',  // Unique handler name
+  topic: 'description',
+  context: { /* any data to persist */ },
+});
+
+// 2. Add handler in orchestrated-routing.ts:
+if (updatedContext.activeThread?.handler === 'my-command-setup') {
+  const { handleMySetup } = await import('../../commands/my-command.js');
+  const handled = await handleMySetup(commandContext, updatedContext.activeThread);
+  if (handled) return;
+}
+
+// 3. In your handler, clear state when done:
+await clearThreadState(subscriberId);
+```
+
+**Key files:**
+- `lib/context-loader.ts` — `storeThreadState()`, `clearThreadState()`, `loadUserContext()`
+- `lib/sms/orchestrated-routing.ts` — Routes non-keyword messages based on active thread
+- Thread state expires after 5 minutes of inactivity
+
 ### SMS Messages
 All SMS must stay under 670 UCS-2 code units (10 segments). Auto-shorten if exceeded.
+
+**URL formatting**: Always add text AFTER URLs to prevent iMessage/Twilio from splitting the message:
+```typescript
+// BAD - URL at end may split into separate message
+`View all: kochi.to/cs`
+
+// GOOD - trailing text prevents split
+`💬 kochi.to/cs — full feed`
+`Read more: ${link} — summary on site`
+```
 
 ### ZAD Apps
 ZAD apps use ONLY `/api/zad/save` and `/api/zad/load`. Never direct Supabase access.
@@ -148,8 +190,10 @@ Twitter has 280 char limit — shorten tweet text if needed, but keep the full U
 4. Webtoys content → Through `engine/` pipeline
 
 **Module ownership:**
-- `controller.ts` → Orchestration, routing
-- `storage-manager.ts` → Database operations
+- `lib/sms/handlers.ts` → Keyword command dispatch
+- `lib/sms/orchestrated-routing.ts` → Context-aware routing, multi-turn flows
+- `lib/context-loader.ts` → Thread state, user context, conversation history
+- `storage-manager.ts` → Database operations (engine)
 - `notification-client.ts` → SMS/email delivery
 - `stackables-manager.ts` → Stack commands
 

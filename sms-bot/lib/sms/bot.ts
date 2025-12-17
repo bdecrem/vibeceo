@@ -95,6 +95,42 @@ export async function startSmsBot(): Promise<void> {
     res.status(200).send("OK");
   });
 
+  // CS Chat Supabase test endpoint (debug)
+  server.get("/cs-chat-test", async (req, res) => {
+    const { spawn } = await import("child_process");
+    const path = await import("path");
+
+    const pythonPath = process.env.PYTHON_BIN || "python3";
+    const testScript = path.join(
+      process.cwd(),
+      "agents/cs-chat/test_supabase.py"
+    );
+
+    const proc = spawn(pythonPath, [testScript], {
+      env: process.env as NodeJS.ProcessEnv,
+    });
+
+    let stdout = "";
+    let stderr = "";
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on("data", (data) => {
+      stderr += data.toString();
+    });
+
+    proc.on("close", (code) => {
+      try {
+        const result = JSON.parse(stdout.trim());
+        res.json({ ...result, stderr: stderr.substring(0, 500), code });
+      } catch {
+        res.json({ error: "Parse error", stdout, stderr, code });
+      }
+    });
+  });
+
   // CS Chat agentic endpoint
   server.post("/cs-chat", async (req, res) => {
     try {

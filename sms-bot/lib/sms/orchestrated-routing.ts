@@ -93,6 +93,16 @@ export async function handleOrchestratedMessage(
     // If neither handled, continue with normal routing
   }
 
+  // Check for CS handle setup (user is providing their handle)
+  if (updatedContext.activeThread?.handler === 'cs-handle-setup') {
+    const { handleCSHandleSetup } = await import('../../commands/cs.js');
+    const csHandled = await handleCSHandleSetup(commandContext, updatedContext.activeThread);
+    if (csHandled) {
+      console.log(`[Orchestrated Routing] Handled CS handle setup: "${commandContext.message}"`);
+      return;
+    }
+  }
+
   // Route message using orchestrator FIRST to detect topic changes
   // This must happen before checking for recruit exploration to prevent
   // unrelated messages from being routed to the recruiter
