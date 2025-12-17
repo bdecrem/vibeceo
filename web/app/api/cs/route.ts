@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextRequest, NextResponse } from 'next/server'
-import { verifySessionToken } from './auth'
+import { verifySessionToken, isAdmin } from './auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
 
     // Verify token to identify user's posts
     const userPhone = token ? verifySessionToken(token) : null
+    const userIsAdmin = userPhone ? await isAdmin(userPhone) : false
 
     const { data: links, error } = await supabase
       .from('cs_content')
@@ -69,6 +70,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       links: processedLinks,
       people: uniquePeople,
+      isAdmin: userIsAdmin,
       pagination: {
         page,
         limit,

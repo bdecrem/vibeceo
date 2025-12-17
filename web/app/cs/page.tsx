@@ -34,6 +34,7 @@ interface ChatSource {
 interface AuthState {
   token: string | null
   handle: string | null
+  isAdmin: boolean
 }
 
 type ModalState = 'closed' | 'phone' | 'code' | 'handle'
@@ -72,7 +73,7 @@ export default function CSPage() {
   const [error, setError] = useState<string | null>(null)
 
   // Auth state
-  const [auth, setAuth] = useState<AuthState>({ token: null, handle: null })
+  const [auth, setAuth] = useState<AuthState>({ token: null, handle: null, isAdmin: false })
   const [modal, setModal] = useState<ModalState>('closed')
   const [phone, setPhone] = useState('')
   const [code, setCode] = useState('')
@@ -90,6 +91,10 @@ export default function CSPage() {
   const [chatAnswer, setChatAnswer] = useState('')
   const [chatSources, setChatSources] = useState<ChatSource[]>([])
   const [chatLoading, setChatLoading] = useState(false)
+
+  // Person editing state
+  const [editingPersonOn, setEditingPersonOn] = useState<string | null>(null)
+  const [personText, setPersonText] = useState('')
 
   // Load auth from cookie first, then localStorage fallback
   useEffect(() => {
@@ -130,6 +135,10 @@ export default function CSPage() {
       const result = await response.json()
       setLinks(result.links || [])
       setPeople(result.people || [])
+      // Update isAdmin from API response
+      if (result.isAdmin !== undefined) {
+        setAuth(prev => ({ ...prev, isAdmin: result.isAdmin }))
+      }
     } catch (err) {
       console.error('Error fetching CS data:', err)
       setError(err instanceof Error ? err.message : 'Failed to load')
@@ -254,7 +263,7 @@ export default function CSPage() {
   }
 
   const handleLogout = () => {
-    setAuth({ token: null, handle: null })
+    setAuth({ token: null, handle: null, isAdmin: false })
     localStorage.removeItem('cs_auth')
     // Clear cookies
     document.cookie = 'cs_token=; path=/; max-age=0'
@@ -331,6 +340,39 @@ export default function CSPage() {
       setChatAnswer(err instanceof Error ? err.message : 'Failed to process question')
     } finally {
       setChatLoading(false)
+    }
+  }
+
+  const handleSetPerson = async (postId: string) => {
+    if (!auth.token) return
+
+    try {
+      const res = await fetch('/api/cs/set-person', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: auth.token, postId, person: personText.trim() || null })
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to set person')
+
+      // Update local state
+      setLinks(prev => prev.map(link => {
+        if (link.id === postId) {
+          return { ...link, about_person: data.person }
+        }
+        return link
+      }))
+
+      // Update people list if new person was added
+      if (data.person && !people.includes(data.person)) {
+        setPeople(prev => [...prev, data.person].sort())
+      }
+
+      setPersonText('')
+      setEditingPersonOn(null)
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to set person')
     }
   }
 
@@ -469,7 +511,7 @@ export default function CSPage() {
                 <span className="cs-link-poster">{link.posted_by_name || 'Anonymous'}</span>
                 <span className="cs-link-sep">&middot;</span>
                 <span className="cs-link-time">{timeAgo(link.posted_at)}</span>
-                {link.about_person && (
+                {link.about_person ? (
                   <>
                     <span className="cs-link-sep">&middot;</span>
                     <span
@@ -478,15 +520,48 @@ export default function CSPage() {
                     >
                       re: {link.about_person}
                     </span>
+                    {auth.isAdmin && (
+                      <button
+                        onClick={() => { setEditingPersonOn(link.id); setPersonText(link.about_person || '') }}
+                        className="cs-edit-btn"
+                        title="Edit person"
+                      >✏️</button>
+                    )}
+                  </>
+                ) : auth.token && (
+                  <>
+                    <span className="cs-link-sep">&middot;</span>
+                    <button
+                      onClick={() => { setEditingPersonOn(link.id); setPersonText('') }}
+                      className="cs-add-person-btn"
+                    >+ person</button>
                   </>
                 )}
-                {link.isOwner && (
+                {(link.isOwner || auth.isAdmin) && (
                   <>
                     <span className="cs-link-sep">&middot;</span>
                     <button onClick={() => handleDeletePost(link.id)} className="cs-delete-btn">del</button>
                   </>
                 )}
               </div>
+
+              {/* Person editing */}
+              {editingPersonOn === link.id && (
+                <div className="cs-edit-person">
+                  <input
+                    type="text"
+                    value={personText}
+                    onChange={(e) => setPersonText(e.target.value)}
+                    placeholder="Person name (e.g., Elon Musk)"
+                    className="cs-person-input"
+                    maxLength={50}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSetPerson(link.id)}
+                    autoFocus
+                  />
+                  <button onClick={() => handleSetPerson(link.id)} className="cs-person-save">Save</button>
+                  <button onClick={() => { setEditingPersonOn(null); setPersonText('') }} className="cs-person-cancel">Cancel</button>
+                </div>
+              )}
 
               {/* Comments */}
               {link.comments && link.comments.length > 0 && (
@@ -496,7 +571,7 @@ export default function CSPage() {
                       <span className="cs-comment-author">{comment.author}:</span>
                       <span className="cs-comment-text">{comment.text}</span>
                       <span className="cs-comment-time">{timeAgo(comment.created_at)}</span>
-                      {auth.handle && comment.author === auth.handle && (
+                      {((auth.handle && comment.author === auth.handle) || auth.isAdmin) && (
                         <button onClick={() => handleDeleteComment(link.id, comment.id)} className="cs-delete-btn">x</button>
                       )}
                     </div>
@@ -906,6 +981,69 @@ const styles = `
 
   .cs-delete-btn:hover {
     color: #c62828;
+  }
+
+  .cs-edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.7rem;
+    padding: 0;
+    margin-left: 0.3rem;
+    opacity: 0.5;
+  }
+
+  .cs-edit-btn:hover {
+    opacity: 1;
+  }
+
+  .cs-add-person-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #888;
+    padding: 0;
+  }
+
+  .cs-add-person-btn:hover {
+    color: #1565c0;
+  }
+
+  .cs-edit-person {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .cs-person-input {
+    flex: 1;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    max-width: 200px;
+  }
+
+  .cs-person-save {
+    font-size: 0.75rem;
+    color: #fff;
+    background: #1565c0;
+    border: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+
+  .cs-person-cancel {
+    font-size: 0.75rem;
+    color: #666;
+    background: none;
+    border: 1px solid #ddd;
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+    cursor: pointer;
   }
 
   .cs-comment-btn {

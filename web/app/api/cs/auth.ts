@@ -1,4 +1,25 @@
 import crypto from 'crypto'
+import { createClient } from '@supabase/supabase-js'
+
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+)
+
+// Admin handles that can delete any post/comment and edit any about_person
+const ADMIN_HANDLES = ['bart']
+
+// Check if a phone number belongs to an admin
+export async function isAdmin(phone: string): Promise<boolean> {
+  const { data: subscriber } = await supabase
+    .from('sms_subscribers')
+    .select('personalization')
+    .eq('phone_number', phone)
+    .single()
+
+  const handle = subscriber?.personalization?.handle
+  return handle ? ADMIN_HANDLES.includes(handle.toLowerCase()) : false
+}
 
 // Simple session token: base64(phone:timestamp:signature)
 export function createSessionToken(phone: string): string {

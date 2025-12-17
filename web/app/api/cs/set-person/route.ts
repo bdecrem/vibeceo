@@ -11,7 +11,7 @@ const supabase = createClient(
 
 export async function POST(req: NextRequest) {
   try {
-    const { token, postId } = await req.json()
+    const { token, postId, person } = await req.json()
 
     if (!token || !postId) {
       return NextResponse.json({ error: 'Token and postId required' }, { status: 400 })
@@ -25,10 +25,10 @@ export async function POST(req: NextRequest) {
     // Check if user is admin
     const userIsAdmin = await isAdmin(phone)
 
-    // Verify ownership before deleting (unless admin)
+    // Get the post
     const { data: post, error: fetchError } = await supabase
       .from('cs_content')
-      .select('posted_by_phone')
+      .select('about_person')
       .eq('id', postId)
       .single()
 
@@ -36,25 +36,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 })
     }
 
-    if (post.posted_by_phone !== phone && !userIsAdmin) {
-      return NextResponse.json({ error: 'Not authorized to delete this post' }, { status: 403 })
+    // Non-admins can only set person if it's currently empty
+    if (!userIsAdmin && post.about_person) {
+      return NextResponse.json({ error: 'Not authorized to change person on this post' }, { status: 403 })
     }
 
-    // Delete the post
-    const { error: deleteError } = await supabase
+    // Sanitize person input (1-2 words, max 50 chars)
+    const sanitizedPerson = person?.trim().slice(0, 50) || null
+
+    // Update the post
+    const { error: updateError } = await supabase
       .from('cs_content')
-      .delete()
+      .update({ about_person: sanitizedPerson })
       .eq('id', postId)
 
-    if (deleteError) {
-      console.error('[cs/delete-post] Delete error:', deleteError)
-      return NextResponse.json({ error: 'Failed to delete post' }, { status: 500 })
+    if (updateError) {
+      console.error('[cs/set-person] Update error:', updateError)
+      return NextResponse.json({ error: 'Failed to update person' }, { status: 500 })
     }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, person: sanitizedPerson })
 
   } catch (error) {
-    console.error('[cs/delete-post] Error:', error)
-    return NextResponse.json({ error: 'Failed to delete post' }, { status: 500 })
+    console.error('[cs/set-person] Error:', error)
+    return NextResponse.json({ error: 'Failed to set person' }, { status: 500 })
   }
 }

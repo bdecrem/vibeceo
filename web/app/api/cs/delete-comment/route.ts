@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { verifySessionToken } from '../auth'
+import { verifySessionToken, isAdmin } from '../auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
     if (!phone) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
     }
+
+    // Check if user is admin
+    const userIsAdmin = await isAdmin(phone)
 
     // Get user's handle
     const { data: subscriber } = await supabase
@@ -53,8 +56,8 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
     }
 
-    // Verify ownership
-    if (comments[commentIndex].author !== userHandle) {
+    // Verify ownership (unless admin)
+    if (comments[commentIndex].author !== userHandle && !userIsAdmin) {
       return NextResponse.json({ error: 'Not authorized to delete this comment' }, { status: 403 })
     }
 
