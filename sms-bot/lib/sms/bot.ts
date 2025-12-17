@@ -95,6 +95,23 @@ export async function startSmsBot(): Promise<void> {
     res.status(200).send("OK");
   });
 
+  // CS Chat agentic endpoint
+  server.post("/cs-chat", async (req, res) => {
+    try {
+      const { question } = req.body;
+      if (!question) {
+        return res.status(400).json({ error: "Question required" });
+      }
+
+      const { runCSChat } = await import("../../agents/cs-chat/index.js");
+      const result = await runCSChat(question);
+      res.json(result);
+    } catch (error) {
+      console.error("[cs-chat] Error:", error);
+      res.status(500).json({ error: "Failed to process question" });
+    }
+  });
+
   // Debug endpoint to list all routes
   server.get("/routes", (req, res) => {
     // Type-safe implementation

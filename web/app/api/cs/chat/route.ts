@@ -3,7 +3,10 @@ import { createClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
 export const dynamic = 'force-dynamic'
-export const maxDuration = 30
+export const maxDuration = 60 // Allow more time for agentic search
+
+// SMS bot URL for agentic chat (Railway service)
+const SMS_BOT_URL = process.env.SMS_BOT_URL || 'http://localhost:3030'
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -34,6 +37,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Question must be 3-500 characters' }, { status: 400 })
     }
 
+    // Try agentic search first (via sms-bot service)
+    try {
+      const agenticResponse = await fetch(`${SMS_BOT_URL}/cs-chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: trimmedQuestion }),
+        signal: AbortSignal.timeout(55000) // 55s timeout (before Vercel's 60s limit)
+      })
+
+      if (agenticResponse.ok) {
+        const data = await agenticResponse.json()
+        if (data.answer) {
+          console.log('[cs/chat] Agentic response received')
+          return NextResponse.json({ answer: data.answer, sources: [], agentic: true })
+        }
+      }
+    } catch (agenticError) {
+      console.log('[cs/chat] Agentic search unavailable, falling back to simple search:', agenticError)
+    }
+
+    // Fallback: Simple search (original implementation)
     // Check if this is a broad/analytical question that should use all links
     const broadPatterns = /\b(theme|themes|common|summary|summarize|overview|all|everything|general|trend|trends|pattern|patterns)\b/i
     const isBroadQuestion = broadPatterns.test(trimmedQuestion)
