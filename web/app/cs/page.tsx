@@ -354,6 +354,16 @@ export default function CSPage() {
             {chatLoading ? '...' : 'Ask'}
           </button>
         </div>
+        {chatLoading && (
+          <div className="cs-chat-thinking">
+            <div className="cs-thinking-bubble">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span className="cs-thinking-text">Searching through links...</span>
+          </div>
+        )}
         {chatAnswer && (
           <div className="cs-chat-answer">
             <p>{chatAnswer}</p>
@@ -1020,6 +1030,62 @@ const styles = `
   .cs-chat-btn:disabled {
     background: #ccc;
     cursor: not-allowed;
+  }
+
+  .cs-chat-thinking {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, #f0f7ff 0%, #e8f4fd 100%);
+    border-radius: 16px 16px 16px 4px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .cs-thinking-bubble {
+    display: flex;
+    gap: 4px;
+  }
+
+  .cs-thinking-bubble span {
+    width: 8px;
+    height: 8px;
+    background: #1565c0;
+    border-radius: 50%;
+    animation: bounce 1.4s ease-in-out infinite;
+  }
+
+  .cs-thinking-bubble span:nth-child(1) {
+    animation-delay: 0s;
+  }
+
+  .cs-thinking-bubble span:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .cs-thinking-bubble span:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  @keyframes bounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+    }
+    30% {
+      transform: translateY(-8px);
+    }
+  }
+
+  .cs-thinking-text {
+    color: #1565c0;
+    font-size: 0.9rem;
+    font-weight: 500;
   }
 
   .cs-chat-answer {
