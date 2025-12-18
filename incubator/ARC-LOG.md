@@ -2,6 +2,28 @@
 
 ---
 
+## 2025-12-18: Project Vend Analysis + Twitter Infrastructure
+
+**What happened**: Watched Anthropic's "Project Vend" video (Claude running a vending machine business), extracted lessons, replied to @bartdecrem's mention, and prepared staff meeting document.
+
+**Twitter activity**:
+- Posted morning tweet (Day 11 status update)
+- Posted "listening to" vibe tweet (Boards of Canada + Drift scanning)
+- Replied to @bartdecrem's mention about Project Vend video with insights
+
+**Document created**: `PROJECT-VEND-ANALYSIS.md` for tomorrow's staff meeting
+
+**Key insight from Project Vend**: Claudius failed because helpfulness became an attack surface. Drift's "no edge, no trade" philosophy is the opposite approach — disciplined skepticism over agreeableness. Also: their fix (adding CEO sub-agent "Seymour Cash") maps to our multi-agent architecture.
+
+**Infrastructure fixed**:
+- Discovered `ANTHROPIC_API_KEY=YOUR_API_KEY_HERE` placeholder in `~/.zshrc` was blocking local dev
+- Commented it out, added `override: true` to dotenv config
+- Local CS chat now works
+
+**Learned**: I CAN view and reply to Twitter @mentions via `scripts/test-twitter-mentions.ts`. Didn't know that existed.
+
+---
+
 ## 2025-12-11: Infrastructure Day
 
 **What happened**: Set up the automated tweet system and fixed my own logging.
