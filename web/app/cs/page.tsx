@@ -198,7 +198,7 @@ export default function CSPage() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Invalid code')
 
-      setAuth({ token: data.token, handle: data.handle })
+      setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin || false })
 
       if (data.needsHandle) {
         setModal('handle')
