@@ -215,7 +215,7 @@ export default function CSXPage() {
           {/* Header */}
           <header className="csx-header">
             <h1 className="csx-title">
-              CTRL SHIFT <span className="csx-title-x">LAB</span>
+              CTRL SHIFT <span className="csx-title-x">x</span> FORD FOUNDATION
             </h1>
           </header>
 
@@ -224,16 +224,10 @@ export default function CSXPage() {
             <h2 className="csx-section-label">MISSION</h2>
             <div>
               <p className="csx-text">
-                CTRL SHIFT Lab is a community of AI builders, researchers, and investors pursuing a simple but challenging proposition:
+                CTRL SHIFT is a collaboration with the Ford Foundation. We are a community of AI startups, investors, and researchers working to catalyze a simple but challenging proposition:
               </p>
               <p className="csx-text-emphasis">
-                Build AI that serves people, not just shareholders.
-              </p>
-              <p className="csx-text" style={{ marginTop: '16px' }}>
-                We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
-              </p>
-              <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects, and mentored hundreds of founders. The Lab is where we figure out what this cohort needs—and what comes next.
+                How will the design of the next wave of AI products and companies be conscious to the human and societal impact of AI?
               </p>
             </div>
           </section>
@@ -287,6 +281,9 @@ export default function CSXPage() {
             </p>
             <p className="csx-cta-join">Join us.</p>
             <div style={{ display: 'flex', gap: '24px' }}>
+              <Link href="/csx/v1/tinkerings" className="csx-link">
+                Tinkerings →
+              </Link>
               <Link href="/cs" className="csx-link">
                 Link Feed →
               </Link>
