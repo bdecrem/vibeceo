@@ -8,7 +8,7 @@ export const size = {
 export const contentType = 'image/png'
 
 export default function Icon() {
-  const imagePath = join(process.cwd(), 'public', 'cs-favicon.png')
+  const imagePath = join(process.cwd(), 'public', 'cs-favicon-trW.png')
   const imageBuffer = readFileSync(imagePath)
 
   return new Response(imageBuffer, {

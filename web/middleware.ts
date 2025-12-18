@@ -78,7 +78,13 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // /cs stays as /cs (no rewrite needed)
+    // /cs → rewrite to /cs (explicit rewrite needed for custom domain)
+    if (pathname === '/cs' || pathname.startsWith('/cs/')) {
+      const newUrl = new URL(pathname, request.url)
+      log(`[Middleware] CTRL SHIFT /cs rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     return NextResponse.next()
   }
 

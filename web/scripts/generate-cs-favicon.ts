@@ -39,7 +39,7 @@ async function generateFavicon() {
         .asterisk {
           font-size: 96px;
           font-weight: 500;
-          color: #8b8b8b;
+          color: #ffffff;
           line-height: 1;
         }
       </style>
