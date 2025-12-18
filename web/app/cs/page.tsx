@@ -97,50 +97,56 @@ export default function CSPage() {
   const [editingPersonOn, setEditingPersonOn] = useState<string | null>(null)
   const [personText, setPersonText] = useState('')
 
+  // Debug state (temporary)
+  const [debugInfo, setDebugInfo] = useState<string>('')
+
   // Load auth from server (reads httpOnly cookie server-side)
   // Falls back to localStorage token if cookie was cleared by Safari
   useEffect(() => {
     const checkAuth = async () => {
       // Debug: log localStorage state
       const stored = localStorage.getItem('cs_auth')
-      console.log('[CS Auth] localStorage cs_auth:', stored ? 'present' : 'missing', stored?.slice(0, 50))
+      let debug = `localStorage: ${stored ? 'YES' : 'NO'}\n`
 
       try {
         // First try server-side cookie check
         const res = await fetch('/api/cs/me', { credentials: 'include' })
         const data = await res.json()
-        console.log('[CS Auth] /api/cs/me response:', data)
+        debug += `cookie auth: ${data.authenticated ? 'YES' : 'NO'}\n`
 
         if (data.authenticated) {
           setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
+          setDebugInfo(debug + 'Result: cookie worked')
           return
         }
       } catch (e) {
-        console.error('[CS Auth] Auth check failed:', e)
+        debug += `cookie error: ${e}\n`
       }
 
       // Cookie missing - try localStorage recovery
       if (stored) {
         try {
           const localAuth = JSON.parse(stored)
-          console.log('[CS Auth] Trying localStorage recovery, token present:', !!localAuth.token)
+          debug += `localStorage token: ${localAuth.token ? 'YES' : 'NO'}\n`
           if (localAuth.token) {
             // Re-validate token server-side and restore cookie
             const res = await fetch(`/api/cs/me?token=${encodeURIComponent(localAuth.token)}`, {
               credentials: 'include'
             })
             const data = await res.json()
-            console.log('[CS Auth] localStorage recovery response:', data)
+            debug += `localStorage recovery: ${data.authenticated ? 'YES' : 'NO'}\n`
 
             if (data.authenticated) {
               setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
+              setDebugInfo(debug + 'Result: localStorage recovery worked')
               return
             }
           }
         } catch (e) {
-          console.error('[CS Auth] localStorage recovery failed:', e)
+          debug += `localStorage error: ${e}\n`
         }
       }
+      setDebugInfo(debug + 'Result: NOT authenticated')
     }
 
     checkAuth()
@@ -452,6 +458,11 @@ export default function CSPage() {
               <p className="cs-login-hint">
                 Not subscribed yet?<br /><a href="sms:+18663300015&body=CS%20SUBSCRIBE" className="cs-invite-link">Click here for an invite</a>
               </p>
+              {debugInfo && (
+                <pre style={{ marginTop: 16, padding: 8, background: '#222', fontSize: 10, whiteSpace: 'pre-wrap', textAlign: 'left' }}>
+                  {debugInfo}
+                </pre>
+              )}
             </div>
           ) : modal === 'code' ? (
             <div className="cs-login-form">
