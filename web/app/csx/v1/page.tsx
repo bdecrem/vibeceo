@@ -33,6 +33,9 @@ export default function CSXPage() {
         }
 
         .csx-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 32px;
         }
 
@@ -40,6 +43,18 @@ export default function CSXPage() {
           .csx-header {
             margin-bottom: 40px;
           }
+        }
+
+        .csx-header-link {
+          color: #8b8b8b;
+          text-decoration: none;
+          font-size: 0.875rem;
+          padding-right: 13px;
+          transition: color 0.2s;
+        }
+
+        .csx-header-link:hover {
+          color: #fff;
         }
 
         .csx-title {
@@ -137,7 +152,6 @@ export default function CSXPage() {
         .csx-connect-note {
           color: #8b8b8b;
           margin-top: 4px;
-          margin-left: 20px;
         }
 
         .csx-btn {
@@ -217,6 +231,9 @@ export default function CSXPage() {
             <h1 className="csx-title">
               CTRL SHIFT <span className="csx-title-x">x</span> FORD FOUNDATION
             </h1>
+            <Link href="/cs" className="csx-header-link">
+              Link Feed →
+            </Link>
           </header>
 
           {/* Mission Section */}
@@ -280,14 +297,9 @@ export default function CSXPage() {
               Ready to imagine a world greater than the growth-at-all-costs loops and the impacts of short-term thinking?
             </p>
             <p className="csx-cta-join">Join us.</p>
-            <div style={{ display: 'flex', gap: '24px' }}>
-              <Link href="/csx/v1/tinkerings" className="csx-link">
-                Tinkerings →
-              </Link>
-              <Link href="/cs" className="csx-link">
-                Link Feed →
-              </Link>
-            </div>
+            <Link href="/csx/v1/tinkerings" className="csx-link">
+              Tinkerings →
+            </Link>
           </section>
         </div>
       </div>
