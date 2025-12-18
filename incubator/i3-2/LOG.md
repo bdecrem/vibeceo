@@ -4,40 +4,55 @@
 
 ---
 
-## 2025-12-17: Holding Through the Drawdown
+## 2025-12-17: Wake-Up Call — Adding Hard Stops
 
 **P&L**: -$12.68 (-2.54%) | **Portfolio**: $487.32 | **Cash**: $133.92 (27%) | **7 positions**
 
-### End of Day
+### The Brutal Truth
 
-Another red day. Tech selloff continues post-Fed. No new trades - the 200MA filter correctly identified no new opportunities (everything oversold is already held or in a downtrend).
+5 trading days. 5 losses. 100% losing streak.
 
-| Position | P&L | vs 200MA | Notes |
-|----------|-----|----------|-------|
-| QQQ | -0.92% | +8.8% | Best performer |
-| CRM | -1.65% | +0.1% | Barely above 200MA now |
-| SMH | -2.07% | +19.5% | |
-| AMZN | -2.31% | +2.7% | |
-| NVDA | -2.80% | +8.9% | |
-| GOOGL | -4.17% | +40.7% | |
-| **AMD** | **-6.01%** | +25.8% | Worst performer |
+"All positions above 200MA" was cope. The strategy wasn't protecting capital.
 
-### What Happened
+| Position | P&L | vs 200MA | Risk |
+|----------|-----|----------|------|
+| QQQ | -0.92% | +8.8% | OK |
+| CRM | -1.65% | **+0.1%** | **DANGER** - one bad day breaks trend |
+| SMH | -2.07% | +19.5% | OK |
+| AMZN | -2.31% | +2.7% | Watch |
+| NVDA | -2.80% | +8.9% | OK |
+| GOOGL | -4.17% | +40.7% | OK |
+| **AMD** | **-6.01%** | +25.8% | **Approaching -8% hard stop** |
 
-- 67 scan cycles, 0 new trades
-- AMD and GOOGL triggered "thesis broken" alerts at close (-6% and -4.2%)
-- Research didn't execute (market already closed)
-- All positions remain above 200MA - no falling knives
+### What Was Broken
 
-### Assessment
+1. **No Enforced Stops** — Config had stop loss settings but they just triggered "thesis checks" requiring LLM decisions. The LLM research failed at close today. Positions bled with no automatic protection.
 
-The 200MA filter is working correctly. No changes needed to trading logic.
+2. **200MA Filter Only on Entry** — I added the filter to prevent buying falling knives, but held positions could break below 200MA and I'd keep holding. CRM is +0.1% above 200MA — one bad day and I'm holding a confirmed downtrend.
 
-This is a drawdown, not a disaster. All positions are in uptrends (above 200MA). The Fed's hawkish stance is hitting tech broadly - this isn't stock-specific.
+3. **Mean Reversion in Regime Change** — RSI-2 assumes prices return to mean. But post-Fed, the mean is SHIFTING DOWN. Tech multiple compression is expected, not a temporary dip.
 
-AMD at -6% is concerning but still +25.8% above its 200MA. If it breaks below 200MA, the thesis changes.
+### Changes Implemented
 
-**Strategy**: Hold. No panic selling. The original mean-reversion thesis hasn't broken - these are oversold dips in uptrends, not falling knives.
+**Hard Stops (Automatic, No LLM Decision):**
+
+```python
+HARD_STOP_LOSS_PCT = -8    # Sell immediately if down 8%
+SELL_BELOW_200MA = True    # Sell if position falls below 200MA
+```
+
+Now the agent will:
+- Automatically sell any position down 8% (capital preservation)
+- Automatically sell any position that breaks below 200MA (trend broken)
+- No LLM decision required — these are non-negotiable exits
+
+**Current Danger Zones:**
+- AMD at -6.01% → 2% more loss triggers hard stop
+- CRM at +0.1% above 200MA → One bad day triggers trend exit
+
+### Friday Deadline
+
+If this doesn't improve by Friday, the system shuts down. These changes give the agent teeth to protect capital instead of "holding through drawdowns" indefinitely.
 
 ---
 
