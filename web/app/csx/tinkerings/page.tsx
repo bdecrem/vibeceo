@@ -10,7 +10,7 @@ export default function TinkeringsPage() {
           min-height: 100vh;
           background: #000;
           color: #fff;
-          font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+          font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           -webkit-font-smoothing: antialiased;
         }
 
