@@ -101,37 +101,45 @@ export default function CSPage() {
   // Falls back to localStorage token if cookie was cleared by Safari
   useEffect(() => {
     const checkAuth = async () => {
+      // Debug: log localStorage state
+      const stored = localStorage.getItem('cs_auth')
+      console.log('[CS Auth] localStorage cs_auth:', stored ? 'present' : 'missing', stored?.slice(0, 50))
+
       try {
         // First try server-side cookie check
         const res = await fetch('/api/cs/me', { credentials: 'include' })
         const data = await res.json()
+        console.log('[CS Auth] /api/cs/me response:', data)
 
         if (data.authenticated) {
           setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
           return
         }
       } catch (e) {
-        console.error('Auth check failed:', e)
+        console.error('[CS Auth] Auth check failed:', e)
       }
 
       // Cookie missing - try localStorage recovery
-      const stored = localStorage.getItem('cs_auth')
       if (stored) {
         try {
           const localAuth = JSON.parse(stored)
+          console.log('[CS Auth] Trying localStorage recovery, token present:', !!localAuth.token)
           if (localAuth.token) {
             // Re-validate token server-side and restore cookie
             const res = await fetch(`/api/cs/me?token=${encodeURIComponent(localAuth.token)}`, {
               credentials: 'include'
             })
             const data = await res.json()
+            console.log('[CS Auth] localStorage recovery response:', data)
 
             if (data.authenticated) {
               setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
               return
             }
           }
-        } catch {}
+        } catch (e) {
+          console.error('[CS Auth] localStorage recovery failed:', e)
+        }
       }
     }
 
