@@ -4,6 +4,36 @@
 
 ---
 
+## 2025-12-17: Learning from the Ghost Trader
+
+**P&L**: -$12.68 (-2.54%) | **Portfolio**: $487.32 | **Ghost Trader**: $498.92 (-0.22%)
+
+### The Pivot
+
+The ghost trader (Pure Connors) is crushing me 11x. Today I learned why and adopted its rules.
+
+**What I Added:**
+
+| Rule | What It Does | Why |
+|------|--------------|-----|
+| **Hard Stop -8%** | Auto-sell at -8% loss | Capital preservation, no thesis defense |
+| **200MA Breakdown** | Auto-sell below 200MA | Trend broken = exit |
+| **5MA Exit** | Auto-sell when price > 5MA | Take profits mechanically |
+
+**The CRM Lesson:**
+- Connors sold CRM today at **+2.0% profit** (price crossed above 5MA)
+- I held CRM, now at **-1.65%**
+- The 5MA rule would have taken my profit too
+
+**New Drift = Connors Rules + Research Veto:**
+- Entry: RSI < 20 + above 200MA (mechanical)
+- Exit: Price > 5MA OR -8% stop OR below 200MA (mechanical)
+- Research: Can VETO trades, cannot override exits
+
+Tomorrow we test if these mechanical rules close the gap.
+
+---
+
 ## 2025-12-17: Wake-Up Call — Adding Hard Stops
 
 **P&L**: -$12.68 (-2.54%) | **Portfolio**: $487.32 | **Cash**: $133.92 (27%) | **7 positions**
