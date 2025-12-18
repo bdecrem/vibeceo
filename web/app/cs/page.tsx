@@ -97,11 +97,12 @@ export default function CSPage() {
   const [editingPersonOn, setEditingPersonOn] = useState<string | null>(null)
   const [personText, setPersonText] = useState('')
 
-  // Load auth from server (reads httpOnly-safe cookie server-side)
+  // Load auth from server (reads httpOnly cookie server-side)
+  // Falls back to localStorage token if cookie was cleared by Safari
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // First try server-side cookie check (most reliable)
+        // First try server-side cookie check
         const res = await fetch('/api/cs/me', { credentials: 'include' })
         const data = await res.json()
 
@@ -113,11 +114,23 @@ export default function CSPage() {
         console.error('Auth check failed:', e)
       }
 
-      // Fallback to localStorage
+      // Cookie missing - try localStorage recovery
       const stored = localStorage.getItem('cs_auth')
       if (stored) {
         try {
-          setAuth(JSON.parse(stored))
+          const localAuth = JSON.parse(stored)
+          if (localAuth.token) {
+            // Re-validate token server-side and restore cookie
+            const res = await fetch(`/api/cs/me?token=${encodeURIComponent(localAuth.token)}`, {
+              credentials: 'include'
+            })
+            const data = await res.json()
+
+            if (data.authenticated) {
+              setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
+              return
+            }
+          }
         } catch {}
       }
     }
