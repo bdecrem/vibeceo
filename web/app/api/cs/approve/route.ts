@@ -75,8 +75,8 @@ export async function POST(req: NextRequest) {
 
       const handle = subscriber.personalization?.handle
       const welcomeMsg = handle
-        ? `You're in! Welcome to CTRL Shift, ${handle}. Share links: CS <url>. Feed: kochi.to/cs`
-        : `You're in! Welcome to CTRL Shift. Share links: CS <url>. Feed: kochi.to/cs`
+        ? `You're in! Welcome to CTRL SHIFT, ${handle}.\n\nText CS + any URL to share with the group.\nSee everything at kochi.to/cs`
+        : `You're in! Welcome to CTRL SHIFT.\n\nText CS + any URL to share with the group.\nSee everything at kochi.to/cs`
 
       await twilioClient.messages.create({
         body: welcomeMsg,

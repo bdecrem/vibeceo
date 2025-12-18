@@ -538,7 +538,7 @@ async function handleApprove(context: CommandContext, approvePhone?: string): Pr
     if (existingHandle) {
       await sendSms(
         phoneToApprove,
-        `You're in! Welcome to CTRL Shift, ${existingHandle}. Share links: CS <url>. Feed: kochi.to/cs 💬`,
+        `You're in! Welcome to CTRL SHIFT, ${existingHandle}.\n\nText CS + any URL to share with the group.\nSee everything at kochi.to/cs`,
         twilioClient
       );
     } else {
@@ -552,7 +552,7 @@ async function handleApprove(context: CommandContext, approvePhone?: string): Pr
       }
       await sendSms(
         phoneToApprove,
-        "You're in! Welcome to CTRL Shift. Pick a handle — reply with one word (like 'roxi')",
+        "You're in! Welcome to CTRL SHIFT.\n\nPick a handle — reply with one word (like 'roxi')",
         twilioClient
       );
     }
