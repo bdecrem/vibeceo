@@ -27,13 +27,17 @@ import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
 const CS_PREFIX = "CS";
 export const CS_AGENT_SLUG = "cs";
 
+// Admin phone for CS invite approvals
+const CS_ADMIN_PHONE = "+16508989508";
+
 interface ParsedCSCommand {
-  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING" | "COMMENT" | "KOCHI";
+  subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING" | "COMMENT" | "KOCHI" | "APPROVE";
   url?: string;
   notes?: string;
   aboutPerson?: string;
   text?: string;      // For COMMENT
   question?: string;  // For KOCHI
+  approvePhone?: string;  // For APPROVE
 }
 
 // Strip surrounding quotes from a URL
@@ -66,6 +70,14 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
   }
   if (afterPrefixUpper === "LIST" || afterPrefixUpper === "RECENT") {
     return { subcommand: "LIST" };
+  }
+
+  // Check for APPROVE command (admin only)
+  if (afterPrefixUpper.startsWith("APPROVE") || afterPrefixUpper.startsWith("OK ") || afterPrefixUpper === "OK" || afterPrefixUpper === "Y" || afterPrefixUpper === "YES") {
+    // Extract phone number - could be "APPROVE +1234567890" or "OK +1234567890" or just "Y" (uses thread state)
+    const phoneMatch = afterPrefix.match(/[\d+][\d\s()-]+/);
+    const approvePhone = phoneMatch ? phoneMatch[0].replace(/[\s()-]/g, '') : undefined;
+    return { subcommand: "APPROVE", approvePhone };
   }
 
   // Check for KOCHI AI question
@@ -130,6 +142,110 @@ function extractDomain(url: string): string {
     return "";
   }
 }
+
+// ============ Waitlist Functions ============
+
+interface WaitlistEntry {
+  id: string;
+  phone: string;
+  requested_at: string;
+  status: 'pending' | 'approved' | 'rejected';
+  name?: string;
+}
+
+/**
+ * Check if phone is on the waitlist (pending)
+ */
+async function isOnWaitlist(phone: string): Promise<boolean> {
+  const { data } = await supabase
+    .from('cs_waitlist')
+    .select('id')
+    .eq('phone', phone)
+    .eq('status', 'pending')
+    .maybeSingle();
+  return !!data;
+}
+
+/**
+ * Add phone to the CS waitlist
+ */
+async function addToWaitlist(phone: string, name?: string): Promise<'added' | 'already' | 'error'> {
+  // Check if already on waitlist
+  const existing = await isOnWaitlist(phone);
+  if (existing) {
+    return 'already';
+  }
+
+  const { error } = await supabase
+    .from('cs_waitlist')
+    .insert({
+      phone,
+      name: name || null,
+      status: 'pending',
+      requested_at: new Date().toISOString(),
+    });
+
+  if (error) {
+    console.error('[cs] Failed to add to waitlist:', error);
+    return 'error';
+  }
+
+  return 'added';
+}
+
+/**
+ * Approve a waitlist entry and subscribe the user
+ */
+async function approveWaitlistEntry(phone: string): Promise<'approved' | 'not_found' | 'error'> {
+  // Find the pending entry
+  const { data: entry, error: findError } = await supabase
+    .from('cs_waitlist')
+    .select('id, name')
+    .eq('phone', phone)
+    .eq('status', 'pending')
+    .maybeSingle();
+
+  if (findError || !entry) {
+    return 'not_found';
+  }
+
+  // Update status to approved
+  const { error: updateError } = await supabase
+    .from('cs_waitlist')
+    .update({ status: 'approved' })
+    .eq('id', entry.id);
+
+  if (updateError) {
+    console.error('[cs] Failed to update waitlist status:', updateError);
+    return 'error';
+  }
+
+  // Subscribe the user
+  const result = await subscribeToAgent(phone, CS_AGENT_SLUG);
+  if (result === 'error' || result === 'missing_subscriber') {
+    console.error('[cs] Failed to subscribe approved user:', result);
+    return 'error';
+  }
+
+  return 'approved';
+}
+
+/**
+ * Get the most recent pending waitlist entry (for "Y" approval without phone)
+ */
+async function getMostRecentPendingWaitlist(): Promise<WaitlistEntry | null> {
+  const { data } = await supabase
+    .from('cs_waitlist')
+    .select('*')
+    .eq('status', 'pending')
+    .order('requested_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  return data as WaitlistEntry | null;
+}
+
+// ============================================
 
 async function broadcastNewLink(
   twilioClient: TwilioClient,
@@ -274,58 +390,59 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
   const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
 
   try {
+    // Check if already subscribed
     const alreadySubscribed = await isSubscribedToAgent(normalizedFrom, CS_AGENT_SLUG);
 
     if (alreadySubscribed) {
-      await sendSms(from, "You're already subscribed to CS links.", twilioClient);
+      await sendSms(from, "You're already in! Share links: CS <url>", twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
 
-    const result = await subscribeToAgent(normalizedFrom, CS_AGENT_SLUG);
+    // Check if already on waitlist
+    const alreadyWaitlisted = await isOnWaitlist(normalizedFrom);
+    if (alreadyWaitlisted) {
+      await sendSms(from, "You're on the waitlist! We'll text you when you're in.", twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
 
-    if (result === "missing_subscriber") {
+    // Get subscriber info for the name
+    const subscriber = await getSubscriber(normalizedFrom);
+    if (!subscriber) {
       await sendSms(from, "Text START first to join Kochi.", twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
 
-    if (result === "error") {
-      await sendSms(from, "Could not subscribe. Try again later.", twilioClient);
+    const name = subscriber.personalization?.handle || subscriber.personalization?.name || null;
+
+    // Add to waitlist
+    const waitlistResult = await addToWaitlist(normalizedFrom, name);
+    if (waitlistResult === 'error') {
+      await sendSms(from, "Could not process request. Try again later.", twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
 
-    // Check if user already has a handle
-    const subscriber = await getSubscriber(normalizedFrom);
-    const existingHandle = subscriber?.personalization?.handle;
+    // Notify admin
+    const displayName = name || normalizedFrom;
+    await sendSms(
+      CS_ADMIN_PHONE,
+      `🔔 CS invite request from ${displayName} (${normalizedFrom})\n\nReply: CS APPROVE ${normalizedFrom}`,
+      twilioClient
+    );
 
-    if (existingHandle) {
-      // Already has a handle, just confirm
-      await sendSms(
-        from,
-        `Welcome back, ${existingHandle}. Share links by texting CS + any URL. kochi.to/cs 💬`,
-        twilioClient
-      );
-    } else {
-      // Ask for handle and store thread state
-      if (subscriber?.id) {
-        await storeThreadState(subscriber.id, {
-          handler: 'cs-handle-setup',
-          topic: 'handle setup',
-          context: {},
-        });
-      }
+    // Confirm to user
+    await sendSms(
+      from,
+      "Request received! You're on the waitlist — we'll text you when you're in.",
+      twilioClient
+    );
 
-      await sendSms(
-        from,
-        "Subscribed! Pick a handle — reply with one word (like 'roxi')",
-        twilioClient
-      );
-    }
   } catch (error) {
-    console.error("[cs] Error subscribing:", error);
-    await sendSms(from, "Could not subscribe. Try again later.", twilioClient);
+    console.error("[cs] Error in subscribe/waitlist:", error);
+    await sendSms(from, "Could not process request. Try again later.", twilioClient);
   }
 
   await updateLastMessageDate(normalizedFrom);
@@ -356,6 +473,90 @@ async function handleUnsubscribe(context: CommandContext): Promise<boolean> {
   } catch (error) {
     console.error("[cs] Error unsubscribing:", error);
     await sendSms(from, "Could not unsubscribe. Try again later.", twilioClient);
+  }
+
+  await updateLastMessageDate(normalizedFrom);
+  return true;
+}
+
+async function handleApprove(context: CommandContext, approvePhone?: string): Promise<boolean> {
+  const { from, normalizedFrom, twilioClient, sendSmsResponse: sendSms, updateLastMessageDate } = context;
+
+  // Only admin can approve
+  if (normalizedFrom !== CS_ADMIN_PHONE) {
+    // Silent ignore - don't reveal admin features
+    await updateLastMessageDate(normalizedFrom);
+    return true;
+  }
+
+  try {
+    let phoneToApprove = approvePhone;
+
+    // If no phone provided, use the most recent pending request
+    if (!phoneToApprove) {
+      const recentPending = await getMostRecentPendingWaitlist();
+      if (!recentPending) {
+        await sendSms(from, "No pending invite requests.", twilioClient);
+        await updateLastMessageDate(normalizedFrom);
+        return true;
+      }
+      phoneToApprove = recentPending.phone;
+    }
+
+    // Normalize the phone number
+    if (!phoneToApprove.startsWith('+')) {
+      phoneToApprove = '+1' + phoneToApprove.replace(/\D/g, '');
+    }
+
+    // Approve and subscribe
+    const result = await approveWaitlistEntry(phoneToApprove);
+
+    if (result === 'not_found') {
+      await sendSms(from, `No pending request for ${phoneToApprove}`, twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+
+    if (result === 'error') {
+      await sendSms(from, `Failed to approve ${phoneToApprove}. Try again.`, twilioClient);
+      await updateLastMessageDate(normalizedFrom);
+      return true;
+    }
+
+    // Get user's name for the welcome message
+    const subscriber = await getSubscriber(phoneToApprove);
+    const existingHandle = subscriber?.personalization?.handle;
+
+    // Send "you're in" message to approved user
+    if (existingHandle) {
+      await sendSms(
+        phoneToApprove,
+        `You're in! Welcome to CTRL Shift, ${existingHandle}. Share links: CS <url>. Feed: kochi.to/cs 💬`,
+        twilioClient
+      );
+    } else {
+      // Ask for handle
+      if (subscriber?.id) {
+        await storeThreadState(subscriber.id, {
+          handler: 'cs-handle-setup',
+          topic: 'handle setup',
+          context: {},
+        });
+      }
+      await sendSms(
+        phoneToApprove,
+        "You're in! Welcome to CTRL Shift. Pick a handle — reply with one word (like 'roxi')",
+        twilioClient
+      );
+    }
+
+    // Confirm to admin
+    const displayName = subscriber?.personalization?.handle || subscriber?.personalization?.name || phoneToApprove;
+    await sendSms(from, `✓ Approved ${displayName}`, twilioClient);
+
+  } catch (error) {
+    console.error("[cs] Error in handleApprove:", error);
+    await sendSms(from, "Something went wrong. Try again.", twilioClient);
   }
 
   await updateLastMessageDate(normalizedFrom);
@@ -588,6 +789,8 @@ export const csCommandHandler: CommandHandler = {
         return handleCSComment(context, parsed.text!);
       case "KOCHI":
         return handleCSKochi(context, parsed.question || "");
+      case "APPROVE":
+        return handleApprove(context, parsed.approvePhone);
       case "PENDING":
         // Just "CS" received - wait up to 30s for URL follow-up (iMessage splitting)
         setPendingCS(context.normalizedFrom);
