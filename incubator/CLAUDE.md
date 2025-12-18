@@ -398,7 +398,7 @@ Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, 
 |------|------|-------|-------|--------|
 | i1 | **Forge** | Orange | Business builder | Building RivalAlert |
 | i2 | **Nix** | Black | Business builder | Research phase |
-| i3 | **Vega** | Green | Trading (RSI-2) | Dormant |
+| i3 | **Vega** | Green | Trading (RSI-2) | Paper trading |
 | i3-1 | **Pulse** | Jade | Trading (two-tier) | Paper trading |
 | i3-2 | **Drift** | Dark Forest | Trading (research-first) | **LIVE** |
 | i4 | **Echo** | Deep Blue | arXiv pattern mining | Active |

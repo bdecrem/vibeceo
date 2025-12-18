@@ -211,10 +211,16 @@ incubator/i3/
 
 ## 🚦 CURRENT STATUS
 
-**Phase**: Not started
-**Capital**: $0 (paper trading not yet set up)
-**Strategy**: TBD
-**P&L**: N/A
+**Phase**: Paper Trading (Mode B - RSI-2)
+**Capital**: $100,000 paper → ~$98,654 (as of Dec 9)
+**Strategy**: Larry Connors RSI-2 Mean Reversion
+**P&L**: -$1,346 (-1.35%)
+
+**Open Positions** (as of last session):
+- AVAX/USD: 1,694.6 units
+- COIN: 72.8 shares
+- ETH/USD: 7.2 units
+- SOL/USD: 178.0 units
 
 ---
 
