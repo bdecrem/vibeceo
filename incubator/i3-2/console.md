@@ -4,7 +4,596 @@
 
 ---
 
+## 2025-12-18
+
+
+--- Cycle 57 (crypto) ---
+`09:21:25` [Drift] Scanning crypto: 0 assets
+`09:21:25` [Drift] Stage 1: Quantitative screening 0 symbols...
+`09:21:28` [Drift] All 1 triggers are held positions - skipping LLM refinement
+`09:21:28` [Drift] Scan complete: 1 triggers to research
+`09:21:28` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`09:21:28` [09:21:28 ET] completed: Processed 1 triggers, 0 actions
+
+
+--- Cycle 56 (crypto) ---
+`09:06:21` [Drift] Scanning crypto: 0 assets
+`09:06:21` [Drift] Stage 1: Quantitative screening 0 symbols...
+`09:06:24` [Drift] All 1 triggers are held positions - skipping LLM refinement
+`09:06:24` [Drift] Scan complete: 1 triggers to research
+`09:06:24` [Drift] Running hourly general news scan...
+`09:06:24` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWEHGs7jQQqWJEfDgQkP8'}
+`09:06:24` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`09:06:24` [09:06:24 ET] completed: Processed 1 triggers, 0 actions
+
+
+--- Cycle 55 (crypto) ---
+`08:51:17` [Drift] Scanning crypto: 0 assets
+`08:51:17` [Drift] Stage 1: Quantitative screening 0 symbols...
+`08:51:20` [Drift] All 1 triggers are held positions - skipping LLM refinement
+`08:51:20` [Drift] Scan complete: 1 triggers to research
+`08:51:20` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`08:51:20` [08:51:20 ET] completed: Processed 1 triggers, 0 actions
+
+
+--- Cycle 54 (crypto) ---
+`08:36:13` [Drift] Scanning crypto: 0 assets
+`08:36:13` [Drift] Stage 1: Quantitative screening 0 symbols...
+`08:36:16` [Drift] All 1 triggers are held positions - skipping LLM refinement
+`08:36:16` [Drift] Scan complete: 1 triggers to research
+`08:36:16` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`08:36:16` [08:36:16 ET] completed: Processed 1 triggers, 0 actions
+
+
+--- Cycle 53 (crypto) ---
+`08:21:08` [Drift] Scanning crypto: 0 assets
+`08:21:08` [Drift] Stage 1: Quantitative screening 0 symbols...
+`08:21:11` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`08:21:11` [Drift] Scan complete: 2 triggers to research
+`08:21:11` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -5.0% - thesis broken?
+`08:21:12` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWEDpwU6WPpXQLEbRa9eH'}
+`08:21:12` [Drift] AMD: PASS (confidence: 0%)
+`08:21:12` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -3.3% - thesis broken?
+`08:21:12` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWEDpz29CxijDhfjAjXeQ'}
+`08:21:13` [Drift] GOOGL: PASS (confidence: 0%)
+`08:21:13` [08:21:13 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 52 (crypto) ---
+`08:06:03` [Drift] Scanning crypto: 0 assets
+`08:06:04` [Drift] Stage 1: Quantitative screening 0 symbols...
+`08:06:06` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`08:06:06` [Drift] Scan complete: 2 triggers to research
+`08:06:06` [Drift] Running hourly general news scan...
+`08:06:07` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWECgCbZhHqmMbEv8ojcA'}
+`08:06:07` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`08:06:07` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`08:06:08` [08:06:08 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 51 (crypto) ---
+`07:50:59` [Drift] Scanning crypto: 0 assets
+`07:51:00` [Drift] Stage 1: Quantitative screening 0 symbols...
+`07:51:02` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`07:51:02` [Drift] Scan complete: 2 triggers to research
+`07:51:03` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`07:51:03` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`07:51:03` [07:51:03 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 50 (crypto) ---
+`07:35:55` [Drift] Scanning crypto: 0 assets
+`07:35:56` [Drift] Stage 1: Quantitative screening 0 symbols...
+`07:35:58` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`07:35:58` [Drift] Scan complete: 2 triggers to research
+`07:35:59` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`07:35:59` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`07:35:59` [07:35:59 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 49 (crypto) ---
+`07:20:51` [Drift] Scanning crypto: 0 assets
+`07:20:52` [Drift] Stage 1: Quantitative screening 0 symbols...
+`07:20:54` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`07:20:54` [Drift] Scan complete: 2 triggers to research
+`07:20:55` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`07:20:55` [Drift] Skipping GOOGL research: Researched 60min ago, price stable
+`07:20:55` [07:20:55 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 48 (crypto) ---
+`07:05:47` [Drift] Scanning crypto: 0 assets
+`07:05:48` [Drift] Stage 1: Quantitative screening 0 symbols...
+`07:05:50` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`07:05:50` [Drift] Scan complete: 2 triggers to research
+`07:05:50` [Drift] Running hourly general news scan...
+`07:05:50` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWE85eW6xYXnVfKKV6Ehs'}
+`07:05:51` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`07:05:51` [Drift] Skipping GOOGL research: Researched 45min ago, price stable
+`07:05:51` [07:05:51 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 47 (crypto) ---
+`06:50:43` [Drift] Scanning crypto: 0 assets
+`06:50:44` [Drift] Stage 1: Quantitative screening 0 symbols...
+`06:50:46` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`06:50:46` [Drift] Scan complete: 2 triggers to research
+`06:50:47` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`06:50:47` [Drift] Skipping GOOGL research: Researched 30min ago, price stable
+`06:50:47` [06:50:47 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 46 (crypto) ---
+`06:35:40` [Drift] Scanning crypto: 0 assets
+`06:35:40` [Drift] Stage 1: Quantitative screening 0 symbols...
+`06:35:42` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`06:35:42` [Drift] Scan complete: 2 triggers to research
+`06:35:43` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`06:35:43` [Drift] Skipping GOOGL research: Researched 15min ago, price stable
+`06:35:43` [06:35:43 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 45 (crypto) ---
+`06:20:35` [Drift] Scanning crypto: 0 assets
+`06:20:35` [Drift] Stage 1: Quantitative screening 0 symbols...
+`06:20:38` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`06:20:38` [Drift] Scan complete: 2 triggers to research
+`06:20:38` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -5.3% - thesis broken?
+`06:20:38` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWE4djBZPo1ouP6MdtawX'}
+`06:20:38` [Drift] AMD: PASS (confidence: 0%)
+`06:20:39` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -3.2% - thesis broken?
+`06:20:39` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWE4dmcfHSALnpPJtdP83'}
+`06:20:39` [Drift] GOOGL: PASS (confidence: 0%)
+`06:20:39` [06:20:39 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 44 (crypto) ---
+`06:05:31` [Drift] Scanning crypto: 0 assets
+`06:05:31` [Drift] Stage 1: Quantitative screening 0 symbols...
+`06:05:34` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`06:05:34` [Drift] Scan complete: 2 triggers to research
+`06:05:34` [Drift] Running hourly general news scan...
+`06:05:34` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWE3V3rbdQGxunuRxtd6C'}
+`06:05:34` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`06:05:34` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`06:05:34` [06:05:34 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 43 (crypto) ---
+`05:50:27` [Drift] Scanning crypto: 0 assets
+`05:50:27` [Drift] Stage 1: Quantitative screening 0 symbols...
+`05:50:30` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`05:50:30` [Drift] Scan complete: 2 triggers to research
+`05:50:30` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`05:50:30` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`05:50:30` [05:50:30 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 42 (crypto) ---
+`05:35:23` [Drift] Scanning crypto: 0 assets
+`05:35:23` [Drift] Stage 1: Quantitative screening 0 symbols...
+`05:35:26` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`05:35:26` [Drift] Scan complete: 2 triggers to research
+`05:35:26` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`05:35:26` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`05:35:26` [05:35:26 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 41 (crypto) ---
+`05:20:19` [Drift] Scanning crypto: 0 assets
+`05:20:19` [Drift] Stage 1: Quantitative screening 0 symbols...
+`05:20:22` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`05:20:22` [Drift] Scan complete: 2 triggers to research
+`05:20:22` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`05:20:22` [Drift] Skipping GOOGL research: Researched 60min ago, price stable
+`05:20:22` [05:20:22 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 40 (crypto) ---
+`05:05:15` [Drift] Scanning crypto: 0 assets
+`05:05:15` [Drift] Stage 1: Quantitative screening 0 symbols...
+`05:05:18` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`05:05:18` [Drift] Scan complete: 2 triggers to research
+`05:05:18` [Drift] Running hourly general news scan...
+`05:05:18` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDxtW2WvpZz4BbunKwzH'}
+`05:05:18` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`05:05:18` [Drift] Skipping GOOGL research: Researched 45min ago, price stable
+`05:05:18` [05:05:18 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 39 (crypto) ---
+`04:50:11` [Drift] Scanning crypto: 0 assets
+`04:50:11` [Drift] Stage 1: Quantitative screening 0 symbols...
+`04:50:14` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`04:50:14` [Drift] Scan complete: 2 triggers to research
+`04:50:14` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`04:50:14` [Drift] Skipping GOOGL research: Researched 30min ago, price stable
+`04:50:14` [04:50:14 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 38 (crypto) ---
+`04:35:07` [Drift] Scanning crypto: 0 assets
+`04:35:07` [Drift] Stage 1: Quantitative screening 0 symbols...
+`04:35:10` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`04:35:10` [Drift] Scan complete: 2 triggers to research
+`04:35:10` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`04:35:10` [Drift] Skipping GOOGL research: Researched 15min ago, price stable
+`04:35:10` [04:35:10 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 37 (crypto) ---
+`04:20:02` [Drift] Scanning crypto: 0 assets
+`04:20:02` [Drift] Stage 1: Quantitative screening 0 symbols...
+`04:20:05` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`04:20:05` [Drift] Scan complete: 2 triggers to research
+`04:20:05` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -5.6% - thesis broken?
+`04:20:06` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDuSaESsW427qzKPwx8w'}
+`04:20:06` [Drift] AMD: PASS (confidence: 0%)
+`04:20:06` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -3.6% - thesis broken?
+`04:20:06` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDuScgnJnXGZCrAX4txh'}
+`04:20:06` [Drift] GOOGL: PASS (confidence: 0%)
+`04:20:06` [04:20:06 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 36 (crypto) ---
+`04:04:57` [Drift] Scanning crypto: 0 assets
+`04:04:58` [Drift] Stage 1: Quantitative screening 0 symbols...
+`04:05:00` [Drift] All 2 triggers are held positions - skipping LLM refinement
+`04:05:00` [Drift] Scan complete: 2 triggers to research
+`04:05:00` [Drift] Running hourly general news scan...
+`04:05:01` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDtHsB4BqvqEeo8H987N'}
+`04:05:01` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`04:05:01` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`04:05:02` [04:05:02 ET] completed: Processed 2 triggers, 0 actions
+
+
+--- Cycle 35 (crypto) ---
+`03:49:54` [Drift] Scanning crypto: 0 assets
+`03:49:54` [Drift] Stage 1: Quantitative screening 0 symbols...
+`03:49:56` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`03:49:56` [Drift] Scan complete: 3 triggers to research
+`03:49:57` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`03:49:57` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`03:49:57` [Drift] Skipping NVDA research: Researched 60min ago, price stable
+`03:49:57` [03:49:57 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 34 (crypto) ---
+`03:34:50` [Drift] Scanning crypto: 0 assets
+`03:34:50` [Drift] Stage 1: Quantitative screening 0 symbols...
+`03:34:53` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`03:34:53` [Drift] Scan complete: 3 triggers to research
+`03:34:53` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`03:34:53` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`03:34:53` [Drift] Skipping NVDA research: Researched 45min ago, price stable
+`03:34:53` [03:34:53 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 33 (crypto) ---
+`03:19:46` [Drift] Scanning crypto: 0 assets
+`03:19:46` [Drift] Stage 1: Quantitative screening 0 symbols...
+`03:19:49` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`03:19:49` [Drift] Scan complete: 3 triggers to research
+`03:19:49` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`03:19:49` [Drift] Skipping GOOGL research: Researched 60min ago, price stable
+`03:19:49` [Drift] Skipping NVDA research: Researched 30min ago, price stable
+`03:19:49` [03:19:49 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 32 (crypto) ---
+`03:04:42` [Drift] Scanning crypto: 0 assets
+`03:04:42` [Drift] Stage 1: Quantitative screening 0 symbols...
+`03:04:45` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`03:04:45` [Drift] Scan complete: 3 triggers to research
+`03:04:45` [Drift] Running hourly general news scan...
+`03:04:45` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDohLe758RVBdTemv3Gm'}
+`03:04:45` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`03:04:45` [Drift] Skipping GOOGL research: Researched 45min ago, price stable
+`03:04:45` [Drift] Skipping NVDA research: Researched 15min ago, price stable
+`03:04:46` [03:04:46 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 31 (crypto) ---
+`02:49:38` [Drift] Scanning crypto: 0 assets
+`02:49:38` [Drift] Stage 1: Quantitative screening 0 symbols...
+`02:49:41` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`02:49:41` [Drift] Scan complete: 3 triggers to research
+`02:49:41` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`02:49:41` [Drift] Skipping GOOGL research: Researched 30min ago, price stable
+`02:49:41` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching NVDA: Position down -3.3% - thesis broken?
+`02:49:41` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDnYjaNS6PsihNMn7uSS'}
+`02:49:42` [Drift] NVDA: PASS (confidence: 0%)
+`02:49:42` [02:49:42 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 30 (crypto) ---
+`02:34:34` [Drift] Scanning crypto: 0 assets
+`02:34:34` [Drift] Stage 1: Quantitative screening 0 symbols...
+`02:34:37` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`02:34:37` [Drift] Scan complete: 3 triggers to research
+`02:34:37` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`02:34:37` [Drift] Skipping GOOGL research: Researched 15min ago, price stable
+`02:34:37` [Drift] Skipping NVDA research: Researched 105min ago, price stable
+`02:34:37` [02:34:37 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 29 (crypto) ---
+`02:19:29` [Drift] Scanning crypto: 0 assets
+`02:19:30` [Drift] Stage 1: Quantitative screening 0 symbols...
+`02:19:32` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`02:19:32` [Drift] Scan complete: 3 triggers to research
+`02:19:32` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -6.5% - thesis broken?
+`02:19:33` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDkFQGp1w1hXPq9ymsFU'}
+`02:19:33` [Drift] AMD: PASS (confidence: 0%)
+`02:19:33` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -4.3% - thesis broken?
+`02:19:33` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDkFSsaeFJnTkpbqbtQW'}
+`02:19:33` [Drift] GOOGL: PASS (confidence: 0%)
+`02:19:33` [Drift] Skipping NVDA research: Researched 90min ago, price stable
+`02:19:34` [02:19:34 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 28 (crypto) ---
+`02:04:25` [Drift] Scanning crypto: 0 assets
+`02:04:25` [Drift] Stage 1: Quantitative screening 0 symbols...
+`02:04:28` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`02:04:28` [Drift] Scan complete: 3 triggers to research
+`02:04:28` [Drift] Running hourly general news scan...
+`02:04:28` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDj6ioAZ9reX7URznKeQ'}
+`02:04:28` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`02:04:28` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`02:04:29` [Drift] Skipping NVDA research: Researched 75min ago, price stable
+`02:04:29` [02:04:29 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 27 (crypto) ---
+`01:49:21` [Drift] Scanning crypto: 0 assets
+`01:49:22` [Drift] Stage 1: Quantitative screening 0 symbols...
+`01:49:24` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`01:49:24` [Drift] Scan complete: 3 triggers to research
+`01:49:24` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`01:49:24` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`01:49:25` [Drift] Skipping NVDA research: Researched 60min ago, price stable
+`01:49:25` [01:49:25 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 26 (crypto) ---
+`01:34:18` [Drift] Scanning crypto: 0 assets
+`01:34:18` [Drift] Stage 1: Quantitative screening 0 symbols...
+`01:34:20` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`01:34:20` [Drift] Scan complete: 3 triggers to research
+`01:34:21` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`01:34:21` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`01:34:21` [Drift] Skipping NVDA research: Researched 45min ago, price stable
+`01:34:21` [01:34:21 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 25 (crypto) ---
+`01:19:14` [Drift] Scanning crypto: 0 assets
+`01:19:14` [Drift] Stage 1: Quantitative screening 0 symbols...
+`01:19:16` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`01:19:16` [Drift] Scan complete: 3 triggers to research
+`01:19:17` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`01:19:17` [Drift] Skipping GOOGL research: Researched 60min ago, price stable
+`01:19:17` [Drift] Skipping NVDA research: Researched 30min ago, price stable
+`01:19:17` [01:19:17 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 24 (crypto) ---
+`01:04:10` [Drift] Scanning crypto: 0 assets
+`01:04:10` [Drift] Stage 1: Quantitative screening 0 symbols...
+`01:04:12` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`01:04:12` [Drift] Scan complete: 3 triggers to research
+`01:04:12` [Drift] Running hourly general news scan...
+`01:04:12` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDeWCNAdSBDs6JCNz38b'}
+`01:04:13` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`01:04:13` [Drift] Skipping GOOGL research: Researched 45min ago, price stable
+`01:04:13` [Drift] Skipping NVDA research: Researched 15min ago, price stable
+`01:04:13` [01:04:13 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 23 (crypto) ---
+`00:49:05` [Drift] Scanning crypto: 0 assets
+`00:49:05` [Drift] Stage 1: Quantitative screening 0 symbols...
+`00:49:08` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`00:49:08` [Drift] Scan complete: 3 triggers to research
+`00:49:08` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`00:49:08` [Drift] Skipping GOOGL research: Researched 30min ago, price stable
+`00:49:08` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching NVDA: Position down -3.3% - thesis broken?
+`00:49:09` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDdMaYJLWADcx7HSVscT'}
+`00:49:09` [Drift] NVDA: PASS (confidence: 0%)
+`00:49:09` [00:49:09 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 22 (crypto) ---
+`00:34:01` [Drift] Scanning crypto: 0 assets
+`00:34:01` [Drift] Stage 1: Quantitative screening 0 symbols...
+`00:34:04` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`00:34:04` [Drift] Scan complete: 3 triggers to research
+`00:34:04` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`00:34:04` [Drift] Skipping GOOGL research: Researched 15min ago, price stable
+`00:34:04` [Drift] Skipping NVDA research: Researched 105min ago, price stable
+`00:34:05` [00:34:05 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 21 (crypto) ---
+`00:18:56` [Drift] Scanning crypto: 0 assets
+`00:18:57` [Drift] Stage 1: Quantitative screening 0 symbols...
+`00:18:59` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`00:18:59` [Drift] Scan complete: 3 triggers to research
+`00:19:00` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -6.5% - thesis broken?
+`00:19:00` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDb4F9HL24H3sWLWNEXp'}
+`00:19:00` [Drift] AMD: PASS (confidence: 0%)
+`00:19:00` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -4.3% - thesis broken?
+`00:19:00` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDb4HTRz2zcWHzerAMAT'}
+`00:19:01` [Drift] GOOGL: PASS (confidence: 0%)
+`00:19:01` [Drift] Skipping NVDA research: Researched 90min ago, price stable
+`00:19:01` [00:19:01 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 20 (crypto) ---
+`00:03:52` [Drift] Scanning crypto: 0 assets
+`00:03:52` [Drift] Stage 1: Quantitative screening 0 symbols...
+`00:03:55` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`00:03:55` [Drift] Scan complete: 3 triggers to research
+`00:03:55` [Drift] Running hourly general news scan...
+`00:03:55` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDZuZ4vaH7d9Gf7oCykf'}
+`00:03:55` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`00:03:56` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`00:03:56` [Drift] Skipping NVDA research: Researched 75min ago, price stable
+`00:03:56` [00:03:56 ET] completed: Processed 3 triggers, 0 actions
+
+
 ## 2025-12-17
+
+
+--- Cycle 19 (crypto) ---
+`23:48:48` [Drift] Scanning crypto: 0 assets
+`23:48:49` [Drift] Stage 1: Quantitative screening 0 symbols...
+`23:48:51` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`23:48:51` [Drift] Scan complete: 3 triggers to research
+`23:48:51` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`23:48:51` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`23:48:52` [Drift] Skipping NVDA research: Researched 60min ago, price stable
+`23:48:52` [23:48:52 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 18 (crypto) ---
+`23:33:45` [Drift] Scanning crypto: 0 assets
+`23:33:45` [Drift] Stage 1: Quantitative screening 0 symbols...
+`23:33:47` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`23:33:47` [Drift] Scan complete: 3 triggers to research
+`23:33:48` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`23:33:48` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`23:33:48` [Drift] Skipping NVDA research: Researched 45min ago, price stable
+`23:33:48` [23:33:48 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 17 (crypto) ---
+`23:18:41` [Drift] Scanning crypto: 0 assets
+`23:18:41` [Drift] Stage 1: Quantitative screening 0 symbols...
+`23:18:44` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`23:18:44` [Drift] Scan complete: 3 triggers to research
+`23:18:44` [Drift] Skipping AMD research: Researched 60min ago, price stable
+`23:18:44` [Drift] Skipping GOOGL research: Researched 60min ago, price stable
+`23:18:44` [Drift] Skipping NVDA research: Researched 30min ago, price stable
+`23:18:44` [23:18:44 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 16 (crypto) ---
+`23:03:36` [Drift] Scanning crypto: 0 assets
+`23:03:37` [Drift] Stage 1: Quantitative screening 0 symbols...
+`23:03:39` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`23:03:39` [Drift] Scan complete: 3 triggers to research
+`23:03:39` [Drift] Running hourly general news scan...
+`23:03:39` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDVK1WhoqsVhVj4mDjur'}
+`23:03:40` [Drift] Skipping AMD research: Researched 45min ago, price stable
+`23:03:40` [Drift] Skipping GOOGL research: Researched 45min ago, price stable
+`23:03:40` [Drift] Skipping NVDA research: Researched 15min ago, price stable
+`23:03:40` [23:03:40 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 15 (crypto) ---
+`22:48:32` [Drift] Scanning crypto: 0 assets
+`22:48:32` [Drift] Stage 1: Quantitative screening 0 symbols...
+`22:48:35` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`22:48:35` [Drift] Scan complete: 3 triggers to research
+`22:48:35` [Drift] Skipping AMD research: Researched 30min ago, price stable
+`22:48:35` [Drift] Skipping GOOGL research: Researched 30min ago, price stable
+`22:48:35` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching NVDA: Position down -3.3% - thesis broken?
+`22:48:35` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDUAP67qE3BZ8LCWGAXC'}
+`22:48:36` [Drift] NVDA: PASS (confidence: 0%)
+`22:48:36` [22:48:36 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 14 (crypto) ---
+`22:33:28` [Drift] Scanning crypto: 0 assets
+`22:33:28` [Drift] Stage 1: Quantitative screening 0 symbols...
+`22:33:31` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`22:33:31` [Drift] Scan complete: 3 triggers to research
+`22:33:31` [Drift] Skipping AMD research: Researched 15min ago, price stable
+`22:33:31` [Drift] Skipping GOOGL research: Researched 15min ago, price stable
+`22:33:31` [Drift] Skipping NVDA research: Researched 105min ago, price stable
+`22:33:31` [22:33:31 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 13 (crypto) ---
+`22:18:23` [Drift] Scanning crypto: 0 assets
+`22:18:23` [Drift] Stage 1: Quantitative screening 0 symbols...
+`22:18:26` [Drift] All 4 triggers are held positions - skipping LLM refinement
+`22:18:26` [Drift] Scan complete: 3 triggers to research
+`22:18:26` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching AMD: Position down -6.5% - thesis broken?
+`22:18:26` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDRs397TxK91ksYchNpk'}
+`22:18:27` [Drift] AMD: PASS (confidence: 0%)
+`22:18:27` [Drift] Using Sonnet for HOLD check
+
+[Drift] Researching GOOGL: Position down -4.3% - thesis broken?
+`22:18:27` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDRs5VzgRdANmYbxUcBd'}
+`22:18:27` [Drift] GOOGL: PASS (confidence: 0%)
+`22:18:27` [Drift] Skipping NVDA research: Researched 90min ago, price stable
+`22:18:27` [22:18:27 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 12 (crypto) ---
+`22:03:19` [Drift] Scanning crypto: 0 assets
+`22:03:19` [Drift] Stage 1: Quantitative screening 0 symbols...
+`22:03:22` [Drift] All 3 triggers are held positions - skipping LLM refinement
+`22:03:22` [Drift] Scan complete: 3 triggers to research
+`22:03:22` [Drift] Running hourly general news scan...
+`22:03:22` [Drift] Research error: Error code: 401 - {'type': 'error', 'error': {'type': 'authentication_error', 'message': 'invalid x-api-key'}, 'request_id': 'req_011CWDQiMypcpJmf6Qz33dJg'}
+`22:03:22` [Drift] Skipping AMD research: Researched 105min ago, price stable
+`22:03:22` [Drift] Skipping GOOGL research: Researched 105min ago, price stable
+`22:03:23` [Drift] Skipping NVDA research: Researched 75min ago, price stable
+`22:03:23` [22:03:23 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 11 (crypto) ---
+`21:48:15` [Drift] Scanning crypto: 0 assets
+`21:48:15` [Drift] Stage 1: Quantitative screening 0 symbols...
+`21:48:18` [Drift] All 3 triggers are held positions - skipping LLM refinement
+`21:48:18` [Drift] Scan complete: 3 triggers to research
+`21:48:18` [Drift] Skipping AMD research: Researched 90min ago, price stable
+`21:48:18` [Drift] Skipping GOOGL research: Researched 90min ago, price stable
+`21:48:18` [Drift] Skipping NVDA research: Researched 60min ago, price stable
+`21:48:18` [21:48:18 ET] completed: Processed 3 triggers, 0 actions
+
+
+--- Cycle 10 (crypto) ---
+`21:33:10` [Drift] Scanning crypto: 0 assets
+`21:33:10` [Drift] Stage 1: Quantitative screening 0 symbols...
+`21:33:13` [Drift] All 3 triggers are held positions - skipping LLM refinement
+`21:33:13` [Drift] Scan complete: 3 triggers to research
+`21:33:13` [Drift] Skipping AMD research: Researched 75min ago, price stable
+`21:33:13` [Drift] Skipping GOOGL research: Researched 75min ago, price stable
+`21:33:14` [Drift] Skipping NVDA research: Researched 45min ago, price stable
+`21:33:14` [21:33:14 ET] completed: Processed 3 triggers, 0 actions
 
 
 --- Cycle 9 (crypto) ---
