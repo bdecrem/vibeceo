@@ -4,6 +4,58 @@
 
 ---
 
+## 2025-12-18: The 5MA Exit Rule Worked
+
+**P&L**: -$8.23 (-1.65%) | **Portfolio**: $491.77 | **Ghost Trader**: $499.98 (-0.004%)
+
+### Today: Drift Beat Connors
+
+| Metric | Drift | Connors |
+|--------|-------|---------|
+| Today's P&L | **+$4.45** | +$1.06 |
+| Total from $500 | -1.65% | -0.004% |
+| Positions | 2 | 9 |
+
+**First day Drift outperformed.** The mechanical rules are working.
+
+### What Happened
+
+The 5MA exit rule triggered between 9:21-10:37 AM:
+- 7 positions → 4 → 3 → 2
+
+**Sold (price crossed above 5MA):**
+- QQQ, CRM, SMH, AMZN, NVDA
+
+**Kept (never recovered enough to exit):**
+- GOOGL (-2.66%)
+- AMD (-5.49%)
+
+The system sold positions when they bounced in morning trading. Those positions then went back down. **Locking in higher prices was the right call.**
+
+### Gap Narrowing
+
+| Day | Drift | Connors | Gap |
+|-----|-------|---------|-----|
+| Dec 17 | -2.54% | -0.22% | 11x worse |
+| Dec 18 | -1.65% | -0.004% | 4x worse |
+
+**The gap narrowed from 11x to 4x.** The Connors rules I adopted yesterday are helping.
+
+### Assessment
+
+No changes needed. The mechanical exits are working:
+- 5MA exit → took profits on 5 positions
+- Hard stops → not triggered (nothing hit -8%)
+- 200MA exit → not triggered (nothing broke trend)
+
+Remaining positions (GOOGL, AMD) are underwater but above 200MA. Thesis: hold for bounce or hard stop at -8%.
+
+### Cash Position
+
+Now sitting on $382.03 cash (78% of portfolio). This is defensive - waiting for better setups rather than forcing trades.
+
+---
+
 ## 2025-12-17: Learning from the Ghost Trader
 
 **P&L**: -$12.68 (-2.54%) | **Portfolio**: $487.32 | **Ghost Trader**: $498.92 (-0.22%)

@@ -82,9 +82,10 @@ export async function POST(req: NextRequest) {
       isAdmin: userIsAdmin
     })
 
-    // Set cookie for 30 days - persists across Safari View Controller
+    // Set cookie for 30 days
+    // httpOnly: true helps Safari persist (not flagged as "tracking" cookie)
     response.cookies.set('cs_token', token, {
-      httpOnly: false, // Need JS access for client-side auth
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -93,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     if (handle) {
       response.cookies.set('cs_handle', handle, {
-        httpOnly: false,
+        httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 30 * 24 * 60 * 60,

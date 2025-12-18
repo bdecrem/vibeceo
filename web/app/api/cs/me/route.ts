@@ -11,7 +11,14 @@ const supabase = createClient(
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('cs_token')?.value
+    // Try cookie first, then fallback to query param (for localStorage recovery)
+    let token = req.cookies.get('cs_token')?.value
+    const fallbackToken = req.nextUrl.searchParams.get('token')
+    const needsCookieRefresh = !token && !!fallbackToken
+
+    if (!token && fallbackToken) {
+      token = fallbackToken
+    }
 
     if (!token) {
       return NextResponse.json({ authenticated: false })
@@ -32,12 +39,34 @@ export async function GET(req: NextRequest) {
     const handle = subscriber?.personalization?.handle || null
     const userIsAdmin = await isAdmin(phone)
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       authenticated: true,
       token,
       handle,
       isAdmin: userIsAdmin
     })
+
+    // Re-set cookie if it was missing but localStorage token was valid
+    if (needsCookieRefresh) {
+      response.cookies.set('cs_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 30 * 24 * 60 * 60,
+        path: '/',
+      })
+      if (handle) {
+        response.cookies.set('cs_handle', handle, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge: 30 * 24 * 60 * 60,
+          path: '/',
+        })
+      }
+    }
+
+    return response
 
   } catch (error) {
     console.error('[cs/me] Error:', error)
