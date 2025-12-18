@@ -97,32 +97,32 @@ export default function CSPage() {
   const [editingPersonOn, setEditingPersonOn] = useState<string | null>(null)
   const [personText, setPersonText] = useState('')
 
-  // Load auth from cookie first, then localStorage fallback
+  // Load auth from server (reads httpOnly-safe cookie server-side)
   useEffect(() => {
-    // Try cookies first (survives Safari View Controller)
-    // Note: split on first '=' only, since base64 tokens contain '=' padding
-    const cookies = document.cookie.split(';').reduce((acc, c) => {
-      const idx = c.indexOf('=')
-      if (idx > 0) {
-        const key = c.slice(0, idx).trim()
-        const val = c.slice(idx + 1)
-        if (key && val) acc[key] = decodeURIComponent(val)
-      }
-      return acc
-    }, {} as Record<string, string>)
-
-    if (cookies.cs_token) {
-      setAuth({ token: cookies.cs_token, handle: cookies.cs_handle || null, isAdmin: false })
-      return
-    }
-
-    // Fallback to localStorage
-    const stored = localStorage.getItem('cs_auth')
-    if (stored) {
+    const checkAuth = async () => {
       try {
-        setAuth(JSON.parse(stored))
-      } catch {}
+        // First try server-side cookie check (most reliable)
+        const res = await fetch('/api/cs/me', { credentials: 'include' })
+        const data = await res.json()
+
+        if (data.authenticated) {
+          setAuth({ token: data.token, handle: data.handle, isAdmin: data.isAdmin })
+          return
+        }
+      } catch (e) {
+        console.error('Auth check failed:', e)
+      }
+
+      // Fallback to localStorage
+      const stored = localStorage.getItem('cs_auth')
+      if (stored) {
+        try {
+          setAuth(JSON.parse(stored))
+        } catch {}
+      }
     }
+
+    checkAuth()
   }, [])
 
   // Save auth to localStorage
