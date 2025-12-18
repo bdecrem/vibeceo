@@ -41,6 +41,15 @@ function stripQuotes(url: string): string {
   return url.replace(/^["']|["']$/g, "");
 }
 
+// Normalize a person's name: initial caps, trim whitespace
+function normalizeName(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand {
   const afterPrefix = extractAfterPrefix(message, messageUpper, CS_PREFIX).trim();
   const afterPrefixUpper = afterPrefix.toUpperCase();
@@ -82,7 +91,7 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
     let aboutPerson: string | undefined;
     const personMatch = afterUrl.match(/\bperson:\s*(\S+(?:\s+\S+)?)/i);
     if (personMatch) {
-      aboutPerson = personMatch[1].trim();
+      aboutPerson = normalizeName(personMatch[1]);
       // Remove person: from notes
       afterUrl = afterUrl.replace(personMatch[0], '').trim();
     }
@@ -93,11 +102,11 @@ function parseCSCommand(message: string, messageUpper: string): ParsedCSCommand 
       if (linkedInMatch) {
         // Convert slug to readable name: john-doe-2496ba82 -> John Doe
         // Filter out trailing numeric IDs (alphanumeric segments with digits)
-        aboutPerson = linkedInMatch[1]
+        const rawName = linkedInMatch[1]
           .split('-')
           .filter(word => !/\d/.test(word)) // Remove segments containing digits
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
           .join(' ');
+        aboutPerson = normalizeName(rawName);
       }
     }
 
@@ -135,7 +144,7 @@ async function broadcastNewLink(
     return { sent: 0, failed: 0 };
   }
 
-  const handle = poster.name ? `[${poster.name}]` : "[someone]";
+  const handle = poster.name || "someone";
   const message = notes
     ? `📎 ${handle} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
     : `📎 ${handle} shared: ${url} — 💬 kochi.to/cs`;

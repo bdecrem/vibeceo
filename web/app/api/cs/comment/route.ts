@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     // Notify original poster (if not commenting on own post)
     if (link.posted_by_phone && link.posted_by_phone !== phone) {
       try {
-        const commenterName = handle !== 'Anonymous' ? `[${handle}]` : 'someone'
+        const commenterName = handle !== 'Anonymous' ? handle : 'Someone'
         await twilioClient.messages.create({
           body: `${commenterName} replied to your link — 💬 kochi.to/cs 👀`,
           to: link.posted_by_phone,

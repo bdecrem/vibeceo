@@ -132,6 +132,16 @@ MAX_STOP_LOSS_PCT = 8  # Never set stop wider than this
 DAILY_LOSS_LIMIT_PCT = 5  # Stop trading if down 5% in a day
 WEEKLY_LOSS_LIMIT_PCT = 10  # Reduce size if down 10% in a week
 
+# ============ HARD STOPS (AUTOMATIC, NO LLM DECISION) ============
+# These are non-negotiable exits - the position is sold immediately
+HARD_STOP_LOSS_PCT = -8  # Sell immediately if down 8% (capital preservation)
+SELL_BELOW_200MA = True  # Sell if position falls below 200MA (trend broken)
+
+# ============ CONNORS EXIT RULE ============
+# This is what the ghost trader does that I wasn't doing
+USE_5MA_EXIT = True      # Sell when price closes above 5-day MA (take profits)
+EXIT_MA_PERIOD = 5       # 5-day MA for exit signal
+
 # ============ EXIT TRIGGERS ============
 PROFIT_TARGET_PCT = 5  # Review position when up this much
 STOP_CHECK_PCT = -3  # Review position when down this much (thesis check)

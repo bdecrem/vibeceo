@@ -1,0 +1,45 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-17T12:49:10.716389",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $498.91 | Cash: $149.90 | Positions: 14",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "EXIT SIGNAL: CRM price $258.96 > 5MA $258.60 (P&L: +2.0%)",
+      "EXIT SIGNAL: CVX price $149.71 > 5MA $149.39 (P&L: +1.7%)",
+      "HOLD GOOGL: $297.57 < 5MA $306.82 (P&L: -2.6%)",
+      "HOLD GS: $870.78 < 5MA $887.68 (P&L: -1.2%)",
+      "HOLD MA: $566.25 < 5MA $567.29 (P&L: +0.0%)",
+      "EXIT SIGNAL: MSFT price $478.47 > 5MA $478.33 (P&L: +0.8%)",
+      "HOLD QQQ: $602.24 < 5MA $612.75 (P&L: -1.3%)",
+      "HOLD SMH: $339.64 < 5MA $353.89 (P&L: -3.4%)",
+      "HOLD SPY: $672.82 < 5MA $680.67 (P&L: -0.8%)",
+      "HOLD UBER: $79.14 < 5MA $82.49 (P&L: -2.0%)",
+      "HOLD V: $345.01 < 5MA $346.09 (P&L: -0.2%)",
+      "HOLD XLE: $44.85 < 5MA $45.06 (P&L: +1.8%)",
+      "HOLD XLF: $54.63 < 5MA $54.82 (P&L: -0.1%)",
+      "HOLD XOM: $117.49 < 5MA $117.66 (P&L: +1.9%)"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "CRM",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "CVX",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "MSFT",
+        "reason": "Connors exit: price > 5-day MA"
+      }
+    ]
+  }
+]

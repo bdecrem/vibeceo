@@ -15,6 +15,7 @@ export function middleware(request: NextRequest) {
   const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
+  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -52,6 +53,35 @@ export function middleware(request: NextRequest) {
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
+
+  // Handle ctrlshift.so domain
+  if (isCtrlShiftDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /csx
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/csx', request.url)
+      log(`[Middleware] CTRL SHIFT domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /cs → rewrite to /cs (explicit rewrite needed for custom domain)
+    if (pathname === '/cs' || pathname.startsWith('/cs/')) {
+      const newUrl = new URL(pathname, request.url)
+      log(`[Middleware] CTRL SHIFT /cs rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 

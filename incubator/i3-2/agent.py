@@ -42,6 +42,10 @@ from config import (
     UPTREND_MA_PERIOD,
     PROFIT_TARGET_PCT,
     STOP_CHECK_PCT,
+    HARD_STOP_LOSS_PCT,
+    SELL_BELOW_200MA,
+    USE_5MA_EXIT,
+    EXIT_MA_PERIOD,
     VERBOSE,
     STATE_DIR,
     SECTOR_MAP,
@@ -503,6 +507,91 @@ If nothing major, respond:
                 except Exception as e:
                     if VERBOSE:
                         log(f"[Drift] Error getting data for {symbol}: {e}")
+
+            # ========== HARD STOPS: Automatic exits, no LLM decision ==========
+            # These are non-negotiable - capital preservation comes first
+            hard_stop_sells = []
+            for pos in positions:
+                symbol = pos["symbol"]
+                pnl_pct = pos["unrealized_plpc"]
+
+                # Hard stop loss - sell immediately if down too much
+                if pnl_pct <= HARD_STOP_LOSS_PCT:
+                    if cycle_logger:
+                        cycle_logger.add_entry(f"HARD STOP: {symbol} down {pnl_pct:.1f}% (limit: {HARD_STOP_LOSS_PCT}%)")
+                    hard_stop_sells.append({
+                        "symbol": symbol,
+                        "reason": f"Hard stop hit: down {pnl_pct:.1f}% exceeds {HARD_STOP_LOSS_PCT}% limit",
+                        "type": "hard_stop"
+                    })
+                    continue
+
+                # 200MA breakdown - trend is broken
+                if SELL_BELOW_200MA:
+                    try:
+                        bars = self.alpaca.get_bars(symbol, days=365)
+                        if bars and len(bars) >= 200:
+                            closes = [b["close"] for b in bars]
+                            sma_200 = sum(closes[-200:]) / 200
+                            current_price = closes[-1]
+                            if current_price < sma_200:
+                                pct_below = ((current_price - sma_200) / sma_200) * 100
+                                if cycle_logger:
+                                    cycle_logger.add_entry(f"200MA BREAKDOWN: {symbol} at ${current_price:.2f} is {pct_below:.1f}% below 200MA ${sma_200:.2f}")
+                                hard_stop_sells.append({
+                                    "symbol": symbol,
+                                    "reason": f"200MA breakdown: price {pct_below:.1f}% below trend",
+                                    "type": "trend_broken"
+                                })
+                    except Exception as e:
+                        if VERBOSE:
+                            log(f"[Drift] Error checking 200MA for {symbol}: {e}")
+
+                # 5MA exit - Connors rule: take profits when price > 5MA
+                if USE_5MA_EXIT and symbol not in [s["symbol"] for s in hard_stop_sells]:
+                    try:
+                        bars = self.alpaca.get_bars(symbol, days=10)
+                        if bars and len(bars) >= EXIT_MA_PERIOD:
+                            closes = [b["close"] for b in bars]
+                            sma_5 = sum(closes[-EXIT_MA_PERIOD:]) / EXIT_MA_PERIOD
+                            current_price = closes[-1]
+                            if current_price > sma_5:
+                                pct_above = ((current_price - sma_5) / sma_5) * 100
+                                if cycle_logger:
+                                    cycle_logger.add_entry(f"5MA EXIT: {symbol} at ${current_price:.2f} is {pct_above:.1f}% above 5MA ${sma_5:.2f}")
+                                hard_stop_sells.append({
+                                    "symbol": symbol,
+                                    "reason": f"Connors exit: price {pct_above:.1f}% above 5MA (take profits)",
+                                    "type": "connors_exit"
+                                })
+                    except Exception as e:
+                        if VERBOSE:
+                            log(f"[Drift] Error checking 5MA for {symbol}: {e}")
+
+            # Execute hard stop sells
+            for sell_signal in hard_stop_sells:
+                symbol = sell_signal["symbol"]
+                reason = sell_signal["reason"]
+                if VERBOSE:
+                    log(f"[Drift] HARD STOP SELL: {symbol} - {reason}")
+                try:
+                    order = self.alpaca.sell(symbol, reason=reason)
+                    if order and order.get("status") != "error":
+                        actions.append({
+                            "action": "sell",
+                            "symbol": symbol,
+                            "reason": reason,
+                            "type": sell_signal["type"],
+                        })
+                        if cycle_logger:
+                            cycle_logger.add_entry(f"SOLD {symbol}: {reason}")
+                except Exception as e:
+                    if cycle_logger:
+                        cycle_logger.add_entry(f"SELL FAILED {symbol}: {e}")
+
+            # Update positions list after hard stops
+            if hard_stop_sells:
+                positions = self.alpaca.get_positions()
 
             # ========== STAGE 2: Check positions for exit triggers ==========
             for pos in positions:

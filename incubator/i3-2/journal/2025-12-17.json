@@ -9479,5 +9479,492 @@
     "action": "no_action",
     "timestamp": "2025-12-17T14:23:25.284315-05:00",
     "timestamp_human": "02:23 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.84,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T14:38:31.338939-05:00",
+    "timestamp_human": "02:38 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.25,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T14:53:37.426547-05:00",
+    "timestamp_human": "02:53 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.9,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T15:08:42.996025-05:00",
+    "timestamp_human": "03:08 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.15,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T15:23:49.000334-05:00",
+    "timestamp_human": "03:23 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.76,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T15:38:55.193123-05:00",
+    "timestamp_human": "03:38 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.08,
+    "position_count": 7,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-17T15:54:01.213038-05:00",
+    "timestamp_human": "03:54 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.32,
+    "position_count": 7,
+    "findings": "All 2 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T16:09:03.620090-05:00",
+    "timestamp_human": "04:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -6.0% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T16:09:04.649652-05:00",
+    "timestamp_human": "04:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "Position down -4.2% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T16:09:05.416010-05:00",
+    "timestamp_human": "04:09 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.1,
+    "position_count": 7,
+    "findings": "All 2 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T16:24:07.027295-05:00",
+    "timestamp_human": "04:24 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.28,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T16:39:09.176323-05:00",
+    "timestamp_human": "04:39 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Position down -3.4% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T16:39:10.226212-05:00",
+    "timestamp_human": "04:39 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.36,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T16:54:11.888836-05:00",
+    "timestamp_human": "04:54 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.2,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T17:09:14.325241-05:00",
+    "timestamp_human": "05:09 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.84,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T17:24:16.734557-05:00",
+    "timestamp_human": "05:24 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.88,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T17:39:19.137239-05:00",
+    "timestamp_human": "05:39 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.07,
+    "position_count": 7,
+    "findings": "All 2 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T17:54:21.559099-05:00",
+    "timestamp_human": "05:54 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.78,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T18:09:24.125818-05:00",
+    "timestamp_human": "06:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -6.5% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T18:09:24.898587-05:00",
+    "timestamp_human": "06:09 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "Position down -4.2% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T18:09:25.453155-05:00",
+    "timestamp_human": "06:09 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.5,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T18:24:28.098254-05:00",
+    "timestamp_human": "06:24 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.56,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T18:39:31.052646-05:00",
+    "timestamp_human": "06:39 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Position down -3.1% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T18:39:32.333159-05:00",
+    "timestamp_human": "06:39 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.38,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T18:54:34.676053-05:00",
+    "timestamp_human": "06:54 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.21,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T19:09:37.924022-05:00",
+    "timestamp_human": "07:09 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.22,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T19:13:02.811403-05:00",
+    "timestamp_human": "07:13 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.52,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T19:17:29.401650-05:00",
+    "timestamp_human": "07:17 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.71,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T19:32:34.070093-05:00",
+    "timestamp_human": "07:32 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 486.65,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T19:47:38.485497-05:00",
+    "timestamp_human": "07:47 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T20:02:43.013400-05:00",
+    "timestamp_human": "08:02 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T20:17:47.976414-05:00",
+    "timestamp_human": "08:17 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -6.4% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T20:17:49.026906-05:00",
+    "timestamp_human": "08:17 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "GOOGL",
+    "trigger": "Position down -4.1% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T20:17:49.792733-05:00",
+    "timestamp_human": "08:17 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T20:32:53.962216-05:00",
+    "timestamp_human": "08:32 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T20:47:58.745604-05:00",
+    "timestamp_human": "08:47 PM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "NVDA",
+    "trigger": "Position down -3.0% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-17T20:48:00.044339-05:00",
+    "timestamp_human": "08:48 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T21:03:04.160755-05:00",
+    "timestamp_human": "09:03 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 487.08,
+    "position_count": 7,
+    "findings": "All 3 triggers are existing positions",
+    "triggers": [
+      "AMD",
+      "GOOGL",
+      "NVDA"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-17T21:18:08.929368-05:00",
+    "timestamp_human": "09:18 PM ET"
   }
 ]
