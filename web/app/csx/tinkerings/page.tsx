@@ -157,7 +157,7 @@ export default function TinkeringsPage() {
               <li>2. Investment funnel</li>
               <li>3. First product/startup artifacts</li>
               <li>4. Stretch: Cohort 1 of CS incubator</li>
-              <li>5. The blueprint</li>
+              <li>5. The blueprint: our lens on what to build and the business model.</li>
             </ul>
           </section>
         </div>
