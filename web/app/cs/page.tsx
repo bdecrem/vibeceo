@@ -154,7 +154,7 @@ export default function CSPage() {
     : links
 
   useEffect(() => {
-    document.title = "CS - Link Feed"
+    document.title = "CTRL SHIFT - Link Feed"
     // Only fetch links if authenticated
     if (auth.token) {
       fetchLinks(auth.token)
@@ -405,8 +405,8 @@ export default function CSPage() {
     return (
       <div className="cs-container">
         <div className="cs-login-screen">
-          <h1 className="cs-login-title">CS</h1>
-          <p className="cs-login-subtitle">Private Link Feed</p>
+          <h1 className="cs-login-title">CTRL SHIFT</h1>
+          <p className="cs-login-subtitle">LINK FEED</p>
 
           {modal === 'closed' || modal === 'phone' ? (
             <div className="cs-login-form">
@@ -480,8 +480,7 @@ export default function CSPage() {
       <div className="cs-container">
       <header className="cs-header">
         <div className="cs-header-left">
-          <h1 className="cs-title">CS</h1>
-          <p className="cs-subtitle">Link Feed</p>
+          <h1 className="cs-title">CTRL SHIFT <span className="cs-title-sub">LINK FEED</span></h1>
         </div>
         {auth.token && (
           <div className="cs-header-right">
@@ -520,7 +519,10 @@ export default function CSPage() {
           onClick={() => setSearchOpen(!searchOpen)}
           title="Search links"
         >
-          🔍
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="m21 21-4.35-4.35"/>
+          </svg>
         </button>
       </div>
 
@@ -936,18 +938,16 @@ const styles = `
   }
 
   .cs-title {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     font-weight: 400;
     color: #fff;
     margin: 0;
     letter-spacing: -0.025em;
   }
 
-  .cs-subtitle {
-    font-size: 0.9rem;
+  .cs-title-sub {
     color: #8b8b8b;
-    font-weight: 400;
-    margin: 0;
+    margin-left: 8px;
   }
 
   .cs-header-right {
@@ -1055,13 +1055,10 @@ const styles = `
 
   .cs-filter-bar {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 0.5rem;
     margin-bottom: 1.5rem;
-    padding: 0.75rem;
-    background: #111;
-    border: 1px solid #333;
   }
 
   .cs-filter-left {
@@ -1100,13 +1097,16 @@ const styles = `
   }
 
   .cs-search-toggle {
-    background: none;
+    background: #1a1a1a;
     border: 1px solid #404040;
     font-size: 1rem;
     cursor: pointer;
-    padding: 0.25rem 0.5rem;
+    padding: 0.25rem 0.6rem;
     transition: all 0.15s ease;
     color: #8b8b8b;
+    display: flex;
+    align-items: center;
+    height: 26px;
   }
 
   .cs-search-toggle:hover {
@@ -1122,9 +1122,6 @@ const styles = `
 
   .cs-search-panel {
     margin-bottom: 1.5rem;
-    padding: 1rem;
-    background: #111;
-    border: 1px solid #333;
     animation: slideDown 0.2s ease;
   }
 

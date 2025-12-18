@@ -215,7 +215,7 @@ export default function CSXPage() {
           {/* Header */}
           <header className="csx-header">
             <h1 className="csx-title">
-              CTRL-SHIFT <span className="csx-title-x">x</span> FORD FOUNDATION
+              CTRL SHIFT <span className="csx-title-x">x</span> FORD FOUNDATION
             </h1>
           </header>
 
@@ -224,7 +224,7 @@ export default function CSXPage() {
             <h2 className="csx-section-label">MISSION</h2>
             <div>
               <p className="csx-text">
-                Control Shift is a collaboration with the Ford Foundation. We are a community of AI startups, investors, and researchers working to catalyze a simple but challenging proposition:
+                CTRL SHIFT is a collaboration with the Ford Foundation. We are a community of AI startups, investors, and researchers working to catalyze a simple but challenging proposition:
               </p>
               <p className="csx-text-emphasis">
                 How will the design of the next wave of AI products and companies be conscious to the human and societal impact of AI?
@@ -280,9 +280,14 @@ export default function CSXPage() {
               Ready to imagine a world greater than the growth-at-all-costs loops and the impacts of short-term thinking?
             </p>
             <p className="csx-cta-join">Join us.</p>
-            <Link href="/csx/tinkerings" className="csx-link">
-              Tinkerings →
-            </Link>
+            <div style={{ display: 'flex', gap: '24px' }}>
+              <Link href="/csx/tinkerings" className="csx-link">
+                Tinkerings →
+              </Link>
+              <Link href="/cs" className="csx-link">
+                Link Feed →
+              </Link>
+            </div>
           </section>
         </div>
       </div>
