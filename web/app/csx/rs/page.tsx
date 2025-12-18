@@ -300,7 +300,7 @@ export default function CSXClonePage() {
           <section className="csx-section">
             <h2 className="csx-cta-title">Wanna make a shift?</h2>
             <p className="csx-cta-text">
-              Ready to imagine a world greater than the growth-at-all-costs loops and the impacts of short-term thinking?
+              Come build with us. Workshop your prototypes, build a new model, or figure out the right problem to solve.
             </p>
             <p className="csx-cta-join">Join us.</p>
             <Link href="/csx/rs/tinkerings" className="csx-link">
