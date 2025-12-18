@@ -250,14 +250,14 @@ export default function CSXClonePage() {
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
               </p>
               <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The Lab is where we figure out what comes next.
+                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
               </p>
             </div>
           </section>
 
           {/* Connect Section */}
           <section className="csx-section">
-            <h2 className="csx-section-label">CONNECT</h2>
+            <h2 className="csx-section-label">BUILD WITH US</h2>
             <p className="csx-text">
               We want to hear from you! How does your work think long, build fast, and create technologies that actually make life better?
             </p>
@@ -267,8 +267,8 @@ export default function CSXClonePage() {
               <div className="csx-connect-item">
                 <div className="csx-connect-content">
                   <span className="csx-connect-number">1.</span>
-                  <span>Weekly office hours</span>
-                  <span className="csx-connect-desc"> — product, fundraising, go-to-market + technology strategy.</span>
+                  <strong>Explore</strong>
+                  <span className="csx-connect-desc"> — weekly office hours on product, fundraising, go-to-market + technology strategy.</span>
                 </div>
                 <button className="csx-btn">SIGNUP</button>
               </div>
@@ -277,8 +277,8 @@ export default function CSXClonePage() {
               <div className="csx-connect-item">
                 <div className="csx-connect-content">
                   <span className="csx-connect-number">2.</span>
-                  <span>Non-dilutive founder awards</span>
-                  <span className="csx-connect-desc"> ($1k - $10k) in support of their missions.</span>
+                  <strong>Fund</strong>
+                  <span className="csx-connect-desc"> — non-dilutive founder awards ($1k - $10k) in support of their missions.</span>
                   <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
                 </div>
                 <button className="csx-btn">APPLY</button>
@@ -288,8 +288,8 @@ export default function CSXClonePage() {
               <div className="csx-connect-item">
                 <div className="csx-connect-content">
                   <span className="csx-connect-number">3.</span>
-                  <span>Tech explorations</span>
-                  <span className="csx-connect-desc"> — building prototypes and tools.</span>
+                  <strong>Build</strong>
+                  <span className="csx-connect-desc"> — tech explorations, building prototypes and tools.</span>
                 </div>
                 <button className="csx-btn">GITHUB</button>
               </div>
