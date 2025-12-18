@@ -603,11 +603,14 @@ export default function CSPage() {
                       re: {link.about_person}
                     </span>
                     {auth.isAdmin && (
-                      <button
-                        onClick={() => { setEditingPersonOn(link.id); setPersonText(link.about_person || '') }}
-                        className="cs-edit-btn"
-                        title="Edit person"
-                      >✏️</button>
+                      <>
+                        <span className="cs-link-sep">&middot;</span>
+                        <button
+                          onClick={() => { setEditingPersonOn(link.id); setPersonText(link.about_person || '') }}
+                          className="cs-edit-person-btn"
+                          title="Edit person"
+                        >edit</button>
+                      </>
                     )}
                   </>
                 ) : auth.token && (
@@ -1194,18 +1197,18 @@ const styles = `
     color: #ff6b6b;
   }
 
-  .cs-edit-btn {
+  .cs-edit-person-btn {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    color: #666;
     padding: 0;
-    margin-left: 0.3rem;
-    opacity: 0.5;
+    font-family: 'IBM Plex Mono', monospace;
   }
 
-  .cs-edit-btn:hover {
-    opacity: 1;
+  .cs-edit-person-btn:hover {
+    color: #999;
   }
 
   .cs-add-person-btn {
