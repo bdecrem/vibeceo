@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CTRL-SHIFT x Ford Foundation</title>
+    <meta name="description" content="A community of AI startups, investors, and researchers working to catalyze human-conscious AI design." />
+    <meta name="author" content="CTRL-SHIFT" />
+
+    <meta property="og:title" content="CTRL-SHIFT x Ford Foundation" />
+    <meta property="og:description" content="How will the design of the next wave of AI products be conscious to the human and societal impact of AI?" />
+    <meta property="og:type" content="website" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  </head>
+
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

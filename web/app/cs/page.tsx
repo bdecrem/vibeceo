@@ -470,7 +470,14 @@ export default function CSPage() {
   }
 
   return (
-    <div className="cs-container">
+    <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet"
+      />
+      <div className="cs-container">
       <header className="cs-header">
         <div className="cs-header-left">
           <h1 className="cs-title">CS</h1>
@@ -769,12 +776,11 @@ export default function CSPage() {
 
       <style jsx>{styles}</style>
     </div>
+    </>
   )
 }
 
 const styles = `
-  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
-
   html, body {
     background: #000;
     margin: 0;

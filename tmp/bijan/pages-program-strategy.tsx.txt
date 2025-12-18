@@ -1,0 +1,58 @@
+import { Link } from "react-router-dom";
+
+const ProgramStrategy = () => {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <div className="max-w-4xl mx-auto px-6 py-12 md:py-16">
+        {/* Header */}
+        <header className="mb-8 md:mb-10">
+          <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
+            ← Back
+          </Link>
+        </header>
+
+        {/* Title */}
+        <h1 className="text-xl md:text-2xl font-normal tracking-tight mb-8">
+          TINKERINGS
+        </h1>
+
+        {/* What, Who, Where, How, Burn */}
+        <section className="mb-8 space-y-3">
+          <div className="flex"><span className="text-muted-foreground shrink-0 w-24">1. What:</span><span>Office Hours + up to $100k in awards (20 x 5)</span></div>
+          <div className="flex"><span className="text-muted-foreground shrink-0 w-24">2. Who:</span><span>Startups who want to develop their human impact approach + get a brand affiliation</span></div>
+          <div className="flex"><span className="text-muted-foreground shrink-0 w-24">3. Where:</span><span>Circulate at research universities and Anthropic for Startups</span></div>
+          <div className="flex"><span className="text-muted-foreground shrink-0 w-24">4. How:</span><span>Casual but committed pace</span></div>
+          <div className="flex"><span className="text-muted-foreground shrink-0 w-24">5. Burn:</span><span>Light OpX + awards</span></div>
+        </section>
+
+        {/* Lead Gen */}
+        <section className="mb-8">
+          <h2 className="text-xs font-normal text-muted-foreground mb-3 tracking-widest">
+            FUNNELS
+          </h2>
+          <div className="space-y-2">
+            <p>1. Anthropic for Startups</p>
+            <p>2. MIT</p>
+            <p>3. Stanford Labs</p>
+          </div>
+        </section>
+
+        {/* Outputs */}
+        <section className="mb-8">
+          <h2 className="text-xs font-normal text-muted-foreground mb-3 tracking-widest">
+            THINGS WE ARE LOOKING FOR
+          </h2>
+          <div className="space-y-2">
+            <p>1. Juicy talent funnel</p>
+            <p>2. First startup artifacts</p>
+            <p>3. Investment funnel</p>
+            <p>4. Maybe cohort 1 of CS community</p>
+            <p>5. A Brand built</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+};
+
+export default ProgramStrategy;
