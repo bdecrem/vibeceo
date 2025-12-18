@@ -100,9 +100,14 @@ export default function CSPage() {
   // Load auth from cookie first, then localStorage fallback
   useEffect(() => {
     // Try cookies first (survives Safari View Controller)
+    // Note: split on first '=' only, since base64 tokens contain '=' padding
     const cookies = document.cookie.split(';').reduce((acc, c) => {
-      const [key, val] = c.trim().split('=')
-      if (key && val) acc[key] = decodeURIComponent(val)
+      const idx = c.indexOf('=')
+      if (idx > 0) {
+        const key = c.slice(0, idx).trim()
+        const val = c.slice(idx + 1)
+        if (key && val) acc[key] = decodeURIComponent(val)
+      }
       return acc
     }, {} as Record<string, string>)
 
