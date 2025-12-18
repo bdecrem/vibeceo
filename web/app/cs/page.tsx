@@ -775,6 +775,12 @@ export default function CSPage() {
 const styles = `
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
 
+  html, body {
+    background: #000;
+    margin: 0;
+    padding: 0;
+  }
+
   .cs-container {
     max-width: 800px;
     margin: 0 auto;
