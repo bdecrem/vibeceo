@@ -107,7 +107,7 @@ export default function TinkeringsPage() {
         <div className="csx-container">
           {/* Header */}
           <header className="csx-header">
-            <Link href="/csx" className="csx-back-link">
+            <Link href="/csx/rs" className="csx-back-link">
               ← Back
             </Link>
           </header>

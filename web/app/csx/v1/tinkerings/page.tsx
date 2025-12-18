@@ -85,7 +85,7 @@ export default function TinkeringsPage() {
         .csx-detail-label {
           color: #8b8b8b;
           flex-shrink: 0;
-          width: 112px;
+          width: 96px;
         }
 
         .csx-detail-value {
@@ -107,23 +107,23 @@ export default function TinkeringsPage() {
         <div className="csx-container">
           {/* Header */}
           <header className="csx-header">
-            <Link href="/csx" className="csx-back-link">
+            <Link href="/csx/v1" className="csx-back-link">
               ← Back
             </Link>
           </header>
 
           {/* Title */}
-          <h1 className="csx-page-title">THE WORK</h1>
+          <h1 className="csx-page-title">TINKERINGS</h1>
 
           {/* What, Who, Where, How, Burn */}
           <section className="csx-section">
             <div className="csx-detail-row">
               <span className="csx-detail-label">1. What:</span>
-              <span className="csx-detail-value">Office Hours + $25k in awards (5 x $5,000) over 10 weeks</span>
+              <span className="csx-detail-value">Office Hours + up to $100k in awards (20 x 5)</span>
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">2. Who:</span>
-              <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach + get a brand affiliation</span>
+              <span className="csx-detail-value">Startups who want to develop their human impact approach + get a brand affiliation</span>
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">3. Where:</span>
@@ -134,8 +134,8 @@ export default function TinkeringsPage() {
               <span className="csx-detail-value">Casual but committed pace</span>
             </div>
             <div className="csx-detail-row">
-              <span className="csx-detail-label">5. Budget:</span>
-              <span className="csx-detail-value">$50,000</span>
+              <span className="csx-detail-label">5. Burn:</span>
+              <span className="csx-detail-value">Light OpX + awards</span>
             </div>
           </section>
 
@@ -153,11 +153,11 @@ export default function TinkeringsPage() {
           <section className="csx-section">
             <h2 className="csx-section-label">THINGS WE ARE LOOKING FOR</h2>
             <ul className="csx-list">
-              <li>1. Talent funnel</li>
-              <li>2. Investment funnel</li>
-              <li>3. First product/startup artifacts</li>
-              <li>4. Stretch: Cohort 1 of CS incubator</li>
-              <li>5. The blueprint</li>
+              <li>1. Juicy talent funnel</li>
+              <li>2. First startup artifacts</li>
+              <li>3. Investment funnel</li>
+              <li>4. Maybe cohort 1 of CS community</li>
+              <li>5. A Brand built</li>
             </ul>
           </section>
         </div>

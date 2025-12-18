@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 
-export default function CSXPage() {
+export default function CSXClonePage() {
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -287,6 +287,9 @@ export default function CSXPage() {
             </p>
             <p className="csx-cta-join">Join us.</p>
             <div style={{ display: 'flex', gap: '24px' }}>
+              <Link href="/csx/rs/tinkerings" className="csx-link">
+                The Work →
+              </Link>
               <Link href="/cs" className="csx-link">
                 Link Feed →
               </Link>
