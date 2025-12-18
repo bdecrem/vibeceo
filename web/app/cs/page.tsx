@@ -423,7 +423,9 @@ export default function CSPage() {
               <button onClick={handleSendCode} disabled={authLoading || !phone} className="cs-login-btn">
                 {authLoading ? 'Sending...' : 'Send Code'}
               </button>
-              <p className="cs-login-hint">Not a member? Text <code>CS SUBSCRIBE</code> to +1 (866) 330-0015</p>
+              <p className="cs-login-hint">
+                Not subscribed yet? <a href="sms:+18663300015&body=CS%20SUBSCRIBE" className="cs-invite-link">Click here for an invite</a>
+              </p>
             </div>
           ) : modal === 'code' ? (
             <div className="cs-login-form">
@@ -922,6 +924,16 @@ const styles = `
   }
 
   .cs-login-hint code {
+    color: #8b8b8b;
+  }
+
+  .cs-invite-link {
+    color: #fff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .cs-invite-link:hover {
     color: #8b8b8b;
   }
 
