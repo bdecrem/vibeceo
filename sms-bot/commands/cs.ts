@@ -135,7 +135,7 @@ async function broadcastNewLink(
     return { sent: 0, failed: 0 };
   }
 
-  const handle = poster.name ? `[${poster.name}]` : "[someone]";
+  const handle = poster.name || "someone";
   const message = notes
     ? `📎 ${handle} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
     : `📎 ${handle} shared: ${url} — 💬 kochi.to/cs`;
