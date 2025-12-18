@@ -119,7 +119,7 @@ export default function TinkeringsPage() {
           <section className="csx-section">
             <div className="csx-detail-row">
               <span className="csx-detail-label">1. What:</span>
-              <span className="csx-detail-value">Office Hours + $25k in awards (5 x $5,000) over 10 weeks</span>
+              <span className="csx-detail-value">Office Hours + mini awards + tech dev over 10 weeks</span>
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">2. Who:</span>

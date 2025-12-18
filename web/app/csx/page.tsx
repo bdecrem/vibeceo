@@ -250,7 +250,7 @@ export default function CSXPage() {
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
               </p>
               <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects, and mentored hundreds of founders. The Lab is where we figure out what this cohort needs—and what comes next.
+                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The Lab is where we figure out what comes next.
               </p>
             </div>
           </section>
@@ -278,7 +278,7 @@ export default function CSXPage() {
                 <div className="csx-connect-content">
                   <span className="csx-connect-number">2.</span>
                   <span>Non-dilutive founder awards</span>
-                  <span className="csx-connect-desc"> ($5k - $25K) in support of their missions.</span>
+                  <span className="csx-connect-desc"> ($1k - $10k) in support of their missions.</span>
                   <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
                 </div>
                 <button className="csx-btn">APPLY</button>
@@ -288,10 +288,10 @@ export default function CSXPage() {
               <div className="csx-connect-item">
                 <div className="csx-connect-content">
                   <span className="csx-connect-number">3.</span>
-                  <span>Occasional speakers</span>
-                  <span className="csx-connect-desc"> on best practices.</span>
+                  <span>Tech explorations</span>
+                  <span className="csx-connect-desc"> — building prototypes and tools.</span>
                 </div>
-                <button className="csx-btn">CALENDAR</button>
+                <button className="csx-btn">GITHUB</button>
               </div>
             </div>
           </section>
