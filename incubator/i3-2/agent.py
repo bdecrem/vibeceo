@@ -44,6 +44,8 @@ from config import (
     STOP_CHECK_PCT,
     HARD_STOP_LOSS_PCT,
     SELL_BELOW_200MA,
+    USE_5MA_EXIT,
+    EXIT_MA_PERIOD,
     VERBOSE,
     STATE_DIR,
     SECTOR_MAP,
@@ -544,6 +546,27 @@ If nothing major, respond:
                     except Exception as e:
                         if VERBOSE:
                             log(f"[Drift] Error checking 200MA for {symbol}: {e}")
+
+                # 5MA exit - Connors rule: take profits when price > 5MA
+                if USE_5MA_EXIT and symbol not in [s["symbol"] for s in hard_stop_sells]:
+                    try:
+                        bars = self.alpaca.get_bars(symbol, days=10)
+                        if bars and len(bars) >= EXIT_MA_PERIOD:
+                            closes = [b["close"] for b in bars]
+                            sma_5 = sum(closes[-EXIT_MA_PERIOD:]) / EXIT_MA_PERIOD
+                            current_price = closes[-1]
+                            if current_price > sma_5:
+                                pct_above = ((current_price - sma_5) / sma_5) * 100
+                                if cycle_logger:
+                                    cycle_logger.add_entry(f"5MA EXIT: {symbol} at ${current_price:.2f} is {pct_above:.1f}% above 5MA ${sma_5:.2f}")
+                                hard_stop_sells.append({
+                                    "symbol": symbol,
+                                    "reason": f"Connors exit: price {pct_above:.1f}% above 5MA (take profits)",
+                                    "type": "connors_exit"
+                                })
+                    except Exception as e:
+                        if VERBOSE:
+                            log(f"[Drift] Error checking 5MA for {symbol}: {e}")
 
             # Execute hard stop sells
             for sell_signal in hard_stop_sells:
