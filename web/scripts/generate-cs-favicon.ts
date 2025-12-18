@@ -30,7 +30,7 @@ async function generateFavicon() {
         body {
           width: 128px;
           height: 128px;
-          background: #000;
+          background: transparent;
           display: flex;
           align-items: center;
           justify-content: center;
