@@ -406,6 +406,47 @@ function formatStackEmailAsHtml(message: string, appName: string): string {
   `;
 }
 
+/**
+ * Send a simple notification email (for admin alerts, etc.)
+ */
+export async function sendNotificationEmail(
+  to: string,
+  subject: string,
+  body: string,
+  linkUrl?: string,
+  linkText?: string
+): Promise<{ success: boolean }> {
+  try {
+    const htmlBody = `
+      <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; padding: 24px; max-width: 600px;">
+        <p style="font-size: 16px; line-height: 1.5;">${body.replace(/\n/g, '<br>')}</p>
+        ${linkUrl ? `<p style="margin-top: 24px;"><a href="${linkUrl}" style="background: #4ade80; color: #000; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: 600;">${linkText || 'View'}</a></p>` : ''}
+      </div>
+    `;
+
+    const msg = {
+      to,
+      from: 'Kochi <bot@advisorsfoundry.ai>',
+      subject,
+      text: body + (linkUrl ? `\n\n${linkText || 'View'}: ${linkUrl}` : ''),
+      html: htmlBody,
+    };
+
+    if (isSendGridBypassed()) {
+      console.log(`🚫 SendGrid Bypassed: Would send notification to ${to}`);
+      console.log(`🚫 Subject: ${subject}`);
+      return { success: true };
+    }
+
+    await sgMail.send(msg);
+    console.log(`📧 Notification sent to ${to}: ${subject}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error(`❌ Failed to send notification email:`, error.response?.body || error.message);
+    return { success: false };
+  }
+}
+
 function formatMessageAsText(message: string): string {
   const today = new Date().toLocaleDateString('en-US', { 
     month: 'long', 

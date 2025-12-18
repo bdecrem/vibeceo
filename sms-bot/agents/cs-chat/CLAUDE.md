@@ -40,10 +40,18 @@ Web Side (web/)
 | `CS <url> person: Name` | Tag a link as being "about" someone |
 | `CS <text>` | Comment on recent link (30-min rolling window) |
 | `CS KOCHI <question>` | AI-powered Q&A — broadcasts question + answer to all |
-| `CS SUBSCRIBE` / `CS SUB` | Subscribe to broadcasts |
+| `CS SUBSCRIBE` / `CS SUB` | Request invite (adds to waitlist) |
 | `CS UNSUBSCRIBE` / `CS UNSUB` | Unsubscribe |
 | `CS LIST` | See 5 most recent links |
 | `CS HELP` | Show commands |
+| `CS APPROVE <phone>` | **Admin only**: Approve waitlist request |
+| `CS Y` / `CS OK` | **Admin only**: Approve most recent waitlist request |
+
+**Invite-only system:**
+- CS is invite-only. `CS SUBSCRIBE` adds user to waitlist
+- Admin receives SMS notification for each invite request
+- Admin approves via `CS APPROVE +1234567890` or `CS Y` (for most recent)
+- Approved user receives "You're in!" message and is subscribed
 
 **Special handling:**
 - LinkedIn profile URLs auto-detect `about_person` from the URL slug
@@ -96,6 +104,15 @@ Web Side (web/)
 | agent_slug | TEXT | `'cs'` for CTRL Shift |
 | subscribed_at | TIMESTAMPTZ | |
 | active | BOOLEAN | Whether subscribed |
+
+### `cs_waitlist` — Invite waitlist (owned by CS)
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID PK | |
+| phone | TEXT NOT NULL | Normalized phone (+1...) |
+| name | TEXT | User's name/handle at request time |
+| status | TEXT NOT NULL | `'pending'`, `'approved'`, or `'rejected'` |
+| requested_at | TIMESTAMPTZ | When invite was requested |
 
 Used via `lib/agent-subscriptions.ts` helpers: `subscribeToAgent()`, `unsubscribeFromAgent()`, `getAgentSubscribers()`, `isSubscribedToAgent()`
 
