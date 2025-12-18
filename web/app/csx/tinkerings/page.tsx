@@ -6,11 +6,13 @@ export default function TinkeringsPage() {
   return (
     <>
       <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap');
+
         .csx-page {
           min-height: 100vh;
           background: #000;
           color: #fff;
-          font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          font-family: 'IBM Plex Mono', monospace;
           -webkit-font-smoothing: antialiased;
         }
 
