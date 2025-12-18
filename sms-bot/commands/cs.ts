@@ -20,6 +20,7 @@ import { supabase } from "../lib/supabase.js";
 import { sendSmsResponse, setPendingCS } from "../lib/sms/handlers.js";
 import { fetchAndSummarizeLink } from "../lib/cs-content-fetcher.js";
 import { storeThreadState, clearThreadState, type ActiveThread } from "../lib/context-loader.js";
+import { sendNotificationEmail } from "../lib/email/sendgrid.js";
 import type { TwilioClient } from "../lib/sms/webhooks.js";
 import type { CommandContext, CommandHandler } from "./types.js";
 import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
@@ -27,8 +28,9 @@ import { matchesPrefix, extractAfterPrefix } from "./command-utils.js";
 const CS_PREFIX = "CS";
 export const CS_AGENT_SLUG = "cs";
 
-// Admin phone for CS invite approvals
-const CS_ADMIN_PHONE = "+16508989508";
+// Admin for CS invite approvals
+const CS_ADMIN_EMAIL = "bdecrem@gmail.com";
+const CS_ADMIN_PHONE = "+16508989508";  // For SMS-based approval commands
 
 interface ParsedCSCommand {
   subcommand: "SUBSCRIBE" | "UNSUBSCRIBE" | "POST" | "LIST" | "HELP" | "PENDING" | "COMMENT" | "KOCHI" | "APPROVE";
@@ -167,30 +169,32 @@ async function isOnWaitlist(phone: string): Promise<boolean> {
 }
 
 /**
- * Add phone to the CS waitlist
+ * Add phone to the CS waitlist, returns the entry ID on success
  */
-async function addToWaitlist(phone: string, name?: string): Promise<'added' | 'already' | 'error'> {
+async function addToWaitlist(phone: string, name?: string): Promise<{ status: 'added' | 'already' | 'error'; id?: string }> {
   // Check if already on waitlist
   const existing = await isOnWaitlist(phone);
   if (existing) {
-    return 'already';
+    return { status: 'already' };
   }
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('cs_waitlist')
     .insert({
       phone,
       name: name || null,
       status: 'pending',
       requested_at: new Date().toISOString(),
-    });
+    })
+    .select('id')
+    .single();
 
-  if (error) {
+  if (error || !data) {
     console.error('[cs] Failed to add to waitlist:', error);
-    return 'error';
+    return { status: 'error' };
   }
 
-  return 'added';
+  return { status: 'added', id: data.id };
 }
 
 /**
@@ -419,18 +423,21 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
 
     // Add to waitlist
     const waitlistResult = await addToWaitlist(normalizedFrom, name);
-    if (waitlistResult === 'error') {
+    if (waitlistResult.status === 'error') {
       await sendSms(from, "Could not process request. Try again later.", twilioClient);
       await updateLastMessageDate(normalizedFrom);
       return true;
     }
 
-    // Notify admin
-    const displayName = name || normalizedFrom;
-    await sendSms(
-      CS_ADMIN_PHONE,
-      `🔔 CS invite request from ${displayName} (${normalizedFrom})\n\nReply: CS APPROVE ${normalizedFrom}`,
-      twilioClient
+    // Notify admin via email (SMS gets blocked by Twilio spam filters)
+    const displayName = name || 'Someone';
+    const approveUrl = `https://kochi.to/cs/q/${waitlistResult.id}`;
+    await sendNotificationEmail(
+      CS_ADMIN_EMAIL,
+      `CS invite request: ${displayName}`,
+      `${displayName} is requesting access to CTRL Shift.`,
+      approveUrl,
+      'Review & Approve'
     );
 
     // Confirm to user

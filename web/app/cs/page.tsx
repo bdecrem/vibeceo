@@ -424,7 +424,7 @@ export default function CSPage() {
                 {authLoading ? 'Sending...' : 'Send Code'}
               </button>
               <p className="cs-login-hint">
-                Not subscribed yet? <a href="sms:+18663300015&body=CS%20SUBSCRIBE" className="cs-invite-link">Click here for an invite</a>
+                Not subscribed yet?<br /><a href="sms:+18663300015&body=CS%20SUBSCRIBE" className="cs-invite-link">Click here for an invite</a>
               </p>
             </div>
           ) : modal === 'code' ? (
