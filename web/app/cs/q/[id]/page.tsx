@@ -19,7 +19,7 @@ interface WaitlistEntry {
 
 export default function WaitlistApprovePage() {
   const params = useParams();
-  const id = params.id as string;
+  const id = params?.id as string;
 
   const [entry, setEntry] = useState<WaitlistEntry | null>(null);
   const [loading, setLoading] = useState(true);
