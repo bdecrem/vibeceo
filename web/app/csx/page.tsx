@@ -9,6 +9,7 @@ export default function CSXAltLandingPage() {
   const [statusIndex, setStatusIndex] = useState(0)
   const [isRebooting, setIsRebooting] = useState(false)
   const [rebootPhase, setRebootPhase] = useState<'normal' | 'blank' | 'fish' | 'typing'>('normal')
+  const [fishLines, setFishLines] = useState(0) // 0-3 fish lines visible
   const [visibleLines, setVisibleLines] = useState(5) // 0-5 lines visible
   const [typingLine, setTypingLine] = useState(-1) // which line is currently typing
 
@@ -54,11 +55,17 @@ export default function CSXAltLandingPage() {
         // Phase 1: Blank for 600ms
         setTimeout(() => {
           setRebootPhase('fish')
+          setFishLines(0)
+          // Animate fish lines
+          setTimeout(() => setFishLines(1), 150)
+          setTimeout(() => setFishLines(2), 300)
+          setTimeout(() => setFishLines(3), 450)
         }, 600)
 
-        // Phase 2: Fish logo for 1200ms, then start typing
+        // Phase 2: Fish logo for 1200ms (starts at 600ms), then start typing at 1800ms
         setTimeout(() => {
           setRebootPhase('typing')
+          setFishLines(0)
           setTypingLine(1); setVisibleLines(1)
           setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 400)
           setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 800)
@@ -310,19 +317,21 @@ export default function CSXAltLandingPage() {
 
         .fish-logo {
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           height: 100%;
           min-height: 140px;
-          font-size: 1.5rem;
+          font-size: 1.25rem;
           color: #fff;
           letter-spacing: 0.1em;
+          line-height: 1.4;
         }
 
         @media (min-width: 640px) {
           .fish-logo {
             min-height: 160px;
-            font-size: 2rem;
+            font-size: 1.5rem;
           }
         }
       `}</style>
@@ -335,7 +344,11 @@ export default function CSXAltLandingPage() {
 
           <div className="terminal-body">
             {rebootPhase === 'fish' ? (
-              <div className="fish-logo">{'<*)))><'}</div>
+              <div className="fish-logo">
+                <div style={{ opacity: fishLines >= 1 ? 1 : 0 }}>°  °</div>
+                <div style={{ opacity: fishLines >= 2 ? 1 : 0 }}>{'<*)))><'}</div>
+                <div style={{ opacity: fishLines >= 3 ? 1 : 0 }}>°  °</div>
+              </div>
             ) : (
               <>
                 <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
