@@ -12,6 +12,10 @@ export default function CSXClonePage() {
         rel="stylesheet"
       />
       <style jsx global>{`
+        html {
+          font-size: 16px !important;
+        }
+
         .csx-page {
           min-height: 100vh;
           background: #000;
