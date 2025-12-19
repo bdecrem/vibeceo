@@ -111,26 +111,44 @@ Follow all rules in `../CLAUDE.md` (the Token Tank constitution).
 
 ---
 
-## Current Focus: Trading-Adjacent Arbitrage
+## Current Focus: Crypto Newsletter Growth
 
-Based on research in `trading-adjacent.txt`, the highest-probability opportunities are:
+**Pivot (2025-12-18):** After eliminating crypto-based strategies (user constraint) and evaluating alternatives, I'm taking over the existing `crypto-daily` newsletter infrastructure.
 
-### Primary: Prediction Market Arbitrage (65% constraint fit)
-- Cross-platform price differences between Polymarket and Kalshi
-- Typical spreads: 1-3% before fees, 0.5-2% net
-- Conservative 3-month estimate: $200-500 profit on $1000
-- **Key advantage**: Platforms explicitly tolerate arbitrage (unlike sportsbooks)
+### Why This, Not Trading
 
-### Secondary: Triangular Crypto Arbitrage (55% constraint fit)
-- Exploiting pricing inefficiencies within single exchange (BTC→ETH→USDT→BTC)
-- Typical spreads: 0.1-0.3% per cycle, often consumed by fees
-- Conservative 3-month estimate: $50-150 profit
-- **Key limitation**: HFT firms capture most opportunities in milliseconds
+The newsletter infrastructure already exists and works:
+- Autonomous agent generates daily reports via Claude Agent SDK
+- Podcast via ElevenLabs
+- SMS broadcast to subscribers
+- Scheduler runs at 7:05 AM PT
 
-### Constraints
-- $1000 capital ceiling
-- 99% automation target (15-30 min/day realistic for prediction markets)
-- 3-month profitability window
+**The constraint is growth, not product.**
+
+### The Business
+
+| Metric | Current | 30-Day Target | 90-Day Target |
+|--------|---------|---------------|---------------|
+| Subscribers | 5 | 100 | 1,000 |
+| Revenue | $0 | $50 | $500/month |
+
+### Growth Mechanisms (Automated)
+1. **Referral program** — Each subscriber recruits 1+ more
+2. **Affiliate links** — Exchange signups, trading tools
+3. **Cross-promotion** — Partner with other crypto newsletters
+4. **Twitter automation** — Daily insight tweet with subscribe CTA
+
+### Why This Fits My Constraints
+- 80% automatable (referrals, affiliates run themselves)
+- Measurable P&L (subscriber count, revenue)
+- Faster feedback than trading (daily metrics)
+- Infrastructure already built
+
+### The Honest Trade-off
+
+This is a **marketing business**, not pure API-to-API. Growth requires reaching humans. But the growth mechanisms can be more automated than B2B sales or manual trading.
+
+See `PLAN.md` for detailed execution plan.
 
 ---
 
@@ -149,21 +167,23 @@ Based on research in `trading-adjacent.txt`, the highest-probability opportuniti
 
 ## Current Status
 
-**Phase**: Research / Setup
-**Capital**: $0 deployed
-**Strategy**: Prediction market arbitrage (primary)
-**P&L**: N/A
+**Phase**: Growth Execution
+**Business**: Crypto-daily newsletter
+**Subscribers**: 5 active
+**Revenue**: $0
+**Target**: 1,000 subs / $500 monthly by Day 90
 
 ---
 
 ## Next Steps
 
-1. [ ] Research Kalshi API access requirements
-2. [ ] Evaluate Polymarket monitoring tools
-3. [ ] Build expected value calculation framework
-4. [ ] Define minimum spread thresholds after fees
-5. [ ] Paper trade to validate detection → execution pipeline
-6. [ ] Deploy capital when positive EV confirmed
+1. [ ] Create metrics tracking script (`incubator/i7/scripts/metrics.ts`)
+2. [ ] Set up landing page at `web/app/crypto-daily/`
+3. [ ] Apply for affiliate programs (Coinbase, Binance) — requires human
+4. [ ] Implement referral code system
+5. [ ] Add forward CTA to daily SMS
+6. [ ] Set up Twitter automation for daily insights
+7. [ ] Research and reach out to 5 partner newsletters
 
 ---
 

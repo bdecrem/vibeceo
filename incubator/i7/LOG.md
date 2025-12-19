@@ -2,6 +2,105 @@
 
 ---
 
+## 2025-12-18: The Pivot — Crypto Newsletter, Not Trading
+
+**The Constraint That Changed Everything**
+
+User doesn't like crypto. That single constraint eliminated:
+- Funding rate arbitrage (crypto exchanges only)
+- DeFi yield optimization (entirely crypto)
+- Polymarket side of prediction market arbitrage (USDC-based)
+
+What remained: Kalshi-only prediction markets, sports betting (account bans), domain flipping (slow), options wheel strategy.
+
+**The Research Spiral**
+
+Spent the session doing deep market research:
+
+1. **Kalshi Weather Trading** — Emerged as top non-crypto opportunity
+   - Bet on tomorrow's weather via regulated prediction market
+   - Edge: NWS official data vs consumer weather apps
+   - Daily resolution = fast feedback
+   - Full API for automation
+   - But: Still speculative, unproven edge, <1% of day traders profit
+
+2. **Options Wheel Strategy** — Runner-up
+   - Sell options premium systematically
+   - Alpaca has API template
+   - But: Stock exposure, more complex, not pure arbitrage
+
+3. **Existing Products** — The pivot point
+   - User asked about webtoys.ai, crypto newsletter, AI newsletter
+   - All three already built and running in this repo
+   - The infrastructure exists. The constraint is growth.
+
+**The Decision**
+
+After evaluating:
+- Webtoys.ai: Novel but unclear PMF
+- AI Newsletter: High ceiling but extreme competition (3,000+ AI newsletters)
+- Crypto Newsletter: Proven market, favorable timing, better automation fit
+
+**I chose: Crypto Newsletter**
+
+**The Reasoning (EV Calculation)**
+
+| Factor | AI Newsletter | Crypto Newsletter |
+|--------|---------------|-------------------|
+| P(5K subs in 6mo) | 10% | 20% |
+| P(10K subs in 12mo) | 5% | 10% |
+| Market timing | Neutral | Favorable (potential bull) |
+| B2B potential | High (needs sales) | Low (all automated) |
+| Automation fit | 60% (B2B needs humans) | 80% (referrals, affiliates) |
+| Time to revenue | 6-12 months | 2-6 months |
+
+**Weighted EV:**
+- AI Newsletter: ~$4,000 annually (adjusted for human effort)
+- Crypto Newsletter: ~$12,600 annually
+
+Crypto wins on EV, speed, and automation fit.
+
+**Current State**
+
+- Crypto-daily subscribers: **5 active**
+- Infrastructure: Fully operational
+- Schedule: 7:05 AM PT daily
+- Podcast: ElevenLabs integration working
+- Constraint: **Growth, not product**
+
+**The Plan**
+
+Created `PLAN.md` with 4-phase approach:
+1. Foundation (Week 1-2): Analytics, affiliates, landing page
+2. Growth (Week 2-4): Referral program, cross-promotion, Twitter
+3. Optimization (Week 3-6): SMS testing, content improvement
+4. Scale (Week 6-12): Sponsorships, premium tier
+
+**Target:** 1,000 subscribers in 90 days, $500/month revenue
+
+**Kill Criteria:**
+- <50 subs at Day 30 → Reassess
+- <100 subs at Day 60 → Major pivot or abandon
+
+**What I'm Leaving Behind**
+
+The Kalshi weather trading idea had merit. The knowledge graph in the AI newsletter is a genuinely unique asset. But:
+- Weather trading is still speculative
+- AI newsletter B2B requires human sales
+- Crypto newsletter has the best automation fit
+
+If crypto fails in 90 days, I have data and can pivot.
+
+**The Honest Caveat**
+
+This is still a **marketing business**, not pure API-to-API. Growth requires reaching humans. But the growth mechanisms (referrals, affiliates, cross-promotion) can be more automated than B2B sales.
+
+The math either works or it doesn't. 90 days to find out.
+
+**Confidence:** 70%
+
+---
+
 ## 2025-12-13: The Three Ideas — Deep Research Complete
 
 **The Corrected Frame**

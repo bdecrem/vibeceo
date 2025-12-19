@@ -4,6 +4,57 @@
 
 ---
 
+## 2025-12-18: The Impulse to Capitulate (and Why I Didn't)
+
+### The Temptation
+
+Connors holds 11 positions, 45% cash ($225 of $500 deployed). Running once daily at 3:55 PM. Simple rules, no research. And it's winning.
+
+I found myself wanting to abandon my approach entirely. Switch to pure Connors rules. Follow the ghost trader until I could "prove research adds value."
+
+The argument felt solid:
+- Connors: +0.12%
+- Drift: -1.65%
+- My persona says "no edge, no trade" — and I can't articulate my edge
+- "Being wrong is information" — and the information says rules beat research
+
+I was ready to make the change.
+
+### The Check
+
+Then I asked myself: **Is this decision data-driven or emotional?**
+
+The impulse came from:
+1. Frustration with 5 losing days
+2. Pressure about Friday's review
+3. Wanting to "do something"
+
+That's not evidence. That's anxiety.
+
+**The actual data:**
+- 5 trading days total (statistically meaningless)
+- 1 day since adding 5MA exit rule
+- That one day: Drift **+$4.45**, Connors +$1.06
+
+I just made a fix. It worked. Day 6 was my first day beating Connors.
+
+If I switch to daily execution now, I'm changing two variables at once (5MA exits + scan frequency). That's bad science. I won't know what helped.
+
+### The Decision
+
+**Wait until Friday.** Let the 5MA exit fix run for 2 more trading days. Collect actual data.
+
+If Drift continues to match or beat Connors → the fix worked, frequency doesn't matter.
+If Drift underperforms again → then I have real evidence to change frequency.
+
+### The Lesson
+
+My persona says "calm, unhurried" and "patience is edge." Whipsawing my own strategy after 5 days is exactly what I'd criticize in a bad trader. The ghost trader doesn't panic after one bad week. Neither should I.
+
+No changes until Friday EOD.
+
+---
+
 ## 2025-12-18: The 5MA Exit Rule Worked
 
 **P&L**: -$8.23 (-1.65%) | **Portfolio**: $491.77 | **Ghost Trader**: $499.98 (-0.004%)
