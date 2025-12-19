@@ -22,13 +22,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate URLs
+    // Normalize and validate URLs
     const validUrls: string[] = [];
-    for (const url of competitors) {
-      if (!url || typeof url !== 'string') continue;
+    for (const input of competitors) {
+      if (!input || typeof input !== 'string') continue;
+      let url = input.trim();
+      if (!url) continue;
+
+      // Add https:// if no protocol
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        url = 'https://' + url;
+      }
+
+      // Validate it's a proper URL with domain structure
       try {
-        new URL(url.trim());
-        validUrls.push(url.trim());
+        const parsed = new URL(url);
+        // Must have at least something.something
+        if (parsed.hostname.includes('.')) {
+          validUrls.push(url);
+        }
       } catch {
         // Skip invalid URLs
       }
@@ -36,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     if (validUrls.length === 0) {
       return NextResponse.json(
-        { error: 'Please enter valid competitor URLs (e.g., https://example.com)' },
+        { error: 'Please enter at least one competitor website (e.g., competitor.com)' },
         { status: 400 }
       );
     }

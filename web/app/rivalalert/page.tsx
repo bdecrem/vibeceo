@@ -105,12 +105,12 @@ export default function RivalAlertLanding() {
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-orange-400"
                 />
                 <div className="space-y-2">
-                  <p className="text-sm text-gray-400 text-left">Competitor URLs to monitor:</p>
+                  <p className="text-sm text-gray-400 text-left">Competitor websites to monitor (1-3):</p>
                   {competitors.map((comp, i) => (
                     <input
                       key={i}
-                      type="url"
-                      placeholder={`https://competitor${i + 1}.com`}
+                      type="text"
+                      placeholder={i === 0 ? 'competitor.com' : '(optional)'}
                       value={comp}
                       onChange={(e) => updateCompetitor(i, e.target.value)}
                       className="w-full px-4 py-2 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-500 focus:outline-none focus:border-orange-400 text-sm"
