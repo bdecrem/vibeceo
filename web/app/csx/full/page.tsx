@@ -297,7 +297,7 @@ export default function CSXPage() {
                   <strong>Explore</strong>
                   <span className="csx-connect-desc"> — weekly office hours on product, fundraising, go-to-market + technology strategy.</span>
                 </div>
-                <button className="csx-btn">SIGNUP</button>
+                <Link href="/csx/contact?type=signup" className="csx-btn">SIGNUP</Link>
               </div>
 
               {/* Founder Awards */}
@@ -308,7 +308,7 @@ export default function CSXPage() {
                   <span className="csx-connect-desc"> — non-dilutive founder awards ($1k - $10k) in support of their missions.</span>
                   <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
                 </div>
-                <button className="csx-btn">APPLY</button>
+                <Link href="/csx/contact?type=apply" className="csx-btn">APPLY</Link>
               </div>
 
               {/* Speakers */}
