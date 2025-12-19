@@ -170,6 +170,13 @@ export default function CSXAltLandingPage() {
 
         .terminal-body {
           margin-bottom: 0;
+          min-height: 140px;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-body {
+            min-height: 160px;
+          }
         }
 
         .terminal-body .line-hidden {
@@ -303,7 +310,8 @@ export default function CSXAltLandingPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          height: 120px;
+          height: 100%;
+          min-height: 140px;
           font-size: 1.5rem;
           color: #fff;
           letter-spacing: 0.1em;
@@ -311,7 +319,7 @@ export default function CSXAltLandingPage() {
 
         @media (min-width: 640px) {
           .fish-logo {
-            height: 140px;
+            min-height: 160px;
             font-size: 2rem;
           }
         }
