@@ -8,8 +8,9 @@ export default function CSXAltLandingPage() {
   const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
   const [isRebooting, setIsRebooting] = useState(false)
-  const [rebootPhase, setRebootPhase] = useState<'normal' | 'blank' | 'fish' | 'typing'>('normal')
-  const [fishLines, setFishLines] = useState(0) // 0-3 fish lines visible
+  const [rebootPhase, setRebootPhase] = useState<'normal' | 'blank' | 'graphic' | 'typing'>('normal')
+  const [graphicLines, setGraphicLines] = useState(0) // 0-3 lines visible
+  const [bootGraphic, setBootGraphic] = useState<'fish' | 'people'>('fish')
   const [visibleLines, setVisibleLines] = useState(5) // 0-5 lines visible
   const [typingLine, setTypingLine] = useState(-1) // which line is currently typing
 
@@ -33,6 +34,7 @@ export default function CSXAltLandingPage() {
     { text: 'compiling...', color: 'amber', cursor: true },
     { text: 'switching models...', color: 'amber', cursor: true },
     { text: 'integrating...', color: 'amber', cursor: true },
+    { text: 'bridging worlds...', color: 'amber', cursor: true },
     { text: 'build error. rebooting...', color: 'red', cursor: false },
   ]
 
@@ -51,21 +53,24 @@ export default function CSXAltLandingPage() {
         setRebootPhase('blank')
         setVisibleLines(0) // Hide all lines
         setTypingLine(-1)
+        // Randomly select boot graphic
+        const graphic = Math.random() > 0.5 ? 'fish' : 'people'
+        setBootGraphic(graphic)
 
         // Phase 1: Blank for 600ms
         setTimeout(() => {
-          setRebootPhase('fish')
-          setFishLines(0)
-          // Animate fish lines
-          setTimeout(() => setFishLines(1), 150)
-          setTimeout(() => setFishLines(2), 300)
-          setTimeout(() => setFishLines(3), 450)
+          setRebootPhase('graphic')
+          setGraphicLines(0)
+          // Animate graphic lines
+          setTimeout(() => setGraphicLines(1), 150)
+          setTimeout(() => setGraphicLines(2), 300)
+          setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Fish logo for 1200ms (starts at 600ms), then start typing at 1800ms
+        // Phase 2: Graphic for 1200ms (starts at 600ms), then start typing at 1800ms
         setTimeout(() => {
           setRebootPhase('typing')
-          setFishLines(0)
+          setGraphicLines(0)
           setTypingLine(1); setVisibleLines(1)
           setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 400)
           setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 800)
@@ -315,7 +320,7 @@ export default function CSXAltLandingPage() {
           display: none;
         }
 
-        .fish-logo {
+        .boot-graphic {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -326,10 +331,11 @@ export default function CSXAltLandingPage() {
           color: #fff;
           letter-spacing: 0.1em;
           line-height: 1.4;
+          white-space: pre;
         }
 
         @media (min-width: 640px) {
-          .fish-logo {
+          .boot-graphic {
             min-height: 160px;
             font-size: 1.5rem;
           }
@@ -343,11 +349,21 @@ export default function CSXAltLandingPage() {
           </div>
 
           <div className="terminal-body">
-            {rebootPhase === 'fish' ? (
-              <div className="fish-logo">
-                <div style={{ opacity: fishLines >= 1 ? 1 : 0 }}>°  °</div>
-                <div style={{ opacity: fishLines >= 2 ? 1 : 0 }}>{'<*)))><'}</div>
-                <div style={{ opacity: fishLines >= 3 ? 1 : 0 }}>°  °</div>
+            {rebootPhase === 'graphic' ? (
+              <div className="boot-graphic">
+                {bootGraphic === 'fish' ? (
+                  <>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{' o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'<º)))><'}</div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>{' o   o'}</div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{' o   o   o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'/|\\ /|\\ /|\\ /|\\'}</div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>{'/ \\ / \\ / \\ / \\'}</div>
+                  </>
+                )}
               </div>
             ) : (
               <>
@@ -376,7 +392,7 @@ export default function CSXAltLandingPage() {
             )}
           </div>
 
-          <div className="terminal-status" style={{ opacity: rebootPhase === 'blank' || rebootPhase === 'fish' ? 0 : 1 }}>
+          <div className="terminal-status" style={{ opacity: rebootPhase === 'blank' || rebootPhase === 'graphic' ? 0 : 1 }}>
             {statusMessages[statusIndex].cursor ? (
               <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
             ) : (
