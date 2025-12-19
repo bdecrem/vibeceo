@@ -83,7 +83,7 @@ export default function TinkeringsPage() {
         }
 
         .csx-detail-label {
-          color: #8b8b8b;
+          color: #fff;
           flex-shrink: 0;
           width: 112px;
         }
@@ -123,18 +123,14 @@ export default function TinkeringsPage() {
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">2. Who:</span>
-              <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach + get a brand affiliation</span>
+              <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach</span>
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">3. Where:</span>
               <span className="csx-detail-value">Circulate at research universities and Anthropic for Startups</span>
             </div>
             <div className="csx-detail-row">
-              <span className="csx-detail-label">4. How:</span>
-              <span className="csx-detail-value">Casual but committed pace</span>
-            </div>
-            <div className="csx-detail-row">
-              <span className="csx-detail-label">5. Budget:</span>
+              <span className="csx-detail-label">4. Budget:</span>
               <span className="csx-detail-value">$50,000</span>
             </div>
           </section>
@@ -154,10 +150,8 @@ export default function TinkeringsPage() {
             <h2 className="csx-section-label">THINGS WE ARE LOOKING FOR</h2>
             <ul className="csx-list">
               <li>1. Talent funnel</li>
-              <li>2. Investment funnel</li>
-              <li>3. First product/startup artifacts</li>
-              <li>4. Stretch: Cohort 1 of CS incubator</li>
-              <li>5. The blueprint: our lens on what to build and the business model.</li>
+              <li>2. First product/startup artifacts</li>
+              <li>3. The blueprint: our lens on what to build and the business model.</li>
             </ul>
           </section>
         </div>

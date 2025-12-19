@@ -138,6 +138,14 @@ export default function CSXPage() {
 
         .csx-connect-content {
           flex: 1;
+          font-size: 1rem;
+          line-height: 1.7;
+        }
+
+        @media (min-width: 768px) {
+          .csx-connect-content {
+            font-size: 1.125rem;
+          }
         }
 
         .csx-connect-number {
@@ -146,11 +154,11 @@ export default function CSXPage() {
         }
 
         .csx-connect-desc {
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
         }
 
         .csx-connect-note {
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
           margin-top: 4px;
         }
 
@@ -186,7 +194,7 @@ export default function CSXPage() {
         .csx-cta-text {
           font-size: 1rem;
           line-height: 1.7;
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
           margin: 0 0 16px 0;
         }
 
@@ -219,6 +227,18 @@ export default function CSXPage() {
           color: #fff;
         }
 
+        .csx-link-white {
+          color: #fff;
+          text-decoration: underline;
+          text-decoration-color: #8b8b8b;
+          text-underline-offset: 4px;
+          transition: text-decoration-color 0.2s;
+        }
+
+        .csx-link-white:hover {
+          text-decoration-color: #fff;
+        }
+
         .csx-space-y > * + * {
           margin-top: 16px;
         }
@@ -248,9 +268,6 @@ export default function CSXPage() {
               </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
-              </p>
-              <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
               </p>
             </div>
           </section>
@@ -294,6 +311,14 @@ export default function CSXPage() {
                 <button className="csx-btn">GITHUB</button>
               </div>
             </div>
+          </section>
+
+          {/* About Us Section */}
+          <section className="csx-section">
+            <h2 className="csx-section-label">ABOUT US</h2>
+            <p className="csx-text">
+              <Link href="/csx/about" className="csx-link-white">Between us</Link>, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
+            </p>
           </section>
 
           {/* Call to Action */}
