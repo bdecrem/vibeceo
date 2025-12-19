@@ -292,7 +292,7 @@ export default function CSXAltLandingPage() {
       <div className="terminal-page" onClick={handleClick}>
         <div className="terminal-box">
           <div className="terminal-header">
-            <span className="terminal-header-title">CTRL SHIFT</span> · LONG HORIZON LAB
+            <span className="terminal-header-title">CTRL SHIFT</span> <span style={{ verticalAlign: 'middle' }}>•</span> LONG HORIZON LAB
           </div>
 
           <div className="terminal-body">
