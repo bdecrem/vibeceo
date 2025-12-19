@@ -97,7 +97,7 @@ export default function CSXPage() {
         }
 
         .csx-text {
-          font-size: 1rem;
+          font-size: 0.875rem;
           line-height: 1.7;
           color: rgba(255, 255, 255, 0.9);
           margin: 0 0 16px 0;
@@ -105,12 +105,12 @@ export default function CSXPage() {
 
         @media (min-width: 768px) {
           .csx-text {
-            font-size: 1.125rem;
+            font-size: 1rem;
           }
         }
 
         .csx-text-emphasis {
-          font-size: 1.125rem;
+          font-size: 1rem;
           line-height: 1.7;
           font-weight: 300;
           font-style: italic;
@@ -142,13 +142,13 @@ export default function CSXPage() {
 
         .csx-connect-content {
           flex: 1;
-          font-size: 1rem;
+          font-size: 0.875rem;
           line-height: 1.7;
         }
 
         @media (min-width: 768px) {
           .csx-connect-content {
-            font-size: 1.125rem;
+            font-size: 1rem;
           }
         }
 
@@ -196,7 +196,7 @@ export default function CSXPage() {
         }
 
         .csx-cta-text {
-          font-size: 1rem;
+          font-size: 0.875rem;
           line-height: 1.7;
           color: rgba(255, 255, 255, 0.9);
           margin: 0 0 16px 0;
@@ -204,12 +204,12 @@ export default function CSXPage() {
 
         @media (min-width: 768px) {
           .csx-cta-text {
-            font-size: 1.125rem;
+            font-size: 1rem;
           }
         }
 
         .csx-cta-join {
-          font-size: 1.125rem;
+          font-size: 1rem;
           font-weight: 400;
           margin: 0 0 16px 0;
         }
