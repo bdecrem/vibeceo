@@ -266,6 +266,9 @@ export default function CSXClonePage() {
               <p className="csx-text-emphasis">
                 Put AI to work for people, not just shareholders.
               </p>
+              <p className="csx-text-emphasis">
+                AI research and products that put people at the center.
+              </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
               </p>
