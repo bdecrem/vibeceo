@@ -86,6 +86,13 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // /rs → rewrite to /csx/rs
+    if (pathname === '/rs' || pathname.startsWith('/rs/')) {
+      const newUrl = new URL(`/csx${pathname}`, request.url)
+      log(`[Middleware] CTRL SHIFT /rs rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     return NextResponse.next()
   }
 
