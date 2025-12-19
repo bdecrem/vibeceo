@@ -7,6 +7,9 @@ export default function CSXAltLandingPage() {
   const router = useRouter()
   const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
+  const [isRebooting, setIsRebooting] = useState(false)
+  const [visibleLines, setVisibleLines] = useState(5) // 0-5 lines visible
+  const [typingLine, setTypingLine] = useState(-1) // which line is currently typing
 
   const statusMessages = [
     { text: 'looking for the right builder...', color: 'green', cursor: false },
@@ -35,14 +38,39 @@ export default function CSXAltLandingPage() {
     }, 530)
 
     const statusInterval = setInterval(() => {
-      setStatusIndex(Math.floor(Math.random() * statusMessages.length))
+      const newIndex = Math.floor(Math.random() * statusMessages.length)
+      setStatusIndex(newIndex)
+
+      // Trigger reboot animation for the red error message
+      if (statusMessages[newIndex].color === 'red' && !isRebooting) {
+        setIsRebooting(true)
+        setVisibleLines(0) // Hide all lines
+        setTypingLine(-1)
+
+        // After 1.5 second blank, start showing lines one by one with typing effect
+        setTimeout(() => {
+          setTypingLine(1); setVisibleLines(1)
+          setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 500)
+          setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 1000)
+          setTimeout(() => { setTypingLine(4); setVisibleLines(4) }, 1400)
+          setTimeout(() => { setTypingLine(5); setVisibleLines(5) }, 1800)
+          // Switch to "rebuilding..." for 1 second at the end
+          setTimeout(() => {
+            setTypingLine(-1)
+            const rebuildingIndex = statusMessages.findIndex(m => m.text === 'rebuilding...')
+            setStatusIndex(rebuildingIndex)
+          }, 2200)
+          // End reboot cycle
+          setTimeout(() => { setIsRebooting(false) }, 3200)
+        }, 1500)
+      }
     }, 3000)
 
     return () => {
       clearInterval(cursorInterval)
       clearInterval(statusInterval)
     }
-  }, [])
+  }, [isRebooting])
 
   const handleClick = () => {
     router.push('/csx/full')
@@ -119,6 +147,21 @@ export default function CSXAltLandingPage() {
           margin-bottom: 0;
         }
 
+        .terminal-body .line-hidden {
+          opacity: 0;
+        }
+
+        .terminal-body .line-typing {
+          overflow: hidden;
+          white-space: nowrap;
+          animation: typeIn 0.4s steps(30) forwards;
+        }
+
+        @keyframes typeIn {
+          from { max-width: 0; }
+          to { max-width: 100%; }
+        }
+
         .terminal-line {
           font-size: 1rem;
           line-height: 1.7;
@@ -187,6 +230,15 @@ export default function CSXAltLandingPage() {
           opacity: 0;
         }
 
+        .status-text-blink {
+          animation: textBlink 1s ease-in-out infinite;
+        }
+
+        @keyframes textBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+
         .click-hint {
           display: none;
         }
@@ -199,23 +251,23 @@ export default function CSXAltLandingPage() {
           </div>
 
           <div className="terminal-body">
-            <div className="terminal-line">
+            <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
               we back the weird, the rigorous, the not-next-quarter.
             </div>
-            <div className="terminal-line terminal-dim">
+            <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
               students, researchers, founders building for impact.
             </div>
 
             <div className="terminal-programs">
-              <div className="terminal-program">
+              <div className={`terminal-program ${visibleLines < 3 ? 'line-hidden' : ''} ${typingLine === 3 ? 'line-typing' : ''}`}>
                 <span className="terminal-program-label">explore:</span>
                 <span className="terminal-program-value">weekly office hours</span>
               </div>
-              <div className="terminal-program">
+              <div className={`terminal-program ${visibleLines < 4 ? 'line-hidden' : ''} ${typingLine === 4 ? 'line-typing' : ''}`}>
                 <span className="terminal-program-label">fund:</span>
                 <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
               </div>
-              <div className="terminal-program">
+              <div className={`terminal-program ${visibleLines < 5 ? 'line-hidden' : ''} ${typingLine === 5 ? 'line-typing' : ''}`}>
                 <span className="terminal-program-label">build:</span>
                 <span className="terminal-program-value">prototypes, tools, and new models</span>
               </div>
