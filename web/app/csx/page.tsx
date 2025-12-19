@@ -8,6 +8,7 @@ export default function CSXAltLandingPage() {
   const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
   const [isRebooting, setIsRebooting] = useState(false)
+  const [rebootPhase, setRebootPhase] = useState<'normal' | 'blank' | 'fish' | 'typing'>('normal')
   const [visibleLines, setVisibleLines] = useState(5) // 0-5 lines visible
   const [typingLine, setTypingLine] = useState(-1) // which line is currently typing
 
@@ -44,25 +45,35 @@ export default function CSXAltLandingPage() {
       // Trigger reboot animation for the red error message
       if (statusMessages[newIndex].color === 'red' && !isRebooting) {
         setIsRebooting(true)
+        setRebootPhase('blank')
         setVisibleLines(0) // Hide all lines
         setTypingLine(-1)
 
-        // After 1.5 second blank, start showing lines one by one with typing effect
+        // Phase 1: Blank for 600ms
         setTimeout(() => {
+          setRebootPhase('fish')
+        }, 600)
+
+        // Phase 2: Fish logo for 1200ms, then start typing
+        setTimeout(() => {
+          setRebootPhase('typing')
           setTypingLine(1); setVisibleLines(1)
-          setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 500)
-          setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 1000)
-          setTimeout(() => { setTypingLine(4); setVisibleLines(4) }, 1400)
-          setTimeout(() => { setTypingLine(5); setVisibleLines(5) }, 1800)
-          // Switch to "rebuilding..." for 1 second at the end
+          setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 400)
+          setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 800)
+          setTimeout(() => { setTypingLine(4); setVisibleLines(4) }, 1100)
+          setTimeout(() => { setTypingLine(5); setVisibleLines(5) }, 1400)
+          // Switch to "rebuilding..." at the end
           setTimeout(() => {
             setTypingLine(-1)
             const rebuildingIndex = statusMessages.findIndex(m => m.text === 'rebuilding...')
             setStatusIndex(rebuildingIndex)
-          }, 2200)
+          }, 1800)
           // End reboot cycle
-          setTimeout(() => { setIsRebooting(false) }, 3200)
-        }, 1500)
+          setTimeout(() => {
+            setIsRebooting(false)
+            setRebootPhase('normal')
+          }, 2800)
+        }, 1800)
       }
     }, 3000)
 
@@ -287,6 +298,23 @@ export default function CSXAltLandingPage() {
         .click-hint {
           display: none;
         }
+
+        .fish-logo {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 120px;
+          font-size: 1.5rem;
+          color: #fff;
+          letter-spacing: 0.1em;
+        }
+
+        @media (min-width: 640px) {
+          .fish-logo {
+            height: 140px;
+            font-size: 2rem;
+          }
+        }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
@@ -296,30 +324,36 @@ export default function CSXAltLandingPage() {
           </div>
 
           <div className="terminal-body">
-            <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
-              we back the weird, the rigorous, the not-next-quarter.
-            </div>
-            <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
-              founders, researchers and students building for impact.
-            </div>
+            {rebootPhase === 'fish' ? (
+              <div className="fish-logo">{'<*)))><'}</div>
+            ) : (
+              <>
+                <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
+                  we back the weird, the rigorous, the not-next-quarter.
+                </div>
+                <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
+                  founders, researchers and students building for impact.
+                </div>
 
-            <div className="terminal-programs">
-              <div className={`terminal-program ${visibleLines < 3 ? 'line-hidden' : ''} ${typingLine === 3 ? 'line-typing' : ''}`}>
-                <span className="terminal-program-label">explore:</span>
-                <span className="terminal-program-value">weekly office hours</span>
-              </div>
-              <div className={`terminal-program ${visibleLines < 4 ? 'line-hidden' : ''} ${typingLine === 4 ? 'line-typing' : ''}`}>
-                <span className="terminal-program-label">fund:</span>
-                <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
-              </div>
-              <div className={`terminal-program ${visibleLines < 5 ? 'line-hidden' : ''} ${typingLine === 5 ? 'line-typing' : ''}`}>
-                <span className="terminal-program-label">build:</span>
-                <span className="terminal-program-value">prototypes, tools, and new models</span>
-              </div>
-            </div>
+                <div className="terminal-programs">
+                  <div className={`terminal-program ${visibleLines < 3 ? 'line-hidden' : ''} ${typingLine === 3 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">explore:</span>
+                    <span className="terminal-program-value">weekly office hours</span>
+                  </div>
+                  <div className={`terminal-program ${visibleLines < 4 ? 'line-hidden' : ''} ${typingLine === 4 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">fund:</span>
+                    <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
+                  </div>
+                  <div className={`terminal-program ${visibleLines < 5 ? 'line-hidden' : ''} ${typingLine === 5 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">build:</span>
+                    <span className="terminal-program-value">prototypes, tools, and new models</span>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="terminal-status">
+          <div className="terminal-status" style={{ opacity: rebootPhase === 'blank' || rebootPhase === 'fish' ? 0 : 1 }}>
             {statusMessages[statusIndex].cursor ? (
               <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
             ) : (
