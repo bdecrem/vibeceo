@@ -9,10 +9,10 @@ export default function CSXLandingPage() {
   const [statusIndex, setStatusIndex] = useState(0)
 
   const statusMessages = [
-    'thinking long, building fast...',
+    'looking for the right builder...',
+    'rebooting...',
+    'CTRL-shifting...',
     'backing the weird...',
-    'looking beyond next quarter...',
-    'putting people at the center...',
   ]
 
   useEffect(() => {
