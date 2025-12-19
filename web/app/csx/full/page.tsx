@@ -318,7 +318,7 @@ export default function CSXPage() {
                   <strong>Build</strong>
                   <span className="csx-connect-desc"> — tech explorations, building prototypes and tools.</span>
                 </div>
-                <button className="csx-btn">GITHUB</button>
+                <a href="https://github.com/bdecrem/ctrl-shift" target="_blank" rel="noopener noreferrer" className="csx-btn">GITHUB</a>
               </div>
             </div>
           </section>
