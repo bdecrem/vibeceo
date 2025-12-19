@@ -11494,5 +11494,731 @@
     "action": "research_triggered",
     "timestamp": "2025-12-18T23:56:01.025577-05:00",
     "timestamp_human": "11:56 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T00:11:03.760902-05:00",
+    "timestamp_human": "12:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T00:26:06.676165-05:00",
+    "timestamp_human": "12:26 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -5.1% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-19T00:26:07.895681-05:00",
+    "timestamp_human": "12:26 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T00:41:10.076363-05:00",
+    "timestamp_human": "12:41 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T00:56:12.888113-05:00",
+    "timestamp_human": "12:56 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T01:11:15.440755-05:00",
+    "timestamp_human": "01:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T01:26:17.944776-05:00",
+    "timestamp_human": "01:26 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T01:41:20.793813-05:00",
+    "timestamp_human": "01:41 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T01:56:23.574736-05:00",
+    "timestamp_human": "01:56 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T02:11:26.072389-05:00",
+    "timestamp_human": "02:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T02:26:28.579404-05:00",
+    "timestamp_human": "02:26 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -5.1% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-19T02:26:29.670084-05:00",
+    "timestamp_human": "02:26 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T02:41:31.814577-05:00",
+    "timestamp_human": "02:41 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T02:56:34.227670-05:00",
+    "timestamp_human": "02:56 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T03:11:36.835827-05:00",
+    "timestamp_human": "03:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T03:26:39.417778-05:00",
+    "timestamp_human": "03:26 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T03:41:42.683695-05:00",
+    "timestamp_human": "03:41 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.16,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T03:56:45.333165-05:00",
+    "timestamp_human": "03:56 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.42,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T04:11:48.085161-05:00",
+    "timestamp_human": "04:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.54,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T04:26:50.842710-05:00",
+    "timestamp_human": "04:26 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -3.5% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-19T04:26:51.788984-05:00",
+    "timestamp_human": "04:26 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.49,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T04:41:54.275779-05:00",
+    "timestamp_human": "04:41 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.45,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T04:56:57.120135-05:00",
+    "timestamp_human": "04:56 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.39,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T05:11:59.734935-05:00",
+    "timestamp_human": "05:11 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.42,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T05:27:02.466249-05:00",
+    "timestamp_human": "05:27 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.37,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T05:42:05.564234-05:00",
+    "timestamp_human": "05:42 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.34,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T05:57:08.306081-05:00",
+    "timestamp_human": "05:57 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.08,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T06:12:11.269646-05:00",
+    "timestamp_human": "06:12 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.35,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T06:27:14.079170-05:00",
+    "timestamp_human": "06:27 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -3.7% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-19T06:27:15.266255-05:00",
+    "timestamp_human": "06:27 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.29,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T06:42:17.673628-05:00",
+    "timestamp_human": "06:42 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.22,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T06:57:20.622439-05:00",
+    "timestamp_human": "06:57 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.94,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T07:12:23.645998-05:00",
+    "timestamp_human": "07:12 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.93,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T07:27:26.597438-05:00",
+    "timestamp_human": "07:27 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.88,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T07:42:29.614727-05:00",
+    "timestamp_human": "07:42 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.81,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T07:57:32.583261-05:00",
+    "timestamp_human": "07:57 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.85,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T08:12:35.382028-05:00",
+    "timestamp_human": "08:12 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.88,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T08:27:38.115572-05:00",
+    "timestamp_human": "08:27 AM ET"
+  },
+  {
+    "type": "research",
+    "symbol": "AMD",
+    "trigger": "Position down -4.2% - thesis broken?",
+    "searches": [],
+    "findings": "",
+    "decision": "pass",
+    "confidence": 0,
+    "thesis": "",
+    "timestamp": "2025-12-19T08:27:39.060236-05:00",
+    "timestamp_human": "08:27 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.89,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T08:42:41.577010-05:00",
+    "timestamp_human": "08:42 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.01,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T08:57:44.308230-05:00",
+    "timestamp_human": "08:57 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 492.95,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T09:12:46.965313-05:00",
+    "timestamp_human": "09:12 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 493.17,
+    "position_count": 2,
+    "findings": "All 1 triggers are existing positions",
+    "triggers": [
+      "AMD"
+    ],
+    "action": "research_triggered",
+    "timestamp": "2025-12-19T09:27:49.686012-05:00",
+    "timestamp_human": "09:27 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 494.74,
+    "position_count": 1,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T09:42:58.036525-05:00",
+    "timestamp_human": "09:42 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 494.78,
+    "position_count": 1,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T09:58:03.988803-05:00",
+    "timestamp_human": "09:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.07,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T10:13:11.225206-05:00",
+    "timestamp_human": "10:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T10:28:16.449777-05:00",
+    "timestamp_human": "10:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T10:43:22.790750-05:00",
+    "timestamp_human": "10:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T10:58:28.200099-05:00",
+    "timestamp_human": "10:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T11:13:34.075221-05:00",
+    "timestamp_human": "11:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T11:28:39.368280-05:00",
+    "timestamp_human": "11:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T11:43:44.809128-05:00",
+    "timestamp_human": "11:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T11:58:50.172217-05:00",
+    "timestamp_human": "11:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T12:13:55.519886-05:00",
+    "timestamp_human": "12:13 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T12:29:01.243292-05:00",
+    "timestamp_human": "12:29 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T12:44:07.765081-05:00",
+    "timestamp_human": "12:44 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T12:59:14.470417-05:00",
+    "timestamp_human": "12:59 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T13:14:21.011718-05:00",
+    "timestamp_human": "01:14 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T13:29:27.605376-05:00",
+    "timestamp_human": "01:29 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T13:44:34.085352-05:00",
+    "timestamp_human": "01:44 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T13:59:40.546193-05:00",
+    "timestamp_human": "01:59 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T14:14:46.047524-05:00",
+    "timestamp_human": "02:14 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T14:29:51.861590-05:00",
+    "timestamp_human": "02:29 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.08,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-19T14:44:58.159861-05:00",
+    "timestamp_human": "02:44 PM ET"
   }
 ]

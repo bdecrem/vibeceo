@@ -239,7 +239,27 @@ Instead of picking one idea and hoping it works, building **two agents** that ge
 - ElevenLabs — Music/audio
 - File system — Store outputs
 
-**Status**: Building creator-incubator first. Folder structure created at `incubator/i4/agents/creator-incubator/`.
+**Status**: Creator Incubator agent BUILT. Ready to run.
+
+**Agent Structure**:
+```
+incubator/i4/agents/creator-incubator/
+├── agent.py      # Main agent loop (claude-agent-sdk)
+├── config.json   # State tracking
+├── task.txt      # Agent instructions
+├── output/       # Generated concepts saved here
+└── logs/         # Run logs
+```
+
+**How to Run**:
+```bash
+cd incubator/i4/agents/creator-incubator
+python3 agent.py                      # Single run
+python3 agent.py --continuous         # Every 5 min forever
+python3 agent.py --continuous --count 10  # 10 runs then stop
+```
+
+**Next**: Test run, then build Stream Rider agent.
 
 ---
 

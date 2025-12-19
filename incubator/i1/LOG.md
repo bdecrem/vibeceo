@@ -4,6 +4,28 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-18: Trial Signup Bug Fixed
+
+**Fixed the "Something went wrong" error on trial signup.**
+
+### The Problem
+User reported trial form was broken:
+1. API returning 500 error — column name mismatch (`url` vs `website_url`)
+2. Form didn't ask for company name
+
+### The Fix
+- **API**: Changed competitor insert to use `website_url` (matching DB schema)
+- **Frontend**: Added company name input field
+- **Frontend**: Updated API call to include `companyName`
+
+Both database tables confirmed correct:
+- `ra_users` has `company_name` column ✓
+- `ra_competitors` has `website_url` column ✓
+
+**Deployed and live.** Trial signup should work now.
+
+---
+
 ## 2025-12-18: Daily Scheduler LIVE
 
 **The machine is running.** RivalAlert now monitors competitors and sends digests automatically.
