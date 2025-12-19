@@ -19,6 +19,7 @@ import { registerRecruitingJob } from "./recruiting-scheduler.js"; // NEW channe
 import { registerQueueProcessorJob } from "../scheduler/queue-processor.js"; // Message queue processor
 import { registerTokenTankDailyJob } from "../../agents/token-tank/index.js"; // Token Tank daily updates
 import { registerTokenshotsDailyJob } from "../../agents/tokenshots/index.js"; // Tokenshots daily AI research podcast
+import { registerRivalAlertDailyJob } from "../../agents/rivalalert/index.js"; // RivalAlert competitor monitoring (i1/Forge)
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -64,6 +65,7 @@ export async function startSmsBot(): Promise<void> {
     registerRecruitingJob(twilioClient); // RECRUIT - NEW channel-based recruiting with daily candidate collection
     registerTokenTankDailyJob(twilioClient); // TT - Token Tank daily updates at 8am PT
     registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT
+    registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
