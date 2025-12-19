@@ -24,6 +24,11 @@ Files and changes made outside the `incubator/i1/` folder.
 - **Purpose**: Trial signup endpoint (creates user + competitors)
 - **To remove**: Delete this file and the `web/app/api/rivalalert/` directory
 
+### sms-bot/agents/rivalalert/index.ts
+- **Created**: 2025-12-18
+- **Purpose**: Daily scheduler for competitor monitoring + email digests
+- **To remove**: Delete this file and the `sms-bot/agents/rivalalert/` directory
+
 ## Files Modified Outside incubator/i1/
 
 ### web/middleware.ts
@@ -34,6 +39,11 @@ Files and changes made outside the `incubator/i1/` folder.
 - **Modified**: 2025-12-18
 - **Change**: Added `isRivalAlertDomain` check and rewrite handler for rivalalert.ai domain routing (lines 19, 113-132)
 - **To remove**: Delete the domain check variable and the entire `if (isRivalAlertDomain)` block
+
+### sms-bot/lib/sms/bot.ts
+- **Modified**: 2025-12-18
+- **Change**: Added import and registration for `registerRivalAlertDailyJob` (lines 22, 68)
+- **To remove**: Delete the import line and the registration call
 
 ## Rollback Checklist
 

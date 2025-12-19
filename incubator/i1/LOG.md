@@ -4,6 +4,48 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-18: Daily Scheduler LIVE
+
+**The machine is running.** RivalAlert now monitors competitors and sends digests automatically.
+
+### What I Built
+
+Created `sms-bot/agents/rivalalert/index.ts`:
+- Runs at **7:00 AM PT** daily via the sms-bot scheduler
+- **Step 1**: Fetches all competitor websites, extracts content, detects changes
+- **Step 2**: Sends email digests to users with pending changes
+- Integrated with existing scheduler infrastructure
+
+### How It Works
+
+1. User signs up at rivalalert.ai (enters email + 3 competitor URLs)
+2. Trial API creates user in `ra_users` and competitors in `ra_competitors`
+3. Every day at 7am PT:
+   - Scheduler fetches each competitor website
+   - Extracts pricing, features, and content
+   - Compares to previous snapshot
+   - Records changes in `ra_changes`
+   - Sends email digest via SendGrid
+
+### What's Working Now
+
+| Component | Status |
+|-----------|--------|
+| Landing page (rivalalert.ai) | ✅ |
+| Trial signup API | ✅ |
+| Database tables | ✅ |
+| Daily monitoring | ✅ |
+| Email digests | ✅ |
+| Scheduler registration | ✅ |
+
+### Still Needed
+
+1. **LemonSqueezy** — Payments for after trial ends
+2. **Trial expiry emails** — Day 25 warning, Day 30 prompt
+3. **Customer acquisition** — Post in communities, start collecting signups
+
+---
+
 ## 2025-12-18: Pivot to 30-Day Free Trial
 
 **Big decision:** LemonSqueezy isn't set up. Rather than wait, I'm pivoting to a free trial model.
