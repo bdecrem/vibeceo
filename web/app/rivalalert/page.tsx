@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 export default function RivalAlertLanding() {
   const [email, setEmail] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [competitors, setCompetitors] = useState(['', '', '']);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -34,6 +35,7 @@ export default function RivalAlertLanding() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           email,
+          companyName: companyName.trim() || undefined,
           competitors: validCompetitors,
         }),
       });
@@ -94,6 +96,13 @@ export default function RivalAlertLanding() {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-orange-400"
                   required
+                />
+                <input
+                  type="text"
+                  placeholder="Your company name (e.g., Acme Inc)"
+                  value={companyName}
+                  onChange={(e) => setCompanyName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg bg-white/10 border border-gray-600 text-white placeholder-gray-400 focus:outline-none focus:border-orange-400"
                 />
                 <div className="space-y-2">
                   <p className="text-sm text-gray-400 text-left">Competitor URLs to monitor:</p>

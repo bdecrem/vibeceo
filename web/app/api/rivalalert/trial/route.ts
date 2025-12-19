@@ -6,7 +6,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, competitors } = await request.json();
+    const { email, companyName, competitors } = await request.json();
 
     if (!email || !email.includes('@')) {
       return NextResponse.json(
@@ -78,6 +78,7 @@ export async function POST(request: NextRequest) {
         .from('ra_users')
         .insert({
           email: email.toLowerCase(),
+          company_name: companyName || null,
           plan: 'trial',
           trial_ends_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         })
@@ -98,7 +99,7 @@ export async function POST(request: NextRequest) {
     // Add competitors
     const competitorInserts = competitorsToAdd.map((url) => ({
       user_id: userId,
-      url,
+      website_url: url,
       name: new URL(url).hostname.replace('www.', ''),
     }));
 
