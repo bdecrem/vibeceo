@@ -167,7 +167,7 @@ export default function CSXPage() {
         }
 
         .csx-btn {
-          align-self: flex-start;
+          align-self: flex-end;
           padding: 4px 12px;
           border: 1px solid #404040;
           background: transparent;
@@ -176,6 +176,12 @@ export default function CSXPage() {
           font-family: inherit;
           cursor: pointer;
           transition: all 0.2s;
+        }
+
+        @media (min-width: 768px) {
+          .csx-btn {
+            align-self: flex-start;
+          }
         }
 
         .csx-btn:hover {

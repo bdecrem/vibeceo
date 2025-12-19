@@ -111,10 +111,16 @@ export default function CSXAltLandingPage() {
           border: 1px solid #fff;
           border-left-style: dashed;
           border-right-style: dashed;
-          padding: 24px 32px;
+          padding: 20px 24px;
           max-width: 640px;
           width: 100%;
           position: relative;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-box {
+            padding: 24px 32px;
+          }
         }
 
         .terminal-box::before {
@@ -131,12 +137,20 @@ export default function CSXAltLandingPage() {
         }
 
         .terminal-header {
-          margin-bottom: 20px;
-          padding-bottom: 16px;
+          margin-bottom: 16px;
+          padding-bottom: 12px;
           border-bottom: 1px dotted #666;
-          font-size: 0.875rem;
+          font-size: 0.75rem;
           color: #aaa;
           letter-spacing: 0.05em;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            font-size: 0.875rem;
+          }
         }
 
         .terminal-header-title {
@@ -163,10 +177,18 @@ export default function CSXAltLandingPage() {
         }
 
         .terminal-line {
-          font-size: 1rem;
-          line-height: 1.7;
-          margin-bottom: 4px;
+          font-size: 0.875rem;
+          line-height: 1.6;
+          margin-bottom: 2px;
           color: #fff;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-line {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 4px;
+          }
         }
 
         .terminal-dim {
@@ -174,14 +196,28 @@ export default function CSXAltLandingPage() {
         }
 
         .terminal-programs {
-          margin-top: 20px;
+          margin-top: 16px;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-programs {
+            margin-top: 20px;
+          }
         }
 
         .terminal-program {
-          font-size: 1rem;
-          line-height: 1.6;
-          margin-bottom: 4px;
+          font-size: 0.875rem;
+          line-height: 1.5;
+          margin-bottom: 2px;
           display: flex;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-program {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 4px;
+          }
         }
 
         .terminal-program:last-child {
@@ -200,12 +236,21 @@ export default function CSXAltLandingPage() {
         .terminal-status {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 0.875rem;
+          gap: 8px;
+          font-size: 0.75rem;
           color: #999;
-          margin-top: 20px;
-          padding-top: 16px;
+          margin-top: 16px;
+          padding-top: 12px;
           border-top: 1px dotted #666;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-status {
+            gap: 10px;
+            font-size: 0.875rem;
+            margin-top: 20px;
+            padding-top: 16px;
+          }
         }
 
         .status-dot {
