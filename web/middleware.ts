@@ -16,6 +16,7 @@ export function middleware(request: NextRequest) {
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
   const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so'
+  const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -108,7 +109,28 @@ export function middleware(request: NextRequest) {
 
     return NextResponse.next()
   }
-  
+
+  // Handle rivalalert.ai domain (i1/Forge)
+  if (isRivalAlertDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/rivalalert', request.url)
+      log(`[Middleware] RivalAlert domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass music player route immediately
   if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
     log(`[Middleware] Music player bypassed: ${pathname}`)
