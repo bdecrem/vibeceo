@@ -15,7 +15,7 @@ export function middleware(request: NextRequest) {
   const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
-  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so'
+  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so' || host === 'ctrlshift.pizza' || host === 'www.ctrlshift.pizza'
   const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
 
   // Handle token-tank domain (mirror kochi pattern)
