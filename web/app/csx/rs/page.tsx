@@ -167,7 +167,7 @@ export default function CSXClonePage() {
         }
 
         .csx-btn {
-          align-self: flex-start;
+          align-self: flex-end;
           padding: 4px 12px;
           border: 1px solid #404040;
           background: transparent;
@@ -176,6 +176,13 @@ export default function CSXClonePage() {
           font-family: inherit;
           cursor: pointer;
           transition: all 0.2s;
+          text-decoration: none;
+        }
+
+        @media (min-width: 768px) {
+          .csx-btn {
+            align-self: flex-start;
+          }
         }
 
         .csx-btn:hover {
@@ -291,7 +298,7 @@ export default function CSXClonePage() {
                   <strong>Explore</strong>
                   <span className="csx-connect-desc"> — weekly office hours on product, fundraising, go-to-market + technology strategy.</span>
                 </div>
-                <button className="csx-btn">SIGNUP</button>
+                <Link href="/csx/contact?type=signup" className="csx-btn">SIGNUP</Link>
               </div>
 
               {/* Founder Awards */}
@@ -302,7 +309,7 @@ export default function CSXClonePage() {
                   <span className="csx-connect-desc"> — non-dilutive founder awards ($1k - $10k) in support of their missions.</span>
                   <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
                 </div>
-                <button className="csx-btn">APPLY</button>
+                <Link href="/csx/contact?type=apply" className="csx-btn">APPLY</Link>
               </div>
 
               {/* Speakers */}
@@ -312,7 +319,7 @@ export default function CSXClonePage() {
                   <strong>Build</strong>
                   <span className="csx-connect-desc"> — tech explorations, building prototypes and tools.</span>
                 </div>
-                <button className="csx-btn">GITHUB</button>
+                <a href="https://github.com/bdecrem/ctrl-shift" target="_blank" rel="noopener noreferrer" className="csx-btn">GITHUB</a>
               </div>
             </div>
           </section>
