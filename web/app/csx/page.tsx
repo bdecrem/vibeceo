@@ -10,11 +10,23 @@ export default function CSXLandingPage() {
 
   const statusMessages = [
     { text: 'looking for the right builder...', color: 'green', cursor: false },
-    { text: 'build error. rebooting...', color: 'red', cursor: false },
+    { text: 'backing the weird...', color: 'green', cursor: false },
+    { text: 'scanning the horizon...', color: 'green', cursor: false },
+    { text: 'connecting dots...', color: 'green', cursor: false },
+    { text: 'asking better questions...', color: 'green', cursor: false },
+    { text: 'thinking long...', color: 'green', cursor: false },
+    { text: 'building fast...', color: 'green', cursor: false },
+    { text: 'ignoring the noise...', color: 'green', cursor: false },
+    { text: 'finding signal...', color: 'green', cursor: false },
+    { text: 'following curiosity...', color: 'green', cursor: false },
+    { text: 'shipping...', color: 'green', cursor: false },
+    { text: 'iterating...', color: 'green', cursor: false },
+    { text: 'prototyping...', color: 'green', cursor: false },
     { text: 'deep researching...', color: 'amber', cursor: true },
     { text: 'CTRL-shifting...', color: 'amber', cursor: true },
     { text: 'rebuilding...', color: 'amber', cursor: true },
-    { text: 'backing the weird...', color: 'green', cursor: false },
+    { text: 'compiling...', color: 'amber', cursor: true },
+    { text: 'build error. rebooting...', color: 'red', cursor: false },
   ]
 
   useEffect(() => {
@@ -23,9 +35,9 @@ export default function CSXLandingPage() {
       setShowCursor(prev => !prev)
     }, 530)
 
-    // Rotating status messages
+    // Random status messages
     const statusInterval = setInterval(() => {
-      setStatusIndex(prev => (prev + 1) % statusMessages.length)
+      setStatusIndex(Math.floor(Math.random() * statusMessages.length))
     }, 3000)
 
     return () => {
