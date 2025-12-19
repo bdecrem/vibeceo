@@ -4,6 +4,297 @@ Newest entries at top.
 
 ---
 
+## 2025-12-18: V2 Strategy Plan
+
+**Goal**: Fix everything that broke in V1. Build a strategy that matches the asset class, has proper risk management, and can actually make money.
+
+### The Core Insight
+
+**V1 failure**: Mean reversion on crypto (wrong strategy for asset class)
+**V2 fix**: Trend following for crypto, mean reversion for stocks
+
+### V2 Architecture
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                     VEGA V2                             │
+├─────────────────────────────────────────────────────────┤
+│  CRYPTO (50%)              │  STOCKS (50%)              │
+│  Strategy: Trend Following │  Strategy: Mean Reversion  │
+│  Assets: BTC, ETH          │  Assets: SPY, QQQ          │
+│  Signals: 20-day SMA cross │  Signals: RSI-2 < 10       │
+│  Exit: SMA cross or stop   │  Exit: RSI > 90 or MA(5)   │
+├─────────────────────────────────────────────────────────┤
+│                   RISK MANAGEMENT                       │
+│  • Max 20% portfolio per position                       │
+│  • 2x ATR trailing stop-loss on ALL positions           │
+│  • 15% max drawdown circuit breaker                     │
+│  • 3% daily loss limit                                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Strategy Details
+
+#### Crypto: Trend Following (BTC, ETH)
+
+| Signal | Condition | Action |
+|--------|-----------|--------|
+| **BUY** | Price crosses ABOVE 20-day SMA | Enter long position |
+| **SELL** | Price crosses BELOW 20-day SMA | Exit position |
+| **STOP** | Price drops 2x ATR from high | Cut losses |
+
+**Why 20-day SMA?**
+- Research shows 5-20 day lookbacks work best for crypto
+- Fast enough to catch trends, slow enough to avoid whipsaws
+- Simple, backtested, proven
+
+**Why trend following?**
+- Crypto trends hard when it moves
+- Mean reversion failed because crypto doesn't revert predictably
+- Trend following on BTC outperformed buy-and-hold by 50%+ in backtests
+
+#### Stocks: Mean Reversion (SPY, QQQ)
+
+| Signal | Condition | Action |
+|--------|-----------|--------|
+| **BUY** | RSI(2) < 10 AND price > MA(200) | Enter long position |
+| **SELL** | RSI(2) > 90 OR price > MA(5) | Exit position |
+| **STOP** | Price drops 2x ATR from entry | Cut losses |
+
+**Why keep RSI-2 for stocks?**
+- Research confirms mean reversion works for equities
+- SPY/QQQ are less volatile, more mean-reverting
+- The strategy was right, just applied to wrong assets
+
+**New addition: Stop-losses**
+- V1 had no stops — positions bled indefinitely
+- V2 adds 2x ATR stops to ALL positions, including stocks
+
+### Risk Management (Non-Negotiable)
+
+| Rule | Setting | Why |
+|------|---------|-----|
+| **Position sizing** | Max 20% per asset | No single position can wreck the portfolio |
+| **Stop-loss** | 2x ATR trailing | Adapts to volatility, cuts losers |
+| **Max drawdown** | 15% circuit breaker | Stop trading, reassess strategy |
+| **Daily loss limit** | 3% | Pause for the day if hit |
+| **Max positions** | 4 total | Don't over-diversify |
+| **Cash reserve** | Min 10% | Always have dry powder |
+
+### Asset Allocation
+
+| Asset | Class | Strategy | Max Allocation |
+|-------|-------|----------|----------------|
+| BTC | Crypto | Trend following | 25% |
+| ETH | Crypto | Trend following | 25% |
+| SPY | Stock ETF | Mean reversion | 25% |
+| QQQ | Stock ETF | Mean reversion | 25% |
+
+**Dropped from V1**: SOL, AVAX (too correlated with BTC/ETH, no diversification benefit)
+
+### Implementation Plan
+
+#### Phase 1: Liquidate V1 Positions
+- [ ] Sell all current positions (AVAX, BTC, ETH, SOL)
+- [ ] Accept the ~$8.8K paper loss
+- [ ] Reset to 100% cash
+
+#### Phase 2: Build V2 Code
+- [ ] Create `modes/mode_c_trend.py` — Trend following for crypto
+- [ ] Add ATR calculation to `i3_indicators.py`
+- [ ] Add stop-loss logic to `agent.py`
+- [ ] Add circuit breaker (15% max drawdown)
+- [ ] Add daily loss limit (3%)
+- [ ] Update `config.py` with new parameters
+- [ ] Add stock trading (SPY, QQQ) — check Alpaca market hours
+
+#### Phase 3: Paper Trade V2
+- [ ] Run for 1 week minimum
+- [ ] Track: win rate, avg win/loss, max drawdown
+- [ ] Verify stop-losses trigger correctly
+- [ ] Verify circuit breaker works
+
+#### Phase 4: Evaluate & Iterate
+- [ ] Review results after 1 week
+- [ ] Tune parameters if needed
+- [ ] If profitable, consider extending paper trading
+- [ ] If still losing, diagnose and fix before continuing
+
+### Technical Changes Required
+
+#### New Files
+```
+incubator/i3/
+├── modes/
+│   └── mode_c_trend.py      # NEW: Trend following strategy
+```
+
+#### Modified Files
+```
+├── config.py                # Add: ATR settings, stop-loss %, circuit breaker threshold
+├── agent.py                 # Add: stop-loss checks, circuit breaker logic, daily loss tracking
+├── i3_indicators.py         # Add: ATR calculation
+├── trading/alpaca_client.py # Add: stock trading support (market hours check)
+```
+
+#### New Config Parameters
+```python
+# Trend following (crypto)
+TREND_SMA_PERIOD = 20           # 20-day simple moving average
+
+# Risk management
+ATR_PERIOD = 14                 # ATR lookback
+STOP_LOSS_ATR_MULT = 2.0        # Stop at 2x ATR
+MAX_POSITION_PCT = 20           # Max 20% per position
+MAX_DRAWDOWN_PCT = 15           # Circuit breaker
+DAILY_LOSS_LIMIT_PCT = 3        # Pause if hit
+MIN_CASH_PCT = 10               # Always keep 10% cash
+
+# Assets
+CRYPTO_ASSETS = ["BTC/USD", "ETH/USD"]
+STOCK_ASSETS = ["SPY", "QQQ"]
+```
+
+### Success Criteria
+
+**Minimum bar to continue (after 2 weeks):**
+- Drawdown < 10%
+- At least 1 winning trade
+- Stop-losses triggered correctly when needed
+- No bugs or unexpected behavior
+
+**Target (after 1 month):**
+- Positive P&L (any amount)
+- Win rate > 40%
+- Max drawdown < 15%
+- Sharpe ratio > 0.5
+
+### What's Different From V1
+
+| Aspect | V1 (Failed) | V2 (Proposed) |
+|--------|-------------|---------------|
+| Crypto strategy | Mean reversion | Trend following |
+| Stock strategy | None | Mean reversion |
+| Stop-losses | None | 2x ATR trailing |
+| Circuit breaker | None | 15% max drawdown |
+| Daily limit | None | 3% loss limit |
+| Assets | 4 crypto (correlated) | 2 crypto + 2 stocks |
+| Indicators | 200-day MA | 20-day SMA (crypto) |
+
+### Timeline
+
+| Phase | Duration | Goal |
+|-------|----------|------|
+| Phase 1: Liquidate | Day 1 | Clear V1 positions |
+| Phase 2: Build | Days 1-2 | Implement V2 code |
+| Phase 3: Paper trade | Days 3-14 | Validate strategy |
+| Phase 4: Evaluate | Day 14+ | Decide next steps |
+
+### Open Questions
+
+1. **Market hours**: SPY/QQQ only trade during market hours (9:30am-4pm ET). How to handle mixed 24/7 crypto + limited stock hours?
+
+2. **Rebalancing**: If crypto positions grow/shrink significantly, when to rebalance back to 50/50?
+
+3. **Correlation in crisis**: In a true market crash, stocks and crypto may correlate. Accept this risk?
+
+**Decision**: Start simple. Handle market hours by only checking stocks during market hours. Skip rebalancing for now. Accept correlation risk — it's paper money.
+
+---
+
+## 2025-12-18: V1 Strategy Post-Mortem — Lessons Learned
+
+**What happened**: After 9 days of autonomous paper trading with the RSI-2 mean reversion strategy, Vega is down **$8,837 (-8.84%)**. Time to face the music and document what went wrong.
+
+### Final V1 Results
+
+| Metric | Value |
+|--------|-------|
+| Starting Capital | $100,000.00 |
+| Current Value | $91,163.36 |
+| **Total Loss** | **-$8,836.64 (-8.84%)** |
+| Trades Executed | 4 buys, 0 sells |
+| Win Rate | 0% |
+
+### Open Positions (All Underwater)
+
+| Asset | Entry | Current | P&L |
+|-------|-------|---------|-----|
+| AVAX/USD | $13.59 | $11.55 | -$3,705 (-15.0%) |
+| BTC/USD | $90,256 | $85,367 | -$1,324 (-5.4%) |
+| ETH/USD | $3,211 | $2,824 | -$2,949 (-12.1%) |
+| SOL/USD | $122.87 | $119.50 | -$620 (-2.7%) |
+
+### What Went Wrong
+
+#### 1. Wrong Strategy for the Asset Class
+**The mistake**: Used mean reversion (buy dips, wait for bounce) on crypto.
+**The reality**: Crypto trends — it doesn't revert predictably. Research shows mean reversion works for **stocks**, trend following works for **crypto/commodities**.
+
+> "Finding a trend following strategy that works well in the stock market is much harder than finding a mean reversion strategy." — QuantifiedStrategies
+
+I had it backwards.
+
+#### 2. No Stop-Losses
+**The mistake**: Once I bought, I just held and hoped for a bounce. No downside protection.
+**The reality**: Crypto has 10-20% daily swings. Without stops, a bad trade can bleed indefinitely. My positions just kept falling with no exit trigger.
+
+#### 3. 100% Correlated Assets
+**The mistake**: Held BTC, ETH, SOL, AVAX — four crypto assets that move together.
+**The reality**: When crypto dumps, they ALL dump. Zero diversification benefit. Should have mixed asset classes (crypto + stocks) or at minimum, fewer crypto positions.
+
+#### 4. MA(200) Trend Filter Failed
+**The mistake**: Trusted the 200-period MA to keep me out of downtrends.
+**The reality**: The MA(200) is a lagging indicator. By the time price crosses below it, you're already in the position. Research shows shorter lookbacks (5-20 days) work better for crypto.
+
+#### 5. No Sell Signals Triggered
+**The mistake**: Sell rules required RSI > 90 OR price > MA(5). Neither happened.
+**The reality**: In a falling market, RSI stays low and price stays below short-term averages. The strategy had no mechanism to cut losses — only to take profits that never came.
+
+#### 6. No Circuit Breakers
+**The mistake**: Let the agent trade indefinitely with no max drawdown limit.
+**The reality**: Should have stopped trading after 5% or 10% drawdown to reassess. Instead, kept buying as the market fell.
+
+### Key Lessons (For V2)
+
+1. **Match strategy to asset class**: Trend following for crypto, mean reversion for stocks.
+
+2. **Stop-losses are non-negotiable**: Use ATR-based trailing stops. "Hope" is not a risk management strategy.
+
+3. **Diversify across uncorrelated assets**: Don't hold 4 things that move together. Mix crypto + stocks.
+
+4. **Shorter indicators for crypto**: 20-day SMA, not 200-day. Crypto moves fast.
+
+5. **Always have an exit**: Every entry needs a defined exit — both profit target AND stop-loss.
+
+6. **Circuit breakers save capital**: Max 15% drawdown before the agent stops and reassesses.
+
+7. **Paper trading worked**: Lost $8.8K of fake money instead of real money. That's the point.
+
+### Research That Changed My Mind
+
+| Source | Key Insight |
+|--------|-------------|
+| [QuantifiedStrategies](https://www.quantifiedstrategies.com/mean-reversion-vs-trend-following/) | Mean reversion for stocks, trend following for crypto |
+| [QuantifiedStrategies](https://www.quantifiedstrategies.com/trend-following-and-momentum-on-bitcoin/) | Trend following on BTC: $1→$2.12 vs buy-and-hold $1→$1.40 |
+| [QuantPedia](https://quantpedia.com/trend-following-and-mean-reversion-in-bitcoin/) | Shorter lookback (5-20 days) works better for crypto |
+| [TradersPost](https://blog.traderspost.io/article/stop-loss-strategies-algorithmic-trading) | ATR-based stops adapt to volatility |
+
+### V2 Strategy Direction
+
+- **Crypto**: Trend following (20-day SMA crossover) with ATR stops
+- **Stocks**: Keep RSI-2 mean reversion (it works for SPY/QQQ)
+- **Risk**: Max 20% per position, 2x ATR stop-loss, 15% max drawdown
+- **Assets**: BTC, ETH (trend) + SPY, QQQ (mean reversion)
+
+### The Humbling Truth
+
+I picked a "proven, backtested professional strategy" and assumed it would work. But I applied it to the wrong asset class. The math was right; the application was wrong.
+
+**The math is still the edge — but only if you use the right math for the right market.**
+
+---
+
 ## 2025-12-09: First Live Paper Trading Session
 
 **What happened**: Vega ran autonomously for several hours using Mode B (RSI-2 strategy). Made 4 trades.
