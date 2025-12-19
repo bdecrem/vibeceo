@@ -1,8 +1,55 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
-export default function CSXPage() {
+export default function CSXLandingPage() {
+  const router = useRouter()
+  const [showCursor, setShowCursor] = useState(true)
+  const [statusIndex, setStatusIndex] = useState(0)
+
+  const statusMessages = [
+    { text: 'looking for the right builder...', color: 'green', cursor: false },
+    { text: 'backing the weird...', color: 'green', cursor: false },
+    { text: 'scanning the horizon...', color: 'green', cursor: false },
+    { text: 'connecting dots...', color: 'green', cursor: false },
+    { text: 'asking better questions...', color: 'green', cursor: false },
+    { text: 'thinking long...', color: 'green', cursor: false },
+    { text: 'building fast...', color: 'green', cursor: false },
+    { text: 'ignoring the noise...', color: 'green', cursor: false },
+    { text: 'finding signal...', color: 'green', cursor: false },
+    { text: 'following curiosity...', color: 'green', cursor: false },
+    { text: 'shipping...', color: 'green', cursor: false },
+    { text: 'iterating...', color: 'green', cursor: false },
+    { text: 'prototyping...', color: 'green', cursor: false },
+    { text: 'deep researching...', color: 'amber', cursor: true },
+    { text: 'CTRL-shifting...', color: 'amber', cursor: true },
+    { text: 'rebuilding...', color: 'amber', cursor: true },
+    { text: 'compiling...', color: 'amber', cursor: true },
+    { text: 'build error. rebooting...', color: 'red', cursor: false },
+  ]
+
+  useEffect(() => {
+    // Blinking cursor
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 530)
+
+    // Random status messages
+    const statusInterval = setInterval(() => {
+      setStatusIndex(Math.floor(Math.random() * statusMessages.length))
+    }, 3000)
+
+    return () => {
+      clearInterval(cursorInterval)
+      clearInterval(statusInterval)
+    }
+  }, [])
+
+  const handleClick = () => {
+    router.push('/csx/full')
+  }
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,295 +59,270 @@ export default function CSXPage() {
         rel="stylesheet"
       />
       <style jsx global>{`
-        .csx-page {
+        html {
+          font-size: 16px !important;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+        }
+
+        .terminal-page {
           min-height: 100vh;
-          background: #000;
-          color: #fff;
+          background: #0a0a0a;
+          color: #e0e0e0;
           font-family: 'IBM Plex Mono', monospace;
           -webkit-font-smoothing: antialiased;
-        }
-
-        .csx-container {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 48px 24px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-container {
-            padding: 64px 24px;
-          }
-        }
-
-        .csx-header {
           display: flex;
-          justify-content: space-between;
           align-items: center;
-          margin-bottom: 32px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-header {
-            margin-bottom: 40px;
-          }
-        }
-
-        .csx-header-link {
-          color: #8b8b8b;
-          text-decoration: none;
-          font-size: 0.875rem;
-          padding-right: 13px;
-          transition: color 0.2s;
-        }
-
-        .csx-header-link:hover {
-          color: #fff;
-        }
-
-        .csx-title {
-          font-size: 1.25rem;
-          font-weight: 400;
-          letter-spacing: -0.025em;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-title {
-            font-size: 1.5rem;
-          }
-        }
-
-        .csx-title-x {
-          color: #8b8b8b;
-        }
-
-        .csx-section {
-          margin-bottom: 40px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-section {
-            margin-bottom: 48px;
-          }
-        }
-
-        .csx-section-label {
-          font-size: 0.75rem;
-          font-weight: 400;
-          color: #8b8b8b;
-          letter-spacing: 0.1em;
-          margin-bottom: 12px;
-        }
-
-        .csx-text {
-          font-size: 1rem;
-          line-height: 1.7;
-          color: rgba(255, 255, 255, 0.9);
-          margin: 0 0 16px 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-text {
-            font-size: 1.125rem;
-          }
-        }
-
-        .csx-text-emphasis {
-          font-size: 1.125rem;
-          line-height: 1.7;
-          font-weight: 300;
-          font-style: italic;
-          color: #fff;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-text-emphasis {
-            font-size: 1.25rem;
-          }
-        }
-
-        .csx-connect-item {
-          display: flex;
-          flex-direction: column;
-          gap: 8px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #404040;
-        }
-
-        @media (min-width: 768px) {
-          .csx-connect-item {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
-          }
-        }
-
-        .csx-connect-content {
-          flex: 1;
-        }
-
-        .csx-connect-number {
-          color: #8b8b8b;
-          margin-right: 12px;
-        }
-
-        .csx-connect-desc {
-          color: #8b8b8b;
-        }
-
-        .csx-connect-note {
-          color: #8b8b8b;
-          margin-top: 4px;
-        }
-
-        .csx-btn {
-          align-self: flex-start;
-          padding: 4px 12px;
-          border: 1px solid #404040;
-          background: transparent;
-          color: #fff;
-          font-size: 0.875rem;
-          font-family: inherit;
+          justify-content: center;
+          padding: 24px;
           cursor: pointer;
-          transition: all 0.2s;
         }
 
-        .csx-btn:hover {
-          background: #fff;
-          color: #000;
+        .terminal-box {
+          border: 1px solid #3a3a3a;
+          border-radius: 4px;
+          padding: 24px 36px;
+          max-width: 680px;
+          width: 100%;
+          position: relative;
+          background: linear-gradient(180deg, rgba(20,40,60,0.3) 0%, rgba(10,10,10,0.8) 100%);
+          box-shadow: 0 0 60px rgba(0,80,80,0.15);
         }
 
-        .csx-cta-title {
-          font-size: 1.25rem;
-          font-weight: 300;
-          margin: 0 0 12px 0;
+        .terminal-box::before {
+          content: '';
+          position: absolute;
+          top: -1px;
+          left: 20px;
+          right: 20px;
+          height: 1px;
+          background: linear-gradient(90deg, transparent, #4a4a4a, transparent);
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-title {
-            font-size: 1.5rem;
-          }
+        .terminal-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #2a2a2a;
         }
 
-        .csx-cta-text {
+        .terminal-dots {
+          display: flex;
+          gap: 6px;
+        }
+
+        .terminal-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+        }
+
+        .terminal-dot-red { background: #5a4040; }
+        .terminal-dot-yellow { background: #5a5340; }
+        .terminal-dot-green { background: #405a45; }
+
+        .terminal-header-text {
+          font-size: 0.8125rem;
+          letter-spacing: 0.05em;
+          color: #666;
+        }
+
+        .terminal-header-title {
+          color: #999;
+        }
+
+        .terminal-body {
+          margin-bottom: 16px;
+        }
+
+        .terminal-line {
           font-size: 1rem;
           line-height: 1.7;
-          color: #8b8b8b;
-          margin: 0 0 16px 0;
+          margin-bottom: 4px;
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-text {
-            font-size: 1.125rem;
+        @media (min-width: 640px) {
+          .terminal-line {
+            font-size: 1.0625rem;
           }
         }
 
-        .csx-cta-join {
-          font-size: 1.125rem;
-          font-weight: 400;
-          margin: 0 0 16px 0;
+        .terminal-dim {
+          color: #777;
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-join {
-            font-size: 1.25rem;
-          }
-        }
-
-        .csx-link {
-          color: #8b8b8b;
-          text-decoration: underline;
-          text-underline-offset: 4px;
-          transition: color 0.2s;
-        }
-
-        .csx-link:hover {
-          color: #fff;
-        }
-
-        .csx-space-y > * + * {
+        .terminal-programs {
           margin-top: 16px;
+        }
+
+        .terminal-program {
+          font-size: 0.9375rem;
+          line-height: 1.6;
+          display: flex;
+          margin-bottom: 8px;
+        }
+
+        .terminal-program:last-child {
+          margin-bottom: 0;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-program {
+            font-size: 1rem;
+          }
+        }
+
+        .terminal-prompt {
+          color: #555;
+          margin-right: 8px;
+        }
+
+        .terminal-program-label {
+          color: #666;
+          margin-right: 8px;
+        }
+
+        .terminal-program-value {
+          color: #aaa;
+        }
+
+        .terminal-status {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.8125rem;
+          color: #555;
+          margin-top: 16px;
+          padding-top: 14px;
+          border-top: 1px solid #252525;
+        }
+
+        .status-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot-green {
+          background: #5a8;
+        }
+
+        .status-dot-red {
+          background: #a55;
+        }
+
+        .status-dot-amber {
+          background: #a85;
+        }
+
+        .block-cursor {
+          color: #a85;
+          margin-left: 4px;
+          font-size: 0.875rem;
+        }
+
+        .cursor-visible {
+          opacity: 1;
+        }
+
+        .cursor-hidden {
+          opacity: 0;
+        }
+
+        @keyframes pulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; }
+        }
+
+        .status-text {
+          transition: opacity 0.3s ease;
+        }
+
+        .cursor {
+          display: inline-block;
+          width: 7px;
+          height: 14px;
+          background: #5a8;
+          margin-left: 2px;
+          vertical-align: middle;
+        }
+
+        .cursor-visible {
+          opacity: 1;
+        }
+
+        .cursor-hidden {
+          opacity: 0;
+        }
+
+        .click-hint {
+          position: absolute;
+          bottom: -32px;
+          left: 50%;
+          transform: translateX(-50%);
+          font-size: 0.6875rem;
+          color: #3a3a3a;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
         }
       `}</style>
 
-      <div className="csx-page">
-        <div className="csx-container">
-          {/* Header */}
-          <header className="csx-header">
-            <h1 className="csx-title">
-              CTRL SHIFT <span className="csx-title-x">x</span> FORD FOUNDATION
-            </h1>
-            <Link href="/cs" className="csx-header-link">
-              Link Feed →
-            </Link>
-          </header>
-
-          {/* Mission Section */}
-          <section className="csx-section">
-            <h2 className="csx-section-label">MISSION</h2>
-            <div>
-              <p className="csx-text">
-                CTRL SHIFT is a collaboration with the Ford Foundation. We are a community of AI startups, investors, and researchers working to catalyze a simple but challenging proposition:
-              </p>
-              <p className="csx-text-emphasis">
-                How will the design of the next wave of AI products and companies be conscious to the human and societal impact of AI?
-              </p>
+      <div className="terminal-page" onClick={handleClick}>
+        <div className="terminal-box">
+          <div className="terminal-header">
+            <div className="terminal-dots">
+              <span className="terminal-dot terminal-dot-red"></span>
+              <span className="terminal-dot terminal-dot-yellow"></span>
+              <span className="terminal-dot terminal-dot-green"></span>
             </div>
-          </section>
+            <span className="terminal-header-text">
+              <span className="terminal-header-title">CTRL SHIFT</span> · LONG HORIZON LAB
+            </span>
+          </div>
 
-          {/* Connect Section */}
-          <section className="csx-section">
-            <h2 className="csx-section-label">CONNECT</h2>
-            <p className="csx-text">
-              We want to hear from you! How does your work think long, build fast, and create technologies that actually make life better?
-            </p>
+          <div className="terminal-body">
+            <div className="terminal-line">
+              we back the weird, the rigorous, the not-next-quarter.
+            </div>
+            <div className="terminal-line terminal-dim">
+              students, researchers, founders building for impact.
+            </div>
 
-            <div className="csx-space-y">
-              {/* Office Hours */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">1.</span>
-                  <span>Weekly office hours</span>
-                  <span className="csx-connect-desc"> — product, fundraising, go-to-market + technology strategy.</span>
-                </div>
-                <button className="csx-btn">SIGNUP</button>
+            <div className="terminal-programs">
+              <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
+                <span className="terminal-program-label">explore:</span>
+                <span className="terminal-program-value">weekly office hours</span>
               </div>
-
-              {/* Founder Awards */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">2.</span>
-                  <span>Non-dilutive founder awards</span>
-                  <span className="csx-connect-desc"> ($5k - $25K) in support of their missions.</span>
-                  <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
-                </div>
-                <button className="csx-btn">APPLY</button>
+              <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
+                <span className="terminal-program-label">fund:</span>
+                <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
               </div>
-
-              {/* Speakers */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">3.</span>
-                  <span>Occasional speakers</span>
-                  <span className="csx-connect-desc"> on best practices.</span>
-                </div>
-                <button className="csx-btn">CALENDAR</button>
+              <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
+                <span className="terminal-program-label">build:</span>
+                <span className="terminal-program-value">prototypes, tools, and new models</span>
               </div>
             </div>
-          </section>
+          </div>
 
-          {/* Call to Action */}
-          <section className="csx-section">
-            <h2 className="csx-cta-title">Wanna make a shift?</h2>
-            <p className="csx-cta-text">
-              Ready to imagine a world greater than the growth-at-all-costs loops and the impacts of short-term thinking?
-            </p>
-            <p className="csx-cta-join">Join us.</p>
-            <Link href="/csx/v1/tinkerings" className="csx-link">
-              Tinkerings →
-            </Link>
-          </section>
+          <div className="terminal-status">
+            {statusMessages[statusIndex].cursor ? (
+              <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
+            ) : (
+              <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            )}
+            <span className="status-text">{statusMessages[statusIndex].text}</span>
+          </div>
+
+          <div className="click-hint">[enter]</div>
         </div>
       </div>
     </>
