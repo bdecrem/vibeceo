@@ -156,8 +156,7 @@ export default function TinkeringsPage() {
             <h2 className="csx-section-label">FUNNELS</h2>
             <ul className="csx-list">
               <li>1. Anthropic for Startups</li>
-              <li>2. MIT</li>
-              <li>3. Stanford Labs</li>
+              <li>2. Labs at MIT and Stanford</li>
             </ul>
           </section>
 
