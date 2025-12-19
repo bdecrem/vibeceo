@@ -9,10 +9,11 @@ export default function CSXLandingPage() {
   const [statusIndex, setStatusIndex] = useState(0)
 
   const statusMessages = [
-    'looking for the right builder...',
-    'rebooting...',
-    'CTRL-shifting...',
-    'backing the weird...',
+    { text: 'looking for the right builder...', color: 'green' },
+    { text: 'build error. rebooting...', color: 'red' },
+    { text: 'deep researching...', color: 'amber' },
+    { text: 'CTRL-shifting...', color: 'green' },
+    { text: 'backing the weird...', color: 'green' },
   ]
 
   useEffect(() => {
@@ -89,14 +90,37 @@ export default function CSXLandingPage() {
         }
 
         .terminal-header {
-          font-size: 0.875rem;
-          letter-spacing: 0.05em;
+          display: flex;
+          align-items: center;
+          gap: 12px;
           margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px solid #2a2a2a;
+        }
+
+        .terminal-dots {
+          display: flex;
+          gap: 6px;
+        }
+
+        .terminal-dot {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+        }
+
+        .terminal-dot-red { background: #5a4040; }
+        .terminal-dot-yellow { background: #5a5340; }
+        .terminal-dot-green { background: #405a45; }
+
+        .terminal-header-text {
+          font-size: 0.8125rem;
+          letter-spacing: 0.05em;
           color: #666;
         }
 
         .terminal-header-title {
-          color: #fff;
+          color: #999;
         }
 
         .terminal-body {
@@ -140,6 +164,11 @@ export default function CSXLandingPage() {
           }
         }
 
+        .terminal-prompt {
+          color: #555;
+          margin-right: 8px;
+        }
+
         .terminal-program-label {
           color: #666;
           margin-right: 8px;
@@ -164,8 +193,19 @@ export default function CSXLandingPage() {
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          background: #5a8;
           animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-dot-green {
+          background: #5a8;
+        }
+
+        .status-dot-red {
+          background: #a55;
+        }
+
+        .status-dot-amber {
+          background: #a85;
         }
 
         @keyframes pulse {
@@ -209,7 +249,14 @@ export default function CSXLandingPage() {
       <div className="terminal-page" onClick={handleClick}>
         <div className="terminal-box">
           <div className="terminal-header">
-            <span className="terminal-header-title">CTRL SHIFT</span> · LONG HORIZON LAB
+            <div className="terminal-dots">
+              <span className="terminal-dot terminal-dot-red"></span>
+              <span className="terminal-dot terminal-dot-yellow"></span>
+              <span className="terminal-dot terminal-dot-green"></span>
+            </div>
+            <span className="terminal-header-text">
+              <span className="terminal-header-title">CTRL SHIFT</span> · LONG HORIZON LAB
+            </span>
           </div>
 
           <div className="terminal-body">
@@ -222,14 +269,17 @@ export default function CSXLandingPage() {
 
             <div className="terminal-programs">
               <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
                 <span className="terminal-program-label">explore:</span>
                 <span className="terminal-program-value">weekly office hours</span>
               </div>
               <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
                 <span className="terminal-program-label">fund:</span>
                 <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
               </div>
               <div className="terminal-program">
+                <span className="terminal-prompt">&gt;</span>
                 <span className="terminal-program-label">build:</span>
                 <span className="terminal-program-value">prototypes, tools, and new models</span>
               </div>
@@ -237,12 +287,11 @@ export default function CSXLandingPage() {
           </div>
 
           <div className="terminal-status">
-            <span className="status-dot"></span>
-            <span className="status-text">{statusMessages[statusIndex]}</span>
-            <span className={`cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}></span>
+            <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            <span className="status-text">{statusMessages[statusIndex].text}</span>
           </div>
 
-          <div className="click-hint">click anywhere to enter</div>
+          <div className="click-hint">[enter]</div>
         </div>
       </div>
     </>
