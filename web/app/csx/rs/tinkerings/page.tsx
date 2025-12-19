@@ -157,6 +157,7 @@ export default function TinkeringsPage() {
             <ul className="csx-list">
               <li>1. Anthropic for Startups</li>
               <li>2. Labs at MIT and Stanford</li>
+              <li>3. Responsible AI community</li>
             </ul>
           </section>
 
