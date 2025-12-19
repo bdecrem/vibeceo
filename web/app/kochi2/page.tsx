@@ -13,13 +13,16 @@ const poppins = Poppins({
 export default function KochiLanding2() {
   return (
     <div className={`${poppins.className} relative h-screen w-full overflow-hidden`}>
-      {/* Layer 1: Background Scene - Full bleed */}
+      {/* Layer 1: Background Scene - Full bleed
+           object-cover + center: on portrait phones, scales to fill height,
+           crops equally left/right, vertical position stays consistent */}
       <Image
         src={bgImage}
-        alt="Tokyo coffee alley at night"
+        alt="Forest scene"
         fill
         priority
-        className="object-cover object-center"
+        className="object-cover"
+        style={{ objectPosition: 'center 55%' }}
         sizes="100vw"
       />
 
@@ -31,12 +34,12 @@ export default function KochiLanding2() {
         }}
       />
 
-      {/* Layer 2: Ambient light pool on counter (behind Kochi) */}
+      {/* Layer 2: Ambient light pool on counter (behind Kochi) - hidden on mobile */}
       <div
-        className="absolute z-10 pointer-events-none"
+        className="absolute z-10 pointer-events-none hidden sm:block"
         style={{
-          left: '34%',
-          bottom: '42%',
+          left: '50%',
+          bottom: '38%',
           transform: 'translateX(-50%)',
           width: 'clamp(180px, 24vw, 280px)',
           height: 'clamp(60px, 8vw, 100px)',
@@ -53,13 +56,21 @@ export default function KochiLanding2() {
           left: '50%',
           top: '58.5%',
           transform: 'translateX(-50%) translateY(-50%) perspective(1000px) rotateX(5deg)',
-          width: 'clamp(336px, 43vw, 528px)',
+          width: 'clamp(240px, 43vw, 528px)',
         }}
       >
         <style>{`
           @keyframes blink {
             0%, 96%, 100% { transform: scaleY(1); }
             98% { transform: scaleY(0.1); }
+          }
+          @keyframes lookAround {
+            0%, 100% { transform: translateX(0); }
+            30% { transform: translateX(6px); }
+            70% { transform: translateX(-6px); }
+          }
+          #eye-right, #eye-left {
+            animation: lookAround 5s ease-in-out infinite;
           }
           #eye-right ellipse, #eye-left ellipse {
             animation: blink 4s ease-in-out infinite;
