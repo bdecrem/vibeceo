@@ -142,8 +142,8 @@ export default function TinkeringsPage() {
               <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach</span>
             </div>
             <div className="csx-detail-row">
-              <span className="csx-detail-label">3. Where:</span>
-              <span className="csx-detail-value">Circulate at research universities and Anthropic for Startups</span>
+              <span className="csx-detail-label">3. Mode:</span>
+              <span className="csx-detail-value">A studio</span>
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">4. Budget:</span>
