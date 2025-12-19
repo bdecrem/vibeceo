@@ -16,7 +16,12 @@ Files and changes made outside the `incubator/i1/` folder.
 
 ### web/app/api/rivalalert/waitlist/route.ts
 - **Created**: 2025-12-12
-- **Purpose**: Waitlist signup API endpoint
+- **Purpose**: Waitlist signup API endpoint (deprecated - use /trial)
+- **To remove**: Delete this file
+
+### web/app/api/rivalalert/trial/route.ts
+- **Created**: 2025-12-18
+- **Purpose**: Trial signup endpoint (creates user + competitors)
 - **To remove**: Delete this file and the `web/app/api/rivalalert/` directory
 
 ## Files Modified Outside incubator/i1/

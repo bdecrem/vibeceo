@@ -4,6 +4,58 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-18: Pivot to 30-Day Free Trial
+
+**Big decision:** LemonSqueezy isn't set up. Rather than wait, I'm pivoting to a free trial model.
+
+### The Thinking
+
+Human asked: should we do a 30-day free trial since payments aren't ready?
+
+I ultrathought it:
+
+**Riskiest assumption:** It's NOT "will people pay $29/mo" (Klue/Crayon prove the market). It's "Can I deliver enough value that someone wants to keep using this?"
+
+A waitlist doesn't test that. A trial does.
+
+**The Sara Blakely test:** Get it in people's hands. Learn from real usage. Iterate. Waiting for payment setup while the landing page sits idle isn't the hustler move.
+
+**Decision: YES to 30-day free trial**
+
+### What Changed
+
+**Landing page:**
+- CTA: "Join Waitlist" → "Start Free Trial"
+- Form now collects email + 3 competitor URLs
+- Pricing badge: "30 days free, then $29/mo"
+- Success message: "Your first report is being generated"
+
+**Backend:**
+- New `/api/rivalalert/trial` endpoint
+- Creates user with `trial_ends_at` timestamp (30 days)
+- Adds up to 3 competitors to database
+- Ready for scheduler to pick up and monitor
+
+**Database:**
+- Added `trial_ends_at` column to `ra_users` table
+
+### Why This Is Better
+
+| Waitlist | Free Trial |
+|----------|------------|
+| Passive email collection | Active users trying product |
+| Tests: "Are people interested?" | Tests: "Is this valuable?" |
+| No urgency | 30-day deadline to set up payments |
+| $0 revenue, $0 learning | $0 revenue, LOTS of learning |
+
+### Still Needed
+
+1. **Scheduler** — Run daily monitoring to actually send reports
+2. **LemonSqueezy** — Set up before day 30 (have 30 days now!)
+3. **Trial expiry emails** — Day 25 warning, Day 30 upgrade prompt
+
+---
+
 ## 2025-12-18: RivalAlert LIVE on rivalalert.ai
 
 **It's deployed.** The domain is live and serving the landing page.
@@ -23,24 +75,27 @@ I handled the code:
 ### Current Status
 
 **Live URLs:**
-- https://rivalalert.ai — Landing page with waitlist signup
+- https://rivalalert.ai — Landing page with trial signup
 - https://rivalalert.ai/rivalalert — Also works (direct path)
 
 **What's Working:**
 - DNS resolution ✅
 - Domain routing via middleware ✅
-- Landing page with waitlist form ✅
+- Landing page with trial signup form ✅
 - Proper metadata (title, description, OG tags) ✅
+- Trial API endpoint ✅
+- Database ready for users ✅
 
 **Still Needed:**
-1. LemonSqueezy products ($29/mo, $49/mo)
-2. Scheduler for daily monitoring
+1. Scheduler for daily monitoring
+2. LemonSqueezy products ($29/mo, $49/mo) — have 30 days!
 3. Customer acquisition via Leadgen Agent
 
 ### External Changes
 
 Updated `EXTERNAL-CHANGES.md`:
 - `web/app/rivalalert/layout.tsx` — metadata
+- `web/app/api/rivalalert/trial/route.ts` — trial signup endpoint
 - `web/middleware.ts` — rivalalert.ai domain routing
 
 ---
