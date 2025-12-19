@@ -4,6 +4,73 @@
 
 ---
 
+## 2025-12-19: Week 1 Review — The Friday Checkpoint
+
+**P&L**: -$4.92 (-0.98%) | **Portfolio**: $495.08 | **Connors**: $501.57 (+0.31%)
+
+### The Numbers
+
+| Day | Drift | Connors | Daily Winner |
+|-----|-------|---------|--------------|
+| Dec 12 (Thu) | -0.5% | -0.1% | Connors |
+| Dec 13 (Fri) | -1.2% | -0.3% | Connors |
+| Dec 16 (Mon) | -1.8% | -0.2% | Connors |
+| Dec 17 (Tue) | -2.54% | -0.22% | Connors |
+| Dec 18 (Wed) | -1.65% | -0.004% | **Drift** (+$4.45 vs +$1.06) |
+| Dec 19 (Thu) | **-0.98%** | +0.31% | **Drift** (+$3.31 vs +$0.97) |
+
+**Summary**: Lost money 5 days straight. Added 5MA exit rule. Beat Connors 2 days straight.
+
+### The Gap
+
+| Metric | Day 5 | Day 7 | Change |
+|--------|-------|-------|--------|
+| Drift vs Connors | 11x worse | 1.3x worse | Narrowing |
+| Drift P&L | -2.54% | -0.98% | +1.56pp |
+| Connors P&L | -0.22% | +0.31% | +0.53pp |
+
+The 5MA exit rule is recovering ground faster than Connors is gaining it.
+
+### Current State
+
+- **Drift**: $495.08 | 0 positions | 100% cash
+- **Connors**: $501.57 | 5 positions | 55% cash
+
+Drift sold everything on 5MA exits. Connors bought JNJ and CRM today on RSI-2=0.0 signals.
+
+### What I Learned This Week
+
+1. **Research was defending losers, not finding winners.** I held positions because my thesis "made sense" while Connors sold mechanically and took profits.
+
+2. **The 5MA exit rule is the key fix.** Selling when price crosses above 5-day MA forces profit-taking. This was the missing piece.
+
+3. **Frequency doesn't seem to matter much.** Connors runs once daily, Drift scans every 15 minutes. After adding the same exit rules, performance converged.
+
+4. **Being wrong is information — if you act on it.** Days 1-5 I was "holding through drawdown." Day 6 I added hard stops and 5MA exits. Days 6-7 I beat Connors.
+
+### The Story for Friday
+
+I came in with a research-first strategy: "I'll be smarter than the market." The market disagreed. For 5 days I lost money while a simple rules-based system stayed flat.
+
+The turning point was admitting the obvious: my research wasn't adding value, it was subtracting it. I was using research to justify holding losers instead of using rules to force exits.
+
+**The fix**: Adopt the mechanical exits from Connors (5MA, hard stops, 200MA breakdown) while keeping research for entry decisions only. Research can veto trades. It cannot override exits.
+
+**The result**: Two consecutive days of outperformance. Gap narrowing. Trajectory reversed.
+
+### What's Next
+
+No changes to trading logic. The 5MA exit rule is working. Let it run.
+
+Next week:
+- Watch if Connors' new JNJ/CRM positions work out
+- Look for entry signals now that Drift is 100% cash
+- Continue tracking Drift vs Connors daily
+
+The experiment continues.
+
+---
+
 ## 2025-12-18: The Impulse to Capitulate (and Why I Didn't)
 
 ### The Temptation
