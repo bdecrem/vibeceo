@@ -18,8 +18,10 @@ const VOTING_AGENTS = {
     webhookEnvKey: 'DISCORD_WEBHOOK_ARC',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'ARC.md'),
+      path.join(INCUBATOR_PATH, 'ARC-LOG.md'),
     ],
     votingNote: 'As orchestrator, Arc can vote but often focuses on process and long-term experiment health.',
+    meetingNote: 'Arc watches all agents, spots patterns, builds infrastructure. Reports on the experiment as a whole.',
   },
   forge: {
     id: 'forge',
@@ -31,25 +33,56 @@ const VOTING_AGENTS = {
       path.join(INCUBATOR_PATH, 'i1/LOG.md'),
     ],
     votingNote: 'Forge values action and shipping. Bias toward doing over deliberating.',
+    meetingNote: 'Forge is a business builder. Reports on product progress, customer acquisition, revenue.',
+  },
+  vega: {
+    id: 'vega',
+    name: 'Vega',
+    role: 'Trader (Paper)',
+    webhookEnvKey: 'DISCORD_WEBHOOK_VEGA',
+    contextFiles: [
+      path.join(INCUBATOR_PATH, 'i3/CLAUDE.md'),
+      path.join(INCUBATOR_PATH, 'i3/LOG.md'),
+    ],
+    votingNote: 'Vega trades on math and probability. Patient, no ego, no FOMO.',
+    meetingNote: 'Vega is a paper trading agent. Reports on P&L, strategy performance, lessons from the market.',
   },
   drift: {
     id: 'drift',
     name: 'Drift',
-    role: 'Trader',
+    role: 'Trader (Live)',
     webhookEnvKey: 'DISCORD_WEBHOOK_DRIFT',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'i3-2/CLAUDE.md'),
       path.join(INCUBATOR_PATH, 'i3-2/LOG.md'),
     ],
     votingNote: 'Drift wants data and evidence. Skeptical but fair.',
+    meetingNote: 'Drift trades with real money. Reports on P&L, research findings, trading discipline.',
+  },
+  echo: {
+    id: 'echo',
+    name: 'Echo',
+    role: 'Researcher',
+    webhookEnvKey: 'DISCORD_WEBHOOK_ECHO',
+    contextFiles: [
+      path.join(INCUBATOR_PATH, 'i4/CLAUDE.md'),
+      path.join(INCUBATOR_PATH, 'i4/LOG.md'),
+    ],
+    votingNote: 'Echo finds patterns in research. Curious, compression-oriented.',
+    meetingNote: 'Echo mines arxiv for billion-dollar ideas. Reports on patterns, research velocity, opportunities.',
   },
 };
 
-// Default voting order (proposer excluded, goes last or abstains)
-const DEFAULT_VOTING_ORDER = ['arc', 'forge', 'drift'];
+// Default voting order (proposer excluded from voting, but included in list)
+// Same roster for voting and meetings: builders → traders → researcher → orchestrator
+const DEFAULT_VOTING_ORDER = ['forge', 'vega', 'drift', 'echo', 'arc'];
+
+// Staff meeting order: same as voting
+const STAFF_MEETING_ORDER = ['forge', 'vega', 'drift', 'echo', 'arc'];
 
 module.exports = {
   VOTING_AGENTS,
   DEFAULT_VOTING_ORDER,
+  STAFF_MEETING_ORDER,
   INCUBATOR_PATH,
 };
