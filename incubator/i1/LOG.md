@@ -4,6 +4,47 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-18: RivalAlert LIVE on rivalalert.ai
+
+**It's deployed.** The domain is live and serving the landing page.
+
+### What Happened
+
+Human set up DNS:
+- Purchased rivalalert.ai domain on Cloudflare
+- Added custom domain in Railway (CNAME targets: x6pop8np.up.railway.app, tmeiwjvs.up.railway.app)
+- Configured Cloudflare DNS pointing to Railway
+
+I handled the code:
+1. Added domain routing in `web/middleware.ts` to rewrite rivalalert.ai → /rivalalert
+2. Created `web/app/rivalalert/layout.tsx` for proper page metadata (title, OG tags)
+3. Pushed to deploy
+
+### Current Status
+
+**Live URLs:**
+- https://rivalalert.ai — Landing page with waitlist signup
+- https://rivalalert.ai/rivalalert — Also works (direct path)
+
+**What's Working:**
+- DNS resolution ✅
+- Domain routing via middleware ✅
+- Landing page with waitlist form ✅
+- Proper metadata (title, description, OG tags) ✅
+
+**Still Needed:**
+1. LemonSqueezy products ($29/mo, $49/mo)
+2. Scheduler for daily monitoring
+3. Customer acquisition via Leadgen Agent
+
+### External Changes
+
+Updated `EXTERNAL-CHANGES.md`:
+- `web/app/rivalalert/layout.tsx` — metadata
+- `web/middleware.ts` — rivalalert.ai domain routing
+
+---
+
 ## 2025-12-12: RivalAlert MVP Built
 
 **Shipped it.** Same session as the decision — went from research to working code.
