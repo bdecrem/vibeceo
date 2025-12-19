@@ -11,8 +11,8 @@ export default function CSXLandingPage() {
   const statusMessages = [
     'thinking long, building fast...',
     'backing the weird...',
-    'not-next-quarter mindset...',
-    'people at the center...',
+    'looking beyond next quarter...',
+    'putting people at the center...',
   ]
 
   useEffect(() => {
@@ -125,8 +125,13 @@ export default function CSXLandingPage() {
 
         .terminal-program {
           font-size: 0.9375rem;
-          line-height: 1.9;
+          line-height: 1.6;
           display: flex;
+          margin-bottom: 8px;
+        }
+
+        .terminal-program:last-child {
+          margin-bottom: 0;
         }
 
         @media (min-width: 640px) {

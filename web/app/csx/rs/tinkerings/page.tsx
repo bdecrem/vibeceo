@@ -84,13 +84,13 @@ export default function TinkeringsPage() {
         .csx-detail-row {
           display: flex;
           margin-bottom: 12px;
-          font-size: 0.875rem;
+          font-size: 1rem;
           line-height: 1.7;
         }
 
         @media (min-width: 768px) {
           .csx-detail-row {
-            font-size: 1rem;
+            font-size: 1.125rem;
           }
         }
 
@@ -108,13 +108,13 @@ export default function TinkeringsPage() {
           margin: 0;
           padding: 0;
           list-style: none;
-          font-size: 0.875rem;
+          font-size: 1rem;
           line-height: 1.7;
         }
 
         @media (min-width: 768px) {
           .csx-list {
-            font-size: 1rem;
+            font-size: 1.125rem;
           }
         }
 

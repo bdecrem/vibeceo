@@ -176,7 +176,7 @@ export default function AboutPage() {
         }
 
         .csx-text {
-          font-size: 0.875rem;
+          font-size: 1rem;
           line-height: 1.7;
           color: rgba(255, 255, 255, 0.9);
           margin: 0 0 16px 0;
@@ -185,7 +185,7 @@ export default function AboutPage() {
 
         @media (min-width: 768px) {
           .csx-text {
-            font-size: 1rem;
+            font-size: 1.125rem;
           }
         }
 
@@ -246,14 +246,14 @@ export default function AboutPage() {
 
         .csx-highlight {
           margin-bottom: 12px;
-          font-size: 0.875rem;
+          font-size: 1rem;
           line-height: 1.7;
           color: rgba(255, 255, 255, 0.9);
         }
 
         @media (min-width: 768px) {
           .csx-highlight {
-            font-size: 1rem;
+            font-size: 1.125rem;
           }
         }
 
