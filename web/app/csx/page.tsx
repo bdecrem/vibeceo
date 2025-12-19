@@ -47,27 +47,32 @@ export default function CSXAltLandingPage() {
       const newIndex = Math.floor(Math.random() * statusMessages.length)
       setStatusIndex(newIndex)
 
-      // Trigger reboot animation for the red error message
-      if (statusMessages[newIndex].color === 'red' && !isRebooting) {
+      // Trigger boot animation for special messages
+      const currentMessage = statusMessages[newIndex].text
+      const isBuildError = currentMessage === 'build error. rebooting...'
+      const isBridgingWorlds = currentMessage === 'bridging worlds...'
+
+      if ((isBuildError || isBridgingWorlds) && !isRebooting) {
         setIsRebooting(true)
         setRebootPhase('blank')
-        setVisibleLines(0) // Hide all lines
+        setVisibleLines(0)
         setTypingLine(-1)
-        // Randomly select boot graphic
-        const graphic = Math.random() > 0.5 ? 'fish' : 'people'
+
+        // build error → fish, bridging worlds → people
+        const graphic = isBuildError ? 'fish' : 'people'
         setBootGraphic(graphic)
+        const endStatus = isBuildError ? 'rebuilding...' : 'bridging worlds...'
 
         // Phase 1: Blank for 600ms
         setTimeout(() => {
           setRebootPhase('graphic')
           setGraphicLines(0)
-          // Animate graphic lines
           setTimeout(() => setGraphicLines(1), 150)
           setTimeout(() => setGraphicLines(2), 300)
           setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Graphic for 1200ms (starts at 600ms), then start typing at 1800ms
+        // Phase 2: Graphic for 1200ms, then typing at 1800ms
         setTimeout(() => {
           setRebootPhase('typing')
           setGraphicLines(0)
@@ -76,13 +81,11 @@ export default function CSXAltLandingPage() {
           setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 800)
           setTimeout(() => { setTypingLine(4); setVisibleLines(4) }, 1100)
           setTimeout(() => { setTypingLine(5); setVisibleLines(5) }, 1400)
-          // Switch to "rebuilding..." at the end
           setTimeout(() => {
             setTypingLine(-1)
-            const rebuildingIndex = statusMessages.findIndex(m => m.text === 'rebuilding...')
-            setStatusIndex(rebuildingIndex)
+            const statusIdx = statusMessages.findIndex(m => m.text === endStatus)
+            setStatusIndex(statusIdx)
           }, 1800)
-          // End reboot cycle
           setTimeout(() => {
             setIsRebooting(false)
             setRebootPhase('normal')
@@ -392,7 +395,7 @@ export default function CSXAltLandingPage() {
             )}
           </div>
 
-          <div className="terminal-status" style={{ opacity: rebootPhase === 'blank' || rebootPhase === 'graphic' ? 0 : 1 }}>
+          <div className="terminal-status">
             {statusMessages[statusIndex].cursor ? (
               <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
             ) : (
