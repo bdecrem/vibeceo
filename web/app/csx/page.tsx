@@ -30,6 +30,8 @@ export default function CSXAltLandingPage() {
     { text: 'CTRL-shifting...', color: 'amber', cursor: true },
     { text: 'rebuilding...', color: 'amber', cursor: true },
     { text: 'compiling...', color: 'amber', cursor: true },
+    { text: 'switching models...', color: 'amber', cursor: true },
+    { text: 'integrating...', color: 'amber', cursor: true },
     { text: 'build error. rebooting...', color: 'red', cursor: false },
   ]
 
