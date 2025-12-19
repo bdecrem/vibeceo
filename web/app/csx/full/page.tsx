@@ -271,7 +271,7 @@ export default function CSXPage() {
                 Build an AI future that puts people at the center.
               </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
-                We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
+                We focus on ambitious, longer-horizon projects that traditional venture ignores: founders, researchers and students building for impact that won't show up in next quarter's metrics.
               </p>
             </div>
           </section>

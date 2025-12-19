@@ -255,7 +255,7 @@ export default function CSXAltLandingPage() {
               we back the weird, the rigorous, the not-next-quarter.
             </div>
             <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
-              students, researchers, founders building for impact.
+              founders, researchers and students building for impact.
             </div>
 
             <div className="terminal-programs">
