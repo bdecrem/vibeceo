@@ -70,8 +70,8 @@ export default function CSXLandingPage() {
         .terminal-box {
           border: 1px solid #3a3a3a;
           border-radius: 4px;
-          padding: 32px 40px;
-          max-width: 580px;
+          padding: 24px 36px;
+          max-width: 680px;
           width: 100%;
           position: relative;
           background: linear-gradient(180deg, rgba(20,40,60,0.3) 0%, rgba(10,10,10,0.8) 100%);
@@ -91,7 +91,7 @@ export default function CSXLandingPage() {
         .terminal-header {
           font-size: 0.875rem;
           letter-spacing: 0.05em;
-          margin-bottom: 28px;
+          margin-bottom: 20px;
           color: #666;
         }
 
@@ -100,7 +100,7 @@ export default function CSXLandingPage() {
         }
 
         .terminal-body {
-          margin-bottom: 24px;
+          margin-bottom: 16px;
         }
 
         .terminal-line {
@@ -120,7 +120,7 @@ export default function CSXLandingPage() {
         }
 
         .terminal-programs {
-          margin-top: 24px;
+          margin-top: 16px;
         }
 
         .terminal-program {
@@ -151,8 +151,8 @@ export default function CSXLandingPage() {
           gap: 10px;
           font-size: 0.8125rem;
           color: #555;
-          margin-top: 28px;
-          padding-top: 20px;
+          margin-top: 16px;
+          padding-top: 14px;
           border-top: 1px solid #252525;
         }
 
