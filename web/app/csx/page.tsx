@@ -264,10 +264,7 @@ export default function CSXPage() {
                 CTRL SHIFT Lab is a community of AI builders, researchers, and investors pursuing a simple but challenging proposition:
               </p>
               <p className="csx-text-emphasis">
-                Put AI to work for people, not just shareholders.
-              </p>
-              <p className="csx-text-emphasis">
-                AI research and products that put people at the center.
+                Build an AI future that puts people at the center.
               </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
