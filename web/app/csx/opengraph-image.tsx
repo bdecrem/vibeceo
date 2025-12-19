@@ -1,7 +1,7 @@
 import { readFileSync } from 'fs'
 import { join } from 'path'
 
-export const alt = 'CTRL SHIFT* LAB'
+export const alt = 'CTRL SHIFT • LONG HORIZON LAB'
 export const size = {
   width: 1200,
   height: 630,
