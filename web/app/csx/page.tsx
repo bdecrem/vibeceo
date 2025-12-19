@@ -142,8 +142,7 @@ export default function CSXLandingPage() {
 
         .terminal-program-label {
           color: #666;
-          width: 60px;
-          flex-shrink: 0;
+          margin-right: 8px;
         }
 
         .terminal-program-value {
