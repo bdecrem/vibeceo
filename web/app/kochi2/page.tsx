@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
 import bgImage from "./bg.png";
@@ -11,6 +12,27 @@ const poppins = Poppins({
 });
 
 export default function KochiLanding2() {
+  const [isHiding, setIsHiding] = useState(false);
+
+  useEffect(() => {
+    const scheduleHide = () => {
+      // Random delay between 8-15 seconds
+      const delay = 8000 + Math.random() * 7000;
+      return setTimeout(() => {
+        setIsHiding(true);
+        // Come back up after 1.5 seconds
+        setTimeout(() => {
+          setIsHiding(false);
+          // Schedule next hide
+          scheduleHide();
+        }, 1500);
+      }, delay);
+    };
+
+    const timeoutId = scheduleHide();
+    return () => clearTimeout(timeoutId);
+  }, []);
+
   return (
     <div className={`${poppins.className} relative h-screen w-full overflow-hidden`}>
       {/* Layer 1: Background Scene - Full bleed
@@ -49,28 +71,28 @@ export default function KochiLanding2() {
         }}
       />
 
-      {/* Layer 3: Kochi SVG character */}
+      {/* Layer 3: Desk mask - clips Kochi to appear behind desk */}
       <div
-        className="absolute z-20"
+        className="absolute inset-0 z-20"
         style={{
-          left: '50%',
-          top: '58.5%',
-          transform: 'translateX(-50%) translateY(-50%) perspective(1000px) rotateX(5deg)',
-          width: 'clamp(240px, 43vw, 528px)',
+          clipPath: 'polygon(0 0, 100% 0, 100% 64.4%, 0 60.4%)',
         }}
       >
+        {/* Kochi SVG character - can move freely within mask */}
+        <div
+          style={{
+            position: 'absolute',
+            left: '50%',
+            top: isHiding ? '80%' : '61%',
+            transform: 'translateX(-50%) translateY(-50%) perspective(1000px) rotateX(5deg)',
+            width: 'clamp(288px, 52vw, 634px)',
+            transition: 'top 0.6s ease-in-out',
+          }}
+        >
         <style>{`
           @keyframes blink {
             0%, 96%, 100% { transform: scaleY(1); }
             98% { transform: scaleY(0.1); }
-          }
-          @keyframes lookAround {
-            0%, 100% { transform: translateX(0); }
-            30% { transform: translateX(6px); }
-            70% { transform: translateX(-6px); }
-          }
-          #eye-right, #eye-left {
-            animation: lookAround 5s ease-in-out infinite;
           }
           #eye-right ellipse, #eye-left ellipse {
             animation: blink 4s ease-in-out infinite;
@@ -88,13 +110,23 @@ export default function KochiLanding2() {
             transform-origin: center bottom;
             transform-box: fill-box;
           }
+          @keyframes itchy {
+            0%, 90%, 100% { transform: rotate(0deg); }
+            92% { transform: rotate(-2deg); }
+            94% { transform: rotate(2deg); }
+            96% { transform: rotate(-1.5deg); }
+            98% { transform: rotate(1deg); }
+          }
+          .kochi-container {
+            animation: itchy 5s ease-in-out infinite;
+            transform-origin: center bottom;
+          }
         `}</style>
         <svg
           viewBox="0 0 1024 1536"
-          className="w-full h-auto"
+          className="w-full h-auto kochi-container"
           style={{
             filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 60px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 120px rgba(255, 255, 255, 0.25))',
-            clipPath: 'polygon(0 0, 100% 0, 100% 58%, 0 55%)',
           }}
         >
           <g id="antenna-right">
@@ -138,9 +170,10 @@ export default function KochiLanding2() {
             <ellipse fill="#FFFFFF" cx="549.719" cy="700.016" rx="32.344" ry="31.078"/>
           </g>
         </svg>
+        </div>
       </div>
 
-      {/* Layer 3: Text + CTA Overlay */}
+      {/* Layer 4: Text + CTA Overlay */}
       <div className="relative z-20 flex flex-col items-center h-full px-6 pt-[10vh] sm:pt-[12vh]">
         {/* Logo / Wordmark */}
         <h1
