@@ -5,22 +5,31 @@ import { useEffect, useState } from 'react'
 
 export default function CSXAltLandingPage() {
   const router = useRouter()
+  const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
 
   const statusMessages = [
-    { text: 'looking for the right builder...', color: 'green' },
-    { text: 'build error. rebooting...', color: 'red' },
-    { text: 'deep researching...', color: 'amber' },
-    { text: 'CTRL-shifting...', color: 'green' },
-    { text: 'backing the weird...', color: 'green' },
+    { text: 'looking for the right builder...', color: 'green', cursor: false },
+    { text: 'build error. rebooting...', color: 'red', cursor: false },
+    { text: 'deep researching...', color: 'amber', cursor: true },
+    { text: 'CTRL-shifting...', color: 'amber', cursor: true },
+    { text: 'rebuilding...', color: 'amber', cursor: true },
+    { text: 'backing the weird...', color: 'green', cursor: false },
   ]
 
   useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 530)
+
     const statusInterval = setInterval(() => {
       setStatusIndex(prev => (prev + 1) % statusMessages.length)
     }, 3000)
 
-    return () => clearInterval(statusInterval)
+    return () => {
+      clearInterval(cursorInterval)
+      clearInterval(statusInterval)
+    }
   }, [])
 
   const handleClick = () => {
@@ -29,6 +38,12 @@ export default function CSXAltLandingPage() {
 
   return (
     <>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500&display=swap"
+        rel="stylesheet"
+      />
       <style jsx global>{`
         html {
           font-size: 16px !important;
@@ -41,10 +56,11 @@ export default function CSXAltLandingPage() {
 
         .terminal-page {
           min-height: 100vh;
-          background: #000;
+          background: #0a0a0a;
           color: #ccc;
-          font-family: 'Courier New', Courier, monospace;
+          font-family: 'IBM Plex Mono', monospace;
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
           padding: 24px;
@@ -52,121 +68,118 @@ export default function CSXAltLandingPage() {
         }
 
         .terminal-box {
-          border: 1px solid #555;
-          padding: 20px 28px;
+          border: 1px dashed #fff;
+          padding: 24px 32px;
           max-width: 640px;
           width: 100%;
+          position: relative;
+        }
+
+        .terminal-box::before {
+          content: '';
+          position: absolute;
+          top: 4px;
+          left: 4px;
+          right: 4px;
+          bottom: 4px;
+          border: 1px dashed #fff;
+          pointer-events: none;
         }
 
         .terminal-header {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          margin-bottom: 16px;
-          padding-bottom: 12px;
-          border-bottom: 1px solid #555;
-          font-size: 0.75rem;
-          color: #888;
-        }
-
-        .terminal-dots {
-          display: flex;
-          gap: 5px;
-        }
-
-        .terminal-dot {
-          width: 8px;
-          height: 8px;
-          border-radius: 50%;
-          background: #555;
+          margin-bottom: 20px;
+          padding-bottom: 16px;
+          border-bottom: 1px dotted #666;
+          font-size: 0.875rem;
+          color: #aaa;
+          letter-spacing: 0.05em;
         }
 
         .terminal-header-title {
-          color: #bbb;
+          color: #fff;
         }
 
         .terminal-body {
-          margin-bottom: 12px;
+          margin-bottom: 0;
         }
 
         .terminal-line {
-          font-size: 0.9375rem;
-          line-height: 1.6;
+          font-size: 1rem;
+          line-height: 1.7;
           margin-bottom: 4px;
+          color: #fff;
         }
 
         .terminal-dim {
-          color: #888;
+          color: #999;
         }
 
         .terminal-programs {
-          margin-top: 16px;
+          margin-top: 20px;
         }
 
         .terminal-program {
-          font-size: 0.875rem;
-          line-height: 1.5;
-          margin-bottom: 6px;
+          font-size: 1rem;
+          line-height: 1.6;
+          margin-bottom: 4px;
+          display: flex;
         }
 
         .terminal-program:last-child {
           margin-bottom: 0;
         }
 
-        .terminal-prompt {
-          color: #777;
-          margin-right: 6px;
-        }
-
         .terminal-program-label {
           color: #999;
-          margin-right: 6px;
+          margin-right: 8px;
         }
 
         .terminal-program-value {
-          color: #bbb;
+          color: #fff;
         }
 
         .terminal-status {
           display: flex;
           align-items: center;
-          gap: 8px;
-          font-size: 0.75rem;
-          color: #777;
-          margin-top: 16px;
-          padding-top: 12px;
-          border-top: 1px solid #555;
+          gap: 10px;
+          font-size: 0.875rem;
+          color: #999;
+          margin-top: 20px;
+          padding-top: 16px;
+          border-top: 1px dotted #666;
         }
 
         .status-dot {
-          width: 6px;
-          height: 6px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
         }
 
-        .status-dot-green { background: #6c6; }
-        .status-dot-red { background: #c66; }
-        .status-dot-amber { background: #ca6; }
+        .status-dot-green { background: #5a8; }
+        .status-dot-red { background: #a55; }
+        .status-dot-amber { background: #a85; }
+
+        .block-cursor {
+          color: #a85;
+        }
+
+        .cursor-visible {
+          opacity: 1;
+        }
+
+        .cursor-hidden {
+          opacity: 0;
+        }
 
         .click-hint {
-          margin-top: 16px;
-          font-size: 0.6875rem;
-          color: #666;
-          text-align: center;
+          display: none;
         }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
         <div className="terminal-box">
           <div className="terminal-header">
-            <div className="terminal-dots">
-              <span className="terminal-dot"></span>
-              <span className="terminal-dot"></span>
-              <span className="terminal-dot"></span>
-            </div>
-            <span>
-              <span className="terminal-header-title">CTRL SHIFT</span> // LONG HORIZON LAB
-            </span>
+            <span className="terminal-header-title">CTRL SHIFT</span> · LONG HORIZON LAB
           </div>
 
           <div className="terminal-body">
@@ -179,29 +192,28 @@ export default function CSXAltLandingPage() {
 
             <div className="terminal-programs">
               <div className="terminal-program">
-                <span className="terminal-prompt">$</span>
-                <span className="terminal-program-label">explore</span>
+                <span className="terminal-program-label">explore:</span>
                 <span className="terminal-program-value">weekly office hours</span>
               </div>
               <div className="terminal-program">
-                <span className="terminal-prompt">$</span>
-                <span className="terminal-program-label">fund</span>
-                <span className="terminal-program-value">non-dilutive awards ($1k-$10k)</span>
+                <span className="terminal-program-label">fund:</span>
+                <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
               </div>
               <div className="terminal-program">
-                <span className="terminal-prompt">$</span>
-                <span className="terminal-program-label">build</span>
+                <span className="terminal-program-label">build:</span>
                 <span className="terminal-program-value">prototypes, tools, and new models</span>
               </div>
             </div>
           </div>
 
           <div className="terminal-status">
-            <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            {statusMessages[statusIndex].cursor ? (
+              <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
+            ) : (
+              <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            )}
             <span>{statusMessages[statusIndex].text}</span>
           </div>
-
-          <div className="click-hint">[enter]</div>
         </div>
       </div>
     </>

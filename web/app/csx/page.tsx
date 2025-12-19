@@ -9,11 +9,12 @@ export default function CSXLandingPage() {
   const [statusIndex, setStatusIndex] = useState(0)
 
   const statusMessages = [
-    { text: 'looking for the right builder...', color: 'green' },
-    { text: 'build error. rebooting...', color: 'red' },
-    { text: 'deep researching...', color: 'amber' },
-    { text: 'CTRL-shifting...', color: 'green' },
-    { text: 'backing the weird...', color: 'green' },
+    { text: 'looking for the right builder...', color: 'green', cursor: false },
+    { text: 'build error. rebooting...', color: 'red', cursor: false },
+    { text: 'deep researching...', color: 'amber', cursor: true },
+    { text: 'CTRL-shifting...', color: 'amber', cursor: true },
+    { text: 'rebuilding...', color: 'amber', cursor: true },
+    { text: 'backing the weird...', color: 'green', cursor: false },
   ]
 
   useEffect(() => {
@@ -208,6 +209,20 @@ export default function CSXLandingPage() {
           background: #a85;
         }
 
+        .block-cursor {
+          color: #a85;
+          margin-left: 4px;
+          font-size: 0.875rem;
+        }
+
+        .cursor-visible {
+          opacity: 1;
+        }
+
+        .cursor-hidden {
+          opacity: 0;
+        }
+
         @keyframes pulse {
           0%, 100% { opacity: 0.4; }
           50% { opacity: 1; }
@@ -287,7 +302,11 @@ export default function CSXLandingPage() {
           </div>
 
           <div className="terminal-status">
-            <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            {statusMessages[statusIndex].cursor ? (
+              <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
+            ) : (
+              <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            )}
             <span className="status-text">{statusMessages[statusIndex].text}</span>
           </div>
 
