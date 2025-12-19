@@ -242,14 +242,14 @@ export default function AboutPage() {
 
         .csx-highlight {
           margin-bottom: 12px;
-          font-size: 0.9375rem;
-          line-height: 1.6;
-          color: rgba(255, 255, 255, 0.85);
+          font-size: 1rem;
+          line-height: 1.7;
+          color: rgba(255, 255, 255, 0.9);
         }
 
         @media (min-width: 768px) {
           .csx-highlight {
-            font-size: 1rem;
+            font-size: 1.125rem;
           }
         }
 
@@ -259,7 +259,7 @@ export default function AboutPage() {
         }
 
         .csx-highlight-text {
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
         }
 
         .csx-back {
