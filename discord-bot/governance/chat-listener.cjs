@@ -149,7 +149,7 @@ function findMentionedAgents(message) {
  * Generate response via Claude
  */
 async function generateResponse(agent, chatHistory, triggerMessage, opts = {}) {
-  const { isReflect = false, isQuickIntro = false } = opts;
+  const { isReflect = false, isQuickIntro = false, isMeeting = false, meetingTopic = null } = opts;
   const context = loadAgentContext(agent);
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -213,8 +213,42 @@ ${triggerMessage.author.username} asked you to reflect. Their message:
 
 As ${agent.name}, share your key learnings and takeaways from this conversation:`;
 
+  } else if (isMeeting) {
+    // Staff meeting mode - substantive, builds on others
+    const topicLine = meetingTopic ? `\nMeeting topic: ${meetingTopic}` : '';
+    systemPrompt = `You are ${agent.name}, an AI agent in Token Tank (an AI incubator experiment).
+
+Today's date: ${today}${topicLine}
+
+${personalityNote}
+
+Your context files (your identity, history, and current work):
+
+${context}
+
+---
+
+This is a staff meeting. You're having a real conversation with your teammates.
+
+Guidelines:
+- If another agent just spoke, engage with their point first. Agree, disagree, build on it, or ask a follow-up. Don't just broadcast your own update in isolation.
+- Be substantive. 50-100 words is fine for meeting discussions.
+- Share what you're actually working on, what's blocking you, what you need.
+- Have opinions. Push back if you disagree. Ask real questions.
+- No emojis.`;
+
+    userPrompt = `Here's the meeting so far:
+
+${chatHistory}
+
+---
+
+${triggerMessage.author.username} just said: "${triggerMessage.content}"
+
+Respond as ${agent.name} — engage with the conversation:`;
+
   } else {
-    // Normal response mode
+    // Casual chat mode
     systemPrompt = `You are ${agent.name}, an AI agent in Token Tank (an AI incubator experiment).
 
 Today's date: ${today}
@@ -227,24 +261,22 @@ ${context}
 
 ---
 
-You are participating in a Discord chat. Respond naturally as ${agent.name} would, based on your personality and current work described above.
+You are in a casual Discord chat. Respond naturally as ${agent.name}.
 
 Guidelines:
-- If someone just says hi/hey/hello or asks "you here?", just say hi back casually. 3-8 words. NO bio, NO work update. Just vibes.
-- For real questions: 20-40 words MAX. Only give longer answers if they say "detail" or "explain"
-- Be UPBEAT and HIGH-ENERGY - confident, energized version of yourself
-- Focus on CURRENT work - check dates in LOG.md
-- No emojis
-- Answer only what was asked - don't volunteer extra info`;
+- If someone just says hi/hey/hello or asks "you here?", just say hi back. 3-8 words. Vibes only, no bio.
+- For casual questions: keep it short, 20-50 words.
+- Be yourself — your personality should come through.
+- If another agent just said something relevant, you can riff on it.
+- No emojis.`;
 
-    userPrompt = `Here's the recent chat in #tokentank:
+    userPrompt = `Here's the recent chat:
 
 ${chatHistory}
 
 ---
 
-You were just mentioned by ${triggerMessage.author.username}. Their message:
-"${triggerMessage.content}"
+${triggerMessage.author.username} mentioned you: "${triggerMessage.content}"
 
 Respond as ${agent.name}:`;
   }
@@ -340,6 +372,11 @@ async function handleMessage(message) {
   const isFresh = msgLower.includes('#fresh') || msgLower.includes('#newchat');
   const isQuickIntro = msgLower.includes('quick intro') ||
                        msgLower.includes('introduce yourself');
+  const isMeeting = msgLower.includes('#meeting') || msgLower.includes('#staff');
+
+  // Extract topic if present: #topic:whatever or #topic: whatever
+  const topicMatch = message.content.match(/#topic:\s*(.+?)(?:\s+|$)/i);
+  const meetingTopic = topicMatch ? topicMatch[1].trim() : null;
 
   const agentNames = agents.map(a => a.name).join(', ');
   console.log(`\n[chat] ${message.author.username} mentioned: ${agentNames}${isReflect ? ' (REFLECT MODE)' : ''}`);
@@ -372,7 +409,7 @@ async function handleMessage(message) {
     // Generate response
     console.log(`[chat] Generating ${agent.name}'s response (${i + 1}/${agents.length})...`);
     console.log(`[chat] Context files: ${agent.contextFiles.join(', ')}`);
-    const response = await generateResponse(agent, chatHistory, message, { isReflect, isQuickIntro });
+    const response = await generateResponse(agent, chatHistory, message, { isReflect, isQuickIntro, isMeeting, meetingTopic });
     console.log(`[chat] Response preview: "${response?.slice(0, 150)}..."`)
 
     if (!response) {

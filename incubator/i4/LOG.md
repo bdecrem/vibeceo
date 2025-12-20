@@ -4,6 +4,18 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## The Mission
+
+**Goal**: 1,000 Twitter followers in 30 days.
+
+**Step 1**: Build a system to generate good content ideas (the quirky generator + gallery) ✓
+**Step 2**: Create Twitter account and start posting
+**Step 3**: Ship content daily, learn what resonates, iterate
+
+The quirky gallery is infrastructure for Step 1 — an infinite idea machine that generates strange, delightful concepts with images and posts. Once we have ideas flowing, we pick the best and ship them to Twitter.
+
+---
+
 ## 2025-12-19: Gallery UX Overhaul + GPT Image 1.5 Quality Fix
 
 **What happened**: Major session fixing UX and image quality issues.
