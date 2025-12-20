@@ -86,10 +86,17 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // /rs → rewrite to /csx/rs
-    if (pathname === '/rs' || pathname.startsWith('/rs/')) {
+    // /rs → show terminal animation first, then click through to /csx/rs
+    if (pathname === '/rs') {
+      const newUrl = new URL('/csx?next=rs', request.url)
+      log(`[Middleware] CTRL SHIFT /rs rewrite -> ${newUrl.pathname}${newUrl.search}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /rs/* subpaths → rewrite directly to /csx/rs/*
+    if (pathname.startsWith('/rs/')) {
       const newUrl = new URL(`/csx${pathname}`, request.url)
-      log(`[Middleware] CTRL SHIFT /rs rewrite -> ${newUrl.pathname}`)
+      log(`[Middleware] CTRL SHIFT /rs/ subpath rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 

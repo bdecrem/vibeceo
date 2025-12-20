@@ -1,10 +1,12 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 export default function CSXAltLandingPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextPage = searchParams.get('next')
   const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
   const [isRebooting, setIsRebooting] = useState(false)
@@ -101,7 +103,9 @@ export default function CSXAltLandingPage() {
   }, [isRebooting])
 
   const handleClick = () => {
-    router.push('/csx/full')
+    // If ?next=rs, go to /csx/rs; otherwise default to /csx/full
+    const destination = nextPage === 'rs' ? '/csx/rs' : '/csx/full'
+    router.push(destination)
   }
 
   return (
@@ -187,11 +191,12 @@ export default function CSXAltLandingPage() {
 
         .terminal-body {
           margin-bottom: 0;
-          min-height: 140px;
+          height: 140px;
         }
 
         @media (min-width: 640px) {
           .terminal-body {
+            height: auto;
             min-height: 160px;
           }
         }
