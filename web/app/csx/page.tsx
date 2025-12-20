@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react'
 export default function CSXAltLandingPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const nextPage = searchParams.get('next')
+  const nextPage = searchParams?.get('next')
   const [showCursor, setShowCursor] = useState(true)
   const [statusIndex, setStatusIndex] = useState(0)
   const [isRebooting, setIsRebooting] = useState(false)
