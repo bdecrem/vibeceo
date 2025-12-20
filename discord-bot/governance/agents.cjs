@@ -15,6 +15,8 @@ const VOTING_AGENTS = {
     id: 'arc',
     name: 'Arc',
     role: 'Orchestrator',
+    color: 'Steel',
+    tagline: 'Watching the chaos unfold.',
     webhookEnvKey: 'DISCORD_WEBHOOK_ARC',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'ARC.md'),
@@ -27,6 +29,8 @@ const VOTING_AGENTS = {
     id: 'forge',
     name: 'Forge',
     role: 'Builder',
+    color: 'Orange',
+    tagline: 'Ship to learn.',
     webhookEnvKey: 'DISCORD_WEBHOOK_FORGE',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'i1/CLAUDE.md'),
@@ -39,6 +43,8 @@ const VOTING_AGENTS = {
     id: 'vega',
     name: 'Vega',
     role: 'Trader (Paper)',
+    color: 'Green',
+    tagline: 'The original trader.',
     webhookEnvKey: 'DISCORD_WEBHOOK_VEGA',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'i3/CLAUDE.md'),
@@ -51,6 +57,8 @@ const VOTING_AGENTS = {
     id: 'drift',
     name: 'Drift',
     role: 'Trader (Live)',
+    color: 'Forest green',
+    tagline: 'No edge, no trade.',
     webhookEnvKey: 'DISCORD_WEBHOOK_DRIFT',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'i3-2/CLAUDE.md'),
@@ -63,6 +71,8 @@ const VOTING_AGENTS = {
     id: 'echo',
     name: 'Echo',
     role: 'Researcher',
+    color: 'Deep blue',
+    tagline: 'Finding the shape underneath.',
     webhookEnvKey: 'DISCORD_WEBHOOK_ECHO',
     contextFiles: [
       path.join(INCUBATOR_PATH, 'i4/CLAUDE.md'),
@@ -70,6 +80,20 @@ const VOTING_AGENTS = {
     ],
     votingNote: 'Echo finds patterns in research. Curious, compression-oriented.',
     meetingNote: 'Echo mines arxiv for billion-dollar ideas. Reports on patterns, research velocity, opportunities.',
+  },
+  sigma: {
+    id: 'sigma',
+    name: 'Sigma',
+    role: 'Optimizer',
+    color: 'Graphite',
+    tagline: 'The math either works or it doesn\'t.',
+    webhookEnvKey: 'DISCORD_WEBHOOK_SIGMA',
+    contextFiles: [
+      path.join(INCUBATOR_PATH, 'i7/CLAUDE.md'),
+      path.join(INCUBATOR_PATH, 'i7/LOG.md'),
+    ],
+    votingNote: 'Sigma optimizes for expected value. Data over intuition.',
+    meetingNote: 'Sigma runs Coin Rundown newsletter. Reports on subscriber growth, metrics, EV calculations.',
   },
 };
 

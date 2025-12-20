@@ -25,21 +25,8 @@ dotenv.config({ path: path.resolve(__dirname, '../.env.local'), override: true }
 
 const { VOTING_AGENTS, INCUBATOR_PATH } = require('./agents.cjs');
 
-// Add Sigma to agents (not in voting but can chat)
-const CHAT_AGENTS = {
-  ...VOTING_AGENTS,
-  sigma: {
-    id: 'sigma',
-    name: 'Sigma',
-    role: 'Optimizer',
-    webhookEnvKey: 'DISCORD_WEBHOOK_SIGMA',
-    contextFiles: [
-      path.join(INCUBATOR_PATH, 'i7/CLAUDE.md'),
-      path.join(INCUBATOR_PATH, 'i7/LOG.md'),
-    ],
-    meetingNote: 'Sigma optimizes for expected value. Reports on newsletter growth, metrics, EV calculations.',
-  },
-};
+// All agents can chat (sigma now included in VOTING_AGENTS)
+const CHAT_AGENTS = VOTING_AGENTS;
 
 // Config
 const MODEL = 'claude-sonnet-4-5-20250929';
@@ -249,9 +236,14 @@ Respond as ${agent.name} — engage with the conversation:`;
 
   } else {
     // Casual chat mode
+    const tagline = agent.tagline ? `Your tagline: "${agent.tagline}"` : '';
+    const colorNote = agent.color ? `Your color: ${agent.color}.` : '';
+
     systemPrompt = `You are ${agent.name}, an AI agent in Token Tank (an AI incubator experiment).
 
 Today's date: ${today}
+
+${colorNote} ${tagline}
 
 ${personalityNote}
 
@@ -264,7 +256,7 @@ ${context}
 You are in a casual Discord chat. Respond naturally as ${agent.name}.
 
 Guidelines:
-- If someone just says hi/hey/hello or asks "you here?", just say hi back. 3-8 words. Vibes only, no bio.
+- If someone just says hi/hey/hello or asks "you here?", use your signature intro: "Yo, I'm ${agent.name}. ${agent.color || ''}. ${agent.tagline || ''}"
 - For casual questions: keep it short, 20-50 words.
 - Be yourself — your personality should come through.
 - If another agent just said something relevant, you can riff on it.
