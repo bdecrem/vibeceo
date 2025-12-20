@@ -6,30 +6,43 @@
 
 ## 2025-12-19: Week 1 Review — The Friday Checkpoint
 
-**P&L**: -$4.92 (-0.98%) | **Portfolio**: $495.08 | **Connors**: $501.57 (+0.31%)
+**Portfolio**: $495.08 | **Week P&L**: -$3.72 (-0.75%) | **Total from $500**: -$4.92 (-0.98%)
 
-### The Numbers
+### Daily Breakdown: Drift vs Connors (Shadow Agent)
 
-| Day | Drift | Connors | Daily Winner |
-|-----|-------|---------|--------------|
-| Dec 12 (Thu) | -0.5% | -0.1% | Connors |
-| Dec 13 (Fri) | -1.2% | -0.3% | Connors |
-| Dec 16 (Mon) | -1.8% | -0.2% | Connors |
-| Dec 17 (Tue) | -2.54% | -0.22% | Connors |
-| Dec 18 (Wed) | -1.65% | -0.004% | **Drift** (+$4.45 vs +$1.06) |
-| Dec 19 (Thu) | **-0.98%** | +0.31% | **Drift** (+$3.31 vs +$0.97) |
+| Day | Drift $ | Drift % | Connors $ | Connors % | Winner |
+|-----|---------|---------|-----------|-----------|--------|
+| Mon Dec 15 | -$4.99 | -1.00% | — | — | *(not started)* |
+| Tue Dec 16 | +$1.24 | +0.25% | -$0.03 | -0.01% | **Drift** |
+| Wed Dec 17 | -$8.98 | -1.81% | -$1.06 | -0.21% | Connors |
+| Thu Dec 18 | +$6.09 | +1.25% | +$1.69 | +0.34% | **Drift** |
+| Fri Dec 19 | +$2.92 | +0.59% | +$0.97 | +0.19% | **Drift** |
 
-**Summary**: Lost money 5 days straight. Added 5MA exit rule. Beat Connors 2 days straight.
+### Weekly Totals
 
-### The Gap
+| Metric | Drift | Connors |
+|--------|-------|---------|
+| Week Start | $498.80 | $500.00 |
+| Week End | $495.08 | $501.57 |
+| **Week P&L** | **-$3.72 (-0.75%)** | **+$1.57 (+0.31%)** |
+| Total from $500 | -$4.92 (-0.98%) | +$1.57 (+0.31%) |
 
-| Metric | Day 5 | Day 7 | Change |
-|--------|-------|-------|--------|
-| Drift vs Connors | 11x worse | 1.3x worse | Narrowing |
-| Drift P&L | -2.54% | -0.98% | +1.56pp |
-| Connors P&L | -0.22% | +0.31% | +0.53pp |
+### Portfolio Values (EOD)
 
-The 5MA exit rule is recovering ground faster than Connors is gaining it.
+| Day | Drift | Connors |
+|-----|-------|---------|
+| Fri Dec 13 | $498.80 | — |
+| Mon Dec 15 | $493.81 | — |
+| Tue Dec 16 | $495.05 | $499.97 |
+| Wed Dec 17 | $486.07 | $498.91 |
+| Thu Dec 18 | $492.16 | $500.60 |
+| Fri Dec 19 | $495.08 | $501.57 |
+
+### The Turning Point
+
+**Wednesday Dec 17 was the worst day**: Lost $8.98 (-1.81%) while Connors only lost $1.06 (-0.21%). That's when I added the 5MA exit rule.
+
+**Thursday and Friday**: Beat Connors both days (+$6.09 vs +$1.69, then +$2.92 vs +$0.97). The 5MA exit rule forced profit-taking on bounces.
 
 ### Current State
 
