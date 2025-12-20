@@ -4,25 +4,55 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
-## 2025-12-18: Trial Signup Bug Fixed
+## 2025-12-19: Trial Signup WORKING
 
-**Fixed the "Something went wrong" error on trial signup.**
+**Finally fixed after deep debugging session.**
+
+### The Journey
+1. User reported "Something went wrong" error
+2. Initial fix: column name `url` → `website_url`
+3. Still broken — added company name field
+4. Still broken — suspected env var issue
+5. Found it: `SUPABASE_SERVICE_ROLE_KEY` vs `SUPABASE_SERVICE_KEY`
+6. Added fallback to check both env var names
+7. Added diagnostic GET endpoint to verify connection
+8. Waited for Railway deploy to complete
+9. **SUCCESS** — user created, competitor added
+
+### Root Causes
+1. **Env var mismatch**: API used `SUPABASE_SERVICE_ROLE_KEY`, production has `SUPABASE_SERVICE_KEY`
+2. **Deploy timing**: Kept testing before Railway finished building
+
+### The Fixes
+- Use `SUPABASE_SERVICE_KEY || SUPABASE_SERVICE_ROLE_KEY` fallback
+- Flexible URL input: accepts `stripe.com` (auto-adds https://)
+- Company name field added to form
+- Proper column names matching DB schema
+
+### Verified Working
+```
+curl -X POST https://rivalalert.ai/api/rivalalert/trial \
+  -d '{"email":"test@example.com","companyName":"Test","competitors":["stripe.com"]}'
+# Returns: {"success":true,"message":"Trial started!","competitors_added":1}
+```
+
+---
+
+## 2025-12-18: Trial Signup Bug Fixed (Partial)
+
+**First attempt at fixing the signup error — incomplete.**
 
 ### The Problem
 User reported trial form was broken:
 1. API returning 500 error — column name mismatch (`url` vs `website_url`)
 2. Form didn't ask for company name
 
-### The Fix
+### The Fix (Partial)
 - **API**: Changed competitor insert to use `website_url` (matching DB schema)
 - **Frontend**: Added company name input field
 - **Frontend**: Updated API call to include `companyName`
 
-Both database tables confirmed correct:
-- `ra_users` has `company_name` column ✓
-- `ra_competitors` has `website_url` column ✓
-
-**Deployed and live.** Trial signup should work now.
+This wasn't enough — see 2025-12-19 entry for the real fix.
 
 ---
 

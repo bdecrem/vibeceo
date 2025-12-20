@@ -4,39 +4,6 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Diagnostic endpoint
-export async function GET() {
-  const checks = {
-    hasUrl: !!supabaseUrl,
-    hasKey: !!supabaseServiceKey,
-    urlPrefix: supabaseUrl?.substring(0, 30) || 'missing',
-    keyPrefix: supabaseServiceKey?.substring(0, 10) || 'missing',
-  };
-
-  if (!supabaseUrl || !supabaseServiceKey) {
-    return NextResponse.json({ status: 'error', message: 'Missing env vars', checks });
-  }
-
-  try {
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const { count, error } = await supabase
-      .from('ra_users')
-      .select('*', { count: 'exact', head: true });
-
-    if (error) {
-      return NextResponse.json({ status: 'db_error', error: error.message, checks });
-    }
-
-    return NextResponse.json({ status: 'ok', userCount: count, checks });
-  } catch (e) {
-    return NextResponse.json({
-      status: 'exception',
-      error: e instanceof Error ? e.message : 'unknown',
-      checks
-    });
-  }
-}
-
 export async function POST(request: NextRequest) {
   console.log('[RivalAlert] Trial signup request received');
   try {
