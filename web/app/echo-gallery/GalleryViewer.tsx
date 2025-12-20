@@ -90,16 +90,39 @@ function formatDate(dateStr: string): string {
 export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  // Read hash from URL on initial load
+  useEffect(() => {
+    const hash = window.location.hash.slice(1); // Remove #
+    if (hash) {
+      const index = ideas.findIndex(idea => idea.id === hash);
+      if (index !== -1) {
+        setCurrentIndex(index);
+      }
+    }
+  }, [ideas]);
 
   const goTo = useCallback((index: number) => {
     if (index < 0 || index >= ideas.length || isTransitioning) return;
     setIsTransitioning(true);
     setCurrentIndex(index);
+    // Update URL hash
+    if (ideas[index]) {
+      window.history.replaceState(null, '', `#${ideas[index].id}`);
+    }
     setTimeout(() => setIsTransitioning(false), 300);
-  }, [ideas.length, isTransitioning]);
+  }, [ideas, isTransitioning]);
 
   const goNext = useCallback(() => goTo(currentIndex + 1), [currentIndex, goTo]);
   const goPrev = useCallback(() => goTo(currentIndex - 1), [currentIndex, goTo]);
+
+  const shareIdea = useCallback(() => {
+    const url = `${window.location.origin}${window.location.pathname}#${ideas[currentIndex].id}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }, [ideas, currentIndex]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -344,8 +367,29 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
               )}
             </div>
           </div>
-          <div style={{ color: '#555', fontSize: '0.85em', textAlign: 'right' }} suppressHydrationWarning>
-            {formatDate(idea.created_at)}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+            <button
+              onClick={shareIdea}
+              style={{
+                background: copied ? 'rgba(78,205,196,0.2)' : 'rgba(255,255,255,0.1)',
+                border: 'none',
+                borderRadius: '50%',
+                width: '36px',
+                height: '36px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1em',
+                transition: 'all 0.2s ease',
+              }}
+              title={copied ? 'Copied!' : 'Copy link'}
+            >
+              {copied ? '✓' : '🔗'}
+            </button>
+            <div style={{ color: '#555', fontSize: '0.85em', textAlign: 'right' }} suppressHydrationWarning>
+              {formatDate(idea.created_at)}
+            </div>
           </div>
         </div>
 

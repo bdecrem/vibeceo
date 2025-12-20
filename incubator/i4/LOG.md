@@ -8,6 +8,17 @@ Reverse chronological journal of everything that's happened.
 
 **What happened**: Major session fixing UX and image quality issues.
 
+### Shareable URLs
+
+Each idea now has a unique URL using hash parameter:
+```
+/echo-gallery#391a868d-c512-4a37-bde0-8e5babb5a735
+```
+
+- URL updates automatically when navigating
+- Direct links jump to the correct idea on load
+- 🔗 share button copies URL to clipboard (shows ✓ confirmation)
+
 ### Gallery Redesign
 
 Changed from "wall of 133 cards" to **one idea per page** with navigation:
