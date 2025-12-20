@@ -175,69 +175,96 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
         }} />
       </div>
 
-      {/* Navigation arrows */}
+      {/* Navigation arrows - subtle edge strips on mobile, circles on desktop */}
+      <style>{`
+        .nav-btn {
+          position: fixed;
+          top: 50%;
+          transform: translateY(-50%);
+          border: none;
+          cursor: pointer;
+          z-index: 100;
+          transition: all 0.2s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .nav-btn:disabled {
+          cursor: not-allowed;
+        }
+        .nav-btn-prev {
+          left: 0;
+          border-radius: 0 8px 8px 0;
+          width: 28px;
+          height: 80px;
+          font-size: 1em;
+        }
+        .nav-btn-next {
+          right: 0;
+          border-radius: 8px 0 0 8px;
+          width: 28px;
+          height: 80px;
+          font-size: 1em;
+        }
+        @media (min-width: 768px) {
+          .nav-btn-prev {
+            left: 20px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5em;
+          }
+          .nav-btn-next {
+            right: 20px;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 1.5em;
+          }
+        }
+      `}</style>
       <button
+        className="nav-btn nav-btn-prev"
         onClick={goPrev}
         disabled={currentIndex === 0}
         style={{
-          position: 'fixed',
-          left: '20px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: currentIndex === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-          border: 'none',
-          borderRadius: '50%',
-          width: '60px',
-          height: '60px',
-          cursor: currentIndex === 0 ? 'not-allowed' : 'pointer',
-          color: currentIndex === 0 ? '#333' : '#fff',
-          fontSize: '1.5em',
-          zIndex: 100,
-          transition: 'all 0.2s ease',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          background: currentIndex === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+          color: currentIndex === 0 ? '#333' : 'rgba(255,255,255,0.6)',
         }}
         onMouseEnter={(e) => {
-          if (currentIndex !== 0) e.currentTarget.style.background = palette.accent;
+          if (currentIndex !== 0) {
+            e.currentTarget.style.background = palette.accent;
+            e.currentTarget.style.color = '#000';
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = currentIndex === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)';
+          e.currentTarget.style.background = currentIndex === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)';
+          e.currentTarget.style.color = currentIndex === 0 ? '#333' : 'rgba(255,255,255,0.6)';
         }}
       >
-        ←
+        ‹
       </button>
 
       <button
+        className="nav-btn nav-btn-next"
         onClick={goNext}
         disabled={currentIndex === ideas.length - 1}
         style={{
-          position: 'fixed',
-          right: '20px',
-          top: '50%',
-          transform: 'translateY(-50%)',
-          background: currentIndex === ideas.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)',
-          border: 'none',
-          borderRadius: '50%',
-          width: '60px',
-          height: '60px',
-          cursor: currentIndex === ideas.length - 1 ? 'not-allowed' : 'pointer',
-          color: currentIndex === ideas.length - 1 ? '#333' : '#fff',
-          fontSize: '1.5em',
-          zIndex: 100,
-          transition: 'all 0.2s ease',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
+          background: currentIndex === ideas.length - 1 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)',
+          color: currentIndex === ideas.length - 1 ? '#333' : 'rgba(255,255,255,0.6)',
         }}
         onMouseEnter={(e) => {
-          if (currentIndex !== ideas.length - 1) e.currentTarget.style.background = palette.accent;
+          if (currentIndex !== ideas.length - 1) {
+            e.currentTarget.style.background = palette.accent;
+            e.currentTarget.style.color = '#000';
+          }
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.background = currentIndex === ideas.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)';
+          e.currentTarget.style.background = currentIndex === ideas.length - 1 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.06)';
+          e.currentTarget.style.color = currentIndex === ideas.length - 1 ? '#333' : 'rgba(255,255,255,0.6)';
         }}
       >
-        →
+        ›
       </button>
 
       {/* Idea counter / slider - pinned to bottom on mobile */}
