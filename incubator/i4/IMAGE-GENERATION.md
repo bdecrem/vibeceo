@@ -7,6 +7,7 @@ The latest flagship model. Better prompt following, quality, and editing support
 **Model:** `gpt-image-1.5`
 **Pinned version:** `gpt-image-1.5-2025-12-16`
 **Requires:** Organization verification at https://platform.openai.com/settings/organization/general
+**Organization ID:** `org-3kZbACXqO0sjNiYNjj7AuRsR` (must pass to OpenAI client)
 
 ### Generate Images
 
@@ -61,14 +62,14 @@ The optional `mask` file focuses edits on specific parts of the image.
 from openai import OpenAI
 import base64
 
-client = OpenAI()  # uses OPENAI_API_KEY env var
+# Must include organization ID for GPT Image 1.5
+client = OpenAI(organization="org-3kZbACXqO0sjNiYNjj7AuRsR")
 
 result = client.images.generate(
     model="gpt-image-1.5",
     prompt="Your prompt here",
     n=1,
-    size="1024x1024",
-    quality="high"
+    size="1024x1024"
 )
 
 # Save (returns base64)

@@ -52,9 +52,11 @@ def load_env_vars():
 env_vars = load_env_vars()
 
 # Initialize clients
-claude = anthropic.Anthropic()
+claude = anthropic.Anthropic(api_key=env_vars.get("ANTHROPIC_API_KEY") or os.environ.get("ANTHROPIC_API_KEY"))
 openai_key = env_vars.get("OPENAI_API_KEY") or os.environ.get("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=openai_key) if openai_key else None
+# Org ID required for GPT Image 1.5 access
+OPENAI_ORG_ID = "org-3kZbACXqO0sjNiYNjj7AuRsR"
+openai_client = OpenAI(api_key=openai_key, organization=OPENAI_ORG_ID) if openai_key else None
 
 # Supabase setup
 SUPABASE_URL = env_vars.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "https://tqniseocczttrfwtpbdr.supabase.co"
