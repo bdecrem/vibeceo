@@ -43,6 +43,7 @@ export default function KochiLanding2() {
         alt="Forest scene"
         fill
         priority
+        unoptimized
         className="object-cover"
         style={{ objectPosition: 'center 55%' }}
         sizes="100vw"
