@@ -1,4 +1,8 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+
+export const viewport: Viewport = {
+  themeColor: '#0a0a0a',
+}
 
 export const metadata: Metadata = {
   title: 'CTRL SHIFT • LONG HORIZON LAB',
