@@ -4,11 +4,45 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// Diagnostic endpoint
+export async function GET() {
+  const checks = {
+    hasUrl: !!supabaseUrl,
+    hasKey: !!supabaseServiceKey,
+    urlPrefix: supabaseUrl?.substring(0, 30) || 'missing',
+    keyPrefix: supabaseServiceKey?.substring(0, 10) || 'missing',
+  };
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    return NextResponse.json({ status: 'error', message: 'Missing env vars', checks });
+  }
+
+  try {
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { count, error } = await supabase
+      .from('ra_users')
+      .select('*', { count: 'exact', head: true });
+
+    if (error) {
+      return NextResponse.json({ status: 'db_error', error: error.message, checks });
+    }
+
+    return NextResponse.json({ status: 'ok', userCount: count, checks });
+  } catch (e) {
+    return NextResponse.json({
+      status: 'exception',
+      error: e instanceof Error ? e.message : 'unknown',
+      checks
+    });
+  }
+}
+
 export async function POST(request: NextRequest) {
+  console.log('[RivalAlert] Trial signup request received');
   try {
     // Check env vars are set
     if (!supabaseUrl || !supabaseServiceKey) {
-      console.error('Missing Supabase env vars:', {
+      console.error('[RivalAlert] Missing Supabase env vars:', {
         hasUrl: !!supabaseUrl,
         hasKey: !!supabaseServiceKey,
         urlPrefix: supabaseUrl?.substring(0, 20),
@@ -18,7 +52,9 @@ export async function POST(request: NextRequest) {
         { status: 500 }
       );
     }
+    console.log('[RivalAlert] Env vars OK, parsing body...');
     const { email, companyName, competitors } = await request.json();
+    console.log('[RivalAlert] Body parsed:', { email, companyName, competitorCount: competitors?.length });
 
     if (!email || !email.includes('@')) {
       return NextResponse.json(
@@ -68,14 +104,21 @@ export async function POST(request: NextRequest) {
     // Limit to 3 competitors for free trial
     const competitorsToAdd = validUrls.slice(0, 3);
 
+    console.log('[RivalAlert] Creating Supabase client...');
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    console.log('[RivalAlert] Supabase client created, checking for existing user...');
 
     // Check if user already exists
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: lookupError } = await supabase
       .from('ra_users')
       .select('id, trial_ends_at')
       .eq('email', email.toLowerCase())
       .single();
+
+    console.log('[RivalAlert] User lookup result:', {
+      found: !!existingUser,
+      error: lookupError?.message || null
+    });
 
     let userId: string;
 
@@ -98,6 +141,7 @@ export async function POST(request: NextRequest) {
         .eq('id', userId);
     } else {
       // Create new user with 30-day trial
+      console.log('[RivalAlert] Creating new user...');
       const { data: newUser, error: userError } = await supabase
         .from('ra_users')
         .insert({
@@ -109,8 +153,14 @@ export async function POST(request: NextRequest) {
         .select('id')
         .single();
 
+      console.log('[RivalAlert] User create result:', {
+        success: !!newUser,
+        userId: newUser?.id,
+        error: userError?.message || null
+      });
+
       if (userError || !newUser) {
-        console.error('Error creating user:', userError);
+        console.error('[RivalAlert] Error creating user:', userError);
         return NextResponse.json(
           { error: 'Failed to create trial. Please try again.' },
           { status: 500 }
