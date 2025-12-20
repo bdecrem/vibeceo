@@ -553,13 +553,13 @@ Output as JSON array (no markdown, just raw JSON):
 
 
 def generate_image_prompts(idea: dict) -> list:
-    """Generate 3 image prompts for an idea."""
+    """Generate 4 image prompts for an idea."""
     response = claude.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=2000,
         messages=[{
             "role": "user",
-            "content": f"""Generate 3 image prompts for GPT Image 1.5.
+            "content": f"""Generate 4 image prompts for GPT Image 1.5.
 
 Concept: {idea['name']}
 Description: {idea['concept']}
@@ -587,8 +587,11 @@ Output as JSON array (no markdown):
     return parse_json_response(response.content[0].text)
 
 
-def generate_image(prompt: str, filename: str) -> tuple[str, bytes, str]:
-    """Generate an image using GPT Image 1.5. Returns (filename, image_bytes, model_used)."""
+def generate_image(prompt: str, filename: str, retry_count: int = 0) -> tuple[str, bytes, str]:
+    """Generate an image using GPT Image 1.5. Returns (filename, image_bytes, model_used).
+
+    Will retry once with a softened prompt if content is rejected.
+    """
     if not openai_client:
         print("    [!] OpenAI client not available, skipping image generation")
         return None, None, None
@@ -608,9 +611,16 @@ def generate_image(prompt: str, filename: str) -> tuple[str, bytes, str]:
         return filename, image_bytes, "gpt-image-1.5 (high)"
 
     except Exception as e:
-        # Fall back to DALL-E 3 if gpt-image-1.5 fails
-        # Catch various access/model errors
         msg = str(e).lower()
+
+        # Check for content policy rejection - retry with softened prompt
+        rejection_triggers = ["content policy", "safety", "rejected", "not allowed", "inappropriate", "violates"]
+        if any(trigger in msg for trigger in rejection_triggers) and retry_count == 0:
+            print(f"    [!] Content rejected, retrying with softened prompt...")
+            softened_prompt = f"A gentle, whimsical, family-friendly interpretation of: {prompt}. Soft colors, dreamy atmosphere, suitable for all ages."
+            return generate_image(softened_prompt, filename, retry_count=1)
+
+        # Fall back to DALL-E 3 if gpt-image-1.5 fails for other reasons
         fallback_triggers = ["gpt-image", "model", "permission", "access", "authorized", "not found", "404", "403"]
 
         if any(trigger in msg for trigger in fallback_triggers):
@@ -635,6 +645,12 @@ def generate_image(prompt: str, filename: str) -> tuple[str, bytes, str]:
                 return filename, image_bytes, "dall-e-3"
 
             except Exception as e2:
+                msg2 = str(e2).lower()
+                # DALL-E 3 also rejected - retry with softened prompt
+                if any(trigger in msg2 for trigger in rejection_triggers) and retry_count == 0:
+                    print(f"    [!] DALL-E 3 also rejected, retrying with softened prompt...")
+                    softened_prompt = f"A gentle, whimsical, family-friendly interpretation of: {prompt}. Soft colors, dreamy atmosphere, suitable for all ages."
+                    return generate_image(softened_prompt, filename, retry_count=1)
                 print(f"    [!] DALL-E 3 also failed: {e2}")
                 return None, None, None
         else:
@@ -807,13 +823,13 @@ def run_generator(approach: int, human_input: str = None):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
     for i, img_data in enumerate(image_prompts):
-        print(f"    [{i+1}/3] Generating image...")
+        print(f"    [{i+1}/{len(image_prompts)}] Generating image...")
         filename = f"{idea['name']}-{timestamp}-{i+1}.png"
         fname, image_bytes, model_used = generate_image(img_data['prompt'], filename)
 
         url = None
         if image_bytes:
-            print(f"    [{i+1}/3] Generated with {model_used}, uploading...")
+            print(f"    [{i+1}/{len(image_prompts)}] Generated with {model_used}, uploading...")
             url = upload_image_to_supabase(fname, image_bytes)
 
         images.append({
