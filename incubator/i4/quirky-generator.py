@@ -12,7 +12,7 @@ Select your approach:
     1 - Pure Claude prompt (just ask for weirdness)
     2 - Collision engine (smash random things together)
     3 - Constraint template (you provide a weird constraint)
-    5 - Human seed expansion (you provide a one-liner, AI expands)
+    4 - Human seed expansion (you provide a one-liner, AI expands)
 """
 
 import anthropic
@@ -59,7 +59,8 @@ OPENAI_ORG_ID = "org-3kZbACXqO0sjNiYNjj7AuRsR"
 openai_client = OpenAI(api_key=openai_key, organization=OPENAI_ORG_ID) if openai_key else None
 
 # Supabase setup
-SUPABASE_URL = env_vars.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "https://tqniseocczttrfwtpbdr.supabase.co"
+_supabase_url = env_vars.get("SUPABASE_URL") or os.environ.get("SUPABASE_URL") or "https://tqniseocczttrfwtpbdr.supabase.co"
+SUPABASE_URL = _supabase_url if _supabase_url.endswith("/") else _supabase_url + "/"
 SUPABASE_KEY = env_vars.get("SUPABASE_SERVICE_KEY") or env_vars.get("SUPABASE_ANON_KEY") or os.environ.get("SUPABASE_SERVICE_KEY")
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_KEY else None
 
@@ -256,21 +257,27 @@ def generate_image_prompts(idea: dict) -> list:
         max_tokens=2000,
         messages=[{
             "role": "user",
-            "content": f"""Generate 5 detailed image prompts for this creative concept:
+            "content": f"""Generate 5 image prompts for GPT Image 1.5.
 
-Name: {idea['name']}
-Concept: {idea['concept']}
-Vibe: {idea['vibe']}
+Concept: {idea['name']}
+Description: {idea['concept']}
+Mood: {idea['vibe']}
 
-Each prompt should:
-- Be detailed enough for DALL-E 3 to generate something compelling
-- Include style guidance (artistic style, color palette, mood)
-- Capture different aspects of the concept
-- Be visually striking
+STYLE GUIDE FOR GPT IMAGE 1.5:
+- Write naturally, like describing a photo to a friend
+- Be specific about what you SEE, not abstract concepts
+- Mention one clear style: "photograph", "oil painting", "watercolor", "pencil sketch", "3D render"
+- Keep it under 100 words - shorter prompts work better
+- NO keyword stuffing (no "highly detailed, 8k, masterpiece")
+- NO artist names (the model doesn't need them)
 
-Output as JSON array (no markdown, just raw JSON):
+GOOD: "A tired office worker asleep at their desk at 3am, harsh fluorescent lighting, empty coffee cups, a single desk lamp illuminating sticky notes. Photograph, documentary style."
+
+BAD: "Award-winning editorial photograph of exhausted corporate employee, dramatic chiaroscuro lighting, in the style of Gregory Crewdson, highly detailed, masterful composition, 8k resolution"
+
+Output as JSON array (no markdown):
 [
-    {{"prompt": "detailed image generation prompt", "description": "what this image represents"}},
+    {{"prompt": "natural description under 100 words", "description": "what this shows"}},
     ...
 ]"""
         }]
@@ -278,25 +285,25 @@ Output as JSON array (no markdown, just raw JSON):
     return parse_json_response(response.content[0].text)
 
 
-def generate_image(prompt: str, filename: str) -> tuple[str, bytes]:
-    """Generate an image using GPT Image 1.5. Returns (filename, image_bytes)."""
+def generate_image(prompt: str, filename: str) -> tuple[str, bytes, str]:
+    """Generate an image using GPT Image 1.5. Returns (filename, image_bytes, model_used)."""
     if not openai_client:
         print("    [!] OpenAI client not available, skipping image generation")
-        return None, None
+        return None, None, None
 
     try:
         # Try GPT Image 1.5 first (better quality, returns base64)
-        # NOTE: quality param not universally accepted yet, omitting for compatibility
         result = openai_client.images.generate(
             model="gpt-image-1.5",
             prompt=prompt,
             n=1,
-            size="1024x1024"
+            size="1024x1024",
+            quality="high"
         )
 
         # Decode base64 response
         image_bytes = base64.b64decode(result.data[0].b64_json)
-        return filename, image_bytes
+        return filename, image_bytes, "gpt-image-1.5"
 
     except Exception as e:
         # Fall back to DALL-E 3 if gpt-image-1.5 fails
@@ -323,14 +330,14 @@ def generate_image(prompt: str, filename: str) -> tuple[str, bytes]:
                     image_bytes = f.read()
 
                 temp_path.unlink()
-                return filename, image_bytes
+                return filename, image_bytes, "dall-e-3"
 
             except Exception as e2:
                 print(f"    [!] DALL-E 3 also failed: {e2}")
-                return None, None
+                return None, None, None
         else:
             print(f"    [!] Image generation failed: {e}")
-            return None, None
+            return None, None, None
 
 
 def upload_image_to_supabase(filename: str, image_bytes: bytes) -> str:
@@ -399,6 +406,7 @@ def save_idea_to_supabase(idea: dict, text_posts: list, images: list) -> str:
                 "description": img.get("description"),
                 "storage_path": img.get("url"),
                 "image_order": i + 1,
+                "model": img.get("model"),
             }
             supabase.table("echo_quirky_images").insert(img_data).execute()
 
@@ -467,7 +475,7 @@ def run_generator(approach: int, human_input: str = None):
         idea = engine_collision()
     elif approach == 3:
         idea = engine_constraint(human_input)
-    elif approach == 5:
+    elif approach == 4:
         idea = engine_expansion(human_input)
     else:
         raise ValueError(f"Unknown approach: {approach}")
@@ -495,17 +503,18 @@ def run_generator(approach: int, human_input: str = None):
     for i, img_data in enumerate(image_prompts):
         print(f"    [{i+1}/5] Generating image...")
         filename = f"{idea['name']}-{timestamp}-{i+1}.png"
-        fname, image_bytes = generate_image(img_data['prompt'], filename)
+        fname, image_bytes, model_used = generate_image(img_data['prompt'], filename)
 
         url = None
         if image_bytes:
-            print(f"    [{i+1}/5] Uploading to Supabase...")
+            print(f"    [{i+1}/5] Generated with {model_used}, uploading...")
             url = upload_image_to_supabase(fname, image_bytes)
 
         images.append({
             'prompt': img_data['prompt'],
             'description': img_data['description'],
-            'url': url
+            'url': url,
+            'model': model_used
         })
 
     # Save to Supabase
@@ -538,7 +547,7 @@ Select your generator approach:
   3 - Constraint template
       (You provide a weird constraint)
 
-  5 - Human seed expansion
+  4 - Human seed expansion
       (You provide a one-liner, AI expands)
 
 """)
@@ -559,10 +568,10 @@ Select your generator approach:
     # Get approach
     while True:
         try:
-            approach = int(input("Enter approach (1/2/3/5): ").strip())
-            if approach in [1, 2, 3, 5]:
+            approach = int(input("Enter approach (1/2/3/4): ").strip())
+            if approach in [1, 2, 3, 4]:
                 break
-            print("Please enter 1, 2, 3, or 5")
+            print("Please enter 1, 2, 3, or 4")
         except ValueError:
             print("Please enter a number")
 
@@ -572,7 +581,7 @@ Select your generator approach:
         print("\nEnter your weird constraint:")
         print("  (e.g., 'an account that only posts about things that almost happened')")
         human_input = input("> ").strip()
-    elif approach == 5:
+    elif approach == 4:
         print("\nEnter your one-line seed idea:")
         print("  (e.g., 'reviews of places that don't exist')")
         human_input = input("> ").strip()

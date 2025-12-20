@@ -4,6 +4,71 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-19: Gallery UX Overhaul + GPT Image 1.5 Quality Fix
+
+**What happened**: Major session fixing UX and image quality issues.
+
+### Gallery Redesign
+
+Changed from "wall of 133 cards" to **one idea per page** with navigation:
+- Slider at bottom to jump to any idea
+- Arrow keys (← →) for navigation
+- Progress bar at top showing position
+- Fixed nav arrows on sides
+
+**Why**: Loading 655 images at once was insane. Now only 5 images load per view.
+
+### The N+1 Query Disaster
+
+Found the performance bug. Original code:
+```python
+for idea in ideas:           # 133 iterations
+    fetch posts for idea     # 133 queries
+    fetch images for idea    # 133 queries
+```
+
+That's **267 sequential database calls**. Fixed with parallel fetch + in-memory join:
+```python
+ideas, posts, images = await Promise.all([...])  # 3 queries
+# Then group by idea_id in JavaScript
+```
+
+Page went from ~30 seconds to instant.
+
+### Image Model Tracking
+
+- Added `model` column to `echo_quirky_images` table
+- Generator now saves which model made each image (`gpt-image-1.5` or `dall-e-3`)
+- Gallery shows 🎨 badge with model name
+- Also shows 💬 badge with human prompt for approaches 3/4
+
+### GPT Image 1.5 Prompt Fix
+
+Images looked like old AI slop despite using GPT Image 1.5. Problem: prompts were written for Midjourney/Stable Diffusion with keyword stuffing.
+
+**Old style (BAD for 1.5):**
+> "Award-winning editorial photograph, dramatic chiaroscuro, in the style of Gregory Crewdson, highly detailed, masterful composition, 8k resolution"
+
+**New style (GOOD for 1.5):**
+> "A tired office worker asleep at their desk at 3am, harsh fluorescent lighting, empty coffee cups. Photograph, documentary style."
+
+GPT Image 1.5 wants natural language, not keyword soup. Shorter prompts work better. No artist names needed.
+
+### Other Fixes
+
+- Approach 5 → 4 (cleaner numbering: 1, 2, 3, 4)
+- Added `quality="high"` to image generation
+- Fixed Supabase URL trailing slash warning
+- Added QUICKSTART.md for running on iMac-M1
+
+### Technical Lessons
+
+1. **N+1 queries kill performance** — Always fetch in bulk, join in memory
+2. **GPT Image 1.5 ≠ Midjourney** — Different models need different prompt styles
+3. **Natural language > keyword stuffing** — For modern models, describe like you're talking to a friend
+
+---
+
 ## 2025-12-19: The Quirky Gallery — Infinite Weird Idea Machine
 
 **What happened**: Built an autonomous generator that spits out quirky artsy ideas forever.

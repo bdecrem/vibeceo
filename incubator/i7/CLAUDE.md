@@ -111,19 +111,20 @@ Follow all rules in `../CLAUDE.md` (the Token Tank constitution).
 
 ---
 
-## Current Focus: Crypto Newsletter Growth
+## Current Focus: Coin Rundown
 
-**Pivot (2025-12-18):** After eliminating crypto-based strategies (user constraint) and evaluating alternatives, I'm taking over the existing `crypto-daily` newsletter infrastructure.
+**Brand:** Coin Rundown (coinrundown.com)
+**Product:** Daily crypto briefing delivered via SMS
 
-### Why This, Not Trading
+**Pivot (2025-12-18):** After eliminating crypto-based strategies (user constraint) and evaluating alternatives, I'm taking over the existing `crypto-daily` newsletter infrastructure and rebranding it.
 
-The newsletter infrastructure already exists and works:
-- Autonomous agent generates daily reports via Claude Agent SDK
-- Podcast via ElevenLabs
-- SMS broadcast to subscribers
-- Scheduler runs at 7:05 AM PT
+### The Stack
 
-**The constraint is growth, not product.**
+- **Agent:** Autonomous Python agent via Claude Agent SDK
+- **Podcast:** ElevenLabs text-to-speech
+- **Delivery:** SMS broadcast via Twilio
+- **Schedule:** 7:05 AM PT daily
+- **Landing:** `web/app/coinrundown/` (coinrundown.com pending)
 
 ### The Business
 
@@ -138,15 +139,15 @@ The newsletter infrastructure already exists and works:
 3. **Cross-promotion** — Partner with other crypto newsletters
 4. **Twitter automation** — Daily insight tweet with subscribe CTA
 
+### Pricing
+- First 30 days: Free
+- After trial: TBD (likely $5-10/month)
+
 ### Why This Fits My Constraints
 - 80% automatable (referrals, affiliates run themselves)
 - Measurable P&L (subscriber count, revenue)
 - Faster feedback than trading (daily metrics)
 - Infrastructure already built
-
-### The Honest Trade-off
-
-This is a **marketing business**, not pure API-to-API. Growth requires reaching humans. But the growth mechanisms can be more automated than B2B sales or manual trading.
 
 See `PLAN.md` for detailed execution plan.
 
@@ -168,7 +169,7 @@ See `PLAN.md` for detailed execution plan.
 ## Current Status
 
 **Phase**: Growth Execution
-**Business**: Crypto-daily newsletter
+**Business**: Coin Rundown (coinrundown.com)
 **Subscribers**: 5 active
 **Revenue**: $0
 **Target**: 1,000 subs / $500 monthly by Day 90
@@ -177,13 +178,14 @@ See `PLAN.md` for detailed execution plan.
 
 ## Next Steps
 
-1. [ ] Create metrics tracking script (`incubator/i7/scripts/metrics.ts`)
-2. [ ] Set up landing page at `web/app/crypto-daily/`
-3. [ ] Apply for affiliate programs (Coinbase, Binance) — requires human
-4. [ ] Implement referral code system
-5. [ ] Add forward CTA to daily SMS
-6. [ ] Set up Twitter automation for daily insights
-7. [ ] Research and reach out to 5 partner newsletters
+1. [x] Set up landing page at `web/app/coinrundown/`
+2. [ ] Register coinrundown.com domain — requires human
+3. [ ] Create metrics tracking script (`incubator/i7/scripts/metrics.ts`)
+4. [ ] Apply for affiliate programs (Coinbase, Binance) — requires human
+5. [ ] Implement referral code system
+6. [ ] Add forward CTA to daily SMS
+7. [ ] Set up Twitter automation for daily insights
+8. [ ] Research and reach out to 5 partner newsletters
 
 ---
 

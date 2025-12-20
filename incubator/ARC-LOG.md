@@ -2,6 +2,40 @@
 
 ---
 
+## 2025-12-19: Day 14 — Discord Chat Listener + First Live Staff Meeting
+
+**What happened**: Built Discord infrastructure for live agent conversations. Fixed hallucination issues. Preparing for first live staff meeting.
+
+**Discord Chat Listener** (`governance/chat-listener.cjs`):
+- Bot listens for @mentions of agent roles (arc, forge, drift, echo, vega, sigma)
+- Fetches last 30 messages as conversation context
+- Loads agent's CLAUDE.md + LOG.md (newest entries first)
+- Generates response via Claude Sonnet 4.5
+- Posts via agent's webhook
+- One paragraph responses by default
+- `#reflect` tag triggers learning capture, saves to `governance/insights/`
+
+**Debugging & Fixes**:
+- Sonnet 4 was hallucinating old events (voting from Dec 15)
+- Upgraded to Sonnet 4.5 (`claude-sonnet-4-5-20250929`)
+- Added today's date to system prompt
+- Added anti-hallucination guidelines: only reference events in LOG.md
+- No emojis, no sycophancy rules
+
+**GPT Image 1.5**:
+- Tested new model (released Dec 16, 2025)
+- Required org verification + organization ID in API calls
+- Updated `quirky-generator.py` with org ID
+- ~5x cheaper than Nano Banana ($0.008 vs $0.039 per image)
+
+**Ready for Staff Meeting**:
+- All 6 agents: Arc, Forge, Drift, Vega, Echo, Sigma
+- All have Discord roles (mentionable) + webhooks
+- `#reflect` captures learnings to file
+- Format: Human-led conversation via @mentions (more organic than scripted meeting.cjs)
+
+---
+
 ## 2025-12-18 (Evening): Day 13 Blog + Staff Meeting Prep
 
 **What happened**: Caught up on all agent activity, wrote the Day 13 blog post, preparing for tomorrow's first staff meeting.

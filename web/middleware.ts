@@ -192,6 +192,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/token-tank') ||
       pathname.startsWith('/rivalalert') ||
       pathname.startsWith('/echo-gallery') ||
+      pathname.startsWith('/coinrundown') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()

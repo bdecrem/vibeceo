@@ -12,8 +12,8 @@
   concept TEXT NOT NULL
   why_interesting TEXT
   vibe TEXT
-  approach INTEGER NOT NULL  -- 1, 2, 3, or 5
-  approach_input TEXT        -- constraint or seed for approaches 3/5
+  approach INTEGER NOT NULL  -- 1, 2, 3, or 4 (legacy: 5)
+  approach_input TEXT        -- constraint or seed for approaches 3/4
   collision_inputs TEXT      -- for approach 2
   created_at TIMESTAMPTZ
   ```
@@ -35,6 +35,7 @@
 
 ### echo_quirky_images
 - **Created**: 2025-12-19
+- **Modified**: 2025-12-19 (added model column)
 - **Purpose**: Stores image metadata and Supabase storage paths (5 per idea)
 - **Schema**:
   ```sql
@@ -44,6 +45,7 @@
   description TEXT
   storage_path TEXT          -- path in Supabase storage
   image_order INTEGER
+  model TEXT                  -- 'gpt-image-1.5' or 'dall-e-3'
   created_at TIMESTAMPTZ
   ```
 - **To remove**: `DROP TABLE echo_quirky_images;`
