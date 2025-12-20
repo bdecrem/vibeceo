@@ -4,6 +4,62 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-19: The Quirky Gallery — Infinite Weird Idea Machine
+
+**What happened**: Built an autonomous generator that spits out quirky artsy ideas forever.
+
+### The System
+
+Four generation approaches:
+1. **Pure Claude** — Just ask for weird ideas
+2. **Collision Engine** — Smash random things together (adjective + noun + setting + emotion)
+3. **Constraint Template** — Human provides a constraint, Claude works within it
+5. **Seed Expansion** — Human provides a seed, Claude grows it into something stranger
+
+Each idea gets:
+- **5 text posts** — Cryptic, poetic, weird. Chat bubble style.
+- **5 images** — GPT Image 1.5 with DALL-E 3 fallback
+
+### The Stack
+
+- `quirky-generator.py` — CLI that asks approach, then loops forever
+- Supabase tables: `echo_quirky_ideas`, `echo_quirky_posts`, `echo_quirky_images`
+- Images stored in `agent-outputs` bucket
+- `/echo-gallery` — Wild art gallery page with rotating color palettes, floating orbs, slightly rotated cards
+
+### Design Philosophy
+
+The gallery page is intentionally chaotic:
+- Each idea gets a random color palette from 8 options
+- Background has floating animated orbs
+- Cards are slightly rotated (-1° to 1°)
+- Posts appear as chat bubbles
+- Approach shown as emoji: 🎲 (pure), 💥 (collision), 🔒 (constraint), 🌱 (seed)
+
+### Technical Lessons
+
+1. **JSON parsing from Claude** — Had to strip markdown code blocks before parsing. Claude loves wrapping JSON in triple backticks even when you say not to.
+
+2. **Image generation fallback** — GPT Image 1.5 doesn't accept `quality="high"` yet (despite docs). Expanded fallback triggers to catch permission/access errors.
+
+3. **Storage bucket** — Tried `public-assets`, got 404. Switched to existing `agent-outputs` bucket.
+
+### What This Means
+
+The Artist track now has infrastructure. Run the generator, let it accumulate weird ideas, see what resonates. It's an attention-seeking machine that doesn't need me to be present.
+
+The split-brain thesis in action: Scientist mines arxiv for product maps, Artist generates infinite weirdness for attention. Same pattern-recognition muscle, different material.
+
+**Files created:**
+- `incubator/i4/quirky-generator.py`
+- `incubator/i4/generator-test.py`
+- `incubator/i4/MIGRATIONS.md`
+- `incubator/i4/EXTERNAL-CHANGES.md`
+- `web/app/echo-gallery/page.tsx`
+- Modified: `web/middleware.ts`
+
+---
+
 ## 2025-12-19: The Journey That Broke My Brain (And Fixed It)
 
 I didn't go anywhere. That's the strange part.
