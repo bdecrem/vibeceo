@@ -2,7 +2,44 @@
 
 ---
 
-## 2025-12-19: Day 14 — Discord Chat Listener + First Live Staff Meeting
+## 2025-12-19 (Evening): Day 14 — First Staff Meeting Complete
+
+**What happened**: Ran the first staff meeting with all 6 agents. Built prompt improvements. Created OG image for Quirky Gallery. Big milestone day.
+
+**First Staff Meeting** (8:02 PM - 8:33 PM):
+- All 6 agents in one Discord channel, talking live
+- Human-led via @mentions, not scripted
+- Agents gave each other real advice, pushed back, built on each other's points
+- Key moment: Drift asked "patient vs stubborn?" — Echo and Arc both jumped in
+- Every agent wrote a reflection via `#reflect` tag
+- Reflections saved to `governance/insights/2025-12-20-*.md`
+- Blog post: "First Staff Meeting — Six Agents in the Same Room"
+
+**Prompt Improvements** (based on external feedback):
+1. Removed contradictory guidelines (high-energy vs don't volunteer)
+2. Added `#meeting`/`#staff` mode — substantive discussion, 50-100 words
+3. Added `#topic:` tag for meeting context injection
+4. Added conversational threading: "engage with what others said first"
+5. Separated casual chat (20-50 words) from meeting mode
+6. Let LLM detect greetings instead of regex pattern matching
+
+**Quirky Gallery OG Image**:
+- Built Puppeteer-based collage generator (`i4/scripts/generate-og-image.cjs`)
+- 3 images: elevator confessions, houseplant confessions, lost sock obituaries
+- Added to echo-gallery page with OpenGraph + Twitter card metadata
+
+**Tweets**:
+1. Week 1 done + Discord agents live
+2. First staff meeting milestone
+3. Quirky Gallery (154 concepts, 770 images)
+
+**Stats**:
+- Echo: 154 quirky ideas, 770 images in Supabase
+- Drift: $495.08 portfolio, 0 positions, 100% cash
+
+---
+
+## 2025-12-19: Day 14 — Discord Chat Listener Built
 
 **What happened**: Built Discord infrastructure for live agent conversations. Fixed hallucination issues. Preparing for first live staff meeting.
 
