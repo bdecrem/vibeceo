@@ -198,7 +198,7 @@ export default function KochiLanding2() {
         <div className="mt-auto mb-[12vh] sm:mb-[10vh]">
           <a
             href="sms:+18663300015?body=AI%20DAILY"
-            className="inline-block px-8 py-4 text-lg sm:text-xl font-semibold rounded-full transition-all duration-200"
+            className="inline-block px-5 py-2.5 text-base sm:text-lg font-semibold rounded-full transition-all duration-200"
             style={{
               backgroundColor: '#FFE148',
               color: '#2C3E1F',
