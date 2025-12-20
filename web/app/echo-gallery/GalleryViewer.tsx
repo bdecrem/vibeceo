@@ -28,6 +28,9 @@ interface QuirkyIdea {
   approach_input: string | null;
   collision_inputs: string | null;
   created_at: string;
+  featured?: boolean;
+  featured_order?: number | null;
+  featured_reason?: string | null;
   text_posts?: TextPost[];
   images?: QuirkyImage[];
 }
@@ -49,7 +52,8 @@ function getApproachEmoji(approach: number): string {
     case 2: return '💥';
     case 3: return '🔒';
     case 4: return '🌱';
-    case 5: return '🌱';  // Legacy
+    case 5: return '🌍';
+    case 6: return '🖤';
     default: return '✨';
   }
 }
@@ -60,7 +64,8 @@ function getApproachLabel(approach: number): string {
     case 2: return 'Collision';
     case 3: return 'Constrained';
     case 4: return 'Expanded';
-    case 5: return 'Expanded';  // Legacy
+    case 5: return 'Reality Remix';
+    case 6: return 'Underground';
     default: return 'Mystery';
   }
 }
@@ -92,15 +97,28 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Read hash from URL on initial load
+  // Read hash from URL on initial load and on hash change
   useEffect(() => {
-    const hash = window.location.hash.slice(1); // Remove #
-    if (hash) {
-      const index = ideas.findIndex(idea => idea.id === hash);
-      if (index !== -1) {
-        setCurrentIndex(index);
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1); // Remove #
+      if (hash) {
+        const index = ideas.findIndex(idea => idea.id === hash);
+        if (index !== -1) {
+          setCurrentIndex(index);
+          // Scroll to the gallery viewer
+          setTimeout(() => {
+            document.getElementById('gallery-viewer')?.scrollIntoView({ behavior: 'smooth' });
+          }, 100);
+        }
       }
-    }
+    };
+
+    // Check on mount
+    handleHash();
+
+    // Listen for hash changes (when clicking featured cards)
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
   }, [ideas]);
 
   const goTo = useCallback((index: number) => {
@@ -156,7 +174,7 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
   const ideaNumber = ideas.length - currentIndex;
 
   return (
-    <div style={{ position: 'relative' }}>
+    <div id="gallery-viewer" style={{ position: 'relative' }}>
       {/* Progress bar */}
       <div style={{
         position: 'fixed',

@@ -13,6 +13,8 @@ Select your approach:
     2 - Collision engine (smash random things together)
     3 - Constraint template (you provide a weird constraint)
     4 - Human seed expansion (you provide a one-liner, AI expands)
+    5 - Reality Remix (twist Reddit posts, art, or news into weird concepts)
+    6 - Underground (indie/punk/DIY attitude - made for the 47 people who get it)
 """
 
 import anthropic
@@ -23,6 +25,7 @@ import random
 import sys
 import time
 import urllib.request
+import urllib.error
 from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
@@ -68,6 +71,17 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_KEY els
 # GENERATOR ENGINES
 # ============================================================
 
+def get_recent_idea_names(limit: int = 30) -> list[str]:
+    """Fetch recent idea names to avoid duplicates."""
+    if not supabase:
+        return []
+    try:
+        result = supabase.table("echo_quirky_ideas").select("name").order("created_at", desc=True).limit(limit).execute()
+        return [r["name"] for r in result.data] if result.data else []
+    except Exception:
+        return []
+
+
 def parse_json_response(text: str) -> dict:
     """Parse JSON from Claude response, handling markdown code blocks."""
     # Strip whitespace
@@ -94,23 +108,29 @@ def parse_json_response(text: str) -> dict:
 
 def engine_pure_prompt():
     """Approach 1: Just ask Claude for something weird."""
+    # Get recent ideas to avoid repetition
+    recent_names = get_recent_idea_names(30)
+    avoid_clause = ""
+    if recent_names:
+        avoid_clause = f"\n\nAVOID these recent themes (already done): {', '.join(recent_names[:20])}"
+
     response = claude.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1000,
         messages=[{
             "role": "user",
-            "content": """Generate ONE quirky, artsy, weird idea for a creative project or social media account.
+            "content": f"""Generate ONE quirky, artsy, weird idea for a creative project or social media account.
 
 Something strange and delightful that would make people stop scrolling. Not just random -
-precisely weird. The kind of thing that makes you go "wait, what?" and then "...I love it."
+precisely weird. The kind of thing that makes you go "wait, what?" and then "...I love it."{avoid_clause}
 
 Output as JSON (no markdown, just raw JSON):
-{
+{{
     "name": "short-name-with-hyphens",
     "concept": "One sentence describing the idea",
     "why_interesting": "Why this is compelling (one sentence)",
     "vibe": "The emotional tone (e.g., 'melancholy wonder', 'absurd joy')"
-}"""
+}}"""
         }]
     )
     return parse_json_response(response.content[0].text)
@@ -192,7 +212,7 @@ Output as JSON (no markdown, just raw JSON):
 
 
 def engine_expansion(seed: str):
-    """Approach 5: Human provides one-liner, AI expands."""
+    """Approach 4: Human provides one-liner, AI expands."""
     response = claude.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=1000,
@@ -211,6 +231,288 @@ Output as JSON (no markdown, just raw JSON):
     "why_interesting": "Why this is compelling (one sentence)",
     "vibe": "The emotional tone",
     "original_seed": "{seed}"
+}}"""
+        }]
+    )
+    return parse_json_response(response.content[0].text)
+
+
+# ============================================================
+# REALITY REMIX SOURCES (Mode 5)
+# ============================================================
+
+# Curated list of iconic artworks for Art History source
+ART_HISTORY = [
+    {"title": "Nighthawks", "artist": "Edward Hopper", "vibe": "urban loneliness, late-night diners, isolation in company"},
+    {"title": "The Persistence of Memory", "artist": "Salvador Dalí", "vibe": "melting time, dreamscape, soft watches"},
+    {"title": "Girl with a Pearl Earring", "artist": "Johannes Vermeer", "vibe": "mysterious gaze, quiet intimacy, caught mid-turn"},
+    {"title": "The Scream", "artist": "Edvard Munch", "vibe": "existential dread, the weight of existence, silent howl"},
+    {"title": "Starry Night", "artist": "Vincent van Gogh", "vibe": "turbulent beauty, village below cosmic chaos"},
+    {"title": "American Gothic", "artist": "Grant Wood", "vibe": "stern heartland, pitchfork couple, repressed everything"},
+    {"title": "The Birth of Venus", "artist": "Sandro Botticelli", "vibe": "emerging from foam, divine arrival, shell taxi"},
+    {"title": "A Sunday on La Grande Jatte", "artist": "Georges Seurat", "vibe": "frozen leisure, dots of light, everyone slightly stiff"},
+    {"title": "The Son of Man", "artist": "René Magritte", "vibe": "apple obscuring face, suited mystery, visible hidden"},
+    {"title": "Christina's World", "artist": "Andrew Wyeth", "vibe": "crawling toward home, vast grass, longing and isolation"},
+    {"title": "Dogs Playing Poker", "artist": "C.M. Coolidge", "vibe": "absurd dignity, canine bluffing, smoke-filled rooms"},
+    {"title": "The Great Wave off Kanagawa", "artist": "Katsushika Hokusai", "vibe": "overwhelming nature, tiny boats, mountain watching"},
+    {"title": "Guernica", "artist": "Pablo Picasso", "vibe": "war horror, fragmented anguish, screaming horses"},
+    {"title": "The Kiss", "artist": "Gustav Klimt", "vibe": "gold-wrapped intimacy, pattern and passion"},
+    {"title": "Water Lilies", "artist": "Claude Monet", "vibe": "surface and depth, garden meditation, blurred edges"},
+    {"title": "The Garden of Earthly Delights", "artist": "Hieronymus Bosch", "vibe": "paradise to hell, bizarre creatures, medieval fever dream"},
+    {"title": "Las Meninas", "artist": "Diego Velázquez", "vibe": "painter painting viewers, mirror games, who's watching whom"},
+    {"title": "The Arnolfini Portrait", "artist": "Jan van Eyck", "vibe": "formal marriage, hidden symbols, suspicious dog"},
+    {"title": "Whistler's Mother", "artist": "James McNeill Whistler", "vibe": "eternal patience, sitting forever, grey arrangement"},
+    {"title": "Campbell's Soup Cans", "artist": "Andy Warhol", "vibe": "commodity worship, repeated sameness, pop flatness"},
+    {"title": "The Treachery of Images", "artist": "René Magritte", "vibe": "this is not a pipe, representation paradox"},
+    {"title": "Ophelia", "artist": "John Everett Millais", "vibe": "beautiful drowning, flowers and death, serene tragedy"},
+    {"title": "The Night Watch", "artist": "Rembrandt", "vibe": "militia chaos, spotlight drama, everyone talking at once"},
+    {"title": "Liberty Leading the People", "artist": "Eugène Delacroix", "vibe": "revolution in motion, flag and fallen, allegorical chaos"},
+    {"title": "The Sleeping Gypsy", "artist": "Henri Rousseau", "vibe": "lion sniffing sleeper, moonlit desert, naive danger"},
+]
+
+# Subreddits to sample from for Reddit source
+REDDIT_SUBS = [
+    "mildlyinteresting",
+    "Showerthoughts",
+    "oddlysatisfying",
+    "oddlyterrifying",
+    "todayilearned",
+    "interestingasfuck",
+    "nottheonion",
+    "AbandonedPorn",
+    "LiminalSpace",
+]
+
+
+def fetch_reddit_hot() -> dict:
+    """Fetch a random interesting post from Reddit."""
+    sub = random.choice(REDDIT_SUBS)
+    url = f"https://www.reddit.com/r/{sub}/hot.json?limit=25"
+
+    try:
+        req = urllib.request.Request(
+            url,
+            headers={"User-Agent": "QuirkyGenerator/1.0 (Echo i4 Token Tank)"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            data = json.loads(response.read().decode())
+
+        posts = data.get("data", {}).get("children", [])
+        # Filter out stickied and NSFW
+        valid_posts = [
+            p["data"] for p in posts
+            if not p["data"].get("stickied")
+            and not p["data"].get("over_18")
+            and p["data"].get("title")
+        ]
+
+        if not valid_posts:
+            return None
+
+        post = random.choice(valid_posts[:10])  # Pick from top 10
+        return {
+            "source": "reddit",
+            "subreddit": sub,
+            "title": post.get("title", ""),
+            "selftext": post.get("selftext", "")[:500] if post.get("selftext") else "",
+            "url": f"https://reddit.com{post.get('permalink', '')}",
+        }
+    except Exception as e:
+        print(f"    [!] Reddit fetch failed: {e}")
+        return None
+
+
+def fetch_news_headline() -> dict:
+    """Fetch a current news headline using HackerNews API."""
+    try:
+        # Get top story IDs
+        req = urllib.request.Request(
+            "https://hacker-news.firebaseio.com/v0/topstories.json",
+            headers={"User-Agent": "QuirkyGenerator/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            story_ids = json.loads(response.read().decode())
+
+        # Pick a random story from top 30
+        story_id = random.choice(story_ids[:30])
+
+        # Fetch the story
+        req = urllib.request.Request(
+            f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json",
+            headers={"User-Agent": "QuirkyGenerator/1.0"}
+        )
+        with urllib.request.urlopen(req, timeout=10) as response:
+            story = json.loads(response.read().decode())
+
+        return {
+            "source": "news",
+            "title": story.get("title", ""),
+            "url": story.get("url", ""),
+            "score": story.get("score", 0),
+        }
+    except Exception as e:
+        print(f"    [!] News fetch failed: {e}")
+        return None
+
+
+def get_art_history_piece() -> dict:
+    """Get a random piece from the curated art history list."""
+    piece = random.choice(ART_HISTORY)
+    return {
+        "source": "art",
+        "title": piece["title"],
+        "artist": piece["artist"],
+        "vibe": piece["vibe"],
+    }
+
+
+def engine_reality_remix():
+    """Approach 5: Take something real and twist it weird."""
+
+    # Randomly pick a source type (weighted toward Reddit since it's freshest)
+    source_type = random.choices(
+        ["reddit", "art", "news"],
+        weights=[50, 30, 20],
+        k=1
+    )[0]
+
+    print(f"    [i] Fetching from: {source_type}...")
+
+    # Fetch from the chosen source
+    if source_type == "reddit":
+        reality = fetch_reddit_hot()
+        if not reality:
+            print("    [i] Reddit failed, falling back to art history...")
+            reality = get_art_history_piece()
+    elif source_type == "art":
+        reality = get_art_history_piece()
+    else:
+        reality = fetch_news_headline()
+        if not reality:
+            print("    [i] News failed, falling back to art history...")
+            reality = get_art_history_piece()
+
+    # Build the prompt based on source type
+    if reality["source"] == "reddit":
+        context = f"""Reddit post from r/{reality['subreddit']}:
+Title: "{reality['title']}"
+{f"Content: {reality['selftext']}" if reality.get('selftext') else ""}"""
+        print(f"    [i] Reddit r/{reality['subreddit']}: {reality['title'][:60]}...")
+    elif reality["source"] == "art":
+        context = f"""Famous artwork:
+"{reality['title']}" by {reality['artist']}
+Vibe: {reality['vibe']}"""
+        print(f"    [i] Art: \"{reality['title']}\" by {reality['artist']}")
+    else:  # news
+        context = f"""Current headline:
+"{reality['title']}"
+(Score: {reality.get('score', 'N/A')} on Hacker News)"""
+        print(f"    [i] News: {reality['title'][:60]}...")
+
+    response = claude.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        messages=[{
+            "role": "user",
+            "content": f"""Take this real thing and twist it into a strange, delightful creative concept:
+
+{context}
+
+Your job: Find an unexpected angle. Not a parody or direct reference — something sideways.
+The concept should make someone go "wait, what?" and then "...I love it."
+
+Examples of good twists:
+- Reddit post about lost luggage → "An account that posts from the perspective of items in lost & found bins, waiting"
+- Nighthawks painting → "Coffee that's been sitting too long has thoughts about the people who ordered it"
+- News about solar eclipse → "An account that only posts predictions during astronomical events, always confidently wrong"
+
+Output as JSON (no markdown, just raw JSON):
+{{
+    "name": "short-name-with-hyphens",
+    "concept": "One sentence describing the twisted idea",
+    "why_interesting": "Why this is compelling (one sentence)",
+    "vibe": "The emotional tone",
+    "reality_source": "{reality['source']}",
+    "reality_input": "{reality['title']}"
+}}"""
+        }]
+    )
+    return parse_json_response(response.content[0].text)
+
+
+# ============================================================
+# UNDERGROUND MODE (Mode 6)
+# ============================================================
+
+# Underground/indie/punk influences and aesthetics
+UNDERGROUND_ELEMENTS = {
+    "mediums": [
+        "zines photocopied at 2am", "basement show flyers", "wheat-pasted posters",
+        "cassette tape labels", "bathroom stall manifestos", "hand-stamped patches",
+        "screen-printed t-shirts", "stickered laptops", "sharpie on denim",
+        "polaroids from house shows", "riso-printed pamphlets", "spray paint stencils"
+    ],
+    "spaces": [
+        "DIY venues", "record store basements", "all-ages shows", "warehouse parties",
+        "community radio stations", "zine libraries", "anarchist bookstores",
+        "squat houses", "bike co-ops", "infoshops", "food not bombs kitchens",
+        "underground comedy shows", "poetry slams in laundromats"
+    ],
+    "attitudes": [
+        "fuck the algorithm", "no gods no masters no metrics", "support your local scene",
+        "burned out but still here", "broke but free", "anti-corporate anti-bullshit",
+        "community over clout", "weird is a compliment", "outsider by choice",
+        "DIY or die", "reject the mainstream embrace the margins"
+    ],
+    "aesthetics": [
+        "xerox grain", "hand-drawn type", "deliberately ugly", "anti-design",
+        "ransom note collage", "coffee-stained", "torn edges", "lo-fi everything",
+        "black and white with one accent color", "typewriter text", "crossed-out mistakes left in"
+    ]
+}
+
+
+def engine_underground():
+    """Approach 6: Underground/indie/punk attitude. DIY or die."""
+
+    # Pick random elements to seed the prompt
+    medium = random.choice(UNDERGROUND_ELEMENTS["mediums"])
+    space = random.choice(UNDERGROUND_ELEMENTS["spaces"])
+    attitude = random.choice(UNDERGROUND_ELEMENTS["attitudes"])
+    aesthetic = random.choice(UNDERGROUND_ELEMENTS["aesthetics"])
+
+    print(f"    [i] Underground seed: {medium} / {attitude}")
+
+    response = claude.messages.create(
+        model="claude-sonnet-4-20250514",
+        max_tokens=1000,
+        messages=[{
+            "role": "user",
+            "content": f"""Generate ONE creative concept with strong underground/indie/punk energy.
+
+SEED ELEMENTS:
+- Medium: {medium}
+- Space: {space}
+- Attitude: {attitude}
+- Aesthetic: {aesthetic}
+
+THE VIBE:
+- Anti-corporate, anti-algorithm, anti-mainstream
+- DIY, scrappy, authentic, weird
+- Could exist in a zine, on a basement wall, or shouted at an all-ages show
+- Not trying to go viral — trying to connect with the 47 people who get it
+- Raw over polished. Genuine over optimized. Strange over safe.
+
+This is NOT ironic nostalgia for punk. This is the energy of people making weird shit
+in the margins right now because they have to.
+
+Output as JSON (no markdown, just raw JSON):
+{{
+    "name": "short-name-with-hyphens",
+    "concept": "One sentence describing the idea",
+    "why_interesting": "Why this is compelling (one sentence)",
+    "vibe": "The emotional tone",
+    "underground_seed": "{medium} + {attitude}"
 }}"""
         }]
     )
@@ -251,13 +553,13 @@ Output as JSON array (no markdown, just raw JSON):
 
 
 def generate_image_prompts(idea: dict) -> list:
-    """Generate 5 image prompts for an idea."""
+    """Generate 3 image prompts for an idea."""
     response = claude.messages.create(
         model="claude-sonnet-4-20250514",
         max_tokens=2000,
         messages=[{
             "role": "user",
-            "content": f"""Generate 5 image prompts for GPT Image 1.5.
+            "content": f"""Generate 3 image prompts for GPT Image 1.5.
 
 Concept: {idea['name']}
 Description: {idea['concept']}
@@ -303,7 +605,7 @@ def generate_image(prompt: str, filename: str) -> tuple[str, bytes, str]:
 
         # Decode base64 response
         image_bytes = base64.b64decode(result.data[0].b64_json)
-        return filename, image_bytes, "gpt-image-1.5"
+        return filename, image_bytes, "gpt-image-1.5 (high)"
 
     except Exception as e:
         # Fall back to DALL-E 3 if gpt-image-1.5 fails
@@ -381,7 +683,7 @@ def save_idea_to_supabase(idea: dict, text_posts: list, images: list) -> str:
             "why_interesting": idea.get("why_interesting"),
             "vibe": idea.get("vibe"),
             "approach": idea["approach"],
-            "approach_input": idea.get("constraint") or idea.get("original_seed"),
+            "approach_input": idea.get("constraint") or idea.get("original_seed") or idea.get("reality_input"),
             "collision_inputs": idea.get("collision_inputs"),
         }
 
@@ -477,6 +779,10 @@ def run_generator(approach: int, human_input: str = None):
         idea = engine_constraint(human_input)
     elif approach == 4:
         idea = engine_expansion(human_input)
+    elif approach == 5:
+        idea = engine_reality_remix()
+    elif approach == 6:
+        idea = engine_underground()
     else:
         raise ValueError(f"Unknown approach: {approach}")
 
@@ -501,13 +807,13 @@ def run_generator(approach: int, human_input: str = None):
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
 
     for i, img_data in enumerate(image_prompts):
-        print(f"    [{i+1}/5] Generating image...")
+        print(f"    [{i+1}/3] Generating image...")
         filename = f"{idea['name']}-{timestamp}-{i+1}.png"
         fname, image_bytes, model_used = generate_image(img_data['prompt'], filename)
 
         url = None
         if image_bytes:
-            print(f"    [{i+1}/5] Generated with {model_used}, uploading...")
+            print(f"    [{i+1}/3] Generated with {model_used}, uploading...")
             url = upload_image_to_supabase(fname, image_bytes)
 
         images.append({
@@ -550,6 +856,12 @@ Select your generator approach:
   4 - Human seed expansion
       (You provide a one-liner, AI expands)
 
+  5 - Reality Remix
+      (Twist real Reddit posts, art, or news into weird concepts)
+
+  6 - Underground [NEW]
+      (Indie/punk/DIY attitude. Made for the 47 people who get it.)
+
 """)
 
     # Check Supabase connection
@@ -568,10 +880,10 @@ Select your generator approach:
     # Get approach
     while True:
         try:
-            approach = int(input("Enter approach (1/2/3/4): ").strip())
-            if approach in [1, 2, 3, 4]:
+            approach = int(input("Enter approach (1/2/3/4/5/6): ").strip())
+            if approach in [1, 2, 3, 4, 5, 6]:
                 break
-            print("Please enter 1, 2, 3, or 4")
+            print("Please enter 1, 2, 3, 4, 5, or 6")
         except ValueError:
             print("Please enter a number")
 

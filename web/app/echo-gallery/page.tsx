@@ -1,26 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
 import { Metadata } from 'next';
 import GalleryViewer from './GalleryViewer';
+import FeaturedSection from './FeaturedSection';
 
 export const metadata: Metadata = {
-  title: 'The Quirky Gallery | Ideas That Shouldn\'t Exist',
-  description: 'Strange and delightful ideas, generated forever. An infinite museum of the beautifully weird.',
+  title: 'The Oblique Museum | Ideas That Shouldn\'t Exist',
+  description: 'Strange and delightful ideas, approached from unexpected angles. An infinite museum of the precisely weird.',
   openGraph: {
-    title: 'The Quirky Gallery',
-    description: 'Strange and delightful ideas, generated forever. 154 concepts. 770 images.',
+    title: 'The Oblique Museum',
+    description: 'Ideas approached from unexpected angles. Growing forever.',
     images: [
       {
         url: 'https://webtoys.ai/og-quirky-gallery.png',
         width: 1200,
         height: 630,
-        alt: 'The Quirky Gallery - An infinite idea machine by Echo',
+        alt: 'The Oblique Museum - Ideas that shouldn\'t exist, by Echo',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Quirky Gallery',
-    description: 'An infinite idea machine. Weird concepts. Weirder images.',
+    title: 'The Oblique Museum',
+    description: 'Ideas approached from unexpected angles. Growing forever.',
     images: ['https://webtoys.ai/og-quirky-gallery.png'],
   },
 };
@@ -54,6 +55,9 @@ interface QuirkyIdea {
   approach_input: string | null;
   collision_inputs: string | null;
   created_at: string;
+  featured?: boolean;
+  featured_order?: number | null;
+  featured_reason?: string | null;
   text_posts?: TextPost[];
   images?: QuirkyImage[];
 }
@@ -106,6 +110,11 @@ async function getIdeas(): Promise<QuirkyIdea[]> {
 
 export default async function EchoGalleryPage() {
   const ideas = await getIdeas();
+
+  // Separate featured ideas and sort by featured_order
+  const featuredIdeas = ideas
+    .filter(idea => idea.featured && idea.featured_order)
+    .sort((a, b) => (a.featured_order || 0) - (b.featured_order || 0));
 
   return (
     <div style={{
@@ -168,7 +177,7 @@ export default async function EchoGalleryPage() {
         {/* Header */}
         <header style={{
           textAlign: 'center',
-          marginBottom: '80px',
+          marginBottom: '60px',
           position: 'relative',
         }}>
           <div style={{
@@ -188,7 +197,7 @@ export default async function EchoGalleryPage() {
             margin: '0 0 20px 0',
             lineHeight: 1,
           }}>
-            The Quirky
+            The Oblique
             <br />
             <span style={{
               background: 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #ffe66d 100%)',
@@ -197,7 +206,7 @@ export default async function EchoGalleryPage() {
               fontWeight: 400,
               fontStyle: 'italic',
             }}>
-              Gallery
+              Museum
             </span>
           </h1>
           <p style={{
@@ -224,6 +233,30 @@ export default async function EchoGalleryPage() {
             <span style={{ color: '#666', marginLeft: '8px' }}>strange ideas and counting</span>
           </div>
         </header>
+
+        {/* Featured Section */}
+        <FeaturedSection featuredIdeas={featuredIdeas} totalCount={ideas.length} />
+
+        {/* Divider */}
+        <div style={{
+          textAlign: 'center',
+          marginBottom: '60px',
+        }}>
+          <div style={{
+            width: '100px',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, #333, transparent)',
+            margin: '0 auto 20px',
+          }} />
+          <p style={{
+            color: '#555',
+            fontSize: '0.9em',
+            textTransform: 'uppercase',
+            letterSpacing: '0.2em',
+          }}>
+            Browse All {ideas.length} Ideas
+          </p>
+        </div>
 
         {/* Gallery Viewer */}
         <GalleryViewer ideas={ideas} />
@@ -252,9 +285,9 @@ export default async function EchoGalleryPage() {
             fontStyle: 'italic',
             color: '#333',
           }}>
-            This gallery grows forever.
+            This museum grows forever.
             <br />
-            Ideas are never deleted.
+            Nothing is ever deleted.
             <br />
             <span style={{ color: '#444' }}>That&apos;s the deal.</span>
           </p>

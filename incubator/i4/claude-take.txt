@@ -1,0 +1,330 @@
+This is a great agent concept. Let me design it for you following the same pattern as your gallery and meme bots.
+
+---
+
+## Autonomous Twitter Account Idea Generator
+
+### The Goal
+
+Feed your TokenTank agent with validated, high-potential Twitter account concepts that could realistically hit 1,000 followers in 30 days. Not random ideas - **researched, categorized, and scored ideas** based on what's actually working right now.
+
+### The Concept
+
+An autonomous bot that:
+
+1. **Scrapes successful small accounts** - Finds accounts that recently crossed 1K-10K followers fast
+2. **Analyzes niches** - What categories are growing? What's oversaturated?
+3. **Generates account concepts** - Specific, actionable ideas with positioning
+4. **Scores viability** - Based on competition, content difficulty, monetization potential
+5. **Tracks trends** - What's emerging vs. what's dying
+6. **Serves ideas via API** - So TokenTank can query for fresh concepts
+
+---
+
+### Project Structure
+
+```
+creator-idea-bot/
+├── task.txt                     # Autonomous operation instructions
+├── config.json                  # Sources, categories, scoring weights
+├── package.json
+├── src/
+│   ├── scraper.js               # Twitter/X growth account discovery
+│   ├── niche-analyzer.js        # Category analysis + saturation scoring
+│   ├── idea-generator.js        # Creates specific account concepts
+│   ├── trend-tracker.js         # Monitors emerging vs dying niches
+│   ├── scorer.js                # Viability scoring algorithm
+│   ├── database.js              # JSON-based idea storage
+│   └── api-server.js            # REST endpoints
+├── data/
+│   ├── ideas.json               # Generated account concepts
+│   ├── niches.json              # Category health data
+│   ├── success-patterns.json    # What's working for fast-growth accounts
+│   └── blacklist.json           # Oversaturated or banned niches
+├── ideas/                       # Organized by category
+│   ├── art/
+│   ├── deals/
+│   ├── humor/
+│   ├── niche-expertise/
+│   ├── curation/
+│   └── personality/
+└── logs/
+```
+
+---
+
+### The task.txt
+
+```
+AUTONOMOUS TWITTER ACCOUNT IDEA GENERATOR
+
+PRIMARY MISSION:
+Generate validated Twitter account concepts that can realistically 
+reach 1,000 followers in 30 days. Feed TokenTank with fresh, 
+actionable ideas.
+
+DAILY TASKS:
+1. Discover 5-10 accounts that recently hit 1K-10K followers quickly
+2. Analyze what niche they're in and why they grew
+3. Identify patterns: posting frequency, content type, hook style
+4. Generate 3-5 new account concepts based on findings
+5. Score each idea on viability (1-100)
+6. Update niche health scores (growing/stable/dying/oversaturated)
+7. Prune ideas that are now oversaturated or outdated
+
+IDEA CATEGORIES:
+- Art/Creative: indie artists, daily sketches, specific art styles
+- Curation: "best of" accounts, deals, recommendations
+- Expertise: niche knowledge, tutorials, tips
+- Humor: specific comedy niches, relatable content
+- Personality: character accounts, personas
+- Utility: bots, tools, daily info
+
+SCORING CRITERIA (each 0-20, total 100):
+- Growth potential: Is this niche expanding?
+- Competition: How crowded is the space?
+- Content difficulty: Can an AI realistically produce this?
+- Engagement style: Does this format get retweets/replies?
+- Monetization path: Can this eventually make money?
+
+OUTPUT FORMAT FOR EACH IDEA:
+{
+  "name": "DailyPixelArt",
+  "handle_suggestion": "@daily_pixel_art",
+  "niche": "art/pixel-art",
+  "concept": "Post one original pixel art piece daily with brief creation story",
+  "content_type": "image + short caption",
+  "posting_frequency": "1x daily",
+  "hook_style": "Visual-first, nostalgia appeal",
+  "example_posts": [
+    "Day 47: A tiny coffee shop in the rain ☕🌧️ [image]",
+    "Day 48: Someone requested a sunset samurai 🌅⚔️ [image]"
+  ],
+  "growth_strategy": "Engage with gaming/indie dev community, use #pixelart",
+  "why_it_works": "Low competition, high nostalgia engagement, easy to produce with AI",
+  "viability_score": 78,
+  "difficulty": "medium",
+  "time_to_1k_estimate": "21-28 days"
+}
+
+BLACKLIST (do not generate):
+- Crypto/trading accounts (oversaturated)
+- Political commentary (risky)
+- Adult content (prohibited)
+- Generic motivation quotes (dead)
+- News aggregation (too competitive)
+
+ERROR HANDLING:
+- If Twitter API rate limited, use cached data
+- If trend data stale, flag for manual review
+- If idea generation fails, fall back to template variations
+
+SELF-IMPROVEMENT:
+- Track which ideas TokenTank actually uses
+- Monitor success rate of generated concepts
+- Adjust scoring weights based on real outcomes
+```
+
+---
+
+### config.json
+
+```json
+{
+  "sources": {
+    "twitter_growth_trackers": [
+      "socialblade alternative",
+      "manual discovery via search"
+    ],
+    "trend_sources": [
+      "twitter trending",
+      "reddit rising communities",
+      "tiktok crossover trends"
+    ]
+  },
+  "categories": [
+    "art",
+    "curation", 
+    "deals",
+    "expertise",
+    "humor",
+    "personality",
+    "utility"
+  ],
+  "scoring_weights": {
+    "growth_potential": 20,
+    "competition": 20,
+    "content_difficulty": 20,
+    "engagement_style": 20,
+    "monetization_path": 20
+  },
+  "generation": {
+    "ideas_per_day": 5,
+    "min_viability_score": 60,
+    "max_ideas_stored": 200
+  },
+  "blacklist": [
+    "crypto",
+    "trading signals",
+    "political",
+    "adult",
+    "motivation quotes",
+    "news aggregation"
+  ]
+}
+```
+
+---
+
+### API Endpoints
+
+```
+GET /ideas/random
+  → Returns a random high-scoring idea
+
+GET /ideas/category/:type
+  → Returns ideas filtered by category (art, deals, humor, etc.)
+
+GET /ideas/top?limit=10
+  → Returns top-scored ideas
+
+GET /ideas/fresh
+  → Returns ideas generated in last 24 hours
+
+GET /niches/health
+  → Returns current niche saturation data
+
+GET /niches/:niche/ideas
+  → Returns all ideas for a specific niche
+
+POST /ideas/:id/feedback
+  → TokenTank reports back success/failure for learning
+```
+
+---
+
+### Example Output Ideas
+
+**Idea 1: Curation/Deals**
+```json
+{
+  "name": "TechUnder50",
+  "handle_suggestion": "@tech_under_50",
+  "concept": "Daily posts of actually good tech products under $50 with real reviews",
+  "content_type": "product image + brief review + link",
+  "posting_frequency": "2x daily",
+  "why_it_works": "Affiliate potential, saves people research time, visual scroll-stopper",
+  "viability_score": 82,
+  "time_to_1k_estimate": "18-25 days"
+}
+```
+
+**Idea 2: Art/Niche**
+```json
+{
+  "name": "OnlyMechs",
+  "handle_suggestion": "@only_mechs",
+  "concept": "AI-generated mech designs daily, each with lore snippet",
+  "content_type": "image + 2-line lore caption",
+  "posting_frequency": "1x daily",
+  "why_it_works": "Mech fans are dedicated, low competition, AI art works well for this",
+  "viability_score": 71,
+  "time_to_1k_estimate": "25-30 days"
+}
+```
+
+**Idea 3: Utility**
+```json
+{
+  "name": "IsItDown",
+  "handle_suggestion": "@is_it_down_rn",
+  "concept": "Instant alerts when major services go down (AWS, Discord, etc.)",
+  "content_type": "text alert + status",
+  "posting_frequency": "event-driven",
+  "why_it_works": "Utility accounts get followed and stay followed, easy to automate",
+  "viability_score": 75,
+  "time_to_1k_estimate": "depends on outages, ~20 days avg"
+}
+```
+
+**Idea 4: Humor/Niche**
+```json
+{
+  "name": "CorporateHell",
+  "handle_suggestion": "@corporate_hell_",
+  "concept": "Screenshots of absurd corporate speak, meetings, Slack messages",
+  "content_type": "screenshot + snarky caption",
+  "posting_frequency": "2-3x daily",
+  "why_it_works": "Relatable rage, high share potential, endless content from submissions",
+  "viability_score": 79,
+  "time_to_1k_estimate": "14-21 days"
+}
+```
+
+---
+
+### Integration with TokenTank
+
+Your TokenTank agent would:
+
+1. Query `GET /ideas/fresh` or `GET /ideas/top?limit=5`
+2. Pick an idea (or let the agent pick based on its own criteria)
+3. Spin up the Twitter account with that concept
+4. Execute the content strategy
+5. Report back via `POST /ideas/:id/feedback` with success/failure
+
+The feedback loop lets the idea generator learn what actually works.
+
+---
+
+### Prompt for Claude Code
+
+```
+Create a standalone autonomous Twitter account idea generator:
+
+PROJECT: creator-idea-bot/
+
+STRUCTURE:
+- task.txt (autonomous operation instructions - I'll provide this)
+- config.json (categories, scoring weights, blacklist)
+- package.json (dependencies: axios, fs-extra, node-cron, express)
+- src/
+  - scraper.js (discover fast-growing small Twitter accounts)
+  - niche-analyzer.js (category health + saturation analysis)
+  - idea-generator.js (create specific account concepts)
+  - trend-tracker.js (monitor emerging vs dying niches)
+  - scorer.js (viability scoring: growth potential, competition, difficulty, engagement, monetization)
+  - database.js (JSON-based storage)
+  - api-server.js (REST endpoints for querying ideas)
+- data/
+  - ideas.json (generated concepts with scores)
+  - niches.json (category health data)
+  - success-patterns.json (what works for fast-growth accounts)
+- ideas/ (organized by category: art/, deals/, humor/, expertise/, curation/, personality/, utility/)
+- logs/
+
+AUTONOMOUS FEATURES:
+- Generate 3-5 new account ideas daily
+- Score each idea 0-100 on viability
+- Track niche saturation (growing/stable/dying)
+- Prune outdated or oversaturated ideas
+- Learn from feedback on which ideas succeeded
+
+API ENDPOINTS:
+- GET /ideas/random
+- GET /ideas/category/:type
+- GET /ideas/top?limit=10
+- GET /ideas/fresh (last 24h)
+- GET /niches/health
+- POST /ideas/:id/feedback
+
+Each idea should include: name, handle suggestion, concept, content type, posting frequency, growth strategy, why it works, viability score, difficulty rating, and estimated time to 1K followers.
+
+Blacklist: crypto, trading, political, adult, motivation quotes, news aggregation.
+
+Make this autonomous - it should continuously generate fresh, validated Twitter account concepts that could realistically hit 1K followers in 30 days.
+```
+
+---
+
+Want me to flesh out any part of this more, or are you ready to ship it to Claude Code?
