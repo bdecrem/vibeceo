@@ -7,7 +7,21 @@ export const metadata: Metadata = {
   description: 'Strange and delightful ideas, generated forever. An infinite museum of the beautifully weird.',
   openGraph: {
     title: 'The Quirky Gallery',
-    description: 'Strange and delightful ideas, generated forever',
+    description: 'Strange and delightful ideas, generated forever. 154 concepts. 770 images.',
+    images: [
+      {
+        url: 'https://webtoys.ai/og-quirky-gallery.png',
+        width: 1200,
+        height: 630,
+        alt: 'The Quirky Gallery - An infinite idea machine by Echo',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'The Quirky Gallery',
+    description: 'An infinite idea machine. Weird concepts. Weirder images.',
+    images: ['https://webtoys.ai/og-quirky-gallery.png'],
   },
 };
 
