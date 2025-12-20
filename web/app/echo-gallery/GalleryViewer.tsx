@@ -240,22 +240,25 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
         →
       </button>
 
-      {/* Idea counter / slider */}
+      {/* Idea counter / slider - pinned to bottom on mobile */}
       <div style={{
         position: 'fixed',
-        bottom: '30px',
-        left: '50%',
-        transform: 'translateX(-50%)',
+        bottom: '0',
+        left: '0',
+        right: '0',
         display: 'flex',
         alignItems: 'center',
-        gap: '20px',
-        background: 'rgba(0,0,0,0.8)',
-        padding: '15px 30px',
-        borderRadius: '100px',
-        border: '1px solid rgba(255,255,255,0.1)',
-        zIndex: 100,
+        justifyContent: 'center',
+        gap: '15px',
+        background: 'rgba(0,0,0,0.95)',
+        padding: '12px 20px',
+        paddingBottom: 'max(12px, env(safe-area-inset-bottom))',
+        borderTop: '1px solid rgba(255,255,255,0.1)',
+        zIndex: 1000,
+        WebkitBackdropFilter: 'blur(10px)',
+        backdropFilter: 'blur(10px)',
       }}>
-        <span style={{ color: '#666', fontSize: '0.9em' }}>#{ideaNumber}</span>
+        <span style={{ color: '#666', fontSize: '0.85em', minWidth: '45px' }}>#{ideaNumber}</span>
         <input
           type="range"
           min={0}
@@ -263,12 +266,13 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
           value={currentIndex}
           onChange={(e) => goTo(parseInt(e.target.value))}
           style={{
-            width: '200px',
+            flex: 1,
+            maxWidth: '300px',
             accentColor: palette.accent,
             cursor: 'pointer',
           }}
         />
-        <span style={{ color: '#666', fontSize: '0.9em' }}>{ideas.length} ideas</span>
+        <span style={{ color: '#666', fontSize: '0.85em', minWidth: '60px', textAlign: 'right' }}>{ideas.length} ideas</span>
       </div>
 
       {/* Main idea display */}
