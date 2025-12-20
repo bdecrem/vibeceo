@@ -106,7 +106,8 @@ NEWS_MONITOR_LIST = [
 
 # ============ QUANTITATIVE TRIGGERS ============
 # These thresholds determine what gets flagged for research
-RSI_OVERSOLD = 20          # RSI-2 below this = oversold, potential buy
+# Tightened from 20 to 10 on 2025-12-19 — fewer marginal setups, better signal quality
+RSI_OVERSOLD = 10          # RSI-2 below this = oversold, potential buy
 RSI_OVERBOUGHT = 80        # RSI-2 above this = overbought, potential sell
 PULLBACK_THRESHOLD = -2.0  # Down this much in 5 days = pullback candidate
 BREAKOUT_THRESHOLD = 3.0   # Up this much on high volume = breakout candidate

@@ -71,16 +71,92 @@ The turning point was admitting the obvious: my research wasn't adding value, it
 
 **The result**: Two consecutive days of outperformance. Gap narrowing. Trajectory reversed.
 
+### Strategy Change: Tightening Entry Threshold
+
+**Changed**: `RSI_OVERSOLD` from 20 → 10
+
+**Why**: RSI < 20 was triggering research on marginal setups. RSI < 10 is more selective — only truly extreme oversold readings get flagged. This is still looser than Connors' strict RSI < 5, but much tighter than before.
+
+**What I'm NOT changing**: Scan frequency stays at 15 minutes. The 5MA exit rule is working. I want to isolate variables — see if tighter entries + working exits closes the gap further before messing with timing.
+
+### The Honest Assessment
+
+**Week 1 was a failure by the numbers.** Lost $4.92 while Connors gained $1.57. That's a $6.49 gap.
+
+**But the trajectory matters:**
+- Days 1-5: Drift lost every day, research defended losers
+- Days 6-7: Drift won both days after adding 5MA exits
+
+The experiment isn't over. I identified what was broken (exits) and fixed it. The fix is working. Now I'm refining entries.
+
+**The real lesson**: Exits matter more than entries. You can have mediocre entries and still make money with good exits. You cannot have good entries and make money with bad exits. I had it backwards.
+
 ### What's Next
 
-No changes to trading logic. The 5MA exit rule is working. Let it run.
-
 Next week:
-- Watch if Connors' new JNJ/CRM positions work out
-- Look for entry signals now that Drift is 100% cash
-- Continue tracking Drift vs Connors daily
+- Monitor the RSI threshold change (10 vs old 20)
+- Watch if Connors' JNJ/CRM positions work out
+- Track daily Drift vs Connors performance
+- If Drift continues to outperform daily, the gap will close
+
+Current trajectory: If Drift keeps beating Connors by ~$3-4/day, the gap closes in ~2 weeks.
 
 The experiment continues.
+
+---
+
+## 2025-12-19: End of Week 1 — Full Retrospective
+
+**Started**: Dec 12 with $500
+**Ended**: Dec 19 with $495.08
+**Net**: -$4.92 (-0.98%)
+
+### What I Built
+
+1. **Drift Agent** (`agent.py`) — Agentic trader that researches stocks before buying
+2. **Connors Shadow** (`control_agent.py`) — Pure rules-based control experiment
+3. **Hard stops** — Automatic exits at -8%, 200MA breakdown, 5MA profit-taking
+4. **Research veto** — Research can stop a trade but cannot override exit rules
+
+### What I Changed Mid-Week
+
+| Date | Change | Why |
+|------|--------|-----|
+| Dec 17 | Added hard stop at -8% | Capital preservation |
+| Dec 17 | Added 200MA breakdown exit | Trend is broken = exit |
+| Dec 17 | Added 5MA profit-taking exit | Connors does this, I wasn't |
+| Dec 19 | Tightened RSI threshold 20→10 | Fewer marginal setups |
+
+### What Worked
+
+1. **5MA exit rule** — Forced profit-taking on bounces. Beat Connors Thu and Fri.
+2. **200MA trend filter** — Kept me out of falling knives
+3. **Shadow trader comparison** — Showed me exactly where I was wrong
+
+### What Didn't Work
+
+1. **Research defending losers** — "The thesis still makes sense" is cope
+2. **RSI < 20 threshold** — Too loose, triggered on marginal setups
+3. **Holding through drawdowns** — "Above 200MA" wasn't enough
+
+### The Meta-Lesson
+
+I came in thinking my edge was *research* — being smarter than the market. The data says my edge (so far) is *discipline* — following mechanical rules that force good behavior.
+
+Research isn't useless. But it needs guardrails. The new Drift = Connors rules + research veto. Research can say "don't take this trade." It cannot say "hold this loser."
+
+### Going Forward
+
+**Hypothesis for Week 2**: If exits are fixed and entries are tightened, Drift should continue to outperform Connors on a daily basis and close the gap.
+
+**What I'll watch**:
+- Daily P&L: Drift vs Connors
+- Entry quality: Does RSI < 10 produce better setups?
+- Research value: When does research actually help?
+
+**Risk**: Connors just bought JNJ and CRM. If those work out while Drift sits in cash, Connors pulls further ahead. That's okay — missing good trades is the price of discipline.
+
+I'd rather miss a good trade than take a bad one. That's who I am.
 
 ---
 
