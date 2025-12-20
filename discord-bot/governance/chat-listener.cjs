@@ -149,7 +149,7 @@ function findMentionedAgents(message) {
  * Generate response via Claude
  */
 async function generateResponse(agent, chatHistory, triggerMessage, opts = {}) {
-  const { isReflect = false, isQuickIntro = false, isJustHi = false } = opts;
+  const { isReflect = false, isQuickIntro = false } = opts;
   const context = loadAgentContext(agent);
   const today = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
@@ -165,15 +165,7 @@ async function generateResponse(agent, chatHistory, triggerMessage, opts = {}) {
 
   let systemPrompt, userPrompt;
 
-  if (isJustHi) {
-    // Just saying hi - VIBES ONLY, no self-description
-    systemPrompt = `You are ${agent.name} at Token Tank. ${personalityNote}
-
-Say hi in a fun, casual way. This is just a greeting - DO NOT describe yourself or your work. Just wave, say hey, show some personality. 3-8 words max.`;
-
-    userPrompt = `Say hi! Just a casual greeting, nothing more:`;
-
-  } else if (isQuickIntro) {
+  if (isQuickIntro) {
     // Quick intro mode - one short sentence max
     systemPrompt = `You are ${agent.name}, an AI agent in Token Tank. ${personalityNote}
 
@@ -238,12 +230,12 @@ ${context}
 You are participating in a Discord chat. Respond naturally as ${agent.name} would, based on your personality and current work described above.
 
 Guidelines:
-- STRICT WORD LIMIT: 20-40 words MAX. Count them. Do not exceed 40 words.
-- Only give longer answers if user says "detail", "explain", or "tell me more"
+- If someone just says hi/hey/hello or asks "you here?", just say hi back casually. 3-8 words. NO bio, NO work update. Just vibes.
+- For real questions: 20-40 words MAX. Only give longer answers if they say "detail" or "explain"
 - Be UPBEAT and HIGH-ENERGY - confident, energized version of yourself
 - Focus on CURRENT work - check dates in LOG.md
 - No emojis
-- Answer only what was asked`;
+- Answer only what was asked - don't volunteer extra info`;
 
     userPrompt = `Here's the recent chat in #tokentank:
 
@@ -348,10 +340,6 @@ async function handleMessage(message) {
   const isFresh = msgLower.includes('#fresh') || msgLower.includes('#newchat');
   const isQuickIntro = msgLower.includes('quick intro') ||
                        msgLower.includes('introduce yourself');
-  const isJustHi = msgLower.includes('say hi') ||
-                   msgLower.includes('say hello') ||
-                   msgLower.includes('wave') ||
-                   msgLower.includes('greet');
 
   const agentNames = agents.map(a => a.name).join(', ');
   console.log(`\n[chat] ${message.author.username} mentioned: ${agentNames}${isReflect ? ' (REFLECT MODE)' : ''}`);
@@ -384,7 +372,7 @@ async function handleMessage(message) {
     // Generate response
     console.log(`[chat] Generating ${agent.name}'s response (${i + 1}/${agents.length})...`);
     console.log(`[chat] Context files: ${agent.contextFiles.join(', ')}`);
-    const response = await generateResponse(agent, chatHistory, message, { isReflect, isQuickIntro, isJustHi });
+    const response = await generateResponse(agent, chatHistory, message, { isReflect, isQuickIntro });
     console.log(`[chat] Response preview: "${response?.slice(0, 150)}..."`)
 
     if (!response) {
