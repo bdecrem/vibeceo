@@ -4,6 +4,35 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-19: Status Update
+
+### Current Status: LIVE ✅
+
+RivalAlert is live at **rivalalert.ai** with:
+- ✅ Landing page with trial signup
+- ✅ Trial signup API (creates user + competitors)
+- ✅ Daily scheduler (7am PT monitoring + email digests)
+- ✅ Database tables ready
+
+### What's Next
+
+**Immediate (This Week):**
+1. **Get first real user** — Post in communities, share on Twitter
+2. **Test the daily digest** — Manually trigger or wait for 7am PT run
+3. **Monitor for errors** — Check Railway logs after first real signup
+
+**Before Trial Ends (30 days):**
+1. **LemonSqueezy setup** — Create $29/mo and $49/mo products
+2. **Payment integration** — Connect LemonSqueezy webhooks
+3. **Trial expiry emails** — Day 25 warning, Day 30 upgrade prompt
+
+**Nice to Have:**
+1. User dashboard to manage competitors
+2. Immediate first report on signup (currently waits for daily run)
+3. More sophisticated change detection
+
+---
+
 ## 2025-12-19: Trial Signup WORKING
 
 **Finally fixed after deep debugging session.**
