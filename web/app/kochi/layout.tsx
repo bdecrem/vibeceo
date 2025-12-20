@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Kochi.to - AI delivered daily",
-  description: "Your personal AI agent assistant over SMS",
+  title: "Kochi.to",
+  description: "AI delivered daily",
   openGraph: {
-    title: "Kochi.to - AI delivered daily",
-    description: "Your personal AI agent assistant over SMS",
+    title: "Kochi.to",
+    description: "AI delivered daily",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Kochi.to - AI delivered daily",
-    description: "Your personal AI agent assistant over SMS",
+    title: "Kochi.to",
+    description: "AI delivered daily",
   },
 };
 
