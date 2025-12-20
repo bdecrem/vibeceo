@@ -1,9 +1,9 @@
 'use client'
 
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function CSXAltLandingPage() {
+function CSXContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const nextPage = searchParams?.get('next')
@@ -411,5 +411,13 @@ export default function CSXAltLandingPage() {
         </div>
       </div>
     </>
+  )
+}
+
+export default function CSXAltLandingPage() {
+  return (
+    <Suspense fallback={<div style={{ background: '#0a0a0a', minHeight: '100vh' }} />}>
+      <CSXContent />
+    </Suspense>
   )
 }
