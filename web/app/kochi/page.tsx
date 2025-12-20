@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Poppins } from "next/font/google";
-import Image from "next/image";
 import bgImage from "./bg.png";
 
 const poppins = Poppins({
@@ -38,15 +37,12 @@ export default function KochiLanding2() {
       {/* Layer 1: Background Scene - Full bleed
            object-cover + center: on portrait phones, scales to fill height,
            crops equally left/right, vertical position stays consistent */}
-      <Image
-        src={bgImage}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={bgImage.src}
         alt="Forest scene"
-        fill
-        priority
-        unoptimized
-        className="object-cover"
+        className="absolute inset-0 w-full h-full object-cover"
         style={{ objectPosition: 'center 55%' }}
-        sizes="100vw"
       />
 
       {/* Optional: subtle vignette overlay for depth */}
