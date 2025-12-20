@@ -1,11 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 export async function POST(request: NextRequest) {
   try {
+    // Check env vars are set
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase env vars:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseServiceKey,
+        urlPrefix: supabaseUrl?.substring(0, 20),
+      });
+      return NextResponse.json(
+        { error: 'Server configuration error. Please try again later.' },
+        { status: 500 }
+      );
+    }
     const { email, companyName, competitors } = await request.json();
 
     if (!email || !email.includes('@')) {
@@ -134,7 +146,8 @@ export async function POST(request: NextRequest) {
       competitors_added: competitorsToAdd.length,
     });
   } catch (error) {
-    console.error('Trial signup error:', error);
+    console.error('Trial signup error:', error instanceof Error ? error.message : error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'no stack');
     return NextResponse.json(
       { error: 'Something went wrong. Please try again.' },
       { status: 500 }
