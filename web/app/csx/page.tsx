@@ -191,7 +191,7 @@ function CSXContent() {
 
         .terminal-body {
           margin-bottom: 0;
-          height: 140px;
+          height: 190px;
         }
 
         @media (min-width: 640px) {
