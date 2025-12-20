@@ -76,8 +76,13 @@ function getModelLabel(images: QuirkyImage[] | undefined): string | null {
   if (models.length === 0) return null;
   const uniqueModels = [...new Set(models)];
   if (uniqueModels.length === 1) {
-    return uniqueModels[0] === 'gpt-image-1.5' ? 'GPT 1.5' : 'DALL-E 3';
+    return uniqueModels[0]?.includes('gpt-image') ? 'GPT 1.5' : 'DALL-E 3';
   }
+  // Check if all are gpt-image variants
+  const allGpt = uniqueModels.every(m => m?.includes('gpt-image'));
+  const allDalle = uniqueModels.every(m => m?.includes('dall-e'));
+  if (allGpt) return 'GPT 1.5';
+  if (allDalle) return 'DALL-E 3';
   return 'Mixed';
 }
 
