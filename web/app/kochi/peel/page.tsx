@@ -42,6 +42,13 @@ export default function PeelPage() {
         return;
       }
 
+      // Check for HEIC/HEIF (iPhone default format) - not supported
+      const fileName = selectedFile.name.toLowerCase();
+      if (fileName.endsWith(".heic") || fileName.endsWith(".heif") || selectedFile.type.includes("heic") || selectedFile.type.includes("heif")) {
+        setError("HEIC format not supported — try a JPG or PNG, or change iPhone settings to 'Most Compatible'");
+        return;
+      }
+
       if (selectedFile.size > 10 * 1024 * 1024) {
         setError("Image must be less than 10MB");
         return;
