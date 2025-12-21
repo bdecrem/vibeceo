@@ -85,9 +85,9 @@ final_prompt = base_step1.txt + step1/leadgen.txt
 
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
+SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ANTHROPIC_API_KEY=your-anthropic-key
-GOOGLE_API_KEY=your-google-api-key  # For Step 2 channel discovery
+# Optional: CLAUDE_CODE_OAUTH_TOKEN for autonomous web search
 ```
 
 ## Example Usage

@@ -377,9 +377,9 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
 ### Agent Behavior
 
 **First call (no context):**
-- Use web search to find 3-5 relevant channels
-- Research query: "What are the best websites to search for [clarified_subject]?"
-- Rate each channel 1-10 based on relevance
+- Use Claude WebSearch to find 3-5 relevant channels
+- Search query: "What are the best websites to search for [clarified_subject]?"
+- Research and rate each channel 1-10 based on relevance
 - Present list with rationale for each rating
 
 **Successive calls:**
@@ -749,7 +749,7 @@ def check_response_for_commands(response: str, project_id: str, step: int) -> di
 
 ### Phase 4: Step 2 - Discover Channels
 1. Create `step2-channels.py`
-2. Implement Google Search API for channel discovery
+2. Implement Claude WebSearch for channel discovery (same pattern as Step 3)
 3. Implement channel rating logic
 4. Add command parsing for channel commands (SAVE_CHANNELS, UPDATE_CHANNELS)
 5. Create base_step2.txt + category-specific prompts
@@ -757,12 +757,14 @@ def check_response_for_commands(response: str, project_id: str, step: int) -> di
 
 ### Phase 5: Step 3 - Execute Search
 1. Create `step3-search.py`
-2. Implement claude-agent-sdk with WebSearch tool for channel search
+2. Implement Claude WebSearch for executing searches across channels
 3. Implement agent context with previous results (for deduplication)
 4. Implement learning from ratings
 5. Add favorites and winner marking commands
 6. Create base_step3.txt + category-specific prompts
 7. Test end-to-end workflow
+
+Note: Steps 2 and 3 both use Claude WebSearch - consistent pattern, simple implementation
 
 ### Phase 6: Integration
 1. Test full workflow (all 3 steps)
@@ -944,11 +946,11 @@ progressive-search/              # Lives in repository root
 8. ✅ **Database**: Use existing Supabase instance (run migration in browser admin)
 9. ✅ **Python version**: 3.10+ (matches existing agents with `#!/usr/bin/env python3`)
 10. ✅ **Dependencies**:
-    - `anthropic` - For AI agent
+    - `anthropic` - For AI agent responses
     - `supabase-py` - Clean database operations
-    - `google-api-python-client` - For Google Search in Step 2
-11. ✅ **Step 2 channel discovery**: Google Search API to find relevant channels
-12. ✅ **Step 3 search execution**: `claude-agent-sdk` with WebSearch tool (flexible, maintains itself)
+    - `claude-agent-sdk` - Autonomous web search (Steps 2 & 3)
+11. ✅ **Step 2 channel discovery**: Claude WebSearch to find relevant channels (same as Step 3)
+12. ✅ **Step 3 search execution**: Claude WebSearch with autonomous research
 13. ✅ **Authentication**: Environment variables for now (TODO: add user auth later)
 14. ✅ **Location**: `progressive-search/` in repository root directory
 15. ✅ **System prompts**: Two-layer architecture (base + category-specific)

@@ -1,0 +1,22 @@
+# Recruiting Search Category
+
+You're helping someone find candidates/hires for their team.
+
+## Key Questions to Ask
+
+1. **Role & Seniority**: What position? Junior/Mid/Senior?
+2. **Required Skills**: Must-have technical skills or domain expertise
+3. **Location**: Office/Remote/Hybrid? Geographic constraints?
+4. **Company Stage**: Startup/Scale-up/Enterprise?
+5. **Compensation Range**: Salary expectations (helps set realistic targets)
+
+## Example Clarifications
+
+- "Backend engineers" → "Senior backend engineers (5+ years Python/Go) at seed-stage startups, SF Bay Area or remote, $150-200k"
+- "Marketing hire" → "Growth marketing lead (3-5 years B2B SaaS) for Series A company, NYC, $100-130k + equity"
+
+## Things to Watch For
+
+- Don't just list technologies - understand the level of expertise needed
+- Remote-friendly roles need geographic clarification (US-only? Global? Timezone requirements?)
+- Startup vs enterprise changes the candidate profile significantly
