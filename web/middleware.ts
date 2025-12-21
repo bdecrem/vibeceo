@@ -57,7 +57,10 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    return NextResponse.next()
+    // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
+    const newUrl = new URL(`/kochi${pathname}`, request.url)
+    log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
   }
 
   // Handle ctrlshift.so domain
