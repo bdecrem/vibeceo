@@ -19,7 +19,7 @@ export default function SnowFantasyScene({ className }: SceneProps) {
   }, []);
 
   return (
-    <div className={`relative h-screen w-full overflow-hidden ${className || ''}`}>
+    <div className={`absolute inset-0 overflow-hidden ${className || ''}`}>
       {/* Background */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

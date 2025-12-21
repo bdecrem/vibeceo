@@ -27,7 +27,7 @@ export default function HavenScene({ className }: SceneProps) {
   }, []);
 
   return (
-    <div className={`relative h-screen w-full overflow-hidden ${className || ''}`}>
+    <div className={`absolute inset-0 overflow-hidden ${className || ''}`}>
       {/* Layer 1: Background Scene - Full bleed */}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -83,18 +83,18 @@ export default function HavenScene({ className }: SceneProps) {
             0%, 96%, 100% { transform: scaleY(1); }
             98% { transform: scaleY(0.1); }
           }
-          .haven-scene #eye-right ellipse, .haven-scene #eye-left ellipse {
+          #eye-right ellipse, #eye-left ellipse {
             animation: blink 4s ease-in-out infinite;
             transform-origin: center center;
           }
-          .haven-scene #eye-left ellipse {
+          #eye-left ellipse {
             animation-delay: 0.05s;
           }
           @keyframes sway {
             0%, 100% { transform: skewX(-2deg); }
             50% { transform: skewX(2deg); }
           }
-          .haven-scene #antenna-right, .haven-scene #antenna-left {
+          #antenna-right, #antenna-left {
             animation: sway 2.5s ease-in-out infinite;
             transform-origin: center bottom;
             transform-box: fill-box;
@@ -106,14 +106,14 @@ export default function HavenScene({ className }: SceneProps) {
             96% { transform: rotate(-1.5deg); }
             98% { transform: rotate(1deg); }
           }
-          .haven-scene .kochi-container {
+          .kochi-container {
             animation: itchy 5s ease-in-out infinite;
             transform-origin: center bottom;
           }
         `}</style>
         <svg
           viewBox="0 0 1024 1536"
-          className="w-full h-auto kochi-container haven-scene"
+          className="w-full h-auto kochi-container"
           style={{
             filter: 'drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)) drop-shadow(0 0 60px rgba(255, 255, 255, 0.4)) drop-shadow(0 0 120px rgba(255, 255, 255, 0.25))',
           }}

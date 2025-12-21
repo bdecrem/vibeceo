@@ -3,10 +3,10 @@
 import { Poppins } from "next/font/google";
 
 // Switch scenes by changing this import:
-// import Scene from './scenes/haven';
+import Scene from './scenes/haven';
 // import Scene from './scenes/izakaya';
 // import Scene from './scenes/tokyo';
-import Scene from './scenes/snowfantasy';
+// import Scene from './scenes/snowfantasy';
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -21,7 +21,7 @@ export default function KochiLanding() {
       <Scene />
 
       {/* Text + CTA Overlay (consistent across all scenes) */}
-      <div className="absolute inset-0 z-30 flex flex-col items-center h-full px-6 pt-[10vh] sm:pt-[12vh] pointer-events-none">
+      <div className="relative z-30 h-screen flex flex-col items-center px-6 pt-[4vh] sm:pt-[6vh]">
         {/* Logo / Wordmark */}
         <h1
           className="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight text-center"
@@ -41,11 +41,11 @@ export default function KochiLanding() {
             textShadow: '0 2px 12px rgba(0,0,0,0.6)'
           }}
         >
-          AI delivered daily.
+          AI blasts delivered daily. Weather permitting.
         </p>
 
         {/* Single CTA - positioned lower */}
-        <div className="mt-auto mb-[12vh] sm:mb-[10vh] pointer-events-auto">
+        <div className="mt-[52vh] text-center">
           <a
             href="sms:+18663300015?body=AI%20DAILY"
             className="inline-block px-5 py-2.5 text-base sm:text-lg font-semibold rounded-full transition-all duration-200"
@@ -63,8 +63,9 @@ export default function KochiLanding() {
               e.currentTarget.style.boxShadow = '0 4px 24px rgba(255, 225, 72, 0.5)';
             }}
           >
-            Try it &rarr;
+            Try it now &rarr;
           </a>
+          <p className="mt-2 text-sm text-white/70">Daily AI reports over SMS.</p>
         </div>
       </div>
     </div>
