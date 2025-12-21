@@ -45,7 +45,7 @@ export default function KochiLanding() {
         </p>
 
         {/* Single CTA - positioned lower */}
-        <div className="mt-[62vh] text-center">
+        <div className="absolute bottom-[8vh] left-1/2 -translate-x-1/2 text-center">
           <a
             href="sms:+18663300015?body=AI%20DAILY"
             className="inline-block px-5 py-2.5 text-base sm:text-lg font-semibold rounded-full transition-all duration-200"
