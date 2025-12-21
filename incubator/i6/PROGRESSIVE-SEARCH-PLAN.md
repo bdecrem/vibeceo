@@ -308,18 +308,31 @@ Agent responses are parsed for embedded commands:
 
 ### System Prompts
 
-Category-specific system prompts stored in:
+Two-layer prompt architecture: **base prompts** (shared across all categories) + **category-specific prompts** (fine-tuning):
+
 ```
 progressive-search/prompts/
+├── base_step1.txt          # Shared Step 1 instructions for ALL categories
+├── base_step2.txt          # Shared Step 2 instructions for ALL categories
+├── base_step3.txt          # Shared Step 3 instructions for ALL categories
 ├── step1/
-│   ├── leadgen.txt       # For finding customers
-│   ├── recruiting.txt    # For finding candidates
-│   ├── job_search.txt    # For finding jobs
-│   ├── pet_adoption.txt  # For finding pets
-│   └── general.txt       # Default fallback
+│   ├── leadgen.txt         # Category-specific additions for leadgen
+│   ├── recruiting.txt      # Category-specific additions for recruiting
+│   ├── job_search.txt      # Category-specific additions for job search
+│   ├── pet_adoption.txt    # Category-specific additions for pet adoption
+│   └── general.txt         # Default fallback additions
+├── step2/
+│   └── [same categories]
+└── step3/
+    └── [same categories]
 ```
 
-Each prompt file contains category-specific guidance for the agent.
+**Final prompt construction:**
+```python
+final_prompt = load_prompt('base_step1.txt') + "\n\n" + load_prompt(f'step1/{category}.txt')
+```
+
+This architecture allows shared instructions (command format, error handling, tone) in base files, while category-specific nuances (what questions to ask, what signals matter) live in category files.
 
 ---
 
@@ -510,7 +523,6 @@ python step3-search.py <uuid> -m "Mark #1 as winner - we're hiring them!"
 |-----------|----------|-------------|
 | `<uuid>` | Yes | Project UUID |
 | `-m, --msg` | No | User message to send to agent |
-| `--limit` | No | Number of results (default: 5, max: 20) |
 
 ### Input Validation
 
@@ -523,9 +535,9 @@ python step3-search.py <uuid> -m "Mark #1 as winner - we're hiring them!"
 
 **First call:**
 - Search approved channels (weighted by rating)
-- Return 5 results (or `--limit` count)
+- Return 5 results by default (agent can return up to 10 if user explicitly asks)
 - Include link, description, last updated date
-- No duplicates within same project
+- Check previous results in context to avoid duplicates
 
 **Learning from feedback:**
 - User rates results 1-10
@@ -717,38 +729,40 @@ def check_response_for_commands(response: str, project_id: str, step: int) -> di
 ## Implementation Plan
 
 ### Phase 1: Database Setup ✅ NEXT
-1. Create migration file: `progressive_search_schema.sql`
-2. Run migration on Supabase
+1. ✅ Create migration file: `001_initial_schema.sql`
+2. Run migration on Supabase (via browser admin SQL editor)
 3. Test tables with sample data
 
 ### Phase 2: Shared Libraries
-1. `lib/db.py` - Database client (Supabase)
+1. `lib/db.py` - Database client (Supabase via supabase-py)
 2. `lib/command_parser.py` - Command parsing logic
 3. `lib/context_builder.py` - Build context from DB
-4. `lib/system_prompts.py` - Load category-specific prompts
+4. `lib/system_prompts.py` - Load base + category-specific prompts
 
 ### Phase 3: Step 1 - Clarify Subject
-1. Create `step1-clarify.py`
-2. Implement argument parsing
+1. Create `step1-clarify.py` with `#!/usr/bin/env python3`
+2. Implement argument parsing (-n/--new, -m/--msg, -c/--category)
 3. Implement agent call with context
-4. Implement command parsing
-5. Add system prompts for each category
+4. Implement command parsing (SAVE_SUBJECT, UPDATE_SUBJECT)
+5. Create base_step1.txt + category-specific prompts
 6. Test with sample queries
 
 ### Phase 4: Step 2 - Discover Channels
 1. Create `step2-channels.py`
-2. Implement web search for channel discovery
+2. Implement Google Search API for channel discovery
 3. Implement channel rating logic
-4. Add command parsing for channel commands
-5. Test with Step 1 output
+4. Add command parsing for channel commands (SAVE_CHANNELS, UPDATE_CHANNELS)
+5. Create base_step2.txt + category-specific prompts
+6. Test with Step 1 output
 
 ### Phase 5: Step 3 - Execute Search
 1. Create `step3-search.py`
-2. Implement channel search logic
-3. Implement deduplication
+2. Implement claude-agent-sdk with WebSearch tool for channel search
+3. Implement agent context with previous results (for deduplication)
 4. Implement learning from ratings
-5. Add favorites and winner marking
-6. Test end-to-end workflow
+5. Add favorites and winner marking commands
+6. Create base_step3.txt + category-specific prompts
+7. Test end-to-end workflow
 
 ### Phase 6: Integration
 1. Test full workflow (all 3 steps)
@@ -756,10 +770,11 @@ def check_response_for_commands(response: str, project_id: str, step: int) -> di
 3. Document common issues
 4. Create usage examples for each category
 
-### Phase 7: API Wrapper (Future)
-1. Create REST API endpoints for each step
-2. Add authentication
-3. Enable AI agents to call via HTTP
+### Phase 7: Authentication & API (Future)
+1. Add user authentication system
+2. Associate projects with authenticated users
+3. Create REST API endpoints for each step
+4. Enable AI agents to call via HTTP
 
 ---
 
@@ -826,19 +841,22 @@ python step2-channels.py ghi-789
 ## Files Structure
 
 ```
-progressive-search/
-├── step1-clarify.py          # Step 1 script
-├── step2-channels.py          # Step 2 script
-├── step3-search.py            # Step 3 script
+progressive-search/              # Lives in repository root
+├── step1-clarify.py             # Step 1 script
+├── step2-channels.py            # Step 2 script
+├── step3-search.py              # Step 3 script
 ├── lib/
 │   ├── __init__.py
-│   ├── db.py                  # Database client
-│   ├── command_parser.py      # Command parsing
-│   ├── context_builder.py     # Context construction
-│   └── system_prompts.py      # Prompt loading
+│   ├── db.py                    # Database client (supabase-py)
+│   ├── command_parser.py        # Command parsing
+│   ├── context_builder.py       # Context construction
+│   └── system_prompts.py        # Prompt loading (base + category)
 ├── prompts/
+│   ├── base_step1.txt           # Shared Step 1 instructions
+│   ├── base_step2.txt           # Shared Step 2 instructions
+│   ├── base_step3.txt           # Shared Step 3 instructions
 │   ├── step1/
-│   │   ├── leadgen.txt
+│   │   ├── leadgen.txt          # Category-specific additions
 │   │   ├── recruiting.txt
 │   │   ├── job_search.txt
 │   │   ├── pet_adoption.txt
@@ -848,12 +866,13 @@ progressive-search/
 │   └── step3/
 │       └── [same categories]
 ├── migrations/
-│   └── progressive_search_schema.sql
+│   └── 001_initial_schema.sql  # ✅ Created - ready to run on Supabase
 ├── tests/
 │   ├── test_step1.py
 │   ├── test_step2.py
 │   └── test_step3.py
-└── README.md                  # This file
+├── requirements.txt             # Python dependencies
+└── README.md                    # Usage documentation
 ```
 
 ---
@@ -861,10 +880,10 @@ progressive-search/
 ## Todo Checklist
 
 ### Database
-- [ ] Write SQL migration file
-- [ ] Create tables on Supabase
+- [x] Write SQL migration file (`001_initial_schema.sql`)
+- [ ] Run migration on Supabase (via browser SQL editor)
 - [ ] Test table structure with sample inserts
-- [ ] Add RLS policies (if needed)
+- [ ] Add RLS policies (TODO: when adding user authentication)
 
 ### Library Code
 - [ ] `lib/db.py` - Supabase client + CRUD functions
@@ -878,10 +897,13 @@ progressive-search/
 - [ ] `step3-search.py` - Full implementation
 
 ### System Prompts
-- [ ] Write prompts for leadgen (all steps)
-- [ ] Write prompts for recruiting (all steps)
-- [ ] Write prompts for job_search (all steps)
-- [ ] Write prompts for general (all steps)
+- [ ] Write base_step1.txt (shared across all categories)
+- [ ] Write base_step2.txt (shared across all categories)
+- [ ] Write base_step3.txt (shared across all categories)
+- [ ] Write category-specific prompts for leadgen (steps 1-3)
+- [ ] Write category-specific prompts for recruiting (steps 1-3)
+- [ ] Write category-specific prompts for job_search (steps 1-3)
+- [ ] Write category-specific prompts for general (steps 1-3)
 
 ### Testing
 - [ ] Test Step 1 end-to-end
@@ -897,6 +919,7 @@ progressive-search/
 - [ ] Create video walkthrough (optional)
 
 ### Integration (Future)
+- [ ] Add user authentication system
 - [ ] Create REST API wrapper
 - [ ] Integrate with leadgen agent (i6)
 - [ ] Integrate with recruiting agent
@@ -906,7 +929,7 @@ progressive-search/
 
 ## Design Decisions Summary
 
-These design choices have been confirmed:
+### Database & Architecture ✅
 
 1. ✅ **Table naming**: All tables prefixed with `ps_` (ps_projects, ps_conversation, ps_channels, ps_results)
 2. ✅ **Status values**: 'refining_query', 'discovering_channels', 'searching', 'completed'
@@ -916,17 +939,20 @@ These design choices have been confirmed:
 6. ✅ **Result dates**: `deadline` and `last_updated` are nullable (not all categories need them)
 7. ✅ **Deduplication**: No database constraints - agent checks previous results in context to avoid duplicates
 
-## Questions & Clarifications
+### Implementation Choices ✅
 
-Before starting implementation, please confirm:
-
-1. **Database**: Should this use the existing Supabase instance or a separate database?
-2. **Python version**: What Python version should we target? (3.10+?)
-3. **Dependencies**: OK to use `anthropic` SDK + `supabase-py`?
-4. **Web search**: Should Step 2 use Google Search API, or a different tool?
-5. **Step 3 search**: How should the agent actually search channels? Web scraping? APIs? Manual research?
-6. **Authentication**: Do we need user authentication, or can scripts run with env vars for now?
-7. **Location**: Should this live in `sms-bot/` or `incubator/i6/progressive-search/`?
+8. ✅ **Database**: Use existing Supabase instance (run migration in browser admin)
+9. ✅ **Python version**: 3.10+ (matches existing agents with `#!/usr/bin/env python3`)
+10. ✅ **Dependencies**:
+    - `anthropic` - For AI agent
+    - `supabase-py` - Clean database operations
+    - `google-api-python-client` - For Google Search in Step 2
+11. ✅ **Step 2 channel discovery**: Google Search API to find relevant channels
+12. ✅ **Step 3 search execution**: `claude-agent-sdk` with WebSearch tool (flexible, maintains itself)
+13. ✅ **Authentication**: Environment variables for now (TODO: add user auth later)
+14. ✅ **Location**: `progressive-search/` in repository root directory
+15. ✅ **System prompts**: Two-layer architecture (base + category-specific)
+16. ✅ **Step 3 results**: Default 5, up to 10 if user asks (no --limit flag)
 
 ---
 
