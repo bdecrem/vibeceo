@@ -84,14 +84,14 @@ CREATE INDEX idx_progressive_projects_status ON progressive_search_projects(stat
 CREATE INDEX idx_progressive_projects_category ON progressive_search_projects(category);
 ```
 
-### Table: `progressive_search_conversation`
+### Table: `ps_conversation`
 
-Conversation history for each step.
+Conversation history for each step. Each message is stored as a separate row, allowing flexible querying and per-message metadata.
 
 ```sql
-CREATE TABLE progressive_search_conversation (
+CREATE TABLE ps_conversation (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES progressive_search_projects(id) ON DELETE CASCADE,
+  project_id UUID NOT NULL REFERENCES ps_projects(id) ON DELETE CASCADE,
 
   -- Step tracking
   step INTEGER NOT NULL,  -- 1 (clarify), 2 (discover), 3 (search)
@@ -107,17 +107,17 @@ CREATE TABLE progressive_search_conversation (
   CONSTRAINT valid_role CHECK (role IN ('user', 'assistant'))
 );
 
-CREATE INDEX idx_progressive_conversation_project ON progressive_search_conversation(project_id, step, created_at);
+CREATE INDEX idx_ps_conversation_project ON ps_conversation(project_id, step, created_at);
 ```
 
-### Table: `progressive_search_channels`
+### Table: `ps_channels`
 
 Discovered channels (websites/sources) with ratings.
 
 ```sql
-CREATE TABLE progressive_search_channels (
+CREATE TABLE ps_channels (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES progressive_search_projects(id) ON DELETE CASCADE,
+  project_id UUID NOT NULL REFERENCES ps_projects(id) ON DELETE CASCADE,
 
   -- Channel info
   name VARCHAR(200) NOT NULL,  -- "LinkedIn Jobs", "Indeed", "GitHub", etc.
@@ -125,36 +125,32 @@ CREATE TABLE progressive_search_channels (
   description TEXT,
   channel_type VARCHAR(50),  -- 'job_board', 'professional_network', 'code_repo', etc.
 
-  -- Ratings
-  agent_rating INTEGER NOT NULL,  -- 1-10, agent's initial rating
-  user_rating INTEGER,  -- 1-10, user can override
-  effective_rating INTEGER GENERATED ALWAYS AS (COALESCE(user_rating, agent_rating)) STORED,
+  -- Rating (agent sets initially, user can update)
+  rating INTEGER NOT NULL DEFAULT 5,  -- 1-10
 
   -- Status
   is_approved BOOLEAN DEFAULT false,
-  is_active BOOLEAN DEFAULT true,  -- Can be disabled without deleting
 
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  CONSTRAINT valid_agent_rating CHECK (agent_rating >= 1 AND agent_rating <= 10),
-  CONSTRAINT valid_user_rating CHECK (user_rating IS NULL OR (user_rating >= 1 AND user_rating <= 10))
+  CONSTRAINT valid_rating CHECK (rating >= 1 AND rating <= 10)
 );
 
-CREATE INDEX idx_progressive_channels_project ON progressive_search_channels(project_id);
-CREATE INDEX idx_progressive_channels_approved ON progressive_search_channels(project_id, is_approved, is_active);
+CREATE INDEX idx_ps_channels_project ON ps_channels(project_id);
+CREATE INDEX idx_ps_channels_approved ON ps_channels(project_id, is_approved) WHERE is_approved = true;
 ```
 
-### Table: `progressive_search_results`
+### Table: `ps_results`
 
-Search results (leads, candidates, jobs, listings).
+Search results (leads, candidates, jobs, listings). Agent is responsible for avoiding duplicates by checking previous results in conversation context.
 
 ```sql
-CREATE TABLE progressive_search_results (
+CREATE TABLE ps_results (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  project_id UUID NOT NULL REFERENCES progressive_search_projects(id) ON DELETE CASCADE,
-  channel_id UUID REFERENCES progressive_search_channels(id) ON DELETE SET NULL,
+  project_id UUID NOT NULL REFERENCES ps_projects(id) ON DELETE CASCADE,
+  channel_id UUID REFERENCES ps_channels(id) ON DELETE SET NULL,
 
   -- Result data
   title VARCHAR(500) NOT NULL,  -- Person name, job title, company name, etc.
@@ -163,10 +159,10 @@ CREATE TABLE progressive_search_results (
   url TEXT NOT NULL,  -- Link to profile, listing, posting
 
   -- Additional fields (flexible JSON for category-specific data)
-  metadata JSONB DEFAULT '{}',  -- Email, phone, salary, deadline, etc.
+  metadata JSONB DEFAULT '{}',  -- Email, phone, salary, experience, etc.
 
-  -- Dates
-  deadline TIMESTAMPTZ,  -- For job postings, application deadlines
+  -- Dates (nullable - not all categories need these)
+  deadline TIMESTAMPTZ,  -- For job postings, application deadlines, etc.
   last_updated TIMESTAMPTZ,  -- When listing was last updated on source site
   found_at TIMESTAMPTZ DEFAULT NOW(),  -- When agent found this
 
@@ -177,20 +173,16 @@ CREATE TABLE progressive_search_results (
   is_contacted BOOLEAN DEFAULT false,
   is_winner BOOLEAN DEFAULT false,  -- Final selection
 
-  -- Deduplication
-  external_id VARCHAR(200),  -- ID from source site (to prevent duplicates)
-
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW(),
 
-  CONSTRAINT valid_user_rating CHECK (user_rating IS NULL OR (user_rating >= 1 AND user_rating <= 10)),
-  CONSTRAINT unique_external_id UNIQUE (project_id, channel_id, external_id)
+  CONSTRAINT valid_user_rating CHECK (user_rating IS NULL OR (user_rating >= 1 AND user_rating <= 10))
 );
 
-CREATE INDEX idx_progressive_results_project ON progressive_search_results(project_id, created_at DESC); 
-CREATE INDEX idx_progressive_results_favorites ON progressive_search_results(project_id, is_favorite) WHERE is_favorite = true;
-CREATE INDEX idx_progressive_results_winner ON progressive_search_results(project_id, is_winner) WHERE is_winner = true;
+CREATE INDEX idx_ps_results_project ON ps_results(project_id, created_at DESC);
+CREATE INDEX idx_ps_results_favorites ON ps_results(project_id, is_favorite) WHERE is_favorite = true;
+CREATE INDEX idx_ps_results_winner ON ps_results(project_id, is_winner) WHERE is_winner = true;
 ```
 
 ---
@@ -281,7 +273,7 @@ Agent responses are parsed for embedded commands:
   "success": true,
   "project_id": "550e8400-e29b-41d4-a716-446655440000",
   "category": "recruiting",
-  "status": "clarifying",
+  "status": "refining_query",
   "agent_response": "I'll help you find senior backend engineers! A few questions to refine the search:\n\n1. Location: Are you open to remote candidates, or specific to SF Bay Area?\n2. Experience: How many years of experience are you looking for?\n3. Tech stack: Any specific languages/frameworks required?\n\nLet me know and I'll refine the search!",
   "clarified_subject": null,
   "next_step": "Continue clarifying by running: python step1-clarify.py 550e8400-e29b-41d4-a716-446655440000 -m 'your response'"
@@ -293,7 +285,7 @@ Agent responses are parsed for embedded commands:
 {
   "success": true,
   "project_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "clarifying",
+  "status": "refining_query",
   "agent_response": "Perfect! Here's your refined search:\n\n**Clarified Subject:**\nSenior backend engineers (Python/Go) at seed-stage startups in SF Bay Area or remote, 5+ years experience, $150-200k salary\n\nThis looks good? Reply YES to save and move to channel discovery, or let me know any changes.",
   "clarified_subject": "Senior backend engineers (Python/Go) at seed-stage startups in SF Bay Area or remote, 5+ years experience, $150-200k salary",
   "is_confirmed": false,
@@ -306,7 +298,7 @@ Agent responses are parsed for embedded commands:
 {
   "success": true,
   "project_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "discovering",
+  "status": "discovering_channels",
   "agent_response": "✅ Saved! Your search is now ready.\n\nNext step: Discover channels by running:\npython step2-channels.py 550e8400-e29b-41d4-a716-446655440000",
   "clarified_subject": "Senior backend engineers (Python/Go) at seed-stage startups in SF Bay Area or remote, 5+ years experience, $150-200k salary",
   "is_confirmed": true,
@@ -397,14 +389,14 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
       "url": "https://linkedin.com/jobs",
       "description": "Professional network with strong startup presence in SF Bay Area",
       "channel_type": "professional_network",
-      "agent_rating": 9
+      "rating": 9
     },
     {
       "name": "GitHub Jobs",
       "url": "https://github.com/jobs",
       "description": "Developer-focused job board, good for backend roles",
       "channel_type": "job_board",
-      "agent_rating": 8
+      "rating": 8
     }
   ]
 }
@@ -415,8 +407,8 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
 {
   "command": "UPDATE_CHANNELS",
   "updates": [
-    {"name": "LinkedIn Jobs", "user_rating": 10},
-    {"name": "GitHub Jobs", "is_active": false}
+    {"name": "LinkedIn Jobs", "rating": 10},
+    {"name": "GitHub Jobs", "rating": 3}
   ],
   "new_channels": [
     {
@@ -424,7 +416,7 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
       "url": "https://angel.co",
       "description": "Startup job board",
       "channel_type": "job_board",
-      "agent_rating": 7
+      "rating": 7
     }
   ]
 }
@@ -437,7 +429,7 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
 {
   "success": true,
   "project_id": "550e8400-e29b-41d4-a716-446655440000",
-  "status": "discovering",
+  "status": "discovering_channels",
   "agent_response": "I found 4 great channels for finding senior backend engineers:\n\n1. **LinkedIn Jobs** (9/10)\n   Professional network with strong startup presence in SF Bay Area\n   \n2. **GitHub Jobs** (8/10)\n   Developer-focused job board, great for backend roles\n   \n3. **AngelList** (8/10)\n   Startup-specific job board\n   \n4. **YC Work at a Startup** (7/10)\n   Y Combinator's job board for their portfolio companies\n\nWould you like to add/remove any channels or adjust ratings?",
   "channels": [],
   "is_approved": false,
@@ -456,9 +448,7 @@ python step2-channels.py <uuid> -m "Rate LinkedIn 9/10, GitHub 8/10"
     {
       "id": "...",
       "name": "LinkedIn Jobs",
-      "agent_rating": 9,
-      "user_rating": null,
-      "effective_rating": 9,
+      "rating": 9,
       "is_approved": true
     }
   ],
@@ -548,7 +538,7 @@ python step3-search.py <uuid> -m "Mark #1 as winner - we're hiring them!"
 **Successive searches:**
 - Use learned preferences to refine
 - Adjust channel weights based on result quality
-- Never show duplicates from previous searches
+- Agent checks previous results in context to avoid showing duplicates
 
 ### Structured Commands
 
@@ -569,8 +559,7 @@ python step3-search.py <uuid> -m "Mark #1 as winner - we're hiring them!"
         "experience": "5+ years",
         "tech_stack": ["Python", "Go", "PostgreSQL"]
       },
-      "last_updated": "2025-12-18T10:00:00Z",
-      "external_id": "linkedin-123456"
+      "last_updated": "2025-12-18T10:00:00Z"
     }
   ]
 }
@@ -914,6 +903,18 @@ progressive-search/
 - [ ] Add webhook support
 
 ---
+
+## Design Decisions Summary
+
+These design choices have been confirmed:
+
+1. ✅ **Table naming**: All tables prefixed with `ps_` (ps_projects, ps_conversation, ps_channels, ps_results)
+2. ✅ **Status values**: 'refining_query', 'discovering_channels', 'searching', 'completed'
+3. ✅ **Conversation storage**: One row per message (not JSON array) for flexibility and debugging
+4. ✅ **Channel ratings**: Single `rating` column (agent sets, user updates)
+5. ✅ **Channel approval**: Just `is_approved` boolean (no is_active field)
+6. ✅ **Result dates**: `deadline` and `last_updated` are nullable (not all categories need them)
+7. ✅ **Deduplication**: No database constraints - agent checks previous results in context to avoid duplicates
 
 ## Questions & Clarifications
 
