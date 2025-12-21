@@ -1,0 +1,14 @@
+# Progressive Search Agent System - Python Dependencies
+
+# AI & Agent Framework
+anthropic>=0.39.0           # Claude API
+claude-agent-sdk>=0.1.9     # Autonomous agents with WebSearch
+
+# Database
+supabase>=2.0.0             # Supabase client for database operations
+
+# Google Search (for Step 2 channel discovery)
+google-api-python-client>=2.0.0
+
+# Utilities
+python-dotenv>=1.0.0        # Environment variable management
