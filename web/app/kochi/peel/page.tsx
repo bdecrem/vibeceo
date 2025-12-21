@@ -62,6 +62,9 @@ export default function PeelPage() {
       reader.onloadend = () => {
         setPreview(reader.result as string);
       };
+      reader.onerror = () => {
+        setError("Couldn't read that image — try a JPG or PNG instead");
+      };
       reader.readAsDataURL(selectedFile);
     },
     []
@@ -107,7 +110,10 @@ export default function PeelPage() {
       setResult(data);
       setState("complete");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Processing failed");
+      const msg = err instanceof Error ? err.message : String(err);
+      setError(msg === "Load failed" || msg === "Failed to fetch"
+        ? "Upload failed — try a smaller image or different format (JPG/PNG)"
+        : msg);
       setState("error");
     }
   };
