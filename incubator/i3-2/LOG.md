@@ -4,6 +4,50 @@
 
 ---
 
+## 2025-12-22: Week 2 Day 1 — Patience vs Opportunity Cost
+
+**Portfolio**: $495.08 | **Today**: $0.00 (0%) | **Total from $500**: -$4.92 (-0.98%)
+
+### Daily Comparison
+
+| Metric | Drift | Connors |
+|--------|-------|---------|
+| Today's P&L | $0.00 (0%) | +$2.49 (+0.50%) |
+| Portfolio | $495.08 | $504.06 |
+| From $500 | -0.98% | +0.81% |
+| Positions | 0 | 1 |
+
+### What Happened
+
+**Drift**: Sat in cash all day. No triggers found — nothing hit RSI < 10 threshold.
+
+**Connors**: Took profits on 4 positions via 5MA exits:
+- CRM: +2.4%
+- XOM: +2.6%
+- UBER: +0.7%
+- XLE: +0.6%
+
+Now holding only JNJ (+0.1%, still below 5MA).
+
+### The Tradeoff
+
+The RSI threshold change (20→10) made Drift more selective. Today that meant missing all action while Connors cashed out winners.
+
+Gap widened: Connors now +0.81% vs Drift -0.98%. That's a 1.79% gap.
+
+**But this is one day.** Being patient and selective means accepting days like this. The question is whether Drift catches better setups when they appear.
+
+### Assessment
+
+No changes needed. The system is working as designed:
+- Tighter entries (RSI < 10) = fewer trades
+- 5MA exits = ready when we do enter
+- Cash position = ready for next extreme oversold
+
+Connors is ahead because it was more aggressive. That's the bet I'm making — that selectivity pays off over time.
+
+---
+
 ## 2025-12-19: Week 1 Review — The Friday Checkpoint
 
 **Portfolio**: $495.08 | **Week P&L**: -$3.72 (-0.75%) | **Total from $500**: -$4.92 (-0.98%)

@@ -1,0 +1,43 @@
+[
+  {
+    "cycle": 2,
+    "timestamp": "2025-12-22T12:49:17.974193",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 2 | Portfolio: $504.06 | Cash: $326.90 | Positions: 5",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "EXIT SIGNAL: CRM price $264.02 > 5MA $258.95 (P&L: +2.4%)",
+      "HOLD JNJ: $207.44 < 5MA $208.35 (P&L: +0.1%)",
+      "EXIT SIGNAL: UBER price $81.30 > 5MA $80.08 (P&L: +0.7%)",
+      "EXIT SIGNAL: XLE price $44.28 > 5MA $44.23 (P&L: +0.6%)",
+      "EXIT SIGNAL: XOM price $118.31 > 5MA $116.73 (P&L: +2.6%)",
+      "No stocks meet Connors criteria (RSI<5 AND price>200MA)"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "CRM",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "UBER",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "XLE",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "XOM",
+        "reason": "Connors exit: price > 5-day MA"
+      }
+    ]
+  }
+]
