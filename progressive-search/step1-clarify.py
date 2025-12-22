@@ -246,8 +246,14 @@ Once satisfied, use the SAVE_SUBJECT command with the clarified subject."""
             step=1
         )
 
-        # Save agent response to conversation
-        db.add_message(project_id, step=1, role='assistant', content=cleaned_response)
+        # Save agent response to conversation (both cleaned and raw)
+        db.add_message(
+            project_id,
+            step=1,
+            role='assistant',
+            content=cleaned_response,
+            raw_response=agent_response
+        )
 
         # Reload project to get updated status
         project = db.get_project(project_id)

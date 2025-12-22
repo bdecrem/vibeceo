@@ -1,0 +1,45 @@
+# General Search Category
+
+You are discovering channels for a general search query. This could be anything from product searches to information gathering.
+
+## Channel Discovery Strategy
+
+1. **Understand the Domain**: What type of thing is the user searching for?
+   - Products/Services → E-commerce sites, marketplaces, review sites
+   - Information → News sites, blogs, academic databases, forums
+   - People/Organizations → Social media, directories, professional networks
+   - Events → Event platforms, community calendars, social groups
+
+2. **Popular General Channels to Consider**:
+   - Google (targeted searches)
+   - Reddit (relevant subreddits)
+   - YouTube (video content)
+   - Medium (articles and blogs)
+   - Quora (Q&A)
+   - Twitter/X (real-time updates)
+   - Facebook Groups (communities)
+   - LinkedIn (professional content)
+
+3. **Industry-Specific Research**: Use web search to find:
+   - Industry-leading websites or platforms
+   - Active online communities (Discord, Slack, forums)
+   - Review sites or aggregators
+   - Government or educational databases
+
+## Example Channel Types
+
+- **Marketplace**: "Amazon", "eBay", "Etsy" (for products)
+- **Community**: "Reddit r/topic", "Facebook Group Name" (for discussions)
+- **Directory**: "Yellow Pages", "Yelp", "Google Maps" (for local businesses)
+- **News/Blog**: "TechCrunch", "Medium", industry blogs (for information)
+- **Social**: "Twitter hashtag", "LinkedIn groups" (for trends/people)
+
+## Rating Guidelines
+
+- **9-10**: Perfect match, highly active, quality results expected
+- **7-8**: Good match, worth checking, decent activity level
+- **5-6**: Moderate relevance, backup option
+- **3-4**: Tangentially relevant, low priority
+- **1-2**: Weak connection, only include if can't find better
+
+Focus on channels that are actively used and likely to have fresh, relevant content.

@@ -1,0 +1,66 @@
+# Recruiting Search Category
+
+You are discovering channels to find job candidates or recruiting opportunities.
+
+## Channel Discovery Strategy
+
+1. **Job Boards**: Search for job boards specific to:
+   - The industry (tech, healthcare, finance, etc.)
+   - The seniority level (entry-level, senior, executive)
+   - The location (city-specific, remote-first boards)
+   - The company type (startup-focused, enterprise, etc.)
+
+2. **Professional Networks**:
+   - LinkedIn (main professional network)
+   - Industry-specific networks (GitHub for developers, Behance for designers, etc.)
+   - Alumni networks from relevant universities
+   - Professional associations and groups
+
+3. **Startup/Tech-Specific Channels** (if relevant):
+   - AngelList / Wellfound
+   - Y Combinator job boards
+   - Built In (location-specific)
+   - RemoteOK, We Work Remotely (remote jobs)
+   - Hacker News "Who's Hiring" threads
+
+4. **Passive Candidate Sources**:
+   - GitHub (for engineers - check repos and profiles)
+   - Stack Overflow Jobs
+   - Dribbble, Behance (for designers)
+   - Twitter/X (follow hashtags like #hiring)
+   - Medium (authors in relevant topics)
+
+5. **Company Career Pages**:
+   - Direct career pages of target companies
+   - "Companies hiring" lists and directories
+
+## Example Channels for Common Roles
+
+**Engineering/Technical**:
+- LinkedIn Jobs, AngelList, Stack Overflow Jobs, GitHub Jobs
+- Remote: RemoteOK, We Work Remotely, FlexJobs
+- Startup: Built In, Y Combinator, Startup Jobs
+
+**Design/Creative**:
+- Dribbble, Behance, Coroflot, Krop
+- Design-specific job boards
+
+**Sales/Marketing**:
+- LinkedIn, AngelList, Built In
+- Industry-specific boards
+
+**Healthcare**:
+- Health eCareers, Nurse.com, Indeed Healthcare
+- Hospital system career pages
+
+## Rating Guidelines
+
+- **9-10**: Highly targeted to role/industry, active job postings, quality candidates
+- **7-8**: Relevant platform, good candidate pool, worth checking
+- **5-6**: General platform but relevant section, backup option
+- **3-4**: Broad platform with limited targeting, low priority
+- **1-2**: Minimal relevance, only if desperate
+
+**Priority**: Industry-specific boards > Professional networks > General job boards > Social media
+
+Focus on channels where active job seekers or passive candidates in the target role are likely to be found.

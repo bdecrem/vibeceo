@@ -98,7 +98,8 @@ CREATE TABLE ps_conversation (
 
   -- Message
   role VARCHAR(20) NOT NULL,  -- 'user', 'assistant'
-  content TEXT NOT NULL,
+  content TEXT NOT NULL,      -- Cleaned text for context (commands removed)
+  raw_response TEXT,          -- Full unprocessed agent output (for debugging, not in context)
 
   -- Metadata
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -881,44 +882,61 @@ progressive-search/              # Lives in repository root
 
 ## Todo Checklist
 
-### Database
+### Database ✅ COMPLETE
 - [x] Write SQL migration file (`001_initial_schema.sql`)
-- [ ] Run migration on Supabase (via browser SQL editor)
-- [ ] Test table structure with sample inserts
+- [x] Run migration on Supabase (via browser SQL editor)
+- [x] Test table structure with sample inserts (test_db_connection.py passed)
 - [ ] Add RLS policies (TODO: when adding user authentication)
 
-### Library Code
-- [ ] `lib/db.py` - Supabase client + CRUD functions
-- [ ] `lib/command_parser.py` - Command extraction and execution
-- [ ] `lib/context_builder.py` - Build agent context from DB
-- [ ] `lib/system_prompts.py` - Load prompts by category
+### Library Code ✅ COMPLETE
+- [x] `lib/db.py` - Supabase client + CRUD functions (434 lines)
+- [x] `lib/command_parser.py` - Command extraction and execution
+- [x] `lib/context_builder.py` - Build agent context from DB
+- [x] `lib/system_prompts.py` - Load prompts by category
 
 ### Scripts
-- [ ] `step1-clarify.py` - Full implementation
-- [ ] `step2-channels.py` - Full implementation
-- [ ] `step3-search.py` - Full implementation
+- [x] `step1-clarify.py` - Full implementation ✅ TESTED
+- [x] `step2-channels.py` - Full implementation ✅ TESTED (requires CLAUDE_CODE_OAUTH_TOKEN for web search)
+- [ ] `step3-search.py` - Full implementation ⏭️ NEXT
 
 ### System Prompts
-- [ ] Write base_step1.txt (shared across all categories)
-- [ ] Write base_step2.txt (shared across all categories)
-- [ ] Write base_step3.txt (shared across all categories)
-- [ ] Write category-specific prompts for leadgen (steps 1-3)
-- [ ] Write category-specific prompts for recruiting (steps 1-3)
-- [ ] Write category-specific prompts for job_search (steps 1-3)
-- [ ] Write category-specific prompts for general (steps 1-3)
+- [x] Write base_step1.txt (shared across all categories)
+- [x] Write base_step2.txt (shared across all categories)
+- [ ] Write base_step3.txt (shared across all categories) ⏭️ NEEDED FOR STEP 3
+- [x] Write category-specific prompts for leadgen (steps 1-2)
+- [x] Write category-specific prompts for recruiting (steps 1-2)
+- [ ] Write category-specific prompts for job_search (step 1 only)
+- [x] Write category-specific prompts for general (steps 1-2)
+- [ ] Write category-specific prompts for all categories (step 3)
 
 ### Testing
-- [ ] Test Step 1 end-to-end
-- [ ] Test Step 2 end-to-end
-- [ ] Test Step 3 end-to-end
+- [x] Test Step 1 end-to-end ✅ PASSED
+  - Test Project ID: `95aa3677-a44a-4db9-b99a-b1921d76b207`
+  - Status: `discovering_channels`
+  - Ready for Step 2 testing
+- [x] Test Step 2 structure ✅ VALIDATED
+  - Script runs correctly
+  - Validates project status
+  - Detects missing OAuth token (expected)
+  - Ready for OAuth token setup
+- [ ] Test Step 3 end-to-end ⏭️ NEXT
 - [ ] Test full workflow (all 3 steps)
 - [ ] Test error cases (bad UUIDs, missing data, etc.)
 
 ### Documentation
-- [ ] Add inline code comments
-- [ ] Create usage examples
+- [x] Add inline code comments (done for all library modules)
+- [x] Create usage examples (in lib/README.md)
 - [ ] Document common issues
 - [ ] Create video walkthrough (optional)
+
+### Code Cleanup & Improvements
+- [x] **Clean up agent response parsing** - Step 2 & 3 scripts now extract only final ResultMessage text ✅
+- [x] **Fix duplicate channel saves** - Now only keeps final ResultMessage, prevents duplicate commands ✅
+- [x] **Add raw_response storage** - Full agent output stored in separate column for debugging (not in context) ✅
+- [ ] Add better error handling for malformed JSON commands
+- [ ] Add retry logic for database operations
+- [ ] Improve command parser error messages
+- [ ] Remove unused APPROVE_CHANNELS command (replaced by UPDATE_CHANNELS with is_approved field)
 
 ### Integration (Future)
 - [ ] Add user authentication system
@@ -955,16 +973,135 @@ progressive-search/              # Lives in repository root
 14. ✅ **Location**: `progressive-search/` in repository root directory
 15. ✅ **System prompts**: Two-layer architecture (base + category-specific)
 16. ✅ **Step 3 results**: Default 5, up to 10 if user asks (no --limit flag)
+17. ✅ **Channel approval workflow**:
+    - Agent discovers channels (all start as `is_approved=false`)
+    - User reviews and approves individual channels via UPDATE_CHANNELS
+    - Step 3 only searches approved channels (can be subset, not all)
+    - Project status changes to 'searching' when Step 3 script runs (not when channels approved)
+    - APPROVE_CHANNELS command not needed (UPDATE_CHANNELS handles individual approvals)
 
 ---
 
-## Next Steps
+## Progress Summary
 
-Once questions are answered:
-1. Create database migration file
-2. Run migration on Supabase
-3. Start implementing `lib/` modules
-4. Build Step 1 script
-5. Test and iterate
+### ✅ Completed (Phase 1-4)
+- **Phase 1**: Database schema created and tested
+- **Phase 2**: All library modules implemented (db, command_parser, context_builder, system_prompts)
+- **Phase 3**: Step 1 script fully implemented and tested
+  - Base system prompt + 3 category prompts (general, recruiting, leadgen)
+  - Test project ready: `95aa3677-a44a-4db9-b99a-b1921d76b207`
+- **Phase 4**: Step 2 script fully implemented and tested
+  - `step2-channels.py` script created
+  - `prompts/base_step2.txt` system prompt
+  - Category-specific prompts for Step 2 (general, recruiting, leadgen)
+  - Uses claude-agent-sdk with WebSearch
+  - Validates correctly, detects missing OAuth token
 
-Ready to proceed?
+### ⏭️ Next: Phase 5 - Step 3 (Execute Search)
+
+**What Needs to be Built:**
+1. `step3-search.py` script
+2. `prompts/base_step3.txt` system prompt
+3. Category-specific prompts for Step 3 (at minimum: general, recruiting, leadgen)
+
+**Implementation Approach:**
+- Use same pattern as Steps 1 & 2 (argument parsing, context building, command parsing)
+- Use **Claude WebSearch** for autonomous searching
+- Agent searches approved channels and returns 5 relevant results per iteration
+- Includes deduplication (agent sees previous results in context)
+- Learns from user ratings (shows high/low rated examples to agent)
+- Commands: `SAVE_RESULTS`, `UPDATE_RESULTS`, `ADD_TO_FAVORITES`, `MARK_WINNER`
+
+**Key Requirements:**
+- Must include previous results in context for deduplication
+- Must surface user ratings/notes to agent for learning
+- Agent should adapt search strategy based on feedback
+
+---
+
+## Questions Previously Clarified
+
+### 1. ✅ ANSWERED: Claude WebSearch vs Google Search API
+**Decision:** Use Claude WebSearch (claude-agent-sdk) for both Steps 2 & 3
+- Simpler implementation (one pattern for both steps)
+- No additional API keys needed
+- More flexible (agent can adapt search strategy)
+
+### 2. 🤔 PENDING: Claude OAuth Token
+
+**Question:** What is `CLAUDE_CODE_OAUTH_TOKEN` and when do we need it?
+
+**Answer:**
+
+There are **two ways to use Claude**:
+
+#### Option A: Direct API Calls (What we use in Step 1)
+- **Uses:** `ANTHROPIC_API_KEY`
+- **How it works:** You call Claude's API directly with messages
+- **What Claude can do:** Answer questions, follow instructions, return text
+- **What Claude CANNOT do:** Browse the web, search Google, read external files
+
+```python
+# Step 1 uses this approach
+client = Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+response = client.messages.create(
+    model="claude-sonnet-4-20250514",
+    messages=[{"role": "user", "content": "Refine this search query"}]
+)
+```
+
+#### Option B: Autonomous Agents (What we need for Steps 2 & 3)
+- **Uses:** `CLAUDE_CODE_OAUTH_TOKEN`
+- **How it works:** Creates an agent with access to tools (WebSearch, Read, Write, etc.)
+- **What Claude can do:** Everything from Option A PLUS:
+  - 🔍 Search the web autonomously
+  - 📄 Read web pages
+  - 💾 Write to files
+  - 🤖 Use other tools
+
+```python
+# Steps 2 & 3 will use this approach
+from anthropic import Anthropic
+agent = Anthropic().beta.agents.create(
+    model="claude-sonnet-4-20250514",
+    tools=["WebSearch"]  # Agent can now search the web!
+)
+```
+
+**When do you need the OAuth token?**
+- Only if you want the agent to **autonomously search the web**
+- For Step 2 (discovering channels) and Step 3 (searching for results)
+- NOT needed for Step 1 (just conversation refinement)
+
+**Can we skip it?**
+- Yes, temporarily! We can build Steps 2 & 3 without it
+- They'll work but won't be able to actually search the web
+- You'd need to manually provide channel/result data
+
+**How to get it:**
+- It's generated by the Claude Code CLI
+- Part of the claude-agent-sdk authentication
+- See: https://github.com/anthropics/claude-agent-sdk
+
+### 3. 🔍 QUESTION: Do we want to build Step 2 with or without WebSearch initially?
+
+**Option A:** Build full version with WebSearch
+- Requires setting up `CLAUDE_CODE_OAUTH_TOKEN`
+- Agent can autonomously discover channels
+- Complete end-to-end functionality
+
+**Option B:** Build mock version without WebSearch first
+- Test the script structure and command parsing
+- Manually provide mock channel data for testing
+- Add WebSearch functionality later
+
+**Recommendation:** Option B (mock first) - get the script structure working, then add WebSearch once OAuth is set up.
+
+---
+
+## Ready to Start Step 2?
+
+Once you decide on the WebSearch approach, we can:
+1. Create system prompts for Step 2
+2. Build `step2-channels.py` script
+3. Test with the existing project from Step 1

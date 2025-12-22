@@ -152,7 +152,8 @@ def add_message(
     project_id: str,
     step: int,
     role: str,
-    content: str
+    content: str,
+    raw_response: str = None
 ) -> Dict[str, Any]:
     """
     Add a message to the conversation history.
@@ -161,17 +162,24 @@ def add_message(
         project_id: UUID of the project
         step: Step number (1, 2, or 3)
         role: Message role ('user' or 'assistant')
-        content: Message content
+        content: Message content (cleaned text for context)
+        raw_response: Optional full unprocessed agent response (for debugging)
 
     Returns:
         The created message record
     """
-    result = supabase.table('ps_conversation').insert({
+    data = {
         'project_id': project_id,
         'step': step,
         'role': role,
         'content': content
-    }).execute()
+    }
+
+    # Only include raw_response if provided
+    if raw_response is not None:
+        data['raw_response'] = raw_response
+
+    result = supabase.table('ps_conversation').insert(data).execute()
 
     return result.data[0] if result.data else None
 
