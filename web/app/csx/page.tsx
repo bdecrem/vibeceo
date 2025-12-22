@@ -103,8 +103,10 @@ function CSXContent() {
   }, [isRebooting])
 
   const handleClick = () => {
-    // If ?next=rs, go to /csx/rs; otherwise default to /csx/full
-    const destination = nextPage === 'rs' ? '/csx/rs' : '/csx/full'
+    // Route based on ?next= param: rs -> /csx/rs, lf -> /csx/lf, otherwise /csx/full
+    let destination = '/csx/full'
+    if (nextPage === 'rs') destination = '/csx/rs'
+    else if (nextPage === 'lf') destination = '/csx/lf'
     router.push(destination)
   }
 

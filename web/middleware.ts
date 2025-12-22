@@ -115,6 +115,20 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // /lf → show terminal animation first, then click through to /csx/lf (links to /links not /cs)
+    if (pathname === '/lf') {
+      const newUrl = new URL('/csx?next=lf', request.url)
+      log(`[Middleware] CTRL SHIFT /lf rewrite -> ${newUrl.pathname}${newUrl.search}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /lf/* subpaths → rewrite directly to /csx/lf/*
+    if (pathname.startsWith('/lf/')) {
+      const newUrl = new URL(`/csx${pathname}`, request.url)
+      log(`[Middleware] CTRL SHIFT /lf/ subpath rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     return NextResponse.next()
   }
 
