@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Image from 'next/image';
+// Using regular img tags instead of next/image for simpler static file serving
 
 interface BlogImage {
   url: string;
@@ -451,7 +451,8 @@ export default function AmberBlog({ data }: { data: BlogData }) {
         <header className="amber-header">
           <div className="avatar-container">
             <div className="avatar-glow" />
-            <Image
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={profile.avatar}
               alt={profile.name}
               width={80}
@@ -518,11 +519,10 @@ export default function AmberBlog({ data }: { data: BlogData }) {
             {selectedPost.images?.map((image, idx) => (
               <figure className="post-image" key={idx}>
                 <div className="post-image-container">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={image.url}
                     alt={image.alt}
-                    width={800}
-                    height={800}
                     style={{ width: '100%', height: 'auto' }}
                   />
                 </div>
