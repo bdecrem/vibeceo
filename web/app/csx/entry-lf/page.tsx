@@ -329,20 +329,23 @@ export default function CSXEntryLFPage() {
           }
         }
 
-        @keyframes bubbleGlow {
-          0%, 100% { opacity: 0.3; }
-          50% { opacity: 1; text-shadow: 0 0 8px #a85; }
+        @keyframes bubbleBlink {
+          0%, 5% { opacity: 1; text-shadow: 0 0 8px #a85; }
+          7%, 12% { opacity: 0.2; text-shadow: none; }
+          14%, 19% { opacity: 1; text-shadow: 0 0 8px #a85; }
+          21%, 100% { opacity: 0.2; text-shadow: none; }
         }
 
         .bubble {
           display: inline-block;
-          animation: bubbleGlow 0.5s ease-in-out infinite;
+          opacity: 0.2;
+          animation: bubbleBlink 2s linear infinite;
         }
 
         .bubble-1 { animation-delay: 0s; }
-        .bubble-2 { animation-delay: 0.125s; }
-        .bubble-3 { animation-delay: 0.25s; }
-        .bubble-4 { animation-delay: 0.375s; }
+        .bubble-2 { animation-delay: 0.5s; }
+        .bubble-3 { animation-delay: 1s; }
+        .bubble-4 { animation-delay: 1.5s; }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
