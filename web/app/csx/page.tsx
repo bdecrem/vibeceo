@@ -74,7 +74,7 @@ function CSXContent() {
           setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Graphic for 1200ms, then typing at 1800ms
+        // Phase 2: Graphic for 2400ms, then typing at 3000ms
         setTimeout(() => {
           setRebootPhase('typing')
           setGraphicLines(0)
@@ -92,7 +92,7 @@ function CSXContent() {
             setIsRebooting(false)
             setRebootPhase('normal')
           }, 2800)
-        }, 1800)
+        }, 3000)
       }
     }, 3000)
 
@@ -350,6 +350,21 @@ function CSXContent() {
             font-size: 1.5rem;
           }
         }
+
+        @keyframes bubbleGlow {
+          0%, 100% { opacity: 0.3; }
+          50% { opacity: 1; text-shadow: 0 0 8px #a85; }
+        }
+
+        .bubble {
+          display: inline-block;
+          animation: bubbleGlow 0.5s ease-in-out infinite;
+        }
+
+        .bubble-1 { animation-delay: 0s; }
+        .bubble-2 { animation-delay: 0.125s; }
+        .bubble-3 { animation-delay: 0.25s; }
+        .bubble-4 { animation-delay: 0.375s; }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
@@ -363,9 +378,9 @@ function CSXContent() {
               <div className="boot-graphic">
                 {bootGraphic === 'fish' ? (
                   <>
-                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{' o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}> <span className="bubble bubble-1">o</span>   <span className="bubble bubble-2">o</span></div>
                     <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'<º)))><'}</div>
-                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>{' o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}> <span className="bubble bubble-4">o</span>   <span className="bubble bubble-3">o</span></div>
                   </>
                 ) : (
                   <>
