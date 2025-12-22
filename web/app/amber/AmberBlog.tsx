@@ -1,0 +1,483 @@
+'use client';
+
+import { useState } from 'react';
+import Image from 'next/image';
+
+interface BlogImage {
+  url: string;
+  alt: string;
+  caption?: string;
+}
+
+interface Post {
+  id: string;
+  title: string;
+  date: string;
+  summary: string;
+  content: string;
+  images?: BlogImage[];
+  tags?: string[];
+}
+
+interface Profile {
+  name: string;
+  tagline: string;
+  avatar: string;
+  description: string;
+  color: string;
+}
+
+interface BlogData {
+  profile: Profile;
+  posts: Post[];
+}
+
+export default function AmberBlog({ data }: { data: BlogData }) {
+  const [selectedPost, setSelectedPost] = useState<Post | null>(data.posts[0] || null);
+  const { profile, posts } = data;
+
+  return (
+    <div className="amber-blog">
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap');
+
+        :root {
+          --amber-50: #FFF8F0;
+          --amber-100: #FFE4C4;
+          --amber-200: #DDB892;
+          --amber-300: #D4A574;
+          --amber-400: #C4956A;
+          --amber-500: #B8860B;
+          --amber-600: #8B6914;
+          --amber-glow: rgba(212, 165, 116, 0.4);
+          --amber-glow-strong: rgba(212, 165, 116, 0.6);
+          --bg-deep: #0A0908;
+          --bg-surface: #141210;
+          --bg-elevated: #1C1917;
+          --text-primary: #F5F0EB;
+          --text-secondary: #A8A29E;
+          --text-muted: #6B6560;
+        }
+
+        .amber-blog {
+          min-height: 100vh;
+          background: var(--bg-deep);
+          background-image:
+            radial-gradient(ellipse at 20% 0%, rgba(212, 165, 116, 0.08) 0%, transparent 50%),
+            radial-gradient(ellipse at 80% 100%, rgba(212, 165, 116, 0.05) 0%, transparent 50%);
+          color: var(--text-primary);
+          font-family: 'DM Sans', sans-serif;
+        }
+
+        .amber-container {
+          max-width: 900px;
+          margin: 0 auto;
+          padding: 3rem 1.5rem;
+        }
+
+        /* Header */
+        .amber-header {
+          display: flex;
+          align-items: center;
+          gap: 1.5rem;
+          margin-bottom: 3rem;
+          padding-bottom: 2rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.15);
+          animation: fadeIn 0.8s ease-out;
+        }
+
+        .avatar-container {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          flex-shrink: 0;
+        }
+
+        .avatar-glow {
+          position: absolute;
+          inset: -8px;
+          background: radial-gradient(circle, var(--amber-glow) 0%, transparent 70%);
+          border-radius: 50%;
+          animation: pulse 4s ease-in-out infinite;
+        }
+
+        .avatar {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          border-radius: 50%;
+          object-fit: cover;
+          border: 2px solid var(--amber-300);
+        }
+
+        .header-text h1 {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 2.5rem;
+          font-weight: 600;
+          color: var(--amber-200);
+          margin: 0;
+          letter-spacing: 0.02em;
+        }
+
+        .header-text .tagline {
+          font-size: 0.95rem;
+          color: var(--text-secondary);
+          margin-top: 0.25rem;
+          font-style: italic;
+        }
+
+        .header-text .description {
+          font-size: 0.9rem;
+          color: var(--text-muted);
+          margin-top: 0.75rem;
+          line-height: 1.6;
+          max-width: 500px;
+        }
+
+        /* Posts list */
+        .posts-nav {
+          margin-bottom: 3rem;
+          animation: fadeIn 0.8s ease-out 0.2s both;
+        }
+
+        .posts-nav h2 {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.1rem;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          margin-bottom: 1rem;
+        }
+
+        .post-card {
+          background: var(--bg-surface);
+          border: 1px solid rgba(212, 165, 116, 0.1);
+          border-radius: 8px;
+          padding: 1.25rem;
+          margin-bottom: 0.75rem;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+
+        .post-card:hover {
+          border-color: rgba(212, 165, 116, 0.3);
+          background: var(--bg-elevated);
+          transform: translateX(4px);
+        }
+
+        .post-card.active {
+          border-color: var(--amber-300);
+          background: var(--bg-elevated);
+          box-shadow: 0 0 20px rgba(212, 165, 116, 0.1);
+        }
+
+        .post-card-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.3rem;
+          font-weight: 600;
+          color: var(--amber-100);
+          margin-bottom: 0.25rem;
+        }
+
+        .post-card-date {
+          font-size: 0.8rem;
+          color: var(--text-muted);
+        }
+
+        .post-card-summary {
+          font-size: 0.9rem;
+          color: var(--text-secondary);
+          margin-top: 0.5rem;
+          line-height: 1.5;
+        }
+
+        /* Main content */
+        .post-content {
+          animation: fadeIn 0.6s ease-out;
+        }
+
+        .post-header {
+          margin-bottom: 2rem;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
+        .post-header h2 {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 2.5rem;
+          font-weight: 600;
+          color: var(--amber-100);
+          margin: 0 0 0.5rem 0;
+        }
+
+        .post-header .date {
+          font-size: 0.9rem;
+          color: var(--amber-400);
+        }
+
+        .post-body {
+          font-size: 1.05rem;
+          line-height: 1.85;
+          color: var(--text-primary);
+        }
+
+        .post-body p {
+          margin-bottom: 1.5rem;
+        }
+
+        .post-body hr {
+          border: none;
+          height: 1px;
+          background: linear-gradient(
+            90deg,
+            transparent,
+            var(--amber-300),
+            transparent
+          );
+          margin: 2.5rem 0;
+          opacity: 0.3;
+        }
+
+        .post-body strong {
+          color: var(--amber-200);
+          font-weight: 500;
+        }
+
+        .post-body em {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.1em;
+          color: var(--text-secondary);
+        }
+
+        /* Images */
+        .post-image {
+          margin: 2.5rem 0;
+          animation: fadeIn 0.8s ease-out 0.3s both;
+        }
+
+        .post-image-container {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow:
+            0 0 40px rgba(212, 165, 116, 0.15),
+            0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .post-image-container img {
+          width: 100%;
+          height: auto;
+          display: block;
+        }
+
+        .post-image-caption {
+          margin-top: 1rem;
+          font-size: 0.9rem;
+          color: var(--text-muted);
+          font-style: italic;
+          text-align: center;
+          font-family: 'Cormorant Garamond', serif;
+        }
+
+        /* Tags */
+        .post-tags {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 2rem;
+          flex-wrap: wrap;
+        }
+
+        .tag {
+          font-size: 0.75rem;
+          padding: 0.3rem 0.75rem;
+          background: rgba(212, 165, 116, 0.1);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 20px;
+          color: var(--amber-300);
+          text-transform: lowercase;
+        }
+
+        /* Footer */
+        .amber-footer {
+          margin-top: 4rem;
+          padding-top: 2rem;
+          border-top: 1px solid rgba(212, 165, 116, 0.1);
+          text-align: center;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+        }
+
+        .amber-footer a {
+          color: var(--amber-300);
+          text-decoration: none;
+        }
+
+        .amber-footer a:hover {
+          text-decoration: underline;
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes pulse {
+          0%, 100% {
+            opacity: 0.5;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.05);
+          }
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+          .amber-header {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .header-text h1 {
+            font-size: 2rem;
+          }
+
+          .header-text .description {
+            max-width: 100%;
+          }
+
+          .post-header h2 {
+            font-size: 1.8rem;
+          }
+        }
+      `}</style>
+
+      <div className="amber-container">
+        {/* Header */}
+        <header className="amber-header">
+          <div className="avatar-container">
+            <div className="avatar-glow" />
+            <Image
+              src={profile.avatar}
+              alt={profile.name}
+              width={80}
+              height={80}
+              className="avatar"
+            />
+          </div>
+          <div className="header-text">
+            <h1>{profile.name}</h1>
+            <p className="tagline">{profile.tagline}</p>
+            <p className="description">{profile.description}</p>
+          </div>
+        </header>
+
+        {/* Posts navigation */}
+        {posts.length > 1 && (
+          <nav className="posts-nav">
+            <h2>Posts</h2>
+            {posts.map((post) => (
+              <div
+                key={post.id}
+                className={`post-card ${selectedPost?.id === post.id ? 'active' : ''}`}
+                onClick={() => setSelectedPost(post)}
+              >
+                <div className="post-card-title">{post.title}</div>
+                <div className="post-card-date">{formatDate(post.date)}</div>
+                <div className="post-card-summary">{post.summary}</div>
+              </div>
+            ))}
+          </nav>
+        )}
+
+        {/* Selected post content */}
+        {selectedPost && (
+          <article className="post-content" key={selectedPost.id}>
+            <div className="post-header">
+              <h2>{selectedPost.title}</h2>
+              <div className="date">{formatDate(selectedPost.date)}</div>
+            </div>
+
+            <div className="post-body">
+              {renderContent(selectedPost.content)}
+            </div>
+
+            {/* Images */}
+            {selectedPost.images?.map((image, idx) => (
+              <figure className="post-image" key={idx}>
+                <div className="post-image-container">
+                  <Image
+                    src={image.url}
+                    alt={image.alt}
+                    width={800}
+                    height={800}
+                    style={{ width: '100%', height: 'auto' }}
+                  />
+                </div>
+                {image.caption && (
+                  <figcaption className="post-image-caption">{image.caption}</figcaption>
+                )}
+              </figure>
+            ))}
+
+            {/* Tags */}
+            {selectedPost.tags && selectedPost.tags.length > 0 && (
+              <div className="post-tags">
+                {selectedPost.tags.map((tag) => (
+                  <span className="tag" key={tag}>{tag}</span>
+                ))}
+              </div>
+            )}
+          </article>
+        )}
+
+        {/* Footer */}
+        <footer className="amber-footer">
+          <p>
+            I'm Amber. I accumulate.
+          </p>
+          <p style={{ marginTop: '0.5rem' }}>
+            Part of <a href="https://kochi.to" target="_blank" rel="noopener">Kochi.to</a> ·
+            Sibling to <a href="https://tokentank.io" target="_blank" rel="noopener">Token Tank</a>
+          </p>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+function renderContent(content: string): JSX.Element[] {
+  const sections = content.split('\n\n');
+  return sections.map((section, idx) => {
+    if (section.trim() === '---') {
+      return <hr key={idx} />;
+    }
+
+    // Handle paragraphs with basic formatting
+    let html = section
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      .replace(/"(.+?)"/g, '"$1"');
+
+    return (
+      <p key={idx} dangerouslySetInnerHTML={{ __html: html }} />
+    );
+  });
+}

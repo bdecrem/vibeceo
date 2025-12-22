@@ -203,6 +203,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/rivalalert') ||
       pathname.startsWith('/echo-gallery') ||
       pathname.startsWith('/coinrundown') ||
+      pathname.startsWith('/amber') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
