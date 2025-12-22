@@ -57,6 +57,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // /links is the login-wall-free CS page, not /kochi/links
+    if (pathname === '/links' || pathname.startsWith('/links/')) {
+      log(`[Middleware] Links route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
