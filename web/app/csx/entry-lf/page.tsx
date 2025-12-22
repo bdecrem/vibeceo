@@ -15,7 +15,7 @@ export default function CSXEntryLFPage() {
   const [typingLine, setTypingLine] = useState(-1)
 
   const statusMessages = [
-    { text: 'looking for the right builder...', color: 'green', cursor: false },
+    { text: 'onboarding new builders...', color: 'green', cursor: false },
     { text: 'backing the weird...', color: 'green', cursor: false },
     { text: 'scanning the horizon...', color: 'green', cursor: false },
     { text: 'connecting dots...', color: 'green', cursor: false },
@@ -346,7 +346,7 @@ export default function CSXEntryLFPage() {
                   </>
                 ) : (
                   <>
-                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{' o   o   o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{'o   o   o   o'}</div>
                     <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'/|\\ /|\\ /|\\ /|\\'}</div>
                     <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>{'/ \\ / \\ / \\ / \\'}</div>
                   </>
@@ -358,7 +358,7 @@ export default function CSXEntryLFPage() {
                   we back the weird, the rigorous, the not-next-quarter.
                 </div>
                 <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
-                  founders, researchers and students building for impact.
+                  founders, researchers & students building AI that matters.
                 </div>
 
                 <div className="terminal-programs">
