@@ -256,6 +256,98 @@ export default function ASCIIOptionsPage() {
         .star-1 { animation-delay: 0s; }
         .star-2 { animation-delay: 0.5s; }
         .star-3 { animation-delay: 1s; }
+
+        /* Solid robot chest light */
+        @keyframes chestPulse {
+          0%, 100% { opacity: 0.4; }
+          50% { opacity: 1; text-shadow: 0 0 8px #5a8; color: #5a8; }
+        }
+
+        .chest-light {
+          display: inline-block;
+          animation: chestPulse 1.2s ease-in-out infinite;
+        }
+
+        /* Computer screen flicker/boot */
+        @keyframes screenBoot {
+          0%, 10% { opacity: 0.2; }
+          15%, 25% { opacity: 1; }
+          30%, 40% { opacity: 0.3; }
+          45%, 100% { opacity: 1; }
+        }
+
+        .screen-content {
+          animation: screenBoot 2s ease-in-out infinite;
+        }
+
+        /* Loading bar animation */
+        @keyframes loadingBar {
+          0% { width: 0%; }
+          100% { width: 100%; }
+        }
+
+        .load-segment {
+          display: inline-block;
+          opacity: 0.2;
+        }
+
+        .load-1 { animation: bubbleBlink 2.5s linear infinite; animation-delay: 0s; }
+        .load-2 { animation: bubbleBlink 2.5s linear infinite; animation-delay: 0.5s; }
+        .load-3 { animation: bubbleBlink 2.5s linear infinite; animation-delay: 1s; }
+        .load-4 { animation: bubbleBlink 2.5s linear infinite; animation-delay: 1.5s; }
+        .load-5 { animation: bubbleBlink 2.5s linear infinite; animation-delay: 2s; }
+
+        /* Cat tail swish */
+        @keyframes tailSwish {
+          0%, 100% { transform: rotate(-10deg); }
+          50% { transform: rotate(10deg); }
+        }
+
+        .cat-tail {
+          display: inline-block;
+          transform-origin: bottom left;
+          animation: tailSwish 1s ease-in-out infinite;
+        }
+
+        /* Cat ear twitch */
+        @keyframes earTwitch {
+          0%, 90%, 100% { transform: rotate(0deg); }
+          93%, 97% { transform: rotate(-5deg); }
+        }
+
+        .cat-ear {
+          display: inline-block;
+          animation: earTwitch 3s ease-in-out infinite;
+        }
+
+        .cat-ear-right {
+          animation-delay: 1.5s;
+        }
+
+        /* Heartbeat pulse */
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          14% { transform: scale(1.15); opacity: 1; }
+          28% { transform: scale(1); opacity: 0.7; }
+          42% { transform: scale(1.1); opacity: 1; }
+          56% { transform: scale(1); }
+        }
+
+        .heart {
+          display: inline-block;
+          color: #a55;
+          animation: heartbeat 1.5s ease-in-out infinite;
+        }
+
+        /* Hourglass flip */
+        @keyframes sandFall {
+          0%, 45% { opacity: 1; }
+          50%, 95% { opacity: 0.3; }
+          100% { opacity: 1; }
+        }
+
+        .sand-top { animation: sandFall 2s linear infinite; }
+        .sand-bot { animation: sandFall 2s linear infinite; animation-delay: 1s; }
       `}</style>
 
       <div className="options-page">
@@ -354,6 +446,90 @@ export default function ASCIIOptionsPage() {
                 <div>|   {['|', '/', '-', '\\'][frame]}   |</div>
                 <div> \     / </div>
                 <div>  '---'  </div>
+              </div>
+              <div className="terminal-status">
+                <span className="status-dot"></span>
+                <span>build error. rebooting...</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 6: Solid Body Robot */}
+          <div>
+            <div className="option-label">Option E: Solid Robot</div>
+            <div className="terminal-box">
+              <div className="terminal-header">
+                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
+              </div>
+              <div className="boot-graphic">
+                <div> ▄█████▄</div>
+                <div> █ <span className="robot-eye robot-eye-left">●</span> <span className="robot-eye robot-eye-right">●</span> █</div>
+                <div> █▄▄▄▄▄█</div>
+                <div>  █<span className="chest-light">♦</span>█</div>
+                <div>  █▀█▀█</div>
+              </div>
+              <div className="terminal-status">
+                <span className="status-dot"></span>
+                <span>build error. rebooting...</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 7: Cute Computer Booting */}
+          <div>
+            <div className="option-label">Option F: Cute Computer</div>
+            <div className="terminal-box">
+              <div className="terminal-header">
+                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
+              </div>
+              <div className="boot-graphic">
+                <div> .-------.</div>
+                <div className="screen-content"> | <span className="robot-eye robot-eye-left">◠</span>   <span className="robot-eye robot-eye-right">◠</span> |</div>
+                <div className="screen-content"> |   ◡   |</div>
+                <div> '-------'</div>
+                <div> [<span className="load-segment load-1">▓</span><span className="load-segment load-2">▓</span><span className="load-segment load-3">▓</span><span className="load-segment load-4">▓</span><span className="load-segment load-5">▓</span>]</div>
+              </div>
+              <div className="terminal-status">
+                <span className="status-dot"></span>
+                <span>build error. rebooting...</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 8: Cat on Keyboard */}
+          <div>
+            <div className="option-label">Option G: Cat Helper</div>
+            <div className="terminal-box">
+              <div className="terminal-header">
+                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
+              </div>
+              <div className="boot-graphic">
+                <div>  <span className="cat-ear">/\</span>  <span className="cat-ear cat-ear-right">/\</span></div>
+                <div> ( <span className="robot-eye robot-eye-left">•</span>.<span className="robot-eye robot-eye-right">•</span> )</div>
+                <div>  {'>'}^{'<'} <span className="cat-tail">~</span></div>
+                <div> /|████|\</div>
+                <div>  ''  ''</div>
+              </div>
+              <div className="terminal-status">
+                <span className="status-dot"></span>
+                <span>build error. rebooting...</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Option 9: Heartbeat */}
+          <div>
+            <div className="option-label">Option H: Heartbeat</div>
+            <div className="terminal-box">
+              <div className="terminal-header">
+                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
+              </div>
+              <div className="boot-graphic">
+                <div> </div>
+                <div>   <span className="heart">♥</span></div>
+                <div>  <span className="heart">♥♥♥</span></div>
+                <div>   <span className="heart">♥</span></div>
+                <div> </div>
               </div>
               <div className="terminal-status">
                 <span className="status-dot"></span>
