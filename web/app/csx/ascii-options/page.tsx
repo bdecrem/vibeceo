@@ -351,7 +351,7 @@ export default function ASCIIOptionsPage() {
       `}</style>
 
       <div className="options-page">
-        <div className="page-title">ASCII REBOOT OPTIONS</div>
+        <div className="page-title">CTRL SHIFT • ASCII REBOOT OPTIONS</div>
 
         <div className="options-grid">
           {/* Option 1: Current Fish */}
