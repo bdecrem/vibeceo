@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 
 interface BlogImage {
@@ -33,8 +33,56 @@ interface BlogData {
 }
 
 export default function AmberBlog({ data }: { data: BlogData }) {
-  const [selectedPost, setSelectedPost] = useState<Post | null>(data.posts[0] || null);
   const { profile, posts } = data;
+  const [selectedPost, setSelectedPost] = useState<Post | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  // Handle hash-based routing
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash.slice(1);
+      if (hash) {
+        const post = posts.find(p => p.id === hash);
+        if (post) {
+          setSelectedPost(post);
+          return;
+        }
+      }
+      setSelectedPost(posts[0] || null);
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, [posts]);
+
+  const selectPost = (post: Post) => {
+    setSelectedPost(post);
+    window.history.pushState(null, '', `#${post.id}`);
+  };
+
+  const getPostUrl = (postId: string) => {
+    if (typeof window === 'undefined') return '';
+    return `${window.location.origin}/amber#${postId}`;
+  };
+
+  const copyLink = async () => {
+    if (!selectedPost) return;
+    const url = getPostUrl(selectedPost.id);
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareToTwitter = () => {
+    if (!selectedPost) return;
+    const url = getPostUrl(selectedPost.id);
+    const text = `${selectedPost.title} — by Amber`;
+    window.open(
+      `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      '_blank'
+    );
+  };
 
   return (
     <div className="amber-blog">
@@ -202,6 +250,13 @@ export default function AmberBlog({ data }: { data: BlogData }) {
           border-bottom: 1px solid rgba(212, 165, 116, 0.1);
         }
 
+        .post-header-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 1rem;
+        }
+
         .post-header h2 {
           font-family: 'Cormorant Garamond', serif;
           font-size: 2.5rem;
@@ -213,6 +268,37 @@ export default function AmberBlog({ data }: { data: BlogData }) {
         .post-header .date {
           font-size: 0.9rem;
           color: var(--amber-400);
+        }
+
+        .share-widget {
+          display: flex;
+          gap: 0.5rem;
+          flex-shrink: 0;
+        }
+
+        .share-btn {
+          background: rgba(212, 165, 116, 0.1);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 8px;
+          width: 36px;
+          height: 36px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          font-size: 1rem;
+          color: var(--amber-300);
+        }
+
+        .share-btn:hover {
+          background: rgba(212, 165, 116, 0.2);
+          border-color: var(--amber-300);
+          transform: translateY(-1px);
+        }
+
+        .share-btn:active {
+          transform: translateY(0);
         }
 
         .post-body {
@@ -388,7 +474,7 @@ export default function AmberBlog({ data }: { data: BlogData }) {
               <div
                 key={post.id}
                 className={`post-card ${selectedPost?.id === post.id ? 'active' : ''}`}
-                onClick={() => setSelectedPost(post)}
+                onClick={() => selectPost(post)}
               >
                 <div className="post-card-title">{post.title}</div>
                 <div className="post-card-date">{formatDate(post.date)}</div>
@@ -402,7 +488,25 @@ export default function AmberBlog({ data }: { data: BlogData }) {
         {selectedPost && (
           <article className="post-content" key={selectedPost.id}>
             <div className="post-header">
-              <h2>{selectedPost.title}</h2>
+              <div className="post-header-top">
+                <h2>{selectedPost.title}</h2>
+                <div className="share-widget">
+                  <button
+                    className="share-btn"
+                    onClick={copyLink}
+                    title="Copy link"
+                  >
+                    {copied ? '✓' : '🔗'}
+                  </button>
+                  <button
+                    className="share-btn"
+                    onClick={shareToTwitter}
+                    title="Share on X"
+                  >
+                    𝕏
+                  </button>
+                </div>
+              </div>
               <div className="date">{formatDate(selectedPost.date)}</div>
             </div>
 
