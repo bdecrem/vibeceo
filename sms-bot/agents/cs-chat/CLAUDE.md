@@ -6,7 +6,7 @@
 
 - Users share links via SMS → broadcasted to all CS subscribers
 - Links are auto-fetched and summarized by AI
-- Web UI at `kochi.to/cs` shows the feed with comments
+- Web UI at `ctrlshift.so/links` shows the feed with comments
 - AI-powered search/chat to query the shared content
 
 ## Architecture

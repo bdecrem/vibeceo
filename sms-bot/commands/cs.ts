@@ -266,8 +266,8 @@ async function broadcastNewLink(
 
   const handle = poster.name || "someone";
   const message = notes
-    ? `📎 ${handle} shared: ${url}\n"${notes}" — 💬 kochi.to/cs`
-    : `📎 ${handle} shared: ${url} — 💬 kochi.to/cs`;
+    ? `📎 ${handle} shared: ${url}\n"${notes}" — 💬 ctrlshift.so/links`
+    : `📎 ${handle} shared: ${url} — 💬 ctrlshift.so/links`;
 
   let sent = 0;
   let failed = 0;
@@ -377,8 +377,8 @@ async function handlePost(context: CommandContext, url: string, notes?: string, 
 
     // Confirm to poster
     const confirmation = sent > 0
-      ? `✓ Shared to ${sent} subscriber${sent === 1 ? "" : "s"} — 💬 kochi.to/cs`
-      : `✓ Saved — 💬 kochi.to/cs`;
+      ? `✓ Shared to ${sent} subscriber${sent === 1 ? "" : "s"} — 💬 ctrlshift.so/links`
+      : `✓ Saved — 💬 ctrlshift.so/links`;
 
     await sendSms(from, confirmation, twilioClient);
   } catch (error) {
@@ -431,7 +431,7 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
 
     // Notify admin via email (SMS gets blocked by Twilio spam filters)
     const displayName = name || 'Someone';
-    const approveUrl = `https://kochi.to/cs/q/${waitlistResult.id}`;
+    const approveUrl = `https://ctrlshift.so/links/q/${waitlistResult.id}`;
     await sendNotificationEmail(
       CS_ADMIN_EMAIL,
       `CS invite request: ${displayName}`,
@@ -538,7 +538,7 @@ async function handleApprove(context: CommandContext, approvePhone?: string): Pr
     if (existingHandle) {
       await sendSms(
         phoneToApprove,
-        `You're in! Welcome to CTRL SHIFT, ${existingHandle}.\n\nText CS + any URL to share with the group.\nSee everything at kochi.to/cs`,
+        `You're in! Welcome to CTRL SHIFT, ${existingHandle}.\n\nText CS + any URL to share with the group.\nSee everything at ctrlshift.so/links`,
         twilioClient
       );
     } else {
@@ -592,7 +592,7 @@ async function handleList(context: CommandContext): Promise<boolean> {
       return `• ${domain} (${name})`;
     });
 
-    const message = `Recent links:\n${lines.join("\n")}\n\n💬 kochi.to/cs — full feed`;
+    const message = `Recent links:\n${lines.join("\n")}\n\n💬 ctrlshift.so/links — full feed`;
     await sendSms(from, message, twilioClient);
   } catch (error) {
     console.error("[cs] Error listing:", error);
@@ -613,7 +613,7 @@ async function handleHelp(context: CommandContext): Promise<boolean> {
       "• CS <text> — Comment on recent link\n" +
       "• CS KOCHI <question> — Ask AI\n" +
       "• CS SUBSCRIBE — Get notified\n" +
-      "💬 kochi.to/cs — full feed",
+      "💬 ctrlshift.so/links — full feed",
     twilioClient
   );
 
@@ -679,7 +679,7 @@ async function handleCSComment(context: CommandContext, text: string): Promise<b
     }
 
     // Broadcast comment to all subscribers (include the commenter)
-    const broadcastMsg = `💬 ${handle} on ${activePost.domain}: "${text}" — kochi.to/cs`;
+    const broadcastMsg = `💬 ${handle} on ${activePost.domain}: "${text}" — ctrlshift.so/links`;
     await broadcastToSubscribers(twilioClient, broadcastMsg, null);
 
   } catch (error) {
@@ -763,7 +763,7 @@ async function handleCSKochi(context: CommandContext, question: string): Promise
     }
 
     // 5. Broadcast the answer to all subscribers
-    const answerMsg = `🤖 ${answer}\n\nkochi.to/cs 💬`;
+    const answerMsg = `🤖 ${answer}\n\nctrlshift.so/links 💬`;
     await broadcastToSubscribers(twilioClient, answerMsg, null);
 
   } catch (error) {
@@ -864,7 +864,7 @@ export async function handleCSHandleSetup(
 
     await sendSms(
       from,
-      `All set. Share links by texting CS + any URL. See the feed at kochi.to/cs 💬`,
+      `All set. Share links by texting CS + any URL. See the feed at ctrlshift.so/links 💬`,
       twilioClient
     );
   } catch (error) {
