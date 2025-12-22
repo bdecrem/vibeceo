@@ -373,47 +373,7 @@ export default function ASCIIOptionsPage() {
             </div>
           </div>
 
-          {/* Option 2: Cute Robot */}
-          <div>
-            <div className="option-label">Option A: Friendly Robot</div>
-            <div className="terminal-box">
-              <div className="terminal-header">
-                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
-              </div>
-              <div className="boot-graphic">
-                <div>   <span className="antenna">*</span></div>
-                <div>  [<span className="robot-eye robot-eye-left">o</span>_<span className="robot-eye robot-eye-right">o</span>]</div>
-                <div> /-|---|--\</div>
-                <div> |_|___|_|</div>
-              </div>
-              <div className="terminal-status">
-                <span className="status-dot"></span>
-                <span>build error. rebooting...</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Option 3: Coder at Work */}
-          <div>
-            <div className="option-label">Option B: Late Night Coder</div>
-            <div className="terminal-box">
-              <div className="terminal-header">
-                <span className="terminal-header-title">CTRL SHIFT</span> • LONG HORIZON LAB
-              </div>
-              <div className="boot-graphic">
-                <div><span className="steam steam-1">~</span><span className="steam steam-2">~</span><span className="steam steam-3">~</span></div>
-                <div>  o    [_]</div>
-                <div>{' /|\\_'}<span className="typing-cursor">_</span>{'|:|'}</div>
-                <div> / \   {'""\''}</div>
-              </div>
-              <div className="terminal-status">
-                <span className="status-dot"></span>
-                <span>build error. rebooting...</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Option 4: Rocket Launch */}
+          {/* Option 2: Rocket Launch */}
           <div>
             <div className="option-label">Option C: Rocket Launch</div>
             <div className="terminal-box">
