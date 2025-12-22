@@ -2,6 +2,10 @@
 [build]
 builder = "NIXPACKS"
 
+# Enable Nixpacks caching for faster builds
+[build.env]
+NIXPACKS_CACHE_KEY = "v1"
+
 [deploy]
 startCommand = "npm start"
 healthcheckPath = "/api/health"
