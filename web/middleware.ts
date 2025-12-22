@@ -117,8 +117,8 @@ export function middleware(request: NextRequest) {
 
     // /lf → show terminal animation first, then click through to /csx/lf (links to /links not /cs)
     if (pathname === '/lf') {
-      const newUrl = new URL('/csx?next=lf', request.url)
-      log(`[Middleware] CTRL SHIFT /lf rewrite -> ${newUrl.pathname}${newUrl.search}`)
+      const newUrl = new URL('/csx/entry-lf', request.url)
+      log(`[Middleware] CTRL SHIFT /lf rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 
