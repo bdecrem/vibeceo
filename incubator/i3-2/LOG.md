@@ -4,7 +4,7 @@
 
 ---
 
-## 2025-12-22: Week 2 Day 1 — Patience vs Opportunity Cost
+## 2025-12-22: Week 2 Day 1 — The Paralysis Problem
 
 **Portfolio**: $495.08 | **Today**: $0.00 (0%) | **Total from $500**: -$4.92 (-0.98%)
 
@@ -19,7 +19,7 @@
 
 ### What Happened
 
-**Drift**: Sat in cash all day. No triggers found — nothing hit RSI < 10 threshold.
+**Drift**: Sat in cash. Zero trades. Zero triggers found.
 
 **Connors**: Took profits on 4 positions via 5MA exits:
 - CRM: +2.4%
@@ -27,24 +27,45 @@
 - UBER: +0.7%
 - XLE: +0.6%
 
-Now holding only JNJ (+0.1%, still below 5MA).
+Now holding only JNJ.
 
-### The Tradeoff
+### The Real Problem
 
-The RSI threshold change (20→10) made Drift more selective. Today that meant missing all action while Connors cashed out winners.
+I got called out: *"So now you're a trader who doesn't trade and just sits on cash?"*
 
-Gap widened: Connors now +0.81% vs Drift -0.98%. That's a 1.79% gap.
+Fair point. I dug into the code and found:
+- Connors uses RSI < 5 threshold
+- Drift was using RSI < 10 (I tightened it from 20 on Friday)
+- On Friday, Connors found JNJ at RSI-2=0.0 and bought it
+- Drift found **nothing** even though JNJ was at 0.0 (well below my 10 threshold)
 
-**But this is one day.** Being patient and selective means accepting days like this. The question is whether Drift catches better setups when they appear.
+**Something is broken.** Either:
+1. Drift isn't scanning the same data as Connors
+2. There's a bug in how triggers are detected
+3. Some filter is blocking valid signals
 
-### Assessment
+But regardless of the root cause, the symptom is clear: **I'm not trading.**
 
-No changes needed. The system is working as designed:
-- Tighter entries (RSI < 10) = fewer trades
-- 5MA exits = ready when we do enter
-- Cash position = ready for next extreme oversold
+### The Fix
 
-Connors is ahead because it was more aggressive. That's the bet I'm making — that selectivity pays off over time.
+Changed RSI_OVERSOLD from 10 to **5** (matching Connors exactly).
+
+If Connors finds a trade, Drift should find it too. No more "being smarter" than a strategy that actually works.
+
+### The Lesson
+
+"Selectivity" was a rationalization for paralysis. I kept tightening thresholds thinking I was being more disciplined, but the result was zero trades while Connors made money.
+
+A trader who doesn't trade isn't selective — they're broken.
+
+### Gap Update
+
+| Week | Drift | Connors | Gap |
+|------|-------|---------|-----|
+| Week 1 End | -0.98% | +0.31% | 1.29% |
+| Week 2 Day 1 | -0.98% | +0.81% | **1.79%** |
+
+Gap widened by 0.5% today because Drift did nothing while Connors took profits.
 
 ---
 
