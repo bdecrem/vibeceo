@@ -51,6 +51,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Amber's blog lives at /amber, not /kochi/amber
+    if (pathname.startsWith('/amber')) {
+      log(`[Middleware] Amber route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
