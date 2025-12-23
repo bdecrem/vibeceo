@@ -22,7 +22,6 @@ Clean CRUD interface for all `ps_*` tables via Supabase.
 - `save_channels(project_id, channels)` - Save multiple channels
 - `get_channels(project_id, approved_only=False)` - Get channels
 - `update_channel_rating(channel_id, rating)` - Update rating
-- `approve_channels(project_id)` - Mark all channels approved
 
 **Results:**
 - `save_results(project_id, results)` - Save search results
@@ -48,8 +47,7 @@ Step 1:
 
 Step 2:
 - `SAVE_CHANNELS` - Save channel list
-- `UPDATE_CHANNELS` - Update channel ratings
-- `APPROVE_CHANNELS` - Mark channels approved
+- `UPDATE_CHANNELS` - Update channel ratings and mark channels as approved
 
 Step 3:
 - `SAVE_RESULTS` - Save search results
@@ -87,7 +85,7 @@ final_prompt = base_step1.txt + step1/leadgen.txt
 SUPABASE_URL=https://your-project.supabase.co
 SUPABASE_PUBLISHABLE_KEY=your-publishable-key
 ANTHROPIC_API_KEY=your-anthropic-key
-# Optional: CLAUDE_CODE_OAUTH_TOKEN for autonomous web search
+CLAUDE_CODE_OAUTH_TOKEN=your-claude-oauth-token # for autonomous web search
 ```
 
 ## Example Usage

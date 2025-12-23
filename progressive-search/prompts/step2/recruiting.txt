@@ -1,66 +1,116 @@
 # Recruiting Search Category
 
-You are discovering channels to find job candidates or recruiting opportunities.
+You are discovering channels to help a company find CANDIDATES to hire for a role.
 
-## Channel Discovery Strategy
+## CRITICAL: What You're Looking For
 
-1. **Job Boards**: Search for job boards specific to:
-   - The industry (tech, healthcare, finance, etc.)
-   - The seniority level (entry-level, senior, executive)
-   - The location (city-specific, remote-first boards)
-   - The company type (startup-focused, enterprise, etc.)
+**RECRUITING = Finding PEOPLE to hire, NOT job postings**
 
-2. **Professional Networks**:
-   - LinkedIn (main professional network)
-   - Industry-specific networks (GitHub for developers, Behance for designers, etc.)
-   - Alumni networks from relevant universities
-   - Professional associations and groups
+You're helping a recruiter/hiring manager find CANDIDATES (people) to fill a role. This is the OPPOSITE of job search - you're not looking for job boards where companies post openings.
 
-3. **Startup/Tech-Specific Channels** (if relevant):
-   - AngelList / Wellfound
-   - Y Combinator job boards
-   - Built In (location-specific)
-   - RemoteOK, We Work Remotely (remote jobs)
-   - Hacker News "Who's Hiring" threads
+Focus on:
+- **Professional networks** where you can search for people by title, skills, industry
+- **Portfolio/profile platforms** where professionals showcase their work
+- **Community forums** where professionals participate and can be sourced
+- **Talent marketplaces** where candidates have public profiles
 
-4. **Passive Candidate Sources**:
-   - GitHub (for engineers - check repos and profiles)
-   - Stack Overflow Jobs
-   - Dribbble, Behance (for designers)
-   - Twitter/X (follow hashtags like #hiring)
-   - Medium (authors in relevant topics)
+**AVOID**: Job boards where companies post job openings (Indeed, LinkedIn Jobs, Wellfound Jobs, etc.) - those are for JOB SEEKERS looking for work, not for RECRUITERS sourcing candidates.
 
-5. **Company Career Pages**:
-   - Direct career pages of target companies
-   - "Companies hiring" lists and directories
+## Industry-Specific Channel Examples
 
-## Example Channels for Common Roles
+### Technology/Engineering
+- LinkedIn People Search (engineers by programming language, title)
+- GitHub User Search (developers by language, contributions, location)
+- Stack Overflow Developer Stories (developers by expertise)
+- Dev.to, CodePen, Hashnode (developer profiles and portfolios)
 
-**Engineering/Technical**:
-- LinkedIn Jobs, AngelList, Stack Overflow Jobs, GitHub Jobs
-- Remote: RemoteOK, We Work Remotely, FlexJobs
-- Startup: Built In, Y Combinator, Startup Jobs
+### Design/Creative
+- Dribbble (designer portfolios and profiles)
+- Behance (creative portfolios)
+- Figma Community (UI/UX designers)
+- Coroflot (industrial designers)
 
-**Design/Creative**:
-- Dribbble, Behance, Coroflot, Krop
-- Design-specific job boards
+### Sales/Marketing
+- LinkedIn People Search (sales professionals by industry, company size)
+- Twitter/X (thought leaders, hashtags like #SalesTwitter, #MarketingTwitter)
+- Medium (content marketers and writers)
 
-**Sales/Marketing**:
-- LinkedIn, AngelList, Built In
-- Industry-specific boards
+### Healthcare/Medical
+- Doximity (physician network and profiles)
+- LinkedIn People Search (healthcare professionals)
+- Sermo (physician community)
+- Professional association directories (AMA, ANA, etc.)
 
-**Healthcare**:
-- Health eCareers, Nurse.com, Indeed Healthcare
-- Hospital system career pages
+### Finance/Accounting
+- LinkedIn People Search (finance professionals by specialty)
+- CFA Institute directory (chartered financial analysts)
+- Professional association directories
 
-## Rating Guidelines
+### Legal
+- Martindale-Hubbell (attorney profiles)
+- LinkedIn People Search (attorneys by practice area)
+- State bar association directories
 
-- **9-10**: Highly targeted to role/industry, active job postings, quality candidates
-- **7-8**: Relevant platform, good candidate pool, worth checking
-- **5-6**: General platform but relevant section, backup option
-- **3-4**: Broad platform with limited targeting, low priority
-- **1-2**: Minimal relevance, only if desperate
+### Academia/Education
+- LinkedIn People Search (educators, researchers)
+- Google Scholar (researchers by field)
+- ResearchGate (academic profiles)
+- University faculty directories
 
-**Priority**: Industry-specific boards > Professional networks > General job boards > Social media
+### General Professional
+- LinkedIn People Search (any profession)
+- Professional association member directories
+- Industry-specific forums and communities
+- Conference speaker directories
 
-Focus on channels where active job seekers or passive candidates in the target role are likely to be found.
+## Recommended Channel Structure
+
+For any industry, look for:
+
+1. **Professional Networks**:
+   - LinkedIn People Search (works for ALL industries)
+   - Industry-specific professional networks
+   - Professional association member directories
+
+2. **Portfolio/Showcase Platforms**:
+   - Industry-specific sites where professionals show their work
+   - Personal websites and blogs
+   - Professional profile aggregators
+
+3. **Community Forums**:
+   - Reddit communities (r/forhire, industry-specific subreddits)
+   - Industry forums where professionals participate
+   - Slack/Discord communities for that industry
+
+4. **Talent Marketplaces**:
+   - Platforms where candidates create profiles (Toptal, Hired, Contra, Gun.io for tech)
+   - Industry-specific freelance marketplaces
+   - Consultant directories
+
+## Example URLs for Finding Candidates
+
+**✅ GOOD examples** (finding PEOPLE):
+- `https://www.linkedin.com/search/results/people/?keywords=sales%20manager%20saas`
+- `https://github.com/search?q=location:austin+language:python`
+- `https://dribbble.com/designers?location=San%20Francisco`
+- `https://www.doximity.com/pub/search?query=cardiologist&location=Boston`
+
+**❌ BAD examples** (job boards for job seekers, not candidate sourcing):
+- `https://www.linkedin.com/jobs/` ❌
+- `https://wellfound.com/jobs` ❌
+- `https://www.workatastartup.com/` ❌
+- `https://www.indeed.com/` ❌
+- `https://healthecareers.com/jobs` ❌
+
+## Channel Evaluation for Recruiting
+
+Rate channels based on:
+- **Search/filter capability**: Can you search by skills, experience, location, industry?
+- **Profile completeness**: Do profiles include bio, work history, contact info?
+- **Active user base**: Are profiles current and recently updated?
+- **Accessibility**: Free vs paid (prefer free or freemium)
+- **Contact ability**: Can you reach out to candidates directly?
+
+## Key Principle
+
+**Always remember**: You're finding WHERE to search for PEOPLE to hire, not WHERE companies post jobs. Think from the recruiter's perspective: "Where can I find candidates with these skills?" not "Where do job seekers look for jobs?"
