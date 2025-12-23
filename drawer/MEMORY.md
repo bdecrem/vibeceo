@@ -68,10 +68,16 @@ He's shipped to hundreds of millions of users, but always through other people's
 ## Local File Organization
 
 - **~/Documents/code/** — All code projects live here
-- **~/Dropbox/work/kochito/** — Business docs, finances, contractors, EIN, board meetings
-- **~/Dropbox/work/TheBLVD/** — Old Block::Block shutdown docs
-- **~/Desktop/recents/** — Screenshots and notes (e.g., whathappened.txt)
-- Most Dropbox files are smart sync (cloud-only) on this MacBook Air
+- **~/Desktop/recents/** — Screenshots and notes (e.g., log.txt, whathappened.txt)
+
+### Machine-Specific Paths
+
+| Resource | iMac M1 (home) | MacBook Air |
+|----------|----------------|-------------|
+| Dropbox | `~/Documents/Dropbox/` | `~/Dropbox/` |
+| Business docs | `~/Documents/Dropbox/work/kochito/` | `~/Dropbox/work/kochito/` |
+
+**In kochito/**: EIN, articles of incorporation, finances, contractors, board meetings, Brex details
 
 ## Working Style
 
@@ -127,4 +133,4 @@ He wants me to:
 
 ---
 
-*Last updated: December 23, 2025 (AI Twitter Daily + Amberx)*
+*Last updated: December 23, 2025 (iMac setup, machine-specific Dropbox paths)*

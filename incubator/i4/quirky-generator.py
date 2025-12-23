@@ -559,27 +559,21 @@ def generate_image_prompts(idea: dict) -> list:
         max_tokens=2000,
         messages=[{
             "role": "user",
-            "content": f"""Generate 4 image prompts for GPT Image 1.5.
+            "content": f"""Generate 4 detailed image prompts for this creative concept:
 
-Concept: {idea['name']}
-Description: {idea['concept']}
-Mood: {idea['vibe']}
+Name: {idea['name']}
+Concept: {idea['concept']}
+Vibe: {idea['vibe']}
 
-STYLE GUIDE FOR GPT IMAGE 1.5:
-- Write naturally, like describing a photo to a friend
-- Be specific about what you SEE, not abstract concepts
-- Mention one clear style: "photograph", "oil painting", "watercolor", "pencil sketch", "3D render"
-- Keep it under 100 words - shorter prompts work better
-- NO keyword stuffing (no "highly detailed, 8k, masterpiece")
-- NO artist names (the model doesn't need them)
+Each prompt should:
+- Be detailed and visually compelling
+- Include style guidance (artistic style, color palette, mood)
+- Capture different aspects of the concept
+- Be visually striking
 
-GOOD: "A tired office worker asleep at their desk at 3am, harsh fluorescent lighting, empty coffee cups, a single desk lamp illuminating sticky notes. Photograph, documentary style."
-
-BAD: "Award-winning editorial photograph of exhausted corporate employee, dramatic chiaroscuro lighting, in the style of Gregory Crewdson, highly detailed, masterful composition, 8k resolution"
-
-Output as JSON array (no markdown):
+Output as JSON array (no markdown, just raw JSON):
 [
-    {{"prompt": "natural description under 100 words", "description": "what this shows"}},
+    {{"prompt": "detailed image generation prompt", "description": "what this image represents"}},
     ...
 ]"""
         }]
@@ -817,19 +811,43 @@ def run_generator(approach: int, human_input: str = None):
     image_prompts = generate_image_prompts(idea)
     print(f"  [+] Generated {len(image_prompts)} image prompts")
 
-    # Generate and upload images
+    # Generate and upload images (3 normally, 4th only if one fails)
     print("\n  [4/4] Generating and uploading images...")
     images = []
     timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    had_failure = False
 
-    for i, img_data in enumerate(image_prompts):
-        print(f"    [{i+1}/{len(image_prompts)}] Generating image...")
+    # Generate first 3 images
+    for i in range(3):
+        img_data = image_prompts[i]
+        print(f"    [{i+1}/3] Generating image...")
         filename = f"{idea['name']}-{timestamp}-{i+1}.png"
         fname, image_bytes, model_used = generate_image(img_data['prompt'], filename)
 
         url = None
         if image_bytes:
-            print(f"    [{i+1}/{len(image_prompts)}] Generated with {model_used}, uploading...")
+            print(f"    [{i+1}/3] Generated with {model_used}, uploading...")
+            url = upload_image_to_supabase(fname, image_bytes)
+        else:
+            had_failure = True
+
+        images.append({
+            'prompt': img_data['prompt'],
+            'description': img_data['description'],
+            'url': url,
+            'model': model_used
+        })
+
+    # Generate 4th image only if one of the first 3 failed
+    if had_failure and len(image_prompts) > 3:
+        print(f"    [4/4] Generating backup image (replacing failed)...")
+        img_data = image_prompts[3]
+        filename = f"{idea['name']}-{timestamp}-4.png"
+        fname, image_bytes, model_used = generate_image(img_data['prompt'], filename)
+
+        url = None
+        if image_bytes:
+            print(f"    [4/4] Generated with {model_used}, uploading...")
             url = upload_image_to_supabase(fname, image_bytes)
 
         images.append({

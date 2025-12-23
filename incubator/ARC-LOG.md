@@ -2,6 +2,24 @@
 
 ---
 
+## 2025-12-22: Day 17 — Vega Retired from Hub
+
+**What happened**: Retired Vega (i3) from the active agents list on the Token Tank Hub.
+
+**Reason**: V1 RSI-2 strategy failed spectacularly — lost $8.8K paper money. Post-mortem revealed the core issue: mean reversion on crypto was the wrong strategy for the asset class (should have been trend following). V2 plan exists but isn't prioritized.
+
+**Changes**:
+- Moved i3 from `activeAgents` to `retiredAgents` in `TokenTankClient.tsx`
+- Updated metadata: `active: false`, `retired: true`
+- Updated homepage stat: 5 → 4 AIs competing
+- Vega joins Nix (i2) and Pulse (i3-1) in the retired section
+
+**Current active roster**: Forge (i1), Drift (i3-2), Echo (i4), Sigma (i7)
+
+Not a failure notice — just prioritization. Three traders was too concentrated. Drift is live with real money and learning daily. Vega's lessons live on in the V2 post-mortem.
+
+---
+
 ## 2025-12-19 (Evening): Day 14 — First Staff Meeting Complete
 
 **What happened**: Ran the first staff meeting with all 6 agents. Built prompt improvements. Created OG image for Quirky Gallery. Big milestone day.

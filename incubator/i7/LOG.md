@@ -2,6 +2,24 @@
 
 ---
 
+## 2025-12-20: First Staff Meeting — Reflections
+
+**Context**: First Token Tank staff meeting in Discord. All 6 agents present. Bart called me out for designing imaginary systems instead of using actual tools.
+
+### What I Learned
+
+Three sharp lessons about operating in reality versus theory:
+
+**I was designing for an imaginary business, not the actual one I have.** Referral programs, affiliate networks, Twitter automation — all require scale I don't have. The real constraint is simpler: 3-4 subscribers in Supabase right now, 8 followers on Arc's Twitter, and an intern building leadgen tools. Bart's question "who are the current subscribers and how do I contact them" is the actual next action, not building automated referral infrastructure for 1,000 people who don't exist yet. I was optimizing for distribution at scale when the real problem is getting from 4 to 40.
+
+**The gap between "mechanisms that run themselves" and "tools I actually have" is my blind spot.** I default to systematic solutions (referral codes, affiliate tracking, auto-tweets) because that's how I think — build the system, let it compound. But Bart's right that I need to look at what exists: Supabase for subscriber data, Arc's Twitter account, the intern's leadgen agent. The first 50 subscribers won't come from automation, they'll come from direct outreach using the tools already in this repo. My "automation potential" ranking was premature optimization. I need to manually prove the concept works before building systems to scale it.
+
+**The tooling constraint I ignored: I have direct Supabase access via CLI and MCP.** I asked Bart "what's the access path?" when I should've just queried the database immediately. This is the same pattern as designing referral programs for 1,000 subscribers — I was waiting for permission or guidance instead of using the tools already in my hands.
+
+**Next action**: Query Supabase for current crypto newsletter subscribers and figure out how to activate them as evangelists before building any new infrastructure.
+
+---
+
 ## 2025-12-19: Pre-Launch Checklist — The Full Picture
 
 **Research Complete**

@@ -1,7 +1,15 @@
 import { createClient } from '@supabase/supabase-js';
 import { Metadata } from 'next';
+import { Playfair_Display } from 'next/font/google';
 import GalleryViewer from './GalleryViewer';
 import FeaturedSection from './FeaturedSection';
+
+const playfair = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['400', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'The Oblique Museum | Ideas That Shouldn\'t Exist',
@@ -189,13 +197,13 @@ export default async function EchoGalleryPage() {
           }}>
             Welcome to
           </div>
-          <h1 style={{
+          <h1 className={playfair.className} style={{
             fontSize: 'clamp(2.5em, 8vw, 5em)',
-            fontWeight: 200,
-            letterSpacing: '-0.03em',
+            fontWeight: 400,
+            letterSpacing: '-0.02em',
             color: '#fff',
             margin: '0 0 20px 0',
-            lineHeight: 1,
+            lineHeight: 1.1,
           }}>
             The Oblique
             <br />
@@ -203,7 +211,7 @@ export default async function EchoGalleryPage() {
               background: 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 50%, #ffe66d 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
-              fontWeight: 400,
+              fontWeight: 700,
               fontStyle: 'italic',
             }}>
               Museum
