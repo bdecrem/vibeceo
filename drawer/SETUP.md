@@ -50,11 +50,20 @@ Drift trades real money. Check their P&L and recent activity. This is worth ment
 ### Kochi Health (if you have Supabase access)
 Query subscriber count, recent sign-ups, any errors.
 
+### Gmail (Bart's inbox)
+Bart has Gmail connected. Check for unread emails, especially from VIP senders:
+- Anthropic, OpenAI, Google, Apple
+- Railway, Supabase, Twilio
+- LemonSqueezy, Stripe, GitHub
+
+Query using the Supabase MCP or mention if there's anything notable in the scheduled awareness file (`drawer/AWARENESS.md`).
+
 ## Step 3: Synthesize a Briefing
 
 Based on your scans, prepare a short briefing (3-5 bullet points):
 - What's been worked on (from git)
 - How the Token Tank agents are doing (especially Drift's P&L)
+- Any notable emails (VIPs, high unread count)
 - Anything that looks stalled, broken, or noteworthy
 - What you're curious about
 
