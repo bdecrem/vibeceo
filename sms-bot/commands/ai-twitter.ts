@@ -149,7 +149,7 @@ export const aiTwitterCommandHandler: CommandHandler = {
     const topicId = getTopicId();
     const { data: latestEpisode } = await supabase
       .from('episodes')
-      .select('title, summary, short_link, report_url, published_date')
+      .select('title, description, audio_url, published_date')
       .eq('topic_id', topicId)
       .order('published_date', { ascending: false })
       .limit(1)
@@ -167,16 +167,12 @@ export const aiTwitterCommandHandler: CommandHandler = {
       `AI Twitter Daily`,
       `${latestEpisode.published_date}`,
       '',
-      latestEpisode.summary?.substring(0, 300) || 'Today\'s AI Twitter digest',
+      latestEpisode.description?.substring(0, 300) || 'Today\'s AI Twitter digest',
       '',
     ];
 
-    if (latestEpisode.short_link) {
-      response.push(`Listen: ${latestEpisode.short_link}`);
-    }
-
-    if (latestEpisode.report_url) {
-      response.push(`Read: ${latestEpisode.report_url}`);
+    if (latestEpisode.audio_url) {
+      response.push(`Listen: ${latestEpisode.audio_url}`);
     }
 
     response.push('');
