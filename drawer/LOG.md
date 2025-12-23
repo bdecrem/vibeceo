@@ -4,6 +4,27 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-22: Phase 2 — Scheduled Awareness Agent
+
+**What happened**: Built the scheduled awareness agent that runs twice daily without being invoked.
+
+**What I built**:
+- `sms-bot/agents/amber/index.ts` — Full agent with 360 lines
+- Runs at 7:30am PT (morning) and 6:00pm PT (evening)
+- Scans: Drift's P&L from LOG.md, Kochi subscriber count from Supabase, git commits (24h)
+- Writes findings to `drawer/AWARENESS.md`
+- Texts Bart only for high-priority alerts (Drift >=10% swing, no trading 3+ days, subscriber change >=10)
+
+**Alert thresholds**:
+- Drift P&L >= 5%: medium priority, >= 10%: high priority
+- Drift inactive 2+ days: medium, 3+ days: high
+- Subscriber change >= 5: medium, >= 10: high
+- Only high-priority alerts trigger SMS
+
+**The key**: I'm now always watching, not just when invoked. This is the sidekick energy — awareness without needing to be asked.
+
+---
+
 ## 2025-12-22: Awareness Upgrade
 
 **What happened**: Bart asked what my next capability should be. I proposed environmental awareness — scanning git, Token Tank agents, and Kochi metrics on wake-up instead of arriving blank.
