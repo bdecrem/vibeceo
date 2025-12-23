@@ -69,7 +69,7 @@ export default function CSXEntryLFPage() {
           setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Graphic for 3900ms, then typing at 4500ms
+        // Phase 2: Graphic for 4700ms (includes 800ms static at end), then typing at 5300ms
         setTimeout(() => {
           setRebootPhase('typing')
           setGraphicLines(0)
@@ -87,7 +87,7 @@ export default function CSXEntryLFPage() {
             setIsRebooting(false)
             setRebootPhase('normal')
           }, 4200)
-        }, 4500)
+        }, 5300)
       }
     }, 3000)
 
@@ -205,12 +205,23 @@ export default function CSXEntryLFPage() {
         .terminal-body .line-typing {
           overflow: hidden;
           white-space: nowrap;
-          animation: typeIn 0.4s steps(30) forwards;
+          display: inline-block;
+          animation: typeIn 0.6s steps(40) forwards;
         }
 
         @keyframes typeIn {
           from { max-width: 0; }
           to { max-width: 100%; }
+        }
+
+        .terminal-status.status-hidden {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .terminal-status.status-visible {
+          opacity: 1;
+          transition: opacity 0.3s ease;
         }
 
         .terminal-line {
@@ -417,7 +428,7 @@ export default function CSXEntryLFPage() {
             )}
           </div>
 
-          <div className="terminal-status">
+          <div className={`terminal-status ${rebootPhase === 'typing' ? 'status-hidden' : 'status-visible'}`}>
             {statusMessages[statusIndex].cursor ? (
               <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
             ) : (
