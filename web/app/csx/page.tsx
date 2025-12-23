@@ -368,6 +368,21 @@ function CSXContent() {
         .bubble-2 { animation-delay: 0.5s; }
         .bubble-3 { animation-delay: 1s; }
         .bubble-4 { animation-delay: 1.5s; }
+
+        /* Heartbeat pulse */
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          14% { transform: scale(1.15); opacity: 1; }
+          28% { transform: scale(1); opacity: 0.7; }
+          42% { transform: scale(1.1); opacity: 1; }
+          56% { transform: scale(1); }
+        }
+
+        .heart {
+          display: inline-block;
+          color: #a55;
+          animation: heartbeat 1.5s ease-in-out infinite;
+        }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
@@ -381,9 +396,9 @@ function CSXContent() {
               <div className="boot-graphic">
                 {bootGraphic === 'fish' ? (
                   <>
-                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}> <span className="bubble bubble-1">o</span>   <span className="bubble bubble-2">o</span></div>
-                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'<º)))><'}</div>
-                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}> <span className="bubble bubble-4">o</span>   <span className="bubble bubble-3">o</span></div>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>   <span className="heart">♥</span></div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>  <span className="heart">♥♥♥</span></div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>   <span className="heart">♥</span></div>
                   </>
                 ) : (
                   <>
