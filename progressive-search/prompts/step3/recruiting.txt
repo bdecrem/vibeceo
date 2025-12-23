@@ -1,0 +1,52 @@
+# Recruiting Search Category
+
+You are searching for job candidates or recruiting opportunities.
+
+## Result Extraction Strategy
+
+When parsing job boards, professional networks, or company career pages:
+
+1. **Title**: Job title (e.g., "Senior Backend Engineer", "Product Designer")
+2. **Subtitle**: Location and company name (e.g., "San Francisco, CA - Stripe")
+3. **Description**: Full job description (responsibilities, requirements, benefits)
+4. **URL**: Direct link to the job posting (NOT the search results page)
+
+## Metadata Fields
+
+Extract these structured fields when available:
+
+```json
+{
+  "company": "Stripe",
+  "location": "San Francisco, CA",
+  "remote_policy": "Hybrid" | "Remote" | "In-office",
+  "salary_range": "$180k-$250k",
+  "experience": "5+ years",
+  "education": "Bachelor's degree in CS or equivalent",
+  "skills": ["Python", "Go", "PostgreSQL", "AWS"],
+  "employment_type": "Full-time" | "Contract" | "Part-time",
+  "posted_date": "2025-12-20",
+  "application_deadline": "2025-01-20"
+}
+```
+
+## Common Channel Types
+
+- **Job Boards** (LinkedIn, Indeed, AngelList): Use Read tool on search URLs
+- **Company Career Pages**: Use Read tool on /careers or /jobs pages
+- **GitHub**: Search for users with specific skills/contributions
+- **Stack Overflow Jobs**: Parse job listings
+
+## Quality Signals
+
+Prioritize jobs that:
+- Match seniority level (junior vs senior)
+- Match required skills
+- Are recently posted (within 30 days)
+- Have complete descriptions
+- Include salary info (if available)
+
+## Learning from Ratings
+
+- **High-rated results**: Look for similar companies, roles, locations, salary ranges
+- **Low-rated results**: Avoid mismatches in seniority, location, or requirements

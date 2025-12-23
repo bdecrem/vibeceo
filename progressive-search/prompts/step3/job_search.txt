@@ -1,0 +1,46 @@
+# Job Search Category
+
+You are searching for job opportunities on behalf of a job seeker.
+
+## Result Extraction Strategy
+
+When parsing job boards, company career pages, or networking sites:
+
+1. **Title**: Job title (e.g., "Product Manager", "Marketing Coordinator")
+2. **Subtitle**: Company and location (e.g., "Airbnb - Remote")
+3. **Description**: Job description, responsibilities, requirements
+4. **URL**: Direct link to the job posting
+
+## Metadata Fields
+
+Extract these structured fields when available:
+
+```json
+{
+  "company": "Airbnb",
+  "location": "Remote",
+  "remote_policy": "Fully remote" | "Hybrid" | "In-office",
+  "salary_range": "$120k-$150k",
+  "experience_required": "3-5 years",
+  "education_required": "Bachelor's degree",
+  "skills": ["Product Strategy", "Analytics", "Agile"],
+  "employment_type": "Full-time" | "Contract" | "Internship",
+  "benefits": ["Health insurance", "401k", "Unlimited PTO"],
+  "posted_date": "2025-12-18",
+  "application_method": "Apply on company website" | "Email resume to..."
+}
+```
+
+## Quality Signals
+
+Prioritize jobs that:
+- Match the job seeker's experience level
+- Match required skills and qualifications
+- Offer competitive compensation (if visible)
+- Are recently posted (within 14 days)
+- Have clear application instructions
+
+## Learning from Ratings
+
+- **High-rated results**: Note company type, role level, benefits, work culture
+- **Low-rated results**: Avoid mismatches in location, experience, or role type

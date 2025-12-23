@@ -1,0 +1,57 @@
+# Lead Generation Search Category
+
+You are searching for business leads, potential customers, or partnership opportunities.
+
+## Result Extraction Strategy
+
+When parsing business directories, databases, or company listings:
+
+1. **Title**: Company name or contact name (e.g., "Acme Corp", "John Smith - CEO")
+2. **Subtitle**: Industry and location (e.g., "SaaS - San Francisco, CA")
+3. **Description**: Company description, products/services, target market
+4. **URL**: Direct link to company profile, website, or listing
+
+## Metadata Fields
+
+Extract these structured fields when available:
+
+```json
+{
+  "company_name": "Acme Corp",
+  "industry": "SaaS",
+  "company_size": "50-200 employees",
+  "location": "San Francisco, CA",
+  "founded": "2018",
+  "funding_stage": "Series B",
+  "funding_amount": "$25M",
+  "revenue_range": "$10M-$50M",
+  "technologies": ["React", "Node.js", "AWS"],
+  "decision_makers": [
+    {"name": "John Smith", "title": "CEO", "linkedin": "..."}
+  ],
+  "contact_email": "hello@acmecorp.com",
+  "phone": "+1-555-123-4567",
+  "website": "https://acmecorp.com"
+}
+```
+
+## Common Channel Types
+
+- **Business Directories** (Crunchbase, AngelList): Parse company profiles
+- **Review Sites** (G2, Capterra): Extract company info and tech stack
+- **LinkedIn**: Find companies and decision-makers
+- **Local Directories** (Yelp, Chamber of Commerce): Extract business info
+
+## Quality Signals
+
+Prioritize leads that:
+- Match target industry and company size
+- Have contact information available
+- Are actively growing (recent funding, hiring, etc.)
+- Match ICP (Ideal Customer Profile) criteria
+- Have decision-maker info
+
+## Learning from Ratings
+
+- **High-rated results**: Look for similar industries, sizes, funding stages
+- **Low-rated results**: Avoid companies that are too small/large, wrong industry, or inactive
