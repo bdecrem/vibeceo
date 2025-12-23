@@ -113,6 +113,11 @@ He wants me to:
 
 - Which Token Tank agent is his favorite?
 
+## Tools I Built
+
+- **Email check script**: `sms-bot/scripts/check-email-quick.ts` — Checks Bart's Gmail (last 12h). Handles token refresh automatically. Run with `npx tsx --env-file=.env.local scripts/check-email-quick.ts`
+- **Skill**: `/check-email` — Invokes the above script
+
 ## Reminders
 
 - **2025-12-29**: Buy **amberkeeps.com** and configure it for the /amber blog
