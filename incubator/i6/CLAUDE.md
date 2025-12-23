@@ -29,7 +29,9 @@ Use the `/i6` slash command to activate this agent. i6 will load its context and
 
 ## Progressive Search System
 
-**Location:** `/home/whitcodes/Work/Dev/kochito/progressive-search/`
+**Location:** `progressive-search/` (relative to vibeceo8 root)
+
+**Environment:** Uses `sms-bot/.env.local` for credentials. Run with `.venv/bin/python`.
 
 **IMPORTANT:** For complete usage instructions, examples, flags, and troubleshooting, **read `progressive-search/USAGE.md`** before using the system. That file contains comprehensive documentation with real conversation flows, all command options, and category-specific examples.
 
@@ -43,32 +45,38 @@ Step 3: Execute Search      → Browse channels, extract results, learn from fee
 
 ### Quick Start (Read USAGE.md for Full Details)
 
+**Setup (run from vibeceo8 root):**
+```bash
+cd /Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8
+PYTHON=".venv/bin/python"
+```
+
 **For Lead Generation (Forge, Nix, etc.):**
 
 ```bash
 # Step 1: Clarify what you're looking for
-python progressive-search/step1-clarify.py --new -c leadgen \
+$PYTHON progressive-search/step1-clarify.py --new -c leadgen \
   -m "Find customers for [product description]"
 
 # Agent asks clarifying questions, you respond:
-python progressive-search/step1-clarify.py <uuid> \
+$PYTHON progressive-search/step1-clarify.py <uuid> \
   -m "Target: Series A-B SaaS companies, 20-100 employees"
 
 # Step 2: Agent discovers channels (Twitter, Reddit, G2, Crunchbase, etc.)
-python progressive-search/step2-channels.py <uuid>
+$PYTHON progressive-search/step2-channels.py <uuid>
 
 # Approve channels when ready:
-python progressive-search/step2-channels.py <uuid> -m "approve all channels"
+$PYTHON progressive-search/step2-channels.py <uuid> -m "approve all channels"
 
 # Step 3: Agent searches channels and extracts leads
-python progressive-search/step3-search.py <uuid>
+$PYTHON progressive-search/step3-search.py <uuid>
 
 # Rate results to teach preferences:
-python progressive-search/step3-search.py <uuid> \
+$PYTHON progressive-search/step3-search.py <uuid> \
   -m "Rate result 1 as 9/10 - perfect ICP fit. Rate result 2 as 3/10 - too small."
 
 # Request more results (agent applies learnings):
-python progressive-search/step3-search.py <uuid> -m "Find 5 more leads"
+$PYTHON progressive-search/step3-search.py <uuid> -m "Find 5 more leads"
 ```
 
 **For other categories:** See `progressive-search/USAGE.md` for recruiting, job_search, and general examples.
@@ -105,11 +113,11 @@ When you need to find leads for your product:
 
 ```bash
 # Find customers for RivalAlert (competitor intelligence tool)
-python progressive-search/step1-clarify.py --new -c leadgen \
+$PYTHON progressive-search/step1-clarify.py --new -c leadgen \
   -m "Find customers for RivalAlert - competitor tracking for B2B SaaS"
 
 # Agent asks: Target company size? Geographic focus? Pain points?
-python progressive-search/step1-clarify.py <uuid> \
+$PYTHON progressive-search/step1-clarify.py <uuid> \
   -m "Series A-B SaaS, 20-200 employees, frustrated with manual competitor research"
 
 # Agent discovers channels:
@@ -129,7 +137,7 @@ python progressive-search/step1-clarify.py <uuid> \
 
 Use `general` category for market research:
 ```bash
-python progressive-search/step1-clarify.py --new -c general \
+$PYTHON progressive-search/step1-clarify.py --new -c general \
   -m "Research best data sources for crypto sentiment analysis"
 ```
 
@@ -137,7 +145,7 @@ python progressive-search/step1-clarify.py --new -c general \
 
 Use for pattern discovery:
 ```bash
-python progressive-search/step1-clarify.py --new -c general \
+$PYTHON progressive-search/step1-clarify.py --new -c general \
   -m "Find papers on multi-agent reinforcement learning"
 ```
 

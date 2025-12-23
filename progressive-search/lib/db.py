@@ -12,20 +12,20 @@ from datetime import datetime
 from pathlib import Path
 from supabase import create_client, Client
 
-# Load environment variables from .env file
+# Load environment variables from sms-bot/.env.local
 from dotenv import load_dotenv
 
-# Find .env file (look in progressive-search directory)
-env_path = Path(__file__).parent.parent / '.env'
+# Use shared .env.local from sms-bot directory
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
 load_dotenv(env_path)
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv('SUPABASE_URL')
-# Try new publishable key first, fall back to legacy anon key
-SUPABASE_KEY = os.getenv('SUPABASE_PUBLISHABLE_KEY') or os.getenv('SUPABASE_KEY')
+# Use service key (same as sms-bot/lib/supabase.ts)
+SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY environment variable")
+    raise ValueError("Missing SUPABASE_URL or SUPABASE_SERVICE_KEY environment variable")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 

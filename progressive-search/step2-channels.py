@@ -11,14 +11,21 @@ Usage:
 
 Requirements:
     - Project must exist and have status 'discovering_channels'
-    - CLAUDE_CODE_OAUTH_TOKEN environment variable must be set for web search
+    - CLAUDE_AGENT_SDK_TOKEN environment variable must be set (same as ANTHROPIC_API_KEY)
 """
 
 import os
 import sys
+from pathlib import Path
+
+# Load environment variables FIRST, before any other imports
+# This ensures CLAUDE_AGENT_SDK_TOKEN is available for the agent SDK
+from dotenv import load_dotenv
+env_path = Path(__file__).parent.parent / 'sms-bot' / '.env.local'
+load_dotenv(env_path)
+
 import json
 import argparse
-from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 # Add lib directory to path
@@ -52,9 +59,9 @@ Examples:
 
 Environment Variables Required:
   ANTHROPIC_API_KEY          - Your Anthropic API key
-  CLAUDE_CODE_OAUTH_TOKEN    - OAuth token for autonomous agent web search
+  CLAUDE_AGENT_SDK_TOKEN     - Token for autonomous agent (same as ANTHROPIC_API_KEY)
   SUPABASE_URL               - Your Supabase project URL
-  SUPABASE_PUBLISHABLE_KEY   - Your Supabase publishable API key
+  SUPABASE_SERVICE_KEY       - Your Supabase service key
         """
     )
 
@@ -79,10 +86,13 @@ def validate_environment() -> Tuple[bool, Optional[str]]:
         'SUPABASE_URL': 'Supabase project URL',
     }
 
-    # Check for either old or new Supabase key format
-    supabase_key = os.getenv('SUPABASE_PUBLISHABLE_KEY') or os.getenv('SUPABASE_KEY')
+    # Check for any Supabase key format (SERVICE_KEY used by db.py)
+    supabase_key = (os.getenv('SUPABASE_SERVICE_KEY') or
+                    os.getenv('SUPABASE_PUBLISHABLE_KEY') or
+                    os.getenv('SUPABASE_KEY') or
+                    os.getenv('SUPABASE_ANON_KEY'))
     if not supabase_key:
-        return False, "Missing SUPABASE_PUBLISHABLE_KEY environment variable"
+        return False, "Missing SUPABASE_SERVICE_KEY environment variable"
 
     missing = []
     for var, description in required_vars.items():
@@ -93,21 +103,23 @@ def validate_environment() -> Tuple[bool, Optional[str]]:
         error_msg = "Missing required environment variables:\n" + "\n".join(missing)
         return False, error_msg
 
-    # Check for OAuth token (needed for web search)
-    if not os.getenv('CLAUDE_CODE_OAUTH_TOKEN'):
+    # Check for agent SDK token (needed for web search)
+    # Per CLAUDE-AGENT-SDK-GUIDE.md: Use CLAUDE_AGENT_SDK_TOKEN (same as ANTHROPIC_API_KEY)
+    agent_token = os.getenv('CLAUDE_AGENT_SDK_TOKEN') or os.getenv('CLAUDE_CODE_OAUTH_TOKEN')
+    if not agent_token:
         warning = """
-⚠️  Warning: CLAUDE_CODE_OAUTH_TOKEN not set
+⚠️  Warning: CLAUDE_AGENT_SDK_TOKEN not set
 
-Channel discovery requires web search capabilities, which need the OAuth token.
+Channel discovery requires web search capabilities, which need the agent SDK token.
 
 Without it, the agent cannot:
 - Search for relevant channels online
 - Verify channel URLs and descriptions
 - Discover new platforms and directories
 
-To get an OAuth token:
-1. Contact Anthropic support or check the Claude Agent SDK documentation
-2. Add it to your .env file: CLAUDE_CODE_OAUTH_TOKEN=your-token-here
+To fix:
+1. Set CLAUDE_AGENT_SDK_TOKEN in sms-bot/.env.local (same value as ANTHROPIC_API_KEY)
+2. See sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md for details
 
 Proceeding anyway, but channel discovery may fail or return limited results.
 """
@@ -158,11 +170,12 @@ async def call_autonomous_agent_async(system_prompt: str, messages: List[Dict[st
             "message": "Cannot perform autonomous web search without claude-agent-sdk"
         })
 
-    oauth_token = os.getenv('CLAUDE_CODE_OAUTH_TOKEN')
-    if not oauth_token:
+    # Per CLAUDE-AGENT-SDK-GUIDE.md: Use CLAUDE_AGENT_SDK_TOKEN (same as ANTHROPIC_API_KEY)
+    agent_token = os.getenv('CLAUDE_AGENT_SDK_TOKEN') or os.getenv('CLAUDE_CODE_OAUTH_TOKEN')
+    if not agent_token:
         return json.dumps({
-            "error": "CLAUDE_CODE_OAUTH_TOKEN not set",
-            "message": "Cannot perform web search without OAuth token"
+            "error": "CLAUDE_AGENT_SDK_TOKEN not set",
+            "message": "Cannot perform web search without agent SDK token. Set CLAUDE_AGENT_SDK_TOKEN in sms-bot/.env.local (same value as ANTHROPIC_API_KEY)"
         })
 
     try:
@@ -185,11 +198,13 @@ async def call_autonomous_agent_async(system_prompt: str, messages: List[Dict[st
         # Add instruction to save channels when ready
         full_prompt += "\n\nPlease discover relevant channels and save them using the SAVE_CHANNELS command when ready."
 
-        # Configure options with system prompt and bypass permissions for web search
+        # Configure options with system prompt and enable web search
+        # Per CLAUDE-AGENT-SDK-GUIDE.md: Must explicitly allow WebSearch tool
         options = ClaudeAgentOptions(
             system_prompt=system_prompt,
             model="claude-sonnet-4-5-20250929",
-            permission_mode="bypassPermissions"  # Allow web search without prompting
+            permission_mode="acceptEdits",  # Auto-approve for non-interactive
+            allowed_tools=["WebSearch", "Read", "WebFetch"]  # Enable web capabilities
         )
 
         # Call query and collect only the final ResultMessage
