@@ -15,6 +15,16 @@ import {
   type ExplainerResult,
   type FetchedContent,
 } from '../lib/content-explainer/index.js';
+import { supabase } from '../lib/supabase.js';
+import ElevenLabsProvider from '../agents/crypto-research/ElevenLabsProvider.js';
+import { createShortLink } from '../lib/utils/shortlink-service.js';
+import { buildMusicPlayerUrl } from '../lib/utils/music-player-link.js';
+
+const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
+const elevenLabsProvider = new ElevenLabsProvider({
+  apiKey: ELEVENLABS_API_KEY,
+  defaultVoice: 'MF3mGyEYCl7XYWbV9V6O',
+});
 
 // URL patterns to detect
 const URL_PATTERN = /https?:\/\/[^\s]+/i;
@@ -29,6 +39,65 @@ interface AmberxSession {
 
 const sessions = new Map<string, AmberxSession>();
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
+const AUDIO_BUCKET = 'audio';
+
+/**
+ * Generate audio explanation and return player link
+ */
+async function generateAudioExplanation(
+  explanation: string,
+  contentType: string,
+  externalId: string
+): Promise<string | null> {
+  if (!ELEVENLABS_API_KEY) {
+    console.log('[amberx] Skipping audio - no ELEVENLABS_API_KEY');
+    return null;
+  }
+
+  try {
+    // Synthesize audio
+    const audioResult = await elevenLabsProvider.synthesize(explanation);
+
+    // Upload to storage
+    const timestamp = Date.now();
+    const fileName = `amberx/${contentType}-${externalId}-${timestamp}.mp3`;
+
+    const { error: uploadError } = await supabase.storage
+      .from(AUDIO_BUCKET)
+      .upload(fileName, audioResult.audioBuffer, {
+        contentType: 'audio/mpeg',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error('[amberx] Audio upload failed:', uploadError);
+      return null;
+    }
+
+    const { data: urlData } = supabase.storage
+      .from(AUDIO_BUCKET)
+      .getPublicUrl(fileName);
+
+    const audioUrl = urlData.publicUrl;
+
+    // Create player shortlink
+    const playerUrl = buildMusicPlayerUrl({
+      src: audioUrl,
+      title: `Amberx Explanation`,
+      autoplay: true,
+    });
+
+    const shortLink = await createShortLink(playerUrl, {
+      context: 'amberx',
+      createdBy: 'sms-bot',
+    });
+
+    return shortLink || audioUrl;
+  } catch (error) {
+    console.error('[amberx] Audio generation failed:', error);
+    return null;
+  }
+}
 
 /**
  * Clean up expired sessions (call periodically)
@@ -138,16 +207,29 @@ export const amberxCommandHandler: CommandHandler = {
         },
       });
 
+      // Generate audio in parallel
+      await sendSmsResponse(from, `Generating audio...`, twilioClient);
+      const audioLink = await generateAudioExplanation(
+        result.explanation,
+        result.contentType,
+        result.externalId
+      );
+
       // Format response
       const sourceLabel =
         result.contentType === 'youtube'
           ? `${result.title}`
           : `@${result.author}`;
 
-      const response =
+      let response =
         `${sourceLabel}\n\n` +
-        `${result.explanation}\n\n` +
-        `Reply with any questions!`;
+        `${result.explanation}\n\n`;
+
+      if (audioLink) {
+        response += `Listen: ${audioLink}\n\n`;
+      }
+
+      response += `Reply with any questions!`;
 
       await reply(response);
       return true;
