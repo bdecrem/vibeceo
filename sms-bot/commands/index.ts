@@ -2,6 +2,8 @@ import type { CommandHandler } from "./types.js";
 
 import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
+import { aiTwitterCommandHandler } from "./ai-twitter.js";
+import { amberxCommandHandler } from "./amberx.js";
 import { announcementsCommandHandler } from "./announcements.js";
 import { csCommandHandler } from "./cs.js";
 import { audioTestCommandHandler } from "./audio-test.js";
@@ -24,6 +26,8 @@ import { tokenshotsCommandHandler } from "./tokenshots.js";
 export const commandHandlers: CommandHandler[] = [
   aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
   airCommandHandler, // AIR (AI Research) - personalized research reports
+  aiTwitterCommandHandler, // AIT - AI Twitter Daily digest
+  amberxCommandHandler, // AMBERX - explain Twitter/YouTube content
   announcementsCommandHandler, // ANNOUNCEMENTS - opt-in to platform updates
   csCommandHandler, // CS - content sharing link feed
   audioTestCommandHandler,

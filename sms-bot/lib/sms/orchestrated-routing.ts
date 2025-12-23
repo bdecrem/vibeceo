@@ -103,6 +103,16 @@ export async function handleOrchestratedMessage(
     }
   }
 
+  // Check for amberx session (user has follow-up questions about content)
+  if (updatedContext.activeThread?.handler === 'amberx-session') {
+    const { handleFollowUp } = await import('../../commands/amberx.js');
+    const amberxHandled = await handleFollowUp(commandContext, updatedContext.activeThread);
+    if (amberxHandled) {
+      console.log(`[Orchestrated Routing] Handled amberx follow-up: "${commandContext.message}"`);
+      return;
+    }
+  }
+
   // Route message using orchestrator FIRST to detect topic changes
   // This must happen before checking for recruit exploration to prevent
   // unrelated messages from being routed to the recruiter

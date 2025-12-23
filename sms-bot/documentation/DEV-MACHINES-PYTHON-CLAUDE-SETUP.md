@@ -144,7 +144,7 @@ brew install python@3.13
 export PATH="/opt/homebrew/bin:/opt/homebrew/sbin:$PATH"
 
 # Add npm global packages (for claude CLI)
-export PATH=~/.npm-global/bin:$PATH
+export PATH="$HOME/.npm-global/bin:$PATH"
 ```
 
 **If you have pyenv installed, disable it:**
