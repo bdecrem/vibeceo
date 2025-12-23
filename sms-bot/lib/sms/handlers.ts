@@ -2760,7 +2760,9 @@ We'll turn your meme ideas into actual memes with images and text overlay.`;
     if (
       messageUpper === "COMMANDS" ||
       messageUpper === "HELP" ||
-      messageUpper === "INFO"
+      messageUpper === "INFO" ||
+      messageUpper === "MENU" ||
+      messageUpper === "OPTIONS"
     ) {
       console.log(`Sending COMMANDS response to ${from}`);
 
