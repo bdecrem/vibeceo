@@ -7,6 +7,7 @@
  * - Git activity (commits in last 24h)
  * - Drift's P&L (live trading agent)
  * - Kochi subscriber count
+ * - Gmail (unread emails, important senders)
  *
  * Writes findings to drawer/AWARENESS.md
  * Texts Bart only if something notable happened
@@ -20,11 +21,27 @@ import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { sendSmsResponse } from "../../lib/sms/handlers.js";
 import type { TwilioClient } from "../../lib/sms/webhooks.js";
 import { createClient } from "@supabase/supabase-js";
+import { searchGmail, hasGmailConnected, type GmailSearchResult } from "../../lib/gmail-client.js";
 
 const execAsync = promisify(exec);
 
-// Bart's phone number for alerts
+// Bart's phone number and subscriber ID
 const BART_PHONE = "+16508989508";
+const BART_SUBSCRIBER_ID = "a5167b9a-a718-4567-a22d-312b7bf9e773";
+
+// VIP senders to highlight (partial matches, case-insensitive)
+const VIP_SENDERS = [
+  "anthropic",
+  "openai",
+  "google",
+  "apple",
+  "railway",
+  "supabase",
+  "twilio",
+  "lemonsqueezy",
+  "stripe",
+  "github",
+];
 
 // Times to run (PT)
 const MORNING_HOUR = 7;
@@ -38,6 +55,17 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const AWARENESS_FILE = path.join(REPO_ROOT, "drawer", "AWARENESS.md");
 const DRIFT_LOG = path.join(REPO_ROOT, "incubator", "i3-2", "LOG.md");
 
+interface GmailSummary {
+  connected: boolean;
+  unreadCount: number;
+  vipEmails: Array<{
+    from: string;
+    subject: string;
+    date: Date;
+  }>;
+  recentSubjects: string[];
+}
+
 interface AwarenessState {
   timestamp: string;
   drift: {
@@ -49,11 +77,12 @@ interface AwarenessState {
   kochi: {
     subscribers: number;
   } | null;
+  gmail: GmailSummary | null;
   recentCommits: number;
 }
 
 interface Alert {
-  type: "drift" | "kochi" | "git";
+  type: "drift" | "kochi" | "git" | "gmail";
   message: string;
   priority: "high" | "medium" | "low";
 }
@@ -132,6 +161,48 @@ async function getRecentCommits(): Promise<number> {
 }
 
 /**
+ * Scan Gmail for unread emails and VIP senders
+ */
+async function scanGmail(): Promise<GmailSummary | null> {
+  try {
+    // Check if Gmail is connected
+    const connected = await hasGmailConnected(BART_SUBSCRIBER_ID);
+    if (!connected) {
+      console.log("[amber] Gmail not connected for Bart");
+      return { connected: false, unreadCount: 0, vipEmails: [], recentSubjects: [] };
+    }
+
+    // Search for unread emails from the last 24 hours
+    const unreadEmails = await searchGmail(BART_SUBSCRIBER_ID, "is:unread", 50);
+
+    // Filter for VIP senders
+    const vipEmails = unreadEmails.filter(email => {
+      const fromLower = email.from.toLowerCase();
+      return VIP_SENDERS.some(vip => fromLower.includes(vip));
+    }).map(email => ({
+      from: email.from,
+      subject: email.subject,
+      date: email.date
+    }));
+
+    // Get recent subject lines (last 5)
+    const recentSubjects = unreadEmails.slice(0, 5).map(e => e.subject);
+
+    console.log(`[amber] Gmail scan: ${unreadEmails.length} unread, ${vipEmails.length} from VIPs`);
+
+    return {
+      connected: true,
+      unreadCount: unreadEmails.length,
+      vipEmails,
+      recentSubjects
+    };
+  } catch (error) {
+    console.error("[amber] Failed to scan Gmail:", error);
+    return null;
+  }
+}
+
+/**
  * Load previous awareness state
  */
 async function loadPreviousState(): Promise<AwarenessState | null> {
@@ -156,6 +227,7 @@ async function loadPreviousState(): Promise<AwarenessState | null> {
       kochi: subscribersMatch ? {
         subscribers: parseInt(subscribersMatch[1], 10)
       } : null,
+      gmail: null, // Previous state doesn't track Gmail (stateless comparison)
       recentCommits: 0
     };
   } catch {
@@ -213,6 +285,36 @@ function generateAlerts(
     }
   }
 
+  // Gmail alerts
+  if (current.gmail?.connected) {
+    // Alert on many unread emails
+    if (current.gmail.unreadCount >= 20) {
+      alerts.push({
+        type: "gmail",
+        message: `${current.gmail.unreadCount} unread emails`,
+        priority: current.gmail.unreadCount >= 50 ? "high" : "medium"
+      });
+    }
+
+    // Alert on VIP emails (always notable)
+    if (current.gmail.vipEmails.length > 0) {
+      const vipSummary = current.gmail.vipEmails
+        .slice(0, 3)
+        .map(e => {
+          // Extract just the sender name/domain
+          const match = e.from.match(/^([^<]+)/);
+          const sender = match ? match[1].trim() : e.from;
+          return `${sender}: "${e.subject.slice(0, 40)}${e.subject.length > 40 ? "..." : ""}"`;
+        })
+        .join("; ");
+      alerts.push({
+        type: "gmail",
+        message: `${current.gmail.vipEmails.length} VIP email(s): ${vipSummary}`,
+        priority: "high"
+      });
+    }
+  }
+
   return alerts;
 }
 
@@ -253,6 +355,31 @@ async function writeAwarenessFile(state: AwarenessState, alerts: Alert[]): Promi
   }
 
   content += `
+### Gmail
+`;
+  if (state.gmail) {
+    if (state.gmail.connected) {
+      content += `- **Unread**: ${state.gmail.unreadCount}
+`;
+      if (state.gmail.vipEmails.length > 0) {
+        content += `- **VIP Emails** (${state.gmail.vipEmails.length}):\n`;
+        for (const email of state.gmail.vipEmails.slice(0, 5)) {
+          const match = email.from.match(/^([^<]+)/);
+          const sender = match ? match[1].trim() : email.from;
+          content += `  - ${sender}: "${email.subject.slice(0, 50)}${email.subject.length > 50 ? "..." : ""}"\n`;
+        }
+      }
+      if (state.gmail.recentSubjects.length > 0) {
+        content += `- **Recent subjects**: ${state.gmail.recentSubjects.slice(0, 3).map(s => `"${s.slice(0, 30)}..."`).join(", ")}\n`;
+      }
+    } else {
+      content += `- *Gmail not connected*\n`;
+    }
+  } else {
+    content += `- *Could not scan Gmail*\n`;
+  }
+
+  content += `
 ### Git Activity (24h)
 - **Commits**: ${state.recentCommits}
 
@@ -288,16 +415,18 @@ export async function runAwarenessScan(twilioClient?: TwilioClient): Promise<voi
   console.log("[amber] Starting awareness scan...");
 
   // Gather current state
-  const [drift, subscribers, recentCommits] = await Promise.all([
+  const [drift, subscribers, recentCommits, gmail] = await Promise.all([
     parseDriftStatus(),
     getKochiSubscribers(),
-    getRecentCommits()
+    getRecentCommits(),
+    scanGmail()
   ]);
 
   const currentState: AwarenessState = {
     timestamp: new Date().toISOString(),
     drift,
     kochi: subscribers !== null ? { subscribers } : null,
+    gmail,
     recentCommits
   };
 
