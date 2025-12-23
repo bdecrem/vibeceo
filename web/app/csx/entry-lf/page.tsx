@@ -112,11 +112,13 @@ export default function CSXEntryLFPage() {
       <style jsx global>{`
         html {
           font-size: 16px !important;
+          background: #0a0a0a;
         }
 
         body {
           margin: 0;
           padding: 0;
+          background: #0a0a0a;
         }
 
         .terminal-page {

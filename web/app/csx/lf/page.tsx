@@ -14,6 +14,13 @@ export default function CSXLinksPage() {
       <style jsx global>{`
         html {
           font-size: 16px !important;
+          background: #000;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background: #000;
         }
 
         .csx-page {
