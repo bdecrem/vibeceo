@@ -13,6 +13,7 @@ export default function CSXEntryLFPage() {
   const [bootGraphic, setBootGraphic] = useState<'fish' | 'people'>('fish')
   const [visibleLines, setVisibleLines] = useState(5)
   const [typingLine, setTypingLine] = useState(-1)
+  const [heartsStatic, setHeartsStatic] = useState(false)
 
   const statusMessages = [
     { text: 'onboarding new builders...', color: 'green', cursor: false },
@@ -44,6 +45,9 @@ export default function CSXEntryLFPage() {
     }, 530)
 
     const statusInterval = setInterval(() => {
+      // Don't change status during reboot sequence
+      if (isRebooting) return
+
       const newIndex = Math.floor(Math.random() * statusMessages.length)
       setStatusIndex(newIndex)
 
@@ -51,16 +55,18 @@ export default function CSXEntryLFPage() {
       const isBuildError = currentMessage === 'build error. rebooting...'
       const isBridgingWorlds = currentMessage === 'bridging worlds...'
 
-      if ((isBuildError || isBridgingWorlds) && !isRebooting) {
+      if (isBuildError || isBridgingWorlds) {
         setIsRebooting(true)
         setRebootPhase('blank')
         setVisibleLines(0)
         setTypingLine(-1)
+        setHeartsStatic(false)
 
         const graphic = isBuildError ? 'fish' : 'people'
         setBootGraphic(graphic)
         const endStatus = isBuildError ? 'rebuilding...' : 'bridging worlds...'
 
+        // Phase 1: Blank for 600ms
         setTimeout(() => {
           setRebootPhase('graphic')
           setGraphicLines(0)
@@ -69,10 +75,17 @@ export default function CSXEntryLFPage() {
           setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Graphic for 4700ms (includes 800ms static at end), then typing at 5300ms
+        // Phase 2a: Hearts pulsing for 3900ms
+        // Phase 2b: Hearts static for 800ms (at 4500ms)
+        setTimeout(() => {
+          setHeartsStatic(true)
+        }, 4500)
+
+        // Phase 3: Typing at 5300ms
         setTimeout(() => {
           setRebootPhase('typing')
           setGraphicLines(0)
+          setHeartsStatic(false)
           setTypingLine(1); setVisibleLines(1)
           setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 800)
           setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 1600)
@@ -82,11 +95,9 @@ export default function CSXEntryLFPage() {
             setTypingLine(-1)
             const statusIdx = statusMessages.findIndex(m => m.text === endStatus)
             setStatusIndex(statusIdx)
-          }, 3600)
-          setTimeout(() => {
-            setIsRebooting(false)
             setRebootPhase('normal')
-          }, 4200)
+            setIsRebooting(false)
+          }, 3600)
         }, 5300)
       }
     }, 3000)
@@ -376,6 +387,12 @@ export default function CSXEntryLFPage() {
           color: #a55;
           animation: heartbeat 1.5s ease-in-out infinite;
         }
+
+        .heart-static {
+          animation: none;
+          opacity: 1;
+          transform: scale(1);
+        }
       `}</style>
 
       <div className="terminal-page" onClick={handleClick}>
@@ -389,9 +406,9 @@ export default function CSXEntryLFPage() {
               <div className="boot-graphic">
                 {bootGraphic === 'fish' ? (
                   <>
-                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>   <span className="heart">♥</span></div>
-                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>  <span className="heart">♥♥♥</span></div>
-                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>   <span className="heart">♥</span></div>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>   <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥</span></div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>  <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥♥♥</span></div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>   <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥</span></div>
                   </>
                 ) : (
                   <>
@@ -428,7 +445,7 @@ export default function CSXEntryLFPage() {
             )}
           </div>
 
-          <div className={`terminal-status ${rebootPhase === 'typing' ? 'status-hidden' : 'status-visible'}`}>
+          <div className={`terminal-status ${rebootPhase === 'normal' ? 'status-visible' : 'status-hidden'}`}>
             {statusMessages[statusIndex].cursor ? (
               <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
             ) : (
