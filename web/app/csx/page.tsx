@@ -1,8 +1,125 @@
 'use client'
 
-import Link from 'next/link'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useState, Suspense } from 'react'
 
-export default function CSXPage() {
+function CSXContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const nextPage = searchParams?.get('next')
+  const [showCursor, setShowCursor] = useState(true)
+  const [statusIndex, setStatusIndex] = useState(0)
+  const [isRebooting, setIsRebooting] = useState(false)
+  const [rebootPhase, setRebootPhase] = useState<'normal' | 'blank' | 'graphic' | 'typing'>('normal')
+  const [graphicLines, setGraphicLines] = useState(0) // 0-3 lines visible
+  const [bootGraphic, setBootGraphic] = useState<'fish' | 'people'>('fish')
+  const [visibleLines, setVisibleLines] = useState(5) // 0-5 lines visible
+  const [typingLine, setTypingLine] = useState(-1) // which line is currently typing
+  const [heartsStatic, setHeartsStatic] = useState(false) // hearts stop pulsing at end
+
+  const statusMessages = [
+    { text: 'onboarding new builders...', color: 'green', cursor: false },
+    { text: 'backing the weird...', color: 'green', cursor: false },
+    { text: 'scanning the horizon...', color: 'green', cursor: false },
+    { text: 'connecting dots...', color: 'green', cursor: false },
+    { text: 'asking better questions...', color: 'green', cursor: false },
+    { text: 'thinking long...', color: 'green', cursor: false },
+    { text: 'building fast...', color: 'green', cursor: false },
+    { text: 'ignoring the noise...', color: 'green', cursor: false },
+    { text: 'finding signal...', color: 'green', cursor: false },
+    { text: 'following curiosity...', color: 'green', cursor: false },
+    { text: 'shipping...', color: 'green', cursor: false },
+    { text: 'iterating...', color: 'green', cursor: false },
+    { text: 'prototyping...', color: 'green', cursor: false },
+    { text: 'deep researching...', color: 'amber', cursor: true },
+    { text: 'CTRL-shifting...', color: 'amber', cursor: true },
+    { text: 'rebuilding...', color: 'amber', cursor: true },
+    { text: 'compiling...', color: 'amber', cursor: true },
+    { text: 'switching models...', color: 'amber', cursor: true },
+    { text: 'integrating...', color: 'amber', cursor: true },
+    { text: 'bridging worlds...', color: 'amber', cursor: true },
+    { text: 'build error. rebooting...', color: 'red', cursor: false },
+  ]
+
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 530)
+
+    const statusInterval = setInterval(() => {
+      // Don't change status during reboot sequence
+      if (isRebooting) return
+
+      const newIndex = Math.floor(Math.random() * statusMessages.length)
+      setStatusIndex(newIndex)
+
+      // Trigger boot animation for special messages
+      const currentMessage = statusMessages[newIndex].text
+      const isBuildError = currentMessage === 'build error. rebooting...'
+      const isBridgingWorlds = currentMessage === 'bridging worlds...'
+
+      if (isBuildError || isBridgingWorlds) {
+        setIsRebooting(true)
+        setRebootPhase('blank')
+        setVisibleLines(0)
+        setTypingLine(-1)
+        setHeartsStatic(false)
+
+        // build error → hearts, bridging worlds → people
+        const graphic = isBuildError ? 'fish' : 'people'
+        setBootGraphic(graphic)
+        const endStatus = isBuildError ? 'rebuilding...' : 'bridging worlds...'
+
+        // Phase 1: Blank for 600ms
+        setTimeout(() => {
+          setRebootPhase('graphic')
+          setGraphicLines(0)
+          setTimeout(() => setGraphicLines(1), 150)
+          setTimeout(() => setGraphicLines(2), 300)
+          setTimeout(() => setGraphicLines(3), 450)
+        }, 600)
+
+        // Phase 2a: Hearts pulsing for 3900ms
+        // Phase 2b: Hearts static for 800ms (at 4500ms)
+        setTimeout(() => {
+          setHeartsStatic(true)
+        }, 4500)
+
+        // Phase 3: Typing at 5300ms
+        setTimeout(() => {
+          setRebootPhase('typing')
+          setGraphicLines(0)
+          setHeartsStatic(false)
+          setTypingLine(1); setVisibleLines(1)
+          setTimeout(() => { setTypingLine(2); setVisibleLines(2) }, 800)
+          setTimeout(() => { setTypingLine(3); setVisibleLines(3) }, 1600)
+          setTimeout(() => { setTypingLine(4); setVisibleLines(4) }, 2300)
+          setTimeout(() => { setTypingLine(5); setVisibleLines(5) }, 3000)
+          setTimeout(() => {
+            setTypingLine(-1)
+            const statusIdx = statusMessages.findIndex(m => m.text === endStatus)
+            setStatusIndex(statusIdx)
+            setRebootPhase('normal')
+            setIsRebooting(false)
+          }, 3600)
+        }, 5300)
+      }
+    }, 3000)
+
+    return () => {
+      clearInterval(cursorInterval)
+      clearInterval(statusInterval)
+    }
+  }, [isRebooting])
+
+  const handleClick = () => {
+    // Route based on ?next= param: rs -> /csx/rs, lf -> /csx/lf, otherwise /csx/full
+    let destination = '/csx/full'
+    if (nextPage === 'rs') destination = '/csx/rs'
+    else if (nextPage === 'lf') destination = '/csx/lf'
+    router.push(destination)
+  }
+
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -12,300 +129,361 @@ export default function CSXPage() {
         rel="stylesheet"
       />
       <style jsx global>{`
-        .csx-page {
+        html {
+          font-size: 16px !important;
+          background: #0a0a0a;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background: #0a0a0a;
+        }
+
+        .terminal-page {
           min-height: 100vh;
-          background: #000;
-          color: #fff;
+          background: #0a0a0a;
+          color: #ccc;
           font-family: 'IBM Plex Mono', monospace;
-          -webkit-font-smoothing: antialiased;
-        }
-
-        .csx-container {
-          max-width: 800px;
-          margin: 0 auto;
-          padding: 48px 24px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-container {
-            padding: 64px 24px;
-          }
-        }
-
-        .csx-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 32px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-header {
-            margin-bottom: 40px;
-          }
-        }
-
-        .csx-header-link {
-          color: #8b8b8b;
-          text-decoration: none;
-          font-size: 0.875rem;
-          padding-right: 13px;
-          transition: color 0.2s;
-        }
-
-        .csx-header-link:hover {
-          color: #fff;
-        }
-
-        .csx-title {
-          font-size: 1.25rem;
-          font-weight: 400;
-          letter-spacing: -0.025em;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-title {
-            font-size: 1.5rem;
-          }
-        }
-
-        .csx-title-x {
-          color: #8b8b8b;
-        }
-
-        .csx-section {
-          margin-bottom: 40px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-section {
-            margin-bottom: 48px;
-          }
-        }
-
-        .csx-section-label {
-          font-size: 0.75rem;
-          font-weight: 400;
-          color: #8b8b8b;
-          letter-spacing: 0.1em;
-          margin-bottom: 12px;
-        }
-
-        .csx-text {
-          font-size: 1rem;
-          line-height: 1.7;
-          color: rgba(255, 255, 255, 0.9);
-          margin: 0 0 16px 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-text {
-            font-size: 1.125rem;
-          }
-        }
-
-        .csx-text-emphasis {
-          font-size: 1.125rem;
-          line-height: 1.7;
-          font-weight: 300;
-          font-style: italic;
-          color: #fff;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-text-emphasis {
-            font-size: 1.25rem;
-          }
-        }
-
-        .csx-connect-item {
           display: flex;
           flex-direction: column;
-          gap: 8px;
-          padding-bottom: 16px;
-          border-bottom: 1px solid #404040;
+          align-items: center;
+          justify-content: center;
+          padding: 24px;
+          padding-top: calc(24px + env(safe-area-inset-top));
+          padding-bottom: calc(24px + env(safe-area-inset-bottom));
+          cursor: pointer;
         }
 
-        @media (min-width: 768px) {
-          .csx-connect-item {
-            flex-direction: row;
-            align-items: flex-start;
-            justify-content: space-between;
+        .terminal-box {
+          border: 1px solid #fff;
+          border-left-style: dashed;
+          border-right-style: dashed;
+          padding: 20px 24px;
+          max-width: 640px;
+          width: 100%;
+          position: relative;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-box {
+            padding: 24px 32px;
           }
         }
 
-        .csx-connect-content {
-          flex: 1;
+        .terminal-box::before {
+          content: '';
+          position: absolute;
+          top: 4px;
+          left: 4px;
+          right: 4px;
+          bottom: 4px;
+          border: 1px solid #fff;
+          border-left-style: dashed;
+          border-right-style: dashed;
+          pointer-events: none;
         }
 
-        .csx-connect-number {
-          color: #8b8b8b;
-          margin-right: 12px;
+        .terminal-header {
+          margin-bottom: 16px;
+          padding-bottom: 12px;
+          border-bottom: 1px dotted #666;
+          font-size: 0.75rem;
+          color: #aaa;
+          letter-spacing: 0.05em;
         }
 
-        .csx-connect-desc {
-          color: #8b8b8b;
+        @media (min-width: 640px) {
+          .terminal-header {
+            margin-bottom: 20px;
+            padding-bottom: 16px;
+            font-size: 0.875rem;
+          }
         }
 
-        .csx-connect-note {
-          color: #8b8b8b;
-          margin-top: 4px;
-        }
-
-        .csx-btn {
-          align-self: flex-start;
-          padding: 4px 12px;
-          border: 1px solid #404040;
-          background: transparent;
+        .terminal-header-title {
           color: #fff;
+        }
+
+        .terminal-body {
+          margin-bottom: 0;
+          height: 190px;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-body {
+            height: auto;
+            min-height: 160px;
+          }
+        }
+
+        .terminal-body .line-hidden {
+          opacity: 0;
+        }
+
+        .terminal-body .line-typing {
+          overflow: hidden;
+          white-space: nowrap;
+          display: inline-block;
+          animation: typeIn 0.6s steps(40) forwards;
+        }
+
+        @keyframes typeIn {
+          from { max-width: 0; }
+          to { max-width: 100%; }
+        }
+
+        .terminal-status.status-hidden {
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .terminal-status.status-visible {
+          opacity: 1;
+          transition: opacity 0.3s ease;
+        }
+
+        .terminal-line {
           font-size: 0.875rem;
-          font-family: inherit;
-          cursor: pointer;
-          transition: all 0.2s;
+          line-height: 1.6;
+          margin-bottom: 2px;
+          color: #fff;
         }
 
-        .csx-btn:hover {
-          background: #fff;
-          color: #000;
+        @media (min-width: 640px) {
+          .terminal-line {
+            font-size: 1rem;
+            line-height: 1.7;
+            margin-bottom: 4px;
+          }
         }
 
-        .csx-cta-title {
+        .terminal-dim {
+          color: #999;
+        }
+
+        .terminal-programs {
+          margin-top: 16px;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-programs {
+            margin-top: 20px;
+          }
+        }
+
+        .terminal-program {
+          font-size: 0.875rem;
+          line-height: 1.5;
+          margin-bottom: 2px;
+          display: flex;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-program {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 4px;
+          }
+        }
+
+        .terminal-program:last-child {
+          margin-bottom: 0;
+        }
+
+        .terminal-program-label {
+          color: #999;
+          margin-right: 8px;
+        }
+
+        .terminal-program-value {
+          color: #fff;
+        }
+
+        .terminal-status {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 0.75rem;
+          color: #999;
+          margin-top: 16px;
+          padding-top: 12px;
+          border-top: 1px dotted #666;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-status {
+            gap: 10px;
+            font-size: 0.875rem;
+            margin-top: 20px;
+            padding-top: 16px;
+          }
+        }
+
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+        }
+
+        .status-dot-green { background: #5a8; }
+        .status-dot-red { background: #a55; }
+        .status-dot-amber { background: #a85; }
+
+        .block-cursor {
+          color: #a85;
+        }
+
+        .cursor-visible {
+          opacity: 1;
+        }
+
+        .cursor-hidden {
+          opacity: 0;
+        }
+
+        .status-text-blink {
+          animation: textBlink 1s ease-in-out infinite;
+        }
+
+        @keyframes textBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.3; }
+        }
+
+        .click-hint {
+          display: none;
+        }
+
+        .boot-graphic {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          min-height: 140px;
           font-size: 1.25rem;
-          font-weight: 300;
-          margin: 0 0 12px 0;
+          color: #fff;
+          letter-spacing: 0.1em;
+          line-height: 1.4;
+          white-space: pre;
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-title {
+        @media (min-width: 640px) {
+          .boot-graphic {
+            min-height: 160px;
             font-size: 1.5rem;
           }
         }
 
-        .csx-cta-text {
-          font-size: 1rem;
-          line-height: 1.7;
-          color: #8b8b8b;
-          margin: 0 0 16px 0;
+        @keyframes bubbleBlink {
+          0%, 5% { opacity: 1; text-shadow: 0 0 8px #a85; }
+          7%, 12% { opacity: 0.2; text-shadow: none; }
+          14%, 19% { opacity: 1; text-shadow: 0 0 8px #a85; }
+          21%, 100% { opacity: 0.2; text-shadow: none; }
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-text {
-            font-size: 1.125rem;
-          }
+        .bubble {
+          display: inline-block;
+          opacity: 0.2;
+          animation: bubbleBlink 2s linear infinite;
         }
 
-        .csx-cta-join {
-          font-size: 1.125rem;
-          font-weight: 400;
-          margin: 0 0 16px 0;
+        .bubble-1 { animation-delay: 0s; }
+        .bubble-2 { animation-delay: 0.5s; }
+        .bubble-3 { animation-delay: 1s; }
+        .bubble-4 { animation-delay: 1.5s; }
+
+        /* Heartbeat pulse */
+        @keyframes heartbeat {
+          0%, 100% { transform: scale(1); opacity: 0.7; }
+          14% { transform: scale(1.15); opacity: 1; }
+          28% { transform: scale(1); opacity: 0.7; }
+          42% { transform: scale(1.1); opacity: 1; }
+          56% { transform: scale(1); }
         }
 
-        @media (min-width: 768px) {
-          .csx-cta-join {
-            font-size: 1.25rem;
-          }
+        .heart {
+          display: inline-block;
+          color: #a55;
+          animation: heartbeat 1.5s ease-in-out infinite;
         }
 
-        .csx-link {
-          color: #8b8b8b;
-          text-decoration: underline;
-          text-underline-offset: 4px;
-          transition: color 0.2s;
-        }
-
-        .csx-link:hover {
-          color: #fff;
-        }
-
-        .csx-space-y > * + * {
-          margin-top: 16px;
+        .heart-static {
+          animation: none;
+          opacity: 1;
+          transform: scale(1);
         }
       `}</style>
 
-      <div className="csx-page">
-        <div className="csx-container">
-          {/* Header */}
-          <header className="csx-header">
-            <h1 className="csx-title">
-              CTRL SHIFT <span className="csx-title-x">LAB</span>
-            </h1>
-            <Link href="/cs" className="csx-header-link">
-              Link Feed →
-            </Link>
-          </header>
+      <div className="terminal-page" onClick={handleClick}>
+        <div className="terminal-box">
+          <div className="terminal-header">
+            <span className="terminal-header-title">CTRL SHIFT</span> <span style={{ verticalAlign: 'middle' }}>•</span> LONG HORIZON LAB
+          </div>
 
-          {/* Mission Section */}
-          <section className="csx-section">
-            <h2 className="csx-section-label">MISSION</h2>
-            <div>
-              <p className="csx-text">
-                CTRL SHIFT Lab is a community of AI builders, researchers, and investors pursuing a simple but challenging proposition:
-              </p>
-              <p className="csx-text-emphasis">
-                Build AI that serves people, not just shareholders.
-              </p>
-              <p className="csx-text" style={{ marginTop: '16px' }}>
-                We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
-              </p>
-              <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
-              </p>
-            </div>
-          </section>
-
-          {/* Connect Section */}
-          <section className="csx-section">
-            <h2 className="csx-section-label">BUILD WITH US</h2>
-            <p className="csx-text">
-              We want to hear from you! How does your work think long, build fast, and create technologies that actually make life better?
-            </p>
-
-            <div className="csx-space-y">
-              {/* Office Hours */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">1.</span>
-                  <strong>Explore</strong>
-                  <span className="csx-connect-desc"> — weekly office hours on product, fundraising, go-to-market + technology strategy.</span>
-                </div>
-                <button className="csx-btn">SIGNUP</button>
+          <div className="terminal-body">
+            {rebootPhase === 'graphic' ? (
+              <div className="boot-graphic">
+                {bootGraphic === 'fish' ? (
+                  <>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>   <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥</span></div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>  <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥♥♥</span></div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>   <span className={`heart ${heartsStatic ? 'heart-static' : ''}`}>♥</span></div>
+                  </>
+                ) : (
+                  <>
+                    <div style={{ opacity: graphicLines >= 1 ? 1 : 0 }}>{'o   o   o   o'}</div>
+                    <div style={{ opacity: graphicLines >= 2 ? 1 : 0 }}>{'/|\\ /|\\ /|\\ /|\\'}</div>
+                    <div style={{ opacity: graphicLines >= 3 ? 1 : 0 }}>{'/ \\ / \\ / \\ / \\'}</div>
+                  </>
+                )}
               </div>
-
-              {/* Founder Awards */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">2.</span>
-                  <strong>Fund</strong>
-                  <span className="csx-connect-desc"> — non-dilutive founder awards ($1k - $10k) in support of their missions.</span>
-                  <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
+            ) : (
+              <>
+                <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
+                  we back the weird, the rigorous, the not-next-quarter.
                 </div>
-                <button className="csx-btn">APPLY</button>
-              </div>
-
-              {/* Speakers */}
-              <div className="csx-connect-item">
-                <div className="csx-connect-content">
-                  <span className="csx-connect-number">3.</span>
-                  <strong>Build</strong>
-                  <span className="csx-connect-desc"> — tech explorations, building prototypes and tools.</span>
+                <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
+                  founders, researchers & students building AI that matters.
                 </div>
-                <button className="csx-btn">GITHUB</button>
-              </div>
-            </div>
-          </section>
 
-          {/* Call to Action */}
-          <section className="csx-section">
-            <h2 className="csx-cta-title">Wanna make a shift?</h2>
-            <p className="csx-cta-text">
-              Come build with us. Workshop your prototypes, build a new model, or figure out the right problem to solve.
-            </p>
-            <p className="csx-cta-join">Join us.</p>
-          </section>
+                <div className="terminal-programs">
+                  <div className={`terminal-program ${visibleLines < 3 ? 'line-hidden' : ''} ${typingLine === 3 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">explore:</span>
+                    <span className="terminal-program-value">weekly office hours</span>
+                  </div>
+                  <div className={`terminal-program ${visibleLines < 4 ? 'line-hidden' : ''} ${typingLine === 4 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">fund:</span>
+                    <span className="terminal-program-value">non-dilutive awards ($1k–$10k)</span>
+                  </div>
+                  <div className={`terminal-program ${visibleLines < 5 ? 'line-hidden' : ''} ${typingLine === 5 ? 'line-typing' : ''}`}>
+                    <span className="terminal-program-label">build:</span>
+                    <span className="terminal-program-value">prototypes, tools, and new models</span>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className={`terminal-status ${rebootPhase === 'normal' ? 'status-visible' : 'status-hidden'}`}>
+            {statusMessages[statusIndex].cursor ? (
+              <span className={`block-cursor ${showCursor ? 'cursor-visible' : 'cursor-hidden'}`}>█</span>
+            ) : (
+              <span className={`status-dot status-dot-${statusMessages[statusIndex].color}`}></span>
+            )}
+            <span>{statusMessages[statusIndex].text}</span>
+          </div>
         </div>
       </div>
     </>
+  )
+}
+
+export default function CSXAltLandingPage() {
+  return (
+    <Suspense fallback={<div style={{ background: '#0a0a0a', minHeight: '100vh' }} />}>
+      <CSXContent />
+    </Suspense>
   )
 }

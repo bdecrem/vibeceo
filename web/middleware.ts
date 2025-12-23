@@ -15,7 +15,8 @@ export function middleware(request: NextRequest) {
   const isTokenTankDomain = host?.includes('token-tank') || host?.includes('tokentank')
   const isB52Domain = host === 'b52s.me' || host === 'www.b52s.me'
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
-  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so'
+  const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so' || host === 'ctrlshift.pizza' || host === 'www.ctrlshift.pizza'
+  const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -50,13 +51,44 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // Amber's blog lives at /amber, not /kochi/amber
+    if (pathname.startsWith('/amber')) {
+      log(`[Middleware] Amber route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // /links is the login-wall-free CS page, not /kochi/links
+    if (pathname === '/links' || pathname.startsWith('/links/')) {
+      log(`[Middleware] Links route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // /l/* shortlinks should not be rewritten
+    if (pathname === '/l' || pathname.startsWith('/l/')) {
+      log(`[Middleware] Shortlink route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // /music-player and /report-viewer should not be rewritten
+    if (pathname === '/music-player' || pathname.startsWith('/music-player')) {
+      log(`[Middleware] Music player route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+    if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer')) {
+      log(`[Middleware] Report viewer route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
       return NextResponse.rewrite(newUrl)
     }
 
-    return NextResponse.next()
+    // Rewrite all other paths to /kochi/* (e.g., /peel -> /kochi/peel)
+    const newUrl = new URL(`/kochi${pathname}`, request.url)
+    log(`[Middleware] Kochi domain rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
   }
 
   // Handle ctrlshift.so domain
@@ -85,6 +117,34 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // /rs → show terminal animation first, then click through to /csx/rs
+    if (pathname === '/rs') {
+      const newUrl = new URL('/csx?next=rs', request.url)
+      log(`[Middleware] CTRL SHIFT /rs rewrite -> ${newUrl.pathname}${newUrl.search}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /rs/* subpaths → rewrite directly to /csx/rs/*
+    if (pathname.startsWith('/rs/')) {
+      const newUrl = new URL(`/csx${pathname}`, request.url)
+      log(`[Middleware] CTRL SHIFT /rs/ subpath rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /lf → show terminal animation first, then click through to /csx/lf (links to /links not /cs)
+    if (pathname === '/lf') {
+      const newUrl = new URL('/csx/entry-lf', request.url)
+      log(`[Middleware] CTRL SHIFT /lf rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // /lf/* subpaths → rewrite directly to /csx/lf/*
+    if (pathname.startsWith('/lf/')) {
+      const newUrl = new URL(`/csx${pathname}`, request.url)
+      log(`[Middleware] CTRL SHIFT /lf/ subpath rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     return NextResponse.next()
   }
 
@@ -108,7 +168,28 @@ export function middleware(request: NextRequest) {
 
     return NextResponse.next()
   }
-  
+
+  // Handle rivalalert.ai domain (i1/Forge)
+  if (isRivalAlertDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/rivalalert', request.url)
+      log(`[Middleware] RivalAlert domain root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    return NextResponse.next()
+  }
+
   // SPECIFIC FIX: Bypass music player route immediately
   if (pathname === '/music-player' || pathname.startsWith('/music-player/')) {
     log(`[Middleware] Music player bypassed: ${pathname}`)
@@ -162,6 +243,9 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/kochi') ||
       pathname.startsWith('/token-tank') ||
       pathname.startsWith('/rivalalert') ||
+      pathname.startsWith('/echo-gallery') ||
+      pathname.startsWith('/coinrundown') ||
+      pathname.startsWith('/amber') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()

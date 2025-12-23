@@ -1,0 +1,16 @@
+{
+  "name": "creator-incubator",
+  "description": "Discovers unique content creator concepts with sample posts",
+  "interval_minutes": 5,
+  "last_run": null,
+  "run_count": 0,
+  "settings": {
+    "posts_per_concept": 10,
+    "include_images": true,
+    "include_audio": false,
+    "research_sources": ["reddit", "twitter"],
+    "image_model": "nano-banana"
+  },
+  "output_dir": "output",
+  "logs_dir": "logs"
+}

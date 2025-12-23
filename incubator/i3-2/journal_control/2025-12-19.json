@@ -1,0 +1,76 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-19T12:49:32.149068",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $501.57 | Cash: $276.01 | Positions: 9",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "EXIT SIGNAL: GOOGL price $304.29 > 5MA $303.65 (P&L: -0.4%)",
+      "EXIT SIGNAL: GS price $893.97 > 5MA $882.32 (P&L: +1.5%)",
+      "EXIT SIGNAL: MA price $569.81 > 5MA $567.37 (P&L: +0.6%)",
+      "EXIT SIGNAL: SMH price $357.37 > 5MA $349.73 (P&L: +1.6%)",
+      "EXIT SIGNAL: SPY price $679.89 > 5MA $677.48 (P&L: +0.3%)",
+      "HOLD UBER: $79.03 < 5MA $80.12 (P&L: -2.2%)",
+      "HOLD XLE: $44.09 < 5MA $44.40 (P&L: +0.1%)",
+      "EXIT SIGNAL: XLF price $54.80 > 5MA $54.72 (P&L: +0.2%)",
+      "HOLD XOM: $116.12 < 5MA $116.51 (P&L: +0.8%)",
+      "CANDIDATE: JNJ RSI-2=0.0, price $207.14 > 200MA $172.43",
+      "CANDIDATE: CRM RSI-2=0.0, price $257.67 > 200MA $257.51",
+      "BUY SIGNAL: JNJ RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: CRM RSI-2=0.0 < 5, above 200MA"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "GOOGL",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "GS",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "MA",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "SMH",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "SPY",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "XLF",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "JNJ",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "CRM",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      }
+    ]
+  }
+]

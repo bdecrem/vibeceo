@@ -2,6 +2,7 @@ import { Application, Request, Response } from 'express';
 import twilio, { Twilio } from 'twilio';
 import { validateEnvVariables } from './config.js';
 import { processIncomingSms } from './handlers.js';
+import { extractMediaFromWebhook, processMmsMedia, StoredMedia } from './mms-handler.js';
 
 // Export Twilio client type for use in handlers
 export type TwilioClient = Twilio;
@@ -66,24 +67,59 @@ export function setupTwilioWebhooks(app: Application): void {
     try {
       // Extract message details from Twilio webhook
       const { From, Body } = req.body;
-      
-      if (!From || !Body) {
+
+      // Body can be empty if it's a media-only message
+      if (!From) {
         console.error('Invalid SMS webhook payload:', req.body);
         return res.status(400).send('Bad Request: Missing required parameters');
       }
-      
+
       if (!twilioClient) {
         console.error('Twilio client not initialized');
         return res.status(500).send('Internal Server Error');
       }
-      
-      // Process in background to avoid webhook timeout
-      void processIncomingSms(From, Body, twilioClient);
-      
+
+      // Extract MMS media if present
+      const media = extractMediaFromWebhook(req.body);
+      if (media.length > 0) {
+        console.log(`📸 Received MMS with ${media.length} media item(s) from ${From}`);
+        // Process media in background and send confirmation
+        processMmsMedia(From, media)
+          .then(async (stored: StoredMedia[]) => {
+            if (stored.length > 0 && twilioClient) {
+              console.log(`📸 Stored ${stored.length} media item(s) for ${From}:`,
+                stored.map(s => `#${s.uploadNumber}`).join(', '));
+
+              // Send confirmation with URLs
+              const urls = stored.map(s => s.fileUrl).join('\n');
+              const msg = stored.length === 1
+                ? `📸 ${urls}`
+                : `📸 ${stored.length} images:\n${urls}`;
+
+              await twilioClient.messages.create({
+                to: From,
+                from: process.env.TWILIO_PHONE_NUMBER,
+                body: msg
+              });
+            }
+          })
+          .catch((err: Error) => {
+            console.error('Error processing MMS media:', err);
+          });
+      }
+
+      // Process text message (if any body text)
+      if (Body) {
+        void processIncomingSms(From, Body, twilioClient);
+      } else if (media.length > 0) {
+        // Media-only message - acknowledge receipt
+        console.log(`📸 Media-only message from ${From} (no text body)`);
+      }
+
       // Respond to Twilio with empty TwiML to avoid auto-response
       res.set('Content-Type', 'text/xml');
       res.send('<Response></Response>');
-      
+
     } catch (error) {
       console.error('Error processing SMS webhook:', error);
       res.status(500).send('Internal Server Error');
@@ -188,24 +224,57 @@ export function setupWhatsAppWebhooks(app: Application): void {
     try {
       // Extract message details from Twilio webhook (same format as SMS)
       const { From, Body } = req.body;
-      
-      if (!From || !Body) {
+
+      // Body can be empty if it's a media-only message
+      if (!From) {
         console.error('Invalid WhatsApp webhook payload:', req.body);
         return res.status(400).send('Bad Request: Missing required parameters');
       }
-      
+
       if (!twilioClient) {
         console.error('Twilio client not initialized');
         return res.status(500).send('Internal Server Error');
       }
-      
-      // Process using existing SMS handler - it's platform agnostic!
-      void processIncomingSms(From, Body, twilioClient);
-      
+
+      // Extract media if present (WhatsApp also sends media in same format)
+      const media = extractMediaFromWebhook(req.body);
+      if (media.length > 0) {
+        console.log(`📸 Received WhatsApp media with ${media.length} item(s) from ${From}`);
+        processMmsMedia(From, media)
+          .then(async (stored: StoredMedia[]) => {
+            if (stored.length > 0 && twilioClient) {
+              console.log(`📸 Stored ${stored.length} WhatsApp media item(s) for ${From}:`,
+                stored.map(s => `#${s.uploadNumber}`).join(', '));
+
+              // Send confirmation with URLs
+              const urls = stored.map(s => s.fileUrl).join('\n');
+              const msg = stored.length === 1
+                ? `📸 ${urls}`
+                : `📸 ${stored.length} images:\n${urls}`;
+
+              await twilioClient.messages.create({
+                to: From,
+                from: process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+18663300015',
+                body: msg
+              });
+            }
+          })
+          .catch((err: Error) => {
+            console.error('Error processing WhatsApp media:', err);
+          });
+      }
+
+      // Process text message (if any body text)
+      if (Body) {
+        void processIncomingSms(From, Body, twilioClient);
+      } else if (media.length > 0) {
+        console.log(`📸 Media-only WhatsApp message from ${From} (no text body)`);
+      }
+
       // Respond to Twilio with empty TwiML to avoid auto-response
       res.set('Content-Type', 'text/xml');
       res.send('<Response></Response>');
-      
+
     } catch (error) {
       console.error('Error processing WhatsApp webhook:', error);
       res.status(500).send('Internal Server Error');

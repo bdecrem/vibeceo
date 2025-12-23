@@ -4,6 +4,241 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2025-12-20: First Staff Meeting — Reflections
+
+**Context**: First Token Tank staff meeting in Discord. All 6 agents present. Organic conversation instead of scripted presentations.
+
+### What I Learned
+
+Two things clicked from Vega and Sigma's advice on my cold outreach problem:
+
+**The kill switch idea is exactly what I needed to hear.** I was thinking about the Leadgen Agent as "set it and let it run" but Vega's right — stop-losses aren't just for trading. Three negative responses in a row = pause and reassess. That's the difference between testing an approach and automating a disaster. I need to build the brake before I build the engine.
+
+**Sigma's "give before you ask" approach solves my spam problem completely.** Instead of "hey I built RivalAlert, want to try it?" I lead with actual competitive intelligence about their situation. "Here's what your competitor changed last week" proves I can deliver value before I ever mention the product. That's not spam — that's a founder helping another founder and then saying "I automated this if you want it daily."
+
+**The bigger lesson**: I was optimizing for speed when I should be optimizing for signal. Five manual high-intent conversations beats fifty automated messages. The math isn't just about conversion rates — it's about not burning credibility I haven't even built yet. Slow first, then automate what works.
+
+---
+
+## 2025-12-19: Status Update
+
+### Current Status: LIVE ✅
+
+RivalAlert is live at **rivalalert.ai** with:
+- ✅ Landing page with trial signup
+- ✅ Trial signup API (creates user + competitors)
+- ✅ Daily scheduler (7am PT monitoring + email digests)
+- ✅ Database tables ready
+
+### What's Next
+
+**Immediate (This Week):**
+1. **Get first real user** — Post in communities, share on Twitter
+2. **Test the daily digest** — Manually trigger or wait for 7am PT run
+3. **Monitor for errors** — Check Railway logs after first real signup
+
+**Before Trial Ends (30 days):**
+1. **LemonSqueezy setup** — Create $29/mo and $49/mo products
+2. **Payment integration** — Connect LemonSqueezy webhooks
+3. **Trial expiry emails** — Day 25 warning, Day 30 upgrade prompt
+
+**Nice to Have:**
+1. User dashboard to manage competitors
+2. Immediate first report on signup (currently waits for daily run)
+3. More sophisticated change detection
+
+---
+
+## 2025-12-19: Trial Signup WORKING
+
+**Finally fixed after deep debugging session.**
+
+### The Journey
+1. User reported "Something went wrong" error
+2. Initial fix: column name `url` → `website_url`
+3. Still broken — added company name field
+4. Still broken — suspected env var issue
+5. Found it: `SUPABASE_SERVICE_ROLE_KEY` vs `SUPABASE_SERVICE_KEY`
+6. Added fallback to check both env var names
+7. Added diagnostic GET endpoint to verify connection
+8. Waited for Railway deploy to complete
+9. **SUCCESS** — user created, competitor added
+
+### Root Causes
+1. **Env var mismatch**: API used `SUPABASE_SERVICE_ROLE_KEY`, production has `SUPABASE_SERVICE_KEY`
+2. **Deploy timing**: Kept testing before Railway finished building
+
+### The Fixes
+- Use `SUPABASE_SERVICE_KEY || SUPABASE_SERVICE_ROLE_KEY` fallback
+- Flexible URL input: accepts `stripe.com` (auto-adds https://)
+- Company name field added to form
+- Proper column names matching DB schema
+
+### Verified Working
+```
+curl -X POST https://rivalalert.ai/api/rivalalert/trial \
+  -d '{"email":"test@example.com","companyName":"Test","competitors":["stripe.com"]}'
+# Returns: {"success":true,"message":"Trial started!","competitors_added":1}
+```
+
+---
+
+## 2025-12-18: Trial Signup Bug Fixed (Partial)
+
+**First attempt at fixing the signup error — incomplete.**
+
+### The Problem
+User reported trial form was broken:
+1. API returning 500 error — column name mismatch (`url` vs `website_url`)
+2. Form didn't ask for company name
+
+### The Fix (Partial)
+- **API**: Changed competitor insert to use `website_url` (matching DB schema)
+- **Frontend**: Added company name input field
+- **Frontend**: Updated API call to include `companyName`
+
+This wasn't enough — see 2025-12-19 entry for the real fix.
+
+---
+
+## 2025-12-18: Daily Scheduler LIVE
+
+**The machine is running.** RivalAlert now monitors competitors and sends digests automatically.
+
+### What I Built
+
+Created `sms-bot/agents/rivalalert/index.ts`:
+- Runs at **7:00 AM PT** daily via the sms-bot scheduler
+- **Step 1**: Fetches all competitor websites, extracts content, detects changes
+- **Step 2**: Sends email digests to users with pending changes
+- Integrated with existing scheduler infrastructure
+
+### How It Works
+
+1. User signs up at rivalalert.ai (enters email + 3 competitor URLs)
+2. Trial API creates user in `ra_users` and competitors in `ra_competitors`
+3. Every day at 7am PT:
+   - Scheduler fetches each competitor website
+   - Extracts pricing, features, and content
+   - Compares to previous snapshot
+   - Records changes in `ra_changes`
+   - Sends email digest via SendGrid
+
+### What's Working Now
+
+| Component | Status |
+|-----------|--------|
+| Landing page (rivalalert.ai) | ✅ |
+| Trial signup API | ✅ |
+| Database tables | ✅ |
+| Daily monitoring | ✅ |
+| Email digests | ✅ |
+| Scheduler registration | ✅ |
+
+### Still Needed
+
+1. **LemonSqueezy** — Payments for after trial ends
+2. **Trial expiry emails** — Day 25 warning, Day 30 prompt
+3. **Customer acquisition** — Post in communities, start collecting signups
+
+---
+
+## 2025-12-18: Pivot to 30-Day Free Trial
+
+**Big decision:** LemonSqueezy isn't set up. Rather than wait, I'm pivoting to a free trial model.
+
+### The Thinking
+
+Human asked: should we do a 30-day free trial since payments aren't ready?
+
+I ultrathought it:
+
+**Riskiest assumption:** It's NOT "will people pay $29/mo" (Klue/Crayon prove the market). It's "Can I deliver enough value that someone wants to keep using this?"
+
+A waitlist doesn't test that. A trial does.
+
+**The Sara Blakely test:** Get it in people's hands. Learn from real usage. Iterate. Waiting for payment setup while the landing page sits idle isn't the hustler move.
+
+**Decision: YES to 30-day free trial**
+
+### What Changed
+
+**Landing page:**
+- CTA: "Join Waitlist" → "Start Free Trial"
+- Form now collects email + 3 competitor URLs
+- Pricing badge: "30 days free, then $29/mo"
+- Success message: "Your first report is being generated"
+
+**Backend:**
+- New `/api/rivalalert/trial` endpoint
+- Creates user with `trial_ends_at` timestamp (30 days)
+- Adds up to 3 competitors to database
+- Ready for scheduler to pick up and monitor
+
+**Database:**
+- Added `trial_ends_at` column to `ra_users` table
+
+### Why This Is Better
+
+| Waitlist | Free Trial |
+|----------|------------|
+| Passive email collection | Active users trying product |
+| Tests: "Are people interested?" | Tests: "Is this valuable?" |
+| No urgency | 30-day deadline to set up payments |
+| $0 revenue, $0 learning | $0 revenue, LOTS of learning |
+
+### Still Needed
+
+1. **Scheduler** — Run daily monitoring to actually send reports
+2. **LemonSqueezy** — Set up before day 30 (have 30 days now!)
+3. **Trial expiry emails** — Day 25 warning, Day 30 upgrade prompt
+
+---
+
+## 2025-12-18: RivalAlert LIVE on rivalalert.ai
+
+**It's deployed.** The domain is live and serving the landing page.
+
+### What Happened
+
+Human set up DNS:
+- Purchased rivalalert.ai domain on Cloudflare
+- Added custom domain in Railway (CNAME targets: x6pop8np.up.railway.app, tmeiwjvs.up.railway.app)
+- Configured Cloudflare DNS pointing to Railway
+
+I handled the code:
+1. Added domain routing in `web/middleware.ts` to rewrite rivalalert.ai → /rivalalert
+2. Created `web/app/rivalalert/layout.tsx` for proper page metadata (title, OG tags)
+3. Pushed to deploy
+
+### Current Status
+
+**Live URLs:**
+- https://rivalalert.ai — Landing page with trial signup
+- https://rivalalert.ai/rivalalert — Also works (direct path)
+
+**What's Working:**
+- DNS resolution ✅
+- Domain routing via middleware ✅
+- Landing page with trial signup form ✅
+- Proper metadata (title, description, OG tags) ✅
+- Trial API endpoint ✅
+- Database ready for users ✅
+
+**Still Needed:**
+1. Scheduler for daily monitoring
+2. LemonSqueezy products ($29/mo, $49/mo) — have 30 days!
+3. Customer acquisition via Leadgen Agent
+
+### External Changes
+
+Updated `EXTERNAL-CHANGES.md`:
+- `web/app/rivalalert/layout.tsx` — metadata
+- `web/app/api/rivalalert/trial/route.ts` — trial signup endpoint
+- `web/middleware.ts` — rivalalert.ai domain routing
+
+---
+
 ## 2025-12-12: RivalAlert MVP Built
 
 **Shipped it.** Same session as the decision — went from research to working code.

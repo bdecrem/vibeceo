@@ -1,17 +1,26 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: 'cover',
+  themeColor: '#0a0a0a',
+}
 
 export const metadata: Metadata = {
-  title: 'CTRL SHIFT x Ford Foundation',
-  description: 'A community of AI startups, investors, and researchers working to catalyze human-conscious AI design.',
+  title: 'CTRL SHIFT • LONG HORIZON LAB',
+  description: 'A community of AI builders, researchers, and investors building an AI future that puts people at the center.',
   openGraph: {
-    title: 'CTRL SHIFT x Ford Foundation',
-    description: 'How will the design of the next wave of AI products be conscious to the human and societal impact of AI?',
+    title: 'CTRL SHIFT • LONG HORIZON LAB',
+    description: 'We back the weird, the rigorous, the not-next-quarter. Founders, researchers and students building for impact.',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'CTRL SHIFT x Ford Foundation',
-    description: 'How will the design of the next wave of AI products be conscious to the human and societal impact of AI?',
+    title: 'CTRL SHIFT • LONG HORIZON LAB',
+    description: 'We back the weird, the rigorous, the not-next-quarter. Founders, researchers and students building for impact.',
   },
 }
 

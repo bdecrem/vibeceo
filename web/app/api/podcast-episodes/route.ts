@@ -6,7 +6,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Topic IDs for the three shows
+// Topic IDs for the shows
 // Note: If a topic doesn't have a valid UUID, we'll try to find it by title
 const SHOWS = [
   {
@@ -14,18 +14,28 @@ const SHOWS = [
     topicId: '770a27b8-28a8-40bd-ad82-d9c0952924ce',
     title: 'AI Research Papers - Daily',
     order: 0,
+    contentType: 'papers' as const,
+  },
+  {
+    name: 'AI Twitter Daily',
+    topicId: '7238f203-08e9-52e7-94a3-ec56b7455bb3',
+    title: 'AI Twitter Daily',
+    order: 1,
+    contentType: 'tweets' as const,
   },
   {
     name: 'Peer Review Fight Club',
     topicId: '5c6c2fd7-fcec-417b-ab48-27db253443b8',
     title: null,
-    order: 1,
+    order: 2,
+    contentType: null,
   },
   {
     name: 'Crypto Research Daily',
     topicId: '151e2d10-46ff-50d9-9071-223702b75ddd',
     title: null,
-    order: 2,
+    order: 3,
+    contentType: null,
   },
 ] as const;
 
@@ -96,7 +106,8 @@ export async function GET() {
               }>
             | undefined;
 
-          if (showInfo.name === 'AI Daily') {
+          // Fetch papers/content for interactive mode
+          if (showInfo.contentType === 'papers') {
             try {
               const { data: coveredPapers, error: coveredPapersError } = await supabase
                 .from('covered_papers')
@@ -120,6 +131,33 @@ export async function GET() {
             } catch (papersError) {
               console.warn('Unexpected error loading AI Daily papers:', papersError);
             }
+          } else if (showInfo.contentType === 'tweets') {
+            try {
+              const { data: coveredTweets, error: coveredTweetsError } = await supabase
+                .from('covered_content')
+                .select(
+                  'external_id, title, author, summary, full_text, url, metadata, covered_at'
+                )
+                .eq('episode_id', episode.id)
+                .eq('content_type', 'tweet')
+                .order('covered_at', { ascending: true })
+                .limit(10);
+
+              if (coveredTweetsError) {
+                console.warn('Error fetching AI Twitter Daily tweets:', coveredTweetsError);
+              } else if (coveredTweets && coveredTweets.length > 0) {
+                papers = coveredTweets.map((tweet) => ({
+                  id: tweet.external_id,
+                  title: tweet.title || `@${tweet.author}`,
+                  summary: tweet.summary || undefined,
+                  fullText: tweet.full_text || undefined,
+                  url: tweet.url || undefined,
+                  author: tweet.author || undefined,
+                }));
+              }
+            } catch (tweetsError) {
+              console.warn('Unexpected error loading AI Twitter Daily tweets:', tweetsError);
+            }
           }
 
           episodes.push({
@@ -133,7 +171,7 @@ export async function GET() {
             topicId: topic.id,
             episodeNumber: episode.episode_number,
             episodeId: episode.id != null ? String(episode.id) : undefined,
-            isDated: showInfo.name === 'AI Daily',
+            isDated: showInfo.name === 'AI Daily' || showInfo.name === 'AI Twitter Daily',
           });
         }
       } catch (err) {

@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quirky Gallery</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: #0a0a0f;
+            color: #e0e0e0;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        h1 {
+            font-size: 3em;
+            font-weight: 300;
+            text-align: center;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 60px;
+            font-style: italic;
+        }
+        .idea {
+            background: #1a1a2e;
+            border-radius: 20px;
+            padding: 40px;
+            margin-bottom: 60px;
+            border: 1px solid #2a2a4e;
+        }
+        .idea-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        .idea-name {
+            font-size: 1.8em;
+            color: #7b68ee;
+            font-weight: 400;
+        }
+        .idea-meta {
+            color: #666;
+            font-size: 0.9em;
+        }
+        .idea-concept {
+            font-size: 1.2em;
+            color: #ccc;
+            margin-bottom: 15px;
+        }
+        .idea-vibe {
+            display: inline-block;
+            background: #2a2a4e;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            color: #9b9bbb;
+            margin-bottom: 30px;
+        }
+        .section-title {
+            font-size: 1.1em;
+            color: #888;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        .posts {
+            display: grid;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .post {
+            background: #0a0a15;
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 3px solid #7b68ee;
+        }
+        .post-text {
+            font-size: 1.1em;
+            color: #e0e0e0;
+        }
+        .images {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .image-card {
+            position: relative;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .image-card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+        .image-card .desc {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0,0,0,0.8);
+            padding: 10px;
+            font-size: 0.85em;
+            color: #ccc;
+        }
+        .no-image {
+            height: 200px;
+            background: #2a2a4e;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-style: italic;
+        }
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Quirky Gallery</h1>
+        <p class="subtitle">Strange and delightful ideas, generated forever</p>
+
+        <div class="idea">
+            <div class="idea-header">
+                <div class="idea-name">grocery-store-confessions</div>
+                <div class="idea-meta">2025-12-19T07:00:27.366436<br>Approach: 1</div>
+            </div>
+            <div class="idea-concept">I leave tiny handwritten anonymous confessions hidden in grocery stores, then photograph them being discovered by unsuspecting shoppers.</div>
+            <div class="idea-vibe">tender voyeurism</div>
+
+            <div class="section-title">Text Posts</div>
+            <div class="posts">
+                <div class="post"><div class="post-text">Found her reading my confession about missing my grandmother's lasagna while standing in the frozen dinner aisle. She held it for a full minute, then quietly put back the Stouffer's and walked away. Sometimes strangers hold our secrets better than we do.</div></div>
+                <div class="post"><div class="post-text">Left 'I pretend organic apples taste better but honestly can't tell the difference' tucked between Honeycrisps. Watched a woman find it, snort-laugh, then defiantly grab the regular ones. My confession became her permission slip.</div></div>
+                <div class="post"><div class="post-text">Today's confession: 'I shop here because my ex hated this store.' Photographed through the security mirror as someone discovered it near the self-checkout. They looked around like they were searching for the writer. We're all haunted by love in aisle 7.</div></div>
+                <div class="post"><div class="post-text">Slipped 'I buy flowers for myself and tell the cashier they're for my mom' into the bouquet section. An elderly man found it, smiled, and picked up daisies. Twenty minutes later, saw him at checkout: 'these are for my wife.' My lie became his truth.</div></div>
+                <div class="post"><div class="post-text">She found my note—'I come here when I'm lonely because the employees say hello'—crumpled in a shopping cart. Watched her smooth it out, read it twice. Then she made eye contact with every worker she passed. Loneliness is contagious. So is kindness.</div></div>
+            </div>
+
+            <div class="section-title">Images</div>
+            <div class="images">
+                <div class="image-card"><img src="images/grocery-store-confessions-20251219-070103-1.png" alt="The moment of discovery - capturing the tender vulnerability when someone finds an anonymous confession"><div class="desc">The moment of discovery - capturing the tender vulnerability when someone finds an anonymous confession</div></div>
+                <div class="image-card"><img src="images/grocery-store-confessions-20251219-070103-2.png" alt="The planting - showing the anonymous confessor hiding their secret message"><div class="desc">The planting - showing the anonymous confessor hiding their secret message</div></div>
+                <div class="image-card"><img src="images/grocery-store-confessions-20251219-070103-3.png" alt="The connection - showing how confessions create unexpected emotional bridges between strangers"><div class="desc">The connection - showing how confessions create unexpected emotional bridges between strangers</div></div>
+                <div class="image-card"><img src="images/grocery-store-confessions-20251219-070103-4.png" alt="The network - revealing how confessions create a web of hidden human connection throughout everyday spaces"><div class="desc">The network - revealing how confessions create a web of hidden human connection throughout everyday spaces</div></div>
+                <div class="image-card"><img src="images/grocery-store-confessions-20251219-070103-5.png" alt="The intimacy - focusing on the physical and emotional texture of anonymous confession sharing"><div class="desc">The intimacy - focusing on the physical and emotional texture of anonymous confession sharing</div></div>
+            </div>
+        </div>
+
+        <footer>
+            1 ideas generated | Echo (i4) | Token Tank
+        </footer>
+    </div>
+</body>
+</html>

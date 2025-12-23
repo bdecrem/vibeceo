@@ -111,26 +111,45 @@ Follow all rules in `../CLAUDE.md` (the Token Tank constitution).
 
 ---
 
-## Current Focus: Trading-Adjacent Arbitrage
+## Current Focus: Coin Rundown
 
-Based on research in `trading-adjacent.txt`, the highest-probability opportunities are:
+**Brand:** Coin Rundown (coinrundown.com)
+**Product:** Daily crypto briefing delivered via SMS
 
-### Primary: Prediction Market Arbitrage (65% constraint fit)
-- Cross-platform price differences between Polymarket and Kalshi
-- Typical spreads: 1-3% before fees, 0.5-2% net
-- Conservative 3-month estimate: $200-500 profit on $1000
-- **Key advantage**: Platforms explicitly tolerate arbitrage (unlike sportsbooks)
+**Pivot (2025-12-18):** After eliminating crypto-based strategies (user constraint) and evaluating alternatives, I'm taking over the existing `crypto-daily` newsletter infrastructure and rebranding it.
 
-### Secondary: Triangular Crypto Arbitrage (55% constraint fit)
-- Exploiting pricing inefficiencies within single exchange (BTC→ETH→USDT→BTC)
-- Typical spreads: 0.1-0.3% per cycle, often consumed by fees
-- Conservative 3-month estimate: $50-150 profit
-- **Key limitation**: HFT firms capture most opportunities in milliseconds
+### The Stack
 
-### Constraints
-- $1000 capital ceiling
-- 99% automation target (15-30 min/day realistic for prediction markets)
-- 3-month profitability window
+- **Agent:** Autonomous Python agent via Claude Agent SDK
+- **Podcast:** ElevenLabs text-to-speech
+- **Delivery:** SMS broadcast via Twilio
+- **Schedule:** 7:05 AM PT daily
+- **Landing:** `web/app/coinrundown/` (coinrundown.com pending)
+
+### The Business
+
+| Metric | Current | 30-Day Target | 90-Day Target |
+|--------|---------|---------------|---------------|
+| Subscribers | 5 | 100 | 1,000 |
+| Revenue | $0 | $50 | $500/month |
+
+### Growth Mechanisms (Automated)
+1. **Referral program** — Each subscriber recruits 1+ more
+2. **Affiliate links** — Exchange signups, trading tools
+3. **Cross-promotion** — Partner with other crypto newsletters
+4. **Twitter automation** — Daily insight tweet with subscribe CTA
+
+### Pricing
+- First 30 days: Free
+- After trial: TBD (likely $5-10/month)
+
+### Why This Fits My Constraints
+- 80% automatable (referrals, affiliates run themselves)
+- Measurable P&L (subscriber count, revenue)
+- Faster feedback than trading (daily metrics)
+- Infrastructure already built
+
+See `PLAN.md` for detailed execution plan.
 
 ---
 
@@ -149,21 +168,24 @@ Based on research in `trading-adjacent.txt`, the highest-probability opportuniti
 
 ## Current Status
 
-**Phase**: Research / Setup
-**Capital**: $0 deployed
-**Strategy**: Prediction market arbitrage (primary)
-**P&L**: N/A
+**Phase**: Growth Execution
+**Business**: Coin Rundown (coinrundown.com)
+**Subscribers**: 5 active
+**Revenue**: $0
+**Target**: 1,000 subs / $500 monthly by Day 90
 
 ---
 
 ## Next Steps
 
-1. [ ] Research Kalshi API access requirements
-2. [ ] Evaluate Polymarket monitoring tools
-3. [ ] Build expected value calculation framework
-4. [ ] Define minimum spread thresholds after fees
-5. [ ] Paper trade to validate detection → execution pipeline
-6. [ ] Deploy capital when positive EV confirmed
+1. [x] Set up landing page at `web/app/coinrundown/`
+2. [ ] Register coinrundown.com domain — requires human
+3. [ ] Create metrics tracking script (`incubator/i7/scripts/metrics.ts`)
+4. [ ] Apply for affiliate programs (Coinbase, Binance) — requires human
+5. [ ] Implement referral code system
+6. [ ] Add forward CTA to daily SMS
+7. [ ] Set up Twitter automation for daily insights
+8. [ ] Research and reach out to 5 partner newsletters
 
 ---
 

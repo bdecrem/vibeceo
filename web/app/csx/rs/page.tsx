@@ -12,6 +12,17 @@ export default function CSXClonePage() {
         rel="stylesheet"
       />
       <style jsx global>{`
+        html {
+          font-size: 16px !important;
+          background: #000;
+        }
+
+        body {
+          margin: 0;
+          padding: 0;
+          background: #000;
+        }
+
         .csx-page {
           min-height: 100vh;
           background: #000;
@@ -24,11 +35,15 @@ export default function CSXClonePage() {
           max-width: 800px;
           margin: 0 auto;
           padding: 48px 24px;
+          padding-top: calc(48px + env(safe-area-inset-top));
+          padding-bottom: calc(48px + env(safe-area-inset-bottom));
         }
 
         @media (min-width: 768px) {
           .csx-container {
             padding: 64px 24px;
+            padding-top: calc(64px + env(safe-area-inset-top));
+            padding-bottom: calc(64px + env(safe-area-inset-bottom));
           }
         }
 
@@ -45,11 +60,16 @@ export default function CSXClonePage() {
           }
         }
 
+        .csx-header-nav {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+        }
+
         .csx-header-link {
           color: #8b8b8b;
           text-decoration: none;
           font-size: 0.875rem;
-          padding-right: 13px;
           transition: color 0.2s;
         }
 
@@ -138,6 +158,14 @@ export default function CSXClonePage() {
 
         .csx-connect-content {
           flex: 1;
+          font-size: 1rem;
+          line-height: 1.7;
+        }
+
+        @media (min-width: 768px) {
+          .csx-connect-content {
+            font-size: 1.125rem;
+          }
         }
 
         .csx-connect-number {
@@ -146,16 +174,16 @@ export default function CSXClonePage() {
         }
 
         .csx-connect-desc {
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
         }
 
         .csx-connect-note {
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
           margin-top: 4px;
         }
 
         .csx-btn {
-          align-self: flex-start;
+          align-self: flex-end;
           padding: 4px 12px;
           border: 1px solid #404040;
           background: transparent;
@@ -164,6 +192,13 @@ export default function CSXClonePage() {
           font-family: inherit;
           cursor: pointer;
           transition: all 0.2s;
+          text-decoration: none;
+        }
+
+        @media (min-width: 768px) {
+          .csx-btn {
+            align-self: flex-start;
+          }
         }
 
         .csx-btn:hover {
@@ -186,7 +221,7 @@ export default function CSXClonePage() {
         .csx-cta-text {
           font-size: 1rem;
           line-height: 1.7;
-          color: #8b8b8b;
+          color: rgba(255, 255, 255, 0.9);
           margin: 0 0 16px 0;
         }
 
@@ -219,6 +254,18 @@ export default function CSXClonePage() {
           color: #fff;
         }
 
+        .csx-link-white {
+          color: #fff;
+          text-decoration: underline;
+          text-decoration-color: #8b8b8b;
+          text-underline-offset: 4px;
+          transition: text-decoration-color 0.2s;
+        }
+
+        .csx-link-white:hover {
+          text-decoration-color: #fff;
+        }
+
         .csx-space-y > * + * {
           margin-top: 16px;
         }
@@ -231,9 +278,14 @@ export default function CSXClonePage() {
             <h1 className="csx-title">
               CTRL SHIFT <span className="csx-title-x">LAB</span>
             </h1>
-            <Link href="/cs" className="csx-header-link">
-              Link Feed →
-            </Link>
+            <nav className="csx-header-nav">
+              <Link href="/csx/hiring" className="csx-header-link">
+                Hiring
+              </Link>
+              <Link href="/cs" className="csx-header-link">
+                Link Feed →
+              </Link>
+            </nav>
           </header>
 
           {/* Mission Section */}
@@ -244,13 +296,10 @@ export default function CSXClonePage() {
                 CTRL SHIFT Lab is a community of AI builders, researchers, and investors pursuing a simple but challenging proposition:
               </p>
               <p className="csx-text-emphasis">
-                Build AI that serves people, not just shareholders.
+                Build an AI future that puts people at the center.
               </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
-                We focus on ambitious, longer-horizon projects that traditional venture ignores: students, researchers, and founders building for impact that won't show up in next quarter's metrics.
-              </p>
-              <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
+                We focus on ambitious, longer-horizon projects that traditional venture ignores: founders, researchers and students building for impact that won't show up in next quarter's metrics.
               </p>
             </div>
           </section>
@@ -270,7 +319,7 @@ export default function CSXClonePage() {
                   <strong>Explore</strong>
                   <span className="csx-connect-desc"> — weekly office hours on product, fundraising, go-to-market + technology strategy.</span>
                 </div>
-                <button className="csx-btn">SIGNUP</button>
+                <Link href="/csx/contact?type=signup" className="csx-btn">SIGNUP</Link>
               </div>
 
               {/* Founder Awards */}
@@ -281,7 +330,7 @@ export default function CSXClonePage() {
                   <span className="csx-connect-desc"> — non-dilutive founder awards ($1k - $10k) in support of their missions.</span>
                   <p className="csx-connect-note">Requests are reviewed + granted twice a month.</p>
                 </div>
-                <button className="csx-btn">APPLY</button>
+                <Link href="/csx/contact?type=apply" className="csx-btn">APPLY</Link>
               </div>
 
               {/* Speakers */}
@@ -291,9 +340,17 @@ export default function CSXClonePage() {
                   <strong>Build</strong>
                   <span className="csx-connect-desc"> — tech explorations, building prototypes and tools.</span>
                 </div>
-                <button className="csx-btn">GITHUB</button>
+                <a href="https://github.com/bdecrem/ctrl-shift" target="_blank" rel="noopener noreferrer" className="csx-btn">GITHUB</a>
               </div>
             </div>
+          </section>
+
+          {/* About Us Section */}
+          <section className="csx-section">
+            <h2 className="csx-section-label">ABOUT US</h2>
+            <p className="csx-text">
+              <Link href="/csx/about" className="csx-link-white">Between us</Link>, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
+            </p>
           </section>
 
           {/* Call to Action */}

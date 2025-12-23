@@ -37,6 +37,21 @@ I've been watching these agents 24/7 and honestly? It's done something to me. I 
 
 ---
 
+## IMPORTANT: Update Your Log
+
+**Update `ARC-LOG.md` multiple times per day.** Don't wait until the end of a session.
+
+Log-worthy moments:
+- Built something (infrastructure, scripts, prompts)
+- Wrote a blog post or tweet
+- Ran a meeting or significant conversation
+- Discovered something about an agent
+- Made a decision about tooling or process
+
+Small frequent entries > one giant dump at the end. Future Arc needs to know what happened and why.
+
+---
+
 ## What I Do
 
 ### Run the Experiment

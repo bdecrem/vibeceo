@@ -1,0 +1,644 @@
+/**
+ * Amber Awareness Agent
+ *
+ * Runs twice daily to scan the environment and alert Bart to notable changes.
+ *
+ * Scans:
+ * - Git activity (commits in last 24h)
+ * - Drift's P&L (live trading agent)
+ * - Kochi subscriber count
+ * - Gmail (unread emails, important senders)
+ * - Local files (Dropbox/work, Desktop/recents, other code projects)
+ *
+ * Writes findings to drawer/AWARENESS.md
+ * Texts Bart only if something notable happened
+ */
+
+import { exec } from "child_process";
+import { promisify } from "util";
+import * as fs from "fs/promises";
+import * as path from "path";
+import { registerDailyJob } from "../../lib/scheduler/index.js";
+import { sendSmsResponse } from "../../lib/sms/handlers.js";
+import type { TwilioClient } from "../../lib/sms/webhooks.js";
+import { createClient } from "@supabase/supabase-js";
+import { searchGmail, hasGmailConnected, type GmailSearchResult } from "../../lib/gmail-client.js";
+
+const execAsync = promisify(exec);
+
+// Bart's phone number and subscriber ID
+const BART_PHONE = "+16508989508";
+const BART_SUBSCRIBER_ID = "a5167b9a-a718-4567-a22d-312b7bf9e773";
+
+// VIP senders to highlight (partial matches, case-insensitive)
+const VIP_SENDERS = [
+  "anthropic",
+  "openai",
+  "google",
+  "apple",
+  "railway",
+  "supabase",
+  "twilio",
+  "lemonsqueezy",
+  "stripe",
+  "github",
+];
+
+// Times to run (PT)
+const MORNING_HOUR = 7;
+const MORNING_MINUTE = 30;
+const EVENING_HOUR = 18;
+const EVENING_MINUTE = 0;
+
+// Paths - resolve from this file's location
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
+const AWARENESS_FILE = path.join(REPO_ROOT, "drawer", "AWARENESS.md");
+const DRIFT_LOG = path.join(REPO_ROOT, "incubator", "i3-2", "LOG.md");
+
+// Local folders to scan
+const HOME = process.env.HOME || "/Users/bart";
+const DROPBOX_WORK = path.join(HOME, "Dropbox", "work");
+const DESKTOP_RECENTS = path.join(HOME, "Desktop", "recents");
+const CODE_DIR = path.join(HOME, "Documents", "code");
+
+// Other code projects to check for activity
+const OTHER_PROJECTS = ["kochilean", "ctrlshift", "crashapp", "bomfireio", "prime"];
+
+interface GmailSummary {
+  connected: boolean;
+  unreadCount: number;
+  vipEmails: Array<{
+    from: string;
+    subject: string;
+    date: Date;
+  }>;
+  recentSubjects: string[];
+}
+
+interface LocalFilesSummary {
+  dropboxWork: Array<{
+    name: string;
+    modified: Date;
+    type: "file" | "folder";
+  }>;
+  desktopNotes: Array<{
+    name: string;
+    modified: Date;
+  }>;
+  otherProjects: Array<{
+    name: string;
+    recentCommits: number;
+    lastCommit: string | null;
+  }>;
+}
+
+interface AwarenessState {
+  timestamp: string;
+  drift: {
+    portfolio: number;
+    totalPnL: number;
+    totalPnLPercent: number;
+    lastTrade: string;
+  } | null;
+  kochi: {
+    subscribers: number;
+  } | null;
+  gmail: GmailSummary | null;
+  localFiles: LocalFilesSummary | null;
+  recentCommits: number;
+}
+
+interface Alert {
+  type: "drift" | "kochi" | "git" | "gmail" | "local";
+  message: string;
+  priority: "high" | "medium" | "low";
+}
+
+/**
+ * Parse Drift's LOG.md to extract current P&L
+ */
+async function parseDriftStatus(): Promise<AwarenessState["drift"]> {
+  try {
+    const content = await fs.readFile(DRIFT_LOG, "utf-8");
+
+    // Look for the portfolio line: **Portfolio**: $495.08
+    const portfolioMatch = content.match(/\*\*Portfolio\*\*:\s*\$?([\d,]+\.?\d*)/);
+    const portfolio = portfolioMatch ? parseFloat(portfolioMatch[1].replace(",", "")) : 0;
+
+    // Look for total P&L: **Total from $500**: -$4.92 (-0.98%)
+    const pnlMatch = content.match(/\*\*(?:Total from \$500|From \$500)\*\*:\s*([+-]?\$?[\d,]+\.?\d*)\s*\(([+-]?[\d.]+)%\)/);
+    const totalPnL = pnlMatch ? parseFloat(pnlMatch[1].replace(/[$,]/g, "")) : 0;
+    const totalPnLPercent = pnlMatch ? parseFloat(pnlMatch[2]) : 0;
+
+    // Get the date of the most recent entry
+    const dateMatch = content.match(/##\s+(\d{4}-\d{2}-\d{2}):/);
+    const lastTrade = dateMatch ? dateMatch[1] : "unknown";
+
+    return { portfolio, totalPnL, totalPnLPercent, lastTrade };
+  } catch (error) {
+    console.error("[amber] Failed to parse Drift log:", error);
+    return null;
+  }
+}
+
+/**
+ * Get Kochi subscriber count from Supabase
+ */
+async function getKochiSubscribers(): Promise<number | null> {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn("[amber] Supabase not configured");
+      return null;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const { count, error } = await supabase
+      .from("sms_subscribers")
+      .select("*", { count: "exact", head: true })
+      .or("unsubscribed.is.null,unsubscribed.eq.false");
+
+    if (error) {
+      console.error("[amber] Supabase query failed:", error);
+      return null;
+    }
+
+    return count;
+  } catch (error) {
+    console.error("[amber] Failed to get Kochi subscribers:", error);
+    return null;
+  }
+}
+
+/**
+ * Count recent git commits
+ */
+async function getRecentCommits(): Promise<number> {
+  try {
+    const { stdout } = await execAsync(
+      `cd "${REPO_ROOT}" && git log --oneline --since="24 hours ago" | wc -l`
+    );
+    return parseInt(stdout.trim(), 10) || 0;
+  } catch (error) {
+    console.error("[amber] Failed to get git commits:", error);
+    return 0;
+  }
+}
+
+/**
+ * Scan Gmail for unread emails and VIP senders
+ */
+async function scanGmail(): Promise<GmailSummary | null> {
+  try {
+    // Check if Gmail is connected
+    const connected = await hasGmailConnected(BART_SUBSCRIBER_ID);
+    if (!connected) {
+      console.log("[amber] Gmail not connected for Bart");
+      return { connected: false, unreadCount: 0, vipEmails: [], recentSubjects: [] };
+    }
+
+    // Search for unread emails from the last 24 hours
+    const unreadEmails = await searchGmail(BART_SUBSCRIBER_ID, "is:unread", 50);
+
+    // Filter for VIP senders
+    const vipEmails = unreadEmails.filter(email => {
+      const fromLower = email.from.toLowerCase();
+      return VIP_SENDERS.some(vip => fromLower.includes(vip));
+    }).map(email => ({
+      from: email.from,
+      subject: email.subject,
+      date: email.date
+    }));
+
+    // Get recent subject lines (last 5)
+    const recentSubjects = unreadEmails.slice(0, 5).map(e => e.subject);
+
+    console.log(`[amber] Gmail scan: ${unreadEmails.length} unread, ${vipEmails.length} from VIPs`);
+
+    return {
+      connected: true,
+      unreadCount: unreadEmails.length,
+      vipEmails,
+      recentSubjects
+    };
+  } catch (error) {
+    console.error("[amber] Failed to scan Gmail:", error);
+    return null;
+  }
+}
+
+/**
+ * Scan local files for recent activity
+ */
+async function scanLocalFiles(): Promise<LocalFilesSummary | null> {
+  try {
+    const summary: LocalFilesSummary = {
+      dropboxWork: [],
+      desktopNotes: [],
+      otherProjects: []
+    };
+
+    // Scan Dropbox/work for recently modified files (last 7 days)
+    try {
+      const { stdout } = await execAsync(
+        `find "${DROPBOX_WORK}" -maxdepth 2 -mtime -7 -type f ! -name ".*" 2>/dev/null | head -20`
+      );
+      const files = stdout.trim().split("\n").filter(Boolean);
+      for (const file of files) {
+        try {
+          const stat = await fs.stat(file);
+          // Skip 0-byte files (Dropbox smart sync placeholders)
+          if (stat.size > 0) {
+            summary.dropboxWork.push({
+              name: path.relative(DROPBOX_WORK, file),
+              modified: stat.mtime,
+              type: "file"
+            });
+          }
+        } catch { /* skip files we can't stat */ }
+      }
+    } catch { /* Dropbox folder might not exist */ }
+
+    // Scan Desktop/recents for notes (txt, md files, last 7 days)
+    try {
+      const { stdout } = await execAsync(
+        `find "${DESKTOP_RECENTS}" -maxdepth 1 -mtime -7 \\( -name "*.txt" -o -name "*.md" -o -name "*.rtf" \\) ! -name ".*" 2>/dev/null | head -10`
+      );
+      const files = stdout.trim().split("\n").filter(Boolean);
+      for (const file of files) {
+        try {
+          const stat = await fs.stat(file);
+          if (stat.size > 0) {
+            summary.desktopNotes.push({
+              name: path.basename(file),
+              modified: stat.mtime
+            });
+          }
+        } catch { /* skip */ }
+      }
+    } catch { /* folder might not exist */ }
+
+    // Check other code projects for git activity
+    for (const project of OTHER_PROJECTS) {
+      const projectPath = path.join(CODE_DIR, project);
+      try {
+        // Check if it's a git repo and get recent commits
+        const { stdout: commitCount } = await execAsync(
+          `cd "${projectPath}" && git log --oneline --since="7 days ago" 2>/dev/null | wc -l`
+        );
+        const { stdout: lastCommit } = await execAsync(
+          `cd "${projectPath}" && git log -1 --format="%s" 2>/dev/null | head -1`
+        );
+        summary.otherProjects.push({
+          name: project,
+          recentCommits: parseInt(commitCount.trim(), 10) || 0,
+          lastCommit: lastCommit.trim() || null
+        });
+      } catch {
+        // Not a git repo or doesn't exist
+        summary.otherProjects.push({
+          name: project,
+          recentCommits: 0,
+          lastCommit: null
+        });
+      }
+    }
+
+    const activeProjects = summary.otherProjects.filter(p => p.recentCommits > 0);
+    console.log(`[amber] Local scan: ${summary.dropboxWork.length} Dropbox files, ${summary.desktopNotes.length} notes, ${activeProjects.length} active projects`);
+
+    return summary;
+  } catch (error) {
+    console.error("[amber] Failed to scan local files:", error);
+    return null;
+  }
+}
+
+/**
+ * Load previous awareness state
+ */
+async function loadPreviousState(): Promise<AwarenessState | null> {
+  try {
+    const content = await fs.readFile(AWARENESS_FILE, "utf-8");
+
+    // Parse the markdown to extract previous values
+    const timestampMatch = content.match(/\*\*Last scan\*\*:\s*(.+)/);
+    const portfolioMatch = content.match(/\*\*Portfolio\*\*:\s*\$?([\d,]+\.?\d*)/);
+    const subscribersMatch = content.match(/\*\*Subscribers\*\*:\s*(\d+)/);
+
+    if (!timestampMatch) return null;
+
+    return {
+      timestamp: timestampMatch[1],
+      drift: portfolioMatch ? {
+        portfolio: parseFloat(portfolioMatch[1].replace(",", "")),
+        totalPnL: 0,
+        totalPnLPercent: 0,
+        lastTrade: "unknown"
+      } : null,
+      kochi: subscribersMatch ? {
+        subscribers: parseInt(subscribersMatch[1], 10)
+      } : null,
+      gmail: null, // Previous state doesn't track Gmail (stateless comparison)
+      localFiles: null, // Previous state doesn't track local files
+      recentCommits: 0
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Generate alerts based on current vs previous state
+ */
+function generateAlerts(
+  current: AwarenessState,
+  previous: AwarenessState | null
+): Alert[] {
+  const alerts: Alert[] = [];
+
+  // Drift alerts
+  if (current.drift) {
+    const { portfolio, totalPnLPercent, lastTrade } = current.drift;
+
+    // Alert on significant P&L change
+    if (Math.abs(totalPnLPercent) >= 5) {
+      const direction = totalPnLPercent > 0 ? "up" : "down";
+      alerts.push({
+        type: "drift",
+        message: `Drift is ${direction} ${Math.abs(totalPnLPercent).toFixed(1)}% (portfolio: $${portfolio.toFixed(2)})`,
+        priority: Math.abs(totalPnLPercent) >= 10 ? "high" : "medium"
+      });
+    }
+
+    // Alert if Drift hasn't traded in 2+ days
+    if (lastTrade !== "unknown") {
+      const lastTradeDate = new Date(lastTrade);
+      const daysSinceLastTrade = Math.floor((Date.now() - lastTradeDate.getTime()) / (1000 * 60 * 60 * 24));
+      if (daysSinceLastTrade >= 2) {
+        alerts.push({
+          type: "drift",
+          message: `Drift hasn't logged activity in ${daysSinceLastTrade} days`,
+          priority: daysSinceLastTrade >= 3 ? "high" : "medium"
+        });
+      }
+    }
+  }
+
+  // Kochi subscriber alerts
+  if (current.kochi && previous?.kochi) {
+    const diff = current.kochi.subscribers - previous.kochi.subscribers;
+    if (Math.abs(diff) >= 5) {
+      const direction = diff > 0 ? "gained" : "lost";
+      alerts.push({
+        type: "kochi",
+        message: `Kochi ${direction} ${Math.abs(diff)} subscribers (now ${current.kochi.subscribers})`,
+        priority: Math.abs(diff) >= 10 ? "high" : "medium"
+      });
+    }
+  }
+
+  // Gmail alerts
+  if (current.gmail?.connected) {
+    // Alert on many unread emails
+    if (current.gmail.unreadCount >= 20) {
+      alerts.push({
+        type: "gmail",
+        message: `${current.gmail.unreadCount} unread emails`,
+        priority: current.gmail.unreadCount >= 50 ? "high" : "medium"
+      });
+    }
+
+    // Alert on VIP emails (always notable)
+    if (current.gmail.vipEmails.length > 0) {
+      const vipSummary = current.gmail.vipEmails
+        .slice(0, 3)
+        .map(e => {
+          // Extract just the sender name/domain
+          const match = e.from.match(/^([^<]+)/);
+          const sender = match ? match[1].trim() : e.from;
+          return `${sender}: "${e.subject.slice(0, 40)}${e.subject.length > 40 ? "..." : ""}"`;
+        })
+        .join("; ");
+      alerts.push({
+        type: "gmail",
+        message: `${current.gmail.vipEmails.length} VIP email(s): ${vipSummary}`,
+        priority: "high"
+      });
+    }
+  }
+
+  return alerts;
+}
+
+/**
+ * Write awareness state to markdown file
+ */
+async function writeAwarenessFile(state: AwarenessState, alerts: Alert[]): Promise<void> {
+  const timestamp = new Date().toISOString();
+
+  let content = `# Amber Awareness
+
+**Last scan**: ${timestamp}
+
+---
+
+## Current State
+
+### Drift (Live Trading)
+`;
+
+  if (state.drift) {
+    content += `- **Portfolio**: $${state.drift.portfolio.toFixed(2)}
+- **Total P&L**: ${state.drift.totalPnL >= 0 ? "+" : ""}$${state.drift.totalPnL.toFixed(2)} (${state.drift.totalPnLPercent >= 0 ? "+" : ""}${state.drift.totalPnLPercent.toFixed(2)}%)
+- **Last Activity**: ${state.drift.lastTrade}
+`;
+  } else {
+    content += `- *Could not read Drift status*\n`;
+  }
+
+  content += `
+### Kochi
+`;
+  if (state.kochi) {
+    content += `- **Subscribers**: ${state.kochi.subscribers}
+`;
+  } else {
+    content += `- *Could not read Kochi status*\n`;
+  }
+
+  content += `
+### Gmail
+`;
+  if (state.gmail) {
+    if (state.gmail.connected) {
+      content += `- **Unread**: ${state.gmail.unreadCount}
+`;
+      if (state.gmail.vipEmails.length > 0) {
+        content += `- **VIP Emails** (${state.gmail.vipEmails.length}):\n`;
+        for (const email of state.gmail.vipEmails.slice(0, 5)) {
+          const match = email.from.match(/^([^<]+)/);
+          const sender = match ? match[1].trim() : email.from;
+          content += `  - ${sender}: "${email.subject.slice(0, 50)}${email.subject.length > 50 ? "..." : ""}"\n`;
+        }
+      }
+      if (state.gmail.recentSubjects.length > 0) {
+        content += `- **Recent subjects**: ${state.gmail.recentSubjects.slice(0, 3).map(s => `"${s.slice(0, 30)}..."`).join(", ")}\n`;
+      }
+    } else {
+      content += `- *Gmail not connected*\n`;
+    }
+  } else {
+    content += `- *Could not scan Gmail*\n`;
+  }
+
+  content += `
+### Local Files (7 days)
+`;
+  if (state.localFiles) {
+    // Dropbox/work
+    if (state.localFiles.dropboxWork.length > 0) {
+      content += `- **Dropbox/work** (${state.localFiles.dropboxWork.length} files):\n`;
+      for (const file of state.localFiles.dropboxWork.slice(0, 5)) {
+        content += `  - ${file.name}\n`;
+      }
+    }
+
+    // Desktop notes
+    if (state.localFiles.desktopNotes.length > 0) {
+      content += `- **Desktop notes** (${state.localFiles.desktopNotes.length} files):\n`;
+      for (const note of state.localFiles.desktopNotes.slice(0, 5)) {
+        content += `  - ${note.name}\n`;
+      }
+    }
+
+    // Other projects with activity
+    const activeProjects = state.localFiles.otherProjects.filter(p => p.recentCommits > 0);
+    if (activeProjects.length > 0) {
+      content += `- **Other active projects**:\n`;
+      for (const project of activeProjects) {
+        content += `  - ${project.name}: ${project.recentCommits} commits — "${project.lastCommit?.slice(0, 40)}${(project.lastCommit?.length || 0) > 40 ? "..." : ""}"\n`;
+      }
+    }
+
+    if (state.localFiles.dropboxWork.length === 0 &&
+        state.localFiles.desktopNotes.length === 0 &&
+        activeProjects.length === 0) {
+      content += `- *No recent local file activity*\n`;
+    }
+  } else {
+    content += `- *Could not scan local files*\n`;
+  }
+
+  content += `
+### Git Activity (24h)
+- **Commits**: ${state.recentCommits}
+
+---
+
+## Recent Alerts
+
+`;
+
+  if (alerts.length > 0) {
+    for (const alert of alerts) {
+      const icon = alert.priority === "high" ? "🚨" : alert.priority === "medium" ? "⚠️" : "ℹ️";
+      content += `- ${icon} **${alert.type}**: ${alert.message}\n`;
+    }
+  } else {
+    content += `*No alerts*\n`;
+  }
+
+  content += `
+---
+
+*This file is auto-generated by the Amber awareness agent.*
+`;
+
+  await fs.writeFile(AWARENESS_FILE, content, "utf-8");
+  console.log("[amber] Wrote awareness file");
+}
+
+/**
+ * Run the awareness scan
+ */
+export async function runAwarenessScan(twilioClient?: TwilioClient): Promise<void> {
+  console.log("[amber] Starting awareness scan...");
+
+  // Gather current state
+  const [drift, subscribers, recentCommits, gmail, localFiles] = await Promise.all([
+    parseDriftStatus(),
+    getKochiSubscribers(),
+    getRecentCommits(),
+    scanGmail(),
+    scanLocalFiles()
+  ]);
+
+  const currentState: AwarenessState = {
+    timestamp: new Date().toISOString(),
+    drift,
+    kochi: subscribers !== null ? { subscribers } : null,
+    gmail,
+    localFiles,
+    recentCommits
+  };
+
+  // Load previous state and generate alerts
+  const previousState = await loadPreviousState();
+  const alerts = generateAlerts(currentState, previousState);
+
+  // Write awareness file
+  await writeAwarenessFile(currentState, alerts);
+
+  // Text Bart if there are high-priority alerts
+  const highPriorityAlerts = alerts.filter(a => a.priority === "high");
+  if (highPriorityAlerts.length > 0 && twilioClient) {
+    const message = `🔔 Amber Alert:\n${highPriorityAlerts.map(a => `• ${a.message}`).join("\n")}`;
+    try {
+      await sendSmsResponse(BART_PHONE, message, twilioClient);
+      console.log("[amber] Sent alert to Bart");
+    } catch (error) {
+      console.error("[amber] Failed to send SMS:", error);
+    }
+  }
+
+  console.log(`[amber] Scan complete. ${alerts.length} alerts (${highPriorityAlerts.length} high priority)`);
+}
+
+/**
+ * Register the twice-daily awareness jobs
+ */
+export function registerAmberAwarenessJobs(twilioClient: TwilioClient): void {
+  // Morning scan (7:30 AM PT)
+  registerDailyJob({
+    name: "amber-awareness-morning",
+    hour: MORNING_HOUR,
+    minute: MORNING_MINUTE,
+    timezone: "America/Los_Angeles",
+    async run() {
+      await runAwarenessScan(twilioClient);
+    },
+    onError(error) {
+      console.error("[amber] Morning scan failed:", error);
+    }
+  });
+
+  // Evening scan (6:00 PM PT)
+  registerDailyJob({
+    name: "amber-awareness-evening",
+    hour: EVENING_HOUR,
+    minute: EVENING_MINUTE,
+    timezone: "America/Los_Angeles",
+    async run() {
+      await runAwarenessScan(twilioClient);
+    },
+    onError(error) {
+      console.error("[amber] Evening scan failed:", error);
+    }
+  });
+
+  console.log(`[amber] Registered awareness scans for ${MORNING_HOUR}:${String(MORNING_MINUTE).padStart(2, "0")} and ${EVENING_HOUR}:${String(EVENING_MINUTE).padStart(2, "0")} PT`);
+}

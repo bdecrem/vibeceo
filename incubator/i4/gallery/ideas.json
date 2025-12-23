@@ -1,0 +1,59 @@
+[
+  {
+    "name": "grocery-store-confessions",
+    "concept": "I leave tiny handwritten anonymous confessions hidden in grocery stores, then photograph them being discovered by unsuspecting shoppers.",
+    "why_interesting": "It transforms mundane grocery runs into accidental moments of human connection and vulnerability, turning the supermarket into an unintentional art gallery of secrets.",
+    "vibe": "tender voyeurism",
+    "approach": 1,
+    "created_at": "2025-12-19T07:00:27.366436",
+    "text_posts": [
+      {
+        "text": "Found her reading my confession about missing my grandmother's lasagna while standing in the frozen dinner aisle. She held it for a full minute, then quietly put back the Stouffer's and walked away. Sometimes strangers hold our secrets better than we do.",
+        "why": "Creates an intimate moment of connection through shared grief and memory"
+      },
+      {
+        "text": "Left 'I pretend organic apples taste better but honestly can't tell the difference' tucked between Honeycrisps. Watched a woman find it, snort-laugh, then defiantly grab the regular ones. My confession became her permission slip.",
+        "why": "Relatable humor that gives people permission to drop pretenses"
+      },
+      {
+        "text": "Today's confession: 'I shop here because my ex hated this store.' Photographed through the security mirror as someone discovered it near the self-checkout. They looked around like they were searching for the writer. We're all haunted by love in aisle 7.",
+        "why": "Universal experience of how relationships echo in mundane spaces"
+      },
+      {
+        "text": "Slipped 'I buy flowers for myself and tell the cashier they're for my mom' into the bouquet section. An elderly man found it, smiled, and picked up daisies. Twenty minutes later, saw him at checkout: 'these are for my wife.' My lie became his truth.",
+        "why": "Shows how confessions can inspire others to create their own beautiful stories"
+      },
+      {
+        "text": "She found my note\u2014'I come here when I'm lonely because the employees say hello'\u2014crumpled in a shopping cart. Watched her smooth it out, read it twice. Then she made eye contact with every worker she passed. Loneliness is contagious. So is kindness.",
+        "why": "Transforms isolation into human connection and shows ripple effects of vulnerability"
+      }
+    ],
+    "images": [
+      {
+        "prompt": "A middle-aged woman in soft pastel clothing discovers a small handwritten note tucked behind cereal boxes on a grocery store shelf, her face illuminated with surprise and curiosity as she unfolds the tiny paper confession. Warm golden hour lighting filters through the store windows, creating a cinematic depth of field with the colorful cereal packages blurred in the background. Shot in the style of Gregory Crewdson's staged photography with muted earth tones and gentle shadows, emphasizing the intimate moment of discovery. The woman's expression shows a mix of wonder and recognition, as if the confession resonates with her own experiences.",
+        "description": "The moment of discovery - capturing the tender vulnerability when someone finds an anonymous confession",
+        "path": "/Users/bart/Documents/code/vibeceo/incubator/i4/gallery/images/grocery-store-confessions-20251219-070103-1.png"
+      },
+      {
+        "prompt": "Close-up macro photograph of weathered hands gently placing a tiny folded confession note between organic apples in the produce section, shot from above with shallow depth of field. The handwritten text is partially visible on cream-colored paper with slightly smudged ink. Soft natural lighting creates gentle shadows between the red and green apples, with a warm color palette of burgundy, forest green, and cream. The style mimics the intimate documentary photography of Vivian Maier, with grain and slight vignetting that adds emotional weight to this secret act of vulnerability.",
+        "description": "The planting - showing the anonymous confessor hiding their secret message",
+        "path": "/Users/bart/Documents/code/vibeceo/incubator/i4/gallery/images/grocery-store-confessions-20251219-070103-2.png"
+      },
+      {
+        "prompt": "A young father reading a tiny handwritten confession while his toddler sits in the grocery cart, frozen food aisle stretching behind them in soft focus. The man's face shows deep contemplation and empathy as he processes the stranger's words. Cool blue tones from the freezer lighting mix with warm overhead fluorescents, creating a liminal space feeling. Photographed in the style of Todd Hido's suburban scenes with slightly desaturated colors and emotional undertones. The confession note appears small and fragile in his large hands, emphasizing the delicate nature of shared human secrets.",
+        "description": "The connection - showing how confessions create unexpected emotional bridges between strangers",
+        "path": "/Users/bart/Documents/code/vibeceo/incubator/i4/gallery/images/grocery-store-confessions-20251219-070103-3.png"
+      },
+      {
+        "prompt": "Bird's eye view of multiple tiny confession notes scattered organically throughout a grocery store - tucked in bread aisles, behind milk cartons, near checkout magazines - each being discovered by different shoppers simultaneously. The scene has a magical realism quality with soft, diffused lighting that makes each discovery glow subtly. Color palette of warm neutrals with pops of grocery store primary colors. Style reminiscent of Andreas Gursky's large-scale retail photography but with intimate human moments highlighted. Each person discovering a note shows different reactions - surprise, tears, smiles, contemplation.",
+        "description": "The network - revealing how confessions create a web of hidden human connection throughout everyday spaces",
+        "path": "/Users/bart/Documents/code/vibeceo/incubator/i4/gallery/images/grocery-store-confessions-20251219-070103-4.png"
+      },
+      {
+        "prompt": "Extreme close-up of a crumpled confession note partially hidden behind pasta sauce jars, with a woman's fingers just entering the frame as she reaches for it. The handwritten words are visible in elegant cursive on aged paper, with emotional weight evident in the careful penmanship. Dramatic chiaroscuro lighting creates deep shadows between the red sauce cans, giving the scene a Renaissance painting quality. Rich color palette of deep reds, warm golds, and cream. The style evokes the intimate still life work of Giorgio Morandi mixed with contemporary documentary photography, emphasizing the profound beauty found in mundane moments of human revelation.",
+        "description": "The intimacy - focusing on the physical and emotional texture of anonymous confession sharing",
+        "path": "/Users/bart/Documents/code/vibeceo/incubator/i4/gallery/images/grocery-store-confessions-20251219-070103-5.png"
+      }
+    ]
+  }
+]

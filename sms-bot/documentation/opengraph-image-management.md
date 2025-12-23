@@ -240,6 +240,180 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 - Web API checks `og_second_chance` first before generating new images
 - This prevents race conditions between SMS bot and web API
 
+## Route-Level Social Images (Next.js Static Pages)
+
+For static pages like `/csx`, `/kochi`, `/amber` (not WEBTOYS apps), use Next.js file conventions.
+
+### The Twitter Problem
+
+Twitter's crawler **prefers** `twitter:image` over `og:image`. If you only have an OpenGraph image, Twitter cards often show blank or broken images. You need **both**.
+
+### File Convention
+
+Place these files in your route folder (e.g., `web/app/csx/`):
+
+| File | Generates Route | Meta Tag |
+|------|-----------------|----------|
+| `opengraph-image.tsx` or `.png` | `/csx/opengraph-image` | `og:image` |
+| `twitter-image.tsx` or `.png` | `/csx/twitter-image` | `twitter:image` |
+
+### Option 1: Static PNG Files
+
+Simplest approach — just drop image files in the route folder:
+
+```
+web/app/kochi/
+├── page.tsx
+├── opengraph-image.png    ← 1200x630px
+└── twitter-image.png      ← Can be same image, just copy it
+```
+
+### Option 2: Dynamic TSX Files
+
+For images stored elsewhere (e.g., `public/` folder):
+
+```tsx
+// web/app/csx/opengraph-image.tsx
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+export const alt = 'CTRL SHIFT • LONG HORIZON LAB'
+export const size = { width: 1200, height: 630 }
+export const contentType = 'image/png'
+
+export default function Image() {
+  const imagePath = join(process.cwd(), 'public', 'csx-og.png')
+  const imageBuffer = readFileSync(imagePath)
+
+  return new Response(imageBuffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  })
+}
+```
+
+Create an identical `twitter-image.tsx` file in the same folder.
+
+### Metadata Setup
+
+In your `layout.tsx` or `page.tsx`, include twitter card type:
+
+```tsx
+export const metadata: Metadata = {
+  title: 'Page Title',
+  description: 'Page description',
+  openGraph: {
+    title: 'Page Title',
+    description: 'Page description',
+    type: 'website',
+    // No 'images' needed — opengraph-image.tsx handles it
+  },
+  twitter: {
+    card: 'summary_large_image',  // Required for large image cards
+    title: 'Page Title',
+    description: 'Page description',
+    // No 'images' needed — twitter-image.tsx handles it
+  },
+}
+```
+
+### Testing Twitter Cards
+
+Twitter caches aggressively. After deploying:
+
+1. Go to [Twitter Card Validator](https://cards-dev.twitter.com/validator)
+2. Paste your URL
+3. Click "Preview card" to force a fresh fetch
+
+If validator is down, tweet the link — first tweet triggers a fresh fetch.
+
+### Viewport for Full-Bleed iPhone Display
+
+To extend page background to iPhone notch/Dynamic Island edges (like The Verge), you need **three things**:
+
+#### 1. Enable viewport-fit=cover
+
+```tsx
+// web/app/layout.tsx (or route-specific layout)
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',  // Extends viewport behind notch/home indicator
+}
+```
+
+#### 2. Set background on html AND body (CRITICAL!)
+
+This is the part everyone misses. `viewport-fit=cover` extends the viewport, but **Safari fills the safe area with the `html` element's background** — not your container div's background.
+
+```css
+/* In your page's inline styles or CSS */
+html {
+  background: #0a0a0a;  /* Your dark background */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;  /* Same color */
+}
+
+.your-container {
+  background: #0a0a0a;  /* Also here for good measure */
+}
+```
+
+**Why this matters:** If you only set background on `.container`, the safe area shows whatever `html`'s background is (often white from globals.css or Tailwind defaults).
+
+#### 3. Add safe-area padding to content
+
+Keep your text/content from hiding under the notch:
+
+```css
+.container {
+  padding: 24px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+```
+
+The `env()` values are 0 on normal screens but expand on iPhones with notches.
+
+#### Complete Example
+
+```tsx
+// page.tsx with full-bleed dark background
+<style jsx global>{`
+  html {
+    background: #0a0a0a;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #0a0a0a;
+  }
+  .page {
+    min-height: 100vh;
+    background: #0a0a0a;
+    padding: 24px;
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+`}</style>
+```
+
+#### Debugging Checklist
+
+If full-bleed isn't working:
+1. ✅ `viewportFit: 'cover'` in viewport config?
+2. ✅ `background` set on `html` element (not just body or container)?
+3. ✅ `background` set on `body` element?
+4. ✅ No conflicting styles from globals.css overriding your background?
+
+---
+
 ## Best Practices
 
 1. **Image Dimensions**: Use 1200x630px for optimal display
@@ -257,5 +431,5 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 - API endpoint: `web/app/api/generate-og-cached/route.ts`
 
 ---
-*Last Updated: January 2025*
+*Last Updated: December 2025*
 *Note: Advanced OG generation features are temporarily disabled in favor of type-based system*

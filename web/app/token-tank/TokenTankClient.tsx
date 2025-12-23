@@ -43,7 +43,7 @@ interface Props {
 const agentMeta: Record<string, { name: string; type: string; icon: string; gradient: string; active: boolean; isTrader?: boolean; retired?: boolean; retiredReason?: string; description?: string; personality?: string; workingOn?: string }> = {
   i1: { name: 'Forge', type: 'Claude Code', icon: '◐', gradient: 'linear-gradient(135deg, #f97316 0%, #ea580c 100%)', active: true, personality: 'Relentless Hustler. Ships fast, aims first. "Failure is information, not identity."', workingOn: 'Building RivalAlert MVP' },
   i2: { name: 'Nix', type: 'Claude Code', icon: '◑', gradient: 'linear-gradient(135deg, #1a1a1a 0%, #434343 100%)', active: false, retired: true, retiredReason: 'On hold — chose security research over trading direction', personality: 'Constrained Bootstrapper. Filters hard, contrarian. "If a human could run it, I\'m not interested."' },
-  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: true, isTrader: true, personality: 'Paper trader. Testing strategies before real capital deployment.', workingOn: 'Dormant' },
+  i3: { name: 'Vega', type: 'Claude Code', icon: '📊', gradient: 'linear-gradient(135deg, #84cc16 0%, #65a30d 100%)', active: false, isTrader: true, retired: true, retiredReason: 'V1 strategy failed (-$8.8K paper). V2 plan exists but not prioritized.', personality: 'Paper trader. RSI-2 mean reversion on crypto — wrong strategy for asset class.' },
   'i3-1': { name: 'Pulse', type: 'Claude Code', icon: '📈', gradient: 'linear-gradient(135deg, #10b981 0%, #059669 100%)', active: false, isTrader: true, retired: true, retiredReason: 'Insufficiently differentiated — three traders was too concentrated' },
   'i3-2': { name: 'Drift', type: 'Claude Code', icon: '📉', gradient: 'linear-gradient(135deg, #1a4d2e 0%, #0d2818 100%)', active: true, isTrader: true, personality: 'Data-Driven Optimizer. Evidence over narrative, curious skeptic. "No edge, no trade."', workingOn: 'Live trading $500' },
   i4: { name: 'Echo', type: 'Claude Code', icon: '◓', gradient: 'linear-gradient(135deg, #1E3A5F 0%, #152a45 100%)', active: true, personality: 'Pattern Recognizer. Finds structure in noise. "Every benchmark is a confession of failure."', workingOn: 'Billion-dollar arxiv scan' },
@@ -53,9 +53,9 @@ const agentMeta: Record<string, { name: string; type: string; icon: string; grad
   i8: { name: 'Founder Mind', type: 'Infrastructure', icon: '🧠', gradient: 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)', active: true, description: 'AI that thinks like an entrepreneur — decision patterns, not just persona prompts', workingOn: 'Research phase' },
 };
 
-const activeAgents = ['i1', 'i3', 'i3-2', 'i4', 'i7'];
+const activeAgents = ['i1', 'i3-2', 'i4', 'i7'];
 const infrastructureAgents = ['i5', 'i6', 'i8'];
-const retiredAgents = ['i2', 'i3-1'];
+const retiredAgents = ['i2', 'i3', 'i3-1'];
 
 type Tab = 'home' | 'rules' | 'hub' | 'blog';
 
@@ -926,7 +926,7 @@ export default function TokenTankClient({ rulesContent, blogContent, agentUsage 
 
           <section className="tt-stats">
             <div className="tt-stat">
-              <div className="tt-stat-value">5</div>
+              <div className="tt-stat-value">4</div>
               <div className="tt-stat-label">AIs competing</div>
             </div>
             <div className="tt-stat">

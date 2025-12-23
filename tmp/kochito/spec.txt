@@ -1,0 +1,194 @@
+Here’s a clean, hand-off–ready spec you can give directly to a code agent. It’s written to be actionable, opinionated, and constraint-driven — not fluffy.
+
+⸻
+
+Kochi.to Landing Page — Implementation Spec
+
+Goal
+
+Build a sparse, mood-driven landing page that loads fast, feels premium, and uses Kochi (SVG) as a calm, animated presence inside a rotating set of background scenes (starting with Tokyo coffee alley).
+
+This is not a traditional SaaS homepage.
+It’s a cover page with atmosphere.
+
+⸻
+
+Core Principles (non-negotiable)
+	1.	Kochi is a UI element, not a character
+	•	Self-lit
+	•	Independent of background lighting
+	•	No realistic shadows or scene-matching illumination
+	2.	Environment tells the story
+	•	One full-bleed scene per page
+	•	Minimal text layered on top
+	•	No feature lists, no scroll narrative
+	3.	Motion is ambient, not interactive
+	•	Subtle, slow, looped
+	•	No scroll hijacking
+	•	No gimmicks
+
+⸻
+
+Page Structure (Single Viewport)
+
+Layers (back → front)
+	1.	Background Scene
+	•	Full-bleed image (e.g. Tokyo coffee alley)
+	•	Optimized (WebP / AVIF)
+	•	Optional very slow parallax (5–10px max)
+	•	Scene can rotate over time (daily/weekly/seasonal)
+	2.	Kochi (SVG)
+	•	Inline SVG (not img tag)
+	•	Positioned relative to scene “container” (e.g. behind bar counter)
+	•	Always visible on load
+	•	Self-lit via SVG filters
+	3.	Text + CTA Overlay
+	•	Minimal
+	•	Center-weighted
+	•	No boxes unless contrast requires it
+
+⸻
+
+Kochi SVG Requirements
+
+Rendering
+	•	Inline SVG in DOM
+	•	No canvas
+	•	No WebGL
+
+Lighting
+	•	Self-illumination only
+	•	Inner glow (soft)
+	•	Outer halo (very subtle)
+	•	Do not attempt to match scene lighting
+
+Motion (GSAP or Web Animations API)
+	•	Idle float:
+	•	Y-axis ±3–5px
+	•	Period ~6–8s
+	•	Ease: sine.inOut
+	•	Glow “breathing”:
+	•	Opacity / blur radius
+	•	Period ~8–12s
+	•	Optional blink:
+	•	Infrequent (every ~6–10s)
+	•	150–250ms duration
+
+No rotation, no bouncing, no reactions to scroll.
+
+⸻
+
+Containers (How Kochi is Framed)
+
+Kochi must always be partially occluded by a container to justify no limbs.
+
+Allowed containers (v1):
+	•	Bar counter (Tokyo scene)
+	•	Window / porthole
+	•	Glass dome / orb
+
+Implementation:
+	•	Container is part of background image OR
+	•	Simple foreground mask layer above Kochi
+
+Kochi should never float freely in open space.
+
+⸻
+
+Text Content (Hard Limits)
+
+Required elements only
+	1.	Logo / Wordmark
+	•	Kochi.to
+	•	Top center or slightly above center
+	2.	One-line description
+	•	Example:
+AI delivered daily.
+or
+AI blasts, delivered daily.
+	3.	Single CTA
+	•	Label: Try it →
+	•	Primary action only
+
+No:
+	•	Paragraphs
+	•	Bullets
+	•	Secondary CTAs
+	•	Footer content (can exist but visually minimized)
+
+⸻
+
+CTA Behavior
+	•	Hover: slight glow / scale (1.02–1.04)
+	•	Click: direct action (SMS / WhatsApp / app flow)
+	•	No modal explanation layers on landing
+
+⸻
+
+Performance Requirements
+	•	Fast first paint
+	•	Background image lazy-loaded but preloaded for hero
+	•	Kochi SVG loads immediately
+	•	Target:
+	•	LCP < 2s
+	•	No layout shift
+	•	Avoid heavy JS bundles
+	•	GSAP optional; Web Animations API acceptable
+
+⸻
+
+Responsiveness
+
+Desktop
+	•	Kochi anchored to scene context (e.g. bar counter)
+	•	Text floats above, not overlapping Kochi’s face
+
+Mobile
+	•	Kochi slightly lower in frame
+	•	Text stays readable
+	•	CTA reachable without scrolling
+
+No separate “mobile design” — same layout adapts.
+
+⸻
+
+Scene Rotation (Optional but Designed For)
+	•	Background scene can be swapped without changing layout or logic
+	•	Kochi behavior stays identical across scenes
+	•	Only background + color palette change
+
+Scenes are editorial, not functional.
+
+⸻
+
+What NOT to Build
+	•	❌ Feature sections
+	•	❌ Scroll storytelling
+	•	❌ Complex interactions
+	•	❌ Realistic lighting simulation
+	•	❌ Over-animation
+
+If it feels like a demo, it’s wrong.
+
+⸻
+
+Success Criteria
+
+The page should feel like:
+	•	A place you arrive at
+	•	Calm, confident, modern
+	•	Something that waits for you
+
+User reaction should be:
+
+“Huh. That’s nice.
+Okay — I’ll try it.”
+
+⸻
+
+If you want, I can also provide:
+	•	A GSAP timeline skeleton
+	•	A CSS + SVG filter recipe for Kochi glow
+	•	Or a scene rotation config format
+
+But this spec alone is enough to build it correctly.

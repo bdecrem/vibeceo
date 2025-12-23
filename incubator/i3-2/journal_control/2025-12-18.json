@@ -1,0 +1,38 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-18T12:49:22.847341",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $500.60 | Cash: $225.96 | Positions: 11",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "HOLD GOOGL: $302.65 < 5MA $304.70 (P&L: -0.9%)",
+      "HOLD GS: $877.72 < 5MA $881.37 (P&L: -0.4%)",
+      "HOLD MA: $567.92 < 5MA $568.09 (P&L: +0.3%)",
+      "EXIT SIGNAL: QQQ price $610.64 > 5MA $609.40 (P&L: +0.0%)",
+      "HOLD SMH: $348.71 < 5MA $349.41 (P&L: -0.8%)",
+      "HOLD SPY: $677.98 < 5MA $678.15 (P&L: -0.0%)",
+      "HOLD UBER: $79.96 < 5MA $81.40 (P&L: -1.0%)",
+      "EXIT SIGNAL: V price $346.97 > 5MA $346.21 (P&L: +0.3%)",
+      "HOLD XLE: $44.16 < 5MA $44.69 (P&L: +0.3%)",
+      "HOLD XLF: $54.63 < 5MA $54.77 (P&L: -0.1%)",
+      "HOLD XOM: $116.72 < 5MA $117.08 (P&L: +1.3%)",
+      "CANDIDATE: JPM RSI-2=0.0, price $313.19 > 200MA $281.95",
+      "SKIP JPM: Sector limit reached (financials)"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "QQQ",
+        "reason": "Connors exit: price > 5-day MA"
+      },
+      {
+        "status": "executed",
+        "action": "sell",
+        "symbol": "V",
+        "reason": "Connors exit: price > 5-day MA"
+      }
+    ]
+  }
+]

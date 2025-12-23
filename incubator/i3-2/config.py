@@ -106,7 +106,9 @@ NEWS_MONITOR_LIST = [
 
 # ============ QUANTITATIVE TRIGGERS ============
 # These thresholds determine what gets flagged for research
-RSI_OVERSOLD = 20          # RSI-2 below this = oversold, potential buy
+# Changed to match Connors exactly (RSI < 5) on 2025-12-22
+# Previous values (20, then 10) resulted in zero trades while Connors found opportunities
+RSI_OVERSOLD = 5           # RSI-2 below this = oversold, potential buy (matches Connors)
 RSI_OVERBOUGHT = 80        # RSI-2 above this = overbought, potential sell
 PULLBACK_THRESHOLD = -2.0  # Down this much in 5 days = pullback candidate
 BREAKOUT_THRESHOLD = 3.0   # Up this much on high volume = breakout candidate

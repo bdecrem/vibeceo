@@ -12,6 +12,10 @@ export default function TinkeringsPage() {
         rel="stylesheet"
       />
       <style jsx global>{`
+        html {
+          font-size: 16px !important;
+        }
+
         .csx-page {
           min-height: 100vh;
           background: #000;
@@ -80,10 +84,18 @@ export default function TinkeringsPage() {
         .csx-detail-row {
           display: flex;
           margin-bottom: 12px;
+          font-size: 1rem;
+          line-height: 1.7;
+        }
+
+        @media (min-width: 768px) {
+          .csx-detail-row {
+            font-size: 1.125rem;
+          }
         }
 
         .csx-detail-label {
-          color: #8b8b8b;
+          color: #fff;
           flex-shrink: 0;
           width: 112px;
         }
@@ -96,6 +108,14 @@ export default function TinkeringsPage() {
           margin: 0;
           padding: 0;
           list-style: none;
+          font-size: 1rem;
+          line-height: 1.7;
+        }
+
+        @media (min-width: 768px) {
+          .csx-list {
+            font-size: 1.125rem;
+          }
         }
 
         .csx-list li {
@@ -123,18 +143,14 @@ export default function TinkeringsPage() {
             </div>
             <div className="csx-detail-row">
               <span className="csx-detail-label">2. Who:</span>
-              <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach + get a brand affiliation</span>
+              <span className="csx-detail-value">Startups, researchers and students who want to develop their human impact approach</span>
             </div>
             <div className="csx-detail-row">
-              <span className="csx-detail-label">3. Where:</span>
-              <span className="csx-detail-value">Circulate at research universities and Anthropic for Startups</span>
+              <span className="csx-detail-label">3. Mode:</span>
+              <span className="csx-detail-value">A studio</span>
             </div>
             <div className="csx-detail-row">
-              <span className="csx-detail-label">4. How:</span>
-              <span className="csx-detail-value">Casual but committed pace</span>
-            </div>
-            <div className="csx-detail-row">
-              <span className="csx-detail-label">5. Budget:</span>
+              <span className="csx-detail-label">4. Budget:</span>
               <span className="csx-detail-value">$50,000</span>
             </div>
           </section>
@@ -144,8 +160,8 @@ export default function TinkeringsPage() {
             <h2 className="csx-section-label">FUNNELS</h2>
             <ul className="csx-list">
               <li>1. Anthropic for Startups</li>
-              <li>2. MIT</li>
-              <li>3. Stanford Labs</li>
+              <li>2. Labs at MIT and Stanford</li>
+              <li>3. Responsible AI community</li>
             </ul>
           </section>
 
@@ -154,10 +170,8 @@ export default function TinkeringsPage() {
             <h2 className="csx-section-label">THINGS WE ARE LOOKING FOR</h2>
             <ul className="csx-list">
               <li>1. Talent funnel</li>
-              <li>2. Investment funnel</li>
-              <li>3. First product/startup artifacts</li>
-              <li>4. Stretch: Cohort 1 of CS incubator</li>
-              <li>5. The blueprint: our lens on what to build and the business model.</li>
+              <li>2. First product/startup artifacts</li>
+              <li>3. The blueprint: our lens on what to build and the business model.</li>
             </ul>
           </section>
         </div>
