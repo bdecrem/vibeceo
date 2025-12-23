@@ -331,18 +331,45 @@ If validator is down, tweet the link — first tweet triggers a fresh fetch.
 
 ### Viewport for Full-Bleed iPhone Display
 
-To extend page background to iPhone notch/Dynamic Island edges:
+To extend page background to iPhone notch/Dynamic Island edges (like The Verge), you need **three things**:
+
+#### 1. Enable viewport-fit=cover
 
 ```tsx
-// web/app/layout.tsx
+// web/app/layout.tsx (or route-specific layout)
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover',  // ← This is the key
+  viewportFit: 'cover',  // Extends viewport behind notch/home indicator
 }
 ```
 
-Then add safe-area padding in CSS:
+#### 2. Set background on html AND body (CRITICAL!)
+
+This is the part everyone misses. `viewport-fit=cover` extends the viewport, but **Safari fills the safe area with the `html` element's background** — not your container div's background.
+
+```css
+/* In your page's inline styles or CSS */
+html {
+  background: #0a0a0a;  /* Your dark background */
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background: #0a0a0a;  /* Same color */
+}
+
+.your-container {
+  background: #0a0a0a;  /* Also here for good measure */
+}
+```
+
+**Why this matters:** If you only set background on `.container`, the safe area shows whatever `html`'s background is (often white from globals.css or Tailwind defaults).
+
+#### 3. Add safe-area padding to content
+
+Keep your text/content from hiding under the notch:
 
 ```css
 .container {
@@ -351,6 +378,39 @@ Then add safe-area padding in CSS:
   padding-bottom: calc(24px + env(safe-area-inset-bottom));
 }
 ```
+
+The `env()` values are 0 on normal screens but expand on iPhones with notches.
+
+#### Complete Example
+
+```tsx
+// page.tsx with full-bleed dark background
+<style jsx global>{`
+  html {
+    background: #0a0a0a;
+  }
+  body {
+    margin: 0;
+    padding: 0;
+    background: #0a0a0a;
+  }
+  .page {
+    min-height: 100vh;
+    background: #0a0a0a;
+    padding: 24px;
+    padding-top: calc(24px + env(safe-area-inset-top));
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  }
+`}</style>
+```
+
+#### Debugging Checklist
+
+If full-bleed isn't working:
+1. ✅ `viewportFit: 'cover'` in viewport config?
+2. ✅ `background` set on `html` element (not just body or container)?
+3. ✅ `background` set on `body` element?
+4. ✅ No conflicting styles from globals.css overriding your background?
 
 ---
 
