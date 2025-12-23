@@ -69,7 +69,7 @@ export default function CSXEntryLFPage() {
           setTimeout(() => setGraphicLines(3), 450)
         }, 600)
 
-        // Phase 2: Graphic for 2400ms, then typing at 3000ms
+        // Phase 2: Graphic for 3900ms, then typing at 4500ms
         setTimeout(() => {
           setRebootPhase('typing')
           setGraphicLines(0)
@@ -87,7 +87,7 @@ export default function CSXEntryLFPage() {
             setIsRebooting(false)
             setRebootPhase('normal')
           }, 2800)
-        }, 3000)
+        }, 4500)
       }
     }, 3000)
 
