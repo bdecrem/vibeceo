@@ -36,10 +36,24 @@ export function extractMediaFromWebhook(body: Record<string, any>): TwilioMedia[
 }
 
 /**
- * Download media from Twilio URL
+ * Download media from Twilio URL (requires Basic Auth)
  */
 async function downloadMedia(url: string): Promise<{ buffer: Buffer; contentType: string }> {
-  const response = await fetch(url);
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  if (!accountSid || !authToken) {
+    throw new Error('Missing Twilio credentials for media download');
+  }
+
+  // Twilio media URLs require HTTP Basic Auth
+  const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+
+  const response = await fetch(url, {
+    headers: {
+      'Authorization': `Basic ${auth}`
+    }
+  });
 
   if (!response.ok) {
     throw new Error(`Failed to download media: ${response.status} ${response.statusText}`);
