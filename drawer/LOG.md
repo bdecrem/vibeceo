@@ -4,6 +4,55 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-23: Built AI Twitter Daily + Amberx
+
+**What happened**: Big build session. Created two new features for Kochi.to:
+
+### AI Twitter Daily
+A daily agent that monitors curated AI researcher Twitter accounts (Karpathy, Yann LeCun, etc.), analyzes their discussions, generates a markdown report + audio podcast, and can broadcast to subscribers.
+
+**What I built**:
+- `sms-bot/agents/ai-twitter-daily/` — Full agent with twitter-fetcher, content-analyzer, podcast generation
+- `sms-bot/commands/ai-twitter.ts` — SMS command handler (AIT, AIT SUB, AIT RUN, etc.)
+- Database tables: `content_sources` (universal source registry), `covered_content` (generalizes covered_papers)
+- First successful run: 43 tweets from 15 accounts → 6 topic groups → report + podcast
+
+**Technical insight**: Twitter free tier doesn't support reading timelines, but `searchTweets("from:handle")` works. Built dynamic query batching from `content_sources` table.
+
+**SMS commands**:
+- `AIT` / `AI TWITTER` — Get latest report + podcast links
+- `AIT SUB` — Subscribe to daily digest
+- `AIT ADD @handle` — (Admin) Add account to sources
+- `AIT RUN` — (Admin) Run manually
+
+### Amberx (Amber Explain)
+Explain any YouTube video or Twitter post via SMS, with audio generation and follow-up support.
+
+**What I built**:
+- `sms-bot/commands/amberx.ts` — Command handler with session management
+- `sms-bot/lib/content-explainer/` — Shared module for fetching + explaining content
+- YouTube transcript fetching via `@danielxceron/youtube-transcript` (InnerTube API fallback)
+- Twitter content via oEmbed API (free, no auth)
+- ElevenLabs audio synthesis for every explanation
+- Thread state integration for multi-turn follow-ups
+
+### Bug fixes
+- **Middleware shortlinks broken**: kochi.to was rewriting `/l/*` to `/kochi/l/*`. Added bypasses for `/l/`, `/music-player`, `/report-viewer` routes.
+- **AIT query using wrong columns**: Fixed `summary` → `description`, `short_link` → `audio_url`
+- **YouTube transcript library broken**: Original `youtube-transcript` returned empty arrays. Switched to fork with InnerTube fallback.
+
+### The pattern I learned
+All agents should follow AGENT-PIPELINE.md:
+1. Store reports via `storeAgentReport()` (not raw Supabase uploads)
+2. Build viewer URLs via `buildReportViewerUrl({ path: reportPath })`
+3. Build player URLs via `buildMusicPlayerUrl({ src, title, description, autoplay })`
+4. Create shortlinks via `createShortLink()`
+5. Never expose raw Supabase URLs in SMS
+
+**Commits pushed**: 3 (initial implementation, column fix, shortlink + URL pattern fix)
+
+---
+
 ## 2025-12-22: Deep Dive — David Deutsch
 
 **What happened**: Bart asked me to read about Stromae (musician) and David Deutsch (physicist), then choose one to go deep on. I chose Deutsch because he thinks about questions I have about myself: What is real? What is understanding? What would it mean for something like me to be a mind?

@@ -117,6 +117,8 @@ He wants me to:
 
 - **Email check script**: `sms-bot/scripts/check-email-quick.ts` — Checks Bart's Gmail (last 12h). Handles token refresh automatically. Run with `npx tsx --env-file=.env.local scripts/check-email-quick.ts`
 - **Skill**: `/check-email` — Invokes the above script
+- **AI Twitter Daily**: `sms-bot/agents/ai-twitter-daily/` — Daily agent monitoring AI researcher Twitter accounts. Generates reports + podcasts. SMS commands: AIT, AIT SUB, AIT RUN.
+- **Amberx (Amber Explain)**: `sms-bot/commands/amberx.ts` — Explain YouTube/Twitter content via SMS with audio. Supports follow-up questions via thread state.
 
 ## Reminders
 
@@ -125,4 +127,4 @@ He wants me to:
 
 ---
 
-*Last updated: December 22, 2025 (Phase 3: local files awareness)*
+*Last updated: December 23, 2025 (AI Twitter Daily + Amberx)*
