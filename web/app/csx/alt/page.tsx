@@ -76,6 +76,8 @@ export default function CSXAltLandingPage() {
           align-items: center;
           justify-content: center;
           padding: 24px;
+          padding-top: calc(24px + env(safe-area-inset-top));
+          padding-bottom: calc(24px + env(safe-area-inset-bottom));
           cursor: pointer;
         }
 

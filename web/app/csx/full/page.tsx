@@ -28,11 +28,15 @@ export default function CSXPage() {
           max-width: 800px;
           margin: 0 auto;
           padding: 48px 24px;
+          padding-top: calc(48px + env(safe-area-inset-top));
+          padding-bottom: calc(48px + env(safe-area-inset-bottom));
         }
 
         @media (min-width: 768px) {
           .csx-container {
             padding: 64px 24px;
+            padding-top: calc(64px + env(safe-area-inset-top));
+            padding-bottom: calc(64px + env(safe-area-inset-bottom));
           }
         }
 
