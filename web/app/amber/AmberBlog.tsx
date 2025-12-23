@@ -36,6 +36,12 @@ export default function AmberBlog({ data }: { data: BlogData }) {
   const { profile, posts } = data;
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showAllPosts, setShowAllPosts] = useState(false);
+
+  const VISIBLE_POSTS = 2;
+  const recentPosts = posts.slice(0, VISIBLE_POSTS);
+  const olderPosts = posts.slice(VISIBLE_POSTS);
+  const hasOlderPosts = olderPosts.length > 0;
 
   // Handle hash-based routing
   useEffect(() => {
@@ -237,6 +243,53 @@ export default function AmberBlog({ data }: { data: BlogData }) {
           color: var(--text-secondary);
           margin-top: 0.5rem;
           line-height: 1.5;
+        }
+
+        .post-card-compact {
+          padding: 0.875rem 1.25rem;
+        }
+
+        .post-card-compact .post-card-title {
+          font-size: 1.1rem;
+        }
+
+        /* View all button */
+        .view-all-btn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 0.875rem 1.25rem;
+          margin-top: 0.5rem;
+          background: transparent;
+          border: 1px dashed rgba(212, 165, 116, 0.2);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          color: var(--text-muted);
+          font-family: inherit;
+          font-size: 0.9rem;
+        }
+
+        .view-all-btn:hover {
+          border-color: rgba(212, 165, 116, 0.4);
+          color: var(--amber-300);
+          background: rgba(212, 165, 116, 0.05);
+        }
+
+        .view-all-arrow {
+          font-size: 1.2rem;
+          transition: transform 0.3s ease;
+          transform: rotate(90deg);
+        }
+
+        .view-all-arrow.expanded {
+          transform: rotate(-90deg);
+        }
+
+        .older-posts {
+          margin-top: 0.5rem;
+          animation: fadeIn 0.3s ease-out;
         }
 
         /* Main content */
@@ -467,11 +520,11 @@ export default function AmberBlog({ data }: { data: BlogData }) {
           </div>
         </header>
 
-        {/* Posts navigation */}
+        {/* Posts navigation - only show if more than 1 post */}
         {posts.length > 1 && (
           <nav className="posts-nav">
-            <h2>Posts</h2>
-            {posts.map((post) => (
+            <h2>Recent</h2>
+            {recentPosts.map((post) => (
               <div
                 key={post.id}
                 className={`post-card ${selectedPost?.id === post.id ? 'active' : ''}`}
@@ -482,6 +535,38 @@ export default function AmberBlog({ data }: { data: BlogData }) {
                 <div className="post-card-summary">{post.summary}</div>
               </div>
             ))}
+
+            {/* View all expander */}
+            {hasOlderPosts && (
+              <>
+                <button
+                  className="view-all-btn"
+                  onClick={() => setShowAllPosts(!showAllPosts)}
+                >
+                  <span className="view-all-text">
+                    {showAllPosts ? 'Show less' : `View all ${posts.length} posts`}
+                  </span>
+                  <span className={`view-all-arrow ${showAllPosts ? 'expanded' : ''}`}>
+                    ›
+                  </span>
+                </button>
+
+                {showAllPosts && (
+                  <div className="older-posts">
+                    {olderPosts.map((post) => (
+                      <div
+                        key={post.id}
+                        className={`post-card post-card-compact ${selectedPost?.id === post.id ? 'active' : ''}`}
+                        onClick={() => selectPost(post)}
+                      >
+                        <div className="post-card-title">{post.title}</div>
+                        <div className="post-card-date">{formatDate(post.date)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
           </nav>
         )}
 
