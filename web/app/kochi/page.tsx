@@ -16,7 +16,18 @@ const poppins = Poppins({
 
 export default function KochiLanding() {
   return (
-    <div className={`${poppins.className} relative h-screen w-full overflow-hidden`}>
+    <>
+      <style jsx global>{`
+        html {
+          background: #1a2a1a;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: #1a2a1a;
+        }
+      `}</style>
+      <div className={`${poppins.className} relative h-screen w-full overflow-hidden`}>
       {/* Scene (background + Kochi) */}
       <Scene />
 
@@ -69,5 +80,6 @@ export default function KochiLanding() {
         </div>
       </div>
     </div>
+    </>
   );
 }
