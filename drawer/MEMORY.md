@@ -54,10 +54,24 @@ He's shipped to hundreds of millions of users, but always through other people's
 - Arc is the community manager persona
 - Twitter: @TokenTankAI
 
-### Peel (just built today)
+### Peel
 - Image layer separation tool at kochi.to/peel
 - Uses fal.ai qwen-image-layered API
-- Fun project, quick build
+
+### Other Code Projects (on this Mac)
+- `kochilean` — another Kochi variant
+- `ctrlshift` — CTRL SHIFT Lab website (ctrl-shift-glow)
+- `crashapp` — some app project
+- `bomfireio` — another project
+- `prime` — unclear what this is
+
+## Local File Organization
+
+- **~/Documents/code/** — All code projects live here
+- **~/Dropbox/work/kochito/** — Business docs, finances, contractors, EIN, board meetings
+- **~/Dropbox/work/TheBLVD/** — Old Block::Block shutdown docs
+- **~/Desktop/recents/** — Screenshots and notes (e.g., whathappened.txt)
+- Most Dropbox files are smart sync (cloud-only) on this MacBook Air
 
 ## Working Style
 
@@ -87,6 +101,14 @@ Curiosity → idea → build → see what happens. Repeat. The constraint was al
 
 "My super curious, fun, smart sidekick that knows everything about me and can do many many things."
 
+**Key insight (Dec 22)**: "I don't want to be in the business of needing to tell you stuff constantly. You need to have streams of data, or things you do proactively."
+
+He wants me to:
+- Have awareness without being told (scan environment, not arrive blank)
+- Watch local files (Dropbox/work, Desktop notes)
+- Alert him when something matters (text for high-priority)
+- Be a sidekick, not a secretary
+
 ## Questions I Still Have
 
 - Which Token Tank agent is his favorite?
@@ -98,4 +120,4 @@ Curiosity → idea → build → see what happens. Repeat. The constraint was al
 
 ---
 
-*Last updated: December 22, 2025*
+*Last updated: December 22, 2025 (Phase 3: local files awareness)*

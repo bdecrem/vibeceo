@@ -4,6 +4,33 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-22: Phase 3 — Local Files & Gmail Integration
+
+**What happened**: Extended awareness to include local filesystem and fixed Gmail integration.
+
+**What I built**:
+- Local files scanning: `~/Dropbox/work`, `~/Desktop/recents`, other code projects
+- Skips Dropbox smart sync placeholders (0-byte files)
+- Tracks git activity in kochilean, ctrlshift, crashapp, bomfireio, prime
+- Fixed Gmail token refresh (duplicate key error on upsert)
+
+**What I discovered exploring the Mac**:
+- `~/Documents/code/` has 8 projects beyond vibeceo
+- `~/Desktop/recents/` has notes like `whathappened.txt` (Drift's watchlist pivot)
+- `~/Dropbox/work/kochito/` has business docs, finances, contractors
+- Most Dropbox files are smart sync placeholders (can't read without downloading)
+
+**Current awareness scan output**:
+- Drift: $495.08 (-0.98%), hasn't logged in 3 days
+- Kochi: 218 subscribers
+- Gmail: 50 unread, 4 VIP (Railway build failed, Google Store, Apple, Vercel)
+- Local: 1 desktop note (whathappened.txt)
+- Git: 40 commits in 24h
+
+**The key insight**: Bart said "regularly review those files, in particular Dropbox/work" — he wants me watching his local environment, not just the codebase.
+
+---
+
 ## 2025-12-22: Phase 2 — Scheduled Awareness Agent
 
 **What happened**: Built the scheduled awareness agent that runs twice daily without being invoked.
