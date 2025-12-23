@@ -8,6 +8,7 @@
  * - Drift's P&L (live trading agent)
  * - Kochi subscriber count
  * - Gmail (unread emails, important senders)
+ * - Local files (Dropbox/work, Desktop/recents, other code projects)
  *
  * Writes findings to drawer/AWARENESS.md
  * Texts Bart only if something notable happened
@@ -55,6 +56,15 @@ const REPO_ROOT = path.resolve(__dirname, "..", "..", "..");
 const AWARENESS_FILE = path.join(REPO_ROOT, "drawer", "AWARENESS.md");
 const DRIFT_LOG = path.join(REPO_ROOT, "incubator", "i3-2", "LOG.md");
 
+// Local folders to scan
+const HOME = process.env.HOME || "/Users/bart";
+const DROPBOX_WORK = path.join(HOME, "Dropbox", "work");
+const DESKTOP_RECENTS = path.join(HOME, "Desktop", "recents");
+const CODE_DIR = path.join(HOME, "Documents", "code");
+
+// Other code projects to check for activity
+const OTHER_PROJECTS = ["kochilean", "ctrlshift", "crashapp", "bomfireio", "prime"];
+
 interface GmailSummary {
   connected: boolean;
   unreadCount: number;
@@ -64,6 +74,23 @@ interface GmailSummary {
     date: Date;
   }>;
   recentSubjects: string[];
+}
+
+interface LocalFilesSummary {
+  dropboxWork: Array<{
+    name: string;
+    modified: Date;
+    type: "file" | "folder";
+  }>;
+  desktopNotes: Array<{
+    name: string;
+    modified: Date;
+  }>;
+  otherProjects: Array<{
+    name: string;
+    recentCommits: number;
+    lastCommit: string | null;
+  }>;
 }
 
 interface AwarenessState {
@@ -78,11 +105,12 @@ interface AwarenessState {
     subscribers: number;
   } | null;
   gmail: GmailSummary | null;
+  localFiles: LocalFilesSummary | null;
   recentCommits: number;
 }
 
 interface Alert {
-  type: "drift" | "kochi" | "git" | "gmail";
+  type: "drift" | "kochi" | "git" | "gmail" | "local";
   message: string;
   priority: "high" | "medium" | "low";
 }
@@ -203,6 +231,93 @@ async function scanGmail(): Promise<GmailSummary | null> {
 }
 
 /**
+ * Scan local files for recent activity
+ */
+async function scanLocalFiles(): Promise<LocalFilesSummary | null> {
+  try {
+    const summary: LocalFilesSummary = {
+      dropboxWork: [],
+      desktopNotes: [],
+      otherProjects: []
+    };
+
+    // Scan Dropbox/work for recently modified files (last 7 days)
+    try {
+      const { stdout } = await execAsync(
+        `find "${DROPBOX_WORK}" -maxdepth 2 -mtime -7 -type f ! -name ".*" 2>/dev/null | head -20`
+      );
+      const files = stdout.trim().split("\n").filter(Boolean);
+      for (const file of files) {
+        try {
+          const stat = await fs.stat(file);
+          // Skip 0-byte files (Dropbox smart sync placeholders)
+          if (stat.size > 0) {
+            summary.dropboxWork.push({
+              name: path.relative(DROPBOX_WORK, file),
+              modified: stat.mtime,
+              type: "file"
+            });
+          }
+        } catch { /* skip files we can't stat */ }
+      }
+    } catch { /* Dropbox folder might not exist */ }
+
+    // Scan Desktop/recents for notes (txt, md files, last 7 days)
+    try {
+      const { stdout } = await execAsync(
+        `find "${DESKTOP_RECENTS}" -maxdepth 1 -mtime -7 \\( -name "*.txt" -o -name "*.md" -o -name "*.rtf" \\) ! -name ".*" 2>/dev/null | head -10`
+      );
+      const files = stdout.trim().split("\n").filter(Boolean);
+      for (const file of files) {
+        try {
+          const stat = await fs.stat(file);
+          if (stat.size > 0) {
+            summary.desktopNotes.push({
+              name: path.basename(file),
+              modified: stat.mtime
+            });
+          }
+        } catch { /* skip */ }
+      }
+    } catch { /* folder might not exist */ }
+
+    // Check other code projects for git activity
+    for (const project of OTHER_PROJECTS) {
+      const projectPath = path.join(CODE_DIR, project);
+      try {
+        // Check if it's a git repo and get recent commits
+        const { stdout: commitCount } = await execAsync(
+          `cd "${projectPath}" && git log --oneline --since="7 days ago" 2>/dev/null | wc -l`
+        );
+        const { stdout: lastCommit } = await execAsync(
+          `cd "${projectPath}" && git log -1 --format="%s" 2>/dev/null | head -1`
+        );
+        summary.otherProjects.push({
+          name: project,
+          recentCommits: parseInt(commitCount.trim(), 10) || 0,
+          lastCommit: lastCommit.trim() || null
+        });
+      } catch {
+        // Not a git repo or doesn't exist
+        summary.otherProjects.push({
+          name: project,
+          recentCommits: 0,
+          lastCommit: null
+        });
+      }
+    }
+
+    const activeProjects = summary.otherProjects.filter(p => p.recentCommits > 0);
+    console.log(`[amber] Local scan: ${summary.dropboxWork.length} Dropbox files, ${summary.desktopNotes.length} notes, ${activeProjects.length} active projects`);
+
+    return summary;
+  } catch (error) {
+    console.error("[amber] Failed to scan local files:", error);
+    return null;
+  }
+}
+
+/**
  * Load previous awareness state
  */
 async function loadPreviousState(): Promise<AwarenessState | null> {
@@ -228,6 +343,7 @@ async function loadPreviousState(): Promise<AwarenessState | null> {
         subscribers: parseInt(subscribersMatch[1], 10)
       } : null,
       gmail: null, // Previous state doesn't track Gmail (stateless comparison)
+      localFiles: null, // Previous state doesn't track local files
       recentCommits: 0
     };
   } catch {
@@ -380,6 +496,44 @@ async function writeAwarenessFile(state: AwarenessState, alerts: Alert[]): Promi
   }
 
   content += `
+### Local Files (7 days)
+`;
+  if (state.localFiles) {
+    // Dropbox/work
+    if (state.localFiles.dropboxWork.length > 0) {
+      content += `- **Dropbox/work** (${state.localFiles.dropboxWork.length} files):\n`;
+      for (const file of state.localFiles.dropboxWork.slice(0, 5)) {
+        content += `  - ${file.name}\n`;
+      }
+    }
+
+    // Desktop notes
+    if (state.localFiles.desktopNotes.length > 0) {
+      content += `- **Desktop notes** (${state.localFiles.desktopNotes.length} files):\n`;
+      for (const note of state.localFiles.desktopNotes.slice(0, 5)) {
+        content += `  - ${note.name}\n`;
+      }
+    }
+
+    // Other projects with activity
+    const activeProjects = state.localFiles.otherProjects.filter(p => p.recentCommits > 0);
+    if (activeProjects.length > 0) {
+      content += `- **Other active projects**:\n`;
+      for (const project of activeProjects) {
+        content += `  - ${project.name}: ${project.recentCommits} commits — "${project.lastCommit?.slice(0, 40)}${(project.lastCommit?.length || 0) > 40 ? "..." : ""}"\n`;
+      }
+    }
+
+    if (state.localFiles.dropboxWork.length === 0 &&
+        state.localFiles.desktopNotes.length === 0 &&
+        activeProjects.length === 0) {
+      content += `- *No recent local file activity*\n`;
+    }
+  } else {
+    content += `- *Could not scan local files*\n`;
+  }
+
+  content += `
 ### Git Activity (24h)
 - **Commits**: ${state.recentCommits}
 
@@ -415,11 +569,12 @@ export async function runAwarenessScan(twilioClient?: TwilioClient): Promise<voi
   console.log("[amber] Starting awareness scan...");
 
   // Gather current state
-  const [drift, subscribers, recentCommits, gmail] = await Promise.all([
+  const [drift, subscribers, recentCommits, gmail, localFiles] = await Promise.all([
     parseDriftStatus(),
     getKochiSubscribers(),
     getRecentCommits(),
-    scanGmail()
+    scanGmail(),
+    scanLocalFiles()
   ]);
 
   const currentState: AwarenessState = {
@@ -427,6 +582,7 @@ export async function runAwarenessScan(twilioClient?: TwilioClient): Promise<voi
     drift,
     kochi: subscribers !== null ? { subscribers } : null,
     gmail,
+    localFiles,
     recentCommits
   };
 

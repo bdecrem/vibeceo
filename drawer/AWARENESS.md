@@ -1,6 +1,6 @@
 # Amber Awareness
 
-**Last scan**: 2025-12-23T05:00:47.896Z
+**Last scan**: 2025-12-23T06:28:16.146Z
 
 ---
 
@@ -9,7 +9,7 @@
 ### Drift (Live Trading)
 - **Portfolio**: $495.08
 - **Total P&L**: $-4.92 (-0.98%)
-- **Last Activity**: 2025-12-22
+- **Last Activity**: 2025-12-20
 
 ### Kochi
 - **Subscribers**: 218
@@ -23,13 +23,18 @@
   - "vercel[bot]": "Re: [bdecrem/vibeceo] Add Twitter meta tags to Amb..."
 - **Recent subjects**: "Reminder: Please Vote by Dec. ...", "About Ceci and others: 2 messa...", "The Briefing: Crypto’s Banking..."
 
+### Local Files (7 days)
+- **Desktop notes** (1 files):
+  - whathappened.txt
+
 ### Git Activity (24h)
-- **Commits**: 38
+- **Commits**: 40
 
 ---
 
 ## Recent Alerts
 
+- 🚨 **drift**: Drift hasn't logged activity in 3 days
 - 🚨 **gmail**: 50 unread emails
 - 🚨 **gmail**: 4 VIP email(s): Railway: "Build failed for kochi.to"; Google Store: "Final call: Special offers end soon"; Apple: "Your receipt from Apple."
 

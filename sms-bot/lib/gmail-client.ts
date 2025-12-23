@@ -108,6 +108,8 @@ export async function storeOAuthTokens(
       token_expires_at: tokens.expires_at.toISOString(),
       scopes: tokens.scopes,
       updated_at: new Date().toISOString(),
+    }, {
+      onConflict: 'subscriber_id,provider'
     });
 
   if (error) {
