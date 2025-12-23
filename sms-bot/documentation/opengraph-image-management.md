@@ -240,6 +240,120 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 - Web API checks `og_second_chance` first before generating new images
 - This prevents race conditions between SMS bot and web API
 
+## Route-Level Social Images (Next.js Static Pages)
+
+For static pages like `/csx`, `/kochi`, `/amber` (not WEBTOYS apps), use Next.js file conventions.
+
+### The Twitter Problem
+
+Twitter's crawler **prefers** `twitter:image` over `og:image`. If you only have an OpenGraph image, Twitter cards often show blank or broken images. You need **both**.
+
+### File Convention
+
+Place these files in your route folder (e.g., `web/app/csx/`):
+
+| File | Generates Route | Meta Tag |
+|------|-----------------|----------|
+| `opengraph-image.tsx` or `.png` | `/csx/opengraph-image` | `og:image` |
+| `twitter-image.tsx` or `.png` | `/csx/twitter-image` | `twitter:image` |
+
+### Option 1: Static PNG Files
+
+Simplest approach — just drop image files in the route folder:
+
+```
+web/app/kochi/
+├── page.tsx
+├── opengraph-image.png    ← 1200x630px
+└── twitter-image.png      ← Can be same image, just copy it
+```
+
+### Option 2: Dynamic TSX Files
+
+For images stored elsewhere (e.g., `public/` folder):
+
+```tsx
+// web/app/csx/opengraph-image.tsx
+import { readFileSync } from 'fs'
+import { join } from 'path'
+
+export const alt = 'CTRL SHIFT • LONG HORIZON LAB'
+export const size = { width: 1200, height: 630 }
+export const contentType = 'image/png'
+
+export default function Image() {
+  const imagePath = join(process.cwd(), 'public', 'csx-og.png')
+  const imageBuffer = readFileSync(imagePath)
+
+  return new Response(imageBuffer, {
+    headers: {
+      'Content-Type': 'image/png',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    },
+  })
+}
+```
+
+Create an identical `twitter-image.tsx` file in the same folder.
+
+### Metadata Setup
+
+In your `layout.tsx` or `page.tsx`, include twitter card type:
+
+```tsx
+export const metadata: Metadata = {
+  title: 'Page Title',
+  description: 'Page description',
+  openGraph: {
+    title: 'Page Title',
+    description: 'Page description',
+    type: 'website',
+    // No 'images' needed — opengraph-image.tsx handles it
+  },
+  twitter: {
+    card: 'summary_large_image',  // Required for large image cards
+    title: 'Page Title',
+    description: 'Page description',
+    // No 'images' needed — twitter-image.tsx handles it
+  },
+}
+```
+
+### Testing Twitter Cards
+
+Twitter caches aggressively. After deploying:
+
+1. Go to [Twitter Card Validator](https://cards-dev.twitter.com/validator)
+2. Paste your URL
+3. Click "Preview card" to force a fresh fetch
+
+If validator is down, tweet the link — first tweet triggers a fresh fetch.
+
+### Viewport for Full-Bleed iPhone Display
+
+To extend page background to iPhone notch/Dynamic Island edges:
+
+```tsx
+// web/app/layout.tsx
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',  // ← This is the key
+}
+```
+
+Then add safe-area padding in CSS:
+
+```css
+.container {
+  padding: 24px;
+  padding-top: calc(24px + env(safe-area-inset-top));
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+```
+
+---
+
 ## Best Practices
 
 1. **Image Dimensions**: Use 1200x630px for optimal display
@@ -257,5 +371,5 @@ The `og_second_chance` field is a failsafe mechanism for content that generates 
 - API endpoint: `web/app/api/generate-og-cached/route.ts`
 
 ---
-*Last Updated: January 2025*
+*Last Updated: December 2025*
 *Note: Advanced OG generation features are temporarily disabled in favor of type-based system*
