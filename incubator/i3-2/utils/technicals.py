@@ -154,13 +154,29 @@ def screen_for_triggers(symbol: str, signals: dict, thresholds: dict) -> list[di
     # Check if trend filter is required
     require_uptrend = thresholds.get("REQUIRE_UPTREND", False)
 
+    # ETF exception: ETFs can bypass 200MA filter at extreme oversold levels
+    # ETFs can't go bankrupt - they're diversified baskets (added 2025-12-23)
+    etf_symbols = thresholds.get("ETF_SYMBOLS", [])
+    etf_bypass_rsi = thresholds.get("ETF_200MA_BYPASS_RSI", 5)
+    is_etf = symbol in etf_symbols
+
     # Oversold bounce setup
     if rsi is not None and rsi < thresholds.get("RSI_OVERSOLD", 20):
         # Apply 200MA trend filter if enabled
         if require_uptrend and not above_200ma:
-            # Skip - stock is in downtrend (below 200MA)
-            # This prevents catching falling knives
-            pass
+            # Check for ETF exception
+            if is_etf and rsi < etf_bypass_rsi:
+                # ETF at extreme oversold - bypass 200MA filter
+                triggers.append({
+                    "symbol": symbol,
+                    "trigger_type": "oversold_etf",
+                    "reason": f"ETF RSI-2 at {rsi} (extreme oversold, 200MA filter bypassed)",
+                    "signals": signals,
+                })
+            else:
+                # Skip - stock is in downtrend (below 200MA)
+                # This prevents catching falling knives
+                pass
         else:
             triggers.append({
                 "symbol": symbol,

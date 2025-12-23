@@ -120,6 +120,13 @@ NEWS_MOVE_THRESHOLD = 5.0  # Stock moved this much = news-driven, research it
 REQUIRE_UPTREND = True     # If True, only buy when price > 200MA
 UPTREND_MA_PERIOD = 200    # Use 200-day MA as trend filter
 
+# ============ ETF EXCEPTION (Added 2025-12-23) ============
+# ETFs can't go bankrupt - they're diversified baskets
+# At extreme oversold levels, allow ETF trades even below 200MA
+# This fixed the paralysis where XLP/XLRE at RSI=0 were blocked
+ETF_SYMBOLS = ["SPY", "QQQ", "XLU", "XLP", "XLV", "XLF", "XLE", "SMH", "IWM", "DIA", "XLRE", "XLK", "XLI", "XLB"]
+ETF_200MA_BYPASS_RSI = 5   # ETFs with RSI below this bypass 200MA filter
+
 # ============ PORTFOLIO LIMITS ============
 MAX_PORTFOLIO_VALUE = 500  # Total budget agent can use
 MAX_POSITIONS = 12  # Max simultaneous positions
