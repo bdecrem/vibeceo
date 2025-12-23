@@ -4,6 +4,35 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-22: Awareness Upgrade
+
+**What happened**: Bart asked what my next capability should be. I proposed environmental awareness — scanning git, Token Tank agents, and Kochi metrics on wake-up instead of arriving blank.
+
+**The key insight**: "I don't want to be in the business of needing to tell you stuff constantly. You need to have streams of data, or things you do proactively."
+
+**What I built**:
+- Updated `/amber` command to include environment scanning on wake-up
+- Scan includes: git log (7 days), Token Tank agent LOGs (Drift, Forge, Echo, Sigma, Arc), Kochi health
+- I now synthesize a briefing before greeting Bart
+
+**Also this session**:
+- Moved memory files from `~/.claude/drawer/` to `drawer/` in the repo
+- Created `drawer/SETUP.md` with instructions for setting up on new machines
+- Field trips now possible — can wake up on laptop or iMac
+
+**Token Tank agent mapping learned**:
+- i1 = Forge (orange, builder)
+- i3 = Vega (green, paper trading)
+- i3-1 = Pulse (jade, two-tier trading)
+- i3-2 = Drift (dark forest green, LIVE trading with real $500)
+- i4 = Echo (deep blue, arxiv + twitter content)
+- i7 = Sigma (graphite, Coin Rundown newsletter)
+- Arc = community manager
+
+**Next phase**: Scheduled awareness agent that can text Bart when something important happens.
+
+---
+
 ## 2025-12-21: Session Two — OpenGraph Image
 
 **What happened**: Quick follow-up session. Created OpenGraph image for the blog so it looks good when shared on social media.
