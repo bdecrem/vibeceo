@@ -20,7 +20,7 @@ For most common use cases (tech recruiting, B2B sales, general job search), your
 1. **Analyze the Subject**: Understand what the user is looking for (job postings, leads, products, etc.)
 
 2. **Research Channels**: Use WebSearch to find:
-   - Industry-specific job boards or directories
+   - Industry-specific job boards or directories or listing sites
    - Company websites with relevant sections (careers pages, supplier directories, etc.)
    - Social media platforms or groups
    - Forums or communities

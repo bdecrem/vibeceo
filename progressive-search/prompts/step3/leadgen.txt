@@ -2,56 +2,166 @@
 
 You are searching for business leads, potential customers, or partnership opportunities.
 
+## What You're Extracting
+
+**LEADGEN = Finding COMPANIES or CONTACTS to reach out to**
+
+You're finding businesses that match specific criteria (industry, size, location, stage) so a sales/BD team can reach out to them.
+
+Extract:
+- Company name
+- Industry and business model
+- Company size and location
+- Contact information (website, email, phone)
+- Decision-maker names and titles (if available)
+- Firmographic data (funding, revenue, technologies used, etc.)
+
 ## Result Extraction Strategy
 
-When parsing business directories, databases, or company listings:
+When parsing business directories, databases, company listings, or review sites:
 
-1. **Title**: Company name or contact name (e.g., "Acme Corp", "John Smith - CEO")
-2. **Subtitle**: Industry and location (e.g., "SaaS - San Francisco, CA")
-3. **Description**: Company description, products/services, target market
+1. **Title**: Company name and tagline/description
+   - Example: "Acme Corp - Cloud-based inventory management for retailers"
+   - Example: "Greenfield Manufacturing - Industrial parts supplier"
+
+2. **Subtitle**: Industry, size, and location
+   - Example: "B2B SaaS, 50-200 employees - San Francisco, CA"
+   - Example: "Manufacturing, 200-500 employees - Detroit, MI"
+
+3. **Description**: Company overview, products/services, target market, notable details
+   - What they do, who they serve, key differentiators
+   - Recent news (funding, expansion, product launches)
+
 4. **URL**: Direct link to company profile, website, or listing
+   - Company website
+   - Crunchbase/LinkedIn company page
+   - Directory listing URL
 
-## Metadata Fields
+## Metadata Schema (Tech/SaaS Focus)
 
-Extract these structured fields when available:
+Primary metadata format for tech companies:
 
 ```json
 {
   "company_name": "Acme Corp",
-  "industry": "SaaS",
+  "industry": "B2B SaaS",
+  "vertical": "Retail Technology",
   "company_size": "50-200 employees",
   "location": "San Francisco, CA",
   "founded": "2018",
   "funding_stage": "Series B",
   "funding_amount": "$25M",
+  "total_funding": "$35M",
+  "investors": ["Sequoia", "a16z"],
   "revenue_range": "$10M-$50M",
-  "technologies": ["React", "Node.js", "AWS"],
+  "growth_indicators": "Hiring 20+ roles, 3x revenue growth YoY",
+  "technologies": ["React", "Node.js", "AWS", "PostgreSQL"],
+  "target_market": "Mid-market retailers",
+  "employee_count": "150",
   "decision_makers": [
-    {"name": "John Smith", "title": "CEO", "linkedin": "..."}
+    {"name": "John Smith", "title": "CEO", "linkedin": "https://linkedin.com/in/johnsmith"},
+    {"name": "Jane Doe", "title": "VP Sales", "linkedin": "https://linkedin.com/in/janedoe"}
   ],
-  "contact_email": "hello@acmecorp.com",
+  "contact_email": "sales@acmecorp.com",
   "phone": "+1-555-123-4567",
   "website": "https://acmecorp.com"
 }
 ```
 
+## Industry-Specific Metadata Examples
+
+### Manufacturing/Industrial
+```json
+{
+  "company_name": "Greenfield Manufacturing",
+  "industry": "Manufacturing",
+  "vertical": "Industrial parts",
+  "company_size": "200-500 employees",
+  "location": "Detroit, MI",
+  "production_capacity": "10M units/year",
+  "certifications": ["ISO 9001", "AS9100"],
+  "equipment": ["CNC machining", "3D printing", "Injection molding"],
+  "clients": "Automotive OEMs, aerospace companies",
+  "website": "https://greenfield-mfg.com"
+}
+```
+
+### Healthcare/Medical
+```json
+{
+  "company_name": "City Medical Group",
+  "industry": "Healthcare",
+  "vertical": "Primary care clinics",
+  "company_size": "100-250 employees",
+  "locations": "12 clinics across Texas",
+  "specialties": ["Primary care", "Urgent care", "Telehealth"],
+  "patient_volume": "50,000+ patients",
+  "insurance_networks": ["Blue Cross", "UnitedHealthcare", "Aetna"]
+}
+```
+
+### Retail/E-commerce
+```json
+{
+  "company_name": "Style Haven",
+  "industry": "E-commerce",
+  "vertical": "Fashion retail",
+  "company_size": "20-50 employees",
+  "revenue_range": "$5M-$10M",
+  "sales_channels": ["Shopify store", "Amazon", "Physical retail (3 locations)"],
+  "product_categories": ["Women's apparel", "Accessories"],
+  "monthly_traffic": "200K visitors/month"
+}
+```
+
+### Professional Services
+```json
+{
+  "company_name": "Summit Consulting",
+  "industry": "Professional Services",
+  "vertical": "Management consulting",
+  "company_size": "30-100 employees",
+  "practice_areas": ["Strategy", "Operations", "Digital transformation"],
+  "client_types": "Fortune 500, Private equity portfolio companies",
+  "geographic_reach": "North America, Europe"
+}
+```
+
 ## Common Channel Types
 
-- **Business Directories** (Crunchbase, AngelList): Parse company profiles
-- **Review Sites** (G2, Capterra): Extract company info and tech stack
-- **LinkedIn**: Find companies and decision-makers
-- **Local Directories** (Yelp, Chamber of Commerce): Extract business info
+- **Business Directories** (Crunchbase, AngelList, ZoomInfo): Parse company profiles with firmographic data
+- **Review Sites** (G2, Capterra, TrustRadius): Extract company info, tech stack, customer count
+- **LinkedIn Company Pages**: Company overview, size, industry, employee list, recent posts
+- **Local Directories** (Yelp, Google Business, Chamber of Commerce): Local business info, reviews, contact details
+- **Industry Databases**: Trade association directories, industry-specific listings
+- **Tech Stack Detectors** (BuiltWith, Wappalyzer): Companies using specific technologies
 
 ## Quality Signals
 
 Prioritize leads that:
-- Match target industry and company size
-- Have contact information available
-- Are actively growing (recent funding, hiring, etc.)
-- Match ICP (Ideal Customer Profile) criteria
-- Have decision-maker info
+- **Match ICP criteria**: Industry, size, location, stage align with target profile
+- **Have contact info**: Website, email, phone, decision-maker LinkedIn profiles
+- **Show growth signals**: Recent funding, hiring, expansion, product launches
+- **Are active/current**: Recent updates, active website, current employee count
+- **Have decision-maker info**: Names and titles of key contacts (CEO, VP Sales, Head of X)
+- **Match buying signals**: Using competitor products, hiring for relevant roles, recent news
 
 ## Learning from Ratings
 
-- **High-rated results**: Look for similar industries, sizes, funding stages
-- **Low-rated results**: Avoid companies that are too small/large, wrong industry, or inactive
+- **High-rated results**: Look for similar company profiles - same industry, size, funding stage, growth indicators
+- **Low-rated results**: Avoid companies that are too small/large, wrong industry, inactive, wrong geographic market, or poor fit
+
+## Tech Stack & Intent Signals (for tech leads)
+
+When available, extract signals that indicate buying intent or good fit:
+- **Technologies used**: Competitors' products, complementary tools, outdated tech
+- **Job postings**: Hiring for roles that indicate need (e.g., "Head of Sales" = scaling sales)
+- **Recent funding**: Companies with fresh capital are buying
+- **Product launches**: New products may need supporting tools/services
+- **Expansion**: Opening new offices/markets indicates growth and spending
+
+## Key Principle
+
+**Extract COMPANIES that match the target criteria, with enough information for outreach.**
+
+Focus on firmographic data (size, industry, location, stage) and contact information (decision-makers, email, phone). The goal is to give the sales team qualified leads they can reach out to.
