@@ -63,6 +63,22 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // /l/* shortlinks should not be rewritten
+    if (pathname === '/l' || pathname.startsWith('/l/')) {
+      log(`[Middleware] Shortlink route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // /music-player and /report-viewer should not be rewritten
+    if (pathname === '/music-player' || pathname.startsWith('/music-player')) {
+      log(`[Middleware] Music player route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+    if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer')) {
+      log(`[Middleware] Report viewer route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)

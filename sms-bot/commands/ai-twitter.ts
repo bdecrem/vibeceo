@@ -14,6 +14,10 @@ import { supabase } from '../lib/supabase.js';
 import { loadUserContext } from '../lib/context-loader.js';
 import { runAITwitterDaily, getTopicId } from '../agents/ai-twitter-daily/index.js';
 import { getAgentSubscribers, subscribeToAgent, unsubscribeFromAgent } from '../lib/agent-subscriptions.js';
+import { getLatestReportMetadata } from '../agents/report-storage.js';
+import { buildReportViewerUrl } from '../lib/utils/report-viewer-link.js';
+import { buildMusicPlayerUrl } from '../lib/utils/music-player-link.js';
+import { createShortLink } from '../lib/utils/shortlink-service.js';
 
 const AGENT_SLUG = 'ai-twitter-daily';
 const ADMIN_PHONES = (process.env.ADMIN_PHONES || '').split(',').filter(Boolean);
@@ -145,8 +149,13 @@ export const aiTwitterCommandHandler: CommandHandler = {
       return true;
     }
 
-    // Default: Get latest report
+    // Default: Get latest report and episode
     const topicId = getTopicId();
+
+    // Get latest report metadata
+    const reportMetadata = await getLatestReportMetadata('ai-twitter-daily');
+
+    // Get latest episode
     const { data: latestEpisode } = await supabase
       .from('episodes')
       .select('title, description, audio_url, published_date')
@@ -155,7 +164,7 @@ export const aiTwitterCommandHandler: CommandHandler = {
       .limit(1)
       .maybeSingle();
 
-    if (!latestEpisode) {
+    if (!latestEpisode && !reportMetadata) {
       await reply(
         `AI Twitter Daily\n\n` +
           `No episodes yet. Subscribe with "AIT SUB" to get daily updates on what AI researchers are discussing.`
@@ -163,16 +172,56 @@ export const aiTwitterCommandHandler: CommandHandler = {
       return true;
     }
 
+    // Build proper viewer/player URLs with shortlinks
+    let reportLink: string | null = null;
+    let podcastLink: string | null = null;
+
+    if (reportMetadata) {
+      const reportViewerUrl = buildReportViewerUrl({ path: reportMetadata.reportPath });
+      try {
+        reportLink = await createShortLink(reportViewerUrl, {
+          context: 'ai-twitter-daily',
+          createdBy: 'sms-bot',
+        });
+      } catch (e) {
+        reportLink = reportViewerUrl;
+      }
+    }
+
+    if (latestEpisode?.audio_url) {
+      const musicPlayerUrl = buildMusicPlayerUrl({
+        src: latestEpisode.audio_url,
+        title: latestEpisode.title || 'AI Twitter Daily',
+        description: latestEpisode.description?.substring(0, 200),
+        autoplay: true,
+      });
+      try {
+        podcastLink = await createShortLink(musicPlayerUrl, {
+          context: 'ai-twitter-daily',
+          createdBy: 'sms-bot',
+        });
+      } catch (e) {
+        podcastLink = musicPlayerUrl;
+      }
+    }
+
+    const displayDate = latestEpisode?.published_date || reportMetadata?.date || new Date().toISOString().split('T')[0];
+    const description = latestEpisode?.description?.substring(0, 250) || reportMetadata?.summary?.substring(0, 250) || 'Today\'s AI Twitter digest';
+
     const response = [
       `AI Twitter Daily`,
-      `${latestEpisode.published_date}`,
+      `${displayDate}`,
       '',
-      latestEpisode.description?.substring(0, 300) || 'Today\'s AI Twitter digest',
+      description,
       '',
     ];
 
-    if (latestEpisode.audio_url) {
-      response.push(`Listen: ${latestEpisode.audio_url}`);
+    if (reportLink) {
+      response.push(`Read: ${reportLink}`);
+    }
+
+    if (podcastLink) {
+      response.push(`Listen: ${podcastLink}`);
     }
 
     response.push('');
