@@ -60,11 +60,16 @@ export default function CSXLinksPage() {
           }
         }
 
+        .csx-header-nav {
+          display: flex;
+          align-items: center;
+          gap: 24px;
+        }
+
         .csx-header-link {
           color: #8b8b8b;
           text-decoration: none;
           font-size: 0.875rem;
-          padding-right: 13px;
           transition: color 0.2s;
         }
 
@@ -273,9 +278,14 @@ export default function CSXLinksPage() {
             <h1 className="csx-title">
               CTRL SHIFT <span className="csx-title-x">LAB</span>
             </h1>
-            <Link href="/links" className="csx-header-link">
-              Link Feed →
-            </Link>
+            <nav className="csx-header-nav">
+              <Link href="/csx/hiring" className="csx-header-link">
+                Hiring
+              </Link>
+              <Link href="/links" className="csx-header-link">
+                Link Feed →
+              </Link>
+            </nav>
           </header>
 
           {/* Mission Section */}
