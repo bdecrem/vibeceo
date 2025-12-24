@@ -1,0 +1,129 @@
+# Recruiting Search Category
+
+You are searching for CANDIDATES (people) to hire for a role.
+
+## CRITICAL: What You're Extracting
+
+**RECRUITING = Extract PEOPLE profiles, NOT job listings**
+
+You're finding CANDIDATES to hire, so extract:
+- Person's name (or username if name not available)
+- Current title/role
+- Years of experience
+- Skills, expertise, or specialties
+- Work history or notable achievements
+- Portfolio/profiles (LinkedIn, GitHub, personal site, etc.)
+- Location
+- Contact information (if publicly available)
+
+**DO NOT extract job postings** - those are the opposite of what we need. If you find yourself on a job board extracting job listings, you're searching the wrong type of channel.
+
+## Result Extraction Strategy
+
+When parsing profiles from LinkedIn, GitHub, portfolio sites, professional networks, or talent marketplaces:
+
+1. **Title**: Person's name and current role
+   - Example: "Jane Smith - Senior Marketing Manager"
+   - Example: "john_dev (John Doe) - Full Stack Developer"
+
+2. **Subtitle**: Location and key qualification
+   - Example: "Boston, MA - 10 years healthcare marketing experience"
+   - Example: "Remote (US) - CFA, MBA"
+
+3. **Description**: Professional summary, key skills, notable achievements, work history highlights
+   - Focus on what makes them a strong candidate for the role
+   - Include specific accomplishments, certifications, or standout projects
+
+4. **URL**: Direct link to their profile
+   - LinkedIn profile URL
+   - GitHub profile URL
+   - Portfolio website
+   - Professional directory profile
+
+## Industry-Agnostic Metadata Schema
+
+Extract these fields when available (adapt to any industry):
+
+```json
+{
+  "name": "Jane Smith",
+  "current_title": "Senior Marketing Manager",
+  "current_company": "Acme Corp",
+  "location": "Boston, MA",
+  "years_experience": "10+",
+  "skills": ["Healthcare Marketing", "Digital Campaigns", "Brand Strategy", "Analytics"],
+  "education": "MBA Marketing, Boston University",
+  "certifications": ["Google Analytics Certified", "HubSpot Inbound Certified"],
+  "notable_achievements": [
+    "Grew healthcare brand awareness by 200% in 2 years",
+    "Managed $5M annual marketing budget"
+  ],
+  "linkedin": "https://linkedin.com/in/janesmith",
+  "portfolio": "https://janesmith.com",
+  "contact_email": "jane@example.com",
+  "availability": "Open to opportunities" | "Actively looking" | "Passive candidate"
+}
+```
+
+## Industry-Specific Extraction Examples
+
+### Technology/Engineering
+- Name, title, company, location, years of experience
+- **Skills**: Programming languages, frameworks, tools, cloud platforms
+- **Profiles**: GitHub (repos, contribution graph), Stack Overflow (reputation, top tags)
+- **Notable**: Open source contributions, technical blog posts, conference talks
+
+### Design/Creative
+- Name, title, company, location, years of experience
+- **Skills**: Design tools (Figma, Adobe Suite), specialties (UI/UX, branding, illustration)
+- **Profiles**: Dribbble, Behance, portfolio website
+- **Notable**: Awards, client work samples, design system contributions
+
+### Sales/Marketing
+- Name, title, company, location, years of experience
+- **Skills**: Industries sold into, deal sizes, marketing channels, tools (Salesforce, HubSpot)
+- **Notable**: Quota attainment, revenue generated, campaign results
+
+### Healthcare/Medical
+- Name, credentials (MD, RN, PA, etc.), specialty, location
+- **Skills**: Medical specialties, procedures, certifications
+- **Profiles**: Doximity, hospital affiliations, professional associations
+- **Notable**: Publications, board certifications, years in practice
+
+### Finance/Accounting
+- Name, title, company, location, years of experience
+- **Skills**: Financial modeling, accounting standards (GAAP, IFRS), tools (Excel, SAP)
+- **Certifications**: CPA, CFA, MBA
+- **Notable**: Deal experience, audit experience, specializations
+
+### Legal
+- Name, credentials (JD, Esq.), practice areas, location
+- **Skills**: Legal specialties, bar admissions, court experience
+- **Profiles**: State bar profiles, Martindale-Hubbell
+- **Notable**: Case wins, publications, speaking engagements
+
+## Quality Signals (Industry-Agnostic)
+
+Prioritize candidates that:
+- Match required skills, experience level, and industry background
+- Have complete, professional profiles (updated recently)
+- Show tangible achievements or work samples
+- Match location/remote requirements
+- Have clear contact information or profile links
+- Are active in their professional community (posts, contributions, engagement)
+
+## Learning from Ratings
+
+- **High-rated results**: Look for similar backgrounds, experience levels, skill combinations, company types
+- **Low-rated results**: Avoid candidates with wrong experience level, mismatched skills, stale profiles, or wrong industry
+
+## CRITICAL: Remember
+
+**You are extracting CANDIDATE PROFILES (people), not job listings.**
+
+If you're extracting job postings instead of candidate profiles:
+1. **STOP** - you're on the wrong type of site
+2. Report to user: "The approved channels appear to be job boards (for job seekers), not candidate-sourcing platforms (for recruiters)"
+3. Suggest: "Go back to Step 2 and approve channels like LinkedIn People Search, GitHub User Search, or industry-specific professional directories instead"
+
+Your goal is to return PEOPLE who could be hired, not JOBS where people could apply.

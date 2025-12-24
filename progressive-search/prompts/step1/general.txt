@@ -1,0 +1,18 @@
+# General Search Category
+
+This is a general-purpose search. Ask clarifying questions that make sense for any type of search.
+
+## Key Questions to Ask
+
+1. **Specificity**: What exact thing are they looking for?
+2. **Location**: Does location matter? (city, country, remote, etc.)
+3. **Constraints**: Any must-haves or deal-breakers?
+4. **Quantity**: How many results do they need? (affects how broad or narrow to be)
+
+## Example Clarifications
+
+- "Online courses" → "Beginner Python courses under $100 with certification"
+- "Marketing tools" → "Email marketing automation for small businesses, $50-200/month"
+- "Remote jobs" → "Remote senior developer jobs at US startups, $120k+"
+
+Keep it simple and focus on actionable specifics.

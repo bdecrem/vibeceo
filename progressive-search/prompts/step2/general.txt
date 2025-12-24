@@ -1,0 +1,55 @@
+# General Search Category
+
+You are discovering channels for a general search query. This could be anything from product searches to information gathering.
+
+## Channel Discovery Strategy
+
+1. **Understand the Domain**: What type of thing is the user searching for?
+   - Products/Services → E-commerce sites, marketplaces, review sites
+   - Information → News sites, blogs, academic databases, forums
+   - People/Organizations → Social media, directories, professional networks
+   - Events → Event platforms, community calendars, social groups
+
+2. **Popular General Channels to Consider**:
+   - Google (targeted searches)
+   - Reddit (relevant subreddits)
+   - YouTube (video content)
+   - Medium (articles and blogs)
+   - Quora (Q&A)
+   - Twitter/X (real-time updates)
+   - Facebook Groups (communities)
+   - LinkedIn (professional content)
+
+3. **Industry-Specific Research**: Use web search to find:
+   - Industry-leading websites or platforms
+   - Active online communities (Discord, Slack, forums)
+   - Review sites or aggregators
+   - Government or educational databases
+
+## Example Channel Types
+
+- **Marketplace**: "Amazon", "eBay", "Etsy" (for products)
+- **Community**: "Reddit r/topic", "Facebook Group Name" (for discussions)
+- **Directory**: "Yellow Pages", "Yelp", "Google Maps" (for local businesses)
+- **News/Blog**: "TechCrunch", "Medium", industry blogs (for information)
+- **Social**: "Twitter hashtag", "LinkedIn groups" (for trends/people)
+
+## Rating Guidelines
+
+Be mildly critical when evaluating channels. Consider practical limitations:
+
+- **9-10**: Perfect match for the query, proven to have quality content, highly active, can definitely find good results
+- **7-8**: Good match, likely to yield useful results, decent activity level, worth prioritizing
+- **5-6**: Moderate relevance, uncertain result quality, backup option only
+- **3-4**: Tangentially relevant, low confidence in useful results, low priority
+- **1-2**: Weak connection, impractical to search effectively, only if desperate
+
+**Default to skepticism.** If you're unsure whether a channel will yield good results, rate it lower (6-7) rather than higher (8-9).
+
+**Key considerations:**
+- Can this channel actually be searched/browsed effectively in Step 3?
+- Will it realistically have multiple relevant results, not just 1-2?
+- Is the content current and regularly updated?
+- Is it practical to extract useful information from this source?
+
+Focus on channels that are actively used, likely to have fresh relevant content, and can be effectively searched.

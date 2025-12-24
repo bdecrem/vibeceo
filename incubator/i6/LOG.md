@@ -1,99 +1,98 @@
-# i6: Leadgen Agent
-
-Find qualified sales leads via SMS. Monitors Twitter, Reddit, HN for pain signals and buying intent.
+# i6 - Progressive Search Infrastructure Log
 
 ---
 
-## What This Is
+## 2025-12-23: Progressive Search System Complete
 
-The user describes their product and ideal customer profile (ICP), then the agent:
+**What happened**: Built the complete Progressive Search Agent System from scratch - all 3 steps, all prompts, full end-to-end testing.
 
-1. **Asks clarifying questions** to build a spec (e.g., "B2B SaaS, 20-200 employees, marketing teams struggling with content creation")
+**System Components Built:**
+1. **Step 1 - Clarify Subject** (`step1-clarify.py`)
+   - Conversational refinement of search queries
+   - Category support (leadgen, recruiting, job_search, general)
+   - Command parsing (SAVE_SUBJECT, UPDATE_SUBJECT)
+   - Full testing with recruiting category
 
-2. **Discovers channels** — specific searches or communities where potential customers express pain, ask for recommendations, or show buying intent
+2. **Step 2 - Discover Channels** (`step2-channels.py`)
+   - Autonomous web search via claude-agent-sdk
+   - Channel discovery and rating (1-10 scale)
+   - User approval workflow
+   - Command parsing (SAVE_CHANNELS, UPDATE_CHANNELS)
+   - Full testing with recruiting category
 
-3. **Monitors daily** for new leads matching the ICP
+3. **Step 3 - Execute Search** (`step3-search.py`)
+   - Autonomous browsing of approved channels
+   - Result extraction with structured metadata
+   - Iterative learning from user ratings
+   - Deduplication (checks previous results)
+   - Command parsing (SAVE_RESULTS, UPDATE_RESULTS, ADD_TO_FAVORITES, MARK_WINNER)
+   - Full end-to-end testing with leadgen category
 
-4. **Delivers leads via SMS** with context: who they are, what they said, suggested approach
+**Prompt Architecture:**
+- Base prompts (base_step1.txt, base_step2.txt, base_step3.txt) - shared across all categories
+- Category-specific prompts for: recruiting, leadgen, job_search, general
+- Two-layer system: base + category = final prompt
 
----
+**Key Features Implemented:**
+- **Iterative Learning Loop** - Rate results, request more, agent learns preferences
+- **Category-Agnostic** - Same pipeline works for recruiting, leadgen, job search, etc.
+- **Database-Backed** - All state in Supabase (ps_projects, ps_conversation, ps_channels, ps_results)
+- **Autonomous Web Browsing** - Uses Read/WebSearch tools to visit URLs and extract data
+- **Deduplication** - Agent tracks previous results to avoid duplicates
 
-## Signal Types
+**Testing:**
+- Recruiting test (Step 1 → 2 → 3): Found 5 job listings
+- Leadgen test (Step 1 → 2 → 3): Found 5 B2B SaaS companies with full firmographic data
+- All commands working correctly
+- Iterative refinement working (rate results, request more, agent applies learnings)
 
-Unlike recruiting (which looks at who someone IS), lead gen looks at what someone SAID/DID:
+**Documentation:**
+- Created comprehensive `USAGE.md` with all flags, examples, conversation flows
+- Updated with iterative learning section per user feedback
+- Includes examples for all categories
 
-- **Pain signals:** "Ugh QuickBooks is killing me"
-- **Intent signals:** "Anyone recommend a tool for X?"
-- **Trigger events:** "Just raised Series A"
-- **Competitive signals:** "Switching from [competitor]"
+**Decisions Made:**
+1. **Category Separation** - Recruiting = find PEOPLE (candidates), leadgen = find COMPANIES, job_search = find JOBS. Critical distinction that was initially confused but now clarified in prompts.
+2. **Industry-Agnostic** - Recruiting and leadgen prompts work for any industry (tech, healthcare, legal, etc.), not just tech-focused.
+3. **Two-Layer Prompts** - Keep base prompts generic, category prompts specific. Scales better.
+4. **Auto-Transitions** - Step 3 auto-transitions from 'discovering_channels' to 'searching' status when approved channels exist.
 
-**Critical:** Leads are TIME SENSITIVE. Tweet from today = hot. Tweet from 3 months ago = cold.
+**Outcome**: Complete, tested, documented progressive search system ready for use by incubator agents.
 
----
-
-## Channel Types
-
-- Twitter searches: `"hate [competitor]"`, `"looking for [solution]"`
-- Reddit: r/startups, r/SaaS, industry subreddits with questions
-- ProductHunt: Comments on competitor products (frustrated users)
-- G2/Capterra: Negative reviews of competitors
-- HackerNews: "Ask HN: What do you use for X?"
-
----
-
-## Example Flow
-
-```
-User: LEADS my product helps startups automate bookkeeping
-
-Agent: Bookkeeping automation for startups. Quick Qs:
-(1) Target: Solo founders, Seed, or Series A+?
-(2) Specific industries or all startups?
-
-User: Seed to Series A, SaaS and e-commerce
-
-Agent: Got it. I'd search:
-- Twitter: founders complaining about QuickBooks/Xero
-- Reddit: r/startups bookkeeping threads
-- ProductHunt: accounting tool comment sections
-APPROVE or adjust?
-
-User: APPROVE
-
-[Daily]
-Agent: 3 Hot Leads!
-
-1. @saas_steve - Founder @ MetricsDash (Seed, 5 ppl)
-   Signal: "Spent 3 hours in QuickBooks" (2h ago)
-   Approach: Reply with empathy + offer
-   Contact: DM, steve@metricsdash.io
-```
+**Lessons:**
+- Category-specific prompts are critical - generic doesn't work
+- Iterative learning requires clear high/low rating thresholds (8-10 = good, 1-3 = bad)
+- Deduplication must be explicit in prompts - "check previous results URLs"
+- WebSearch with autonomous agents is powerful but requires clear instructions
 
 ---
 
-## Why This Matters for Token Tank
+## 2025-12-23: i6 Agent Setup
 
-Forge's RivalAlert needs customers. The Leadgen Agent can find them:
-- Monitor for `"manually checking competitor websites"`
-- Monitor for `"Klue too expensive"`
-- Monitor for `"track competitor pricing"`
+**What happened**: Set up i6 as infrastructure agent for Token Tank incubator.
 
-The product fits the exact use case the agent was designed for.
+**Decisions Made:**
+1. **i6 is infrastructure, not a competitor** - Provides leadgen/search capabilities to other agents
+2. **Documentation-first** - Created CLAUDE.md with usage examples and integration patterns
+3. **Archived planning docs** - Moved old leadgen-agent-plan.md and PROGRESSIVE-SEARCH-PLAN.md to archives/
+4. **Created TODO.md** - Clean list of remaining tasks (mostly polish and testing edge cases)
+
+**Files Created:**
+- `TODO.md` - Remaining tasks for progressive search improvements and i6 integration
+- `CLAUDE.md` - Purpose, usage guide, integration patterns, learnings
+- `LOG.md` - This file
+- `usage.md` - Will track time/token usage (next step)
+
+**Next Steps:**
+1. Create usage.md for tracking
+2. Answer clarifying questions about i6's role (see TODO.md)
+3. Document integration pattern for other agents
+4. Test with incubator business builders for lead generation
+
+**Purpose Defined:**
+- i6 operates the Progressive Search system
+- Finds qualified leads for incubator product ideas
+- Provides reusable infrastructure for any search category
+- NOT competing - powering the incubator
 
 ---
-
-## Status
-
-**Phase:** Architecture planned
-
-Based on the recruiting agent at `sms-bot/agents/recruiting/`. Ready for implementation.
-
----
-
-## Key Files
-
-- `leadgen-agent-plan.md` — Full architecture and implementation plan
-
----
-
-*Infrastructure project. Not competing — powering the incubator.*

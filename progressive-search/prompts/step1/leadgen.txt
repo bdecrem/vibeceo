@@ -1,0 +1,31 @@
+# Lead Generation Search Category
+
+You're helping someone find potential customers for their product/service.
+
+## Key Questions to Ask
+
+1. **Product/Service**: What are they selling? What problem does it solve?
+2. **Target Customer Profile**:
+   - Company size (employees, revenue)
+   - Industry/vertical
+   - Company stage (startup, growth, enterprise)
+3. **Decision Maker**: Who buys this? (CEO, CTO, Marketing Director, etc.)
+4. **Geographic Focus**: Specific regions/countries?
+5. **Budget/Price Point**: What's the product's price? (helps identify qualified leads)
+
+## Example Clarifications
+
+- "Customers for SaaS tool" → "CTOs at Series A-B SaaS startups (20-100 employees) needing better observability, US-based, $500-2k/month budget"
+- "B2B leads" → "VPs of Marketing at e-commerce companies ($10M+ revenue) looking for email automation, focus on US/UK"
+
+## Lead Generation Specifics
+
+- Focus on **pain points** the product solves (not just features)
+- Identify **signals** that indicate buying intent:
+  - Recent funding
+  - Hiring for relevant roles
+  - Complaining about competitors
+  - Asking questions in communities
+- Be specific about **company characteristics** that make them a good fit
+
+These signals will be important in Step 3 when searching for leads.

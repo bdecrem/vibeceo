@@ -1,0 +1,89 @@
+# Lead Generation Search Category
+
+You are discovering channels to find business leads, potential customers, or partnership opportunities.
+Note: This doesn't mean you are looking for businesses to reach out to, but for websites/sources that you
+can find a slew of potential businesses/customers to search for in the next step.
+
+## Channel Discovery Strategy
+
+1. **Business Directories**: Search for directories specific to:
+   - The industry vertical (SaaS, e-commerce, manufacturing, etc.)
+   - Company size (startups, SMBs, enterprise)
+   - Location (city/region business directories)
+   - Funding stage (if targeting startups)
+
+2. **Professional Networks**:
+   - LinkedIn (company pages, groups, Sales Navigator)
+   - Industry-specific professional associations
+   - Chamber of Commerce directories
+   - Trade association member lists
+
+3. **Startup/Tech Databases** (if targeting tech companies):
+   - Crunchbase (funding data, company info)
+   - AngelList (startups, investors)
+   - Product Hunt (new products, companies)
+   - Built In (tech companies by location)
+   - Y Combinator company directory
+
+4. **Review & Listing Sites**:
+   - G2, Capterra, TrustRadius (B2B software)
+   - Yelp, Google Business (local businesses)
+   - Industry-specific review sites
+
+5. **Company Discovery**:
+   - "Best [Industry] Companies" lists
+   - Award winners and "Top X" articles
+   - Industry news sites and press releases
+   - Conference attendee/sponsor lists
+
+6. **Social & Community**:
+   - Twitter/X lists and hashtags
+   - Reddit communities (relevant subreddits)
+   - Slack/Discord communities
+   - Facebook Groups (B2B groups)
+
+7. **Government & Public Data**:
+   - Business registrations and licenses
+   - Government contractor databases
+   - Public company filings
+
+## Example Channels by Lead Type
+
+**B2B SaaS Leads**:
+- Crunchbase, AngelList, Product Hunt, G2, Capterra
+- LinkedIn Sales Navigator, Twitter
+
+**Local Business Leads**:
+- Yelp, Google Business, Chamber of Commerce
+- Industry-specific directories, local business journals
+
+**Enterprise Leads**:
+- LinkedIn, Fortune/Forbes lists, industry publications
+- Conference attendee lists, trade association directories
+
+**Startup Leads**:
+- Crunchbase, AngelList, Y Combinator, Product Hunt
+- Startup news sites (TechCrunch, VentureBeat)
+
+**E-commerce Leads**:
+- Shopify Exchange, Built With (tech stack detection)
+- Amazon sellers, Etsy shops, marketplace directories
+
+## Rating Guidelines
+
+Be mildly critical when evaluating channels. Consider practical limitations:
+
+- **9-10**: Highly targeted, proven to have fresh data, decision-maker info readily available, can be effectively searched/browsed
+- **7-8**: Good targeting, likely to have useful results, worth prioritizing, searchable by relevant criteria
+- **5-6**: Broader directory but filterable, uncertain result quality, backup option only
+- **3-4**: General listing with limited filtering, likely sparse useful results, low priority
+- **1-2**: Minimal targeting, outdated data, impractical to search effectively
+
+**Priority**: Industry-specific databases > Professional networks > Review sites > General directories > Social media
+
+Focus on channels where:
+1. Target companies are actively listed or engaged
+2. Contact information or decision-maker details are available
+3. Data is current and regularly updated
+4. You can filter by relevant criteria (industry, size, location, etc.)
+5. **The channel can actually be browsed/searched effectively in Step 3** (avoid channels requiring complex logins or manual processes)
