@@ -21,6 +21,7 @@ import { registerTokenTankDailyJob } from "../../agents/token-tank/index.js"; //
 import { registerTokenshotsDailyJob } from "../../agents/tokenshots/index.js"; // Tokenshots daily AI research podcast
 import { registerRivalAlertDailyJob } from "../../agents/rivalalert/index.js"; // RivalAlert competitor monitoring (i1/Forge)
 import { registerAmberAwarenessJobs } from "../../agents/amber/index.js"; // Amber awareness - scans environment twice daily
+import { registerAITwitterDailyJob } from "../../agents/ai-twitter-daily/index.js"; // AI Twitter Daily - curated AI researcher tweets
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -68,6 +69,7 @@ export async function startSmsBot(): Promise<void> {
     registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT
     registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
+    registerAITwitterDailyJob(twilioClient); // AI TWITTER DAILY - Curated AI researcher tweets at 8am PT
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
