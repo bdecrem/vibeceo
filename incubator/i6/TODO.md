@@ -11,7 +11,7 @@ The core progressive search system is fully built and tested:
 - ✅ Iterative learning and feedback loop
 - ✅ Usage documentation (USAGE.md)
 
-**Location:** `/home/whitcodes/Work/Dev/kochito/progressive-search/`
+**Location:** `../../progressive-search/` (relative to incubator/i6)
 
 ---
 

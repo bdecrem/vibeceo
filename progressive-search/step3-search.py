@@ -11,7 +11,7 @@ Usage:
 Requirements:
     - Project must exist and have status 'searching'
     - Must have approved channels from Step 2
-    - CLAUDE_CODE_OAUTH_TOKEN environment variable must be set for web browsing
+    - CLAUDE_AGENT_SDK_TOKEN environment variable must be set for web browsing
 """
 
 import os
@@ -52,9 +52,9 @@ Examples:
 
 Environment Variables Required:
   ANTHROPIC_API_KEY          - Your Anthropic API key
-  CLAUDE_CODE_OAUTH_TOKEN    - OAuth token for autonomous agent web browsing
+  CLAUDE_AGENT_SDK_TOKEN     - Anthropic API key with WebSearch permissions for autonomous agents
   SUPABASE_URL               - Your Supabase project URL
-  SUPABASE_PUBLISHABLE_KEY   - Your Supabase publishable API key
+  SUPABASE_ANON_KEY          - Your Supabase anon API key
         """
     )
 
@@ -79,10 +79,10 @@ def validate_environment() -> Tuple[bool, Optional[str]]:
         'SUPABASE_URL': 'Supabase project URL',
     }
 
-    # Check for either old or new Supabase key format
-    supabase_key = os.getenv('SUPABASE_PUBLISHABLE_KEY') or os.getenv('SUPABASE_KEY')
+    # Check for Supabase anon key
+    supabase_key = os.getenv('SUPABASE_ANON_KEY')
     if not supabase_key:
-        return False, "Missing SUPABASE_PUBLISHABLE_KEY environment variable"
+        return False, "Missing SUPABASE_ANON_KEY environment variable"
 
     missing = []
     for var, description in required_vars.items():
@@ -93,21 +93,21 @@ def validate_environment() -> Tuple[bool, Optional[str]]:
         error_msg = "Missing required environment variables:\n" + "\n".join(missing)
         return False, error_msg
 
-    # Check for OAuth token (needed for web browsing)
-    if not os.getenv('CLAUDE_CODE_OAUTH_TOKEN'):
+    # Check for agent SDK token (needed for web browsing)
+    if not os.getenv('CLAUDE_AGENT_SDK_TOKEN'):
         warning = """
-⚠️  Warning: CLAUDE_CODE_OAUTH_TOKEN not set
+⚠️  Warning: CLAUDE_AGENT_SDK_TOKEN not set
 
-Search execution requires web browsing capabilities, which need the OAuth token.
+Search execution requires web browsing capabilities, which need an Anthropic API key with WebSearch permissions.
 
 Without it, the agent cannot:
 - Visit channel URLs to extract results
 - Read web pages for job listings, leads, etc.
 - Discover new opportunities
 
-To get an OAuth token:
-1. Contact Anthropic support or check the Claude Agent SDK documentation
-2. Add it to your .env file: CLAUDE_CODE_OAUTH_TOKEN=your-token-here
+To configure:
+1. Get an Anthropic API key with WebSearch permissions enabled
+2. Add it to sms-bot/.env.local: CLAUDE_AGENT_SDK_TOKEN=your-api-key-here
 
 Proceeding anyway, but search execution may fail or return limited results.
 """
@@ -166,11 +166,11 @@ async def call_autonomous_agent_async(system_prompt: str, messages: List[Dict[st
             "message": "Cannot perform autonomous web browsing without claude-agent-sdk"
         })
 
-    oauth_token = os.getenv('CLAUDE_CODE_OAUTH_TOKEN')
-    if not oauth_token:
+    agent_token = os.getenv('CLAUDE_AGENT_SDK_TOKEN')
+    if not agent_token:
         return json.dumps({
-            "error": "CLAUDE_CODE_OAUTH_TOKEN not set",
-            "message": "Cannot perform web browsing without OAuth token"
+            "error": "CLAUDE_AGENT_SDK_TOKEN not set",
+            "message": "Cannot perform web browsing without agent SDK token"
         })
 
     try:

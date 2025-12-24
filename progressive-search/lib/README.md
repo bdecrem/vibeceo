@@ -81,11 +81,13 @@ final_prompt = base_step1.txt + step1/leadgen.txt
 
 ## Environment Variables Required
 
+These are loaded from `sms-bot/.env.local`:
+
 ```bash
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_PUBLISHABLE_KEY=your-publishable-key
+SUPABASE_ANON_KEY=your-anon-key
 ANTHROPIC_API_KEY=your-anthropic-key
-CLAUDE_CODE_OAUTH_TOKEN=your-claude-oauth-token # for autonomous web search
+CLAUDE_AGENT_SDK_TOKEN=your-anthropic-key-with-websearch # Anthropic API key with WebSearch permissions
 ```
 
 ## Example Usage

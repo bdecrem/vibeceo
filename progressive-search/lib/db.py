@@ -15,17 +15,17 @@ from supabase import create_client, Client
 # Load environment variables from .env file
 from dotenv import load_dotenv
 
-# Find .env file (look in progressive-search directory)
-env_path = Path(__file__).parent.parent / '.env'
+# Find .env file (look in sms-bot directory)
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
 load_dotenv(env_path)
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv('SUPABASE_URL')
-# Try new publishable key first, fall back to legacy anon key
-SUPABASE_KEY = os.getenv('SUPABASE_PUBLISHABLE_KEY') or os.getenv('SUPABASE_KEY')
+# Use anon key from sms-bot/.env.local
+SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_PUBLISHABLE_KEY environment variable")
+    raise ValueError("Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variable")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 

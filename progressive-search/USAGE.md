@@ -14,7 +14,7 @@ Each step uses Claude AI agents to guide the user through the process and execut
 
 ### Environment Variables Required
 
-Create a `.env` file with the following:
+The progressive-search scripts use environment variables from `sms-bot/.env.local`. Ensure the following variables are set:
 
 ```bash
 # Anthropic API (required for all steps)
@@ -22,10 +22,11 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 # Supabase Database (required for all steps)
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_PUBLISHABLE_KEY=eyJ...
+SUPABASE_ANON_KEY=sb_publishable_...
 
-# Claude Agent SDK OAuth Token (required for Steps 2 & 3)
-CLAUDE_CODE_OAUTH_TOKEN=token-...
+# Claude Agent SDK Token (required for Steps 2 & 3)
+# This is an Anthropic API key with WebSearch permissions enabled
+CLAUDE_AGENT_SDK_TOKEN=sk-ant-...
 ```
 
 ### Dependencies
@@ -706,13 +707,13 @@ refining_query → discovering_channels → searching → completed
 
 ## Troubleshooting
 
-### Error: "CLAUDE_CODE_OAUTH_TOKEN not set"
+### Error: "CLAUDE_AGENT_SDK_TOKEN not set"
 
 **Problem:** Steps 2 & 3 require web search/browsing capabilities
 
-**Solution:** Get an OAuth token from Anthropic and add to `.env`:
+**Solution:** Get an Anthropic API key with WebSearch permissions enabled and add to `sms-bot/.env.local`:
 ```bash
-CLAUDE_CODE_OAUTH_TOKEN=your-token-here
+CLAUDE_AGENT_SDK_TOKEN=your-api-key-here
 ```
 
 ### Error: "Project not found"

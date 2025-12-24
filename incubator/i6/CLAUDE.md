@@ -29,7 +29,7 @@ Use the `/i6` slash command to activate this agent. i6 will load its context and
 
 ## Progressive Search System
 
-**Location:** `/home/whitcodes/Work/Dev/kochito/progressive-search/`
+**Location:** `../../progressive-search/` (relative to this agent folder)
 
 **IMPORTANT:** For complete usage instructions, examples, flags, and troubleshooting, **read `progressive-search/USAGE.md`** before using the system. That file contains comprehensive documentation with real conversation flows, all command options, and category-specific examples.
 
