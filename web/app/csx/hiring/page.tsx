@@ -333,7 +333,7 @@ export default function HiringPage() {
               AI Product Research Residency
             </h2>
             <p className="csx-hero-subtitle">
-              The AI Product Research Resident will be a thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. <Link href="/csx/about" className="csx-link">We've done this before</Link>. Now we need you for 10 weeks to build, research, and shape what comes next.
+              The AI Product Research Resident will be a thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. We've done this before. Now we need you for 10 weeks to build, research, and shape what comes next.
             </p>
           </section>
 
