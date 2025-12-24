@@ -6,9 +6,13 @@
  */
 
 import { supabase } from '../../lib/supabase.js';
-import { storeAgentReport, type StoredReportMetadata } from '../report-storage.js';
+import { storeAgentReport, getLatestReportMetadata, type StoredReportMetadata } from '../report-storage.js';
 import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/shortlink-service.js';
 import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
+import { buildReportViewerUrl } from '../../lib/utils/report-viewer-link.js';
+import { registerDailyJob } from '../../lib/scheduler/index.js';
+import { getAgentSubscribers, markAgentReportSent } from '../../lib/agent-subscriptions.js';
+import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import { v5 as uuidv5 } from 'uuid';
 import OpenAI from 'openai';
 import ElevenLabsProvider from '../crypto-research/ElevenLabsProvider.js';
@@ -18,6 +22,11 @@ import { analyzeTweets, generateMarkdownReport, generateSmsSummary, type Analysi
 // Constants
 const AGENT_SLUG = 'ai-twitter-daily';
 const TOPIC_NAMESPACE = uuidv5.URL;
+
+// Scheduler config
+const AI_TWITTER_JOB_HOUR = Number(process.env.AI_TWITTER_REPORT_HOUR || 8);
+const AI_TWITTER_JOB_MINUTE = Number(process.env.AI_TWITTER_REPORT_MINUTE || 0);
+const BROADCAST_DELAY_MS = Number(process.env.AI_TWITTER_BROADCAST_DELAY_MS || 150);
 const TOPIC_SEED = 'ai-twitter-daily-topic';
 const DEFAULT_TOPIC_ID = process.env.AI_TWITTER_TOPIC_ID || uuidv5(TOPIC_SEED, TOPIC_NAMESPACE);
 
@@ -465,4 +474,170 @@ function formatDate(isoDate: string): string {
  */
 export function getTopicId(): string {
   return DEFAULT_TOPIC_ID;
+}
+
+/**
+ * Build SMS message for AI Twitter Daily broadcast
+ */
+async function buildAITwitterMessage(
+  result: AITwitterDailyResult,
+  recipient: string
+): Promise<string> {
+  const lines: string[] = [];
+
+  // Header with date
+  const dateFormatted = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'America/Los_Angeles',
+  }).format(new Date(result.date + 'T12:00:00Z'));
+
+  lines.push(`🐦 AI Twitter Daily — ${dateFormatted}`);
+
+  // Summary
+  if (result.smsSummary) {
+    lines.push(result.smsSummary);
+  } else if (result.analysis.summary) {
+    const summary = result.analysis.summary.substring(0, 200);
+    lines.push(summary);
+  }
+
+  lines.push('');
+
+  // Get or create proper links
+  let reportLink: string | null = null;
+  let podcastLink: string | null = null;
+
+  // Report link via report-viewer
+  const reportMetadata = await getLatestReportMetadata(AGENT_SLUG);
+  if (reportMetadata) {
+    const viewerUrl = buildReportViewerUrl({ path: reportMetadata.reportPath });
+    try {
+      reportLink = await createShortLink(viewerUrl, {
+        context: 'ai-twitter-daily',
+        createdFor: recipient,
+        createdBy: 'sms-bot',
+      });
+    } catch {
+      reportLink = viewerUrl;
+    }
+  }
+
+  // Podcast link via music-player
+  if (result.podcastShortLink) {
+    podcastLink = normalizeShortLinkDomain(result.podcastShortLink);
+  } else if (result.podcastUrl) {
+    const playerUrl = buildMusicPlayerUrl({
+      src: result.podcastUrl,
+      title: `AI Twitter Daily — ${dateFormatted}`,
+      autoplay: true,
+    });
+    try {
+      podcastLink = await createShortLink(playerUrl, {
+        context: 'ai-twitter-daily',
+        createdFor: recipient,
+        createdBy: 'sms-bot',
+      });
+    } catch {
+      podcastLink = playerUrl;
+    }
+  }
+
+  if (podcastLink) {
+    lines.push(`🎧 Listen: ${podcastLink}`);
+  }
+
+  if (reportLink) {
+    lines.push(`📄 Read: ${reportLink}`);
+  }
+
+  return lines.join('\n');
+}
+
+/**
+ * Broadcast AI Twitter Daily to all subscribers
+ */
+async function broadcastAITwitterDaily(
+  result: AITwitterDailyResult,
+  twilioClient: TwilioClient
+): Promise<void> {
+  try {
+    const subscribers = await getAgentSubscribers(AGENT_SLUG);
+
+    if (!subscribers.length) {
+      console.log('[AI Twitter Daily] Broadcast: no active subscribers.');
+      return;
+    }
+
+    const fromNumber = process.env.TWILIO_PHONE_NUMBER;
+    if (!fromNumber) {
+      console.error('[AI Twitter Daily] Cannot broadcast: TWILIO_PHONE_NUMBER not configured');
+      return;
+    }
+
+    let sent = 0;
+    let skipped = 0;
+
+    for (const subscriber of subscribers) {
+      // Check if already sent today (dedup)
+      if (subscriber.last_sent_at) {
+        const lastSent = new Date(subscriber.last_sent_at);
+        const hoursSince = (Date.now() - lastSent.getTime()) / (1000 * 60 * 60);
+        if (hoursSince < 20) {
+          skipped++;
+          continue;
+        }
+      }
+
+      try {
+        const message = await buildAITwitterMessage(result, subscriber.phone_number);
+
+        await twilioClient.messages.create({
+          body: message,
+          to: subscriber.phone_number,
+          from: fromNumber,
+        });
+
+        await markAgentReportSent(subscriber.phone_number, AGENT_SLUG);
+        sent++;
+
+        // Rate limit delay
+        await new Promise((resolve) => setTimeout(resolve, BROADCAST_DELAY_MS));
+      } catch (error) {
+        console.error(`[AI Twitter Daily] Failed to send to ${subscriber.phone_number}:`, error);
+      }
+    }
+
+    console.log(`[AI Twitter Daily] Broadcast complete: ${sent} sent, ${skipped} skipped (already received)`);
+  } catch (error) {
+    console.error('[AI Twitter Daily] Broadcast failed:', error);
+  }
+}
+
+/**
+ * Register daily job for AI Twitter Daily
+ */
+export function registerAITwitterDailyJob(twilioClient: TwilioClient): void {
+  registerDailyJob({
+    name: 'ai-twitter-daily',
+    hour: AI_TWITTER_JOB_HOUR,
+    minute: AI_TWITTER_JOB_MINUTE,
+    timezone: 'America/Los_Angeles',
+    run: async () => {
+      console.log('[AI Twitter Daily] Starting scheduled run...');
+      try {
+        const result = await runAITwitterDaily();
+        console.log(`[AI Twitter Daily] Report generated for ${result.date}: ${result.tweetCount} tweets, ${result.analysis.topicGroups.length} topics`);
+
+        if (result.tweetCount > 0) {
+          await broadcastAITwitterDaily(result, twilioClient);
+        } else {
+          console.log('[AI Twitter Daily] No tweets found, skipping broadcast');
+        }
+      } catch (error) {
+        console.error('[AI Twitter Daily] Scheduled run failed:', error);
+      }
+    },
+  });
 }

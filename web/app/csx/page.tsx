@@ -185,6 +185,9 @@ function CSXContent() {
         }
 
         .terminal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
           margin-bottom: 16px;
           padding-bottom: 12px;
           border-bottom: 1px dotted #666;
@@ -419,7 +422,8 @@ function CSXContent() {
       <div className="terminal-page" onClick={handleClick}>
         <div className="terminal-box">
           <div className="terminal-header">
-            <span className="terminal-header-title">CTRL SHIFT</span> <span style={{ verticalAlign: 'middle' }}>•</span> LONG HORIZON LAB
+            <span className="terminal-header-title">CTRL SHIFT <span style={{ color: '#aaa' }}>LAB</span></span>
+            <span style={{ color: '#8b8b8b' }}>LONG HORIZON BUILD</span>
           </div>
 
           <div className="terminal-body">

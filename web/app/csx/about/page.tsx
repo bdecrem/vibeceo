@@ -58,6 +58,42 @@ const bijanBio = {
   ],
 }
 
+const markBio = {
+  name: 'Mark Mayo',
+  bio: `Mark, a CTRL SHIFT founding advisor, is a systems and deep tech builder. He has spent his career working on bedrock technologies that make the modern Internet work.`,
+  highlights: [
+    {
+      label: 'Mozilla',
+      text: 'As Chief Product Officer, Mark led the Firefox product line and platform stack. Under his leadership, Mozilla launched the Rust programming language and the reference designs for WebAssembly. He also led Future Products and cofounded Mozilla Builders.',
+    },
+    {
+      label: 'Joyent',
+      text: 'As CTO, Mark scaled the company from a dozen engineers to over a hundred, while incubating Node.js and container technologies that reshaped how the Internet runs applications.',
+    },
+  ],
+  links: [
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/markmayo' },
+  ],
+}
+
+const roxiBio = {
+  name: 'Roxi Wen',
+  bio: `Roxi, a CTRL SHIFT founding advisor, is a results-driven global business leader with over 20 years of experience across finance and operations. She helps shape our approach to building a new kind of impact portfolio.`,
+  highlights: [
+    {
+      label: 'Mozilla',
+      text: 'Roxi spent two and a half years at Mozilla as its CFO, driving operational excellence across the organization.',
+    },
+    {
+      label: 'Now',
+      text: 'She currently serves as an Operating Partner at Insight Partners and Faculty & Mentor at PE-Xcelerate, while sitting on the Advisory Board at Born Capital. Previously CFO at Invitae.',
+    },
+  ],
+  links: [
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/roxiwen' },
+  ],
+}
+
 function PersonCard({ person }: { person: typeof bartBio }) {
   return (
     <div className="csx-person">
@@ -290,6 +326,8 @@ export default function AboutPage() {
             <h2 className="csx-section-label">ABOUT US</h2>
             <PersonCard person={bartBio} />
             <PersonCard person={bijanBio} />
+            <PersonCard person={markBio} />
+            <PersonCard person={roxiBio} />
           </section>
 
           {/* Back Link */}

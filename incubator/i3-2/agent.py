@@ -55,6 +55,8 @@ from config import (
     RESEARCH_COOLDOWN_MINUTES,
     RESEARCH_COOLDOWN_PRICE_OVERRIDE,
     NEWS_SCAN_INTERVAL_MINUTES,
+    ETF_SYMBOLS,
+    ETF_200MA_BYPASS_RSI,
     get_position_size,
     print_config,
 )
@@ -491,6 +493,9 @@ If nothing major, respond:
             # Add trend filter settings to thresholds
             thresholds["REQUIRE_UPTREND"] = REQUIRE_UPTREND
             thresholds["UPTREND_MA_PERIOD"] = UPTREND_MA_PERIOD
+            # ETF exception - ETFs bypass 200MA filter at extreme oversold
+            thresholds["ETF_SYMBOLS"] = ETF_SYMBOLS
+            thresholds["ETF_200MA_BYPASS_RSI"] = ETF_200MA_BYPASS_RSI
 
             watchlist_signals = {}
             for symbol in watchlist:

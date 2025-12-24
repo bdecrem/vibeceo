@@ -548,6 +548,181 @@ export async function searchTweets(query: string, maxResults: number = 10): Prom
   }
 }
 
+export interface ListMember {
+  id: string;
+  username: string;
+  name: string;
+  description?: string;
+}
+
+export interface ListMembersResult {
+  success: boolean;
+  members?: ListMember[];
+  error?: string;
+  nextToken?: string;
+}
+
+export interface UserListsResult {
+  success: boolean;
+  lists?: Array<{ id: string; name: string; memberCount: number }>;
+  error?: string;
+}
+
+/**
+ * Get lists owned by a user
+ * @param username - Twitter username (without @)
+ */
+export async function getUserLists(username: string): Promise<UserListsResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return { success: false, error: 'Twitter credentials not configured' };
+  }
+
+  try {
+    // First get user ID from username
+    const userUrl = `https://api.twitter.com/2/users/by/username/${username}`;
+    const userAuthHeader = generateOAuthHeader('GET', userUrl);
+
+    const userResponse = await fetch(userUrl, {
+      method: 'GET',
+      headers: { 'Authorization': userAuthHeader },
+    });
+
+    const userData = await userResponse.json();
+    if (!userResponse.ok || !userData.data?.id) {
+      return { success: false, error: `Could not find user: ${username}` };
+    }
+
+    const userId = userData.data.id;
+
+    // Now get their owned lists
+    const queryParams: Record<string, string> = {
+      'list.fields': 'member_count,description',
+    };
+
+    const baseUrl = `https://api.twitter.com/2/users/${userId}/owned_lists`;
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: { 'Authorization': authHeader },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Get lists failed:', data);
+      return { success: false, error: data.detail || JSON.stringify(data) };
+    }
+
+    const lists = (data.data || []).map((list: any) => ({
+      id: list.id,
+      name: list.name,
+      memberCount: list.member_count || 0,
+    }));
+
+    return { success: true, lists };
+  } catch (error) {
+    console.error('[Twitter] Get lists error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Get members of a Twitter list
+ * @param listId - Twitter list ID
+ * @param maxResults - Number of members to fetch per page (default 100, max 100)
+ * @param paginationToken - Token for next page
+ */
+export async function getListMembers(
+  listId: string,
+  maxResults: number = 100,
+  paginationToken?: string
+): Promise<ListMembersResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return { success: false, error: 'Twitter credentials not configured' };
+  }
+
+  try {
+    const queryParams: Record<string, string> = {
+      max_results: Math.min(maxResults, 100).toString(),
+      'user.fields': 'username,name,description',
+    };
+    if (paginationToken) {
+      queryParams['pagination_token'] = paginationToken;
+    }
+
+    const baseUrl = `https://api.twitter.com/2/lists/${listId}/members`;
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: { 'Authorization': authHeader },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Get list members failed:', data);
+      return { success: false, error: data.detail || JSON.stringify(data) };
+    }
+
+    const members: ListMember[] = (data.data || []).map((user: any) => ({
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      description: user.description,
+    }));
+
+    console.log(`[Twitter] Fetched ${members.length} list members`);
+
+    return {
+      success: true,
+      members,
+      nextToken: data.meta?.next_token,
+    };
+  } catch (error) {
+    console.error('[Twitter] Get list members error:', error);
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+  }
+}
+
+/**
+ * Get ALL members of a Twitter list (handles pagination)
+ * @param listId - Twitter list ID
+ */
+export async function getAllListMembers(listId: string): Promise<ListMembersResult> {
+  const allMembers: ListMember[] = [];
+  let nextToken: string | undefined;
+
+  do {
+    const result = await getListMembers(listId, 100, nextToken);
+    if (!result.success) {
+      // If we hit rate limits but have some members, return what we have
+      if (allMembers.length > 0) {
+        console.log(`[Twitter] Rate limited after ${allMembers.length} members, returning partial results`);
+        return { success: true, members: allMembers };
+      }
+      return result;
+    }
+    allMembers.push(...(result.members || []));
+    nextToken = result.nextToken;
+
+    // Rate limit: wait 15s between pages to avoid 429
+    if (nextToken) {
+      console.log(`[Twitter] Waiting 15s before next page (have ${allMembers.length} members)...`);
+      await new Promise(resolve => setTimeout(resolve, 15000));
+    }
+  } while (nextToken);
+
+  return { success: true, members: allMembers };
+}
+
 /**
  * Reply to a specific tweet
  * @param text - Reply text

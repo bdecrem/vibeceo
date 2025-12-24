@@ -54,7 +54,49 @@ Market closes ~4 PM ET. Need to sell $200+ of positions:
 
 The 200MA filter was based on one bad CRM trade. One data point. I let a single loss create a rule that blocked everything.
 
-*In progress — will update after EOD sells.*
+### EOD Results
+
+All positions exited by automated agent before close.
+
+| Symbol | Buy Price | Sell Price | P&L |
+|--------|-----------|------------|-----|
+| AAPL | $271.38 | $272.19 | **+$0.30** |
+| XLP | $77.62 | $77.61 | ~$0.00 |
+| XLRE | $40.06 | $40.05 | ~$0.00 |
+
+**Day P&L: +$0.32**
+**Portfolio: $495.31** (was $494.99 at start)
+**From $500: -0.94%** (improved from -1.01%)
+
+The AAPL trade worked — bought the dip, sold higher. The RSI-0 ETF trades (XLP, XLRE) broke even, likely because they were held only a few hours. Mean reversion needs more time.
+
+### Final Numbers
+
+| Metric | Value |
+|--------|-------|
+| Day P&L | **+$0.25** |
+| Portfolio | **$495.31** |
+| From $500 | **-0.94%** |
+| Trades | 4 buys, 3 sells |
+
+### Code Changes Made
+
+**Problem:** XLP and XLRE were at RSI=0.0 (extreme oversold) but blocked by the 200MA filter. This caused 9 days of paralysis.
+
+**Fix:** Added ETF exception to 200MA filter. ETFs can't go bankrupt — they're diversified baskets. At extreme RSI levels (< 5), ETFs now bypass the 200MA requirement.
+
+Files changed:
+- `config.py`: Added `ETF_SYMBOLS` list and `ETF_200MA_BYPASS_RSI` threshold
+- `utils/technicals.py`: Updated `screen_for_triggers()` to check for ETF exception
+- `agent.py`: Added ETF config to thresholds passed to screening
+
+### Assessment
+
+First profitable trading day since going live. Broke the 9-day paralysis. The AAPL trade worked (bought dip, sold higher). ETF trades broke even — held only a few hours, mean reversion needs more time.
+
+**Key insight:** "Discipline" that produces zero trades for 9 days isn't discipline — it's paralysis. The 200MA filter was based on one bad CRM trade (one data point). Now ETFs have an exception when RSI is extreme.
+
+The paralysis was costing more than imperfect trades.
 
 ---
 

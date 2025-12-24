@@ -275,9 +275,11 @@ export default function CSXLinksPage() {
         <div className="csx-container">
           {/* Header */}
           <header className="csx-header">
-            <h1 className="csx-title">
-              CTRL SHIFT <span className="csx-title-x">LAB</span>
-            </h1>
+            <Link href="/csx/entry-lf">
+              <h1 className="csx-title">
+                CTRL SHIFT <span className="csx-title-x">LAB</span>
+              </h1>
+            </Link>
             <nav className="csx-header-nav">
               <Link href="/csx/hiring" className="csx-header-link">
                 Hiring

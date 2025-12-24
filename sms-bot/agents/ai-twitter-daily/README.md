@@ -124,15 +124,17 @@ Add more via `AIT ADD @handle` or direct DB insert.
 
 ## Scheduling
 
-Not yet scheduled. Run manually with `AIT RUN` or add to `sms-bot/lib/scheduler/index.ts`:
+**Registered and deployed.** Runs at 8:00 AM PT daily via `registerAITwitterDailyJob()` in `bot.ts`.
 
-```typescript
-// Example: 8 AM PT daily
-scheduleJob('ai-twitter-daily', '0 8 * * *', async () => {
-  await runAITwitterDaily();
-  await broadcastToSubscribers('ai-twitter-daily');
-});
-```
+Environment variable overrides:
+- `AI_TWITTER_REPORT_HOUR` — Hour to run (default: 8)
+- `AI_TWITTER_REPORT_MINUTE` — Minute to run (default: 0)
+- `AI_TWITTER_BROADCAST_DELAY_MS` — Delay between SMS sends (default: 150ms)
+
+The job:
+1. Runs `runAITwitterDaily()` to fetch, analyze, generate report + podcast
+2. Calls `broadcastAITwitterDaily()` to send to all subscribers
+3. Uses 20-hour dedup window to prevent double sends
 
 ## Related Files
 

@@ -1,0 +1,80 @@
+describe these 2 things, for use on another machine & code agent: (1) how do we run claude-agent-sdk with regards to (i) where the claude-agent-sdk library lives etc (ii) where and how we call the OAUTH token for claude-agent-sdk (2) tell me how we use pythong on this machine: what's the filepath, the version, do we use a venv etc etc. CONTEXT: OTHER DEV is working on Linus and i wnat them to deliver PRs taht just run on this machine
+
+ 1. Claude Agent SDK Setup
+
+  Where the Library Lives
+
+  claude-agent-sdk==0.1.4 (or 0.1.6)
+  - This machine: Global install in /opt/homebrew/lib/python3.13/site-packages/
+  - Incubator agents (i3-2, etc.): Each has its own venv/ with local installs
+
+  Authentication (CRITICAL)
+
+  # ✅ CORRECT - Use a REGULAR API key
+  export ANTHROPIC_API_KEY=sk-ant-api03-...
+
+  # ❌ WRONG - OAuth tokens DON'T work with SDK
+  export ANTHROPIC_API_KEY=sk-ant-oat01-...
+
+  The SDK spawns the claude CLI binary internally. That CLI requires a regular API key from console.anthropic.com, NOT an OAuth token.
+
+  How to Call
+
+  from claude_agent_sdk import ClaudeAgentOptions, query
+
+  options = ClaudeAgentOptions(
+      model="claude-sonnet-4-5-20250929",
+      permission_mode="acceptEdits",
+      allowed_tools=["WebSearch", "Read", "Write"]
+  )
+
+  async for message in query(prompt="Your task", options=options):
+      print(message)
+
+  ---
+  2. Python Setup on This Machine
+
+  Version & Path
+
+  Python 3.13.9
+  /opt/homebrew/opt/python@3.13/libexec/bin/python3
+
+  Two Patterns in Use
+
+  Pattern A: Incubator Agents (i3-2/Drift, etc.)
+  cd incubator/i3-2
+  python3 -m venv venv
+  source venv/bin/activate
+  pip install -r requirements.txt
+  ./venv/bin/python agent.py
+  - Each agent has its own venv/ folder
+  - TypeScript calls: ./venv/bin/python agent.py
+
+  Pattern B: SMS-Bot Agents (called from TypeScript)
+  // Forces Homebrew Python directly
+  const PYTHON_BIN = '/opt/homebrew/bin/python3.13';
+
+  spawn(PYTHON_BIN, ['-u', scriptPath], {
+    env: {
+      PATH: process.env.PATH,
+      PYTHONPATH: '/opt/homebrew/lib/python3.13/site-packages',
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
+    }
+  });
+  - Uses global packages from Homebrew
+  - NO venv activation needed
+
+  ---
+  3. For Linux PRs
+
+  Tell them:
+  1. Use Python 3.13+
+  2. Each incubator agent uses ./venv/bin/python — create venv in agent folder
+  3. ANTHROPIC_API_KEY must be a regular key (sk-ant-api03-...), NOT OAuth
+  4. The claude CLI must be in PATH — SDK spawns it
+  5. TypeScript spawns Python as subprocess — no venv activation, pass env vars explicitly
+
+  Key Docs
+
+  - sms-bot/documentation/DEV-MACHINES-PYTHON-CLAUDE-SETUP.md — Full cross-machine setup
+  - sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md — SDK patterns and gotchas

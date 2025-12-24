@@ -145,6 +145,13 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
+    // /hiring → rewrite to /csx/hiring
+    if (pathname === '/hiring' || pathname.startsWith('/hiring/')) {
+      const newUrl = new URL(`/csx${pathname}`, request.url)
+      log(`[Middleware] CTRL SHIFT /hiring rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
     return NextResponse.next()
   }
 
