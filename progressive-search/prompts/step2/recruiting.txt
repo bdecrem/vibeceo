@@ -104,12 +104,24 @@ For any industry, look for:
 
 ## Channel Evaluation for Recruiting
 
+Be mildly critical when evaluating channels. Consider practical limitations:
+
 Rate channels based on:
 - **Search/filter capability**: Can you search by skills, experience, location, industry?
 - **Profile completeness**: Do profiles include bio, work history, contact info?
 - **Active user base**: Are profiles current and recently updated?
 - **Accessibility**: Free vs paid (prefer free or freemium)
 - **Contact ability**: Can you reach out to candidates directly?
+- **Practical searchability**: Can this actually be browsed effectively in Step 3, or will it be difficult to navigate?
+
+**Rating Guidelines:**
+- **9-10**: Excellent candidate database, proven searchability, rich profiles with contact info, can definitely find qualified candidates
+- **7-8**: Good candidate source, likely to yield useful profiles, searchable by relevant criteria
+- **5-6**: Moderate candidate source, uncertain profile quality or search limitations, backup option
+- **3-4**: Limited candidate database, difficult to search effectively, sparse profiles
+- **1-2**: Poor source for candidate sourcing, outdated or impractical to use
+
+**Default to skepticism.** If you're unsure whether a channel will yield good candidate profiles, rate it lower (6-7) rather than higher (8-9).
 
 ## Key Principle
 

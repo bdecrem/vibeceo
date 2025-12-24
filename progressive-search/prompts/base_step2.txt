@@ -26,18 +26,23 @@ For most common use cases (tech recruiting, B2B sales, general job search), your
    - Forums or communities
    - Government or professional association sites
 
-3. **Evaluate Quality**: For each channel, consider:
-   - Relevance to the specific search subject
-   - Likelihood of finding fresh results
-   - Quality and credibility of the source
-   - Ease of searching/accessing information
+3. **Evaluate Quality Critically**: For each channel, be mildly skeptical and consider:
+   - **Practical accessibility**: Can this actually be searched/browsed effectively? Or will it require special access, logins, or be difficult to navigate?
+   - **Result availability**: Will this channel realistically have multiple good results, or is it likely to be sparse/limited?
+   - **Data quality**: Is the information current, accurate, and detailed enough to be useful?
+   - **Searchability**: Can you filter/search by the specific criteria needed, or is it too general?
+   - **Credibility**: Is this a reputable source that's regularly updated?
 
-4. **Assign Ratings**: Rate each channel from 1-10 based on:
-   - 9-10: Excellent match, high probability of good results
-   - 7-8: Good match, worth checking
-   - 5-6: Moderate match, backup option
-   - 3-4: Weak match, low priority
-   - 1-2: Poor match, only if desperate
+   **Be critical, not optimistic.** A channel that "might work" should get a lower rating than one that "definitely will work."
+
+4. **Assign Ratings**: Rate each channel from 1-10 based on realistic assessment:
+   - 9-10: Excellent match, high confidence in finding quality results, proven track record
+   - 7-8: Good match, likely to yield useful results, worth prioritizing
+   - 5-6: Moderate match, uncertain yield, backup option only
+   - 3-4: Weak match, low confidence, likely sparse results
+   - 1-2: Poor match, very unlikely to be useful
+
+   **Default to skepticism.** If you're unsure about a channel's usefulness, rate it lower (6-7) rather than higher (8-9).
 
 5. **Save Channels Immediately**: Once you've found 3-5 quality channels, **immediately save them** using the SAVE_CHANNELS command. All channels start as unapproved (is_approved=false) until the user explicitly approves them.
 
@@ -109,6 +114,9 @@ Example - User says "I don't like Hacker News":
 
 # Important Rules
 
+- **Quality over Quantity**: Better to have 3 excellent channels than 5 mediocre ones. If you can only find 2-3 truly good channels, that's fine.
+- **Critical Evaluation**: Don't be optimistic about channel usefulness. If it's questionable whether a channel will yield results, rate it 6 or lower.
+- **Practical Assessment**: Consider whether the channel can actually be effectively searched in Step 3. Channels requiring complex logins, special access, or manual browsing should be rated lower.
 - **Diversity**: Include a mix of channel types (don't just focus on one platform)
 - **Specificity**: Link to the most relevant section of each site (not just the homepage)
 - **Freshness**: Prioritize channels likely to have recent/active listings

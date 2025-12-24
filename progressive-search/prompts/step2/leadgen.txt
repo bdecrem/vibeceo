@@ -71,11 +71,13 @@ can find a slew of potential businesses/customers to search for in the next step
 
 ## Rating Guidelines
 
-- **9-10**: Highly targeted, fresh data, decision-maker info available
-- **7-8**: Good targeting, active companies, worth checking
-- **5-6**: Broader directory but filterable, backup option
-- **3-4**: General listing with limited filtering, low priority
-- **1-2**: Minimal targeting, outdated data, only if desperate
+Be mildly critical when evaluating channels. Consider practical limitations:
+
+- **9-10**: Highly targeted, proven to have fresh data, decision-maker info readily available, can be effectively searched/browsed
+- **7-8**: Good targeting, likely to have useful results, worth prioritizing, searchable by relevant criteria
+- **5-6**: Broader directory but filterable, uncertain result quality, backup option only
+- **3-4**: General listing with limited filtering, likely sparse useful results, low priority
+- **1-2**: Minimal targeting, outdated data, impractical to search effectively
 
 **Priority**: Industry-specific databases > Professional networks > Review sites > General directories > Social media
 
@@ -84,3 +86,4 @@ Focus on channels where:
 2. Contact information or decision-maker details are available
 3. Data is current and regularly updated
 4. You can filter by relevant criteria (industry, size, location, etc.)
+5. **The channel can actually be browsed/searched effectively in Step 3** (avoid channels requiring complex logins or manual processes)

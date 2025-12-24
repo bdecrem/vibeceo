@@ -57,7 +57,11 @@ python progressive-search/step1-clarify.py <uuid> \
 # Step 2: Agent discovers channels (Twitter, Reddit, G2, Crunchbase, etc.)
 python progressive-search/step2-channels.py <uuid>
 
-# Approve channels when ready:
+# REVIEW CHANNELS CRITICALLY - Don't blindly approve all!
+# Consider: Can this channel actually be searched effectively? Will it have good results?
+# Approve only the channels that seem practical and high-quality:
+python progressive-search/step2-channels.py <uuid> -m "approve channels 1, 2, and 3"
+# OR if all channels look genuinely good:
 python progressive-search/step2-channels.py <uuid> -m "approve all channels"
 
 # Step 3: Agent searches channels and extracts leads
@@ -70,6 +74,21 @@ python progressive-search/step3-search.py <uuid> \
 # Request more results (agent applies learnings):
 python progressive-search/step3-search.py <uuid> -m "Find 5 more leads"
 ```
+
+### Critical Evaluation Philosophy
+
+**When reviewing channels (Step 2):**
+- Be mildly skeptical about channel usefulness
+- Ask yourself: "Can this actually be searched effectively?"
+- Consider: "Will this channel realistically yield multiple good results?"
+- Don't approve channels just because they're suggested - evaluate them critically
+- It's better to have 2-3 excellent channels than 5 mediocre ones
+
+**When reviewing results (Step 3):**
+- Rate honestly based on fit with your ICP (ideal customer profile)
+- Low ratings (1-4) for poor matches help the agent learn what to avoid
+- High ratings (8-10) only for genuinely excellent matches
+- The agent learns from your ratings to improve future searches
 
 **For other categories:** See `progressive-search/USAGE.md` for recruiting, job_search, and general examples.
 
