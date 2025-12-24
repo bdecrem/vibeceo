@@ -1,10 +1,10 @@
 /**
  * YouTube Transcript Fetcher
- * Fetches video transcripts using @danielxceron/youtube-transcript
- * (fork with InnerTube API fallback for better reliability)
+ * Fetches video transcripts using youtube-transcript-plus
+ * (Uses Innertube API for better reliability with YouTube's frequent API changes)
  */
 
-import { YoutubeTranscript } from '@danielxceron/youtube-transcript';
+import { fetchTranscript } from 'youtube-transcript-plus';
 import type { FetchedContent } from './types.js';
 
 // YouTube URL patterns
@@ -44,8 +44,8 @@ export async function fetchYouTubeContent(url: string): Promise<FetchedContent> 
   }
 
   try {
-    // Fetch transcript
-    const transcriptItems = await YoutubeTranscript.fetchTranscript(videoId);
+    // Fetch transcript using youtube-transcript-plus
+    const transcriptItems = await fetchTranscript(videoId);
 
     if (!transcriptItems || transcriptItems.length === 0) {
       throw new Error('No transcript available for this video');
@@ -53,7 +53,7 @@ export async function fetchYouTubeContent(url: string): Promise<FetchedContent> 
 
     // Combine transcript segments into full text and decode HTML entities
     const fullTranscript = transcriptItems
-      .map(item => item.text)
+      .map((item: { text: string }) => item.text)
       .join(' ')
       .replace(/\s+/g, ' ')
       .replace(/&#39;/g, "'")
@@ -68,8 +68,8 @@ export async function fetchYouTubeContent(url: string): Promise<FetchedContent> 
       .trim();
 
     // Calculate approximate duration from last segment
-    const lastItem = transcriptItems[transcriptItems.length - 1];
-    const durationSeconds = lastItem.offset + (lastItem.duration || 0);
+    const lastItem = transcriptItems[transcriptItems.length - 1] as { offset?: number; duration?: number };
+    const durationSeconds = (lastItem.offset || 0) + (lastItem.duration || 0);
     const durationMinutes = Math.round(durationSeconds / 60);
 
     return {
