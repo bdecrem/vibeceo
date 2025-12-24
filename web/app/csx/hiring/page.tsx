@@ -343,7 +343,7 @@ export default function HiringPage() {
           <section className="csx-section">
             <h3 className="csx-section-label">WHO YOU ARE</h3>
             <p className="csx-text">
-              Recent grad, graduate student, or junior in CS or EE (or convince us otherwise). You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc. You're also a thinker, excited to dig deep into what's happening in AI, with a burning passion to point it at problems that matter. And you're a community builder.
+              Recent grad, graduate student, or jr/sr in CS or EE (or convince us otherwise). You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc. You're also a thinker, excited to dig deep into what's happening in AI, with a burning passion to point it at problems that matter. And you're a community builder.
             </p>
             <ul className="csx-qualities">
               <li className="csx-quality">Exceptionally curious — you learn new tools over the weekend because you wanted to</li>
