@@ -11,19 +11,22 @@ function ContactFormContent() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [message, setMessage] = useState('')
+  const [projectLink, setProjectLink] = useState('')
+  const [availability, setAvailability] = useState('')
+  const [twitter, setTwitter] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
   const typeLabels: Record<string, string> = {
     signup: 'Office Hours Signup',
-    apply: 'Founder Award Application',
+    apply: 'AI Product Research Residency',
     general: 'General Inquiry'
   }
 
   const typePlaceholders: Record<string, string> = {
     signup: 'Tell us about yourself and what you\'re working on...',
-    apply: 'Describe your project and how a founder award would help...',
+    apply: 'The short version: who you are, what you\'re working on, why this.',
     general: 'How can we help?'
   }
 
@@ -32,11 +35,17 @@ function ContactFormContent() {
     setSubmitting(true)
     setError('')
 
+    // Build message with additional fields for apply type
+    let fullMessage = message
+    if (type === 'apply') {
+      fullMessage = `WHO & WHY:\n${message}\n\nPROJECT LINK: ${projectLink}\n\nAVAILABILITY: ${availability}\n\nTWITTER/LINKEDIN: ${twitter || 'Not provided'}`
+    }
+
     try {
       const response = await fetch('/api/csx/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, message, type })
+        body: JSON.stringify({ name, email, message: fullMessage, type })
       })
 
       if (!response.ok) {
@@ -61,9 +70,100 @@ function ContactFormContent() {
     )
   }
 
+  // Residency application form
+  if (type === 'apply') {
+    return (
+      <form onSubmit={handleSubmit} className="csx-form">
+        <h1 className="csx-form-title">{typeLabels[type]}</h1>
+        <p className="csx-form-subtitle">Apply by December 29</p>
+
+        <div className="csx-field">
+          <label htmlFor="name">Name</label>
+          <input
+            type="text"
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            placeholder="Your name"
+          />
+        </div>
+
+        <div className="csx-field">
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="you@example.com"
+          />
+        </div>
+
+        <div className="csx-field">
+          <label htmlFor="message">Who you are & why this excites you</label>
+          <textarea
+            id="message"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            required
+            rows={5}
+            placeholder={typePlaceholders[type]}
+          />
+        </div>
+
+        <div className="csx-field">
+          <label htmlFor="projectLink">Link to something you've built</label>
+          <input
+            type="url"
+            id="projectLink"
+            value={projectLink}
+            onChange={(e) => setProjectLink(e.target.value)}
+            required
+            placeholder="Show us something you've built"
+          />
+        </div>
+
+        <div className="csx-field">
+          <label htmlFor="availability">Can you start Jan 1 at 20+ hrs/week?</label>
+          <input
+            type="text"
+            id="availability"
+            value={availability}
+            onChange={(e) => setAvailability(e.target.value)}
+            required
+            placeholder="Yes — or put our minds at ease"
+          />
+        </div>
+
+        <div className="csx-field">
+          <label htmlFor="twitter">Twitter / LinkedIn (optional)</label>
+          <input
+            type="text"
+            id="twitter"
+            value={twitter}
+            onChange={(e) => setTwitter(e.target.value)}
+            placeholder="@handle or profile URL"
+          />
+        </div>
+
+        {error && <p className="csx-error">{error}</p>}
+
+        <div className="csx-form-actions">
+          <Link href="/csx/hiring" className="csx-btn csx-btn-secondary">Cancel</Link>
+          <button type="submit" className="csx-btn" disabled={submitting}>
+            {submitting ? 'Sending...' : 'Apply'}
+          </button>
+        </div>
+      </form>
+    )
+  }
+
+  // Default form for signup and general
   return (
     <form onSubmit={handleSubmit} className="csx-form">
-      <h1 className="csx-form-title">{typeLabels[type]}</h1>
+      <h1 className="csx-form-title" style={{ marginBottom: '32px' }}>{typeLabels[type]}</h1>
 
       <div className="csx-field">
         <label htmlFor="name">Name</label>
@@ -165,13 +265,19 @@ export default function ContactPage() {
         .csx-form-title {
           font-size: 1.25rem;
           font-weight: 400;
-          margin: 0 0 32px 0;
+          margin: 0 0 8px 0;
         }
 
         @media (min-width: 768px) {
           .csx-form-title {
             font-size: 1.5rem;
           }
+        }
+
+        .csx-form-subtitle {
+          font-size: 0.875rem;
+          color: #8b8b8b;
+          margin: 0 0 32px 0;
         }
 
         .csx-form {

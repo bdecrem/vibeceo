@@ -121,9 +121,8 @@ export default function HiringPage() {
         .csx-hero-subtitle {
           font-size: 1rem;
           line-height: 1.7;
-          color: rgba(255, 255, 255, 0.85);
+          color: rgba(255, 255, 255, 0.9);
           margin: 0;
-          max-width: 600px;
         }
 
         @media (min-width: 768px) {
@@ -298,6 +297,17 @@ export default function HiringPage() {
         .csx-back:hover {
           color: #fff;
         }
+
+        .csx-link {
+          color: #fff;
+          text-decoration: underline #8b8b8b;
+          text-underline-offset: 4px;
+          transition: text-decoration-color 0.2s;
+        }
+
+        .csx-link:hover {
+          text-decoration: underline #fff;
+        }
       `}</style>
 
       <div className="csx-page">
@@ -320,21 +330,10 @@ export default function HiringPage() {
           {/* Hero */}
           <section className="csx-hero">
             <h2 className="csx-hero-title">
-              Builder In Residence
+              AI Product Research Residency
             </h2>
             <p className="csx-hero-subtitle">
-              We're looking for someone who builds things. Not someone who talks about building things, or manages people who build things, or writes specs for things that might get built. A builder.
-            </p>
-          </section>
-
-          {/* The Role */}
-          <section className="csx-section">
-            <h3 className="csx-section-label">THE ROLE</h3>
-            <p className="csx-text">
-              Join CTRL SHIFT Lab for a 3-month residency (January 1 – March 30, with potential to extend). You'll work directly on products like our link feed and whatever else we dream up together. Paid position, competitive compensation.
-            </p>
-            <p className="csx-text">
-              We're backed by a major philanthropic foundation. No growth metrics. No quarterly pressure. Just building tools that put people at the center.
+              The AI Product Research Resident will be our thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. <Link href="/csx/about" className="csx-link">We've done this before</Link>. Now we need you for 10 intense weeks to build, research, and shape what comes next.
             </p>
           </section>
 
@@ -342,7 +341,7 @@ export default function HiringPage() {
           <section className="csx-section">
             <h3 className="csx-section-label">WHO YOU ARE</h3>
             <p className="csx-text">
-              CS student or product builder with real technical chops. You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc.
+              Recent grad, graduate student, or junior in CS or EE (or convince us otherwise). You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc. You're also a thinker, excited to dig deep into what's happening in AI, with a burning passion to point it at problems that matter. And you're a community builder.
             </p>
             <ul className="csx-qualities">
               <li className="csx-quality">Exceptionally curious — you learn new tools over the weekend because you wanted to</li>
@@ -354,32 +353,45 @@ export default function HiringPage() {
 
           {/* What You'll Do */}
           <section className="csx-section">
-            <h3 className="csx-section-label">WHAT YOU'LL BUILD</h3>
+            <h3 className="csx-section-label">WHAT YOU'LL DO</h3>
             <p className="csx-text">
-              We're building tools for a community of AI researchers, founders, and builders who think long-term. The link feed is one piece. There's more. Some of it we know, some we'll figure out together.
+              Three things, in roughly equal measure:
             </p>
-            <p className="csx-text">
-              You'll have real ownership, real impact, and the freedom to move fast.
+            <ul className="csx-qualities">
+              <li className="csx-quality"><strong>Research</strong> — Track what's happening in AI. What's trending this week, what matters, where the real opportunities are to put AI to work for people. Translate technical depth into strategic clarity for the team.</li>
+              <li className="csx-quality"><strong>Build</strong> — Write software. The CTRL SHIFT link feed is an example of the type of tooling you'll be working on. And who knows — maybe even prototyping a different kind of AI model on open source.</li>
+              <li className="csx-quality"><strong>Community</strong> — Build our presence. Document what we're doing. Find interesting startups and researchers to connect with. Grow the network on Twitter and beyond.</li>
+            </ul>
+            <p className="csx-text" style={{ marginTop: '16px' }}>
+              Real ownership, real impact, freedom to move fast.
             </p>
           </section>
 
-          {/* Details */}
+          {/* Who We Are */}
           <section className="csx-section">
-            <h3 className="csx-section-label">DETAILS</h3>
-            <div className="csx-role">
-              <div className="csx-role-header">
-                <h4 className="csx-role-title">Builder In Residence</h4>
-                <span className="csx-role-type">JAN – MAR 2025</span>
-              </div>
-              <p className="csx-role-desc">
-                3-month residency, extendable. Competitive compensation. Remote-friendly, SF Bay Area preferred. Must be able to work in the US.
-              </p>
-            </div>
+            <h3 className="csx-section-label">WHO WE ARE</h3>
+            <p className="csx-text">
+              Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. We've worked at Mozilla, Disney, small startups and community groups. <Link href="/csx/about" className="csx-link">More about us</Link>.
+            </p>
+          </section>
+
+          {/* Logistics */}
+          <section className="csx-section">
+            <h3 className="csx-section-label">LOGISTICS</h3>
+            <p className="csx-text">
+              10-week residency starting the first week of January. Minimum 20 hours per week — ideally a lot more. We're working with intensity.
+            </p>
+            <p className="csx-text">
+              $10,000 over 10 weeks. Remote-friendly, SF Bay Area preferred. Must be able to work in the US.
+            </p>
+            <p className="csx-text" style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid #333', fontStyle: 'italic', color: 'rgba(255, 255, 255, 0.7)' }}>
+              Foundation-backed, not VC-backed. No growth metrics. No quarterly pressure. Long horizon lab.
+            </p>
           </section>
 
           {/* CTA */}
           <div className="csx-cta">
-            <p className="csx-cta-text">Sound like you?</p>
+            <p className="csx-cta-text">Sound like you? Apply by December 29.</p>
             <Link href="/csx/contact?type=apply" className="csx-btn">
               APPLY
             </Link>
