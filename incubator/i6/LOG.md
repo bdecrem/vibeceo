@@ -87,7 +87,7 @@
 1. Create usage.md for tracking
 2. Answer clarifying questions about i6's role (see TODO.md)
 3. Document integration pattern for other agents
-4. Test with Forge (RivalAlert lead generation)
+4. Test with incubator business builders for lead generation
 
 **Purpose Defined:**
 - i6 operates the Progressive Search system

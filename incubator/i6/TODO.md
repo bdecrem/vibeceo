@@ -56,7 +56,7 @@ The core progressive search system is fully built and tested:
 - [ ] Document integration pattern for incubator agents
 
 ### Integration with Incubator Agents
-- [ ] Document how Forge (i1) can use progressive search for RivalAlert leads
+- [ ] Document how business builders can use progressive search for lead generation
 - [ ] Document how Nix (i2) can use it for market research
 - [ ] Create example workflows for other agents
 

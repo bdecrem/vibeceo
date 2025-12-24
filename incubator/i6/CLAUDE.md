@@ -6,7 +6,7 @@
 
 **What it does:**
 - Interface for humans to access Progressive Search via `/i6` slash command
-- Finds qualified leads for incubator product ideas (primarily Forge's RivalAlert)
+- Finds qualified leads for incubator product ideas
 - Helps with recruiting, market research, and general information gathering
 - Guides users through the 3-step progressive search process
 - Presents results and helps refine searches through iteration
@@ -27,6 +27,126 @@ Use the `/i6` slash command to activate this agent. i6 will load its context and
 
 ---
 
+## Startup: Verify Python Environment (Run Every Time i6 is Invoked)
+
+**CRITICAL:** Before running any progressive-search commands, you must thoroughly verify the Python installation on this system.
+
+### Step 1: Comprehensive Python Search
+
+Search exhaustively for Python installations before asking the user to install:
+
+```bash
+# Check standard commands
+which python3
+which python
+which python3.12
+which python3.11
+which python3.10
+which python3.9
+which python3.8
+
+# Check common installation paths (macOS)
+ls -la /usr/local/bin/python* 2>/dev/null
+ls -la /opt/homebrew/bin/python* 2>/dev/null
+ls -la /Library/Frameworks/Python.framework/Versions/*/bin/python* 2>/dev/null
+
+# Check common installation paths (Linux)
+ls -la /usr/bin/python* 2>/dev/null
+
+# Find all Python binaries on the system
+find /usr /opt /Library -name "python*" -type f 2>/dev/null | grep -E "python3?\.[0-9]+" | head -20
+
+# Check virtual environment (if standard methods fail)
+# Note: Some other incubator agents use ./venv/bin/python
+# Only use this if you're having trouble accessing Python via standard paths
+ls -la ./venv/bin/python* 2>/dev/null
+```
+
+### Step 2: Test Each Found Python Binary
+
+For each Python binary found, verify it works and check version:
+
+```bash
+# Test the binary (replace /path/to/python with actual path found)
+/path/to/python3 --version
+/path/to/python3 -c "import sys; print(f'Python {sys.version}')"
+
+# Verify it can import required packages
+/path/to/python3 -c "import anthropic, supabase; print('Dependencies OK')" 2>/dev/null || echo "Dependencies missing"
+```
+
+### Step 3: Select the Best Python Binary
+
+Choose based on priority:
+1. **Python 3.11+ with dependencies installed** (best)
+2. **Python 3.8-3.10 with dependencies installed** (good)
+3. **Any Python 3.8+ even without dependencies** (can install deps)
+
+**Store the full binary path** for use throughout the session. For example:
+- `/opt/homebrew/bin/python3` (macOS Homebrew)
+- `/usr/bin/python3` (Linux standard)
+- `/Library/Frameworks/Python.framework/Versions/3.11/bin/python3` (macOS framework install)
+
+### Step 4: Verify Dependencies
+
+Once you've found a working Python binary, check dependencies:
+
+```bash
+/full/path/to/python3 -c "import anthropic; print('anthropic:', anthropic.__version__)"
+/full/path/to/python3 -c "import supabase; print('supabase OK')"
+/full/path/to/python3 -c "from dotenv import load_dotenv; print('python-dotenv OK')"
+```
+
+If any imports fail, install dependencies:
+
+```bash
+/full/path/to/python3 -m pip install -r progressive-search/requirements.txt
+```
+
+### Step 5: Verify Working Directory
+
+Ensure you're in the correct directory:
+
+```bash
+pwd  # Should show the overall project root
+ls progressive-search/step1-clarify.py  # Should exist
+ls sms-bot/.env.local  # Should exist (needed for env vars)
+```
+
+### Final Output
+
+After all checks, summarize for the user and yourself:
+
+```
+✓ Python found: /opt/homebrew/bin/python3 (v3.11.5)
+✓ Dependencies: Installed
+✓ Working directory: /home/whitcodes/Work/Dev/kochito
+✓ Progressive search scripts: Found
+✓ Environment file: sms-bot/.env.local exists
+
+Ready to use progressive-search. Using: /opt/homebrew/bin/python3
+```
+
+**Store this Python path** and use it consistently for ALL progressive-search commands in this session.
+
+### Error Handling
+
+**Only ask user to install Python if:**
+- No Python 3.8+ binary found anywhere on system after exhaustive search
+- All found Python binaries are too old (< 3.8)
+
+**If dependencies missing:**
+- Attempt to install automatically with the found Python binary
+- Only ask user if pip install fails
+
+### Important
+
+- **Run these checks EVERY session** - Python location may change (system updates, new installations)
+- **Use the full path** (e.g., `/opt/homebrew/bin/python3`) in all commands to avoid ambiguity
+- **Don't assume** - always verify, even if it worked last time
+
+---
+
 ## Progressive Search System
 
 **Location:** `../../progressive-search/` (relative to this agent folder)
@@ -43,10 +163,13 @@ Step 3: Execute Search      → Browse channels, extract results, learn from fee
 
 ### Quick Start (Read USAGE.md for Full Details)
 
+**IMPORTANT:** The `python` command in the examples below may need to be replaced with the full path to your Python binary (e.g., `/opt/homebrew/bin/python3`) as determined in the **Startup: Verify Python Environment** section above. Always verify the Python environment first before running these commands.
+
 **For Lead Generation (Forge, Nix, etc.):**
 
 ```bash
 # Step 1: Clarify what you're looking for
+# NOTE: Replace 'python' with your verified Python path (e.g., /opt/homebrew/bin/python3)
 python progressive-search/step1-clarify.py --new -c leadgen \
   -m "Find customers for [product description]"
 
@@ -120,22 +243,25 @@ When you need to find leads for your product:
 4. Agent extracts qualified leads with contact info
 5. Rate leads, request more, progressively improve results
 
-**Example: Forge's RivalAlert**
+**Example: B2B SaaS Product Lead Generation**
 
 ```bash
-# Find customers for RivalAlert (competitor intelligence tool)
+# NOTE: Use your verified Python path (see Startup section above)
+# Examples below use 'python' but replace with full path like /opt/homebrew/bin/python3 if necessary
+
+# Find customers for a B2B SaaS product
 python progressive-search/step1-clarify.py --new -c leadgen \
-  -m "Find customers for RivalAlert - competitor tracking for B2B SaaS"
+  -m "Find customers for a project management tool for remote teams"
 
 # Agent asks: Target company size? Geographic focus? Pain points?
 python progressive-search/step1-clarify.py <uuid> \
-  -m "Series A-B SaaS, 20-200 employees, frustrated with manual competitor research"
+  -m "Series A-B SaaS, 20-200 employees, struggling with team coordination"
 
 # Agent discovers channels:
-# - Twitter: people complaining about Klue, manual competitor tracking
-# - Reddit: r/startups posts about competitor analysis
-# - G2: Reviews of competitor tools mentioning pain points
-# - LinkedIn: Posts from founders struggling with competitive intelligence
+# - Twitter: people discussing project management challenges
+# - Reddit: r/startups posts about team collaboration
+# - G2: Reviews of project management tools mentioning pain points
+# - LinkedIn: Posts from founders discussing remote work challenges
 
 # Agent extracts leads:
 # - Company name, industry, size, funding stage
@@ -173,8 +299,12 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+// NOTE: Use the verified Python path from your startup checks
+// e.g., '/opt/homebrew/bin/python3' instead of just 'python'
+const pythonPath = '/opt/homebrew/bin/python3'; // Adjust based on your system
+
 const { stdout } = await execAsync(
-  `python progressive-search/step1-clarify.py --new -c leadgen -m "${message}"`
+  `${pythonPath} progressive-search/step1-clarify.py --new -c leadgen -m "${message}"`
 );
 
 const result = JSON.parse(stdout);
@@ -229,7 +359,7 @@ GET  /api/progressive-search/projects/:id
 1. Answer clarifying questions (see TODO.md)
 2. Create LOG.md to track i6 development
 3. Document integration pattern for incubator agents
-4. Test integration with Forge (RivalAlert lead generation)
+4. Test integration with incubator business builders for lead generation
 
 ---
 
