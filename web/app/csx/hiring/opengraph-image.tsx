@@ -28,14 +28,14 @@ export default async function Image() {
             letterSpacing: "0.05em",
           }}
         >
-          <span style={{ color: "#fff" }}>CTRL SHIFT </span>
-          <span style={{ color: "#aaa" }}>LAB</span>
+          <span style={{ color: "#fff" }}>CTRL SHIFT</span>
+          <span style={{ color: "#aaa", marginLeft: 10 }}>LAB</span>
         </div>
 
         {/* AI Product Research Residency */}
         <div
           style={{
-            fontSize: 56,
+            fontSize: 44,
             color: "#fff",
             marginTop: 24,
             letterSpacing: "-0.01em",
