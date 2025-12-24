@@ -22,6 +22,21 @@ interface TrackPaper {
   fullText?: string;
 }
 
+interface AmberxContent {
+  id: string;
+  contentType: 'youtube' | 'twitter';
+  externalId: string;
+  title: string;
+  author: string;
+  summary: string;
+  fullText: string;
+  url: string;
+  metadata: {
+    full_explanation?: string;
+    key_points?: string[];
+  };
+}
+
 interface TrackItem {
   id: string;
   title: string;
@@ -143,6 +158,33 @@ function buildRealtimeContext(
   return headerLines.join('\n');
 }
 
+const AMBERX_REALTIME_INSTRUCTIONS =
+  "You're a helpful, curious guide explaining content the user just listened to. They've heard an explanation of a video or tweet and now want to go deeper. Be conversational and enthusiastic. When they ask questions, draw from the original content (transcript/tweet) to give accurate answers. Help them understand the nuances and implications. If they want to go deeper on a topic, provide more technical detail. Keep responses focused and substantive.";
+
+function buildAmberxRealtimeContext(content: AmberxContent): string {
+  const lines: string[] = [];
+
+  const contentLabel = content.contentType === 'youtube' ? 'Video' : 'Tweet';
+  lines.push(`${contentLabel}: ${content.title}`);
+  lines.push(`Author: ${content.author}`);
+  lines.push(`URL: ${content.url}`);
+
+  if (content.metadata.full_explanation) {
+    lines.push(`\nExplanation the user heard:`);
+    lines.push(truncateForContext(content.metadata.full_explanation, 3000) || '');
+  }
+
+  if (content.metadata.key_points?.length) {
+    lines.push(`\nKey Points:`);
+    lines.push(content.metadata.key_points.map(p => `- ${p}`).join('\n'));
+  }
+
+  lines.push(`\nOriginal Content (${contentLabel} ${content.contentType === 'youtube' ? 'transcript' : 'text'}):`);
+  lines.push(truncateForContext(content.fullText, 15000) || '');
+
+  return lines.join('\n');
+}
+
 function MusicPlayerContent(): JSX.Element {
   const searchParams = useSearchParams();
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -168,6 +210,9 @@ function MusicPlayerContent(): JSX.Element {
   const [isMicAvailable, setIsMicAvailable] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [isMicModalOpen, setIsMicModalOpen] = useState(false);
+
+  // Amberx content for interactive mode
+  const [amberxContent, setAmberxContent] = useState<AmberxContent | null>(null);
 
   const customTrack = useMemo((): TrackItem | null => {
     if (!searchParams) {
@@ -236,6 +281,30 @@ function MusicPlayerContent(): JSX.Element {
     }
     void fetchEpisodes();
   }, []);
+
+  // Fetch amberx content for interactive mode if amberx_id is in URL
+  useEffect(() => {
+    if (!searchParams) return;
+
+    const amberxId = searchParams.get('amberx_id');
+    if (!amberxId) return;
+
+    async function fetchAmberxContent() {
+      try {
+        const response = await fetch(`/api/amberx-content?id=${amberxId}`);
+        if (!response.ok) {
+          console.warn('Failed to fetch amberx content');
+          return;
+        }
+        const data = await response.json();
+        setAmberxContent(data as AmberxContent);
+        console.log('[music-player] Loaded amberx content for interactive mode:', data.title);
+      } catch (error) {
+        console.error('Error fetching amberx content:', error);
+      }
+    }
+    void fetchAmberxContent();
+  }, [searchParams]);
 
   const playlist = useMemo(() => {
     if (customTrack) {
@@ -316,7 +385,30 @@ function MusicPlayerContent(): JSX.Element {
     return `${BASE_REALTIME_INSTRUCTIONS}\n\n${aiDailyContext}`;
   }, [aiDailyContext]);
 
-  const canUseMic = Boolean(aiDailyInstructions && aiDailyContext);
+  // Amberx interactive mode context
+  const amberxContext = useMemo(() => {
+    if (!amberxContent) {
+      return null;
+    }
+    return buildAmberxRealtimeContext(amberxContent);
+  }, [amberxContent]);
+
+  const amberxInstructions = useMemo(() => {
+    if (!amberxContext) {
+      return null;
+    }
+    return `${AMBERX_REALTIME_INSTRUCTIONS}\n\n${amberxContext}`;
+  }, [amberxContext]);
+
+  // Mic is available for AI Daily episodes with papers OR amberx content
+  const canUseMic = Boolean(
+    (aiDailyInstructions && aiDailyContext) ||
+    (amberxInstructions && amberxContext)
+  );
+
+  // Determine which instructions/context to use for Realtime API
+  const activeInstructions = amberxInstructions || aiDailyInstructions;
+  const activeContext = amberxContext || aiDailyContext;
 
   useEffect(() => {
     setIsBannerDismissed(false);
@@ -435,12 +527,12 @@ function MusicPlayerContent(): JSX.Element {
   const micDisabled = !canUseMic || isConnecting;
   const micNotYetAvailable = !isMicAvailable && !isMicActive && !isConnecting;
   const micTooltip = !canUseMic
-    ? 'Microphone is only available for AI Daily episodes with research context.'
+    ? 'Interactive mode requires content context (AI Daily or Amberx).'
     : isMicActive
       ? 'Stop recording'
       : !isMicAvailable
         ? 'Click to learn about Interactive Mode'
-        : 'Ask a question about this episode';
+        : 'Ask a question about this content';
 
   const micModalActionDisabled = (!isMicActive && !isMicAvailable) || (isConnecting && !isMicActive);
   const micModalStateLabel = isMicActive
@@ -661,16 +753,16 @@ function MusicPlayerContent(): JSX.Element {
       return;
     }
 
-    // If mic is not available yet (episode still playing), show info message
-    setAiStatus('Interactive Mode lets you discuss this episode once it\'s finished playing.');
+    // If mic is not available yet (audio still playing), show info message
+    setAiStatus('Interactive Mode lets you discuss this content once it\'s finished playing.');
   }, [canUseMic, handleOpenMicModal, isMicActive, isMicAvailable]);
 
   const handleMicModalToggle = useCallback(async () => {
-    if (!canUseMic || !aiDailyInstructions || !aiDailyContext) {
+    if (!canUseMic || !activeInstructions || !activeContext) {
       return;
     }
-    const instructionsForSession = aiDailyInstructions;
-    const contextForSession = aiDailyContext;
+    const instructionsForSession = activeInstructions;
+    const contextForSession = activeContext;
 
     try {
       if (!isMicActive && !isMicAvailable) {
@@ -809,7 +901,7 @@ function MusicPlayerContent(): JSX.Element {
       setIsMicAvailable(true);
       realtimeClientRef.current = null;
     }
-  }, [aiDailyContext, aiDailyInstructions, canUseMic, isMicActive, isMicAvailable]);
+  }, [activeContext, activeInstructions, canUseMic, isMicActive, isMicAvailable]);
 
   useEffect(() => {
     if (!isMicModalOpen) {
@@ -856,7 +948,7 @@ function MusicPlayerContent(): JSX.Element {
     const handlePlaybackEnded = () => {
       setIsPlaying(false);
       setIsMicAvailable(true);
-      setAiStatus('Episode finished. Tap the mic to ask a question.');
+      setAiStatus('Finished. Tap the mic to ask a question.');
       if (realtimeClientRef.current) {
         realtimeClientRef.current.disconnect();
         realtimeClientRef.current = null;

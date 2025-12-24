@@ -27,9 +27,14 @@ export interface ExplainerResult {
   externalId: string;
   title: string;
   author: string;
-  explanation: string;
+  /** Short 1-sentence summary for SMS */
+  shortSummary: string;
+  /** Full detailed explanation (markdown) for report */
+  fullExplanation: string;
   keyPoints: string[];
   rawContent: string;
+  /** Legacy field - same as fullExplanation for backwards compat */
+  explanation: string;
 }
 
 export interface UserPreferences {

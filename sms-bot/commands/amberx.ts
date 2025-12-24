@@ -1,7 +1,11 @@
 /**
  * Amber Explain (amberx) Command
  *
- * Explains content from Twitter/YouTube URLs with follow-up support.
+ * Explains content from Twitter/YouTube URLs with:
+ * - Short SMS summary (fits in single message)
+ * - Full markdown report (stored in Supabase)
+ * - Audio explanation with interactive mode (Realtime API)
+ *
  * Usage: amberx <url> | amber <url> | explain <url>
  */
 
@@ -19,6 +23,8 @@ import { supabase } from '../lib/supabase.js';
 import ElevenLabsProvider from '../agents/crypto-research/ElevenLabsProvider.js';
 import { createShortLink } from '../lib/utils/shortlink-service.js';
 import { buildMusicPlayerUrl } from '../lib/utils/music-player-link.js';
+import { buildReportViewerUrl } from '../lib/utils/report-viewer-link.js';
+import { storeAgentReport } from '../agents/report-storage.js';
 
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
 const elevenLabsProvider = new ElevenLabsProvider({
@@ -35,20 +41,119 @@ interface AmberxSession {
   lastResult: ExplainerResult;
   timestamp: number;
   subscriberId: string;
+  contentId?: string; // UUID in covered_content table
 }
 
 const sessions = new Map<string, AmberxSession>();
 const SESSION_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes
 const AUDIO_BUCKET = 'audio';
+const AGENT_SLUG = 'amberx';
 
 /**
- * Generate audio explanation and return player link
+ * Store content in covered_content table for interactive mode
+ */
+async function storeContentForInteractive(
+  result: ExplainerResult,
+  content: FetchedContent,
+  audioUrl: string | null,
+  reportPath: string | null
+): Promise<string | null> {
+  try {
+    const { data, error } = await supabase
+      .from('covered_content')
+      .insert({
+        content_type: result.contentType,
+        external_id: result.externalId,
+        title: result.title,
+        author: result.author,
+        summary: result.shortSummary,
+        full_text: result.rawContent,
+        url: content.url,
+        metadata: {
+          full_explanation: result.fullExplanation,
+          key_points: result.keyPoints,
+          audio_url: audioUrl,
+          report_path: reportPath,
+        },
+      })
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('[amberx] Failed to store content:', error);
+      return null;
+    }
+
+    return data.id;
+  } catch (error) {
+    console.error('[amberx] Error storing content:', error);
+    return null;
+  }
+}
+
+/**
+ * Store full explanation as markdown report
+ */
+async function storeExplanationReport(
+  result: ExplainerResult,
+  content: FetchedContent
+): Promise<{ reportPath: string; reportUrl: string } | null> {
+  try {
+    // Use date + external_id to create unique report per content
+    const dateStr = new Date().toISOString().split('T')[0];
+    const uniqueDate = `${dateStr}-${result.externalId.slice(0, 8)}`;
+
+    // Build markdown report
+    const markdown = `# ${result.title}
+
+**Source:** ${content.url}
+**Author:** ${result.author || 'Unknown'}
+**Explained:** ${new Date().toLocaleDateString('en-US', {
+  weekday: 'long',
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric'
+})}
+
+---
+
+${result.fullExplanation}
+
+---
+
+*Explained by Amber via Kochi.to*
+`;
+
+    const stored = await storeAgentReport({
+      agent: AGENT_SLUG,
+      date: uniqueDate,
+      markdown,
+      summary: result.shortSummary,
+    });
+
+    const viewerUrl = buildReportViewerUrl({ path: stored.reportPath });
+
+    return {
+      reportPath: stored.reportPath,
+      reportUrl: viewerUrl,
+    };
+  } catch (error) {
+    console.error('[amberx] Failed to store report:', error);
+    return null;
+  }
+}
+
+/**
+ * Generate audio explanation and upload to storage
+ * Returns both the raw audio URL and a player shortlink
  */
 async function generateAudioExplanation(
   explanation: string,
   contentType: string,
-  externalId: string
-): Promise<string | null> {
+  externalId: string,
+  title: string,
+  contentId: string | null
+): Promise<{ audioUrl: string; playerLink: string } | null> {
   if (!ELEVENLABS_API_KEY) {
     console.log('[amberx] Skipping audio - no ELEVENLABS_API_KEY');
     return null;
@@ -80,19 +185,28 @@ async function generateAudioExplanation(
 
     const audioUrl = urlData.publicUrl;
 
-    // Create player shortlink
+    // Create player URL with content_id for interactive mode
     const playerUrl = buildMusicPlayerUrl({
       src: audioUrl,
-      title: `Amberx Explanation`,
+      title: `Amberx — ${title}`,
+      description: 'Ask follow-up questions after listening',
       autoplay: true,
     });
 
-    const shortLink = await createShortLink(playerUrl, {
-      context: 'amberx',
+    // Add amberx_id param for interactive mode
+    const playerUrlWithContext = contentId
+      ? `${playerUrl}&amberx_id=${contentId}`
+      : playerUrl;
+
+    const shortLink = await createShortLink(playerUrlWithContext, {
+      context: 'amberx-audio',
       createdBy: 'sms-bot',
     });
 
-    return shortLink || audioUrl;
+    return {
+      audioUrl,
+      playerLink: shortLink || playerUrl,
+    };
   } catch (error) {
     console.error('[amberx] Audio generation failed:', error);
     return null;
@@ -174,26 +288,65 @@ export const amberxCommandHandler: CommandHandler = {
       return true;
     }
 
-    await sendSmsResponse(from, `Fetching ${contentType} content...`, twilioClient);
+    await sendSmsResponse(from, `Analyzing ${contentType} content...`, twilioClient);
 
     // Get subscriber ID for preferences
     const userContext = await loadUserContext(normalizedFrom);
     const subscriberId = userContext?.subscriberId || normalizedFrom;
 
     try {
-      // Fetch and explain the content
+      // Fetch content first
+      const content = await fetchContent(url);
+
+      // Generate both short and full explanations
       const result = await explainContent({
         url,
         subscriberId,
       });
 
+      // Store markdown report
+      const reportResult = await storeExplanationReport(result, content);
+      const reportPath = reportResult?.reportPath || null;
+
+      // Store content for interactive mode (before audio so we have contentId)
+      const contentId = await storeContentForInteractive(
+        result,
+        content,
+        null, // audio URL added later
+        reportPath
+      );
+
+      // Generate audio (uses contentId for interactive mode link)
+      const audioResult = await generateAudioExplanation(
+        result.fullExplanation,
+        result.contentType,
+        result.externalId,
+        result.title,
+        contentId
+      );
+
+      // Update covered_content with audio URL if generated
+      if (contentId && audioResult?.audioUrl) {
+        await supabase
+          .from('covered_content')
+          .update({
+            metadata: {
+              full_explanation: result.fullExplanation,
+              key_points: result.keyPoints,
+              audio_url: audioResult.audioUrl,
+              report_path: reportPath,
+            },
+          })
+          .eq('id', contentId);
+      }
+
       // Store session for follow-ups
-      const content = await fetchContent(url);
       sessions.set(from, {
         content,
         lastResult: result,
         timestamp: Date.now(),
         subscriberId,
+        contentId: contentId || undefined,
       });
 
       // Store thread state for orchestrated routing
@@ -204,33 +357,35 @@ export const amberxCommandHandler: CommandHandler = {
           url,
           contentType: result.contentType,
           externalId: result.externalId,
+          contentId,
         },
       });
 
-      // Generate audio in parallel
-      await sendSmsResponse(from, `Generating audio...`, twilioClient);
-      const audioLink = await generateAudioExplanation(
-        result.explanation,
-        result.contentType,
-        result.externalId
-      );
+      // Build short SMS response (must fit in single message)
+      const icon = result.contentType === 'youtube' ? '📺' : '🐦';
+      const titleLine = result.title.length > 50
+        ? result.title.slice(0, 47) + '...'
+        : result.title;
 
-      // Format response
-      const sourceLabel =
-        result.contentType === 'youtube'
-          ? `${result.title}`
-          : `@${result.author}`;
+      const lines: string[] = [
+        `${icon} ${titleLine}`,
+        result.shortSummary,
+      ];
 
-      let response =
-        `${sourceLabel}\n\n` +
-        `${result.explanation}\n\n`;
-
-      if (audioLink) {
-        response += `Listen: ${audioLink}\n\n`;
+      // Create shortlinks for report and audio
+      if (reportResult?.reportUrl) {
+        const reportLink = await createShortLink(reportResult.reportUrl, {
+          context: 'amberx-report',
+          createdBy: 'sms-bot',
+        });
+        lines.push(`📄 ${reportLink} — full breakdown`);
       }
 
-      response += `Reply with any questions!`;
+      if (audioResult?.playerLink) {
+        lines.push(`🎧 ${audioResult.playerLink} — listen + ask questions`);
+      }
 
+      const response = lines.join('\n');
       await reply(response);
       return true;
     } catch (error) {

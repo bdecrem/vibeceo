@@ -106,15 +106,46 @@ export async function getUserLevel(
 }
 
 /**
- * Generate explanation for fetched content
+ * Generate a short 1-sentence summary for SMS
  */
-async function generateExplanation(
-  content: FetchedContent,
-  level: ExplanationLevel,
-  followUpQuestion?: string
-): Promise<{ explanation: string; keyPoints: string[] }> {
+async function generateShortSummary(
+  content: FetchedContent
+): Promise<string> {
   const anthropic = new Anthropic();
 
+  const contentDescription = content.contentType === 'youtube'
+    ? `YouTube video`
+    : content.contentType === 'twitter'
+    ? `tweet by @${content.author}`
+    : `content`;
+
+  // Truncate content for summary generation
+  const truncatedContent = content.rawContent.length > 5000
+    ? content.rawContent.slice(0, 5000) + '...'
+    : content.rawContent;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 100,
+    system: 'You are a concise summarizer. Output ONLY a single sentence, no quotes, no preamble.',
+    messages: [{
+      role: 'user',
+      content: `Summarize this ${contentDescription} in ONE sentence (max 80 characters):\n\n${truncatedContent}`,
+    }],
+  });
+
+  const textContent = response.content.find(block => block.type === 'text');
+  return (textContent?.type === 'text' ? textContent.text : '').trim();
+}
+
+/**
+ * Generate a full detailed explanation for the report
+ */
+async function generateFullExplanation(
+  content: FetchedContent,
+  level: ExplanationLevel
+): Promise<{ explanation: string; keyPoints: string[] }> {
+  const anthropic = new Anthropic();
   const levelPrompt = LEVEL_PROMPTS[level];
 
   // Truncate very long content to avoid token limits
@@ -129,57 +160,93 @@ async function generateExplanation(
     ? `Tweet by @${content.author}`
     : `Content`;
 
-  let userPrompt: string;
-
-  if (followUpQuestion) {
-    // Follow-up question about the same content
-    userPrompt = `The user previously asked about this ${contentDescription}:
-
----
-${truncatedContent}
----
-
-Their follow-up question is: "${followUpQuestion}"
-
-Answer their specific question based on the content above. Be concise but thorough.`;
-  } else {
-    // Initial explanation
-    userPrompt = `Please explain this ${contentDescription}:
-
----
-${truncatedContent}
----
-
-Provide:
-1. A clear explanation of what this is about (2-3 paragraphs max)
-2. Key takeaways (as a simple list)
-
-Keep your total response under 400 words so it fits in an SMS.`;
-  }
-
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-20250514',
-    max_tokens: 800,
+    max_tokens: 2000,
     system: levelPrompt,
-    messages: [
-      { role: 'user', content: userPrompt },
-    ],
+    messages: [{
+      role: 'user',
+      content: `Please provide a comprehensive explanation of this ${contentDescription}:
+
+---
+${truncatedContent}
+---
+
+Structure your response as:
+
+## Summary
+A clear 2-3 paragraph overview of the main ideas.
+
+## Key Takeaways
+- Bullet point list of the most important points
+
+## Deeper Dive
+More detailed analysis including:
+- Important nuances or context
+- Why this matters
+- Related concepts to explore
+
+Keep the explanation substantive but accessible. Total length should be 500-800 words.`,
+    }],
   });
 
   const textContent = response.content.find(block => block.type === 'text');
   const explanation = textContent?.type === 'text' ? textContent.text : '';
 
-  // Extract key points (look for numbered or bulleted lists)
+  // Extract key points from the Key Takeaways section
   const keyPoints: string[] = [];
   const lines = explanation.split('\n');
   for (const line of lines) {
     const trimmed = line.trim();
-    if (/^[-•*]\s/.test(trimmed) || /^\d+[.)]\s/.test(trimmed)) {
-      keyPoints.push(trimmed.replace(/^[-•*\d.)\s]+/, '').trim());
+    if (/^[-•*]\s/.test(trimmed)) {
+      keyPoints.push(trimmed.replace(/^[-•*\s]+/, '').trim());
     }
   }
 
   return { explanation, keyPoints };
+}
+
+/**
+ * Generate follow-up answer for interactive mode
+ */
+async function generateFollowUpAnswer(
+  content: FetchedContent,
+  level: ExplanationLevel,
+  question: string
+): Promise<string> {
+  const anthropic = new Anthropic();
+  const levelPrompt = LEVEL_PROMPTS[level];
+
+  const truncatedContent = content.rawContent.length > 15000
+    ? content.rawContent.slice(0, 15000) + '...'
+    : content.rawContent;
+
+  const contentDescription = content.contentType === 'youtube'
+    ? `YouTube video transcript`
+    : content.contentType === 'twitter'
+    ? `Tweet by @${content.author}`
+    : `Content`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-20250514',
+    max_tokens: 1000,
+    system: levelPrompt,
+    messages: [{
+      role: 'user',
+      content: `The user is asking about this ${contentDescription}:
+
+---
+${truncatedContent}
+---
+
+Their question: "${question}"
+
+Answer their specific question based on the content above. Be thorough but concise. If they're asking to go deeper on a topic, provide more technical detail.`,
+    }],
+  });
+
+  const textContent = response.content.find(block => block.type === 'text');
+  return (textContent?.type === 'text' ? textContent.text : '').trim();
 }
 
 /**
@@ -192,19 +259,36 @@ export async function explainContent(input: ExplainerInput): Promise<ExplainerRe
   // 2. Determine explanation level
   const level = input.userLevel || await getUserLevel(input.subscriberId);
 
-  // 3. Generate explanation
-  const { explanation, keyPoints } = await generateExplanation(
-    content,
-    level,
-    input.followUpQuestion
-  );
+  // 3. Handle follow-up questions differently
+  if (input.followUpQuestion) {
+    const answer = await generateFollowUpAnswer(content, level, input.followUpQuestion);
+    return {
+      contentType: content.contentType,
+      externalId: content.externalId,
+      title: content.title,
+      author: content.author,
+      shortSummary: answer.slice(0, 100) + (answer.length > 100 ? '...' : ''),
+      fullExplanation: answer,
+      explanation: answer,
+      keyPoints: [],
+      rawContent: content.rawContent,
+    };
+  }
+
+  // 4. Generate both short summary and full explanation in parallel
+  const [shortSummary, { explanation: fullExplanation, keyPoints }] = await Promise.all([
+    generateShortSummary(content),
+    generateFullExplanation(content, level),
+  ]);
 
   return {
     contentType: content.contentType,
     externalId: content.externalId,
     title: content.title,
     author: content.author,
-    explanation,
+    shortSummary,
+    fullExplanation,
+    explanation: fullExplanation, // backwards compat
     keyPoints,
     rawContent: content.rawContent,
   };
