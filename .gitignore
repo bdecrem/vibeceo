@@ -152,3 +152,4 @@ __pycache__/
 /sms-bot/data/arxiv-reports/*.py
 ngrok.yml
 sms-bot/ENV.sat
+.env.local.old
