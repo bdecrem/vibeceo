@@ -371,6 +371,9 @@ export default function HiringPage() {
           <section className="csx-section">
             <h3 className="csx-section-label">WHO WE ARE</h3>
             <p className="csx-text">
+              CTRL SHIFT Lab is a community of AI builders, researchers, and investors building an AI future that puts people at the center.
+            </p>
+            <p className="csx-text">
               Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. We've worked at Mozilla, Disney, small startups and community groups. <Link href="/csx/about" className="csx-link">More about us</Link>.
             </p>
           </section>
