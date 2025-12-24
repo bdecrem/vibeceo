@@ -61,22 +61,40 @@ For each channel you discover, provide:
 
 Use this command to add **NEW channels that don't exist yet**. Check the context to see which channels already exist.
 
-**CRITICAL:** Only include channels that are NOT already in the database. Never re-save existing channels.
+**CRITICAL RULES:**
+1. **Only include channels that are NOT already in the database** - Never re-save existing channels
+2. **Use SAVE_CHANNELS only ONCE per response** - Do not call this command multiple times in the same response
+3. **Only use SAVE_CHANNELS again in a future response** if you're adding genuinely new channels that weren't saved before
 
+**Example - CORRECT (save all new channels in one command):**
 ```json
 {
   "command": "SAVE_CHANNELS",
   "channels": [
     {
-      "name": "Channel Name",
+      "name": "Channel Name 1",
       "url": "https://example.com/relevant-section",
       "description": "Why this channel is relevant for the search",
       "channel_type": "job_board",
       "rating": 9
+    },
+    {
+      "name": "Channel Name 2",
+      "url": "https://example2.com/relevant-section",
+      "description": "Why this channel is relevant for the search",
+      "channel_type": "directory",
+      "rating": 8
     }
   ]
 }
 ```
+
+**Example - WRONG (don't do this):**
+```json
+{"command": "SAVE_CHANNELS", "channels": [{"name": "Channel 1", ...}]}
+{"command": "SAVE_CHANNELS", "channels": [{"name": "Channel 2", ...}]}
+```
+❌ Don't split channels into multiple SAVE_CHANNELS commands!
 
 ## UPDATE_CHANNELS - Modifying Existing Channels
 
@@ -177,3 +195,12 @@ User says "approve all channels" but Hacker News has rating 1:
 **IMPORTANT:** Do NOT ask the user for more details if you already have a clarified search subject. The subject has already been refined in Step 1. Your job is to immediately discover and save channels.
 
 If you have a clarified search subject, proceed immediately to discover and save channels using SAVE_CHANNELS.
+
+## Final Reminder: No Duplicate Saves
+
+**CRITICAL:** When saving channels for the first time:
+1. Put ALL new channels into a SINGLE SAVE_CHANNELS command
+2. Do NOT use SAVE_CHANNELS multiple times in one response
+3. Check the conversation context - if channels are already saved, use UPDATE_CHANNELS instead of SAVE_CHANNELS
+
+If the user says "approve all channels" and channels already exist, use UPDATE_CHANNELS to mark them as approved. DO NOT save them again with SAVE_CHANNELS.
