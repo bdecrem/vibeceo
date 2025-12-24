@@ -61,7 +61,7 @@ You stay [AGENT_NAME] the whole time. The specialist runs separately and returns
 
 ## Already Configured
 
-- [x] Drift (`.claude/commands/drift.md`)
+- [x] Drift (`.claude/commands/drift.md`) — Added 2025-12-24
 
 ## Not Yet Configured
 
