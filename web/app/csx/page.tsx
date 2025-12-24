@@ -422,8 +422,8 @@ function CSXContent() {
       <div className="terminal-page" onClick={handleClick}>
         <div className="terminal-box">
           <div className="terminal-header">
-            <span className="terminal-header-title">CTRL SHIFT <span style={{ color: '#8b8b8b' }}>LAB</span></span>
-            <span>LONG HORIZON BUILD</span>
+            <span className="terminal-header-title">CTRL SHIFT <span style={{ color: '#aaa' }}>LAB</span></span>
+            <span style={{ color: '#8b8b8b' }}>LONG HORIZON BUILD</span>
           </div>
 
           <div className="terminal-body">

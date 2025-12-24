@@ -75,7 +75,7 @@ function ContactFormContent() {
     return (
       <form onSubmit={handleSubmit} className="csx-form">
         <h1 className="csx-form-title">{typeLabels[type]}</h1>
-        <p className="csx-form-subtitle">Apply by December 29</p>
+        <p className="csx-form-subtitle">Apply by Jan 8. Rolling decisions.</p>
 
         <div className="csx-field">
           <label htmlFor="name">Name</label>
@@ -126,7 +126,7 @@ function ContactFormContent() {
         </div>
 
         <div className="csx-field">
-          <label htmlFor="availability">Can you start Jan 1 at 20+ hrs/week?</label>
+          <label htmlFor="availability">Can you start early January at 20+ hrs/week?</label>
           <input
             type="text"
             id="availability"

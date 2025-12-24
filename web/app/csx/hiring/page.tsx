@@ -333,7 +333,7 @@ export default function HiringPage() {
               AI Product Research Residency
             </h2>
             <p className="csx-hero-subtitle">
-              The AI Product Research Resident will be our thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. <Link href="/csx/about" className="csx-link">We've done this before</Link>. Now we need you for 10 intense weeks to build, research, and shape what comes next.
+              The AI Product Research Resident will be a thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. <Link href="/csx/about" className="csx-link">We've done this before</Link>. Now we need you for 10 weeks to build, research, and shape what comes next.
             </p>
           </section>
 
@@ -379,7 +379,7 @@ export default function HiringPage() {
           <section className="csx-section">
             <h3 className="csx-section-label">LOGISTICS</h3>
             <p className="csx-text">
-              10-week residency starting the first week of January. Minimum 20 hours per week — ideally a lot more. We're working with intensity.
+              10-week residency starting in January. Minimum 20 hours per week — ideally a lot more. We're working with intensity.
             </p>
             <p className="csx-text">
               $10,000 over 10 weeks. Remote-friendly, SF Bay Area preferred. Must be able to work in the US.
@@ -391,7 +391,7 @@ export default function HiringPage() {
 
           {/* CTA */}
           <div className="csx-cta">
-            <p className="csx-cta-text">Sound like you? Apply by December 29.</p>
+            <p className="csx-cta-text">Sound like you? Apply by Jan 8. Rolling decisions.</p>
             <Link href="/csx/contact?type=apply" className="csx-btn">
               APPLY
             </Link>
