@@ -57,6 +57,9 @@ from config import (
     NEWS_SCAN_INTERVAL_MINUTES,
     ETF_SYMBOLS,
     ETF_200MA_BYPASS_RSI,
+    CIRCUIT_BREAKER_MODE,
+    CIRCUIT_BREAKER_VETO_SEARCHES,
+    VETO_TRACKING_FILE,
     get_position_size,
     print_config,
 )
@@ -244,6 +247,119 @@ class DriftAgent:
         minutes_ago = (datetime.now() - last_scan).total_seconds() / 60
         return minutes_ago >= NEWS_SCAN_INTERVAL_MINUTES
 
+    def _circuit_breaker_veto(self, symbol: str, trigger_reason: str, cycle_logger: Optional['CycleLogger'] = None) -> dict:
+        """
+        Circuit Breaker Mode: Fast veto check for catastrophic red flags.
+
+        Default action is BUY. This check only blocks for:
+        - Bankruptcy/fraud news
+        - Catastrophic earnings miss
+        - Fundamental thesis broken (company in crisis)
+
+        Returns:
+            {"veto": bool, "reason": str, "should_buy": bool}
+        """
+        if VERBOSE:
+            log(f"[Drift] Circuit Breaker check for {symbol}...")
+
+        veto_prompt = f"""You are Drift's Circuit Breaker - a fast safety check before buying {symbol}.
+
+TRIGGER: {trigger_reason}
+
+YOUR ONLY JOB: Check for catastrophic red flags that would make this a terrible trade.
+
+Search for recent news about {symbol}. Look ONLY for:
+1. Bankruptcy, insolvency, or severe financial distress
+2. Fraud, SEC investigation, or criminal charges
+3. Catastrophic earnings miss (>50% below estimates)
+4. CEO departure under scandal
+5. Product recall or major safety issue
+6. Company is being delisted
+
+If you find ANY of these red flags, VETO the trade.
+If you find normal market news (analyst downgrades, sector rotation, minor misses), DO NOT veto.
+
+The default is BUY. You are the safety net, not the decision maker.
+
+Respond in JSON:
+{{
+    "veto": true/false,
+    "reason": "One sentence explanation",
+    "red_flag_type": "bankruptcy|fraud|earnings_disaster|scandal|safety|delisting|none"
+}}
+
+Be fast. One search. Make the call."""
+
+        try:
+            # Use Sonnet for speed (cheaper, sufficient for yes/no safety check)
+            response = self._call_llm_with_tools(veto_prompt, model=SCAN_MODEL)
+            result = self._extract_json(response)
+
+            veto = result.get("veto", False)
+            reason = result.get("reason", "No red flags found")
+            red_flag_type = result.get("red_flag_type", "none")
+
+            if veto:
+                if VERBOSE:
+                    log(f"[Drift] ⚠️ VETO: {symbol} - {reason}")
+                if cycle_logger:
+                    cycle_logger.add_entry(f"CIRCUIT BREAKER VETO: {symbol} - {reason}")
+
+                # Track the veto for Saves vs Misses analysis
+                self._track_veto(symbol, trigger_reason, reason, red_flag_type)
+
+                return {"veto": True, "reason": reason, "should_buy": False}
+            else:
+                if VERBOSE:
+                    log(f"[Drift] ✅ CLEAR: {symbol} - no red flags, proceeding to buy")
+                if cycle_logger:
+                    cycle_logger.add_entry(f"Circuit Breaker CLEAR: {symbol} - {reason}")
+
+                return {"veto": False, "reason": reason, "should_buy": True}
+
+        except Exception as e:
+            if VERBOSE:
+                log(f"[Drift] Circuit Breaker error for {symbol}: {e}")
+            # On error, default to BUY (don't let errors cause paralysis)
+            return {"veto": False, "reason": f"Check failed: {e}", "should_buy": True}
+
+    def _track_veto(self, symbol: str, trigger_reason: str, veto_reason: str, red_flag_type: str):
+        """
+        Track vetoed trades for Saves vs Misses analysis.
+
+        Later we can check: did this vetoed trade go up (Miss) or down (Save)?
+        """
+        try:
+            # Read existing vetoes
+            if VETO_TRACKING_FILE.exists():
+                vetoes = json.loads(VETO_TRACKING_FILE.read_text())
+            else:
+                vetoes = {"vetoes": [], "stats": {"total": 0, "saves": 0, "misses": 0}}
+
+            # Get current price for later comparison
+            price = self.alpaca.get_latest_price(symbol) or 0
+
+            # Add this veto
+            vetoes["vetoes"].append({
+                "symbol": symbol,
+                "timestamp": datetime.now().isoformat(),
+                "trigger_reason": trigger_reason,
+                "veto_reason": veto_reason,
+                "red_flag_type": red_flag_type,
+                "price_at_veto": price,
+                "outcome": "pending",  # Will be updated later: "save" or "miss"
+            })
+            vetoes["stats"]["total"] += 1
+
+            # Keep last 100 vetoes
+            vetoes["vetoes"] = vetoes["vetoes"][-100:]
+
+            VETO_TRACKING_FILE.write_text(json.dumps(vetoes, indent=2))
+
+        except Exception as e:
+            if VERBOSE:
+                log(f"[Drift] Veto tracking error: {e}")
+
     def _general_news_scan(self, cycle_logger: Optional['CycleLogger'] = None) -> list:
         """
         Hourly scan for major market-moving news.
@@ -414,34 +530,93 @@ If nothing major, respond:
             available_cash = 0
             held_symbols = set()
 
-        # Step 3: Research each trigger
+        # Step 3: Process each trigger
+        # CIRCUIT BREAKER MODE: For new entries, default to BUY with fast veto check
+        # For existing positions: Use mechanical exits (already handled in _light_scan)
         actions = []
         for trigger in triggers:
-            # Skip BUY research if we don't have enough cash
-            # (SELL and HOLD triggers for existing positions should still be researched)
             symbol = trigger.get("symbol", "")
+            trigger_reason = trigger.get("reason", "")
             is_existing_position = symbol in held_symbols or symbol.replace("/", "") in held_symbols
 
+            # Skip if we don't have enough cash for new positions
             if not is_existing_position and available_cash < MIN_POSITION_SIZE:
-                log(f"[Drift] Skipping {trigger.get('symbol')} research: insufficient cash (${available_cash:.2f} < ${MIN_POSITION_SIZE})")
-                cycle_logger.add_entry(f"Skipped {trigger.get('symbol')}: insufficient cash for new position")
+                log(f"[Drift] Skipping {symbol}: insufficient cash (${available_cash:.2f} < ${MIN_POSITION_SIZE})")
+                cycle_logger.add_entry(f"Skipped {symbol}: insufficient cash for new position")
                 continue
 
-            # Check research cooldown (skip if we recently researched this symbol)
-            current_price = self.alpaca.get_latest_price(symbol) or 0
-            should_skip, skip_reason = self._should_skip_research(symbol, current_price, is_existing_position)
-            if should_skip:
+            # ========== CIRCUIT BREAKER MODE: New entries ==========
+            if CIRCUIT_BREAKER_MODE and not is_existing_position:
                 if VERBOSE:
-                    log(f"[Drift] Skipping {symbol} research: {skip_reason}")
-                cycle_logger.add_entry(f"Skipped {symbol}: {skip_reason}")
-                continue
+                    log(f"[Drift] Circuit Breaker mode: checking {symbol} for red flags...")
+                cycle_logger.add_entry(f"Circuit Breaker mode: {symbol}")
 
-            research_result = self._research(trigger, is_existing_position=is_existing_position, cycle_logger=cycle_logger)
+                # Fast veto check - default is BUY
+                veto_result = self._circuit_breaker_veto(symbol, trigger_reason, cycle_logger)
 
-            if research_result.get("decision") in ["buy", "sell"]:
-                # Step 4: Execute
+                if veto_result.get("veto"):
+                    # Vetoed - skip this trade
+                    if VERBOSE:
+                        log(f"[Drift] VETOED: {symbol} - {veto_result.get('reason')}")
+                    continue
+
+                # No veto - execute buy with mechanical sizing
+                # Use 75% confidence for mechanical entries (middle of the range)
+                mechanical_confidence = 75
+                mechanical_thesis = f"Circuit Breaker entry: {trigger_reason}. No red flags found."
+
+                research_result = {
+                    "symbol": symbol,
+                    "decision": "buy",
+                    "confidence": mechanical_confidence,
+                    "thesis": mechanical_thesis,
+                    "stop_loss_pct": 8,  # Use hard stop
+                    "target_pct": 5,  # Take profits at 5MA exit
+                }
+
+                # Write to memory
+                self._write_memory(symbol, "CIRCUIT_BREAKER_BUY", f"trigger: {trigger_reason[:50]}", mechanical_thesis, mechanical_confidence)
+
                 execution = self._execute(research_result, cycle_logger=cycle_logger)
                 actions.append(execution)
+
+                # Update available cash after buy
+                if execution.get("status") == "executed":
+                    available_cash -= execution.get("notional", 0)
+
+            # ========== EXISTING POSITIONS: Use research for sell decisions ==========
+            elif is_existing_position:
+                # Check research cooldown
+                current_price = self.alpaca.get_latest_price(symbol) or 0
+                should_skip, skip_reason = self._should_skip_research(symbol, current_price, is_existing_position)
+                if should_skip:
+                    if VERBOSE:
+                        log(f"[Drift] Skipping {symbol} research: {skip_reason}")
+                    cycle_logger.add_entry(f"Skipped {symbol}: {skip_reason}")
+                    continue
+
+                research_result = self._research(trigger, is_existing_position=True, cycle_logger=cycle_logger)
+
+                if research_result.get("decision") == "sell":
+                    execution = self._execute(research_result, cycle_logger=cycle_logger)
+                    actions.append(execution)
+
+            # ========== LEGACY MODE: Deep research for entries ==========
+            else:
+                # Circuit Breaker mode is OFF - use old research-first approach
+                current_price = self.alpaca.get_latest_price(symbol) or 0
+                should_skip, skip_reason = self._should_skip_research(symbol, current_price, is_existing_position)
+                if should_skip:
+                    if VERBOSE:
+                        log(f"[Drift] Skipping {symbol} research: {skip_reason}")
+                    cycle_logger.add_entry(f"Skipped {symbol}: {skip_reason}")
+                    continue
+
+                research_result = self._research(trigger, is_existing_position=False, cycle_logger=cycle_logger)
+
+                if research_result.get("decision") in ["buy", "sell"]:
+                    execution = self._execute(research_result, cycle_logger=cycle_logger)
+                    actions.append(execution)
 
         # Complete the cycle log
         message = f"Processed {len(triggers)} triggers, {len(actions)} actions"

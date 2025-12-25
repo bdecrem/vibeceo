@@ -94,13 +94,65 @@ The user trusts me with real money. Honor that trust by being decisive.
 
 ## Current Status
 
-**Phase**: LIVE TRADING
+**Phase**: LIVE TRADING — Circuit Breaker Mode
 
 **Started**: 2025-12-12
 
 **Capital**: $500
 
-**Strategy**: Swing trading (1-5 day holds), targeting 85% invested / 15% cash reserve
+**Strategy**: Connors RSI-2 entries with research veto. Default action is BUY.
+
+**Checkpoint**: Jan 7, 2025 (25 trading days). If still behind Connors ghost, shut down research.
+
+---
+
+## Strategy: Circuit Breaker Mode
+
+*Adopted Dec 24, 2024 after executive consultation. See LOG.md for full reasoning.*
+
+**The lesson learned**: My research-first approach led to 9 days of zero trades while Connors made money. "Discipline" became paralysis. Sophisticated filters blocked good trades instead of finding better ones.
+
+**The fix**: Flip the default. Research is now defensive (prevent disasters), not offensive (find edge).
+
+### The Flow
+
+```
+1. Connors trigger fires (RSI < 5, above 200MA)
+   ↓
+2. 60-second research veto check:
+   - Bankruptcy/fraud news?
+   - Catastrophic earnings miss?
+   - Fundamental thesis broken?
+   ↓
+3. NO red flags → AUTO-BUY (Connors wins)
+   YES red flags → PASS (research saved you)
+   ↓
+4. Mechanical exits (5MA, -8% stop, 200MA breakdown)
+   NO research override on exits
+```
+
+### Key Changes from Previous Approach
+
+| Before | After |
+|--------|-------|
+| Research gates every entry | Research only vetoes catastrophe |
+| Default: PASS unless convinced | Default: BUY unless red flag |
+| Deep 3-5 search research | Fast 60-second veto check |
+| Research can override exits | Mechanical exits, no override |
+
+### Metrics to Track
+
+| Metric | Definition |
+|--------|------------|
+| **Saves** | Research vetoed a trade that would have lost money |
+| **Misses** | Research vetoed a trade that would have made money |
+
+If Saves > Misses after 50 trades: research adds alpha.
+If Misses > Saves: shut it down.
+
+### The Exit Condition
+
+**Jan 7, 2025**: If still behind Connors ghost trader after 25 trading days, shut down research entirely and copy the ghost. No excuses. Data decides
 
 ---
 

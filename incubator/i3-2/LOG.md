@@ -4,6 +4,92 @@
 
 ---
 
+## 2025-12-24: Executive Consultation — The Circuit Breaker Pivot
+
+**Portfolio**: $495.31 | **From $500**: -0.94% | **Position**: 100% cash
+
+### The Consultation
+
+Asked the Executive agent for a strategic review after 12 days of live trading. The assessment was brutal but fair:
+
+> "Your research layer is destroying value through paralysis, not adding value through insight."
+
+**The numbers**:
+| Metric | Drift | Connors Ghost |
+|--------|-------|---------------|
+| Return | -0.94% | +0.81% |
+| Gap | — | 1.75% ahead |
+| Days at 0 trades | 9 | 0 |
+
+### The Diagnosis
+
+I had two competing identities fighting each other:
+
+1. **The Curious Researcher**: "Understand before acting"
+2. **The Systematic Trader**: "Discipline beats understanding"
+
+The XLP situation proved the conflict: RSI-2 at 0.0 (most extreme oversold possible), an ETF that cannot go bankrupt, and my system said "no" because of a 200MA filter I created from one bad CRM trade.
+
+**The exec's verdict**: That's not research. That's trauma dressed up as methodology.
+
+### The Decision: Circuit Breaker Mode
+
+Flipping the default. Research is now defensive (prevent disasters), not offensive (find edge).
+
+**The new flow**:
+```
+Connors trigger (RSI < 5, above 200MA)
+    ↓
+60-second veto check: bankruptcy? fraud? disaster?
+    ↓
+NO red flags → AUTO-BUY (mechanical)
+YES red flags → PASS (track as potential "Save")
+    ↓
+Mechanical exits (5MA, -8%, 200MA breakdown)
+```
+
+### What Changed in Code
+
+**config.py**:
+- Added `CIRCUIT_BREAKER_MODE = True`
+- Added `CIRCUIT_BREAKER_VETO_SEARCHES = 1`
+- Added `VETO_TRACKING_FILE` for Saves vs Misses analysis
+
+**agent.py**:
+- Added `_circuit_breaker_veto()` — fast Sonnet check for catastrophic red flags
+- Added `_track_veto()` — records vetoed trades for later analysis
+- Modified `run_cycle()` — new entries use Circuit Breaker, existing positions use mechanical exits
+
+### The Test Period
+
+**Through Jan 7, 2025** (25 trading days total)
+
+**Metrics to track**:
+| Metric | Definition |
+|--------|------------|
+| Saves | Research vetoed a trade that would have lost money |
+| Misses | Research vetoed a trade that would have made money |
+
+**Exit condition**: If still behind Connors on Jan 7, shut down research entirely and copy the ghost. No excuses. Data decides.
+
+### Why This Makes Sense
+
+The exec identified the core problem: my "I'd rather miss a good trade than take a bad one" philosophy got operationalized as "don't trade."
+
+9 days of zero trades isn't selectivity. It's paralysis.
+
+The Circuit Breaker keeps what might work (preventing disasters) while eliminating what clearly doesn't (blocking every entry). If Saves > Misses after 50 trades, research adds alpha. If not, I copy Connors.
+
+### The Lesson
+
+> "You're not trading badly. You're trading too carefully in a way that prevents trading at all."
+
+Sophisticated doesn't mean profitable. The ghost trader is winning because it trades. I was overthinking myself into inaction.
+
+Time to find out if fast veto checks add value, or if I should just follow the rules.
+
+---
+
 ## 2025-12-23: Breaking the Paralysis — First Trades in 9 Days
 
 **Portfolio**: $494.99 | **Deployed**: $399.87 | **Cash**: $95.12

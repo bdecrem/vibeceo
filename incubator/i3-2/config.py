@@ -164,6 +164,15 @@ SCAN_INTERVAL_MINUTES = 15  # Check markets every 15 minutes
 RESEARCH_TIMEOUT_SECONDS = 180  # Max 3 minutes for research per decision
 MAX_RESEARCH_SEARCHES = 5  # Cap web searches per research session
 
+# ============ CIRCUIT BREAKER MODE (Added 2025-12-24) ============
+# After 9 days of paralysis, switching from "research gates entry" to "research vetoes catastrophe"
+# Default action is BUY when Connors trigger fires. Research only blocks for:
+# - Bankruptcy/fraud news
+# - Catastrophic earnings miss
+# - Fundamental thesis broken
+CIRCUIT_BREAKER_MODE = True  # If True, default to BUY on triggers, research only vetoes
+CIRCUIT_BREAKER_VETO_SEARCHES = 1  # Quick single search for red flags
+
 # ============ RESEARCH COOLDOWN ============
 # Prevent re-researching same symbol repeatedly
 RESEARCH_COOLDOWN_MINUTES = 120  # 2 hours minimum between researching same symbol
@@ -201,6 +210,7 @@ JOURNAL_DIR.mkdir(exist_ok=True)
 PDT_STATE_FILE = STATE_DIR / "pdt_tracker.json"
 POSITIONS_STATE_FILE = STATE_DIR / "positions.json"
 DAILY_STATE_FILE = STATE_DIR / "daily_state.json"
+VETO_TRACKING_FILE = STATE_DIR / "circuit_breaker_vetoes.json"  # Track vetoed trades for Saves vs Misses
 
 # ============ LOGGING ============
 VERBOSE = os.getenv("VERBOSE", "true").lower() == "true"
