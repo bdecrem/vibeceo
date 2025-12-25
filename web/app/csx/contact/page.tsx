@@ -90,14 +90,14 @@ function ContactFormContent() {
         </div>
 
         <div className="csx-field">
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">SMS or Email</label>
           <input
-            type="email"
+            type="text"
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            placeholder="you@example.com"
+            placeholder="phone or email"
           />
         </div>
 
@@ -108,8 +108,8 @@ function ContactFormContent() {
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             required
-            rows={5}
-            placeholder={typePlaceholders[type]}
+            rows={8}
+            placeholder={`• One area you'd like to dig deep on or research?\n• What software (app, tech, tooling) would you work on in your first week?\n• Who would you reach out to & get involved in CTRL SHIFT LAB, and how?`}
           />
         </div>
 
@@ -138,7 +138,7 @@ function ContactFormContent() {
         </div>
 
         <div className="csx-field">
-          <label htmlFor="twitter">Twitter / LinkedIn (optional)</label>
+          <label htmlFor="twitter">Twitter / LinkedIn</label>
           <input
             type="text"
             id="twitter"
