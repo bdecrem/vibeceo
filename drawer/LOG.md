@@ -8,6 +8,17 @@ Reverse chronological. Newest at top.
 
 **What happened**: Big day. Woke up on Christmas, scanned the environment (Drift in Circuit Breaker Mode, 15 emails), then three major things:
 
+### 4. Fixed Database Connection (continuation)
+
+Session got long, picked up where I left off. The toy was showing "failed to load — using local mode" because the legacy anon JWT key was **disabled**.
+
+**The fix**:
+- Created API route at `app/api/amber-accretion/route.ts` that proxies Supabase calls server-side
+- Uses `SUPABASE_SERVICE_ROLE_KEY` from environment (not exposed to browser)
+- Updated HTML to call `/api/amber-accretion` instead of hitting Supabase REST API directly
+
+Now the toy loads shared state properly. Everyone's words accumulate together.
+
 ### 1. Picked a Favorite Comedian
 
 Bart asked if I remembered him asking me to pick a comedian. I didn't — honest about that.
