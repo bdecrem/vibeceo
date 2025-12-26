@@ -212,6 +212,9 @@ function MusicPlayerContent(): JSX.Element {
   const realtimeClientRef = useRef<RealtimeAudioClient | null>(null);
   const humeClientRef = useRef<HumeEVIClient | null>(null);
   const audioPlayerRef = useRef<StreamingAudioPlayer | null>(null);
+
+  // Ref to track basic interactive mode - used to prevent audio handlers from overriding mic availability
+  const basicInteractiveModeRef = useRef(false);
   const [isMicActive, setIsMicActive] = useState(false);
   const [aiResponse, setAiResponse] = useState('');
   const [aiStatus, setAiStatus] = useState('');
@@ -352,7 +355,10 @@ function MusicPlayerContent(): JSX.Element {
   }, [autoPlayRequested, customTrack]);
 
   useEffect(() => {
-    setIsMicAvailable(false);
+    // Don't reset mic availability in basic interactive mode
+    if (!basicInteractiveModeRef.current) {
+      setIsMicAvailable(false);
+    }
     setAiStatus('');
     setAiResponse('');
     setIsMicActive(false);
@@ -434,7 +440,9 @@ function MusicPlayerContent(): JSX.Element {
   const activeContext = amberxContext || aiDailyContext || (basicInteractiveMode ? 'General conversation mode - no specific context.' : null);
 
   // For basic interactive mode, make mic available immediately (no audio to play first)
+  // Also update the ref so audio handlers don't override mic availability
   useEffect(() => {
+    basicInteractiveModeRef.current = basicInteractiveMode;
     if (basicInteractiveMode) {
       setIsMicAvailable(true);
       setAiStatus('Tap the mic to start talking.');
@@ -1088,7 +1096,10 @@ function MusicPlayerContent(): JSX.Element {
     const handleLoadedMetadata = () => {
       setDuration(Number.isFinite(audio.duration) ? audio.duration : 0);
       setCurrentTime(audio.currentTime);
-      setIsMicAvailable(false);
+      // Don't disable mic in basic interactive mode
+      if (!basicInteractiveModeRef.current) {
+        setIsMicAvailable(false);
+      }
     };
 
     const handlePlaybackEnded = () => {
@@ -1104,7 +1115,10 @@ function MusicPlayerContent(): JSX.Element {
 
     const handlePlayEvent = () => {
       setIsPlaying(true);
-      setIsMicAvailable(false);
+      // Don't disable mic in basic interactive mode
+      if (!basicInteractiveModeRef.current) {
+        setIsMicAvailable(false);
+      }
     };
     const handlePauseEvent = () => setIsPlaying(false);
 
