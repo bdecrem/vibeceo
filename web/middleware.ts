@@ -69,13 +69,17 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // /music-player and /report-viewer should not be rewritten
+    // /music-player, /report-viewer, /voice-chat should not be rewritten
     if (pathname === '/music-player' || pathname.startsWith('/music-player')) {
       log(`[Middleware] Music player route bypassed: ${pathname}`)
       return NextResponse.next()
     }
     if (pathname === '/report-viewer' || pathname.startsWith('/report-viewer')) {
       log(`[Middleware] Report viewer route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+    if (pathname === '/voice-chat' || pathname.startsWith('/voice-chat')) {
+      log(`[Middleware] Voice chat route bypassed: ${pathname}`)
       return NextResponse.next()
     }
 
@@ -253,6 +257,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/echo-gallery') ||
       pathname.startsWith('/coinrundown') ||
       pathname.startsWith('/amber') ||
+      pathname.startsWith('/voice-chat') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
