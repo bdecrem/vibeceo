@@ -20,13 +20,13 @@ export const ambervCommandHandler: CommandHandler = {
   async handle(context: CommandContext): Promise<boolean> {
     const { from, twilioClient, sendSmsResponse, updateLastMessageDate, normalizedFrom } = context;
 
-    // Build a simple music player URL with no audio source - just interactive mode
+    // Direct link to the dedicated voice chat page
     const baseUrl = process.env.SHORTLINK_BASE_URL || 'https://kochi.to';
-    const playerUrl = `${baseUrl}/music-player?interactive=1&title=Amber%20Voice`;
+    const voiceChatUrl = `${baseUrl}/voice-chat`;
 
     await sendSmsResponse(
       from,
-      `🎙️ Amber Voice\n\nTap to chat:\n${playerUrl}`,
+      `🎙️ Amber Voice\n\nTap to chat:\n${voiceChatUrl}`,
       twilioClient
     );
 
