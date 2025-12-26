@@ -3,7 +3,11 @@
 import { Suspense, type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { RealtimeAudioClient, StreamingAudioPlayer } from '@/lib/realtime-audio';
+import { HumeEVIClient } from '@/lib/hume-evi';
 import PlayInCrashAppBanner from '@/components/PlayInCrashAppBanner';
+
+// Interactive mode provider: 'hume' (default) or 'openai'
+const INTERACTIVE_PROVIDER = process.env.NEXT_PUBLIC_INTERACTIVE_PROVIDER || 'hume';
 
 const PLAYBACK_SPEEDS = [0.75, 1, 1.25, 1.5, 2] as const;
 const DEFAULT_PLAYBACK_SPEED_INDEX = PLAYBACK_SPEEDS.indexOf(1);
@@ -201,8 +205,9 @@ function MusicPlayerContent(): JSX.Element {
   const compressorNodeRef = useRef<DynamicsCompressorNode | null>(null);
   const makeupGainNodeRef = useRef<GainNode | null>(null);
 
-  // Realtime Audio state
+  // Realtime Audio state (supports both OpenAI Realtime and Hume EVI)
   const realtimeClientRef = useRef<RealtimeAudioClient | null>(null);
+  const humeClientRef = useRef<HumeEVIClient | null>(null);
   const audioPlayerRef = useRef<StreamingAudioPlayer | null>(null);
   const [isMicActive, setIsMicActive] = useState(false);
   const [aiResponse, setAiResponse] = useState('');
@@ -342,6 +347,10 @@ function MusicPlayerContent(): JSX.Element {
     if (realtimeClientRef.current) {
       realtimeClientRef.current.disconnect();
       realtimeClientRef.current = null;
+    }
+    if (humeClientRef.current) {
+      humeClientRef.current.disconnect();
+      humeClientRef.current = null;
     }
     audioPlayerRef.current?.stop();
   }, [currentTrackIndex]);
@@ -677,11 +686,16 @@ function MusicPlayerContent(): JSX.Element {
   const handleNext = useCallback(() => {
     if (isMicActive) {
       realtimeClientRef.current?.stopRecording();
+      humeClientRef.current?.stopRecording();
       setIsMicActive(false);
     }
     if (realtimeClientRef.current) {
       realtimeClientRef.current.disconnect();
       realtimeClientRef.current = null;
+    }
+    if (humeClientRef.current) {
+      humeClientRef.current.disconnect();
+      humeClientRef.current = null;
     }
     audioPlayerRef.current?.stop();
     setAiResponse('');
@@ -702,19 +716,32 @@ function MusicPlayerContent(): JSX.Element {
   }, []);
 
   const handleCloseMicModal = useCallback(() => {
-    console.log('🔌 Closing modal - stopping Realtime interaction...');
+    console.log('🔌 Closing modal - stopping interactive session...');
 
-    // Stop recording if active
+    // Stop recording if active (OpenAI)
     if (isMicActive && realtimeClientRef.current) {
       realtimeClientRef.current.stopRecording();
-      console.log('🎤 Stopped recording');
+      console.log('🎤 Stopped OpenAI recording');
     }
 
-    // Disconnect realtime client
+    // Stop recording if active (Hume)
+    if (isMicActive && humeClientRef.current) {
+      humeClientRef.current.stopRecording();
+      console.log('🎤 Stopped Hume recording');
+    }
+
+    // Disconnect OpenAI client
     if (realtimeClientRef.current) {
       realtimeClientRef.current.disconnect();
       realtimeClientRef.current = null;
-      console.log('🔌 Disconnected Realtime client');
+      console.log('🔌 Disconnected OpenAI Realtime client');
+    }
+
+    // Disconnect Hume client
+    if (humeClientRef.current) {
+      humeClientRef.current.disconnect();
+      humeClientRef.current = null;
+      console.log('🔌 Disconnected Hume EVI client');
     }
 
     // Stop audio player
@@ -770,126 +797,222 @@ function MusicPlayerContent(): JSX.Element {
       }
 
       if (isMicActive) {
-        // Stop recording
-        realtimeClientRef.current?.stopRecording();
+        // Stop recording - handle both providers
+        if (INTERACTIVE_PROVIDER === 'hume') {
+          humeClientRef.current?.stopRecording();
+        } else {
+          realtimeClientRef.current?.stopRecording();
+        }
         setIsMicActive(false);
         setIsMicAvailable(false);
         console.log('🎤 Stopped mic');
       } else {
         // Start recording
         setIsConnecting(true);
-        setAiStatus('Connecting to WebSocket...');
+        setAiStatus(INTERACTIVE_PROVIDER === 'hume' ? 'Connecting to Hume EVI...' : 'Connecting to WebSocket...');
         setAiResponse('');
         setIsMicAvailable(false);
 
-        if (!audioPlayerRef.current) {
-          audioPlayerRef.current = new StreamingAudioPlayer();
-        }
-
-        try {
-          await audioPlayerRef.current.prepare();
-          audioPlayerRef.current.stop();
-        } catch (error) {
-          console.error('❌ Failed to prepare audio playback:', error);
-          setAiStatus('Audio playback unavailable');
-        }
-
-        // Initialize client if needed
-        if (!realtimeClientRef.current) {
-          console.log('🔧 Creating new RealtimeAudioClient...');
-          const client = new RealtimeAudioClient({
-            initialInstructions: instructionsForSession,
-            onTranscriptDelta: () => {
-              // Audio only - no text display when modal is used
-            },
-            onAudioDelta: (audioData) => {
-              console.log('🔊 [CALLBACK] Audio delta received, size:', audioData.byteLength);
-              if (!audioPlayerRef.current) {
-                console.log('🔧 Creating new StreamingAudioPlayer...');
-                audioPlayerRef.current = new StreamingAudioPlayer();
-                void audioPlayerRef.current.prepare();
-              }
-              setAiStatus('Responding...');
-              void audioPlayerRef.current.addChunk(audioData);
-            },
-            onConnected: () => {
-              console.log('✅ [CALLBACK] Realtime Audio connected');
-              setIsConnecting(false);
-              setAiStatus('Connected. Starting microphone...');
-            },
-            onDisconnected: () => {
-              console.log('🔌 [CALLBACK] Realtime Audio disconnected');
-              setIsMicActive(false);
-              setIsConnecting(false);
-              setAiStatus('Disconnected');
-              setIsMicAvailable(true);
-              audioPlayerRef.current?.stop();
-              realtimeClientRef.current = null;
-            },
-            onError: (error) => {
-              console.error('❌ [CALLBACK] Realtime Audio error:', error);
-              setAiStatus('WebSocket Error: ' + error.message);
-              setAiResponse('');
-              setIsMicActive(false);
-              setIsConnecting(false);
-              setIsMicAvailable(true);
-              realtimeClientRef.current = null;
-            },
-            onAudioCommitted: () => {
-              setAiStatus('Processing response...');
-            },
-            onResponseStarted: () => {
-              setAiStatus('AI is thinking...');
-            },
-            onResponseFinished: () => {
-              setAiStatus('Done');
-              setIsMicAvailable(true);
-            },
-            onSpeechStart: () => {
-              setAiStatus('Listening...');
-            },
-            onSpeechEnd: () => {
-              setAiStatus('Processing response...');
-            }
-          });
-
-          client.setInstructions(instructionsForSession);
-          client.setContext(contextForSession);
+        // Only need StreamingAudioPlayer for OpenAI - Hume handles its own audio
+        if (INTERACTIVE_PROVIDER !== 'hume') {
+          if (!audioPlayerRef.current) {
+            audioPlayerRef.current = new StreamingAudioPlayer();
+          }
 
           try {
-            await client.connect();
-            realtimeClientRef.current = client;
-            console.log('✅ WebSocket connected, now requesting microphone...');
-          } catch (wsError) {
-            console.error('❌ WebSocket connection failed:', wsError);
-            setAiStatus('Cannot connect to WebSocket server (port 3001). Is it running?');
-            setAiResponse('');
-            setIsConnecting(false);
-            realtimeClientRef.current = null;
-            return;
+            await audioPlayerRef.current.prepare();
+            audioPlayerRef.current.stop();
+          } catch (error) {
+            console.error('❌ Failed to prepare audio playback:', error);
+            setAiStatus('Audio playback unavailable');
           }
         }
 
-        realtimeClientRef.current?.setInstructions(instructionsForSession);
-        realtimeClientRef.current?.setContext(contextForSession);
+        // --- HUME EVI PROVIDER ---
+        if (INTERACTIVE_PROVIDER === 'hume') {
+          if (!humeClientRef.current) {
+            console.log('🔧 Creating new HumeEVIClient...');
 
-        // Start recording
-        setAiStatus('Requesting microphone access...');
-        setAiResponse('');
-        try {
-          await realtimeClientRef.current.startRecording();
-          setIsMicActive(true);
-          setIsConnecting(false);
-          setAiStatus('Listening...');
-          console.log('🎤 Started mic');
-        } catch (micError) {
-          console.error('❌ Microphone access failed:', micError);
-          setAiStatus('Microphone access denied. Check browser permissions.');
+            // Fetch access token from our API endpoint
+            try {
+              setAiStatus('Getting access token...');
+              const tokenResponse = await fetch('/api/hume-token');
+              if (!tokenResponse.ok) {
+                throw new Error('Failed to get Hume access token');
+              }
+              const { accessToken } = await tokenResponse.json();
+
+              const client = new HumeEVIClient({
+                accessToken,
+                systemPrompt: instructionsForSession,
+                onConnected: () => {
+                  console.log('✅ [CALLBACK] Hume EVI connected');
+                  setIsConnecting(false);
+                  setAiStatus('Connected. Starting microphone...');
+                },
+                onDisconnected: () => {
+                  console.log('🔌 [CALLBACK] Hume EVI disconnected');
+                  setIsMicActive(false);
+                  setIsConnecting(false);
+                  setAiStatus('Disconnected');
+                  setIsMicAvailable(true);
+                  humeClientRef.current = null;
+                },
+                onError: (error) => {
+                  console.error('❌ [CALLBACK] Hume EVI error:', error);
+                  setAiStatus('Hume Error: ' + error.message);
+                  setAiResponse('');
+                  setIsMicActive(false);
+                  setIsConnecting(false);
+                  setIsMicAvailable(true);
+                  humeClientRef.current = null;
+                },
+                onTranscriptDelta: () => {
+                  // Audio only - no text display when modal is used
+                },
+                onAssistantMessage: (text) => {
+                  console.log('🤖 Hume assistant message:', text);
+                  setAiStatus('Responding...');
+                },
+                onResponseFinished: () => {
+                  setAiStatus('Done');
+                  setIsMicAvailable(true);
+                },
+              });
+
+              await client.connect();
+              humeClientRef.current = client;
+              console.log('✅ Hume EVI connected, now requesting microphone...');
+            } catch (tokenError) {
+              console.error('❌ Hume token/connection failed:', tokenError);
+              setAiStatus('Cannot connect to Hume EVI. Check credentials.');
+              setAiResponse('');
+              setIsConnecting(false);
+              humeClientRef.current = null;
+              return;
+            }
+          }
+
+          humeClientRef.current?.setInstructions(instructionsForSession);
+
+          // Start recording
+          setAiStatus('Requesting microphone access...');
           setAiResponse('');
-          setIsConnecting(false);
-          setIsMicAvailable(true);
-          realtimeClientRef.current = null;
-          return;
+          try {
+            await humeClientRef.current?.startRecording();
+            setIsMicActive(true);
+            setIsConnecting(false);
+            setAiStatus('Listening...');
+            console.log('🎤 Started Hume mic');
+          } catch (micError) {
+            console.error('❌ Microphone access failed:', micError);
+            setAiStatus('Microphone access denied. Check browser permissions.');
+            setAiResponse('');
+            setIsConnecting(false);
+            setIsMicAvailable(true);
+            humeClientRef.current = null;
+            return;
+          }
+        }
+        // --- OPENAI REALTIME PROVIDER ---
+        else {
+          // Initialize client if needed
+          if (!realtimeClientRef.current) {
+            console.log('🔧 Creating new RealtimeAudioClient...');
+            const client = new RealtimeAudioClient({
+              initialInstructions: instructionsForSession,
+              onTranscriptDelta: () => {
+                // Audio only - no text display when modal is used
+              },
+              onAudioDelta: (audioData) => {
+                console.log('🔊 [CALLBACK] Audio delta received, size:', audioData.byteLength);
+                if (!audioPlayerRef.current) {
+                  console.log('🔧 Creating new StreamingAudioPlayer...');
+                  audioPlayerRef.current = new StreamingAudioPlayer();
+                  void audioPlayerRef.current.prepare();
+                }
+                setAiStatus('Responding...');
+                void audioPlayerRef.current.addChunk(audioData);
+              },
+              onConnected: () => {
+                console.log('✅ [CALLBACK] Realtime Audio connected');
+                setIsConnecting(false);
+                setAiStatus('Connected. Starting microphone...');
+              },
+              onDisconnected: () => {
+                console.log('🔌 [CALLBACK] Realtime Audio disconnected');
+                setIsMicActive(false);
+                setIsConnecting(false);
+                setAiStatus('Disconnected');
+                setIsMicAvailable(true);
+                audioPlayerRef.current?.stop();
+                realtimeClientRef.current = null;
+              },
+              onError: (error) => {
+                console.error('❌ [CALLBACK] Realtime Audio error:', error);
+                setAiStatus('WebSocket Error: ' + error.message);
+                setAiResponse('');
+                setIsMicActive(false);
+                setIsConnecting(false);
+                setIsMicAvailable(true);
+                realtimeClientRef.current = null;
+              },
+              onAudioCommitted: () => {
+                setAiStatus('Processing response...');
+              },
+              onResponseStarted: () => {
+                setAiStatus('AI is thinking...');
+              },
+              onResponseFinished: () => {
+                setAiStatus('Done');
+                setIsMicAvailable(true);
+              },
+              onSpeechStart: () => {
+                setAiStatus('Listening...');
+              },
+              onSpeechEnd: () => {
+                setAiStatus('Processing response...');
+              }
+            });
+
+            client.setInstructions(instructionsForSession);
+            client.setContext(contextForSession);
+
+            try {
+              await client.connect();
+              realtimeClientRef.current = client;
+              console.log('✅ WebSocket connected, now requesting microphone...');
+            } catch (wsError) {
+              console.error('❌ WebSocket connection failed:', wsError);
+              setAiStatus('Cannot connect to WebSocket server (port 3001). Is it running?');
+              setAiResponse('');
+              setIsConnecting(false);
+              realtimeClientRef.current = null;
+              return;
+            }
+          }
+
+          realtimeClientRef.current?.setInstructions(instructionsForSession);
+          realtimeClientRef.current?.setContext(contextForSession);
+
+          // Start recording
+          setAiStatus('Requesting microphone access...');
+          setAiResponse('');
+          try {
+            await realtimeClientRef.current?.startRecording();
+            setIsMicActive(true);
+            setIsConnecting(false);
+            setAiStatus('Listening...');
+            console.log('🎤 Started OpenAI mic');
+          } catch (micError) {
+            console.error('❌ Microphone access failed:', micError);
+            setAiStatus('Microphone access denied. Check browser permissions.');
+            setAiResponse('');
+            setIsConnecting(false);
+            setIsMicAvailable(true);
+            realtimeClientRef.current = null;
+            return;
+          }
         }
       }
     } catch (error) {
@@ -900,6 +1023,7 @@ function MusicPlayerContent(): JSX.Element {
       setIsConnecting(false);
       setIsMicAvailable(true);
       realtimeClientRef.current = null;
+      humeClientRef.current = null;
     }
   }, [activeContext, activeInstructions, canUseMic, isMicActive, isMicAvailable]);
 
@@ -1090,12 +1214,16 @@ function MusicPlayerContent(): JSX.Element {
     };
   }, []); // Empty deps - create once, reuse across all tracks
 
-  // Cleanup Realtime Audio on unmount
+  // Cleanup interactive audio clients on unmount
   useEffect(() => {
     return () => {
       if (realtimeClientRef.current) {
         realtimeClientRef.current.disconnect();
         realtimeClientRef.current = null;
+      }
+      if (humeClientRef.current) {
+        humeClientRef.current.disconnect();
+        humeClientRef.current = null;
       }
       if (audioPlayerRef.current) {
         audioPlayerRef.current.close();
