@@ -661,9 +661,12 @@ function renderContent(content: string): JSX.Element[] {
 
     // Handle paragraphs with basic formatting
     let html = section
+      .replace(/\*\*\[(.+?)\]\((.+?)\)\*\*/g, '<strong><a href="$2" style="color: var(--amber-200); text-decoration: underline;">$1</a></strong>')
+      .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: var(--amber-300); text-decoration: underline;">$1</a>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
       .replace(/\*(.+?)\*/g, '<em>$1</em>')
-      .replace(/"(.+?)"/g, '"$1"');
+      .replace(/"(.+?)"/g, '"$1"')
+      .replace(/`(.+?)`/g, '<code style="background: rgba(212, 165, 116, 0.15); padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.9em;">$1</code>');
 
     return (
       <p key={idx} dangerouslySetInnerHTML={{ __html: html }} />

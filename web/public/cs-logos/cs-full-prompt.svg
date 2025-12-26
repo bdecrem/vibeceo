@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#0a0a0a"/>
+  <text x="138" y="460" font-family="'IBM Plex Mono', 'SF Mono', 'Menlo', monospace" font-size="220" font-weight="500" fill="#a85" dominant-baseline="middle">&gt;</text>
+  <text x="400" y="460" font-family="'IBM Plex Mono', 'SF Mono', 'Menlo', monospace" font-size="220" font-weight="500" fill="#ffffff" text-anchor="middle" dominant-baseline="middle">CS*</text>
+</svg>

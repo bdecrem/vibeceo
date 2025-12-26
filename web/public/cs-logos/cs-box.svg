@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800">
+  <rect width="800" height="800" fill="#0a0a0a"/>
+  <!-- Outer border -->
+  <rect x="140" y="240" width="520" height="320" fill="none" stroke="#ffffff" stroke-width="3"/>
+  <!-- Inner border -->
+  <rect x="155" y="255" width="490" height="290" fill="none" stroke="#ffffff" stroke-width="2" stroke-dasharray="8 4"/>
+  <!-- CS text -->
+  <text x="400" y="430" font-family="'IBM Plex Mono', 'SF Mono', 'Menlo', monospace" font-size="200" font-weight="500" fill="#ffffff" text-anchor="middle">CS</text>
+</svg>
