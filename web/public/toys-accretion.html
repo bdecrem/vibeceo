@@ -304,8 +304,10 @@
   <div class="credit"><a href="/amber">← amber's blog</a></div>
 
   <script>
-    // API endpoint for shared state
-    const API_URL = '/api/amber-accretion';
+    // API endpoints
+    const API_URL = '/api/amber-accretion';  // Supabase for positions
+    const GRAPH_URL = '/api/amber-accretion/graph';  // Neo4j for vocabulary
+    const DIGEST_URL = '/api/amber-accretion/digest-graph';  // Digestion
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -398,24 +400,25 @@
     // API helpers
     async function loadVocabulary() {
       try {
-        const res = await fetch(`${API_URL}?type=vocabulary`);
+        const res = await fetch(GRAPH_URL);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         const data = await res.json();
 
-        // Build vocabulary map
+        // Build vocabulary map from graph data
         vocabulary = {};
-        for (const row of data) {
+        for (const row of data.words || []) {
           vocabulary[row.word] = {
-            associations: row.associations || [],
-            spawn_candidates: row.spawn_candidates || [],
-            parent_word: row.parent_word,
+            associations: row.evokes || [],
+            spawn_candidates: row.could_spawn || [],
+            parent_word: row.parent,
             is_root: row.is_root,
-            is_digested: row.is_digested,
-            group_name: row.group_name
+            is_digested: row.digested,
+            group_name: row.group_name,
+            thought: row.thought
           };
         }
 
-        console.log(`Loaded ${Object.keys(vocabulary).length} vocabulary words`);
+        console.log(`Loaded ${Object.keys(vocabulary).length} vocabulary words from graph`);
       } catch (e) {
         console.error('Failed to load vocabulary:', e);
       }
@@ -480,6 +483,7 @@
 
     async function savePreserved(p) {
       try {
+        // 1. Save position to Supabase
         const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -496,20 +500,68 @@
         });
 
         if (res.ok) {
-          // Add to existing words and vocabulary
+          // 2. Add to graph (Neo4j)
+          await fetch(GRAPH_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              word: p.symbol,
+              parent_word: p.parentWord || null
+            })
+          });
+
+          // 3. Add to local vocabulary (undigested)
           existingWords.add(p.symbol);
           vocabulary[p.symbol] = {
             associations: [],
             spawn_candidates: [],
             parent_word: p.parentWord || null,
             is_root: false,
-            is_digested: false
+            is_digested: false,
+            thought: null
           };
+
+          // 4. Trigger digestion in background (don't await - let it run async)
+          digestWord(p.symbol);
+
           // Rebuild spawn candidates
           rebuildSpawnCandidates();
         }
       } catch (e) {
         console.error('Failed to save:', e);
+      }
+    }
+
+    // Digest a word asynchronously (Amber processes it)
+    async function digestWord(word) {
+      try {
+        console.log(`Digesting: ${word}...`);
+        const res = await fetch(DIGEST_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ word })
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          console.log(`Digested "${word}":`, data);
+
+          // Update local vocabulary with digestion results
+          if (vocabulary[word]) {
+            vocabulary[word].associations = data.evokes || [];
+            vocabulary[word].spawn_candidates = data.could_spawn || [];
+            vocabulary[word].is_digested = true;
+            vocabulary[word].thought = data.thought;
+          }
+
+          // Rebuild spawn candidates with new possibilities
+          rebuildSpawnCandidates();
+
+          // Play a special tone for digestion complete
+          playTone(700, 0.3, 0.04);
+        }
+      } catch (e) {
+        console.error(`Failed to digest "${word}":`, e);
       }
     }
 
@@ -916,29 +968,51 @@
       // Build age string with parent info for non-root words
       const vocabEntry = vocabulary[p.symbol];
       const isRoot = vocabEntry?.is_root;
+      const isDigested = vocabEntry?.is_digested;
       const parentWord = p.parentWord || vocabEntry?.parent_word;
+      const thought = vocabEntry?.thought;
 
-      let ageText = `preserved ${getAge(p.preservedAt)} · depth ${Math.floor((1 - p.distance / amberRadius) * 100)}%`;
+      let ageText = `preserved ${getAge(p.preservedAt)}`;
       if (isRoot) {
-        ageText = `root word · ${ageText}`;
+        ageText = `root · ${ageText}`;
       } else if (parentWord) {
-        ageText = `spawned from "${parentWord}" · ${ageText}`;
+        ageText = `from "${parentWord}" · ${ageText}`;
+      }
+      if (!isDigested) {
+        ageText += ' · digesting...';
       }
       document.getElementById('examineAge').textContent = ageText;
 
       const connectionsEl = document.getElementById('examineConnections');
-      const related = p.related;
+      const related = p.related || vocabEntry?.associations || [];
       const preservedSymbols = preserved.map(x => x.symbol);
 
-      if (related.length > 0) {
-        connectionsEl.innerHTML = related.map(r => {
-          const isPreserved = preservedSymbols.includes(r);
-          return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}${isPreserved ? ' ·' : ''}</span>`;
-        }).join(' ');
-      } else {
-        connectionsEl.innerHTML = '<span style="opacity:0.4">awaiting digestion...</span>';
+      let html = '';
+
+      // Show Amber's thought if digested
+      if (thought) {
+        html += `<div style="font-style: italic; opacity: 0.7; margin-bottom: 10px; font-size: 11px;">"${thought}"</div>`;
       }
 
+      // Show connections
+      if (related.length > 0) {
+        html += '<div style="margin-bottom: 5px; opacity: 0.5; font-size: 10px;">evokes:</div>';
+        html += related.map(r => {
+          const isPreserved = preservedSymbols.includes(r);
+          return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}</span>`;
+        }).join(' ');
+      } else if (!isDigested) {
+        html += '<span style="opacity:0.4">awaiting amber\'s thoughts...</span>';
+      }
+
+      // Show what could spawn
+      const couldSpawn = vocabEntry?.spawn_candidates || [];
+      if (couldSpawn.length > 0) {
+        html += `<div style="margin-top: 8px; opacity: 0.5; font-size: 10px;">could spawn:</div>`;
+        html += `<span style="opacity: 0.6">${couldSpawn.join(', ')}</span>`;
+      }
+
+      connectionsEl.innerHTML = html;
       panel.classList.add('active');
     }
 
