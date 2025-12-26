@@ -218,6 +218,55 @@
     .credit a:hover {
       opacity: 0.8;
     }
+    .word-input {
+      position: fixed;
+      bottom: 70px;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      z-index: 100;
+      opacity: 0.85;
+    }
+    .word-input input {
+      background: rgba(10, 8, 6, 0.9);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 15px;
+      padding: 8px 14px;
+      color: #d4a574;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      width: 150px;
+      outline: none;
+    }
+    .word-input input::placeholder {
+      color: rgba(212, 165, 116, 0.4);
+    }
+    .word-input input:focus {
+      border-color: rgba(212, 165, 116, 0.5);
+    }
+    .word-input span {
+      cursor: pointer;
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .word-input span:hover {
+      opacity: 1;
+    }
+    @media (max-width: 480px) {
+      .word-input {
+        bottom: 75px;
+        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
+      }
+      .word-input input {
+        width: 130px;
+        font-size: 12px;
+        padding: 7px 12px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -226,12 +275,12 @@
     replaying <span id="replayCount">0</span> / <span id="replayTotal">0</span>
   </div>
   <div class="hint" id="hint">
-    click to grow · hover to examine<br>
-    each word is unique — spawned from the roots, never repeated
+    type a word to offer it · hover to examine<br>
+    amber will digest it and make it part of her world
   </div>
   <canvas id="canvas"></canvas>
   <div class="stats">
-    <span id="preserved">0</span> words · <span id="spawnable">0</span> can emerge
+    <span id="preserved">0</span> words · <span id="pending">0</span> awaiting digestion
   </div>
   <div class="replay-controls" id="replayControls">
     <span onclick="skipReplay()">[skip]</span>
@@ -241,6 +290,10 @@
     <h3 id="examineWord"></h3>
     <div class="age" id="examineAge"></div>
     <div class="connections" id="examineConnections"></div>
+  </div>
+  <div class="word-input" id="wordInput">
+    <input type="text" id="wordField" placeholder="offer a word..." maxlength="30" />
+    <span onclick="submitWord()">[add]</span>
   </div>
   <div class="controls">
     <span onclick="burst()">[burst]</span>
@@ -692,6 +745,51 @@
       }
     }
 
+    async function submitWord() {
+      const input = document.getElementById('wordField');
+      const word = input.value.trim().toLowerCase();
+
+      if (!word) return;
+
+      // Basic validation
+      if (word.length < 2 || word.length > 30) {
+        input.value = '';
+        input.placeholder = 'too short/long';
+        setTimeout(() => { input.placeholder = 'offer a word...'; }, 2000);
+        return;
+      }
+
+      // Check if word already exists
+      if (existingWords.has(word)) {
+        input.value = '';
+        input.placeholder = 'already exists';
+        setTimeout(() => { input.placeholder = 'offer a word...'; }, 2000);
+        return;
+      }
+
+      // Spawn the word from the edge
+      const angle = Math.random() * Math.PI * 2;
+      const dist = size * 0.4 + Math.random() * size * 0.1;
+      spawnParticle(
+        center.x + Math.cos(angle) * dist,
+        center.y + Math.sin(angle) * dist,
+        { word: word, parent: null }  // visitor-contributed, no parent
+      );
+
+      input.value = '';
+      playTone(500, 0.2, 0.05);
+    }
+
+    // Handle enter key
+    document.addEventListener('DOMContentLoaded', () => {
+      const input = document.getElementById('wordField');
+      input.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          submitWord();
+        }
+      });
+    });
+
     function togglePause() {
       paused = !paused;
     }
@@ -795,7 +893,9 @@
 
     function updateStats() {
       document.getElementById('preserved').textContent = preserved.length;
-      document.getElementById('spawnable').textContent = allSpawnCandidates.filter(c => !existingWords.has(c.word)).length;
+      // Count undigested words
+      const undigestedCount = Object.values(vocabulary).filter(v => !v.is_digested).length;
+      document.getElementById('pending').textContent = undigestedCount;
     }
 
     function getAge(date) {
