@@ -1,0 +1,15 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-25T12:49:09.224906",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $504.13 | Cash: $454.03 | Positions: 1",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "EXIT SIGNAL: JNJ price $207.78 > 5MA $207.11 (P&L: +0.2%)",
+      "SELL BLOCKED JNJ: {\"available\":\"0\",\"code\":40310000,\"existing_qty\":\"0.241143441\",\"held_for_orders\":\"0.241143441\",\"message\":\"insufficient qty available for order (requested: 0.241143441, available: 0)\",\"related_orders\":[\"ceccf047-44c2-44ed-bacf-221d4dfc0500\"],\"symbol\":\"JNJ\"}",
+      "No stocks meet Connors criteria (RSI<5 AND price>200MA)"
+    ],
+    "actions": []
+  }
+]
