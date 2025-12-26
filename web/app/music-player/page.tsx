@@ -573,12 +573,14 @@ function MusicPlayerContent(): JSX.Element {
         ? 'Click to learn about Interactive Mode'
         : 'Ask a question about this content';
 
-  const micModalActionDisabled = (!isMicActive && !isMicAvailable) || (isConnecting && !isMicActive);
+  // In basic interactive mode, mic is always available (no audio to play first)
+  const effectivelyMicAvailable = isMicAvailable || basicInteractiveMode;
+  const micModalActionDisabled = (!isMicActive && !effectivelyMicAvailable) || (isConnecting && !isMicActive);
   const micModalStateLabel = isMicActive
     ? 'Listening... tap to finish'
     : isConnecting
       ? 'Connecting to microphone...'
-      : isMicAvailable
+      : effectivelyMicAvailable
         ? 'Tap to start speaking'
         : 'Available after playback';
   const micCircleClassName = [
@@ -804,15 +806,15 @@ function MusicPlayerContent(): JSX.Element {
       return;
     }
 
-    // If mic is available, open the modal to start interaction
-    if (isMicAvailable) {
+    // If mic is available OR in basic interactive mode, open the modal
+    if (isMicAvailable || basicInteractiveMode) {
       handleOpenMicModal();
       return;
     }
 
     // If mic is not available yet (audio still playing), show info message
     setAiStatus('Interactive Mode lets you discuss this content once it\'s finished playing.');
-  }, [canUseMic, handleOpenMicModal, isMicActive, isMicAvailable]);
+  }, [basicInteractiveMode, canUseMic, handleOpenMicModal, isMicActive, isMicAvailable]);
 
   const handleMicModalToggle = useCallback(async () => {
     if (!canUseMic || !activeInstructions || !activeContext) {
