@@ -165,6 +165,9 @@ function buildRealtimeContext(
 const AMBERX_REALTIME_INSTRUCTIONS =
   "You're a helpful, curious guide explaining content the user just listened to. They've heard an explanation of a video or tweet and now want to go deeper. Be conversational and enthusiastic. When they ask questions, draw from the original content (transcript/tweet) to give accurate answers. Help them understand the nuances and implications. If they want to go deeper on a topic, provide more technical detail. Keep responses focused and substantive.";
 
+const BASIC_VOICE_INSTRUCTIONS =
+  "You're Amber, a friendly and knowledgeable AI assistant from Kochi. Be conversational, warm, and helpful. Keep responses concise but substantive. You can discuss any topic - tech, science, culture, ideas. Be curious and engage with what the user is interested in.";
+
 function buildAmberxRealtimeContext(content: AmberxContent): string {
   const lines: string[] = [];
 
@@ -326,6 +329,15 @@ function MusicPlayerContent(): JSX.Element {
     return autoplayParam === '1' || autoplayParam?.toLowerCase() === 'true';
   }, [searchParams]);
 
+  // Check if basic interactive mode is requested via URL param
+  const basicInteractiveMode = useMemo(() => {
+    if (!searchParams) {
+      return false;
+    }
+    const interactiveParam = searchParams.get('interactive');
+    return interactiveParam === '1' || interactiveParam?.toLowerCase() === 'true';
+  }, [searchParams]);
+
   useEffect(() => {
     if (currentTrackIndex >= playlist.length) {
       setCurrentTrackIndex(0);
@@ -409,15 +421,25 @@ function MusicPlayerContent(): JSX.Element {
     return `${AMBERX_REALTIME_INSTRUCTIONS}\n\n${amberxContext}`;
   }, [amberxContext]);
 
-  // Mic is available for AI Daily episodes with papers OR amberx content
+  // Mic is available for AI Daily episodes with papers OR amberx content OR basic interactive mode
   const canUseMic = Boolean(
     (aiDailyInstructions && aiDailyContext) ||
-    (amberxInstructions && amberxContext)
+    (amberxInstructions && amberxContext) ||
+    basicInteractiveMode
   );
 
   // Determine which instructions/context to use for Realtime API
-  const activeInstructions = amberxInstructions || aiDailyInstructions;
-  const activeContext = amberxContext || aiDailyContext;
+  // Priority: amberx > aiDaily > basic interactive mode
+  const activeInstructions = amberxInstructions || aiDailyInstructions || (basicInteractiveMode ? BASIC_VOICE_INSTRUCTIONS : null);
+  const activeContext = amberxContext || aiDailyContext || (basicInteractiveMode ? 'General conversation mode - no specific context.' : null);
+
+  // For basic interactive mode, make mic available immediately (no audio to play first)
+  useEffect(() => {
+    if (basicInteractiveMode) {
+      setIsMicAvailable(true);
+      setAiStatus('Tap the mic to start talking.');
+    }
+  }, [basicInteractiveMode]);
 
   useEffect(() => {
     setIsBannerDismissed(false);

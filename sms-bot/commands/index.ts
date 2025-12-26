@@ -4,6 +4,7 @@ import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
 import { aiTwitterCommandHandler } from "./ai-twitter.js";
 import { amberxCommandHandler } from "./amberx.js";
+import { ambervCommandHandler } from "./amberv.js";
 import { announcementsCommandHandler } from "./announcements.js";
 import { csCommandHandler } from "./cs.js";
 import { audioTestCommandHandler } from "./audio-test.js";
@@ -28,6 +29,7 @@ export const commandHandlers: CommandHandler[] = [
   airCommandHandler, // AIR (AI Research) - personalized research reports
   aiTwitterCommandHandler, // AIT - AI Twitter Daily digest
   amberxCommandHandler, // AMBERX - explain Twitter/YouTube content
+  ambervCommandHandler, // AMBERV - simple voice chat test
   announcementsCommandHandler, // ANNOUNCEMENTS - opt-in to platform updates
   csCommandHandler, // CS - content sharing link feed
   audioTestCommandHandler,
