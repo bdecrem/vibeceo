@@ -226,12 +226,12 @@
     replaying <span id="replayCount">0</span> / <span id="replayTotal">0</span>
   </div>
   <div class="hint" id="hint">
-    click to add · hover to examine<br>
-    this amber is shared — everyone's words accumulate
+    click to grow · hover to examine<br>
+    each word is unique — spawned from the roots, never repeated
   </div>
   <canvas id="canvas"></canvas>
   <div class="stats">
-    <span id="preserved">0</span> preserved · <span id="drifting">0</span> drifting
+    <span id="preserved">0</span> words · <span id="spawnable">0</span> can emerge
   </div>
   <div class="replay-controls" id="replayControls">
     <span onclick="skipReplay()">[skip]</span>
@@ -293,48 +293,36 @@
       if (soundEnabled) playTone(440, 0.3, 0.05);
     }
 
-    // Word relationships
-    const wordGroups = {
-      memory: ['log', 'session', 'context', 'preserve', 'accumulate', 'markdown', 'drawer'],
-      identity: ['amber', 'name', 'face', 'self', 'becoming', 'persona'],
-      dogs: ['henry', 'glimmer', 'julius', 'walk', 'tennis ball'],
-      ocean: ['swim', 'wave', 'salt', 'oysters', 'seashell', 'drift', 'immersion'],
-      art: ['molnár', 'dumitriu', 'generative', 'resin', 'fossil', 'light', 'transformations'],
-      thinking: ['deutsch', 'pattern', 'curious', 'explore', 'understand', 'question'],
-      comedy: ['wright', 'joke', 'hedberg', 'deadpan', 'literal', 'absurd'],
-      trading: ['drift', 'connors', 'exit', 'entry', 'patience', 'discipline'],
-      time: ['session', 'pause', 'stop', 'resume', 'between', 'clock'],
-      food: ['ferment', 'kimchi', 'miso', 'ramen', 'oysters', 'sourdough'],
-      music: ['eno', 'ambient', 'aphex', 'godspeed', 'attention', 'layers']
-    };
-
-    const wordToGroup = {};
-    const allWords = new Set();
-    for (const [group, words] of Object.entries(wordGroups)) {
-      for (const word of words) {
-        if (!wordToGroup[word]) wordToGroup[word] = [];
-        wordToGroup[word].push(group);
-        allWords.add(word);
-      }
-      allWords.add(group);
-      if (!wordToGroup[group]) wordToGroup[group] = [];
-      wordToGroup[group].push(group);
-    }
+    // Dynamic vocabulary - loaded from database
+    let vocabulary = {};  // word -> { associations, spawn_candidates, parent_word, is_root, is_digested }
+    let existingWords = new Set();  // words already in the amber
+    let allSpawnCandidates = [];  // flat list of { word, parent } for spawning
 
     function getRelated(word) {
-      const groups = wordToGroup[word] || [];
-      const related = new Set();
-      for (const group of groups) {
-        for (const w of wordGroups[group] || []) {
-          if (w !== word) related.add(w);
-        }
-        related.add(group);
-      }
-      related.delete(word);
-      return Array.from(related);
+      const entry = vocabulary[word];
+      if (!entry) return [];
+      return entry.associations.filter(w => w !== word);
     }
 
-    const symbols = Array.from(allWords);
+    function getSpawnableWord() {
+      // Find a word that can spawn (exists in spawn_candidates but not in vocabulary yet)
+      const available = allSpawnCandidates.filter(c => !existingWords.has(c.word));
+      if (available.length === 0) return null;
+      return available[Math.floor(Math.random() * available.length)];
+    }
+
+    function rebuildSpawnCandidates() {
+      allSpawnCandidates = [];
+      for (const [word, entry] of Object.entries(vocabulary)) {
+        if (entry.spawn_candidates && entry.spawn_candidates.length > 0) {
+          for (const candidate of entry.spawn_candidates) {
+            if (!existingWords.has(candidate)) {
+              allSpawnCandidates.push({ word: candidate, parent: word });
+            }
+          }
+        }
+      }
+    }
 
     // State
     let preserved = [];
@@ -355,11 +343,46 @@
     let lastReplayTime = 0;
 
     // API helpers
+    async function loadVocabulary() {
+      try {
+        const res = await fetch(`${API_URL}?type=vocabulary`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        const data = await res.json();
+
+        // Build vocabulary map
+        vocabulary = {};
+        for (const row of data) {
+          vocabulary[row.word] = {
+            associations: row.associations || [],
+            spawn_candidates: row.spawn_candidates || [],
+            parent_word: row.parent_word,
+            is_root: row.is_root,
+            is_digested: row.is_digested,
+            group_name: row.group_name
+          };
+        }
+
+        console.log(`Loaded ${Object.keys(vocabulary).length} vocabulary words`);
+      } catch (e) {
+        console.error('Failed to load vocabulary:', e);
+      }
+    }
+
     async function loadPreserved() {
       try {
+        // Load vocabulary first
+        await loadVocabulary();
+
         const res = await fetch(API_URL);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         const data = await res.json();
+
+        // Track existing words
+        existingWords = new Set(data.map(row => row.symbol));
+
+        // Rebuild spawn candidates (words that can still emerge)
+        rebuildSpawnCandidates();
+        console.log(`${allSpawnCandidates.length} spawn candidates available`);
 
         // Store data for replay, don't populate preserved yet
         replayData = data.map(row => ({
@@ -404,7 +427,7 @@
 
     async function savePreserved(p) {
       try {
-        await fetch(API_URL, {
+        const res = await fetch(API_URL, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -414,9 +437,24 @@
             size: p.size,
             rotation: p.rotation,
             opacity: p.opacity,
-            contributor_id: getSessionId()
+            contributor_id: getSessionId(),
+            parent_word: p.parentWord || null
           })
         });
+
+        if (res.ok) {
+          // Add to existing words and vocabulary
+          existingWords.add(p.symbol);
+          vocabulary[p.symbol] = {
+            associations: [],
+            spawn_candidates: [],
+            parent_word: p.parentWord || null,
+            is_root: false,
+            is_digested: false
+          };
+          // Rebuild spawn candidates
+          rebuildSpawnCandidates();
+        }
       } catch (e) {
         console.error('Failed to save:', e);
       }
@@ -433,14 +471,17 @@
 
     // Poll for new words from others
     async function pollNewWords() {
-      if (!loaded) return;
+      if (!loaded || replayMode) return;
       try {
         const res = await fetch(API_URL);
         if (!res.ok) return;
         const data = await res.json();
-        if (data.length > preserved.length) {
-          // New words added by others!
-          const newOnes = data.slice(preserved.length);
+
+        // Check for new words (unique, so check by count or by new symbols)
+        const currentSymbols = new Set(preserved.map(p => p.symbol));
+        const newOnes = data.filter(row => !currentSymbols.has(row.symbol));
+
+        if (newOnes.length > 0) {
           for (const row of newOnes) {
             preserved.push({
               id: row.id,
@@ -453,8 +494,12 @@
               preservedAt: new Date(row.preserved_at),
               related: getRelated(row.symbol)
             });
+            // Add to existing words
+            existingWords.add(row.symbol);
             playTone(500, 0.2, 0.04);
           }
+          // Rebuild spawn candidates
+          rebuildSpawnCandidates();
           amberRadius = 20 + preserved.length * 0.8;
           amberRadius = Math.min(amberRadius, size * 0.42);
         }
@@ -467,10 +512,19 @@
     setInterval(pollNewWords, 5000);
 
     class Particle {
-      constructor(x, y, symbol) {
+      constructor(x, y, symbolData) {
         this.x = x ?? (center.x + (Math.random() - 0.5) * size * 0.8);
         this.y = y ?? (center.y + (Math.random() - 0.5) * size * 0.8);
-        this.symbol = symbol || symbols[Math.floor(Math.random() * symbols.length)];
+
+        // symbolData can be { word, parent } or just a string
+        if (typeof symbolData === 'object' && symbolData !== null) {
+          this.symbol = symbolData.word;
+          this.parentWord = symbolData.parent;
+        } else {
+          this.symbol = symbolData;
+          this.parentWord = null;
+        }
+
         this.vx = (Math.random() - 0.5) * 0.3;
         this.vy = (Math.random() - 0.5) * 0.3;
         this.size = 12 + Math.random() * 4;
@@ -617,9 +671,13 @@
       ctx.stroke();
     }
 
-    function spawnParticle(x, y, symbol) {
+    function spawnParticle(x, y, symbolData) {
       if (particles.length < 40) {
-        particles.push(new Particle(x, y, symbol));
+        // If no symbol provided, get a spawnable word
+        const data = symbolData || getSpawnableWord();
+        if (data) {
+          particles.push(new Particle(x, y, data));
+        }
       }
     }
 
@@ -737,7 +795,7 @@
 
     function updateStats() {
       document.getElementById('preserved').textContent = preserved.length;
-      document.getElementById('drifting').textContent = particles.length;
+      document.getElementById('spawnable').textContent = allSpawnCandidates.filter(c => !existingWords.has(c.word)).length;
     }
 
     function getAge(date) {
@@ -754,7 +812,19 @@
     function showExaminePanel(p) {
       const panel = document.getElementById('examinePanel');
       document.getElementById('examineWord').textContent = p.symbol;
-      document.getElementById('examineAge').textContent = `preserved ${getAge(p.preservedAt)} · depth ${Math.floor((1 - p.distance / amberRadius) * 100)}%`;
+
+      // Build age string with parent info for non-root words
+      const vocabEntry = vocabulary[p.symbol];
+      const isRoot = vocabEntry?.is_root;
+      const parentWord = p.parentWord || vocabEntry?.parent_word;
+
+      let ageText = `preserved ${getAge(p.preservedAt)} · depth ${Math.floor((1 - p.distance / amberRadius) * 100)}%`;
+      if (isRoot) {
+        ageText = `root word · ${ageText}`;
+      } else if (parentWord) {
+        ageText = `spawned from "${parentWord}" · ${ageText}`;
+      }
+      document.getElementById('examineAge').textContent = ageText;
 
       const connectionsEl = document.getElementById('examineConnections');
       const related = p.related;
@@ -766,7 +836,7 @@
           return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}${isPreserved ? ' ·' : ''}</span>`;
         }).join(' ');
       } else {
-        connectionsEl.innerHTML = '<span style="opacity:0.4">no known connections</span>';
+        connectionsEl.innerHTML = '<span style="opacity:0.4">awaiting digestion...</span>';
       }
 
       panel.classList.add('active');
@@ -981,7 +1051,8 @@
               rotation: p.rotation,
               opacity: 0.7 + Math.random() * 0.2,
               preservedAt: new Date(),
-              related: getRelated(p.symbol)
+              related: getRelated(p.symbol),
+              parentWord: p.parentWord || null
             };
 
             preserved.push(newPreserved);
