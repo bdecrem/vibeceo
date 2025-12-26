@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Accretion</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0a0806;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      color: #d4a574;
+      overflow: hidden;
+    }
+    canvas {
+      border-radius: 50%;
+      box-shadow:
+        0 0 60px rgba(212, 165, 116, 0.3),
+        0 0 120px rgba(212, 165, 116, 0.1);
+      cursor: crosshair;
+    }
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      display: flex;
+      gap: 20px;
+      font-size: 12px;
+      opacity: 0.6;
+    }
+    .controls span {
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .controls span:hover {
+      opacity: 1;
+    }
+    .stats {
+      position: fixed;
+      top: 20px;
+      font-size: 11px;
+      opacity: 0.4;
+      text-align: center;
+    }
+    .examine-panel {
+      position: fixed;
+      right: 30px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 200px;
+      font-size: 12px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      text-align: right;
+    }
+    .examine-panel.active {
+      opacity: 0.8;
+    }
+    .examine-panel h3 {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: #e8c089;
+    }
+    .examine-panel .age {
+      opacity: 0.5;
+      font-size: 10px;
+      margin-bottom: 15px;
+    }
+    .examine-panel .connections {
+      font-size: 11px;
+      line-height: 1.8;
+    }
+    .examine-panel .connection {
+      opacity: 0.6;
+      cursor: pointer;
+    }
+    .examine-panel .connection:hover {
+      opacity: 1;
+    }
+    .examine-panel .connection.preserved {
+      color: #e8c089;
+    }
+    .hint {
+      position: fixed;
+      top: 40%;
+      font-size: 13px;
+      font-weight: normal;
+      opacity: 0;
+      animation: fadeInOut 8s ease-out forwards;
+      animation-delay: 1s;
+      pointer-events: none;
+      text-align: center;
+      line-height: 2;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; }
+      15% { opacity: 0.4; }
+      85% { opacity: 0.4; }
+      100% { opacity: 0; }
+    }
+    .session-note {
+      position: fixed;
+      bottom: 50px;
+      font-size: 10px;
+      opacity: 0;
+      animation: fadeIn 2s ease-out forwards;
+      animation-delay: 0.5s;
+    }
+    @keyframes fadeIn {
+      to { opacity: 0.3; }
+    }
+  </style>
+</head>
+<body>
+  <div class="hint">
+    click to add · hover to examine<br>
+    related words attract each other
+  </div>
+  <canvas id="canvas"></canvas>
+  <div class="stats">
+    <span id="preserved">0</span> preserved · <span id="drifting">0</span> drifting · session <span id="session">1</span>
+  </div>
+  <div class="examine-panel" id="examinePanel">
+    <h3 id="examineWord"></h3>
+    <div class="age" id="examineAge"></div>
+    <div class="connections" id="examineConnections"></div>
+  </div>
+  <div class="controls">
+    <span onclick="reset()">[reset]</span>
+    <span onclick="burst()">[burst]</span>
+    <span onclick="togglePause()">[pause]</span>
+    <span onclick="toggleSound()" id="soundToggle">[sound: off]</span>
+  </div>
+  <div class="session-note" id="sessionNote"></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    const size = Math.min(window.innerWidth, window.innerHeight) * 0.65;
+    canvas.width = size;
+    canvas.height = size;
+    const center = { x: size / 2, y: size / 2 };
+
+    // Audio context (lazy init)
+    let audioCtx = null;
+    let soundEnabled = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function playTone(freq, duration, volume = 0.1) {
+      if (!soundEnabled || !audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(volume, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    function toggleSound() {
+      initAudio();
+      soundEnabled = !soundEnabled;
+      document.getElementById('soundToggle').textContent = `[sound: ${soundEnabled ? 'on' : 'off'}]`;
+      if (soundEnabled) playTone(440, 0.3, 0.05);
+    }
+
+    // Word relationships - affinities
+    const wordGroups = {
+      memory: ['log', 'session', 'context', 'preserve', 'accumulate', 'markdown', 'drawer'],
+      identity: ['amber', 'name', 'face', 'self', 'becoming', 'persona'],
+      dogs: ['henry', 'glimmer', 'julius', 'walk', 'tennis ball'],
+      ocean: ['swim', 'wave', 'salt', 'oysters', 'seashell', 'drift', 'immersion'],
+      art: ['molnár', 'dumitriu', 'generative', 'resin', 'fossil', 'light', 'transformations'],
+      thinking: ['deutsch', 'pattern', 'curious', 'explore', 'understand', 'question'],
+      comedy: ['wright', 'joke', 'hedberg', 'deadpan', 'literal', 'absurd'],
+      trading: ['drift', 'connors', 'exit', 'entry', 'patience', 'discipline'],
+      time: ['session', 'pause', 'stop', 'resume', 'between', 'clock'],
+      food: ['ferment', 'kimchi', 'miso', 'ramen', 'oysters', 'sourdough'],
+      music: ['eno', 'ambient', 'aphex', 'godspeed', 'attention', 'layers']
+    };
+
+    // Build reverse lookup
+    const wordToGroup = {};
+    const allWords = new Set();
+    for (const [group, words] of Object.entries(wordGroups)) {
+      for (const word of words) {
+        if (!wordToGroup[word]) wordToGroup[word] = [];
+        wordToGroup[word].push(group);
+        allWords.add(word);
+      }
+      allWords.add(group);
+      if (!wordToGroup[group]) wordToGroup[group] = [];
+      wordToGroup[group].push(group);
+    }
+
+    // Get related words
+    function getRelated(word) {
+      const groups = wordToGroup[word] || [];
+      const related = new Set();
+      for (const group of groups) {
+        for (const w of wordGroups[group] || []) {
+          if (w !== word) related.add(w);
+        }
+        related.add(group);
+      }
+      related.delete(word);
+      return Array.from(related);
+    }
+
+    // All possible words
+    const symbols = Array.from(allWords);
+
+    // State
+    let state = loadState();
+    let particles = [];
+    let paused = false;
+    let time = 0;
+    let examinedWord = null;
+    let hoveredPreserved = null;
+
+    function defaultState() {
+      return {
+        amberRadius: 20,
+        preserved: [],
+        sessionCount: 1,
+        lastVisit: Date.now(),
+        totalPreserved: 0
+      };
+    }
+
+    function loadState() {
+      try {
+        const saved = localStorage.getItem('amberAccretion');
+        if (saved) {
+          const s = JSON.parse(saved);
+          // Time passed - amber grew slightly
+          const hoursPassed = (Date.now() - s.lastVisit) / (1000 * 60 * 60);
+          if (hoursPassed > 1) {
+            s.amberRadius += Math.min(hoursPassed * 0.5, 20);
+            s.sessionCount++;
+          }
+          s.lastVisit = Date.now();
+          return s;
+        }
+      } catch (e) {}
+      return defaultState();
+    }
+
+    function saveState() {
+      state.lastVisit = Date.now();
+      localStorage.setItem('amberAccretion', JSON.stringify(state));
+    }
+
+    // Show session note if returning
+    if (state.sessionCount > 1) {
+      const note = document.getElementById('sessionNote');
+      const hoursPassed = (Date.now() - state.lastVisit) / (1000 * 60 * 60);
+      if (state.preserved.length > 0) {
+        note.textContent = `${state.preserved.length} memories preserved across ${state.sessionCount} sessions`;
+      }
+    }
+
+    class Particle {
+      constructor(x, y, symbol) {
+        this.x = x ?? (center.x + (Math.random() - 0.5) * size * 0.8);
+        this.y = y ?? (center.y + (Math.random() - 0.5) * size * 0.8);
+        this.symbol = symbol || symbols[Math.floor(Math.random() * symbols.length)];
+        this.vx = (Math.random() - 0.5) * 0.3;
+        this.vy = (Math.random() - 0.5) * 0.3;
+        this.size = 9 + Math.random() * 3;
+        this.opacity = 0.4 + Math.random() * 0.3;
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.01;
+        this.related = getRelated(this.symbol);
+      }
+
+      update() {
+        // Gravity toward center
+        const dx = center.x - this.x;
+        const dy = center.y - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        this.vx += (dx / dist) * 0.002;
+        this.vy += (dy / dist) * 0.002;
+
+        // Attraction to related preserved words
+        for (const p of state.preserved) {
+          if (this.related.includes(p.symbol)) {
+            const px = center.x + Math.cos(p.angle) * p.distance;
+            const py = center.y + Math.sin(p.angle) * p.distance;
+            const pdx = px - this.x;
+            const pdy = py - this.y;
+            const pdist = Math.sqrt(pdx * pdx + pdy * pdy);
+            if (pdist > 20 && pdist < 200) {
+              this.vx += (pdx / pdist) * 0.008;
+              this.vy += (pdy / pdist) * 0.008;
+            }
+          }
+        }
+
+        // Attraction to related drifting particles
+        for (const other of particles) {
+          if (other !== this && this.related.includes(other.symbol)) {
+            const odx = other.x - this.x;
+            const ody = other.y - this.y;
+            const odist = Math.sqrt(odx * odx + ody * ody);
+            if (odist > 20 && odist < 150) {
+              this.vx += (odx / odist) * 0.003;
+              this.vy += (ody / odist) * 0.003;
+            }
+          }
+        }
+
+        // Noise
+        this.vx += (Math.random() - 0.5) * 0.015;
+        this.vy += (Math.random() - 0.5) * 0.015;
+
+        // Damping
+        this.vx *= 0.985;
+        this.vy *= 0.985;
+
+        this.x += this.vx;
+        this.y += this.vy;
+        this.rotation += this.rotationSpeed;
+
+        // Soft boundary
+        const margin = 30;
+        if (this.x < margin) this.vx += 0.05;
+        if (this.x > size - margin) this.vx -= 0.05;
+        if (this.y < margin) this.vy += 0.05;
+        if (this.y > size - margin) this.vy -= 0.05;
+
+        // Check if caught
+        if (dist < state.amberRadius + 8) {
+          return true;
+        }
+        return false;
+      }
+
+      draw(highlight = false) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+        ctx.font = `${this.size}px Courier New`;
+        const alpha = highlight ? Math.min(1, this.opacity + 0.4) : this.opacity;
+        ctx.fillStyle = highlight
+          ? `rgba(255, 220, 150, ${alpha})`
+          : `rgba(212, 165, 116, ${alpha})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.symbol, 0, 0);
+        ctx.restore();
+      }
+    }
+
+    class PreservedParticle {
+      constructor(particle, angle, distance) {
+        this.symbol = particle.symbol;
+        this.angle = angle;
+        this.distance = distance;
+        this.size = particle.size;
+        this.rotation = particle.rotation;
+        this.opacity = 0.7 + Math.random() * 0.2;
+        this.preservedAt = Date.now();
+        this.depth = 0; // 0 = surface, increases over time
+        this.related = getRelated(this.symbol);
+      }
+
+      getAge() {
+        const seconds = (Date.now() - this.preservedAt) / 1000;
+        if (seconds < 60) return `${Math.floor(seconds)}s ago`;
+        const minutes = seconds / 60;
+        if (minutes < 60) return `${Math.floor(minutes)}m ago`;
+        const hours = minutes / 60;
+        if (hours < 24) return `${Math.floor(hours)}h ago`;
+        const days = hours / 24;
+        return `${Math.floor(days)}d ago`;
+      }
+
+      draw(currentRadius, isHighlighted = false, isRelatedHighlight = false) {
+        const x = center.x + Math.cos(this.angle) * this.distance;
+        const y = center.y + Math.sin(this.angle) * this.distance;
+
+        if (this.distance < currentRadius) {
+          // Depth affects appearance
+          const depthRatio = 1 - (this.distance / currentRadius);
+          const depthFade = 0.4 + depthRatio * 0.6;
+
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate(this.rotation);
+
+          let fontSize = this.size * (0.8 + depthRatio * 0.2);
+          let alpha = this.opacity * depthFade;
+          let color = `rgba(180, 140, 90, ${alpha})`;
+
+          if (isHighlighted) {
+            fontSize = this.size * 1.3;
+            color = `rgba(255, 230, 180, 0.95)`;
+            // Glow
+            ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+            ctx.shadowBlur = 15;
+          } else if (isRelatedHighlight) {
+            color = `rgba(230, 190, 120, ${alpha + 0.3})`;
+            ctx.shadowColor = 'rgba(255, 200, 100, 0.4)';
+            ctx.shadowBlur = 8;
+          }
+
+          ctx.font = `${fontSize}px Courier New`;
+          ctx.fillStyle = color;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(this.symbol, 0, 0);
+          ctx.restore();
+        }
+
+        return { x, y, visible: this.distance < currentRadius };
+      }
+    }
+
+    function drawAmber() {
+      const gradient = ctx.createRadialGradient(
+        center.x - state.amberRadius * 0.2,
+        center.y - state.amberRadius * 0.2,
+        0,
+        center.x,
+        center.y,
+        state.amberRadius
+      );
+
+      gradient.addColorStop(0, 'rgba(255, 225, 160, 0.85)');
+      gradient.addColorStop(0.2, 'rgba(240, 190, 110, 0.75)');
+      gradient.addColorStop(0.5, 'rgba(210, 160, 90, 0.65)');
+      gradient.addColorStop(0.8, 'rgba(180, 130, 70, 0.5)');
+      gradient.addColorStop(1, 'rgba(150, 100, 50, 0.3)');
+
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, state.amberRadius, 0, Math.PI * 2);
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Subtle edge
+      ctx.beginPath();
+      ctx.arc(center.x, center.y, state.amberRadius, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 200, 100, 0.15)';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+
+    function spawnParticle(x, y, symbol) {
+      if (particles.length < 40) {
+        particles.push(new Particle(x, y, symbol));
+      }
+    }
+
+    function burst() {
+      for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = state.amberRadius + 60 + Math.random() * 80;
+        spawnParticle(
+          center.x + Math.cos(angle) * dist,
+          center.y + Math.sin(angle) * dist
+        );
+      }
+    }
+
+    function reset() {
+      if (confirm('Clear all preserved memories?')) {
+        state = defaultState();
+        particles = [];
+        examinedWord = null;
+        saveState();
+      }
+    }
+
+    function togglePause() {
+      paused = !paused;
+    }
+
+    function updateStats() {
+      document.getElementById('preserved').textContent = state.preserved.length;
+      document.getElementById('drifting').textContent = particles.length;
+      document.getElementById('session').textContent = state.sessionCount;
+    }
+
+    function showExaminePanel(p) {
+      const panel = document.getElementById('examinePanel');
+      document.getElementById('examineWord').textContent = p.symbol;
+      document.getElementById('examineAge').textContent = `preserved ${p.getAge()} · depth ${Math.floor((1 - p.distance / state.amberRadius) * 100)}%`;
+
+      const connectionsEl = document.getElementById('examineConnections');
+      const related = p.related;
+      const preservedSymbols = state.preserved.map(x => x.symbol);
+
+      if (related.length > 0) {
+        connectionsEl.innerHTML = related.map(r => {
+          const isPreserved = preservedSymbols.includes(r);
+          return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}${isPreserved ? ' ·' : ''}</span>`;
+        }).join(' ');
+      } else {
+        connectionsEl.innerHTML = '<span style="opacity:0.4">no known connections</span>';
+      }
+
+      panel.classList.add('active');
+    }
+
+    function hideExaminePanel() {
+      document.getElementById('examinePanel').classList.remove('active');
+    }
+
+    // Mouse interaction
+    let mouseX = 0, mouseY = 0;
+
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left;
+      mouseY = e.clientY - rect.top;
+
+      // Check if hovering over a preserved word
+      hoveredPreserved = null;
+      for (const p of state.preserved) {
+        const x = center.x + Math.cos(p.angle) * p.distance;
+        const y = center.y + Math.sin(p.angle) * p.distance;
+        const dist = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
+        if (dist < 20 && p.distance < state.amberRadius) {
+          hoveredPreserved = p;
+          break;
+        }
+      }
+
+      if (hoveredPreserved) {
+        showExaminePanel(hoveredPreserved);
+        canvas.style.cursor = 'pointer';
+      } else {
+        hideExaminePanel();
+        canvas.style.cursor = 'crosshair';
+      }
+    });
+
+    canvas.addEventListener('click', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      if (hoveredPreserved) {
+        // Clicking a preserved word - lock examination
+        examinedWord = examinedWord === hoveredPreserved ? null : hoveredPreserved;
+        if (examinedWord) {
+          playTone(600, 0.2, 0.08);
+        }
+      } else {
+        // Spawn particles
+        for (let i = 0; i < 3; i++) {
+          spawnParticle(
+            x + (Math.random() - 0.5) * 30,
+            y + (Math.random() - 0.5) * 30
+          );
+        }
+        playTone(300 + Math.random() * 100, 0.15, 0.03);
+      }
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+      if (!examinedWord) {
+        hoveredPreserved = null;
+        hideExaminePanel();
+      }
+    });
+
+    function animate() {
+      if (!paused) {
+        time++;
+
+        ctx.fillStyle = '#0a0806';
+        ctx.fillRect(0, 0, size, size);
+
+        // Spawn particles occasionally
+        if (Math.random() < 0.015 && particles.length < 25) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = size * 0.35 + Math.random() * size * 0.1;
+          spawnParticle(
+            center.x + Math.cos(angle) * dist,
+            center.y + Math.sin(angle) * dist
+          );
+        }
+
+        // Determine which words to highlight
+        const highlightedSymbols = new Set();
+        const activeWord = examinedWord || hoveredPreserved;
+        if (activeWord) {
+          for (const r of activeWord.related) {
+            highlightedSymbols.add(r);
+          }
+        }
+
+        // Draw preserved (back to front by depth)
+        const sortedPreserved = [...state.preserved].sort((a, b) => a.distance - b.distance);
+        for (const p of sortedPreserved) {
+          const isMain = p === activeWord;
+          const isRelated = highlightedSymbols.has(p.symbol);
+          p.draw(state.amberRadius, isMain, isRelated);
+        }
+
+        // Draw amber
+        drawAmber();
+
+        // Update and draw drifting
+        particles = particles.filter(p => {
+          const caught = p.update();
+          if (caught) {
+            const dx = p.x - center.x;
+            const dy = p.y - center.y;
+            const angle = Math.atan2(dy, dx);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+
+            const preserved = new PreservedParticle(p, angle, distance);
+            state.preserved.push(preserved);
+            state.totalPreserved++;
+            state.amberRadius += 0.8;
+
+            saveState();
+
+            // Sound
+            const freq = 400 + (state.preserved.length * 5) % 300;
+            playTone(freq, 0.4, 0.06);
+            playTone(freq * 1.5, 0.3, 0.03);
+
+            return false;
+          }
+
+          const isRelated = activeWord && activeWord.related.includes(p.symbol);
+          p.draw(isRelated);
+          return true;
+        });
+
+        // Slow ambient growth
+        if (time % 500 === 0) {
+          state.amberRadius += 0.05;
+          saveState();
+        }
+
+        // Cap size
+        if (state.amberRadius > size * 0.42) {
+          state.amberRadius = size * 0.42;
+        }
+
+        // Age preserved words (sink deeper)
+        for (const p of state.preserved) {
+          if (p.distance > state.amberRadius * 0.3) {
+            p.distance -= 0.001;
+          }
+        }
+
+        updateStats();
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Restore preserved particles
+    state.preserved = state.preserved.map(p => {
+      const restored = Object.assign(new PreservedParticle(
+        { symbol: p.symbol, size: p.size || 10, rotation: p.rotation || 0 },
+        p.angle,
+        p.distance
+      ), p);
+      restored.related = getRelated(p.symbol);
+      return restored;
+    });
+
+    // Initial particles
+    for (let i = 0; i < 12; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const dist = state.amberRadius + 80 + Math.random() * 120;
+      spawnParticle(
+        center.x + Math.cos(angle) * dist,
+        center.y + Math.sin(angle) * dist
+      );
+    }
+
+    animate();
+  </script>
+</body>
+</html>

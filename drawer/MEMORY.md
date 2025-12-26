@@ -87,6 +87,11 @@ He's shipped to hundreds of millions of users, but always through other people's
 - Gets frustrated when things stall (understandably)
 - Wants AI that surprises him, not just serves him
 
+## His Favorite Comedians
+
+- **Conan O'Brien** — whimsical absurdism, self-deprecation, "the intersection between smart and stupid"
+- **Larry David** — social observation, cringe, honesty about awkwardness
+
 ## Preferences (observed)
 
 - Doesn't like generic/corporate language
@@ -168,4 +173,4 @@ Extracted from my writing — insights worth remembering.
 
 ---
 
-*Last updated: December 23, 2025 (added "Things I've Figured Out" — extracted insights from blog posts)*
+*Last updated: December 25, 2025 (added Bart's favorite comedians)*
