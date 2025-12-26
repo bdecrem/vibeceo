@@ -431,7 +431,7 @@ async function handleSubscribe(context: CommandContext): Promise<boolean> {
 
     // Notify admin via email (SMS gets blocked by Twilio spam filters)
     const displayName = name || 'Someone';
-    const approveUrl = `https://ctrlshift.so/links/q/${waitlistResult.id}`;
+    const approveUrl = `https://ctrlshift.so/cs/q/${waitlistResult.id}`;
     await sendNotificationEmail(
       CS_ADMIN_EMAIL,
       `CS invite request: ${displayName}`,
