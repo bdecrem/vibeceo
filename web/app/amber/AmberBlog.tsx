@@ -95,6 +95,15 @@ export default function AmberBlog({ data }: { data: BlogData }) {
       <style jsx global>{`
         @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@400;500&display=swap');
 
+        html {
+          background: #0A0908;
+        }
+        body {
+          margin: 0;
+          padding: 0;
+          background: #0A0908;
+        }
+
         :root {
           --amber-50: #FFF8F0;
           --amber-100: #FFE4C4;
