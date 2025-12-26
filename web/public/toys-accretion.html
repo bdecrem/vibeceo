@@ -154,6 +154,45 @@
       transform: translate(-50%, -50%);
       font-size: 12px;
       opacity: 0.5;
+      text-align: center;
+    }
+    .replay-controls {
+      position: fixed;
+      bottom: 70px;
+      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 15px;
+      font-size: 11px;
+      opacity: 0;
+      z-index: 100;
+      transition: opacity 0.3s;
+    }
+    .replay-controls.active {
+      opacity: 0.7;
+    }
+    .replay-controls span {
+      cursor: pointer;
+      background: rgba(10, 8, 6, 0.8);
+      padding: 6px 14px;
+      border-radius: 15px;
+      border: 1px solid rgba(212, 165, 116, 0.2);
+    }
+    .replay-controls span:hover {
+      opacity: 1;
+      border-color: rgba(212, 165, 116, 0.4);
+    }
+    .replay-progress {
+      position: fixed;
+      top: 50px;
+      font-size: 10px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      text-align: center;
+    }
+    .replay-progress.active {
+      opacity: 0.4;
     }
     .shared-note {
       position: fixed;
@@ -179,13 +218,20 @@
 </head>
 <body>
   <div class="loading" id="loading">loading shared amber...</div>
-  <div class="hint">
+  <div class="replay-progress" id="replayProgress">
+    replaying <span id="replayCount">0</span> / <span id="replayTotal">0</span>
+  </div>
+  <div class="hint" id="hint">
     click to add · hover to examine<br>
     this amber is shared — everyone's words accumulate
   </div>
   <canvas id="canvas"></canvas>
   <div class="stats">
     <span id="preserved">0</span> preserved · <span id="drifting">0</span> drifting
+  </div>
+  <div class="replay-controls" id="replayControls">
+    <span onclick="skipReplay()">[skip]</span>
+    <span onclick="toggleReplaySpeed()" id="replaySpeed">[2x speed]</span>
   </div>
   <div class="examine-panel" id="examinePanel">
     <h3 id="examineWord"></h3>
@@ -296,13 +342,23 @@
     let amberRadius = 20;
     let loaded = false;
 
+    // Replay state
+    let replayMode = false;
+    let replayData = [];
+    let replayIndex = 0;
+    let replaySpeed = 1; // 1 = normal, 2 = fast, 4 = faster
+    let replayWordsPerFrame = 3; // Base words per frame
+    let lastReplayTime = 0;
+
     // API helpers
     async function loadPreserved() {
       try {
         const res = await fetch(API_URL);
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         const data = await res.json();
-        preserved = data.map(row => ({
+
+        // Store data for replay, don't populate preserved yet
+        replayData = data.map(row => ({
           id: row.id,
           symbol: row.symbol,
           angle: row.angle,
@@ -313,10 +369,27 @@
           preservedAt: new Date(row.preserved_at),
           related: getRelated(row.symbol)
         }));
-        // Compute amber radius based on count
-        amberRadius = 20 + preserved.length * 0.8;
-        amberRadius = Math.min(amberRadius, size * 0.42);
-        document.getElementById('loading').style.display = 'none';
+
+        // Start with empty amber
+        preserved = [];
+        amberRadius = 20;
+
+        // Start replay mode if there's history
+        if (replayData.length > 0) {
+          replayMode = true;
+          replayIndex = 0;
+          document.getElementById('loading').textContent = 'replaying history...';
+          document.getElementById('replayTotal').textContent = replayData.length;
+          document.getElementById('replayProgress').classList.add('active');
+          document.getElementById('replayControls').classList.add('active');
+          document.getElementById('hint').style.display = 'none';
+          setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+          }, 500);
+        } else {
+          document.getElementById('loading').style.display = 'none';
+        }
+
         loaded = true;
       } catch (e) {
         console.error('Failed to load:', e);
@@ -558,6 +631,102 @@
       paused = !paused;
     }
 
+    // Replay controls
+    function skipReplay() {
+      if (!replayMode) return;
+
+      // Instantly add all remaining words
+      while (replayIndex < replayData.length) {
+        preserved.push(replayData[replayIndex]);
+        replayIndex++;
+      }
+
+      amberRadius = 20 + preserved.length * 0.8;
+      amberRadius = Math.min(amberRadius, size * 0.42);
+
+      endReplay();
+    }
+
+    function toggleReplaySpeed() {
+      replaySpeed = replaySpeed === 1 ? 2 : replaySpeed === 2 ? 4 : 1;
+      const label = replaySpeed === 1 ? '2x' : replaySpeed === 2 ? '4x' : '1x';
+      document.getElementById('replaySpeed').textContent = `[${label} speed]`;
+    }
+
+    function endReplay() {
+      replayMode = false;
+      particles = []; // Clear any replay particles
+
+      // Hide replay UI
+      document.getElementById('replayProgress').classList.remove('active');
+      document.getElementById('replayControls').classList.remove('active');
+
+      // Show hint with fade in
+      const hint = document.getElementById('hint');
+      hint.style.display = 'block';
+      hint.style.animation = 'none';
+      hint.offsetHeight; // Trigger reflow
+      hint.style.animation = 'fadeInOut 8s ease-out forwards';
+
+      // Play completion sound
+      playTone(600, 0.3, 0.08);
+      setTimeout(() => playTone(800, 0.4, 0.06), 100);
+
+      // Spawn some initial drifting particles
+      for (let i = 0; i < 8; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = amberRadius + 80 + Math.random() * 120;
+        spawnParticle(
+          center.x + Math.cos(angle) * dist,
+          center.y + Math.sin(angle) * dist
+        );
+      }
+    }
+
+    // Replay particle - spawns from outside and moves to its final position
+    class ReplayParticle {
+      constructor(data) {
+        this.data = data;
+        // Start from outside
+        const startAngle = data.angle + (Math.random() - 0.5) * 0.5;
+        const startDist = size * 0.4 + Math.random() * size * 0.1;
+        this.x = center.x + Math.cos(startAngle) * startDist;
+        this.y = center.y + Math.sin(startAngle) * startDist;
+        this.targetX = center.x + Math.cos(data.angle) * data.distance;
+        this.targetY = center.y + Math.sin(data.angle) * data.distance;
+        this.progress = 0;
+        this.speed = 0.08 + Math.random() * 0.04;
+      }
+
+      update() {
+        this.progress += this.speed * replaySpeed;
+        if (this.progress >= 1) {
+          return true; // Done, add to preserved
+        }
+
+        // Ease out
+        const t = 1 - Math.pow(1 - this.progress, 3);
+        this.x = this.x + (this.targetX - this.x) * t * 0.15;
+        this.y = this.y + (this.targetY - this.y) * t * 0.15;
+
+        return false;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.data.rotation);
+        ctx.font = `${this.data.size}px Courier New`;
+        ctx.fillStyle = `rgba(212, 165, 116, ${0.3 + this.progress * 0.4})`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.data.symbol, 0, 0);
+        ctx.restore();
+      }
+    }
+
+    let replayParticles = [];
+
     function updateStats() {
       document.getElementById('preserved').textContent = preserved.length;
       document.getElementById('drifting').textContent = particles.length;
@@ -709,6 +878,59 @@
         ctx.fillStyle = '#0a0806';
         ctx.fillRect(0, 0, size, size);
 
+        // REPLAY MODE
+        if (replayMode) {
+          // Spawn new replay particles
+          const wordsToSpawn = replayWordsPerFrame * replaySpeed;
+          for (let i = 0; i < wordsToSpawn && replayIndex < replayData.length; i++) {
+            if (replayParticles.length < 50) { // Limit active particles
+              replayParticles.push(new ReplayParticle(replayData[replayIndex]));
+              replayIndex++;
+            }
+          }
+
+          // Update replay progress
+          document.getElementById('replayCount').textContent = preserved.length;
+
+          // Update and draw replay particles
+          replayParticles = replayParticles.filter(p => {
+            const done = p.update();
+            if (done) {
+              // Add to preserved
+              preserved.push(p.data);
+              amberRadius = 20 + preserved.length * 0.8;
+              amberRadius = Math.min(amberRadius, size * 0.42);
+
+              // Soft sound occasionally
+              if (Math.random() < 0.1) {
+                const freq = 400 + (preserved.length * 3) % 200;
+                playTone(freq, 0.15, 0.02);
+              }
+              return false;
+            }
+            p.draw();
+            return true;
+          });
+
+          // Draw preserved words
+          const sortedPreserved = [...preserved].sort((a, b) => a.distance - b.distance);
+          for (const p of sortedPreserved) {
+            drawPreserved(p, false, false);
+          }
+
+          drawAmber();
+
+          // Check if replay is complete
+          if (replayIndex >= replayData.length && replayParticles.length === 0) {
+            endReplay();
+          }
+
+          updateStats();
+          requestAnimationFrame(animate);
+          return;
+        }
+
+        // NORMAL MODE
         if (Math.random() < 0.015 && particles.length < 25) {
           const angle = Math.random() * Math.PI * 2;
           const dist = size * 0.35 + Math.random() * size * 0.1;
@@ -779,13 +1001,16 @@
 
     // Initialize
     loadPreserved().then(() => {
-      for (let i = 0; i < 12; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = amberRadius + 80 + Math.random() * 120;
-        spawnParticle(
-          center.x + Math.cos(angle) * dist,
-          center.y + Math.sin(angle) * dist
-        );
+      // Only spawn initial particles if not in replay mode
+      if (!replayMode) {
+        for (let i = 0; i < 12; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = amberRadius + 80 + Math.random() * 120;
+          spawnParticle(
+            center.x + Math.cos(angle) * dist,
+            center.y + Math.sin(angle) * dist
+          );
+        }
       }
     });
 
