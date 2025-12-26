@@ -279,13 +279,75 @@ const result = await voice.synthesize('Hello world', {
 ```bash
 # Required for Hume
 HUME_API_KEY=your_api_key
+HUME_SECRET_KEY=your_secret_key  # Required for EVI token generation
 
 # Optional: Override default voice for AI Twitter Daily
 AI_TWITTER_HUME_VOICE_ID=5bbc32c1-a1f6-44e8-bedb-9870f23619e2
 
 # Optional: Switch AIT back to ElevenLabs
 AI_TWITTER_VOICE_PROVIDER=elevenlabs
+
+# Optional: Switch interactive mode provider (default: hume)
+NEXT_PUBLIC_INTERACTIVE_PROVIDER=hume  # or 'openai'
 ```
+
+## EVI Integration (Interactive Voice)
+
+Hume EVI (Empathic Voice Interface) is now integrated for interactive Q&A after podcasts in the music player.
+
+### Architecture
+
+```
+music-player → HumeEVIClient → Hume EVI WebSocket
+                    ↓
+              /api/hume-token (access token generation)
+```
+
+No proxy server needed - direct browser connection via access tokens.
+
+### Key Files
+
+| File | Purpose |
+|------|---------|
+| `web/app/api/hume-token/route.ts` | Access token endpoint (OAuth2 flow) |
+| `web/lib/hume-evi.ts` | HumeEVIClient for WebSocket + audio |
+| `web/app/music-player/page.tsx` | Interactive mode UI |
+
+### Usage
+
+```typescript
+import { HumeEVIClient } from '@/lib/hume-evi';
+
+// 1. Get access token from our API
+const tokenRes = await fetch('/api/hume-token');
+const { accessToken } = await tokenRes.json();
+
+// 2. Create client with same voice as TTS podcasts
+const client = new HumeEVIClient({
+  accessToken,
+  systemPrompt: 'You are a helpful assistant...',
+  onConnected: () => console.log('Connected!'),
+  onAssistantMessage: (text) => console.log('AI:', text),
+  onResponseFinished: () => console.log('Done'),
+});
+
+// 3. Connect and start recording
+await client.connect();
+await client.startRecording();
+
+// 4. Stop recording (triggers AI response)
+client.stopRecording();
+
+// 5. Cleanup
+client.disconnect();
+```
+
+### Benefits
+
+- **Same voice** for TTS podcasts and interactive Q&A
+- **No proxy server** - direct WebSocket from browser
+- **Included in Pro plan** ($70/mo) - 1,200 min EVI
+- **Lower latency** than OpenAI Realtime API
 
 ## Resources
 
