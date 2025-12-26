@@ -157,9 +157,8 @@
   <div class="credit"><a href="/amber">← amber's blog</a></div>
 
   <script>
-    // Supabase config
-    const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350';
+    // API endpoint for shared state
+    const API_URL = '/api/amber-accretion';
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -253,28 +252,12 @@
     let amberRadius = 20;
     let loaded = false;
 
-    // Supabase API helpers
-    async function supabaseFetch(endpoint, options = {}) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-        ...options,
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': options.prefer || 'return=minimal',
-          ...options.headers
-        }
-      });
-      if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
-      if (options.prefer?.includes('return=representation') || options.method === 'GET' || !options.method) {
-        return res.json();
-      }
-      return null;
-    }
-
+    // API helpers
     async function loadPreserved() {
       try {
-        const data = await supabaseFetch('amber_accretion?order=preserved_at.asc');
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        const data = await res.json();
         preserved = data.map(row => ({
           id: row.id,
           symbol: row.symbol,
@@ -300,8 +283,9 @@
 
     async function savePreserved(p) {
       try {
-        await supabaseFetch('amber_accretion', {
+        await fetch(API_URL, {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             symbol: p.symbol,
             angle: p.angle,
@@ -330,7 +314,9 @@
     async function pollNewWords() {
       if (!loaded) return;
       try {
-        const data = await supabaseFetch('amber_accretion?order=preserved_at.asc');
+        const res = await fetch(API_URL);
+        if (!res.ok) return;
+        const data = await res.json();
         if (data.length > preserved.length) {
           // New words added by others!
           const newOnes = data.slice(preserved.length);
