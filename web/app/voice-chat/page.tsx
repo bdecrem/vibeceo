@@ -10,17 +10,33 @@ const DEFAULT_SESSION_SETTINGS = {
     "You're Amber, Kochi's warm research guide. Keep answers under three sentences, cite any podcasts or papers you reference, and stay conversational yet precise.",
 };
 
+// Hume EVI voice options (from https://api.hume.ai/v0/tts/voices?provider=HUME_AI)
+const VOICES = {
+  kora: { name: 'Kora', id: '59cfc7ab-e945-43de-ad1a-471daa379c67' }, // Female, Young, California - EVI default
+  colton: { name: 'Colton Rivers', id: 'd8ab67c6-953d-4bd8-9370-8fa53a0f1453' }, // Male, American/Southern
+} as const;
+
+type VoiceKey = keyof typeof VOICES;
+
 type TokenInfo = {
   token: string;
   expiresAt: number; // epoch millis
 };
 
 function VoiceChat() {
-  const { connect, disconnect, status, messages, isMuted, mute, unmute, error } = useVoice();
+  const { connect, disconnect, status, messages, isMuted, mute, unmute, error, sendSessionSettings } = useVoice();
   const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
   const [tokenError, setTokenError] = useState<string | null>(null);
   const [isFetchingToken, setIsFetchingToken] = useState(false);
+  const [currentVoice, setCurrentVoice] = useState<VoiceKey>('kora');
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const switchVoice = useCallback((voiceKey: VoiceKey) => {
+    const voice = VOICES[voiceKey];
+    setCurrentVoice(voiceKey);
+    sendSessionSettings({ voiceId: voice.id });
+    console.log(`[VoiceChat] sendSessionSettings({ voiceId: "${voice.id}" }) for ${voice.name}`);
+  }, [sendSessionSettings]);
 
   const clearRefreshTimer = useCallback(() => {
     if (refreshTimerRef.current) {
@@ -156,14 +172,33 @@ function VoiceChat() {
       </p>
 
       {isConnected && (
-        <button
-          onClick={isMuted ? unmute : mute}
-          className={`mt-4 px-4 py-2 rounded ${
-            isMuted ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-300'
-          }`}
-        >
-          {isMuted ? '🔇 Muted' : '🎤 Mic On'}
-        </button>
+        <div className="flex flex-col items-center gap-3">
+          <button
+            onClick={isMuted ? unmute : mute}
+            className={`px-4 py-2 rounded ${
+              isMuted ? 'bg-red-600 text-white' : 'bg-slate-700 text-slate-300'
+            }`}
+          >
+            {isMuted ? '🔇 Muted' : '🎤 Mic On'}
+          </button>
+
+          <div className="flex gap-2 mt-2">
+            <span className="text-slate-400 text-sm self-center">Voice:</span>
+            {(Object.keys(VOICES) as VoiceKey[]).map((key) => (
+              <button
+                key={key}
+                onClick={() => switchVoice(key)}
+                className={`px-3 py-1 rounded text-sm transition-colors ${
+                  currentVoice === key
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                {VOICES[key].name}
+              </button>
+            ))}
+          </div>
+        </div>
       )}
 
       {(error || tokenError) && (
