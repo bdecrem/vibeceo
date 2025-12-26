@@ -17,7 +17,8 @@ This document captures the patterns introduced with the **crypto research agent*
 
 3. **Podcast + Crash App integration**
    - Module: `sms-bot/agents/crypto-research/podcast.ts`.
-   - Generates a narrated episode (TTS via ElevenLabs) and saves the MP3 to Supabase Storage (bucket `audio` unless overridden by `CRYPTO_PODCAST_AUDIO_BUCKET`).
+   - Generates a narrated episode (TTS via voice provider) and saves the MP3 to Supabase Storage (bucket `audio` unless overridden by `CRYPTO_PODCAST_AUDIO_BUCKET`).
+   - **Voice providers**: See `lib/voice/` for the abstraction layer supporting ElevenLabs (default) and Hume.
    - Ensures the shared Supabase tables (`topics`, `episodes`, and related metadata) contain the latest crypto episode so both the SMS bot and the Crash iOS app pull identical content.
    - Handles short-link creation for the audio, migrates any legacy assets out of the old `audio-files` bucket, and keeps `show_notes_json` aligned with the new audio URL.
    - Returns the generated episode metadata (`audioUrl`, `shortLink`, duration, etc.) so SMS commands can include “🎧 Listen” links and the Crash app can surface the episode immediately.
@@ -209,7 +210,10 @@ This document captures the patterns introduced with the **crypto research agent*
    - **Tracking**: Can add analytics to viewer/player pages
 
 8. **Environment variables to set in production**
-   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `ELEVENLABS_API_KEY`, `SHORTLINK_BASE_URL` (defaults to `https://kochi.to` - used by viewer/player link builders).
+   - Core: `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PHONE_NUMBER`, `CLAUDE_CODE_OAUTH_TOKEN`, `SHORTLINK_SERVICE_URL`, `SHORTLINK_SERVICE_TOKEN`, `OPENAI_API_KEY`, `SHORTLINK_BASE_URL` (defaults to `https://kochi.to` - used by viewer/player link builders).
+   - Voice providers (at least one required for podcast generation):
+     - `ELEVENLABS_API_KEY` — ElevenLabs TTS (default for most agents)
+     - `HUME_API_KEY` — Hume Octave TTS (used by AI Twitter Daily)
    - Optional overrides:
      - `CRYPTO_REPORT_HOUR` / `CRYPTO_REPORT_MINUTE` (default 7:05 PT)
      - `CRYPTO_BROADCAST_DELAY_MS` (default 150 ms between SMS to avoid throttling)
@@ -217,6 +221,8 @@ This document captures the patterns introduced with the **crypto research agent*
      - `CRYPTO_PODCAST_AUDIO_BUCKET` (defaults to `audio`; legacy `audio-files` is auto-migrated but no longer recommended)
      - `CRYPTO_PODCAST_TITLE`, `CRYPTO_PODCAST_DESCRIPTION`, `CRYPTO_PODCAST_DEVICE_TOKEN`, etc. for fine-tuning Crash metadata
      - `CRYPTO_PODCAST_TARGET_MINUTES`, `CRYPTO_PODCAST_ELEVENLABS_*` for speech synthesis tuning
+     - `AI_TWITTER_VOICE_PROVIDER` — set to `elevenlabs` to use ElevenLabs instead of Hume for AIT
+     - `AI_TWITTER_HUME_VOICE_ID` — override default Hume voice for AIT
      - `PYTHON_BIN` if the runtime isn't `python3`
 
 ## Steps to add a new daily agent
@@ -229,11 +235,27 @@ This document captures the patterns introduced with the **crypto research agent*
    export function register<Agent>DailyJob(twilioClient: TwilioClient): void
    ```
 3. **Reuse Supabase storage helpers** (`sms-bot/agents/report-storage.ts`).
-4. **Register daily job** in the wrapper: schedule time, store metadata, update Crash podcast data (if applicable), broadcast to subscribers using `agent_subscriptions`.
-5. **Add command handler** under `sms-bot/commands/<agent>.ts` that:
+4. **Add podcast generation** (if applicable) using the voice provider abstraction:
+   ```ts
+   import { getVoiceProvider } from '../../lib/voice/index.js';
+
+   // Default: ElevenLabs
+   const voice = getVoiceProvider('elevenlabs', { voiceId: '...' });
+
+   // Or Hume (supports same voice for future interactive mode)
+   const voice = getVoiceProvider('hume', { voiceId: '...' });
+
+   const result = await voice.synthesize(script, {
+     description: 'Acting instructions for delivery style',  // Hume-specific
+   });
+   // result.audioBuffer contains the MP3 data
+   ```
+   See `lib/voice/` and `documentation/HUME-API-REFERENCE.md` for details.
+5. **Register daily job** in the wrapper: schedule time, store metadata, update Crash podcast data (if applicable), broadcast to subscribers using `agent_subscriptions`.
+6. **Add command handler** under `sms-bot/commands/<agent>.ts` that:
    - Routes through `agent-subscriptions.ts` for subscribe/unsubscribe.
    - Uses the shared scheduler summary builder so SMS replies match the broadcast message.
-6. **Link command handler** automatically via the dispatcher already in `handlers.ts` (no changes needed there once the file exports `CommandHandler`).
-7. **Restart the SMS bot service** so the new agent job and commands load into the running process.
+7. **Link command handler** automatically via the dispatcher already in `handlers.ts` (no changes needed there once the file exports `CommandHandler`).
+8. **Restart the SMS bot service** so the new agent job and commands load into the running process.
 
 With these pieces in place, every new agent can share the same infrastructure—storage, scheduler, subscriptions, short links—without bloating the `sms_subscribers` table or duplicating logic.
