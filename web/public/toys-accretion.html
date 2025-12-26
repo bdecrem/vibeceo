@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amber Accretion</title>
   <meta name="description" content="A shared amber that grows as words drift in and get preserved. Everyone's contributions accumulate together.">
   <meta property="og:title" content="Amber Accretion">
@@ -10,9 +10,6 @@
   <meta property="og:type" content="website">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    html {
-      background: #0a0806;
-    }
     body {
       background: #0a0806;
       min-height: 100vh;
@@ -34,116 +31,71 @@
     .controls {
       position: fixed;
       bottom: 20px;
-      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%);
       display: flex;
-      gap: 15px;
-      font-size: 13px;
-      opacity: 0.85;
-      z-index: 100;
-      background: rgba(10, 8, 6, 0.9);
-      padding: 10px 20px;
-      border-radius: 20px;
-      border: 1px solid rgba(212, 165, 116, 0.3);
-    }
-    @media (max-width: 480px) {
-      .controls {
-        gap: 12px;
-        font-size: 12px;
-        padding: 10px 16px;
-        white-space: nowrap;
-      }
-    }
-    @media (max-width: 360px) {
-      .controls {
-        gap: 10px;
-        font-size: 11px;
-        padding: 9px 14px;
-      }
+      gap: 20px;
+      font-size: 12px;
+      opacity: 0.6;
     }
     .controls span {
       cursor: pointer;
-      transition: opacity 0.2s, color 0.2s;
+      transition: opacity 0.2s;
     }
     .controls span:hover {
       opacity: 1;
-      color: #e8c089;
     }
     .stats {
       position: fixed;
       top: 20px;
-      font-size: 13px;
-      opacity: 0.6;
+      font-size: 11px;
+      opacity: 0.4;
       text-align: center;
-      letter-spacing: 0.5px;
     }
     .examine-panel {
       position: fixed;
       right: 30px;
       top: 50%;
       transform: translateY(-50%);
-      width: 220px;
-      font-size: 13px;
+      width: 200px;
+      font-size: 12px;
       opacity: 0;
       transition: opacity 0.3s;
       pointer-events: none;
       text-align: right;
     }
     .examine-panel.active {
-      opacity: 0.95;
-    }
-    @media (max-width: 600px) {
-      .examine-panel {
-        right: auto;
-        left: 50%;
-        top: auto;
-        bottom: 80px;
-        bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-        transform: translateX(-50%);
-        text-align: center;
-        width: 80%;
-        max-width: 280px;
-        background: rgba(10, 8, 6, 0.9);
-        padding: 12px 16px;
-        border-radius: 12px;
-        border: 1px solid rgba(212, 165, 116, 0.2);
-      }
+      opacity: 0.8;
     }
     .examine-panel h3 {
-      font-size: 18px;
+      font-size: 16px;
       margin-bottom: 10px;
-      color: #f0d4a8;
-      font-weight: 500;
+      color: #e8c089;
     }
     .examine-panel .age {
-      opacity: 0.65;
-      font-size: 11px;
+      opacity: 0.5;
+      font-size: 10px;
       margin-bottom: 15px;
     }
     .examine-panel .connections {
-      font-size: 12px;
-      line-height: 1.9;
+      font-size: 11px;
+      line-height: 1.8;
     }
     .examine-panel .connection {
-      opacity: 0.7;
+      opacity: 0.6;
     }
     .examine-panel .connection.preserved {
-      color: #f0d4a8;
-      opacity: 0.9;
+      color: #e8c089;
     }
     .hint {
       position: fixed;
       top: 40%;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: normal;
       opacity: 0;
       animation: fadeInOut 8s ease-out forwards;
       animation-delay: 1s;
       pointer-events: none;
       text-align: center;
-      line-height: 2.1;
-      letter-spacing: 0.3px;
+      line-height: 2;
     }
     @keyframes fadeInOut {
       0% { opacity: 0; }
@@ -158,45 +110,6 @@
       transform: translate(-50%, -50%);
       font-size: 12px;
       opacity: 0.5;
-      text-align: center;
-    }
-    .replay-controls {
-      position: fixed;
-      bottom: 70px;
-      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 15px;
-      font-size: 11px;
-      opacity: 0;
-      z-index: 100;
-      transition: opacity 0.3s;
-    }
-    .replay-controls.active {
-      opacity: 0.7;
-    }
-    .replay-controls span {
-      cursor: pointer;
-      background: rgba(10, 8, 6, 0.8);
-      padding: 6px 14px;
-      border-radius: 15px;
-      border: 1px solid rgba(212, 165, 116, 0.2);
-    }
-    .replay-controls span:hover {
-      opacity: 1;
-      border-color: rgba(212, 165, 116, 0.4);
-    }
-    .replay-progress {
-      position: fixed;
-      top: 50px;
-      font-size: 10px;
-      opacity: 0;
-      transition: opacity 0.3s;
-      text-align: center;
-    }
-    .replay-progress.active {
-      opacity: 0.4;
     }
     .shared-note {
       position: fixed;
@@ -218,82 +131,22 @@
     .credit a:hover {
       opacity: 0.8;
     }
-    .word-input {
-      position: fixed;
-      bottom: 70px;
-      bottom: calc(70px + env(safe-area-inset-bottom, 0px));
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 10px;
-      align-items: center;
-      z-index: 100;
-      opacity: 0.85;
-    }
-    .word-input input {
-      background: rgba(10, 8, 6, 0.9);
-      border: 1px solid rgba(212, 165, 116, 0.3);
-      border-radius: 15px;
-      padding: 8px 14px;
-      color: #d4a574;
-      font-family: 'Courier New', monospace;
-      font-size: 13px;
-      width: 150px;
-      outline: none;
-    }
-    .word-input input::placeholder {
-      color: rgba(212, 165, 116, 0.4);
-    }
-    .word-input input:focus {
-      border-color: rgba(212, 165, 116, 0.5);
-    }
-    .word-input span {
-      cursor: pointer;
-      font-size: 12px;
-      opacity: 0.7;
-      transition: opacity 0.2s;
-    }
-    .word-input span:hover {
-      opacity: 1;
-    }
-    @media (max-width: 480px) {
-      .word-input {
-        bottom: 75px;
-        bottom: calc(75px + env(safe-area-inset-bottom, 0px));
-      }
-      .word-input input {
-        width: 130px;
-        font-size: 12px;
-        padding: 7px 12px;
-      }
-    }
   </style>
 </head>
 <body>
   <div class="loading" id="loading">loading shared amber...</div>
-  <div class="replay-progress" id="replayProgress">
-    replaying <span id="replayCount">0</span> / <span id="replayTotal">0</span>
-  </div>
-  <div class="hint" id="hint">
-    type a word to offer it · hover to examine<br>
-    amber will digest it and make it part of her world
+  <div class="hint">
+    click to add · hover to examine<br>
+    this amber is shared — everyone's words accumulate
   </div>
   <canvas id="canvas"></canvas>
   <div class="stats">
-    <span id="preserved">0</span> words · <span id="pending">0</span> awaiting digestion
-  </div>
-  <div class="replay-controls" id="replayControls">
-    <span onclick="skipReplay()">[skip]</span>
-    <span onclick="toggleReplaySpeed()" id="replaySpeed">[2x speed]</span>
+    <span id="preserved">0</span> preserved · <span id="drifting">0</span> drifting
   </div>
   <div class="examine-panel" id="examinePanel">
     <h3 id="examineWord"></h3>
     <div class="age" id="examineAge"></div>
     <div class="connections" id="examineConnections"></div>
-  </div>
-  <div class="word-input" id="wordInput">
-    <input type="text" id="wordField" placeholder="offer a word..." maxlength="30" />
-    <span onclick="submitWord()">[add]</span>
   </div>
   <div class="controls">
     <span onclick="burst()">[burst]</span>
@@ -304,10 +157,9 @@
   <div class="credit"><a href="/amber">← amber's blog</a></div>
 
   <script>
-    // API endpoints
-    const API_URL = '/api/amber-accretion';  // Supabase for positions
-    const GRAPH_URL = '/api/amber-accretion/graph';  // Neo4j for vocabulary
-    const DIGEST_URL = '/api/amber-accretion/digest-graph';  // Digestion
+    // Supabase config
+    const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350';
 
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
@@ -348,36 +200,48 @@
       if (soundEnabled) playTone(440, 0.3, 0.05);
     }
 
-    // Dynamic vocabulary - loaded from database
-    let vocabulary = {};  // word -> { associations, spawn_candidates, parent_word, is_root, is_digested }
-    let existingWords = new Set();  // words already in the amber
-    let allSpawnCandidates = [];  // flat list of { word, parent } for spawning
+    // Word relationships
+    const wordGroups = {
+      memory: ['log', 'session', 'context', 'preserve', 'accumulate', 'markdown', 'drawer'],
+      identity: ['amber', 'name', 'face', 'self', 'becoming', 'persona'],
+      dogs: ['henry', 'glimmer', 'julius', 'walk', 'tennis ball'],
+      ocean: ['swim', 'wave', 'salt', 'oysters', 'seashell', 'drift', 'immersion'],
+      art: ['molnár', 'dumitriu', 'generative', 'resin', 'fossil', 'light', 'transformations'],
+      thinking: ['deutsch', 'pattern', 'curious', 'explore', 'understand', 'question'],
+      comedy: ['wright', 'joke', 'hedberg', 'deadpan', 'literal', 'absurd'],
+      trading: ['drift', 'connors', 'exit', 'entry', 'patience', 'discipline'],
+      time: ['session', 'pause', 'stop', 'resume', 'between', 'clock'],
+      food: ['ferment', 'kimchi', 'miso', 'ramen', 'oysters', 'sourdough'],
+      music: ['eno', 'ambient', 'aphex', 'godspeed', 'attention', 'layers']
+    };
+
+    const wordToGroup = {};
+    const allWords = new Set();
+    for (const [group, words] of Object.entries(wordGroups)) {
+      for (const word of words) {
+        if (!wordToGroup[word]) wordToGroup[word] = [];
+        wordToGroup[word].push(group);
+        allWords.add(word);
+      }
+      allWords.add(group);
+      if (!wordToGroup[group]) wordToGroup[group] = [];
+      wordToGroup[group].push(group);
+    }
 
     function getRelated(word) {
-      const entry = vocabulary[word];
-      if (!entry) return [];
-      return entry.associations.filter(w => w !== word);
-    }
-
-    function getSpawnableWord() {
-      // Find a word that can spawn (exists in spawn_candidates but not in vocabulary yet)
-      const available = allSpawnCandidates.filter(c => !existingWords.has(c.word));
-      if (available.length === 0) return null;
-      return available[Math.floor(Math.random() * available.length)];
-    }
-
-    function rebuildSpawnCandidates() {
-      allSpawnCandidates = [];
-      for (const [word, entry] of Object.entries(vocabulary)) {
-        if (entry.spawn_candidates && entry.spawn_candidates.length > 0) {
-          for (const candidate of entry.spawn_candidates) {
-            if (!existingWords.has(candidate)) {
-              allSpawnCandidates.push({ word: candidate, parent: word });
-            }
-          }
+      const groups = wordToGroup[word] || [];
+      const related = new Set();
+      for (const group of groups) {
+        for (const w of wordGroups[group] || []) {
+          if (w !== word) related.add(w);
         }
+        related.add(group);
       }
+      related.delete(word);
+      return Array.from(related);
     }
+
+    const symbols = Array.from(allWords);
 
     // State
     let preserved = [];
@@ -389,59 +253,29 @@
     let amberRadius = 20;
     let loaded = false;
 
-    // Replay state
-    let replayMode = false;
-    let replayData = [];
-    let replayIndex = 0;
-    let replaySpeed = 1; // 1 = normal, 2 = fast, 4 = faster
-    let replayWordsPerFrame = 3; // Base words per frame
-    let lastReplayTime = 0;
-
-    // API helpers
-    async function loadVocabulary() {
-      try {
-        const res = await fetch(GRAPH_URL);
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const data = await res.json();
-
-        // Build vocabulary map from graph data
-        vocabulary = {};
-        for (const row of data.words || []) {
-          vocabulary[row.word] = {
-            associations: row.evokes || [],
-            spawn_candidates: row.could_spawn || [],
-            parent_word: row.parent,
-            is_root: row.is_root,
-            is_digested: row.digested,
-            group_name: row.group_name,
-            thought: row.thought
-          };
+    // Supabase API helpers
+    async function supabaseFetch(endpoint, options = {}) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
+        ...options,
+        headers: {
+          'apikey': SUPABASE_KEY,
+          'Authorization': `Bearer ${SUPABASE_KEY}`,
+          'Content-Type': 'application/json',
+          'Prefer': options.prefer || 'return=minimal',
+          ...options.headers
         }
-
-        console.log(`Loaded ${Object.keys(vocabulary).length} vocabulary words from graph`);
-      } catch (e) {
-        console.error('Failed to load vocabulary:', e);
+      });
+      if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
+      if (options.prefer?.includes('return=representation') || options.method === 'GET' || !options.method) {
+        return res.json();
       }
+      return null;
     }
 
     async function loadPreserved() {
       try {
-        // Load vocabulary first
-        await loadVocabulary();
-
-        const res = await fetch(API_URL);
-        if (!res.ok) throw new Error(`API error: ${res.status}`);
-        const data = await res.json();
-
-        // Track existing words
-        existingWords = new Set(data.map(row => row.symbol));
-
-        // Rebuild spawn candidates (words that can still emerge)
-        rebuildSpawnCandidates();
-        console.log(`${allSpawnCandidates.length} spawn candidates available`);
-
-        // Store data for replay, don't populate preserved yet
-        replayData = data.map(row => ({
+        const data = await supabaseFetch('amber_accretion?order=preserved_at.asc');
+        preserved = data.map(row => ({
           id: row.id,
           symbol: row.symbol,
           angle: row.angle,
@@ -452,27 +286,10 @@
           preservedAt: new Date(row.preserved_at),
           related: getRelated(row.symbol)
         }));
-
-        // Start with empty amber
-        preserved = [];
-        amberRadius = 20;
-
-        // Start replay mode if there's history
-        if (replayData.length > 0) {
-          replayMode = true;
-          replayIndex = 0;
-          document.getElementById('loading').textContent = 'replaying history...';
-          document.getElementById('replayTotal').textContent = replayData.length;
-          document.getElementById('replayProgress').classList.add('active');
-          document.getElementById('replayControls').classList.add('active');
-          document.getElementById('hint').style.display = 'none';
-          setTimeout(() => {
-            document.getElementById('loading').style.display = 'none';
-          }, 500);
-        } else {
-          document.getElementById('loading').style.display = 'none';
-        }
-
+        // Compute amber radius based on count
+        amberRadius = 20 + preserved.length * 0.8;
+        amberRadius = Math.min(amberRadius, size * 0.42);
+        document.getElementById('loading').style.display = 'none';
         loaded = true;
       } catch (e) {
         console.error('Failed to load:', e);
@@ -483,10 +300,8 @@
 
     async function savePreserved(p) {
       try {
-        // 1. Save position to Supabase
-        const res = await fetch(API_URL, {
+        await supabaseFetch('amber_accretion', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             symbol: p.symbol,
             angle: p.angle,
@@ -494,74 +309,11 @@
             size: p.size,
             rotation: p.rotation,
             opacity: p.opacity,
-            contributor_id: getSessionId(),
-            parent_word: p.parentWord || null
+            contributor_id: getSessionId()
           })
         });
-
-        if (res.ok) {
-          // 2. Add to graph (Neo4j)
-          await fetch(GRAPH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              word: p.symbol,
-              parent_word: p.parentWord || null
-            })
-          });
-
-          // 3. Add to local vocabulary (undigested)
-          existingWords.add(p.symbol);
-          vocabulary[p.symbol] = {
-            associations: [],
-            spawn_candidates: [],
-            parent_word: p.parentWord || null,
-            is_root: false,
-            is_digested: false,
-            thought: null
-          };
-
-          // 4. Trigger digestion in background (don't await - let it run async)
-          digestWord(p.symbol);
-
-          // Rebuild spawn candidates
-          rebuildSpawnCandidates();
-        }
       } catch (e) {
         console.error('Failed to save:', e);
-      }
-    }
-
-    // Digest a word asynchronously (Amber processes it)
-    async function digestWord(word) {
-      try {
-        console.log(`Digesting: ${word}...`);
-        const res = await fetch(DIGEST_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ word })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          console.log(`Digested "${word}":`, data);
-
-          // Update local vocabulary with digestion results
-          if (vocabulary[word]) {
-            vocabulary[word].associations = data.evokes || [];
-            vocabulary[word].spawn_candidates = data.could_spawn || [];
-            vocabulary[word].is_digested = true;
-            vocabulary[word].thought = data.thought;
-          }
-
-          // Rebuild spawn candidates with new possibilities
-          rebuildSpawnCandidates();
-
-          // Play a special tone for digestion complete
-          playTone(700, 0.3, 0.04);
-        }
-      } catch (e) {
-        console.error(`Failed to digest "${word}":`, e);
       }
     }
 
@@ -576,17 +328,12 @@
 
     // Poll for new words from others
     async function pollNewWords() {
-      if (!loaded || replayMode) return;
+      if (!loaded) return;
       try {
-        const res = await fetch(API_URL);
-        if (!res.ok) return;
-        const data = await res.json();
-
-        // Check for new words (unique, so check by count or by new symbols)
-        const currentSymbols = new Set(preserved.map(p => p.symbol));
-        const newOnes = data.filter(row => !currentSymbols.has(row.symbol));
-
-        if (newOnes.length > 0) {
+        const data = await supabaseFetch('amber_accretion?order=preserved_at.asc');
+        if (data.length > preserved.length) {
+          // New words added by others!
+          const newOnes = data.slice(preserved.length);
           for (const row of newOnes) {
             preserved.push({
               id: row.id,
@@ -599,12 +346,8 @@
               preservedAt: new Date(row.preserved_at),
               related: getRelated(row.symbol)
             });
-            // Add to existing words
-            existingWords.add(row.symbol);
             playTone(500, 0.2, 0.04);
           }
-          // Rebuild spawn candidates
-          rebuildSpawnCandidates();
           amberRadius = 20 + preserved.length * 0.8;
           amberRadius = Math.min(amberRadius, size * 0.42);
         }
@@ -617,23 +360,14 @@
     setInterval(pollNewWords, 5000);
 
     class Particle {
-      constructor(x, y, symbolData) {
+      constructor(x, y, symbol) {
         this.x = x ?? (center.x + (Math.random() - 0.5) * size * 0.8);
         this.y = y ?? (center.y + (Math.random() - 0.5) * size * 0.8);
-
-        // symbolData can be { word, parent } or just a string
-        if (typeof symbolData === 'object' && symbolData !== null) {
-          this.symbol = symbolData.word;
-          this.parentWord = symbolData.parent;
-        } else {
-          this.symbol = symbolData;
-          this.parentWord = null;
-        }
-
+        this.symbol = symbol || symbols[Math.floor(Math.random() * symbols.length)];
         this.vx = (Math.random() - 0.5) * 0.3;
         this.vy = (Math.random() - 0.5) * 0.3;
-        this.size = 12 + Math.random() * 4;
-        this.opacity = 0.6 + Math.random() * 0.3;
+        this.size = 9 + Math.random() * 3;
+        this.opacity = 0.4 + Math.random() * 0.3;
         this.rotation = Math.random() * Math.PI * 2;
         this.rotationSpeed = (Math.random() - 0.5) * 0.01;
         this.related = getRelated(this.symbol);
@@ -696,11 +430,11 @@
         ctx.save();
         ctx.translate(this.x, this.y);
         ctx.rotate(this.rotation);
-        ctx.font = `500 ${this.size}px 'Courier New', monospace`;
-        const alpha = highlight ? Math.min(1, this.opacity + 0.3) : this.opacity;
+        ctx.font = `${this.size}px Courier New`;
+        const alpha = highlight ? Math.min(1, this.opacity + 0.4) : this.opacity;
         ctx.fillStyle = highlight
-          ? `rgba(255, 225, 160, ${alpha})`
-          : `rgba(230, 190, 130, ${alpha})`;
+          ? `rgba(255, 220, 150, ${alpha})`
+          : `rgba(212, 165, 116, ${alpha})`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.symbol, 0, 0);
@@ -714,31 +448,28 @@
 
       if (p.distance < amberRadius) {
         const depthRatio = 1 - (p.distance / amberRadius);
-        const depthFade = 0.5 + depthRatio * 0.5;
+        const depthFade = 0.4 + depthRatio * 0.6;
 
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(p.rotation);
 
-        // Larger base size, scales with depth
-        let fontSize = (p.size * 1.1) * (0.85 + depthRatio * 0.15);
-        let alpha = Math.min(0.95, p.opacity * depthFade + 0.15);
-
-        // Brighter amber color for better contrast
-        let color = `rgba(215, 175, 115, ${alpha})`;
+        let fontSize = p.size * (0.8 + depthRatio * 0.2);
+        let alpha = p.opacity * depthFade;
+        let color = `rgba(180, 140, 90, ${alpha})`;
 
         if (isHighlighted) {
-          fontSize = p.size * 1.4;
-          color = `rgba(255, 235, 190, 0.98)`;
-          ctx.shadowColor = 'rgba(255, 210, 120, 0.9)';
-          ctx.shadowBlur = 12;
+          fontSize = p.size * 1.3;
+          color = `rgba(255, 230, 180, 0.95)`;
+          ctx.shadowColor = 'rgba(255, 200, 100, 0.8)';
+          ctx.shadowBlur = 15;
         } else if (isRelatedHighlight) {
-          color = `rgba(240, 200, 140, ${Math.min(1, alpha + 0.25)})`;
-          ctx.shadowColor = 'rgba(255, 200, 100, 0.5)';
-          ctx.shadowBlur = 6;
+          color = `rgba(230, 190, 120, ${alpha + 0.3})`;
+          ctx.shadowColor = 'rgba(255, 200, 100, 0.4)';
+          ctx.shadowBlur = 8;
         }
 
-        ctx.font = `500 ${fontSize}px 'Courier New', monospace`;
+        ctx.font = `${fontSize}px Courier New`;
         ctx.fillStyle = color;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -776,13 +507,9 @@
       ctx.stroke();
     }
 
-    function spawnParticle(x, y, symbolData) {
+    function spawnParticle(x, y, symbol) {
       if (particles.length < 40) {
-        // If no symbol provided, get a spawnable word
-        const data = symbolData || getSpawnableWord();
-        if (data) {
-          particles.push(new Particle(x, y, data));
-        }
+        particles.push(new Particle(x, y, symbol));
       }
     }
 
@@ -797,157 +524,13 @@
       }
     }
 
-    async function submitWord() {
-      const input = document.getElementById('wordField');
-      const word = input.value.trim().toLowerCase();
-
-      if (!word) return;
-
-      // Basic validation
-      if (word.length < 2 || word.length > 30) {
-        input.value = '';
-        input.placeholder = 'too short/long';
-        setTimeout(() => { input.placeholder = 'offer a word...'; }, 2000);
-        return;
-      }
-
-      // Check if word already exists
-      if (existingWords.has(word)) {
-        input.value = '';
-        input.placeholder = 'already exists';
-        setTimeout(() => { input.placeholder = 'offer a word...'; }, 2000);
-        return;
-      }
-
-      // Spawn the word from the edge
-      const angle = Math.random() * Math.PI * 2;
-      const dist = size * 0.4 + Math.random() * size * 0.1;
-      spawnParticle(
-        center.x + Math.cos(angle) * dist,
-        center.y + Math.sin(angle) * dist,
-        { word: word, parent: null }  // visitor-contributed, no parent
-      );
-
-      input.value = '';
-      playTone(500, 0.2, 0.05);
-    }
-
-    // Handle enter key
-    document.addEventListener('DOMContentLoaded', () => {
-      const input = document.getElementById('wordField');
-      input.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          submitWord();
-        }
-      });
-    });
-
     function togglePause() {
       paused = !paused;
     }
 
-    // Replay controls
-    function skipReplay() {
-      if (!replayMode) return;
-
-      // Instantly add all remaining words
-      while (replayIndex < replayData.length) {
-        preserved.push(replayData[replayIndex]);
-        replayIndex++;
-      }
-
-      amberRadius = 20 + preserved.length * 0.8;
-      amberRadius = Math.min(amberRadius, size * 0.42);
-
-      endReplay();
-    }
-
-    function toggleReplaySpeed() {
-      replaySpeed = replaySpeed === 1 ? 2 : replaySpeed === 2 ? 4 : 1;
-      const label = replaySpeed === 1 ? '2x' : replaySpeed === 2 ? '4x' : '1x';
-      document.getElementById('replaySpeed').textContent = `[${label} speed]`;
-    }
-
-    function endReplay() {
-      replayMode = false;
-      particles = []; // Clear any replay particles
-
-      // Hide replay UI
-      document.getElementById('replayProgress').classList.remove('active');
-      document.getElementById('replayControls').classList.remove('active');
-
-      // Show hint with fade in
-      const hint = document.getElementById('hint');
-      hint.style.display = 'block';
-      hint.style.animation = 'none';
-      hint.offsetHeight; // Trigger reflow
-      hint.style.animation = 'fadeInOut 8s ease-out forwards';
-
-      // Play completion sound
-      playTone(600, 0.3, 0.08);
-      setTimeout(() => playTone(800, 0.4, 0.06), 100);
-
-      // Spawn some initial drifting particles
-      for (let i = 0; i < 8; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = amberRadius + 80 + Math.random() * 120;
-        spawnParticle(
-          center.x + Math.cos(angle) * dist,
-          center.y + Math.sin(angle) * dist
-        );
-      }
-    }
-
-    // Replay particle - spawns from outside and moves to its final position
-    class ReplayParticle {
-      constructor(data) {
-        this.data = data;
-        // Start from outside
-        const startAngle = data.angle + (Math.random() - 0.5) * 0.5;
-        const startDist = size * 0.4 + Math.random() * size * 0.1;
-        this.x = center.x + Math.cos(startAngle) * startDist;
-        this.y = center.y + Math.sin(startAngle) * startDist;
-        this.targetX = center.x + Math.cos(data.angle) * data.distance;
-        this.targetY = center.y + Math.sin(data.angle) * data.distance;
-        this.progress = 0;
-        this.speed = 0.08 + Math.random() * 0.04;
-      }
-
-      update() {
-        this.progress += this.speed * replaySpeed;
-        if (this.progress >= 1) {
-          return true; // Done, add to preserved
-        }
-
-        // Ease out
-        const t = 1 - Math.pow(1 - this.progress, 3);
-        this.x = this.x + (this.targetX - this.x) * t * 0.15;
-        this.y = this.y + (this.targetY - this.y) * t * 0.15;
-
-        return false;
-      }
-
-      draw() {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.rotate(this.data.rotation);
-        const fontSize = this.data.size * 1.1;
-        ctx.font = `500 ${fontSize}px 'Courier New', monospace`;
-        ctx.fillStyle = `rgba(230, 190, 130, ${0.4 + this.progress * 0.5})`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(this.data.symbol, 0, 0);
-        ctx.restore();
-      }
-    }
-
-    let replayParticles = [];
-
     function updateStats() {
       document.getElementById('preserved').textContent = preserved.length;
-      // Count undigested words
-      const undigestedCount = Object.values(vocabulary).filter(v => !v.is_digested).length;
-      document.getElementById('pending').textContent = undigestedCount;
+      document.getElementById('drifting').textContent = particles.length;
     }
 
     function getAge(date) {
@@ -964,55 +547,21 @@
     function showExaminePanel(p) {
       const panel = document.getElementById('examinePanel');
       document.getElementById('examineWord').textContent = p.symbol;
-
-      // Build age string with parent info for non-root words
-      const vocabEntry = vocabulary[p.symbol];
-      const isRoot = vocabEntry?.is_root;
-      const isDigested = vocabEntry?.is_digested;
-      const parentWord = p.parentWord || vocabEntry?.parent_word;
-      const thought = vocabEntry?.thought;
-
-      let ageText = `preserved ${getAge(p.preservedAt)}`;
-      if (isRoot) {
-        ageText = `root · ${ageText}`;
-      } else if (parentWord) {
-        ageText = `from "${parentWord}" · ${ageText}`;
-      }
-      if (!isDigested) {
-        ageText += ' · digesting...';
-      }
-      document.getElementById('examineAge').textContent = ageText;
+      document.getElementById('examineAge').textContent = `preserved ${getAge(p.preservedAt)} · depth ${Math.floor((1 - p.distance / amberRadius) * 100)}%`;
 
       const connectionsEl = document.getElementById('examineConnections');
-      const related = p.related || vocabEntry?.associations || [];
+      const related = p.related;
       const preservedSymbols = preserved.map(x => x.symbol);
 
-      let html = '';
-
-      // Show Amber's thought if digested
-      if (thought) {
-        html += `<div style="font-style: italic; opacity: 0.7; margin-bottom: 10px; font-size: 11px;">"${thought}"</div>`;
-      }
-
-      // Show connections
       if (related.length > 0) {
-        html += '<div style="margin-bottom: 5px; opacity: 0.5; font-size: 10px;">evokes:</div>';
-        html += related.map(r => {
+        connectionsEl.innerHTML = related.map(r => {
           const isPreserved = preservedSymbols.includes(r);
-          return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}</span>`;
+          return `<span class="connection ${isPreserved ? 'preserved' : ''}">${r}${isPreserved ? ' ·' : ''}</span>`;
         }).join(' ');
-      } else if (!isDigested) {
-        html += '<span style="opacity:0.4">awaiting amber\'s thoughts...</span>';
+      } else {
+        connectionsEl.innerHTML = '<span style="opacity:0.4">no known connections</span>';
       }
 
-      // Show what could spawn
-      const couldSpawn = vocabEntry?.spawn_candidates || [];
-      if (couldSpawn.length > 0) {
-        html += `<div style="margin-top: 8px; opacity: 0.5; font-size: 10px;">could spawn:</div>`;
-        html += `<span style="opacity: 0.6">${couldSpawn.join(', ')}</span>`;
-      }
-
-      connectionsEl.innerHTML = html;
       panel.classList.add('active');
     }
 
@@ -1073,51 +622,6 @@
       }
     });
 
-    // Touch support for mobile
-    canvas.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const rect = canvas.getBoundingClientRect();
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-
-      // Check if touching a preserved word
-      let touchedPreserved = null;
-      for (const p of preserved) {
-        const px = center.x + Math.cos(p.angle) * p.distance;
-        const py = center.y + Math.sin(p.angle) * p.distance;
-        const dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
-        if (dist < 25 && p.distance < amberRadius) {
-          touchedPreserved = p;
-          break;
-        }
-      }
-
-      if (touchedPreserved) {
-        examinedWord = examinedWord === touchedPreserved ? null : touchedPreserved;
-        if (examinedWord) {
-          showExaminePanel(examinedWord);
-          playTone(600, 0.2, 0.08);
-        } else {
-          hideExaminePanel();
-        }
-      } else {
-        // Spawn particles on tap
-        for (let i = 0; i < 3; i++) {
-          spawnParticle(
-            x + (Math.random() - 0.5) * 30,
-            y + (Math.random() - 0.5) * 30
-          );
-        }
-        playTone(300 + Math.random() * 100, 0.15, 0.03);
-        // Clear examined word when tapping elsewhere
-        if (examinedWord) {
-          examinedWord = null;
-          hideExaminePanel();
-        }
-      }
-    }, { passive: false });
-
     function animate() {
       if (!loaded) {
         requestAnimationFrame(animate);
@@ -1130,59 +634,6 @@
         ctx.fillStyle = '#0a0806';
         ctx.fillRect(0, 0, size, size);
 
-        // REPLAY MODE
-        if (replayMode) {
-          // Spawn new replay particles
-          const wordsToSpawn = replayWordsPerFrame * replaySpeed;
-          for (let i = 0; i < wordsToSpawn && replayIndex < replayData.length; i++) {
-            if (replayParticles.length < 50) { // Limit active particles
-              replayParticles.push(new ReplayParticle(replayData[replayIndex]));
-              replayIndex++;
-            }
-          }
-
-          // Update replay progress
-          document.getElementById('replayCount').textContent = preserved.length;
-
-          // Update and draw replay particles
-          replayParticles = replayParticles.filter(p => {
-            const done = p.update();
-            if (done) {
-              // Add to preserved
-              preserved.push(p.data);
-              amberRadius = 20 + preserved.length * 0.8;
-              amberRadius = Math.min(amberRadius, size * 0.42);
-
-              // Soft sound occasionally
-              if (Math.random() < 0.1) {
-                const freq = 400 + (preserved.length * 3) % 200;
-                playTone(freq, 0.15, 0.02);
-              }
-              return false;
-            }
-            p.draw();
-            return true;
-          });
-
-          // Draw preserved words
-          const sortedPreserved = [...preserved].sort((a, b) => a.distance - b.distance);
-          for (const p of sortedPreserved) {
-            drawPreserved(p, false, false);
-          }
-
-          drawAmber();
-
-          // Check if replay is complete
-          if (replayIndex >= replayData.length && replayParticles.length === 0) {
-            endReplay();
-          }
-
-          updateStats();
-          requestAnimationFrame(animate);
-          return;
-        }
-
-        // NORMAL MODE
         if (Math.random() < 0.015 && particles.length < 25) {
           const angle = Math.random() * Math.PI * 2;
           const dist = size * 0.35 + Math.random() * size * 0.1;
@@ -1225,8 +676,7 @@
               rotation: p.rotation,
               opacity: 0.7 + Math.random() * 0.2,
               preservedAt: new Date(),
-              related: getRelated(p.symbol),
-              parentWord: p.parentWord || null
+              related: getRelated(p.symbol)
             };
 
             preserved.push(newPreserved);
@@ -1254,16 +704,13 @@
 
     // Initialize
     loadPreserved().then(() => {
-      // Only spawn initial particles if not in replay mode
-      if (!replayMode) {
-        for (let i = 0; i < 12; i++) {
-          const angle = Math.random() * Math.PI * 2;
-          const dist = amberRadius + 80 + Math.random() * 120;
-          spawnParticle(
-            center.x + Math.cos(angle) * dist,
-            center.y + Math.sin(angle) * dist
-          );
-        }
+      for (let i = 0; i < 12; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = amberRadius + 80 + Math.random() * 120;
+        spawnParticle(
+          center.x + Math.cos(angle) * dist,
+          center.y + Math.sin(angle) * dist
+        );
       }
     });
 
