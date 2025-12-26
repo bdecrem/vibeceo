@@ -293,7 +293,7 @@
         loaded = true;
       } catch (e) {
         console.error('Failed to load:', e);
-        document.getElementById('loading').textContent = 'failed to load — using local mode';
+        document.getElementById('loading').style.display = 'none';
         loaded = true;
       }
     }
