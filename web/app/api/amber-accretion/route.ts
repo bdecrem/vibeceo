@@ -1,34 +1,41 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
-let supabase: SupabaseClient | null = null;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 function getSupabase() {
-  if (!supabase) {
-    supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error('Missing Supabase configuration');
   }
-  return supabase;
+  return createClient(supabaseUrl, supabaseServiceKey);
 }
 
 // GET - fetch all preserved words
 export async function GET() {
   try {
-    const { data, error } = await getSupabase()
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[AmberAccretion] Missing Supabase env vars:', {
+        hasUrl: !!supabaseUrl,
+        hasKey: !!supabaseServiceKey,
+      });
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
+
+    const supabase = getSupabase();
+    const { data, error } = await supabase
       .from('amber_accretion')
       .select('*')
       .order('preserved_at', { ascending: true });
 
     if (error) {
-      console.error('Error fetching words:', error);
+      console.error('[AmberAccretion] Error fetching words:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data || []);
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error('[AmberAccretion] Unexpected error:', err);
     return NextResponse.json({ error: 'Failed to fetch words' }, { status: 500 });
   }
 }
@@ -36,8 +43,12 @@ export async function GET() {
 // POST - save a new preserved word
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('[AmberAccretion] Missing Supabase env vars');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
+    const body = await request.json();
     const { symbol, angle, distance, size, rotation, opacity, contributor_id } = body;
 
     if (!symbol || angle === undefined || distance === undefined) {
@@ -47,7 +58,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { data, error } = await getSupabase()
+    const supabase = getSupabase();
+    const { data, error } = await supabase
       .from('amber_accretion')
       .insert([{
         symbol,
@@ -62,13 +74,13 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (error) {
-      console.error('Error saving word:', error);
+      console.error('[AmberAccretion] Error saving word:', error);
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
     return NextResponse.json(data);
   } catch (err) {
-    console.error('Unexpected error:', err);
+    console.error('[AmberAccretion] Unexpected error:', err);
     return NextResponse.json({ error: 'Failed to save word' }, { status: 500 });
   }
 }
