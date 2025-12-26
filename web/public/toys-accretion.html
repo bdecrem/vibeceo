@@ -31,17 +31,25 @@
     .controls {
       position: fixed;
       bottom: 20px;
+      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
       left: 50%;
       transform: translateX(-50%);
       display: flex;
-      gap: 20px;
+      gap: 15px;
       font-size: 12px;
-      opacity: 0.7;
+      opacity: 0.8;
       z-index: 100;
-      background: rgba(10, 8, 6, 0.8);
-      padding: 8px 16px;
+      background: rgba(10, 8, 6, 0.9);
+      padding: 10px 18px;
       border-radius: 20px;
-      border: 1px solid rgba(212, 165, 116, 0.2);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+    }
+    @media (max-width: 480px) {
+      .controls {
+        gap: 12px;
+        font-size: 11px;
+        padding: 10px 14px;
+      }
     }
     .controls span {
       cursor: pointer;
@@ -71,7 +79,24 @@
       text-align: right;
     }
     .examine-panel.active {
-      opacity: 0.8;
+      opacity: 0.9;
+    }
+    @media (max-width: 600px) {
+      .examine-panel {
+        right: auto;
+        left: 50%;
+        top: auto;
+        bottom: 80px;
+        bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+        transform: translateX(-50%);
+        text-align: center;
+        width: 80%;
+        max-width: 280px;
+        background: rgba(10, 8, 6, 0.9);
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid rgba(212, 165, 116, 0.2);
+      }
     }
     .examine-panel h3 {
       font-size: 16px;
@@ -615,6 +640,51 @@
         hideExaminePanel();
       }
     });
+
+    // Touch support for mobile
+    canvas.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const rect = canvas.getBoundingClientRect();
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+
+      // Check if touching a preserved word
+      let touchedPreserved = null;
+      for (const p of preserved) {
+        const px = center.x + Math.cos(p.angle) * p.distance;
+        const py = center.y + Math.sin(p.angle) * p.distance;
+        const dist = Math.sqrt((x - px) ** 2 + (y - py) ** 2);
+        if (dist < 25 && p.distance < amberRadius) {
+          touchedPreserved = p;
+          break;
+        }
+      }
+
+      if (touchedPreserved) {
+        examinedWord = examinedWord === touchedPreserved ? null : touchedPreserved;
+        if (examinedWord) {
+          showExaminePanel(examinedWord);
+          playTone(600, 0.2, 0.08);
+        } else {
+          hideExaminePanel();
+        }
+      } else {
+        // Spawn particles on tap
+        for (let i = 0; i < 3; i++) {
+          spawnParticle(
+            x + (Math.random() - 0.5) * 30,
+            y + (Math.random() - 0.5) * 30
+          );
+        }
+        playTone(300 + Math.random() * 100, 0.15, 0.03);
+        // Clear examined word when tapping elsewhere
+        if (examinedWord) {
+          examinedWord = null;
+          hideExaminePanel();
+        }
+      }
+    }, { passive: false });
 
     function animate() {
       if (!loaded) {
