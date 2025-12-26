@@ -20,17 +20,38 @@ import {
   type FetchedContent,
 } from '../lib/content-explainer/index.js';
 import { supabase } from '../lib/supabase.js';
-import ElevenLabsProvider from '../agents/crypto-research/ElevenLabsProvider.js';
+import { getVoiceProvider, type VoiceProvider } from '../lib/voice/index.js';
 import { createShortLink } from '../lib/utils/shortlink-service.js';
 import { buildMusicPlayerUrl } from '../lib/utils/music-player-link.js';
 import { buildReportViewerUrl } from '../lib/utils/report-viewer-link.js';
 import { storeAgentReport } from '../agents/report-storage.js';
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const elevenLabsProvider = new ElevenLabsProvider({
-  apiKey: ELEVENLABS_API_KEY,
-  defaultVoice: 'MF3mGyEYCl7XYWbV9V6O',
-});
+// Voice provider configuration - defaults to Hume
+const AMBERX_VOICE_PROVIDER = (process.env.AMBERX_VOICE_PROVIDER || 'hume') as 'hume' | 'elevenlabs';
+const AMBERX_HUME_VOICE_ID = process.env.AMBERX_HUME_VOICE_ID || '5bbc32c1-a1f6-44e8-bedb-9870f23619e2';
+const AMBERX_ELEVENLABS_VOICE_ID = process.env.AMBERX_ELEVENLABS_VOICE_ID || 'MF3mGyEYCl7XYWbV9V6O';
+
+// Initialize voice provider based on config
+let voiceProvider: VoiceProvider | null = null;
+function getAmberxVoiceProvider(): VoiceProvider | null {
+  if (voiceProvider) return voiceProvider;
+
+  if (AMBERX_VOICE_PROVIDER === 'hume') {
+    if (!process.env.HUME_API_KEY) {
+      console.log('[amberx] Hume API key not configured');
+      return null;
+    }
+    voiceProvider = getVoiceProvider('hume', { voiceId: AMBERX_HUME_VOICE_ID });
+  } else {
+    if (!process.env.ELEVENLABS_API_KEY) {
+      console.log('[amberx] ElevenLabs API key not configured');
+      return null;
+    }
+    voiceProvider = getVoiceProvider('elevenlabs', { voiceId: AMBERX_ELEVENLABS_VOICE_ID });
+  }
+
+  return voiceProvider;
+}
 
 // URL patterns to detect
 const URL_PATTERN = /https?:\/\/[^\s]+/i;
@@ -154,14 +175,21 @@ async function generateAudioExplanation(
   title: string,
   contentId: string | null
 ): Promise<{ audioUrl: string; playerLink: string } | null> {
-  if (!ELEVENLABS_API_KEY) {
-    console.log('[amberx] Skipping audio - no ELEVENLABS_API_KEY');
+  const provider = getAmberxVoiceProvider();
+  if (!provider) {
+    console.log('[amberx] Skipping audio - no voice provider configured');
     return null;
   }
 
   try {
-    // Synthesize audio
-    const audioResult = await elevenLabsProvider.synthesize(explanation);
+    console.log(`[amberx] Generating audio with ${AMBERX_VOICE_PROVIDER}...`);
+
+    // Synthesize audio with appropriate options
+    const synthesizeOptions = AMBERX_VOICE_PROVIDER === 'hume'
+      ? { description: 'Speak clearly and engagingly, like a friendly explainer' }
+      : {};
+
+    const audioResult = await provider.synthesize(explanation, synthesizeOptions);
 
     // Upload to storage
     const timestamp = Date.now();
