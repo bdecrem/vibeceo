@@ -15,7 +15,7 @@ import { getAgentSubscribers, markAgentReportSent } from '../../lib/agent-subscr
 import type { TwilioClient } from '../../lib/sms/webhooks.js';
 import { v5 as uuidv5 } from 'uuid';
 import OpenAI from 'openai';
-import ElevenLabsProvider from '../crypto-research/ElevenLabsProvider.js';
+import { getVoiceProvider } from '../../lib/voice/index.js';
 import { fetchAITwitterContent, filterRecentTweets, type FetchedTweet } from './twitter-fetcher.js';
 import { analyzeTweets, generateMarkdownReport, generateSmsSummary, type AnalysisResult } from './content-analyzer.js';
 
@@ -38,14 +38,13 @@ const PODCAST_SCRIPT_MODEL = 'gpt-4o-mini';
 const PODCAST_TARGET_DURATION_MINUTES = 5;
 const PODCAST_BUCKET = 'audio';
 
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY;
-const ELEVENLABS_VOICE_ID = process.env.AI_TWITTER_ELEVENLABS_VOICE_ID || 'MF3mGyEYCl7XYWbV9V6O';
-const ELEVENLABS_MODEL_ID = process.env.AI_TWITTER_ELEVENLABS_MODEL_ID || 'eleven_turbo_v2_5';
+// Voice provider configuration
+// Use Hume for AI Twitter Daily (same voice for TTS and future interactive mode)
+const VOICE_PROVIDER = (process.env.AI_TWITTER_VOICE_PROVIDER || 'hume') as 'hume' | 'elevenlabs';
+const HUME_VOICE_ID = process.env.AI_TWITTER_HUME_VOICE_ID || '5bbc32c1-a1f6-44e8-bedb-9870f23619e2';
 
-const elevenLabsProvider = new ElevenLabsProvider({
-  apiKey: ELEVENLABS_API_KEY,
-  defaultVoice: ELEVENLABS_VOICE_ID,
-  defaultModel: ELEVENLABS_MODEL_ID,
+const voiceProvider = getVoiceProvider(VOICE_PROVIDER, {
+  voiceId: HUME_VOICE_ID,
 });
 
 export interface AITwitterDailyResult {
@@ -140,8 +139,13 @@ export async function runAITwitterDaily(options: {
   let podcastShortLink: string | null = null;
   let episodeId: number | null = null;
 
-  if (ELEVENLABS_API_KEY) {
-    console.log('[AI Twitter Daily] Step 5: Generating podcast...');
+  // Check if voice provider is configured (either Hume or ElevenLabs)
+  const hasVoiceProvider = VOICE_PROVIDER === 'hume'
+    ? !!process.env.HUME_API_KEY
+    : !!process.env.ELEVENLABS_API_KEY;
+
+  if (hasVoiceProvider) {
+    console.log(`[AI Twitter Daily] Step 5: Generating podcast (${VOICE_PROVIDER})...`);
     try {
       const podcastResult = await generatePodcast({
         date: today,
@@ -159,7 +163,7 @@ export async function runAITwitterDaily(options: {
       console.error('[AI Twitter Daily] Podcast generation failed:', error);
     }
   } else {
-    console.log('[AI Twitter Daily] Skipping podcast (no ELEVENLABS_API_KEY)');
+    console.log('[AI Twitter Daily] Skipping podcast (no voice API key configured)');
   }
 
   // 7. Generate SMS summary
@@ -346,7 +350,9 @@ The script should be interesting to AI practitioners and enthusiasts.`;
  * Synthesize audio from script
  */
 async function synthesizeAudio(script: string): Promise<{ audioBuffer: Buffer; durationSeconds: number }> {
-  const result = await elevenLabsProvider.synthesize(script);
+  const result = await voiceProvider.synthesize(script, {
+    description: 'Speak in a warm, engaging podcast host style. Natural pacing with appropriate pauses.',
+  });
   return {
     audioBuffer: result.audioBuffer,
     durationSeconds: Math.round(result.duration),

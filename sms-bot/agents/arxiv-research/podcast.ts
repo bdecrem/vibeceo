@@ -3,7 +3,7 @@ import { createShortLink, normalizeShortLinkDomain } from '../../lib/utils/short
 import { buildMusicPlayerUrl } from '../../lib/utils/music-player-link.js';
 import OpenAI from 'openai';
 import { v5 as uuidv5 } from 'uuid';
-import ElevenLabsProvider from '../crypto-research/ElevenLabsProvider.js';
+import { ElevenLabsProvider } from '../../lib/voice/index.js';
 
 const DEFAULT_TOPIC_NAMESPACE = uuidv5.URL;
 const DEFAULT_TOPIC_SEED = 'arxiv-daily-topic';
