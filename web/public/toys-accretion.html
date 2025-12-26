@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Amber Accretion</title>
   <meta name="description" content="A shared amber that grows as words drift in and get preserved. Everyone's contributions accumulate together.">
   <meta property="og:title" content="Amber Accretion">
@@ -10,6 +10,9 @@
   <meta property="og:type" content="website">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+    html {
+      background: #0a0806;
+    }
     body {
       background: #0a0806;
       min-height: 100vh;
@@ -46,9 +49,17 @@
     }
     @media (max-width: 480px) {
       .controls {
-        gap: 12px;
+        gap: 10px;
         font-size: 11px;
-        padding: 10px 14px;
+        padding: 10px 16px;
+        white-space: nowrap;
+      }
+    }
+    @media (max-width: 360px) {
+      .controls {
+        gap: 8px;
+        font-size: 10px;
+        padding: 8px 12px;
       }
     }
     .controls span {
