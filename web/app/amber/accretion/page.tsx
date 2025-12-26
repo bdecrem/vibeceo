@@ -11,9 +11,12 @@ export const metadata: Metadata = {
 };
 
 export default function AccretionPage() {
+  // Cache bust with timestamp
+  const cacheBust = `?v=${Date.now()}`;
+
   return (
     <iframe
-      src="/toys-accretion.html"
+      src={`/toys-accretion.html${cacheBust}`}
       style={{
         width: '100vw',
         height: '100vh',
