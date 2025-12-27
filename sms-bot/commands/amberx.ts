@@ -413,6 +413,16 @@ export const amberxCommandHandler: CommandHandler = {
         lines.push(`🎧 ${audioResult.playerLink} — listen + ask questions`);
       }
 
+      // Add voice chat link if we have content stored
+      if (contentId) {
+        const voiceChatUrl = `https://kochi.to/voice-chat/amber?id=${contentId}`;
+        const voiceChatLink = await createShortLink(voiceChatUrl, {
+          context: 'amberx-voice',
+          createdBy: 'sms-bot',
+        });
+        lines.push(`🎙️ ${voiceChatLink} — talk to Amber`);
+      }
+
       const response = lines.join('\n');
       await reply(response);
       return true;
