@@ -1,76 +1,74 @@
 'use client';
 
-import { useState, useRef } from 'react';
-import { HumeEVIClient } from '@/lib/hume-evi';
+import { VoiceProvider, useVoice, VoiceReadyState } from '@humeai/voice-react';
+import { useState, useEffect, useCallback } from 'react';
 
-export default function VoiceChat() {
-  const [status, setStatus] = useState<'idle' | 'connecting' | 'connected' | 'recording'>('idle');
-  const [messages, setMessages] = useState<Array<{ role: string; text: string }>>([]);
-  const [error, setError] = useState<string | null>(null);
-  const clientRef = useRef<HumeEVIClient | null>(null);
+const VOICES = {
+  kora: { name: 'Kora', id: '59cfc7ab-e945-43de-ad1a-471daa379c67' },
+  colton: { name: 'Colton Rivers', id: 'd8ab67c6-953d-4bd8-9370-8fa53a0f1453' },
+};
 
-  const handleStart = async () => {
-    setError(null);
-    setStatus('connecting');
+function VoiceChatInner() {
+  const { connect, disconnect, readyState, messages, sendSessionSettings } = useVoice();
+  const [accessToken, setAccessToken] = useState<string | null>(null);
 
-    try {
-      // Get token
-      const res = await fetch('/api/hume-token');
-      const { accessToken } = await res.json();
-      if (!accessToken) throw new Error('No token');
+  useEffect(() => {
+    fetch('/api/hume-token')
+      .then((res) => res.json())
+      .then((data) => setAccessToken(data.accessToken))
+      .catch(console.error);
+  }, []);
 
-      // Create client
-      const client = new HumeEVIClient({
-        accessToken,
-        systemPrompt: 'You are a helpful assistant. Be concise.',
-        onConnected: () => {
-          setStatus('connected');
-          // Auto-start recording
-          client.startRecording().then(() => setStatus('recording'));
-        },
-        onDisconnected: () => setStatus('idle'),
-        onError: (err) => setError(err.message),
-        onUserMessage: (text) => setMessages((m) => [...m, { role: 'user', text }]),
-        onAssistantMessage: (text) => setMessages((m) => [...m, { role: 'assistant', text }]),
-      });
+  const handleStart = useCallback(async () => {
+    if (!accessToken) return;
+    await connect({ auth: { type: 'accessToken', value: accessToken } });
+  }, [accessToken, connect]);
 
-      clientRef.current = client;
-      await client.connect();
-    } catch (err: any) {
-      setError(err.message);
-      setStatus('idle');
+  // Set voice when connection opens
+  useEffect(() => {
+    if (readyState === VoiceReadyState.OPEN) {
+      console.log('Setting voice to Colton:', VOICES.colton.id);
+      sendSessionSettings({ voiceId: VOICES.colton.id });
     }
-  };
+  }, [readyState, sendSessionSettings]);
 
-  const handleStop = () => {
-    clientRef.current?.disconnect();
-    clientRef.current = null;
-    setStatus('idle');
-  };
+  const isConnected = readyState === VoiceReadyState.OPEN;
 
   return (
     <div className="p-8 max-w-xl mx-auto">
       <h1 className="text-2xl font-bold mb-4">Voice Chat</h1>
 
-      {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4">{error}</div>}
-
       <div className="mb-4">
         <button
-          onClick={status === 'idle' ? handleStart : handleStop}
+          onClick={isConnected ? disconnect : handleStart}
+          disabled={!accessToken}
           className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg"
         >
-          {status === 'idle' ? 'Start' : status === 'connecting' ? 'Connecting...' : 'Stop'}
+          {isConnected ? 'Stop' : 'Start'}
         </button>
-        <span className="ml-4 text-gray-600">{status}</span>
+        <span className="ml-4 text-gray-600">{readyState}</span>
       </div>
 
       <div className="border rounded p-4 h-80 overflow-y-auto bg-gray-50">
-        {messages.map((m, i) => (
-          <div key={i} className="mb-2">
-            <strong>{m.role}:</strong> {m.text}
-          </div>
-        ))}
+        {messages.map((m, i) => {
+          if (m.type === 'user_message' || m.type === 'assistant_message') {
+            return (
+              <div key={i} className="mb-2">
+                <strong>{m.message.role}:</strong> {m.message.content}
+              </div>
+            );
+          }
+          return null;
+        })}
       </div>
     </div>
+  );
+}
+
+export default function VoiceChat() {
+  return (
+    <VoiceProvider>
+      <VoiceChatInner />
+    </VoiceProvider>
   );
 }

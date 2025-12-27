@@ -222,6 +222,11 @@ export class HumeEVIClient {
       });
 
       this.socket.on('error', (error: Error) => {
+        // Ignore "unknown message type" errors - they don't break functionality
+        if (error.message?.includes('unknown message type')) {
+          console.log('⚠️ Hume SDK warning (ignored):', error.message);
+          return;
+        }
         console.error('❌ Hume EVI error:', error);
         this.config.onError?.(error);
       });
@@ -245,13 +250,16 @@ export class HumeEVIClient {
     if (!this.socket) return;
 
     try {
-      // Build session settings - the type field is required by the SDK
-      const settings = {
-        type: 'session_settings' as const,
+      // Build session settings
+      const settings: any = {
+        type: 'session_settings',
         systemPrompt: this.currentSystemPrompt || undefined,
-        voice: this.config.voice || undefined,
       };
+      if (this.config.voice?.id) {
+        settings.voiceId = this.config.voice.id;
+      }
 
+      console.log('⚙️ Sending session settings:', JSON.stringify(settings));
       await this.socket.sendSessionSettings(settings);
       console.log('⚙️ Hume EVI session settings updated');
     } catch (error) {
