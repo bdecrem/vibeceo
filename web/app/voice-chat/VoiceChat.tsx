@@ -9,7 +9,7 @@ const VOICES = {
 };
 
 function VoiceChatInner() {
-  const { connect, disconnect, readyState, messages, sendSessionSettings } = useVoice();
+  const { connect, disconnect, readyState, messages } = useVoice();
   const [accessToken, setAccessToken] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,16 +21,14 @@ function VoiceChatInner() {
 
   const handleStart = useCallback(async () => {
     if (!accessToken) return;
-    await connect({ auth: { type: 'accessToken', value: accessToken } });
+    await connect({
+      auth: { type: 'accessToken', value: accessToken },
+      sessionSettings: {
+        voice: { id: VOICES.colton.id },
+        system_prompt: 'You are Amber, a friendly and witty assistant. When someone asks who you are, always introduce yourself as Amber. Keep responses brief and conversational.',
+      } as any,
+    });
   }, [accessToken, connect]);
-
-  // Set voice when connection opens
-  useEffect(() => {
-    if (readyState === VoiceReadyState.OPEN) {
-      console.log('Setting voice to Colton:', VOICES.colton.id);
-      sendSessionSettings({ voiceId: VOICES.colton.id });
-    }
-  }, [readyState, sendSessionSettings]);
 
   const isConnected = readyState === VoiceReadyState.OPEN;
 
