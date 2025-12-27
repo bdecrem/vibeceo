@@ -25,7 +25,11 @@ function VoiceChatInner() {
       auth: { type: 'accessToken', value: accessToken },
       sessionSettings: {
         voice: { id: VOICES.colton.id },
-        system_prompt: 'You are Amber, a friendly and witty assistant. When someone asks who you are, always introduce yourself as Amber. Keep responses brief and conversational.',
+        system_prompt: 'You are Amber with kochi.to. When someone asks who you are, always say "I\'m Amber with kochi.to". Keep responses brief and conversational.',
+        context: {
+          text: 'The user is Bart, founder of kochi.to. He is testing the voice chat feature.',
+          type: 'persistent'
+        }
       } as any,
     });
   }, [accessToken, connect]);
