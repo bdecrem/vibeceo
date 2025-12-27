@@ -12,19 +12,22 @@ const VOICES = {
 interface AmberContext {
   title: string;
   summary: string;
-  transcript: string;
-  fullExplanation: string | null;
+  fullText: string;
+  metadata: {
+    full_explanation?: string;
+  };
 }
 
 function VoiceChatAmberInner() {
   const searchParams = useSearchParams();
   const amberxId = searchParams?.get('id') || searchParams?.get('amberx_id') || null;
 
-  const { connect, disconnect, readyState } = useVoice();
+  const { connect, disconnect, readyState, sendSessionSettings } = useVoice();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [amberContext, setAmberContext] = useState<AmberContext | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [contextSent, setContextSent] = useState(false);
 
   // Fetch access token
   useEffect(() => {
@@ -41,7 +44,7 @@ function VoiceChatAmberInner() {
     setLoading(true);
     setError(null);
 
-    fetch(`/api/amber-context/${amberxId}`)
+    fetch(`/api/amberx-content?id=${amberxId}`)
       .then((res) => {
         if (!res.ok) throw new Error('Content not found');
         return res.json();
@@ -59,12 +62,7 @@ function VoiceChatAmberInner() {
   const handleStart = useCallback(async () => {
     if (!accessToken) return;
 
-    // Build context text from amber content
-    let contextText = '';
-    if (amberContext) {
-      contextText = `# ${amberContext.title}\n\n## Summary\n${amberContext.summary}\n\n## Full Transcript\n${amberContext.transcript}`;
-    }
-
+    // Connect WITHOUT context in URL (context sent after connection opens)
     await connect({
       auth: { type: 'accessToken', value: accessToken },
       sessionSettings: {
@@ -72,15 +70,25 @@ function VoiceChatAmberInner() {
         system_prompt: amberContext
           ? `You are Amber with kochi.to. You just explained a video to the user. You have access to the full transcript and summary below. Answer their follow-up questions about this content. Be conversational and helpful. When someone asks who you are, say "I'm Amber with kochi.to".`
           : `You are Amber with kochi.to. When someone asks who you are, always say "I'm Amber with kochi.to". Keep responses brief and conversational.`,
-        context: contextText
-          ? {
-              text: contextText,
-              type: 'persistent'
-            }
-          : undefined,
       } as any,
     });
   }, [accessToken, connect, amberContext]);
+
+  // Send context AFTER connection opens (avoids URL length limits)
+  useEffect(() => {
+    if (readyState === VoiceReadyState.OPEN && amberContext && !contextSent) {
+      const contextText = `# ${amberContext.title}\n\n## Summary\n${amberContext.summary}\n\n## Full Transcript\n${amberContext.fullText}`;
+
+      sendSessionSettings({
+        context: {
+          text: contextText,
+          type: 'persistent'
+        }
+      } as any);
+
+      setContextSent(true);
+    }
+  }, [readyState, amberContext, contextSent, sendSessionSettings]);
 
   const isConnected = readyState === VoiceReadyState.OPEN;
 
