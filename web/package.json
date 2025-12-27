@@ -18,6 +18,7 @@
 	},
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.39.0",
+		"@humeai/voice-react": "^0.2.11",
 		"@radix-ui/react-avatar": "^1.0.4",
 		"@radix-ui/react-scroll-area": "^1.2.3",
 		"@radix-ui/react-slot": "^1.1.2",
@@ -33,7 +34,7 @@
 		"dotenv": "^16.4.7",
 		"framer-motion": "^12.16.0",
 		"gsap": "^3.13.0",
-		"hume": "^0.9.5",
+		"hume": "^0.9.18",
 		"ioredis": "^5.6.0",
 		"jsonwebtoken": "^9.0.2",
 		"jwt-decode": "^4.0.0",

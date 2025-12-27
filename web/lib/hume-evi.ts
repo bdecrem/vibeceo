@@ -56,7 +56,7 @@ class EVIAudioPlayer {
   private nextPlayTime = 0;
   private sampleRate: number;
 
-  constructor(sampleRate = 24000) {
+  constructor(sampleRate = 48000) {
     this.sampleRate = sampleRate;
   }
 
