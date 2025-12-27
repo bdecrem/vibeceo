@@ -21,13 +21,18 @@ function VoiceChatInner() {
 
   const handleStart = useCallback(async () => {
     if (!accessToken) return;
+
+    // Fetch the markdown file for context
+    const response = await fetch('/voice-chat/test.md');
+    const mdContent = await response.text();
+
     await connect({
       auth: { type: 'accessToken', value: accessToken },
       sessionSettings: {
         voice: { id: VOICES.colton.id },
-        system_prompt: 'You are Amber with kochi.to. When someone asks who you are, always say "I\'m Amber with kochi.to". Keep responses brief and conversational.',
+        system_prompt: 'You are Amber with kochi.to. When someone asks who you are, always say "I\'m Amber with kochi.to". You have access to documentation about disabled features. Keep responses brief and conversational.',
         context: {
-          text: 'The user is Bart, founder of kochi.to. He is testing the voice chat feature.',
+          text: mdContent,
           type: 'persistent'
         }
       } as any,
