@@ -1,32 +1,99 @@
 'use client';
 
 import { VoiceProvider, useVoice, VoiceReadyState } from '@humeai/voice-react';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Get config ID from Hume dashboard for SUNDAY config
 const EVI_CONFIG_ID = process.env.NEXT_PUBLIC_EVI_CONFIG_ID || '';
 
 function VoiceChatBridgeInner() {
-  const { connect, disconnect, readyState, messages } = useVoice();
+  const { connect, disconnect, readyState, messages, error } = useVoice();
   const [accessToken, setAccessToken] = useState<string | null>(null);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const reconnectAttempts = useRef(0);
+  const maxReconnectAttempts = 3;
 
-  useEffect(() => {
-    fetch('/api/hume-token')
-      .then((res) => res.json())
-      .then((data) => setAccessToken(data.accessToken))
-      .catch(console.error);
+  // Fetch token (with refresh capability)
+  const fetchToken = useCallback(async () => {
+    try {
+      const res = await fetch('/api/hume-token');
+      const data = await res.json();
+      setAccessToken(data.accessToken);
+      return data.accessToken;
+    } catch (err) {
+      console.error('Failed to fetch token:', err);
+      setConnectionError('Failed to get access token');
+      return null;
+    }
   }, []);
 
-  const handleStart = useCallback(async () => {
-    if (!accessToken) return;
+  useEffect(() => {
+    fetchToken();
+  }, [fetchToken]);
 
-    await connect({
-      auth: { type: 'accessToken', value: accessToken },
-      configId: EVI_CONFIG_ID, // Uses SUNDAY config with custom LLM
-    });
-  }, [accessToken, connect]);
+  // Handle connection errors and attempt reconnect
+  useEffect(() => {
+    if (error) {
+      console.error('[VoiceBridge] Error:', error);
+      setConnectionError(error.message || 'Connection error');
+
+      // Attempt reconnect on certain errors
+      if (reconnectAttempts.current < maxReconnectAttempts) {
+        reconnectAttempts.current += 1;
+        console.log(`[VoiceBridge] Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
+
+        setTimeout(async () => {
+          // Refresh token and reconnect
+          const newToken = await fetchToken();
+          if (newToken) {
+            try {
+              await connect({
+                auth: { type: 'accessToken', value: newToken },
+                configId: EVI_CONFIG_ID,
+              });
+              setConnectionError(null);
+              reconnectAttempts.current = 0;
+            } catch (e) {
+              console.error('[VoiceBridge] Reconnect failed:', e);
+            }
+          }
+        }, 1000 * reconnectAttempts.current); // Exponential backoff
+      }
+    }
+  }, [error, connect, fetchToken]);
+
+  // Reset reconnect counter on successful connection
+  useEffect(() => {
+    if (readyState === VoiceReadyState.OPEN) {
+      reconnectAttempts.current = 0;
+      setConnectionError(null);
+    }
+  }, [readyState]);
+
+  const handleStart = useCallback(async () => {
+    if (!accessToken) {
+      const newToken = await fetchToken();
+      if (!newToken) return;
+    }
+
+    try {
+      await connect({
+        auth: { type: 'accessToken', value: accessToken! },
+        configId: EVI_CONFIG_ID,
+      });
+    } catch (e) {
+      console.error('[VoiceBridge] Connect failed:', e);
+      setConnectionError('Failed to connect');
+    }
+  }, [accessToken, connect, fetchToken]);
+
+  const handleStop = useCallback(() => {
+    disconnect();
+    reconnectAttempts.current = 0;
+  }, [disconnect]);
 
   const isConnected = readyState === VoiceReadyState.OPEN;
+  const isConnecting = readyState === VoiceReadyState.CONNECTING;
 
   return (
     <div className="p-8 max-w-xl mx-auto">
@@ -42,13 +109,20 @@ function VoiceChatBridgeInner() {
         </p>
       )}
 
+      {connectionError && (
+        <p className="text-orange-600 mb-4 text-sm">
+          {connectionError}
+          {reconnectAttempts.current > 0 && ` (Reconnecting ${reconnectAttempts.current}/${maxReconnectAttempts}...)`}
+        </p>
+      )}
+
       <div className="mb-4">
         <button
-          onClick={isConnected ? disconnect : handleStart}
-          disabled={!accessToken || !EVI_CONFIG_ID}
+          onClick={isConnected ? handleStop : handleStart}
+          disabled={!accessToken || !EVI_CONFIG_ID || isConnecting}
           className="bg-amber-600 text-white px-6 py-3 rounded-lg text-lg disabled:opacity-50 hover:bg-amber-700"
         >
-          {isConnected ? 'Stop' : 'Start Talking'}
+          {isConnecting ? 'Connecting...' : isConnected ? 'Stop' : 'Start Talking'}
         </button>
         <span className="ml-4 text-gray-600">{readyState}</span>
       </div>
