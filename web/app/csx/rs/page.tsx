@@ -351,7 +351,7 @@ export default function CSXClonePage() {
           <section className="csx-section">
             <h2 className="csx-section-label">ABOUT US</h2>
             <p className="csx-text">
-              <Link href="/csx/about" className="csx-link-white">Between us</Link>, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
+              <Link href="/csx/team" className="csx-link-white">Between us</Link>, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. The lab is where we figure out what comes next.
             </p>
           </section>
 

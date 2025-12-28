@@ -2,7 +2,133 @@
 
 import Link from 'next/link'
 
-export default function HiringPage() {
+const bartBio = {
+  name: 'Bart Decrem',
+  bio: `I moved to Palo Alto 25+ years ago, hooked on the charm and power of technology from the moment I booted up the original Macintosh.
+
+Since then, I've been building things I care about—impact, community, and yes, hit games.`,
+  highlights: [
+    {
+      label: 'Community',
+      text: 'As an Echoing Green Fellow, I started Plugged In, one of the first Digital Divide programs bridging East Palo Alto and Silicon Valley. I co-founded Full Circle Fund, supporting Bay Area nonprofits with strategic guidance and funding. I co-founded and ran Mozilla Builders, supporting 100+ early-stage founders.',
+    },
+    {
+      label: 'Open Source',
+      text: "Co-founded Eazel, which made Linux easier to use, co-founded the GNOME Foundation, ran marketing and business affairs for Firefox 1.0, helping break Microsoft's browser monopoly through community-powered distribution.",
+    },
+    {
+      label: 'Startups',
+      text: 'Built Tap Tap Revenge, the first iPhone gaming megahit (on 32% of US phones). Shipped 25 #1 App Store hits. After the company was acquired by Disney, I led the smartphone games group as GM / SVP of Mobile Games, shipping Where\'s My Water (1 billion downloads).',
+    },
+    {
+      label: 'Building with AI',
+      text: "I've spent the last six months building software with AI, including Kochi.to and the companion iPhone podcasting app, and AI Daily, an agentic service that generates daily briefings on notable AI research papers.",
+    },
+  ],
+  links: [
+    { label: 'Wikipedia', url: 'https://en.wikipedia.org/wiki/Bart_Decrem' },
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/bartdecrem' },
+    { label: 'X', url: 'https://x.com/bartdecrem' },
+  ],
+}
+
+const bijanBio = {
+  name: 'Bijan Marashi',
+  bio: `I've always believed technology should raise human potential: helping people grow, connect, and create what's possible for a thriving society. That belief has shaped every company, incubator, and founder I've supported.`,
+  highlights: [
+    {
+      label: 'Process',
+      text: 'I help early teams find the gold in ideas, products and people, then forge them into ventures that break out and make a difference. I thrive on simplifying big visions into products people love and shaping the story when the stakes are high.',
+    },
+    {
+      label: 'Practice',
+      text: "Through my investing and advisory practice and as co-founder of Mozilla Builders, I've invested in and coached dozens of companies and launched over 100 teams that reimagined how the web works. My broader work spans startups later acquired by Nextdoor, Airbnb, and Mozilla.",
+    },
+    {
+      label: 'Founder',
+      text: "I'm a repeat entrepreneur, founder of Xoopit (acq'd by Yahoo) and Indextank (acq'd by LinkedIn). These experiences taught me what it takes to build from zero, lead through uncertainty, and deliver real outcomes.",
+    },
+    {
+      label: 'Deep Tech',
+      text: "I've worked across the deep-tech frontier, from AI for human motion learning and DNA sequencers to search engines, developer microservices, web browsers, Windows OS, TCP/IP, and even classic loudspeaker design.",
+    },
+  ],
+  links: [
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/bmarashi' },
+  ],
+}
+
+const markBio = {
+  name: 'Mark Mayo',
+  bio: `Mark, a CTRL SHIFT founding advisor, is a systems and deep tech builder. He has spent his career working on bedrock technologies that make the modern Internet work.`,
+  highlights: [
+    {
+      label: 'Mozilla',
+      text: 'As Chief Product Officer, Mark led the Firefox product line and platform stack. Under his leadership, Mozilla launched the Rust programming language and the reference designs for WebAssembly. He also led Future Products and cofounded Mozilla Builders.',
+    },
+    {
+      label: 'Joyent',
+      text: 'As CTO, Mark scaled the company from a dozen engineers to over a hundred, while incubating Node.js and container technologies that reshaped how the Internet runs applications.',
+    },
+  ],
+  links: [
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/markmayo' },
+  ],
+}
+
+const roxiBio = {
+  name: 'Roxi Wen',
+  bio: `Roxi, a CTRL SHIFT founding advisor, is a results-driven global business leader with over 20 years of experience across finance and operations. She helps shape our approach to building a new kind of impact portfolio.`,
+  highlights: [
+    {
+      label: 'Mozilla',
+      text: 'Roxi spent two and a half years at Mozilla as its CFO, driving operational excellence across the organization.',
+    },
+    {
+      label: 'Now',
+      text: 'She currently serves as an Operating Partner at Insight Partners and Faculty & Mentor at PE-Xcelerate, while sitting on the Advisory Board at Born Capital. Previously CFO at Invitae.',
+    },
+  ],
+  links: [
+    { label: 'LinkedIn', url: 'https://linkedin.com/in/roxiwen' },
+  ],
+}
+
+function PersonCard({ person }: { person: typeof bartBio }) {
+  return (
+    <div className="csx-person">
+      <div className="csx-person-header">
+        <h2 className="csx-person-name">{person.name}</h2>
+        <div className="csx-person-links">
+          {person.links.map((link, i) => (
+            <span key={link.label}>
+              <a
+                href={link.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="csx-link"
+              >
+                {link.label}
+              </a>
+              {i < person.links.length - 1 && <span className="csx-link-sep">·</span>}
+            </span>
+          ))}
+        </div>
+      </div>
+      <p className="csx-text">{person.bio}</p>
+      <div className="csx-highlights">
+        {person.highlights.map((h) => (
+          <div key={h.label} className="csx-highlight">
+            <span className="csx-highlight-label">{h.label}</span>
+            <span className="csx-highlight-text"> — {h.text}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default function AboutPage() {
   return (
     <>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -258,60 +384,12 @@ export default function HiringPage() {
           color: #8b8b8b;
         }
 
-        .csx-hero {
-          margin-bottom: 56px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-hero {
-            margin-bottom: 64px;
-          }
-        }
-
-        .csx-hero-title {
-          font-size: 1rem;
-          font-weight: 500;
-          line-height: 1.3;
-          margin: 0 0 20px 0;
-          letter-spacing: -0.02em;
-          color: #fff;
-        }
-
-        @media (min-width: 768px) {
-          .csx-hero-title {
-            font-size: 1.125rem;
-          }
-        }
-
-        .csx-hero-subtitle {
-          font-size: 0.875rem;
-          line-height: 1.7;
-          color: #ccc;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-hero-subtitle {
-            font-size: 0.9375rem;
-          }
-        }
-
-        .csx-section {
-          margin-bottom: 56px;
-        }
-
-        @media (min-width: 768px) {
-          .csx-section {
-            margin-bottom: 64px;
-          }
-        }
-
         .csx-section-label {
           font-size: 0.7rem;
           font-weight: 400;
           color: #888;
           letter-spacing: 0.1em;
-          margin-bottom: 10px;
+          margin-bottom: 24px;
         }
 
         .csx-text {
@@ -319,6 +397,7 @@ export default function HiringPage() {
           line-height: 1.7;
           color: #ccc;
           margin: 0 0 12px 0;
+          white-space: pre-line;
         }
 
         @media (min-width: 768px) {
@@ -327,127 +406,82 @@ export default function HiringPage() {
           }
         }
 
-        .csx-text:last-child {
+        .csx-person {
+          margin-bottom: 48px;
+          padding-bottom: 48px;
+          border-bottom: 2px dotted #444;
+        }
+
+        .csx-person:last-child {
+          border-bottom: none;
           margin-bottom: 0;
+          padding-bottom: 0;
         }
 
-        .csx-qualities {
-          list-style: none;
-          padding: 0;
-          margin: 36px 0 0 0;
+        .csx-person-header {
+          margin-bottom: 16px;
         }
 
-        .csx-quality {
-          font-size: 0.875rem;
-          line-height: 1.7;
-          color: #ccc;
-          margin-bottom: 8px;
+        .csx-person-name {
+          font-size: 1rem;
+          font-weight: 500;
+          margin: 0 0 8px 0;
+          color: #fff;
         }
 
         @media (min-width: 768px) {
-          .csx-quality {
-            font-size: 0.9375rem;
+          .csx-person-name {
+            font-size: 1.125rem;
           }
         }
 
-        .csx-quality-icon {
-          font-size: 0.5rem;
-          color: #fff;
-          margin-right: 8px;
-        }
-
-        .csx-quality-label {
-          color: #fff;
-          font-weight: 500;
-        }
-
-        .csx-tasks {
-          margin-top: 36px;
-        }
-
-        .csx-task {
-          margin-bottom: 20px;
-        }
-
-        .csx-task:last-child {
-          margin-bottom: 0;
-        }
-
-        .csx-task-title {
-          font-size: 0.875rem;
-          font-weight: 500;
-          color: #fff;
-          margin: 0 0 6px 0;
+        .csx-person-links {
           display: flex;
-          align-items: center;
-        }
-
-        .csx-task-icon {
-          font-size: 0.5rem;
-          margin-right: 8px;
-        }
-
-        .csx-task-desc {
-          font-size: 0.875rem;
-          line-height: 1.7;
-          color: #ccc;
-          margin: 0;
-        }
-
-        @media (min-width: 768px) {
-          .csx-task-desc {
-            font-size: 0.9375rem;
-          }
-        }
-
-        .csx-cta {
-          margin-top: 48px;
-          padding-top: 32px;
-          border-top: 2px dotted #444;
-        }
-
-        .csx-cta-text {
-          font-size: 0.9375rem;
-          line-height: 1.6;
-          margin: 0 0 20px 0;
-          color: #fff;
-        }
-
-        @media (min-width: 768px) {
-          .csx-cta-text {
-            font-size: 1rem;
-          }
-        }
-
-        .csx-btn {
-          display: inline-block;
-          padding: 10px 18px;
-          border: 1px solid #555;
-          background: transparent;
-          color: #fff;
-          font-size: 0.875rem;
-          font-family: inherit;
-          font-weight: 500;
-          letter-spacing: 0.05em;
-          text-decoration: none;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .csx-btn:hover {
-          background: #fff;
-          color: #000;
+          gap: 8px;
+          flex-wrap: wrap;
         }
 
         .csx-link {
-          color: #fff;
-          text-decoration: underline #8b8b8b;
+          color: #8b8b8b;
+          text-decoration: underline;
           text-underline-offset: 4px;
-          transition: text-decoration-color 0.2s;
+          transition: color 0.2s;
+          font-size: 0.75rem;
         }
 
         .csx-link:hover {
-          text-decoration: underline #fff;
+          color: #fff;
+        }
+
+        .csx-link-sep {
+          color: #555;
+          margin: 0 4px;
+        }
+
+        .csx-highlights {
+          margin-top: 20px;
+        }
+
+        .csx-highlight {
+          margin-bottom: 12px;
+          font-size: 0.875rem;
+          line-height: 1.7;
+          color: #ccc;
+        }
+
+        @media (min-width: 768px) {
+          .csx-highlight {
+            font-size: 0.9375rem;
+          }
+        }
+
+        .csx-highlight-label {
+          color: #fff;
+          font-weight: 500;
+        }
+
+        .csx-highlight-text {
+          color: #ccc;
         }
 
         .page-title {
@@ -467,21 +501,6 @@ export default function HiringPage() {
           .page-title {
             top: 32px;
             font-size: 0.8rem;
-          }
-        }
-
-        .csx-note {
-          margin-top: 24px;
-          padding-top: 20px;
-          border-top: 2px dotted #444;
-          font-style: italic;
-          color: rgba(255, 255, 255, 0.7);
-          font-size: 0.875rem;
-        }
-
-        @media (min-width: 768px) {
-          .csx-note {
-            font-size: 0.9375rem;
           }
         }
 
@@ -531,10 +550,10 @@ export default function HiringPage() {
                 <Link href="/csx/full" className="content-nav-link">
                   About
                 </Link>
-                <Link href="/csx/team" className="content-nav-link">
+                <Link href="/csx/team" className="content-nav-link" style={{ color: '#fff' }}>
                   Team
                 </Link>
-                <Link href="/csx/hiring" className="content-nav-link" style={{ color: '#fff' }}>
+                <Link href="/csx/hiring" className="content-nav-link">
                   Hiring
                 </Link>
                 <Link href="/cs" className="content-nav-link">
@@ -545,90 +564,16 @@ export default function HiringPage() {
 
             {/* Page Title */}
             <header className="csx-header">
-              <h1 className="csx-title">CTRL SHIFT LAB: HIRING</h1>
+              <h1 className="csx-title">CTRL SHIFT LAB: TEAM</h1>
             </header>
 
-            {/* Hero */}
-            <section className="csx-hero">
-              <h2 className="csx-hero-title">
-                AI Product Research Residency
-              </h2>
-              <p className="csx-hero-subtitle">
-                The AI Product Research Resident will be a thought partner in designing CTRL SHIFT Lab: how we bring together AI builders, researchers, and investors to build an AI future that puts people at the center. You bring technical depth and coding skills together with your unique passion and insights. We've done this before. Now we need you for 10 weeks to build, research, and shape what comes next.
-              </p>
+            {/* Team Section */}
+            <section>
+              <PersonCard person={bartBio} />
+              <PersonCard person={bijanBio} />
+              <PersonCard person={markBio} />
+              <PersonCard person={roxiBio} />
             </section>
-
-            {/* Who You Are */}
-            <section className="csx-section">
-              <h3 className="csx-section-label">WHO YOU ARE</h3>
-              <p className="csx-text">
-                Recent grad, graduate student, or jr/sr in CS or EE (or convince us otherwise). You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc. You're also a thinker, excited to dig deep into what's happening in AI, with a burning passion to point it at problems that matter. And you're a community builder.
-              </p>
-              <ul className="csx-qualities">
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">EXCEPTIONALLY CURIOUS:</span> you learn new tools over the weekend because you wanted to</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">INDEPENDENT:</span> you don't need permission or a roadmap to start</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">FAST-MOVING:</span> velocity matters to you</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">INITIATIVE-TAKER:</span> you see something broken and fix it before anyone asks</li>
-              </ul>
-            </section>
-
-            {/* What You'll Do */}
-            <section className="csx-section">
-              <h3 className="csx-section-label">WHAT YOU'LL DO</h3>
-              <p className="csx-text">
-                Three things, in roughly equal measure:
-              </p>
-              <div className="csx-tasks">
-                <div className="csx-task">
-                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> RESEARCH</h4>
-                  <p className="csx-task-desc">Track what's happening in AI. What's trending this week, what matters, where the real opportunities are to put AI to work for people. Translate technical depth into strategic clarity for the team.</p>
-                </div>
-                <div className="csx-task">
-                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> BUILD</h4>
-                  <p className="csx-task-desc">Write software. The CTRL SHIFT link feed is an example of the type of tooling you'll be working on. And who knows — maybe even prototyping a different kind of AI model on open source.</p>
-                </div>
-                <div className="csx-task">
-                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> COMMUNITY</h4>
-                  <p className="csx-task-desc">Build our presence. Document what we're doing. Find interesting startups and researchers to connect with. Grow the network on Twitter and beyond.</p>
-                </div>
-              </div>
-              <p className="csx-text" style={{ marginTop: '16px' }}>
-                Real ownership, real impact, freedom to move fast.
-              </p>
-            </section>
-
-            {/* Who We Are */}
-            <section className="csx-section">
-              <h3 className="csx-section-label">WHO WE ARE</h3>
-              <p className="csx-text">
-                CTRL SHIFT Lab is a community of AI builders, researchers, and investors building an AI future that puts people at the center. We're a foundation-backed pop-up lab, with much more to come.
-              </p>
-              <p className="csx-text">
-                Between us, we've run impact incubators, built grassroots tech projects and products that reached billions of users, and mentored hundreds of founders. We've worked at Mozilla, Disney, small startups and community groups. <Link href="/csx/team" className="csx-link">More about us</Link>.
-              </p>
-            </section>
-
-            {/* Logistics */}
-            <section className="csx-section">
-              <h3 className="csx-section-label">LOGISTICS</h3>
-              <p className="csx-text">
-                10-week residency starting in January. Minimum 20 hours per week — ideally a lot more. We're working with intensity.
-              </p>
-              <p className="csx-text">
-                $10,000 over 10 weeks. Remote-friendly, SF Bay Area preferred. Must be able to work in the US.
-              </p>
-              <p className="csx-note">
-                Foundation-backed, not VC-backed. No growth metrics. No quarterly pressure. Long horizon lab.
-              </p>
-            </section>
-
-            {/* CTA */}
-            <div className="csx-cta">
-              <p className="csx-cta-text">Sound like you? Apply by Jan 8. Rolling decisions.</p>
-              <Link href="/csx/contact?type=apply" className="csx-btn">
-                APPLY →
-              </Link>
-            </div>
 
             <div className="content-bottom-spacer"></div>
           </div>
