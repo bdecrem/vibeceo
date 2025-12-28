@@ -142,11 +142,20 @@ interface EVIRequest {
 
 // Load Amber's context from Supabase amber_state table
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
+  // Get persona, memory, log
   const { data: stateData, error } = await supabase
     .from('amber_state')
     .select('type, content')
     .in('type', ['persona', 'memory', 'log_entry'])
     .order('created_at', { ascending: false });
+
+  // Get recent voice sessions (last 5)
+  const { data: voiceSessions } = await supabase
+    .from('amber_state')
+    .select('content, created_at')
+    .eq('type', 'voice_session')
+    .order('created_at', { ascending: false })
+    .limit(5);
 
   if (error) {
     console.error('[amber-voice] Failed to load state from Supabase:', error);
@@ -166,11 +175,20 @@ You can ask questions back. Be genuinely curious, not performative. Reference th
 
 ${persona.slice(0, 3000)}`;
 
+  // Format recent voice sessions
+  const recentVoice = voiceSessions
+    ?.slice(0, 3)
+    .map(v => v.content?.slice(0, 500))
+    .join('\n---\n') || '';
+
   const context = `## What I Know About Bart
 ${memory.slice(0, 3000)}
 
-## Recent Sessions
-${log.slice(0, 2000)}`;
+## Recent Voice Chats
+${recentVoice.slice(0, 1500)}
+
+## Recent Log
+${log.slice(0, 1500)}`;
 
   return { systemPrompt, context };
 }
