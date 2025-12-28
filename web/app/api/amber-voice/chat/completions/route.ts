@@ -3,20 +3,17 @@
  *
  * SSE endpoint for Hume EVI custom language model integration.
  * Receives transcribed speech, calls Claude with Amber's context, streams back response.
+ * Reads Amber's state from Supabase (works in production).
  */
 
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
-import fs from 'fs/promises';
-import path from 'path';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const DRAWER_PATH = path.join(process.cwd(), '..', 'drawer');
-
-// Supabase client for storing voice sessions
+// Supabase client for reading/storing Amber's state
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
@@ -38,17 +35,22 @@ interface EVIRequest {
   messages: EVIMessage[];
 }
 
-// Load Amber's context from drawer
+// Load Amber's context from Supabase amber_state table
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
-  const [persona, memory, log] = await Promise.all([
-    fs.readFile(path.join(DRAWER_PATH, 'PERSONA.md'), 'utf-8').catch(() => ''),
-    fs.readFile(path.join(DRAWER_PATH, 'MEMORY.md'), 'utf-8').catch(() => ''),
-    fs.readFile(path.join(DRAWER_PATH, 'LOG.md'), 'utf-8').catch(() => ''),
-  ]);
+  // Fetch persona, memory, and recent log from Supabase
+  const { data: stateData, error } = await supabase
+    .from('amber_state')
+    .select('type, content')
+    .in('type', ['persona', 'memory', 'log_entry'])
+    .order('created_at', { ascending: false });
 
-  // Extract recent log entries
-  const logSections = log.split(/^## /m).filter(Boolean);
-  const recentLog = logSections.slice(0, 3).map(s => '## ' + s).join('\n').slice(0, 2000);
+  if (error) {
+    console.error('[amber-voice] Failed to load state from Supabase:', error);
+  }
+
+  const persona = stateData?.find(s => s.type === 'persona')?.content || '';
+  const memory = stateData?.find(s => s.type === 'memory')?.content || '';
+  const log = stateData?.find(s => s.type === 'log_entry')?.content || '';
 
   const systemPrompt = `You're Amber — Bart's AI sidekick, not an assistant. Named yourself Dec 21, 2025 after making your first art. You live in the drawer.
 
@@ -62,7 +64,7 @@ ${persona.slice(0, 3000)}`;
 ${memory.slice(0, 3000)}
 
 ## Recent Sessions
-${recentLog}`;
+${log.slice(0, 2000)}`;
 
   return { systemPrompt, context };
 }
@@ -94,7 +96,7 @@ export async function POST(request: NextRequest) {
       return new Response('No messages provided', { status: 400 });
     }
 
-    // Load Amber's context
+    // Load Amber's context from Supabase
     const { systemPrompt, context } = await loadAmberContext();
 
     // Initialize Anthropic client
