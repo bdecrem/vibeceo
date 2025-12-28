@@ -79,9 +79,15 @@ function CSXContent() {
           align-items: center;
           justify-content: center;
           padding: 24px;
-          padding-top: calc(24px + env(safe-area-inset-top));
+          padding-top: env(safe-area-inset-top);
           padding-bottom: calc(24px + env(safe-area-inset-bottom));
           image-rendering: pixelated;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-page {
+            padding-top: calc(24px + env(safe-area-inset-top));
+          }
         }
 
         .terminal-container {
@@ -136,7 +142,7 @@ function CSXContent() {
         }
 
         .avatar-frame {
-          border: 2px dotted #fff;
+          border: 2px dotted #666;
           width: 120px;
           height: 120px;
           display: flex;
