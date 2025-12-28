@@ -78,15 +78,53 @@ Which tools should Amber have?
 
 **Total: ~200-250 lines of new code + config**
 
+## EVI Webhook Format (RESOLVED)
+
+Using **SSE (Server-Sent Events)** — recommended by Hume.
+
+### What EVI sends us:
+```
+POST /api/amber-voice?custom_session_id=<session_id>
+Authorization: Bearer <our-api-key>
+
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "what have you been up to?",
+      "time": { "begin": 0, "end": 1000 },
+      "models": {
+        "prosody": {
+          "scores": { "Sadness": 0.1, "Joy": 0.8, "Frustration": 0.2 }
+        }
+      }
+    }
+  ]
+}
+```
+
+### What we send back:
+OpenAI-compatible SSE stream with `Content-Type: text/event-stream`:
+```
+data: {"id":"...","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":"I've"}}]}
+
+data: {"id":"...","object":"chat.completion.chunk","choices":[{"index":0,"delta":{"content":" been"}}]}
+
+data: [DONE]
+```
+
+### Key details:
+- EVI sends full message history (not just latest)
+- We get prosody scores (user's emotional tone)
+- We stream chunks for natural, incremental speaking
+- Format must match OpenAI's chat.completions API
+- Auth via Bearer token
+
 ## Open Questions
 
-1. **EVI webhook format**: What does Hume send to our endpoint? What format do they expect back? Need to check docs.
+1. **Tool execution**: Where do tools run? Same Next.js API route handles tool loop.
 
-2. **Streaming**: Does EVI webhook support streaming responses, or does it need the full response at once?
-
-3. **Authentication**: How does EVI authenticate calls to our webhook?
-
-4. **Tool execution environment**: Where do tools run? Same Next.js API route, or separate service?
+2. **Auth token**: What Bearer token should we expect? Need to configure in Hume dashboard.
 
 ## Implementation Order
 
