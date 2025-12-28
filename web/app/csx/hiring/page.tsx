@@ -35,7 +35,7 @@ export default function HiringPage() {
           justify-content: center;
           padding: 24px;
           padding-top: calc(24px + env(safe-area-inset-top));
-          padding-bottom: calc(24px + env(safe-area-inset-bottom));
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Pixel stars */
@@ -298,11 +298,14 @@ export default function HiringPage() {
 
         .csx-section {
           margin-bottom: 56px;
+          padding-bottom: 56px;
+          border-bottom: 2px dotted #444;
         }
 
         @media (min-width: 768px) {
           .csx-section {
             margin-bottom: 64px;
+            padding-bottom: 64px;
           }
         }
 
@@ -564,12 +567,24 @@ export default function HiringPage() {
               <p className="csx-text">
                 Recent grad, graduate student, or jr/sr in CS or EE (or convince us otherwise). You've shipped things. You can go from idea to working prototype while others are still debating the requirements doc. You're also a thinker, excited to dig deep into what's happening in AI, with a burning passion to point it at problems that matter. And you're a community builder.
               </p>
-              <ul className="csx-qualities">
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">EXCEPTIONALLY CURIOUS:</span> you learn new tools over the weekend because you wanted to</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">INDEPENDENT:</span> you don't need permission or a roadmap to start</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">FAST-MOVING:</span> velocity matters to you</li>
-                <li className="csx-quality"><span className="csx-quality-icon">■</span> <span className="csx-quality-label">INITIATIVE-TAKER:</span> you see something broken and fix it before anyone asks</li>
-              </ul>
+              <div className="csx-tasks">
+                <div className="csx-task">
+                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> EXCEPTIONALLY CURIOUS</h4>
+                  <p className="csx-task-desc">You learn new tools over the weekend because you wanted to.</p>
+                </div>
+                <div className="csx-task">
+                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> INDEPENDENT</h4>
+                  <p className="csx-task-desc">You don't need permission or a roadmap to start.</p>
+                </div>
+                <div className="csx-task">
+                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> FAST-MOVING</h4>
+                  <p className="csx-task-desc">Velocity matters to you.</p>
+                </div>
+                <div className="csx-task">
+                  <h4 className="csx-task-title"><span className="csx-task-icon">■</span> INITIATIVE-TAKER</h4>
+                  <p className="csx-task-desc">You see something broken and fix it before anyone asks.</p>
+                </div>
+              </div>
             </section>
 
             {/* What You'll Do */}
@@ -609,7 +624,7 @@ export default function HiringPage() {
             </section>
 
             {/* Logistics */}
-            <section className="csx-section">
+            <section className="csx-section" style={{ borderBottom: 'none', paddingBottom: 0 }}>
               <h3 className="csx-section-label">LOGISTICS</h3>
               <p className="csx-text">
                 10-week residency starting in January. Minimum 20 hours per week — ideally a lot more. We're working with intensity.

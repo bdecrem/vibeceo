@@ -35,7 +35,7 @@ export default function CSXPage() {
           justify-content: center;
           padding: 24px;
           padding-top: calc(24px + env(safe-area-inset-top));
-          padding-bottom: calc(24px + env(safe-area-inset-bottom));
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* Pixel stars */

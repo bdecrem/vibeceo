@@ -86,34 +86,70 @@ function CSXContent() {
 
         .terminal-container {
           display: flex;
-          align-items: stretch;
+          flex-direction: column;
+          align-items: center;
           gap: 16px;
+        }
+
+        @media (min-width: 900px) {
+          .terminal-container {
+            flex-direction: row;
+            align-items: stretch;
+          }
         }
 
         .side-box {
           border: 1px solid #666;
-          width: 200px;
-          min-width: 200px;
+          width: 100%;
+          max-width: 640px;
           background: transparent;
-          display: none;
+          display: flex;
           flex-direction: column;
           align-items: flex-start;
           padding: 0 12px;
+          order: 2;
+          box-sizing: border-box;
+        }
+
+        @media (min-width: 900px) {
+          .side-box {
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+            order: 0;
+            align-items: center;
+          }
         }
 
         .pixel-businessman {
           image-rendering: pixelated;
           margin-top: 10px;
+          width: 58px;
+          height: 97px;
+        }
+
+        @media (min-width: 900px) {
+          .pixel-businessman {
+            width: 78px;
+            height: 130px;
+          }
         }
 
         .avatar-frame {
           border: 2px dotted #fff;
-          width: 160px;
-          height: 160px;
+          width: 120px;
+          height: 120px;
           display: flex;
           align-items: center;
           justify-content: center;
           align-self: center;
+        }
+
+        @media (min-width: 900px) {
+          .avatar-frame {
+            width: 160px;
+            height: 160px;
+          }
         }
 
         .avatar-label {
@@ -128,6 +164,7 @@ function CSXContent() {
           display: flex;
           gap: 24px;
           margin-top: 8px;
+          margin-bottom: 16px;
           align-self: center;
         }
 
@@ -140,11 +177,6 @@ function CSXContent() {
           opacity: 1;
         }
 
-        @media (min-width: 900px) {
-          .side-box {
-            display: flex;
-          }
-        }
 
         .side-box-right {
           border: 1px solid #666;
@@ -165,12 +197,81 @@ function CSXContent() {
           border-color: #999;
         }
 
+        .side-box-content {
+          display: flex;
+          flex-direction: row;
+          align-items: flex-start;
+          gap: 16px;
+          margin-top: 16px;
+          flex: 1;
+        }
+
+        @media (min-width: 900px) {
+          .side-box-content {
+            flex-direction: column;
+            align-items: center;
+          }
+        }
+
+        .avatar-area {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          order: 2;
+        }
+
+        @media (min-width: 900px) {
+          .avatar-area {
+            order: 0;
+          }
+        }
+
+        .content-area {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          justify-content: space-between;
+          order: 1;
+          flex: 1;
+        }
+
+        @media (min-width: 900px) {
+          .content-area {
+            display: none;
+          }
+        }
+
         .side-box-title {
           color: #888;
           font-size: 0.75rem;
           letter-spacing: 0.02em;
-          margin-top: 16px;
-          margin-bottom: auto;
+          margin-top: 0;
+          margin-bottom: 16px;
+        }
+
+        @media (min-width: 900px) {
+          .side-box-title {
+            display: block;
+            margin-top: 16px;
+            margin-bottom: auto;
+          }
+        }
+
+        .side-box-title-desktop {
+          display: none;
+        }
+
+        @media (min-width: 900px) {
+          .side-box-title-desktop {
+            display: block;
+            color: #888;
+            font-size: 0.75rem;
+            letter-spacing: 0.02em;
+            margin-top: 16px;
+            margin-bottom: auto;
+            text-align: center;
+            align-self: center;
+          }
         }
 
         .hiring-button {
@@ -180,20 +281,38 @@ function CSXContent() {
           font-size: 0.8rem;
           font-weight: 500;
           letter-spacing: 0.1em;
-          padding: 10px 0;
-          margin-top: auto;
-          margin-bottom: 16px;
+          padding: 10px 16px;
+          margin-top: 0;
+          margin-bottom: 0;
           cursor: pointer;
           transition: border-color 0.2s;
           font-family: 'IBM Plex Mono', monospace;
-          width: 160px;
-          align-self: center;
+        }
+
+        @media (min-width: 900px) {
+          .hiring-button {
+            width: 160px;
+            padding: 10px 0;
+            margin-top: auto;
+            margin-bottom: 16px;
+            align-self: center;
+          }
         }
 
         .hiring-button:hover {
           background: #fff;
           color: #000;
           border-color: #fff;
+        }
+
+        .hiring-button-desktop {
+          display: none;
+        }
+
+        @media (min-width: 900px) {
+          .hiring-button-desktop {
+            display: block;
+          }
         }
 
         @media (min-width: 900px) {
@@ -213,6 +332,13 @@ function CSXContent() {
             inset 2px 2px 0 #555,
             inset -2px -2px 0 #222,
             4px 4px 0 #000;
+          order: 1;
+        }
+
+        @media (min-width: 900px) {
+          .terminal-box {
+            order: 0;
+          }
         }
 
         @media (min-width: 640px) {
@@ -372,13 +498,31 @@ function CSXContent() {
           }
         }
 
+        .terminal-line-mobile {
+          display: block;
+        }
+
+        .terminal-line-desktop {
+          display: none;
+        }
+
+        @media (min-width: 640px) {
+          .terminal-line-mobile {
+            display: none;
+          }
+          .terminal-line-desktop {
+            display: block;
+          }
+        }
+
         .terminal-dim {
           color: #999;
         }
 
 
         .terminal-programs {
-          margin-top: 16px;
+          margin-top: 32px;
+          margin-bottom: 16px;
           display: flex;
           flex-direction: row;
           gap: 8px;
@@ -387,6 +531,7 @@ function CSXContent() {
         @media (min-width: 640px) {
           .terminal-programs {
             margin-top: 20px;
+            margin-bottom: 0;
             gap: 12px;
           }
         }
@@ -397,7 +542,7 @@ function CSXContent() {
           display: flex;
           flex-direction: column;
           border: 0.5px solid #888;
-          padding: 10px 12px;
+          padding: 16px 12px;
           flex: 1;
           background: transparent;
         }
@@ -438,8 +583,8 @@ function CSXContent() {
           gap: 8px;
           font-size: 0.75rem;
           color: #888;
-          margin-top: 16px;
-          padding-top: 12px;
+          margin-top: 48px;
+          padding-top: 20px;
           border-top: 2px dotted #444;
         }
 
@@ -659,7 +804,9 @@ function CSXContent() {
                 </button>
               </div>
             </div>
-            <span className="side-box-title">CTRL SHIFT Lab is a community of AI builders who are:</span>
+            <span className="side-box-title-desktop">CTRL SHIFT Lab is a community of AI builders who are:</span>
+            <div className="side-box-content">
+              <div className="avatar-area">
             {/* Founder Group */}
             <div className="avatar-frame" style={{ display: avatarGroup === 'founder' ? 'flex' : 'none' }}>
               <svg className="pixel-businessman" width="78" height="130" viewBox="0 0 48 80" fill="#fff">
@@ -1042,7 +1189,13 @@ function CSXContent() {
                 <rect x="0" y="3" width="4" height="2" />
               </svg>
             </div>
-            <button className="hiring-button" onClick={() => router.push('/csx/hiring')}>We're hiring</button>
+              </div>
+              <div className="content-area">
+                <span className="side-box-title">CTRL SHIFT Lab is a community of AI builders who are:</span>
+                <button className="hiring-button" onClick={() => router.push('/csx/hiring')}>We're hiring</button>
+              </div>
+            </div>
+            <button className="hiring-button hiring-button-desktop" onClick={() => router.push('/csx/hiring')}>We're hiring</button>
           </div>
           <div className="terminal-box">
           <div className="window-bar">
@@ -1093,10 +1246,15 @@ function CSXContent() {
               </div>
             ) : (
               <>
-                <div className={`terminal-line ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
+                {/* Mobile: combined single line */}
+                <div className={`terminal-line terminal-line-mobile ${visibleLines < 1 ? 'line-hidden' : ''}`}>
+                  we back the weird, the rigorous, the not-next-quarter. founders, researchers & students building AI that matters.
+                </div>
+                {/* Desktop: two separate lines */}
+                <div className={`terminal-line terminal-line-desktop ${visibleLines < 1 ? 'line-hidden' : ''} ${typingLine === 1 ? 'line-typing' : ''}`}>
                   we back the weird, the rigorous, the not-next-quarter.
                 </div>
-                <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
+                <div className={`terminal-line terminal-dim terminal-line-desktop ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
                   founders, researchers & students building AI that matters.
                 </div>
 
