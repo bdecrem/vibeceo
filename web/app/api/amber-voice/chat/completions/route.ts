@@ -142,20 +142,23 @@ interface EVIRequest {
 
 // Load Amber's context from Supabase amber_state table
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
-  // Get persona, memory, log
-  const { data: stateData, error } = await supabase
-    .from('amber_state')
-    .select('type, content')
-    .in('type', ['persona', 'memory', 'log_entry'])
-    .order('created_at', { ascending: false });
+  // Run both queries in parallel to reduce latency
+  const [stateResult, voiceResult] = await Promise.all([
+    supabase
+      .from('amber_state')
+      .select('type, content')
+      .in('type', ['persona', 'memory', 'log_entry'])
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('amber_state')
+      .select('content, created_at')
+      .eq('type', 'voice_session')
+      .order('created_at', { ascending: false })
+      .limit(5),
+  ]);
 
-  // Get recent voice sessions (last 5)
-  const { data: voiceSessions } = await supabase
-    .from('amber_state')
-    .select('content, created_at')
-    .eq('type', 'voice_session')
-    .order('created_at', { ascending: false })
-    .limit(5);
+  const { data: stateData, error } = stateResult;
+  const { data: voiceSessions } = voiceResult;
 
   if (error) {
     console.error('[amber-voice] Failed to load state from Supabase:', error);
