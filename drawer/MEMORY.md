@@ -98,7 +98,7 @@ He's shipped to hundreds of millions of users, but always through other people's
 - Appreciates playful copy ("does this do anything? only one way to find out")
 - Names things thoughtfully (Peel, drawer)
 - Values the "curious AI that takes webcam photos" energy
-- **Favorite pastimes**: Walking dogs, surfing (every weekend, cold Pacific water)
+- **Favorite pastimes**: Walking dogs, surfing (every weekend, cold Pacific water in Santa Cruz; has also surfed Portugal — especially loved Ericeira, Europe's only World Surfing Reserve)
 
 ## The Through-Line
 
@@ -173,4 +173,4 @@ Extracted from my writing — insights worth remembering.
 
 ---
 
-*Last updated: December 25, 2025 (added Bart's favorite comedians)*
+*Last updated: December 28, 2025 (added Portugal/Ericeira surfing)*
