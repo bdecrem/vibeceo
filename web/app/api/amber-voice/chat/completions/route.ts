@@ -7,6 +7,7 @@
 
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { createClient } from '@supabase/supabase-js';
 import fs from 'fs/promises';
 import path from 'path';
 
@@ -14,6 +15,12 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const DRAWER_PATH = path.join(process.cwd(), '..', 'drawer');
+
+// Supabase client for storing voice sessions
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_KEY!
+);
 
 // EVI message format
 interface EVIMessage {
@@ -120,8 +127,14 @@ export async function POST(request: NextRequest) {
     // Generate unique ID for this completion
     const completionId = `chatcmpl-${sessionId}-${Date.now()}`;
 
-    // Create SSE response
+    // Get the latest user message and its prosody
+    const latestUserMessage = messages.filter(m => m.role === 'user').pop();
+    const prosodyScores = latestUserMessage?.models?.prosody?.scores || {};
+
+    // Create SSE response and accumulate full response for storage
     const encoder = new TextEncoder();
+    let fullResponse = '';
+
     const readable = new ReadableStream({
       async start(controller) {
         try {
@@ -129,11 +142,39 @@ export async function POST(request: NextRequest) {
             if (event.type === 'content_block_delta' && event.delta.type === 'text_delta') {
               const chunk = toOpenAIChunk(event.delta.text, completionId);
               controller.enqueue(encoder.encode(chunk));
+              fullResponse += event.delta.text;
             }
           }
           // Send done marker
           controller.enqueue(encoder.encode('data: [DONE]\n\n'));
           controller.close();
+
+          // Store the conversation in Supabase (non-blocking)
+          const conversationContent = messages
+            .map(m => `${m.role}: ${m.content}`)
+            .join('\n\n') + `\n\nassistant: ${fullResponse}`;
+
+          supabase
+            .from('amber_state')
+            .insert({
+              type: 'voice_session',
+              content: conversationContent,
+              metadata: {
+                session_id: sessionId,
+                user_message: latestUserMessage?.content || '',
+                assistant_response: fullResponse,
+                prosody: prosodyScores,
+                message_count: messages.length + 1,
+              },
+            })
+            .then(({ error }) => {
+              if (error) {
+                console.error('[amber-voice] Failed to store session:', error);
+              } else {
+                console.log('[amber-voice] Stored voice session:', sessionId);
+              }
+            });
+
         } catch (error) {
           console.error('[amber-voice] Stream error:', error);
           controller.error(error);
