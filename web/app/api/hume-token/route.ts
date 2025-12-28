@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+// Prevent Next.js from caching this route
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   try {
     const apiKey = process.env.HUME_API_KEY;
@@ -22,6 +25,7 @@ export async function GET() {
         'Authorization': `Basic ${encoded}`,
       },
       body: 'grant_type=client_credentials',
+      cache: 'no-store',
     });
 
     const data = await response.json();

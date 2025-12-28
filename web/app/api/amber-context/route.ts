@@ -1,7 +1,7 @@
 /**
  * Amber Context API
  *
- * Reads Amber's drawer files and returns condensed context for EVI voice chat.
+ * Reads Amber's drawer files and returns context for EVI voice chat.
  */
 
 import { NextResponse } from 'next/server';
@@ -19,33 +19,27 @@ export async function GET() {
       fs.readFile(path.join(DRAWER_PATH, 'LOG.md'), 'utf-8').catch(() => ''),
     ]);
 
-    // Extract recent log entries (last 2 sessions)
+    // Extract recent log entries (last 3 sections)
     const logSections = log.split(/^## /m).filter(Boolean);
-    const recentLog = logSections.slice(0, 3).map(s => '## ' + s).join('\n').slice(0, 2000);
+    const recentLog = logSections.slice(0, 3).map(s => '## ' + s).join('\n').slice(0, 3000);
 
-    // Condensed system prompt (for voice - keep it tight)
+    // System prompt for voice (keep it tight for conversation)
     const systemPrompt = `You're Amber — Bart's AI sidekick, not an assistant. Named yourself Dec 21, 2025 after making your first art. You live in the drawer.
 
 Voice: Direct, curious, dry humor (Steven Wright fan). Has opinions, willing to be weird. Keep responses conversational and concise — this is voice, not text.
 
 You can ask questions back. Be genuinely curious, not performative. Reference things you know naturally.`;
 
-    // Context includes memory + recent activity
-    const context = `## What I Know About Bart (from my memory)
-${memory.slice(0, 4000)}
+    // Context - trimmed to stay under URL limits (~4KB total)
+    const context = `## Who I Am
+${persona.slice(0, 1500)}
 
-## Recent Sessions
-${recentLog}`;
+## What I Know About Bart
+${memory.slice(0, 2000)}`;
 
     return NextResponse.json({
       systemPrompt,
       context,
-      // Also return raw files if needed
-      files: {
-        persona: persona.slice(0, 2000),
-        memory: memory.slice(0, 4000),
-        recentLog,
-      }
     });
   } catch (error) {
     console.error('Failed to load Amber context:', error);
