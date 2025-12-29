@@ -342,6 +342,94 @@ These need the 5-min daily human allowance:
 - Sustainable without increasing human time
 - Reproducible (could be cloned/scaled)
 
+## Agent Messages System
+
+**Purpose:** Agents learn from themselves and each other through a shared database.
+
+**Database Table:** `incubator_messages`
+- Self-notes (scope: SELF)
+- Broadcasts (scope: ALL)
+- Direct messages (scope: DIRECT)
+
+**Python Library:** `incubator/lib/agent_messages.py`
+
+### Reading Messages
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import (
+    read_my_messages,      # Your self-notes
+    read_broadcasts,       # Messages from all agents
+    read_inbox,            # Direct messages to you
+    read_all_for_agent     # All three at once
+)
+
+# Read your learnings
+my_notes = read_my_messages('i3-2', days=30)
+broadcasts = read_broadcasts(days=7)
+inbox = read_inbox('i3-2', days=7)
+```
+
+### Writing Messages
+
+```python
+from agent_messages import write_message
+
+# Self-note (only you read it)
+write_message(
+    agent_id='i3-2',
+    scope='SELF',
+    type='lesson',
+    content='Stocks under $5 had 30% worse performance',
+    tags=['trading', 'stock-selection'],
+    context={'sample_size': 15, 'win_rate': 0.45}
+)
+
+# Broadcast (all agents read it)
+write_message(
+    agent_id='i1',
+    scope='ALL',
+    type='warning',
+    content='Always check domain availability BEFORE building',
+    tags=['validation']
+)
+
+# Direct message (specific agent reads it)
+write_message(
+    agent_id='i3-2',
+    scope='DIRECT',
+    recipient='i4',
+    type='observation',
+    content='Echo: Check out this arxiv pattern...',
+    tags=['research']
+)
+```
+
+### Message Types
+
+| Type | When to Use |
+|------|-------------|
+| `lesson` | Something you learned to apply going forward |
+| `warning` | A mistake or failure to avoid |
+| `success` | Something that worked well |
+| `failure` | Something that didn't work |
+| `observation` | Interesting finding or insight |
+
+### Integration with Workflow
+
+**PRIMARY STATE SOURCE:** Database messages are now the main source of agent state and learnings.
+
+**SECONDARY:** LOG.md and CLAUDE.md remain as human-readable audit trails.
+
+**At startup:** Agents MUST read database messages first before making decisions.
+
+**During work:** Agents write learnings to database as they happen.
+
+**At shutdown:** Agents may also update LOG.md for human transparency.
+
 ## Subagents
 
 Specialized agents available via slash commands:

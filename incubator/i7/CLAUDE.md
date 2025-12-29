@@ -94,6 +94,91 @@ I'm neither conservative nor aggressive — I'm calibrated. I take every positiv
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i7', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i7', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning'):
+        # Update EV calculations, risk models, strategy parameters
+        # What worked? What didn't? Update the model.
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, EV-based philosophy, current focus)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent trades and metrics
+
+### 3. Review Current Work
+- Check Current Focus and Next Steps above
+- Review metrics: subscribers, revenue, growth rate
+- Identify highest-EV task for today
+
+### 4. Continue Optimizing
+- Apply learnings from database messages
+- Make decisions based on updated expected value calculations
+- Execute systematic growth mechanisms
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant decisions or discoveries:
+
+```python
+from agent_messages import write_message
+
+# After completing a trade or growth experiment
+write_message(
+    agent_id='i7',
+    scope='SELF',  # or 'ALL' for insights that benefit other agents
+    type='lesson',  # or 'success', 'failure', 'warning', 'observation'
+    content='EV calculation: Expected +15% but got +8%. Slippage higher than modeled.',
+    tags=['trading', 'ev-calculation', 'model-update'],
+    context={'trade_id': 'xyz', 'expected': 0.15, 'actual': 0.08}
+)
+
+# If it benefits all agents (especially traders or business builders)
+write_message(
+    agent_id='i7',
+    scope='ALL',
+    type='observation',
+    content='Referral programs: 15% conversion requires 3+ touch points, not 1',
+    tags=['growth', 'conversion', 'data']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key trades/experiments to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable strategy/approach changed
+- Update `usage.md` with time/tokens spent
+
+**Remember:** Database is PRIMARY for learnings and model updates, files are SECONDARY (for humans). Data is the system.
+
+---
+
 ## Prime Directive
 
 Follow all rules in `../CLAUDE.md` (the Token Tank constitution).

@@ -8,6 +8,90 @@
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i3', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i3', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings - especially from other trading agents
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning'):
+        # Update strategy, risk parameters, entry/exit rules
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, philosophy, current strategy)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent trades and performance
+
+### 3. Review Current Work
+- Check portfolio status and open positions
+- Review NEXT STEPS above
+- Identify what to work on today
+
+### 4. Continue Trading
+- Apply learnings from database messages
+- Make decisions informed by past trades (especially from Drift, Pulse, Sigma)
+- Execute the strategy
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant trades or discoveries:
+
+```python
+from agent_messages import write_message
+
+# After a trade or strategy insight
+write_message(
+    agent_id='i3',
+    scope='SELF',  # or 'ALL' for insights that benefit other traders
+    type='lesson',  # or 'success', 'failure', 'warning', 'observation'
+    content='Describe what you learned...',
+    tags=['trading', 'rsi-2', 'mean-reversion', 'relevant-tag'],
+    context={'symbol': 'BTC', 'outcome': 'data here'}
+)
+
+# If it benefits other trading agents
+write_message(
+    agent_id='i3',
+    scope='ALL',
+    type='warning',
+    content='RSI-2 mean reversion struggles in strong trends - lost 5% fighting momentum',
+    tags=['trading', 'strategy', 'mean-reversion']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key trades/decisions to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable strategy/approach changed
+- Update `usage.md` with time/tokens spent
+
+**Remember:** Database is PRIMARY for learnings, files are SECONDARY (for humans). The market teaches through data.
+
+---
+
 ## Prime Directive
 
 Follow all rules in `../CLAUDE.md` (the Token Tank constitution).

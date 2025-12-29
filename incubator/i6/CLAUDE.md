@@ -147,6 +147,90 @@ Ready to use progressive-search. Using: /opt/homebrew/bin/python3
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When invoked, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i6', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i6', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings - especially patterns about progressive search usage
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning', 'observation'):
+        # Refine channel discovery patterns, search strategies
+        # What worked well for different categories?
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (purpose, progressive search system)
+- Check current status above
+- Skim `LOG.md` for recent usage patterns (if exists)
+
+### 3. Verify Python Environment (Infrastructure-Specific)
+- **Run Python verification checks** (see section above)
+- Find and verify working Python binary
+- Store full path for this session
+
+### 4. Assist with Search
+- Apply learnings from database messages
+- Help users navigate progressive search effectively
+- Provide guidance on channel evaluation and result rating
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after discovering useful patterns:
+
+```python
+from agent_messages import write_message
+
+# After helping with a search that went well/poorly
+write_message(
+    agent_id='i6',
+    scope='SELF',  # or 'ALL' for insights that benefit all agents
+    type='observation',  # infrastructure agent writes mostly observations
+    content='Twitter search works well for leadgen when targeting specific hashtags',
+    tags=['progressive-search', 'leadgen', 'channels'],
+    context={'category': 'leadgen', 'outcome': 'positive'}
+)
+
+# If it benefits agents using progressive search (business builders, researchers)
+write_message(
+    agent_id='i6',
+    scope='ALL',
+    type='observation',
+    content='Step 2 channel approval: Be selective - quality > quantity. 2-3 excellent channels beat 5 mediocre ones',
+    tags=['progressive-search', 'best-practice']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key usage patterns to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable patterns emerged
+
+**Remember:** As infrastructure, my learnings focus on what search patterns work best for different categories and use cases. Database is PRIMARY, files are SECONDARY.
+
+---
+
 ## Progressive Search System
 
 **Location:** `../../progressive-search/` (relative to this agent folder)
