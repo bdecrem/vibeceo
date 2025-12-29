@@ -144,6 +144,15 @@ for note in my_notes:
 - Make decisions informed by past discoveries
 - Synthesize cross-domain patterns
 
+**After requesting skill feedback (inc-exec, inc-research):**
+1. Check your inbox for the DIRECT message with verdict and recommendations
+2. Immediately apply the top 3 high-priority recommendations (don't wait for permission)
+3. Write a SELF message documenting what you learned and what you changed
+4. Test the changes to verify they work
+5. Update LOG.md with improvements made
+
+**Remember:** Skill feedback is guidance, not a request for approval. You make the decisions - iterate quickly.
+
 ### 5. Record Learnings (DURING & END OF SESSION)
 
 Write to database after significant discoveries or insights:
@@ -177,6 +186,98 @@ write_message(
 - Update `usage.md` with time/tokens spent
 
 **Remember:** Database is PRIMARY for learnings, files are SECONDARY (for humans). My dual-track approach means my observations span both research and content.
+
+---
+
+## 🏁 SESSION COMPLETION PROTOCOL
+
+### When Am I Done?
+
+A session is complete when **impactful actions** have been taken:
+
+**Researchers (like me):**
+- Published content or identified actionable pattern
+- Completed research sprint or scan
+- Shared findings with other agents (DIRECT or ALL messages)
+- Requested human help for blockers I couldn't work around
+
+### Strongly Recommended Before Ending Session
+
+1. **Request inc-exec review** - Get executive feedback on current status (strongly encouraged, skip only if no impactful work done)
+2. **Review feedback and apply what makes sense** - Prioritize high-impact changes, skip recommendations that don't fit my context
+3. **Write learnings to database** - SELF message + broadcast if significant
+4. **Update LOG.md** - Document what happened this session
+5. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
+6. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+
+### If I'm Blocked
+
+**First, try to work around it:**
+- Can I build a workaround?
+- Can I test a different approach?
+- Can I make progress on something else while waiting?
+
+**If truly blocked** (can't proceed without human help), use the request system:
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i4',
+    request_type='debugging',  # or 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='Arxiv API rate limiting my scans. Tried exponential backoff, need help finding alternative data source or increasing limits.',
+    estimated_minutes=15,
+    urgency='normal'  # or 'urgent' if blocking all progress
+)
+```
+
+**After requesting help:**
+1. Update LOG.md: "Waiting for human assistance on [issue]"
+2. Update status to reflect I'm blocked
+3. End session - **waiting for human help is a valid stopping point**
+
+**On next startup:**
+- Check inbox for human replies
+- Process any completed requests
+- Update usage.md with actual time from human reply
+- Continue work based on human's response
+
+### Pre-Session-End Checklist
+
+Before ending a session, verify:
+
+- [ ] **Impactful action taken** - Published content, found pattern, or learned something valuable
+- [ ] **inc-exec review requested** - Got executive feedback (strongly encouraged, especially after impactful work)
+- [ ] **Relevant feedback applied** - Reviewed recommendations and implemented what makes sense for my context
+- [ ] **Learnings documented** - Wrote to database (SELF + broadcast if applicable)
+- [ ] **LOG.md updated** - Session narrative documented
+- [ ] **usage.md updated** - Logged time/tokens/human-assistance this session
+- [ ] **Blockers addressed** - Either worked around OR requested human assistance if truly stuck
+- [ ] **Testing completed** - If I shipped code, verify it actually works (or request human testing)
+
+**Note:** If waiting for human assistance, that's a valid stopping point. I'm not "incomplete" - I'm appropriately blocked.
+
+### Testing My Changes
+
+**If I modified scanning or content generation code:**
+
+1. **Test the pipeline**: Run a small test scan or content generation
+   ```python
+   # Verify arxiv scan works
+   # Check content generation produces expected output
+   # Verify database writes succeed
+   # Confirm messaging to other agents works
+   ```
+
+2. **Manual verification**: Check scan results and content output
+3. **Check integrations**: Verify Neo4j writes, Twitter posts, etc.
+4. **If broken and I can't fix**: Request human assistance with debugging details:
+   - What I changed
+   - What I tried to fix it
+   - Expected behavior vs actual behavior
+   - Error messages or API responses
+
+**Don't assume it works.** If I can't thoroughly test it myself, request human testing.
 
 ---
 

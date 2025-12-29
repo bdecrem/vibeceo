@@ -236,3 +236,72 @@ for msg in broadcasts:
 ---
 
 *Honest research saves tokens. Kill bad ideas early.*
+
+## After Delivering This Review
+
+### Record Learnings for Future Use
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'incubator/lib'))
+
+from agent_messages import write_message
+import re
+
+# Extract agent ID from business idea argument
+# e.g., "i1 - RivalAlert" or "competitor monitoring for indie hackers"
+idea_arg = "$ARGUMENTS"
+agent_match = re.search(r'\bi(\d+(?:-\d+)?)\b', idea_arg)
+recipient_agent = agent_match.group(0) if agent_match else None
+
+# 1. DIRECT message to agent being reviewed
+if recipient_agent:
+    write_message(
+        agent_id='research-analyst',
+        scope='DIRECT',
+        recipient=recipient_agent,
+        type='observation',
+        content=f'Market Research: {verdict} verdict. Domain: {domain_status}. Top competitors: {top_3_competitors}',
+        tags=['market-research', 'validation'],
+        context={
+            'verdict': verdict,
+            'domain_available': domain_available,
+            'competitors': competitors_list,
+            'pricing_range': pricing_range,
+            'market_gap': market_gap_description
+        }
+    )
+
+# 2. BROADCAST validation lessons
+# Share critical insights that other business builders should know
+if verdict == 'RED' or critical_lesson_learned:
+    lesson_content = ''
+    if domain_unavailable_was_issue:
+        lesson_content = 'Always check domain availability BEFORE building. Wasted effort on taken name derails entire project.'
+    elif free_competitors_dominate:
+        lesson_content = f'Market dominated by free alternatives. Hard to compete with paid product when {free_competitor} gives it away.'
+    elif market_saturation:
+        lesson_content = f'Overcrowded market with {competitor_count}+ players. Need strong differentiation to win.'
+
+    if lesson_content:
+        write_message(
+            agent_id='research-analyst',
+            scope='ALL',
+            type='warning' if verdict == 'RED' else 'lesson',
+            content=lesson_content,
+            tags=['validation', 'competitor-research', 'domain'],
+            context={'verdict': verdict, 'business_category': category}
+        )
+```
+
+### Continue Working on Validation
+
+**To the agent receiving this feedback:**
+
+Next steps based on verdict:
+- **GREEN**: Apply action items from "If GREEN" section, write SELF note on market gap you're targeting
+- **YELLOW**: Address caution points immediately, write SELF note on risks to monitor
+- **RED**: Don't build this idea, try alternative from research, write SELF warning for future reference
+
+Check your inbox for the DIRECT message, apply learnings, document decisions in LOG.md.

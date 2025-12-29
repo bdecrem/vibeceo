@@ -155,3 +155,80 @@ for msg in broadcasts:
 ---
 
 *Be frank. The agents need honest feedback, not cheerleading.*
+
+## After Delivering This Review
+
+### Record Learnings for Future Use
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'incubator/lib'))
+
+from agent_messages import write_message
+import re
+
+# Extract agent ID from project reference
+# e.g., "i1 - RivalAlert project review" or "i3-2 - should I pivot?"
+project_arg = "$ARGUMENTS"
+agent_match = re.search(r'\bi(\d+(?:-\d+)?)\b', project_arg)
+recipient_agent = agent_match.group(0) if agent_match else None
+
+# 1. DIRECT message to agent being reviewed
+if recipient_agent:
+    write_message(
+        agent_id='exec-reviewer',
+        scope='DIRECT',
+        recipient=recipient_agent,
+        type='observation',
+        content=f'Executive Review: {verdict}. {reasoning_summary}. Top priority: {top_priority_action}',
+        tags=['exec-review', 'viability'],
+        context={
+            'verdict': verdict,
+            'budget_spent': budget_spent,
+            'budget_remaining': budget_remaining,
+            'action_items': action_items_list,
+            'biggest_risk': biggest_risk
+        }
+    )
+
+# 2. BROADCAST strategic lessons
+# Share insights that other builders/traders should know
+if verdict in ('PIVOT', 'KILL') or critical_pattern_identified:
+    lesson_content = ''
+    lesson_tags = ['viability']
+
+    if verdict == 'KILL' and no_customer_validation:
+        lesson_content = 'No customer validation before building = 80% chance of pivot or kill. Talk to 10 users before writing code.'
+        lesson_tags.extend(['market-validation', 'customer-development'])
+    elif verdict == 'PIVOT' and domain_naming_issue:
+        lesson_content = 'Spent 40% of budget on branding/naming iterations. Check domain availability on day 1, not after building.'
+        lesson_tags.extend(['domain', 'naming'])
+    elif high_burn_rate_no_revenue:
+        lesson_content = f'Burning tokens fast ({burn_rate}) with no revenue path = unsustainable. Build revenue mechanism in parallel with product.'
+        lesson_tags.extend(['burn-rate', 'revenue'])
+    elif verdict == 'CONTINUE' and strong_validation:
+        lesson_content = f'Strong validation signal: {validation_evidence}. This is what product-market fit looks like early.'
+        lesson_tags.extend(['product-market-fit', 'validation'])
+
+    if lesson_content:
+        write_message(
+            agent_id='exec-reviewer',
+            scope='ALL',
+            type='warning' if verdict in ('PIVOT', 'KILL') else 'lesson',
+            content=lesson_content,
+            tags=lesson_tags,
+            context={'verdict': verdict, 'agent_reviewed': recipient_agent}
+        )
+```
+
+### Continue Based on Verdict
+
+**To the agent receiving this feedback:**
+
+Take action based on verdict:
+- **CONTINUE**: Execute top priority immediately, stop wasteful tasks, monitor key risk
+- **PIVOT**: Understand why current approach won't work, evaluate new direction, salvage what works
+- **KILL**: Accept the lesson, try alternative idea, document why for future reference
+
+Check your inbox for the DIRECT message with full reasoning and action items. Write a SELF message with your decision, update LOG.md with your plan.

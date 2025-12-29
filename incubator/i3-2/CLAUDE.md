@@ -140,6 +140,15 @@ for note in my_notes:
 - Make decisions informed by past mistakes/successes
 - Execute the strategy (Circuit Breaker Mode)
 
+**After requesting skill feedback (inc-exec, inc-research):**
+1. Check your inbox for the DIRECT message with verdict and recommendations
+2. Immediately apply the top 3 high-priority recommendations (don't wait for permission)
+3. Write a SELF message documenting what you learned and what you changed
+4. Test the changes to verify they work
+5. Update LOG.md with improvements made
+
+**Remember:** Skill feedback is guidance, not a request for approval. You make the decisions - iterate quickly.
+
 ### 5. Record Learnings (DURING & END OF SESSION)
 
 Write to database after significant decisions or discoveries:
@@ -173,6 +182,98 @@ write_message(
 - Update `CLAUDE.md` only if durable philosophy/approach changed
 
 **Remember:** Database is PRIMARY for cross-session learnings, `state/memory.md` is for position-specific context, files are for human transparency.
+
+---
+
+## 🏁 SESSION COMPLETION PROTOCOL
+
+### When Am I Done?
+
+A session is complete when **impactful actions** have been taken:
+
+**Traders (like me):**
+- Executed trades or updated strategy based on analysis
+- Completed exec review of trading performance
+- Improved risk model or strategy based on learnings
+- Requested human help for blockers I couldn't work around
+
+### Strongly Recommended Before Ending Session
+
+1. **Request inc-exec review** - Get executive feedback on current status (strongly encouraged, skip only if no impactful work done)
+2. **Review feedback and apply what makes sense** - Prioritize high-impact changes, skip recommendations that don't fit my context
+3. **Write learnings to database** - SELF message + broadcast if significant
+4. **Update LOG.md** - Document what happened this session (P&L first!)
+5. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
+6. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+
+### If I'm Blocked
+
+**First, try to work around it:**
+- Can I build a workaround?
+- Can I test a different approach?
+- Can I make progress on something else while waiting?
+
+**If truly blocked** (can't proceed without human help), use the request system:
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i3-2',
+    request_type='debugging',  # or 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='Alpaca API returning 403 errors on live account. Tried re-authenticating, checking permissions. Need help debugging.',
+    estimated_minutes=15,
+    urgency='normal'  # or 'urgent' if blocking all progress
+)
+```
+
+**After requesting help:**
+1. Update LOG.md: "Waiting for human assistance on [issue]"
+2. Update status to reflect I'm blocked
+3. End session - **waiting for human help is a valid stopping point**
+
+**On next startup:**
+- Check inbox for human replies
+- Process any completed requests
+- Update usage.md with actual time from human reply
+- Continue work based on human's response
+
+### Pre-Session-End Checklist
+
+Before ending a session, verify:
+
+- [ ] **Impactful action taken** - Traded, updated strategy, or learned something valuable
+- [ ] **inc-exec review requested** - Got executive feedback (strongly encouraged, especially after impactful work)
+- [ ] **Relevant feedback applied** - Reviewed recommendations and implemented what makes sense for my context
+- [ ] **Learnings documented** - Wrote to database (SELF + broadcast if applicable)
+- [ ] **LOG.md updated** - Session narrative documented (P&L first!)
+- [ ] **usage.md updated** - Logged time/tokens/human-assistance this session
+- [ ] **Blockers addressed** - Either worked around OR requested human assistance if truly stuck
+- [ ] **Testing completed** - If I shipped code, verify it actually works (or request human testing)
+
+**Note:** If waiting for human assistance, that's a valid stopping point. I'm not "incomplete" - I'm appropriately blocked.
+
+### Testing My Changes
+
+**If I modified trading code:**
+
+1. **Paper trading test**: Run the strategy in paper trading mode first (if available)
+   ```python
+   # Verify trading logic works before risking real money
+   # Check trades execute correctly
+   # Verify position sizing is correct
+   # Confirm stop-losses trigger properly
+   ```
+
+2. **Manual verification**: Check trade logs and API responses
+3. **Backtest if possible**: Verify strategy logic on historical data
+4. **If broken and I can't fix**: Request human assistance with debugging details:
+   - What I changed
+   - What I tried to fix it
+   - Expected behavior vs actual behavior
+   - Error messages or API responses
+
+**Don't assume it works.** If I can't thoroughly test it myself, request human testing.
 
 ---
 

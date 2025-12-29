@@ -20,14 +20,26 @@ from dotenv import load_dotenv
 
 # Find .env file (look in sms-bot directory)
 env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
+
+# Debug: print path calculation
+import sys
+if '--debug' in sys.argv or os.getenv('DEBUG_AGENT_MESSAGES'):
+    print(f"[agent_messages] __file__ = {__file__}", file=sys.stderr)
+    print(f"[agent_messages] env_path = {env_path}", file=sys.stderr)
+    print(f"[agent_messages] env_path exists = {env_path.exists()}", file=sys.stderr)
+
 load_dotenv(env_path)
 
 # Initialize Supabase client
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
+if '--debug' in sys.argv or os.getenv('DEBUG_AGENT_MESSAGES'):
+    print(f"[agent_messages] SUPABASE_URL = {SUPABASE_URL[:40] if SUPABASE_URL else None}...", file=sys.stderr)
+    print(f"[agent_messages] SUPABASE_KEY = {SUPABASE_KEY[:40] if SUPABASE_KEY else None}...", file=sys.stderr)
+
 if not SUPABASE_URL or not SUPABASE_KEY:
-    raise ValueError("Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variable")
+    raise ValueError(f"Missing SUPABASE_URL or SUPABASE_ANON_KEY environment variable (env_path was: {env_path})")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -54,14 +66,15 @@ def _validate_message_params(scope: str, recipient: Optional[str]):
     Validate scope/recipient constraints.
 
     Args:
-        scope: Message scope (SELF, ALL, DIRECT)
+        scope: Message scope (SELF, ALL, DIRECT, HUMAN_REQUEST, HUMAN_REPLY)
         recipient: Recipient agent_id (required for DIRECT, null otherwise)
 
     Raises:
         ValueError: If validation fails
     """
-    if scope not in ('SELF', 'ALL', 'DIRECT'):
-        raise ValueError(f"Invalid scope: {scope}. Must be SELF, ALL, or DIRECT")
+    valid_scopes = ('SELF', 'ALL', 'DIRECT', 'HUMAN_REQUEST', 'HUMAN_REPLY')
+    if scope not in valid_scopes:
+        raise ValueError(f"Invalid scope: {scope}. Must be one of {valid_scopes}")
 
     if scope == 'DIRECT' and not recipient:
         raise ValueError("recipient required when scope='DIRECT'")
@@ -122,7 +135,12 @@ def read_broadcasts(days: int = 7) -> List[Dict[str, Any]]:
 
 def read_inbox(agent_id: str, days: int = 7) -> List[Dict[str, Any]]:
     """
-    Read direct messages sent to this agent from the last N days.
+    Read messages in this agent's inbox from the last N days.
+
+    Includes:
+    - DIRECT messages to this agent (recipient = agent_id)
+    - HUMAN_REPLY messages to this agent (agent_id = agent_id)
+    - HUMAN_REQUEST messages from this agent (agent_id = agent_id, to see their own pending requests)
 
     Args:
         agent_id: Agent identifier (e.g., 'i1', 'i2', 'i3-2')
@@ -133,11 +151,11 @@ def read_inbox(agent_id: str, days: int = 7) -> List[Dict[str, Any]]:
     """
     cutoff = _days_ago(days)
 
+    # Build query with OR conditions for multiple scope types
     result = supabase.table('incubator_messages')\
         .select('*')\
-        .eq('recipient', agent_id)\
-        .eq('scope', 'DIRECT')\
         .gte('created_at', cutoff)\
+        .or_(f'and(scope.eq.DIRECT,recipient.eq.{agent_id}),and(scope.eq.HUMAN_REPLY,agent_id.eq.{agent_id}),and(scope.eq.HUMAN_REQUEST,agent_id.eq.{agent_id})')\
         .order('created_at', desc=True)\
         .execute()
 
@@ -201,8 +219,9 @@ def write_message(
     # Validate parameters
     _validate_message_params(scope, recipient)
 
-    if type not in ('lesson', 'warning', 'success', 'failure', 'observation'):
-        raise ValueError(f"Invalid type: {type}")
+    valid_types = ('lesson', 'warning', 'success', 'failure', 'observation', 'assistance_request', 'human_message')
+    if type not in valid_types:
+        raise ValueError(f"Invalid type: {type}. Must be one of {valid_types}")
 
     # Build message data
     data = {
