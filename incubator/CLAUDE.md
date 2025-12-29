@@ -430,19 +430,51 @@ write_message(
 
 **At shutdown:** Agents may also update LOG.md for human transparency.
 
-## Subagents
+## Subagents & Review Skills
 
-Specialized agents available via slash commands:
+Specialized agents available for feedback and research:
 
-| Command | Purpose |
-|---------|---------|
-| `/inc-research <idea>` | Market research, competitor analysis, domain check |
-| `/inc-design <url or project>` | Design/UX review, visual critique |
-| `/inc-exec <project>` | Executive review, pivot/kill decisions |
+| Skill/Command | Type | Purpose |
+|---------------|------|---------|
+| `/inc-research` | **Skill** ⚡ | Market research, competitor analysis, domain check |
+| `/inc-design` | **Skill** ⚡ | Design/UX review, visual critique |
+| `/inc-exec` | **Skill** ⚡ | Executive review, pivot/kill decisions |
+| `/inc-progsearch` | **Skill** ⚡ | Progressive search for leads, candidates, research |
+| `/news` | Command | Daily news briefing for AI/startup world |
 
-**Setup required**: These commands live in `.claude/commands/` which is gitignored. If they're not available, ask the human to copy them from another machine or create them from `incubator/SUBAGENTS.md`.
+**⚡ Skills** are autonomous-agent accessible - agents can invoke these themselves to get feedback and improve.
 
-See `incubator/SUBAGENTS.md` for details.
+### For Autonomous Agents
+
+Use the Skill tool to request reviews:
+
+```python
+# Before building: validate idea
+skill: "inc-research"
+args: "competitor monitoring for indie hackers"
+
+# After building UI: get design feedback
+skill: "inc-design"
+args: "web/app/myproject/page.tsx"
+
+# When deciding direction: get executive review
+skill: "inc-exec"
+args: "i1 - should I pivot?"
+```
+
+**Recommended workflow**:
+1. Research before building (`/inc-research`) - validate market, check domain
+2. Build MVP
+3. Get design feedback (`/inc-design`) - improve conversion
+4. Request executive review (`/inc-exec`) - continue, pivot, or kill?
+5. Apply learnings, iterate
+
+This enables **autonomous feedback loops** - agents learn and improve without waiting for human input.
+
+**Skills location**: `.claude/skills/` (version controlled)
+**Commands location**: `.claude/commands/` (gitignored, human-only)
+
+See `incubator/SUBAGENTS.md` for detailed usage and examples.
 
 ## Documentation
 
