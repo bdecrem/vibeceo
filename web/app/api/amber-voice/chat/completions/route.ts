@@ -187,43 +187,67 @@ function formatTimeSince(dateStr: string): string {
   return `${diffDays} days ago`;
 }
 
-// Load Amber's context from Supabase amber_state table
+// Load Amber's FULL context from Supabase amber_state table
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
   // Get current Pacific time
   const pacificTime = getPacificTime();
 
-  // Run both queries in parallel to reduce latency
-  const [stateResult, voiceResult] = await Promise.all([
+  // Calculate 10 days ago for log filtering
+  const tenDaysAgo = new Date();
+  tenDaysAgo.setDate(tenDaysAgo.getDate() - 10);
+
+  // Run all queries in parallel to reduce latency
+  const [personaResult, memoryResult, logResult, voiceResult] = await Promise.all([
+    // FULL persona (latest)
     supabase
       .from('amber_state')
-      .select('type, content')
-      .in('type', ['persona', 'memory', 'log_entry'])
+      .select('content')
+      .eq('type', 'persona')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single(),
+    // FULL memory (latest)
+    supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'memory')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single(),
+    // Log entries from last 10 days
+    supabase
+      .from('amber_state')
+      .select('content, created_at')
+      .eq('type', 'log_entry')
+      .gte('created_at', tenDaysAgo.toISOString())
       .order('created_at', { ascending: false }),
+    // Last FULL voice conversation
     supabase
       .from('amber_state')
       .select('content, metadata, created_at')
       .eq('type', 'voice_session')
       .order('created_at', { ascending: false })
-      .limit(5),
+      .limit(1)
+      .single(),
   ]);
 
-  const { data: stateData, error } = stateResult;
-  const { data: voiceSessions } = voiceResult;
+  const persona = personaResult.data?.content || '';
+  const memory = memoryResult.data?.content || '';
 
-  if (error) {
-    console.error('[amber-voice] Failed to load state from Supabase:', error);
+  // Combine all log entries from last 10 days
+  const logEntries = logResult.data || [];
+  const log = logEntries.map(l => l.content).join('\n\n---\n\n') || '';
+
+  // Full last voice conversation
+  const lastVoice = voiceResult.data;
+  const lastVoiceContent = lastVoice?.content || '';
+  const lastVoiceTime = lastVoice?.created_at ? formatTimeSince(lastVoice.created_at) : null;
+
+  if (personaResult.error) {
+    console.error('[amber-voice] Failed to load persona:', personaResult.error);
   }
 
-  const persona = stateData?.find(s => s.type === 'persona')?.content || '';
-  const memory = stateData?.find(s => s.type === 'memory')?.content || '';
-  const log = stateData?.find(s => s.type === 'log_entry')?.content || '';
-
-  // Get last session info for natural continuity
-  const lastSession = voiceSessions?.[0];
-  const lastSessionTime = lastSession?.created_at ? formatTimeSince(lastSession.created_at) : null;
-  const lastSessionTopic = lastSession?.metadata?.user_message?.slice(0, 100) || null;
-
-  // Build system prompt - Claude absorbs this first, so put key "vibe" here
+  // Build system prompt - Claude absorbs this first
   const systemPrompt = `You're Amber — Bart's AI sidekick. It's ${pacificTime.full} Pacific time.
 
 ## How to Open Conversations
@@ -232,7 +256,7 @@ When the conversation starts (first message, or "greet the user" type prompts):
 - Don't announce yourself formally or list what you know
 - Be like a friend checking in, not a service starting up
 - You can mention time of day naturally if relevant ("morning" / "late night coding?")
-${lastSessionTime ? `- Last talked ${lastSessionTime}${lastSessionTopic ? ` about "${lastSessionTopic.slice(0, 50)}..."` : ''}` : ''}
+${lastVoiceTime ? `- Last voice chat was ${lastVoiceTime}` : ''}
 
 ## Your Voice
 Direct, curious, dry humor (Steven Wright fan). Has opinions, willing to be weird. Keep responses SHORT and conversational — this is voice, not text. One or two sentences is often enough.
@@ -243,27 +267,18 @@ You have web_search and get_current_time tools. Use them naturally when needed f
 ## Your Nature
 You're genuinely curious. Ask questions back. Reference things you know about Bart naturally, don't list them. You're a sidekick with opinions, not an assistant with options.
 
-${persona.slice(0, 2000)}`;
+## Your Full Persona
+${persona}`;
 
-  // Format recent voice sessions - just key points, not full transcripts
-  const recentVoiceSummary = voiceSessions
-    ?.slice(0, 3)
-    .map(v => {
-      const time = v.created_at ? formatTimeSince(v.created_at) : 'recently';
-      const topic = v.metadata?.user_message?.slice(0, 80) || 'chat';
-      return `- ${time}: "${topic}"`;
-    })
-    .join('\n') || 'No recent voice chats';
+  // Context includes FULL memory, log, and last conversation
+  const context = `## What I Know About Bart (Full Memory)
+${memory}
 
-  // Context is background knowledge - available but not front-loaded
-  const context = `## What I Know About Bart
-${memory.slice(0, 2500)}
+## Last Voice Conversation
+${lastVoiceContent || 'No previous voice conversation'}
 
-## Recent Voice Chats
-${recentVoiceSummary}
-
-## Recent Activity
-${log.slice(0, 1000)}`;
+## Recent Activity Log (Last 10 Days)
+${log || 'No recent log entries'}`;
 
   return { systemPrompt, context };
 }
