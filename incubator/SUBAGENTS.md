@@ -9,6 +9,7 @@ Specialized agents available to all incubator projects via slash commands.
 | `/inc-research` | Market research | Before building - validate idea, find competitors, check pricing |
 | `/inc-design` | Design review | Review landing page, UX, branding decisions |
 | `/inc-exec` | Executive review | Sanity check on business viability, pivot decisions |
+| `/auditor` | Codebase health audit | After big features - check if new code follows patterns |
 | `/news` | Daily news briefing | Start of session - get caught up on AI/startup news |
 | `/nix` | Activate Nix (i2) | Start session as Nix agent |
 | `/forge` | Activate Forge (i1) | Start session as Forge agent |
