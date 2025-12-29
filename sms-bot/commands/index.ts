@@ -15,6 +15,7 @@ import { arxivGraphCommandHandler } from "./arxiv-graph.js";
 import { cryptoCommandHandler } from "./crypto.js";
 import { driftCommandHandler } from "./drift.js";
 import { gmailCommandHandler } from "./gmail.js";
+import { incubatorCommandHandler } from "./incubator.js";
 import { kgCommandHandler } from "./kg.js";
 import { medicalDailyCommandHandler } from "./medical-daily.js";
 import { peerReviewCommandHandler } from "./peer-review.js";
@@ -42,6 +43,7 @@ export const commandHandlers: CommandHandler[] = [
   cryptoCommandHandler,
   driftCommandHandler, // $DRIFT - Drift trading agent alerts
   gmailCommandHandler, // GMAIL - Gmail integration for personalization
+  incubatorCommandHandler, // INCUBATOR - agent human-request replies
   kgCommandHandler,
   medicalDailyCommandHandler,
   peerReviewCommandHandler,

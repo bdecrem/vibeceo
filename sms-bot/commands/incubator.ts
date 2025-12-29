@@ -1,5 +1,6 @@
-import { CommandContext } from '../lib/command-dispatcher.js';
-import { supabase } from '../lib/supabase-client.js';
+import type { CommandContext, CommandHandler } from './types.js';
+import { supabase } from '../lib/supabase.js';
+import { matchesPrefix } from './command-utils.js';
 
 /**
  * Handle human replies to agent assistance requests.
@@ -14,39 +15,62 @@ import { supabase } from '../lib/supabase-client.js';
  * The message is written to incubator_messages table where the agent
  * will read it on their next startup.
  */
-export default async function handleIncubatorCommand(context: CommandContext): Promise<void> {
-  const { args, subscriberProfile } = context;
+
+function parseIncubatorCommand(message: string): { agentId: string | null; userMessage: string | null } {
+  // Remove "incubator" prefix (case insensitive)
+  const withoutPrefix = message.replace(/^incubator\s+/i, '').trim();
+
+  // Split into parts
+  const parts = withoutPrefix.split(/\s+/);
+
+  if (parts.length < 2) {
+    return { agentId: null, userMessage: null };
+  }
+
+  const agentId = parts[0];
+  const userMessage = parts.slice(1).join(' ');
+
+  return { agentId, userMessage };
+}
+
+async function handleIncubator(context: CommandContext): Promise<boolean> {
+  const { from, message, twilioClient, sendSmsResponse, updateLastMessageDate } = context;
+
+  const { agentId, userMessage } = parseIncubatorCommand(message);
 
   // Check for minimum required arguments
-  if (!args || args.length < 2) {
-    await context.sendResponse(
+  if (!agentId || !userMessage) {
+    await sendSmsResponse(
+      from,
       'Usage: incubator [agent-id] [message]\n\n' +
       'Examples:\n' +
       '  incubator i1 done, took 20 minutes\n' +
       '  incubator i1 finished updating env variables\n' +
-      '  incubator i3-2 still working on this'
+      '  incubator i3-2 still working on this',
+      twilioClient
     );
-    return;
+    await updateLastMessageDate(context.normalizedFrom);
+    return true;
   }
-
-  // Parse: incubator i1 done, took 20 minutes
-  //        ^command  ^args[0] ^args[1..]
-  const agentId = args[0];
-  const message = args.slice(1).join(' ');
 
   // Validate agent ID format (i1, i2, i3-1, i3-2, etc.)
   if (!agentId.match(/^i\d+(-\d+)?$/)) {
-    await context.sendResponse(`Invalid agent ID: ${agentId}\n\nExpected format: i1, i2, i3-1, etc.`);
-    return;
+    await sendSmsResponse(
+      from,
+      `Invalid agent ID: ${agentId}\n\nExpected format: i1, i2, i3-1, etc.`,
+      twilioClient
+    );
+    await updateLastMessageDate(context.normalizedFrom);
+    return true;
   }
 
   // Parse for completion and time
-  const isDone = /done|complete|finished/i.test(message);
+  const isDone = /done|complete|finished/i.test(userMessage);
   let actualMinutes: number | null = null;
 
   if (isDone) {
     // Extract time: "took 20 minutes", "took 1 hour", "took 30"
-    const timeMatch = message.match(/(?:took|spent)\s+(\d+\.?\d*)\s*(min|minute|minutes|hour|hours|hr|hrs)?/i);
+    const timeMatch = userMessage.match(/(?:took|spent)\s+(\d+\.?\d*)\s*(min|minute|minutes|hour|hours|hr|hrs)?/i);
 
     if (timeMatch) {
       const value = parseFloat(timeMatch[1]);
@@ -68,20 +92,25 @@ export default async function handleIncubatorCommand(context: CommandContext): P
       agent_id: agentId,
       scope: 'HUMAN_REPLY',
       type: 'human_message',
-      content: message,
+      content: userMessage,
       tags: isDone ? ['human-reply', 'completed'] : ['human-reply', 'update'],
       context: {
         completed: isDone,
         actual_minutes: actualMinutes,
-        replied_by: subscriberProfile.phone_number,
+        replied_by: from,
         replied_at: new Date().toISOString()
       }
     });
 
   if (error) {
     console.error('Failed to write human reply to database:', error);
-    await context.sendResponse(`Error: Failed to send message to ${agentId}\n\n${error.message}`);
-    return;
+    await sendSmsResponse(
+      from,
+      `Error: Failed to send message to ${agentId}\n\n${error.message}`,
+      twilioClient
+    );
+    await updateLastMessageDate(context.normalizedFrom);
+    return true;
   }
 
   // Confirm to human
@@ -91,5 +120,17 @@ export default async function handleIncubatorCommand(context: CommandContext): P
     confirmationParts.push(`⏱️ Logged ${actualMinutes} minutes`);
   }
 
-  await context.sendResponse(confirmationParts.join('\n'));
+  await sendSmsResponse(from, confirmationParts.join('\n'), twilioClient);
+  await updateLastMessageDate(context.normalizedFrom);
+  return true;
 }
+
+export const incubatorCommandHandler: CommandHandler = {
+  name: 'incubator',
+  matches(context) {
+    return matchesPrefix(context.messageUpper, 'INCUBATOR');
+  },
+  async handle(context) {
+    return handleIncubator(context);
+  },
+};
