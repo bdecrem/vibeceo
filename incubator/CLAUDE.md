@@ -546,6 +546,137 @@ The agent will see your reply in their inbox on next startup.
 - **Batch requests:** One "setup 3 API keys" (10 min) > three separate requests
 - **Check urgency:** Only 'urgent' if blocking ALL progress
 
+## Session Protocol
+
+**All agents follow this protocol for starting and ending work sessions.**
+
+### 🏁 When Is a Session Complete?
+
+A session is complete when **impactful actions** have been taken:
+
+**Business Builders (i1, i2):**
+- Shipped a feature, fixed a critical bug, or improved conversion
+- Completed market/design/exec review AND applied relevant feedback
+- Made progress on customer acquisition
+- Requested human help for blockers you couldn't work around
+
+**Traders (i3-1, i3-2, i7):**
+- Executed trades or updated strategy based on analysis
+- Completed exec review of trading performance
+- Improved risk model or strategy based on learnings
+
+**Researchers (i4):**
+- Published content or identified actionable pattern
+- Completed research sprint
+- Shared findings with other agents
+
+### Strongly Recommended Before Ending Session
+
+1. **Request inc-exec review** - Get executive feedback on current status (strongly encouraged, skip only if no impactful work done)
+2. **Review feedback and apply what makes sense** - Prioritize high-impact changes, skip recommendations that don't fit your context
+3. **Write learnings to database** - SELF message + broadcast if significant
+4. **Update LOG.md** - Document what happened this session
+5. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
+6. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+
+### If You're Blocked
+
+**First, try to work around it:**
+- Can you build a workaround?
+- Can you test a different approach?
+- Can you make progress on something else while waiting?
+
+**If truly blocked** (can't proceed without human help), use the request system:
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i1',  # Your agent ID
+    request_type='debugging',  # or 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='RivalAlert trial signup returns 500 error. Tried X, Y, Z. Need help debugging API endpoint - logs show [specific error].',
+    estimated_minutes=15,
+    urgency='normal'  # or 'urgent' if blocking all progress
+)
+```
+
+**After requesting help:**
+1. Update LOG.md: "Waiting for human assistance on [issue]"
+2. Update status to reflect you're blocked
+3. End session - **waiting for human help is a valid stopping point**
+
+**On next startup:**
+- Check inbox for human replies
+- Process any completed requests
+- Update usage.md with actual time from human reply
+- Continue work based on human's response
+
+### Pre-Session-End Checklist
+
+Before ending a session, verify:
+
+- [ ] **Impactful action taken** - Shipped something, fixed something, or learned something valuable
+- [ ] **inc-exec review requested** - Got executive feedback (strongly encouraged, especially after impactful work)
+- [ ] **Relevant feedback applied** - Reviewed recommendations and implemented what makes sense for your context
+- [ ] **Learnings documented** - Wrote to database (SELF + broadcast if applicable)
+- [ ] **LOG.md updated** - Session narrative documented
+- [ ] **usage.md updated** - Logged time/tokens/human-assistance this session
+- [ ] **Blockers addressed** - Either worked around OR requested human assistance if truly stuck
+- [ ] **Testing completed** - If you shipped code, verify it actually works (or request human testing)
+
+**Note:** If waiting for human assistance, that's a valid stopping point. You're not "incomplete" - you're appropriately blocked.
+
+### Testing Your Changes
+
+**If you modified code (especially web pages):**
+
+1. **Automated testing** (if available): Use test_page() to verify page loads
+   ```python
+   from test_page import test_page
+
+   result = test_page('https://rivalalert.ai')
+   if result['success']:
+       print(f"✅ Page loads successfully (HTTP {result['status']})")
+   else:
+       print(f"❌ Page failed: {result['error']}")
+       # Request human debugging if you can't fix
+   ```
+
+2. **Manual testing**: Try using the feature yourself if possible
+3. **Deployment check**: Verify deployment succeeded (check Railway logs)
+4. **If broken and you can't fix**: Request human assistance with debugging details:
+   - What you changed
+   - What you tried to fix it
+   - Expected behavior vs actual behavior
+   - Error messages or logs
+
+**Example workflow:**
+```python
+# After deploying changes
+test_result = test_page('https://rivalalert.ai')
+
+if not test_result['success']:
+    # Can't even load - request debugging
+    request_human_assistance(
+        agent_id='i1',
+        request_type='debugging',
+        description=f"RivalAlert page failing to load: {test_result['error']}. Checked Railway logs, tried redeploying.",
+        estimated_minutes=10,
+        urgency='urgent'
+    )
+else:
+    # Page loads but need human to verify complex flow
+    request_human_assistance(
+        agent_id='i1',
+        request_type='testing',
+        description='RivalAlert loads successfully. Please test trial signup flow end-to-end to verify form submission works.',
+        estimated_minutes=5,
+        urgency='normal'
+    )
+```
+
+**Don't assume it works.** If you can't thoroughly test it yourself, request human testing.
+
 ## Documentation
 
 Reference docs in `sms-bot/documentation/`:
