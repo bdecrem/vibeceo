@@ -12,7 +12,7 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
-import { getContextCache } from '../context-cache';
+import { getContextCache } from '../../context-cache';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -322,14 +322,14 @@ export async function POST(request: NextRequest) {
     let systemPrompt: string;
     let context: string;
 
-    const cached = getContextCache(sessionId);
+    const cached = getContextCache();
     if (cached) {
-      console.log(`[amber-voice] Using cached context for session ${sessionId}`);
+      console.log(`[amber-voice] Using cached context`);
       systemPrompt = cached.systemPrompt;
       context = cached.context;
     } else {
       // Fallback: load fresh (backwards compatibility)
-      console.log(`[amber-voice] No cached context, loading fresh for session ${sessionId}`);
+      console.log(`[amber-voice] No cached context, loading fresh`);
       const loaded = await loadAmberContext();
       systemPrompt = loaded.systemPrompt;
       context = loaded.context;

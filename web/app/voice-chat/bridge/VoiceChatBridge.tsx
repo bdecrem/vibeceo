@@ -12,7 +12,6 @@ function VoiceChatBridgeInner() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadStatus, setPreloadStatus] = useState<string | null>(null);
-  const sessionIdRef = useRef<string | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
 
@@ -73,8 +72,8 @@ function VoiceChatBridgeInner() {
     }
   }, [readyState]);
 
-  // Preload Amber's context before connecting
-  const preloadContext = useCallback(async (): Promise<string | null> => {
+  // Preload Amber's context before connecting (cached server-side)
+  const preloadContext = useCallback(async (): Promise<boolean> => {
     setIsPreloading(true);
     setPreloadStatus('Loading Amber\'s memory...');
 
@@ -88,23 +87,22 @@ function VoiceChatBridgeInner() {
 
       setPreloadStatus(`Context loaded (${data.loadTimeMs}ms)`);
       console.log('[VoiceBridge] Preloaded context:', data.stats);
-      return data.sessionId;
+      return true;
     } catch (e) {
       console.error('[VoiceBridge] Preload failed:', e);
       setPreloadStatus('Failed to load context');
-      return null;
+      return false;
     }
   }, []);
 
   const handleStart = useCallback(async () => {
-    // Step 1: Preload context
-    const sessionId = await preloadContext();
-    if (!sessionId) {
+    // Step 1: Preload context (cached server-side)
+    const success = await preloadContext();
+    if (!success) {
       setIsPreloading(false);
       setConnectionError('Failed to load Amber\'s context');
       return;
     }
-    sessionIdRef.current = sessionId;
 
     // Step 2: Get Hume token if needed
     setPreloadStatus('Connecting to voice...');
@@ -117,14 +115,11 @@ function VoiceChatBridgeInner() {
       }
     }
 
-    // Step 3: Connect to Hume with session ID
+    // Step 3: Connect to Hume (context is already cached server-side)
     try {
       await connect({
         auth: { type: 'accessToken', value: token },
         configId: EVI_CONFIG_ID,
-        sessionSettings: {
-          customSessionId: sessionId,
-        },
       });
       setPreloadStatus(null);
     } catch (e) {

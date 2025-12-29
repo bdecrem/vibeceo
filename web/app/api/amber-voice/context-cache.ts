@@ -1,7 +1,10 @@
 /**
  * Simple in-memory cache for pre-loaded Amber context.
  *
- * Context is cached by session ID with a 10-minute TTL.
+ * Uses a "current session" approach since there's typically only one
+ * voice chat active at a time. The preload sets the current context,
+ * and the completions endpoint reads it.
+ *
  * This works because the voice endpoint runs on Node.js runtime (not edge).
  */
 
@@ -9,59 +12,49 @@ interface CachedContext {
   systemPrompt: string;
   context: string;
   timestamp: number;
+  sessionId: string;
 }
 
-const cache = new Map<string, CachedContext>();
+// Single current session
+let currentSession: CachedContext | null = null;
 
 // 10 minute TTL
 const TTL_MS = 10 * 60 * 1000;
-
-// Clean up expired entries periodically
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of cache.entries()) {
-    if (now - value.timestamp > TTL_MS) {
-      cache.delete(key);
-      console.log(`[context-cache] Expired session: ${key}`);
-    }
-  }
-}, 60 * 1000); // Check every minute
 
 export function setContextCache(
   sessionId: string,
   data: { systemPrompt: string; context: string }
 ): void {
-  cache.set(sessionId, {
+  currentSession = {
     ...data,
     timestamp: Date.now(),
-  });
-  console.log(`[context-cache] Cached context for session: ${sessionId}`);
+    sessionId,
+  };
+  console.log(`[context-cache] Set current session: ${sessionId}`);
 }
 
 export function getContextCache(
-  sessionId: string
+  sessionId?: string
 ): { systemPrompt: string; context: string } | null {
-  const entry = cache.get(sessionId);
-
-  if (!entry) {
-    console.log(`[context-cache] No cache for session: ${sessionId}`);
+  if (!currentSession) {
+    console.log(`[context-cache] No current session`);
     return null;
   }
 
   // Check if expired
-  if (Date.now() - entry.timestamp > TTL_MS) {
-    cache.delete(sessionId);
-    console.log(`[context-cache] Expired on access: ${sessionId}`);
+  if (Date.now() - currentSession.timestamp > TTL_MS) {
+    console.log(`[context-cache] Current session expired: ${currentSession.sessionId}`);
+    currentSession = null;
     return null;
   }
 
-  console.log(`[context-cache] Hit for session: ${sessionId}`);
+  console.log(`[context-cache] Using current session: ${currentSession.sessionId}`);
   return {
-    systemPrompt: entry.systemPrompt,
-    context: entry.context,
+    systemPrompt: currentSession.systemPrompt,
+    context: currentSession.context,
   };
 }
 
-export function clearContextCache(sessionId: string): void {
-  cache.delete(sessionId);
+export function clearContextCache(): void {
+  currentSession = null;
 }
