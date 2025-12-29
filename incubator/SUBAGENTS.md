@@ -1,8 +1,8 @@
 # Incubator Subagents
 
-Specialized agents available to all incubator projects via slash commands.
+Specialized agents available to all incubator projects.
 
-## Available Commands
+## How to Use
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
@@ -14,8 +14,31 @@ Specialized agents available to all incubator projects via slash commands.
 | `/news` | Daily news briefing | Start of session - get caught up on AI/startup news |
 | `/nix` | Activate Nix (i2) | Start session as Nix agent |
 | `/forge` | Activate Forge (i1) | Start session as Forge agent |
+**For humans**: Use slash commands in Claude Code (e.g., `/inc-research my-idea`)
 
-## Usage
+**For autonomous agents**: Use the Skill tool:
+```python
+# From within an agent using claude-agent-sdk
+skill: "inc-research"
+args: "Find competitors for project management tools"
+```
+
+## Available Commands & Skills
+
+| Command | Type | Purpose | When to Use |
+|---------|------|---------|-------------|
+| `/inc-research` | **Skill** ⚡ | Market research | Before building - validate idea, find competitors, check pricing |
+| `/inc-design` | **Skill** ⚡ | Design review | Review landing page, UX, branding decisions |
+| `/inc-exec` | **Skill** ⚡ | Executive review | Sanity check on business viability, pivot/kill decisions |
+| `/inc-progsearch` | **Skill** ⚡ | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
+| `/news` | Command | Daily news briefing | Start of session - get caught up on AI/startup news |
+| `/nix` | Command | Activate Nix (i2) | Start session as Nix agent |
+| `/forge` | Command | Activate Forge (i1) | Start session as Forge agent |
+
+**⚡ Skill** = Available for autonomous agents to invoke themselves (stored in `.claude/skills/`)
+**Command** = Human-invoked only (stored in `.claude/commands/`, gitignored)
+
+## Usage for Humans
 
 Just type the command in Claude Code:
 ```
@@ -23,6 +46,73 @@ Just type the command in Claude Code:
 ```
 
 The agent will use web search and provide structured analysis.
+
+## Usage for Autonomous Agents
+
+Agents can invoke skills themselves to get feedback and improve:
+
+### When to Use Each Skill
+
+**Before Building** (`/inc-research`):
+```python
+# Validate market, check domain, research competitors
+skill: "inc-research"
+args: "competitor monitoring SaaS for indie hackers"
+```
+
+**After Building UI** (`/inc-design`):
+```python
+# Get design feedback on landing page or app
+skill: "inc-design"
+args: "web/app/rivalalert/page.tsx"
+```
+
+**When Making Big Decisions** (`/inc-exec`):
+```python
+# Get executive review - continue, pivot, or kill?
+skill: "inc-exec"
+args: "i1 - RivalAlert project review"
+```
+
+**For Research/Leads** (`/inc-progsearch`):
+```python
+# Find companies, candidates, or research information
+skill: "inc-progsearch"
+args: "Find B2B SaaS companies using Stripe"
+```
+
+### Example Workflow: Autonomous Feedback Loop
+
+```python
+# 1. Agent has an idea
+idea = "Competitor monitoring tool"
+
+# 2. Agent validates with market research
+skill: "inc-research"
+args: idea
+
+# Agent reads the verdict (GREEN/YELLOW/RED)
+# If GREEN: proceed to build
+# If YELLOW: adjust based on feedback
+# If RED: kill idea, try something else
+
+# 3. Agent builds MVP
+
+# 4. Agent requests design review
+skill: "inc-design"
+args: "web/app/myproject/page.tsx"
+
+# Agent applies Top 3 Issues from feedback
+
+# 5. Agent requests executive review
+skill: "inc-exec"
+args: "i1 - myproject status check"
+
+# Agent reads verdict and action items
+# Applies feedback, continues building
+```
+
+This enables agents to **learn and improve autonomously** without waiting for human feedback.
 
 ## Setup
 
