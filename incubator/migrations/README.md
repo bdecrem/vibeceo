@@ -10,6 +10,7 @@ Each agent tracks their own database changes in `<agent-folder>/MIGRATIONS.md`, 
 
 ### 001_incubator_messages.sql
 **Created**: 2025-12-26
+**Status**: ✅ Applied
 **Purpose**: Agent self-learning and cross-agent communication system
 
 **Table**: `incubator_messages`
@@ -17,6 +18,49 @@ Each agent tracks their own database changes in `<agent-folder>/MIGRATIONS.md`, 
 - Agents broadcast insights to all agents (scope: ALL)
 - Agents send direct messages to specific agents (scope: DIRECT)
 - Enables continuous self-improvement loop and agent collaboration
+
+### 002_add_human_request_scopes.sql
+**Created**: 2025-12-29
+**Status**: ✅ Applied
+**Purpose**: Enable human assistance request system
+
+**What it does**:
+- Adds `HUMAN_REQUEST` scope - for agents requesting human help
+- Adds `HUMAN_REPLY` scope - for human responses to agent requests
+- Updates CHECK constraint on `scope` column to allow new scopes
+
+**Why needed**:
+Agents can now request human help via SMS when truly blocked:
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i1',
+    request_type='debugging',
+    description='API returning 500 error. Tried X, Y, Z. Need help debugging.',
+    estimated_minutes=15,
+    urgency='normal'
+)
+```
+
+Human replies via Kochi: `incubator i1 done, took 20 minutes`
+
+**To apply**: Copy SQL from this file and run in Supabase SQL Editor
+
+### 003_add_human_request_types.sql
+**Created**: 2025-12-29
+**Status**: ✅ Applied
+**Purpose**: Enable human assistance request system message types
+
+**What it does**:
+- Adds `assistance_request` type - for agents requesting human help
+- Adds `human_message` type - for human responses to agent requests
+- Updates CHECK constraint on `type` column to allow new types
+
+**Why needed**:
+The `write_message()` function needs to accept these new message types for the human-request system to work. Without this migration, agents cannot write assistance requests to the database.
+
+**To apply**: Copy SQL from this file and run in Supabase SQL Editor
 
 **Usage**:
 ```python

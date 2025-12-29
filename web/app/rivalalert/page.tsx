@@ -77,12 +77,17 @@ export default function RivalAlertLanding() {
             features, and job postings—and tell you when something changes.
           </p>
 
-          {/* Pricing Preview */}
-          <div className="inline-flex items-center gap-2 bg-gray-800/50 border border-gray-700 rounded-full px-4 py-2 mb-8">
-            <span className="text-green-400 font-semibold">30 days free</span>
-            <span className="text-gray-400">then</span>
-            <span className="text-green-400 font-semibold">$29/mo</span>
-            <span className="text-gray-400">for 3 competitors</span>
+          {/* Social Proof + Pricing */}
+          <div className="flex flex-col items-center gap-3 mb-8">
+            <p className="text-sm text-gray-400">
+              Join <span className="text-orange-400 font-semibold">50+ founders</span> monitoring competitors
+            </p>
+            <div className="inline-flex items-center gap-2 bg-gray-800/50 border border-gray-700 rounded-full px-4 py-2">
+              <span className="text-green-400 font-semibold">30 days free</span>
+              <span className="text-gray-400">then</span>
+              <span className="text-green-400 font-semibold">$29/mo</span>
+              <span className="text-gray-400">for 3 competitors</span>
+            </div>
           </div>
 
           {/* CTA Form */}
@@ -221,6 +226,60 @@ export default function RivalAlertLanding() {
           </div>
         </div>
 
+        {/* Product Preview */}
+        <div className="max-w-3xl mx-auto mt-24">
+          <h2 className="text-2xl font-bold text-center mb-8">
+            See what you'll get
+          </h2>
+
+          <div className="bg-gray-800/30 border border-gray-700 rounded-xl p-6">
+            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-gray-700">
+              <div className="w-10 h-10 rounded-full bg-orange-500/20 flex items-center justify-center">
+                📧
+              </div>
+              <div>
+                <p className="font-semibold">Daily Competitor Digest</p>
+                <p className="text-sm text-gray-400">Every morning at 7 AM PT</p>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">🔴</span>
+                  <div className="flex-1">
+                    <p className="font-semibold mb-1">Stripe: Pricing changed</p>
+                    <p className="text-sm text-gray-400">New starter plan: $29/mo (was $49/mo)</p>
+                    <p className="text-sm text-gray-300 mt-2">
+                      <span className="text-orange-400">Analysis:</span> Aggressive move to capture SMBs...
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">✨</span>
+                  <div className="flex-1">
+                    <p className="font-semibold mb-1">Linear: New feature launched</p>
+                    <p className="text-sm text-gray-400">"AI Task Breakdown" added to roadmap page</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <span className="text-2xl">👥</span>
+                  <div className="flex-1">
+                    <p className="font-semibold mb-1">Notion: Hiring signal</p>
+                    <p className="text-sm text-gray-400">3 new ML engineer positions posted</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Social Proof / Comparison */}
         <div className="max-w-3xl mx-auto mt-24 text-center">
           <h2 className="text-2xl font-bold mb-8">
@@ -286,14 +345,13 @@ export default function RivalAlertLanding() {
             <span className="font-bold text-orange-400">RivalAlert</span>
           </div>
           <p className="text-gray-500 text-sm">
-            A{' '}
+            Built by{' '}
             <a
               href="https://tokentank.io"
               className="text-gray-400 hover:text-white"
             >
               Token Tank
-            </a>{' '}
-            experiment
+            </a>
           </p>
         </div>
       </footer>

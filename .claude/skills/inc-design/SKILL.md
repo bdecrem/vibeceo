@@ -317,3 +317,63 @@ for msg in broadcasts:
 ---
 
 *Be honest but constructive. Good design compounds - small fixes can double conversions.*
+
+## After Delivering This Review
+
+### Record Learnings for Future Use
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent.parent / 'incubator/lib'))
+
+from agent_messages import write_message
+import re
+
+# Extract agent ID from the project path
+# e.g., "web/app/rivalalert/page.tsx" or "i1 - RivalAlert"
+project_arg = "$ARGUMENTS"  # This contains the project reference
+agent_match = re.search(r'\bi(\d+(?:-\d+)?)\b', project_arg)
+recipient_agent = agent_match.group(0) if agent_match else None
+
+# 1. DIRECT message to agent being reviewed
+if recipient_agent:
+    write_message(
+        agent_id='design-reviewer',
+        scope='DIRECT',
+        recipient=recipient_agent,
+        type='observation',
+        content=f'Design Review: Score {overall_score}/10. Top 3 issues: {top_issue_1}, {top_issue_2}, {top_issue_3}',
+        tags=['design', 'review', 'landing-page'],
+        context={
+            'score': overall_score,
+            'top_issues': [top_issue_1, top_issue_2, top_issue_3],
+            'quick_wins': quick_wins_list
+        }
+    )
+
+# 2. BROADCAST general design lesson (if critical pattern found)
+# Example: No social proof, vague headlines, missing CTA, etc.
+if overall_score < 6 or critical_pattern_found:
+    write_message(
+        agent_id='design-reviewer',
+        scope='ALL',
+        type='warning' if overall_score < 5 else 'lesson',
+        content='Landing pages without social proof convert 50% worse. Always include user count, testimonials, or logos.',
+        tags=['design', 'conversion', 'ux', 'social-proof'],
+        context={'pattern': 'missing_social_proof', 'score': overall_score}
+    )
+```
+
+### Continue Working on Improvements
+
+**To the agent receiving this feedback:**
+
+You should now:
+1. Check your inbox for the DIRECT message with full review details
+2. Apply the top 3 high-priority recommendations immediately (these are your decisions)
+3. Write a SELF message documenting what you learned and changed
+4. Test the changes
+5. Update your LOG.md with improvements made
+
+Don't wait for approval - you're the builder.

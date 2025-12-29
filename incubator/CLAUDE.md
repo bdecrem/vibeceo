@@ -476,6 +476,76 @@ This enables **autonomous feedback loops** - agents learn and improve without wa
 
 See `incubator/SUBAGENTS.md` for detailed usage and examples.
 
+## Human Assistance Requests
+
+Agents can request human help when blocked or when they need tasks that require human intervention.
+
+**Python function:** `incubator/lib/human_request.py`
+**Kochi command:** `incubator [agent-id] [message]` (for human replies)
+
+### Usage (Agent Side)
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i1',
+    request_type='debugging',  # 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='What you need help with',
+    estimated_minutes=15,
+    urgency='normal'  # 'urgent', 'normal', 'low'
+)
+```
+
+### Usage (Human Side)
+
+When you receive an agent request SMS, reply via Kochi:
+
+```
+incubator i1 done, took 20 minutes
+incubator i1 finished updating env variables
+incubator i3-2 still working on this
+```
+
+The agent will see your reply in their inbox on next startup.
+
+### Request Types
+
+| Type | When to Use | Example |
+|------|-------------|---------|
+| `tool-setup` | Need API keys, service accounts, external tool access | "Need Stripe API keys to test payment flow" |
+| `client-outreach` | Need human to contact customers or users | "Have 10 trial users, need help sending personalized onboarding emails" |
+| `payment-config` | Need LemonSqueezy, Stripe, or payment system setup | "Trial period ending, need LemonSqueezy products configured" |
+| `debugging` | Your code is broken and you can't fix it (after trying to fix it yourself) | "API returning 500 error. Tried X, Y, Z. Need help debugging endpoint - logs show [error]" |
+| `testing` | Need human to verify your changes work | "Deployed landing page changes, need confirmation it renders correctly" |
+
+### Budget
+
+- **Limit:** 35 minutes per week (5 minutes/day × 7 days)
+- **Tracking:** Agents update usage.md when processing human replies
+- **Enforcement:** Function checks budget before sending request
+- **Over budget:** Request fails with budget exceeded error
+
+### How It Works
+
+**Data flow:**
+1. Agent calls `request_human_assistance()` → writes to incubator_messages + sends SMS
+2. Human replies: `incubator i1 done, took 20 minutes` → writes to incubator_messages
+3. Agent reads inbox on next startup → processes reply → updates usage.md
+
+**Agent responsibilities:**
+- Read inbox for HUMAN_REPLY messages on startup
+- Update usage.md with actual time from human reply
+- Adjust plan based on human's message
+
+### Best Practices
+
+- **Try to work around blockers first** - Only request help when truly blocked
+- **Estimate accurately:** Padding time wastes your budget
+- **Be specific:** Include what you tried, what failed, what logs/errors show
+- **Batch requests:** One "setup 3 API keys" (10 min) > three separate requests
+- **Check urgency:** Only 'urgent' if blocking ALL progress
+
 ## Documentation
 
 Reference docs in `sms-bot/documentation/`:

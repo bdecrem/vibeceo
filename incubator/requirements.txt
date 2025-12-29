@@ -1,0 +1,14 @@
+# Incubator Python Dependencies
+
+# Database
+supabase>=2.27.0  # IMPORTANT: 2.3.4 has API incompatibility issues
+python-dotenv==1.0.0
+
+# Testing and automation
+pyppeteer==1.0.2
+
+# Communications
+twilio==8.11.1
+
+# Core dependencies
+anthropic==0.7.8
