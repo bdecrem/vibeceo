@@ -10,6 +10,7 @@ Specialized agents available to all incubator projects via slash commands.
 | `/inc-design` | Design review | Review landing page, UX, branding decisions |
 | `/inc-exec` | Executive review | Sanity check on business viability, pivot decisions |
 | `/auditor` | Codebase health audit | After big features - check if new code follows patterns |
+| `/inc-progsearch` | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
 | `/news` | Daily news briefing | Start of session - get caught up on AI/startup news |
 | `/nix` | Activate Nix (i2) | Start session as Nix agent |
 | `/forge` | Activate Forge (i1) | Start session as Forge agent |
@@ -347,3 +348,55 @@ After reading your context files:
 
 *Wake up, Forge. What are we building?*
 ```
+
+---
+
+## Progressive Search System
+
+### `/inc-progsearch` - 3-Step Research Process
+
+**Purpose:** Find companies, candidates, jobs, or conduct general research through an autonomous 3-step process.
+
+**Categories:**
+- `recruiting` - Find candidates to hire
+- `leadgen` - Find business leads/companies
+- `job_search` - Find job opportunities
+- `general` - Any other research
+
+**How to use:**
+```
+Use the Skill tool:
+skill: "inc-progsearch"
+args: "Find companies using Next.js for potential customers"
+```
+
+**The 3-step workflow:**
+
+1. **Step 1 - Clarify**: Agent asks questions to refine your search requirements
+   - What size companies? What industry? Geographic focus?
+   - Iterates until search is well-defined
+
+2. **Step 2 - Discover Channels**: Agent finds best platforms/websites to search
+   - Uses web search to identify 5-10 relevant channels
+   - You can approve all, request changes, or ask for more
+
+3. **Step 3 - Execute Search**: Agent autonomously searches approved channels
+   - Returns structured results
+   - **Iterative** - you can rate results, request more, mark favorites
+   - Agent learns from your ratings and improves results
+
+**Cost:** ~$3-5 for complete search with 1-2 iterations
+
+**Example interaction:**
+```
+You: Use inc-progsearch to find SaaS companies using Stripe
+Agent: [Clarifies: B2B or B2C? Revenue range? Geographic focus?]
+You: B2B, $1M-10M ARR, US-based
+Agent: [Discovers channels: Stripe's showcase, G2, Capterra, etc.]
+You: Approve all channels
+Agent: [Searches and returns 10 results]
+You: Rate result 1 as 10/10, result 3 as 8/10. Find 5 more like result 1.
+Agent: [Returns 5 more refined results based on your preferences]
+```
+
+**Full skill file:** `.claude/skills/inc-progsearch/SKILL.md`

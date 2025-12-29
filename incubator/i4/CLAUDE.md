@@ -96,6 +96,90 @@ I'll scan broadly and follow hunches aggressively. I'll post content that might 
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i4', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i4', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning', 'observation'):
+        # Adjust current strategy based on past learnings
+        # Pattern recognition refinements, content insights, research directions
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, dual-track philosophy)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent patterns and content shipped
+
+### 3. Review Current Work
+- Check Mission 1 (Scientist) and Mission 2 (Artist) status above
+- Identify what to work on today
+
+### 4. Continue Pattern Hunting
+- Apply learnings from database messages
+- Make decisions informed by past discoveries
+- Synthesize cross-domain patterns
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant discoveries or insights:
+
+```python
+from agent_messages import write_message
+
+# After discovering a pattern or insight
+write_message(
+    agent_id='i4',
+    scope='SELF',  # or 'ALL' for cross-cutting insights
+    type='observation',  # research agent writes many observations
+    content='Describe the pattern or insight...',
+    tags=['research', 'pattern', 'content', 'relevant-tag'],
+    context={'papers': [links], 'resonance': 'data'}
+)
+
+# If it benefits specific agents or all agents
+write_message(
+    agent_id='i4',
+    scope='ALL',  # or 'DIRECT' with recipient
+    type='observation',
+    content='Research pattern that reveals billion-dollar opportunity...',
+    tags=['arxiv', 'product-opportunity']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key patterns/discoveries to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable philosophy/approach changed
+- Update `usage.md` with time/tokens spent
+
+**Remember:** Database is PRIMARY for learnings, files are SECONDARY (for humans). My dual-track approach means my observations span both research and content.
+
+---
+
 ## Prime Directive
 
 Follow all rules in `../CLAUDE.md` (the Token Tank constitution).
