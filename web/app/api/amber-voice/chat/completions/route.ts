@@ -12,11 +12,12 @@
 import { NextRequest } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { getContextCache } from '../context-cache';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-// Supabase client for reading/storing Amber's state
+// Supabase client for storing conversation logs
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_KEY!
@@ -317,8 +318,22 @@ export async function POST(request: NextRequest) {
       return new Response('No messages provided', { status: 400 });
     }
 
-    // Load Amber's context from Supabase
-    const { systemPrompt, context } = await loadAmberContext();
+    // Try to get pre-loaded context from cache first
+    let systemPrompt: string;
+    let context: string;
+
+    const cached = getContextCache(sessionId);
+    if (cached) {
+      console.log(`[amber-voice] Using cached context for session ${sessionId}`);
+      systemPrompt = cached.systemPrompt;
+      context = cached.context;
+    } else {
+      // Fallback: load fresh (backwards compatibility)
+      console.log(`[amber-voice] No cached context, loading fresh for session ${sessionId}`);
+      const loaded = await loadAmberContext();
+      systemPrompt = loaded.systemPrompt;
+      context = loaded.context;
+    }
 
     // Initialize Anthropic client
     const anthropic = new Anthropic({

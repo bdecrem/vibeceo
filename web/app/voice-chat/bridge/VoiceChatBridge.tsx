@@ -10,6 +10,9 @@ function VoiceChatBridgeInner() {
   const { connect, disconnect, readyState, messages, error } = useVoice();
   const [accessToken, setAccessToken] = useState<string | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isPreloading, setIsPreloading] = useState(false);
+  const [preloadStatus, setPreloadStatus] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 3;
 
@@ -70,22 +73,67 @@ function VoiceChatBridgeInner() {
     }
   }, [readyState]);
 
-  const handleStart = useCallback(async () => {
-    if (!accessToken) {
-      const newToken = await fetchToken();
-      if (!newToken) return;
-    }
+  // Preload Amber's context before connecting
+  const preloadContext = useCallback(async (): Promise<string | null> => {
+    setIsPreloading(true);
+    setPreloadStatus('Loading Amber\'s memory...');
 
     try {
+      const res = await fetch('/api/amber-voice/preload', { method: 'POST' });
+      const data = await res.json();
+
+      if (!data.success) {
+        throw new Error(data.error || 'Failed to preload');
+      }
+
+      setPreloadStatus(`Context loaded (${data.loadTimeMs}ms)`);
+      console.log('[VoiceBridge] Preloaded context:', data.stats);
+      return data.sessionId;
+    } catch (e) {
+      console.error('[VoiceBridge] Preload failed:', e);
+      setPreloadStatus('Failed to load context');
+      return null;
+    }
+  }, []);
+
+  const handleStart = useCallback(async () => {
+    // Step 1: Preload context
+    const sessionId = await preloadContext();
+    if (!sessionId) {
+      setIsPreloading(false);
+      setConnectionError('Failed to load Amber\'s context');
+      return;
+    }
+    sessionIdRef.current = sessionId;
+
+    // Step 2: Get Hume token if needed
+    setPreloadStatus('Connecting to voice...');
+    let token = accessToken;
+    if (!token) {
+      token = await fetchToken();
+      if (!token) {
+        setIsPreloading(false);
+        return;
+      }
+    }
+
+    // Step 3: Connect to Hume with session ID
+    try {
       await connect({
-        auth: { type: 'accessToken', value: accessToken! },
+        auth: { type: 'accessToken', value: token },
         configId: EVI_CONFIG_ID,
+        sessionSettings: {
+          customSessionId: sessionId,
+        },
       });
+      setPreloadStatus(null);
     } catch (e) {
       console.error('[VoiceBridge] Connect failed:', e);
       setConnectionError('Failed to connect');
+    } finally {
+      setIsPreloading(false);
     }
-  }, [accessToken, connect, fetchToken]);
+  }, [accessToken, connect, fetchToken, preloadContext]);
 
   const handleStop = useCallback(() => {
     disconnect();
@@ -94,13 +142,14 @@ function VoiceChatBridgeInner() {
 
   const isConnected = readyState === VoiceReadyState.OPEN;
   const isConnecting = readyState === VoiceReadyState.CONNECTING;
+  const isBusy = isPreloading || isConnecting;
 
   return (
     <div className="p-8 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-4">Talk to Amber (Bridge)</h1>
+      <h1 className="text-2xl font-bold mb-4">Talk to Amber</h1>
 
       <p className="text-gray-600 mb-4 text-sm">
-        Using custom language model bridge → Claude with full drawer context
+        Voice chat with full memory context
       </p>
 
       {!EVI_CONFIG_ID && (
@@ -116,15 +165,21 @@ function VoiceChatBridgeInner() {
         </p>
       )}
 
+      {preloadStatus && (
+        <p className="text-amber-600 mb-4 text-sm animate-pulse">
+          {preloadStatus}
+        </p>
+      )}
+
       <div className="mb-4">
         <button
           onClick={isConnected ? handleStop : handleStart}
-          disabled={!accessToken || !EVI_CONFIG_ID || isConnecting}
+          disabled={!accessToken || !EVI_CONFIG_ID || isBusy}
           className="bg-amber-600 text-white px-6 py-3 rounded-lg text-lg disabled:opacity-50 hover:bg-amber-700"
         >
-          {isConnecting ? 'Connecting...' : isConnected ? 'Stop' : 'Start Talking'}
+          {isPreloading ? 'Loading...' : isConnecting ? 'Connecting...' : isConnected ? 'Stop' : 'Start Talking'}
         </button>
-        <span className="ml-4 text-gray-600">{readyState}</span>
+        {isConnected && <span className="ml-4 text-green-600">● Connected</span>}
       </div>
 
       <div className="border rounded p-4 h-80 overflow-y-auto bg-gray-50">
