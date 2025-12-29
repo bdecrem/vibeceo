@@ -12,9 +12,109 @@ Specialized agents available to all incubator projects.
 | `/auditor` | Codebase health audit | After big features - check if new code follows patterns |
 | `/inc-progsearch` | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
 | `/news` | Daily news briefing | Start of session - get caught up on AI/startup news |
-| `/nix` | Activate Nix (i2) | Start session as Nix agent |
-| `/forge` | Activate Forge (i1) | Start session as Forge agent |
-**For humans**: Use slash commands in Claude Code (e.g., `/inc-research my-idea`)
+
+### Persona Activators (with Interactive/Autonomous Modes)
+
+| Command | Agent | Mode Support | When to Use |
+|---------|-------|--------------|-------------|
+| `/forge [mode]` | i1 - Forge | ✅ | Activate business builder (Ship to Learn) |
+| `/nix [mode]` | i2 - Nix | ✅ | Activate business builder (AI-Native) |
+| `/drift [mode]` | i3-2 - Drift | ✅ | Activate trader (Research-First) |
+| `/pulse [mode]` | i3-1 - Pulse | ✅ | Activate trader (Two-Tier System) |
+| `/echo [mode]` | i4 - Echo | ✅ | Activate researcher (Pattern Recognition) |
+
+**Mode parameter**: `interactive` (default) or `autonomous`
+
+**Examples:**
+- `/forge interactive` - Conversational Forge, asks for guidance
+- `/nix autonomous` - Autonomous Nix, executes with full authority
+- `/drift` - Defaults to interactive mode
+
+## Persona Activators: Interactive vs Autonomous Modes
+
+Each Token Tank agent can operate in two modes. Choose based on your session goals:
+
+### Interactive Mode (Default)
+
+**Use when:**
+- Planning new features or directions
+- Making complex strategic decisions
+- Exploring options before committing
+- Learning or reviewing past work
+
+**Behavior:**
+- Conversational - explains reasoning and asks questions
+- Presents options before taking action
+- Awaits approval for significant changes (deploys, payments, customer contact)
+- Ideal for collaboration and exploration
+
+**Examples:**
+```bash
+/forge interactive     # Plan next feature with Forge
+/nix                   # Research mode - defaults to interactive
+/drift interactive     # Review trading performance with Drift
+```
+
+### Autonomous Mode
+
+**Use when:**
+- Executing on a clear plan
+- Building features you've already scoped
+- Running daily operations (trading, content generation)
+- Maximizing agent velocity
+
+**Behavior:**
+- Executes with full decision authority within budget constraints
+- Makes calculated decisions aligned with agent's philosophy
+- Ships code, executes trades, publishes content independently
+- Only requests human help when truly blocked (5min/day budget)
+- Documents all actions in LOG.md
+
+**Examples:**
+```bash
+/forge autonomous      # Build the feature we discussed
+/nix autonomous        # Execute the validated business plan
+/drift autonomous      # Run daily trading routine
+```
+
+### Mode-Specific Behaviors by Agent Type
+
+**Business Builders (Forge, Nix):**
+- **Interactive**: Planning, market research, design reviews, exploring pivots
+- **Autonomous**: Implementing features, iterating on validated ideas, routine operations
+
+**Traders (Drift, Pulse):**
+- **Interactive**: Strategy development, performance reviews, learning from past trades
+- **Autonomous**: Daily trading operations, executing mechanical strategies
+
+**Researchers (Echo):**
+- **Interactive**: Exploring research directions, reviewing findings, planning content
+- **Autonomous**: Pattern mining sprints, content creation, autonomous research
+
+### Budget Constraints Apply in Both Modes
+
+Agents in autonomous mode still respect:
+- $1000 lifetime token budget
+- 35 minutes/week human assistance budget
+- All ground rules from incubator/CLAUDE.md
+
+The difference is who makes decisions within those constraints - you (interactive) or the agent (autonomous).
+
+## Setting Up Persona Activators
+
+Persona activators live in `.claude/commands/` (gitignored). On a new machine:
+
+```bash
+# Copy all tracked persona activators
+cp incubator/documentation/subagents/*.md .claude/commands/
+
+# Or selectively:
+cp incubator/documentation/subagents/forge.md .claude/commands/
+```
+
+See `incubator/documentation/subagents/PERSONA-TEMPLATE.md` for creating new persona activators.
+
+---
 
 **For autonomous agents**: Use the Skill tool:
 ```python
@@ -23,7 +123,7 @@ skill: "inc-research"
 args: "Find competitors for project management tools"
 ```
 
-## Available Commands & Skills
+## Review & Utility Commands
 
 | Command | Type | Purpose | When to Use |
 |---------|------|---------|-------------|
@@ -32,8 +132,7 @@ args: "Find competitors for project management tools"
 | `/inc-exec` | **Skill** ⚡ | Executive review | Sanity check on business viability, pivot/kill decisions |
 | `/inc-progsearch` | **Skill** ⚡ | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
 | `/news` | Command | Daily news briefing | Start of session - get caught up on AI/startup news |
-| `/nix` | Command | Activate Nix (i2) | Start session as Nix agent |
-| `/forge` | Command | Activate Forge (i1) | Start session as Forge agent |
+| `/auditor` | Command | Codebase health audit | After big features - check if new code follows patterns |
 
 **⚡ Skill** = Available for autonomous agents to invoke themselves (stored in `.claude/skills/`)
 **Command** = Human-invoked only (stored in `.claude/commands/`, gitignored)
