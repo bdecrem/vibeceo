@@ -63,6 +63,7 @@ Read these before making changes:
 |-----|--------------|
 | `sms-bot/documentation/AGENT-PIPELINE.md` | Creating/modifying agents |
 | `sms-bot/documentation/AGENTS-OVERVIEW.md` | Understanding agent architecture |
+| `sms-bot/documentation/SMS-MESSAGE-FORMATTING.md` | Formatting SMS messages (length limits, helpers) |
 | `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
 | `sms-bot/documentation/ZAD-API-REFERENCE.md` | ZAD (CRUD) apps |
 | `sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
@@ -80,6 +81,12 @@ Read these before making changes:
 - **Controller** orchestrates, never accesses DB directly
 - **Commands** in `commands/` auto-dispatch - no `handlers.ts` changes needed
 - **Agents** use shared infrastructure: scheduler, subscriptions, report storage
+
+### Web App Database Access
+- **Web apps NEVER call Supabase directly** — always go through API routes
+- Frontend code uses `fetch('/api/...')` to interact with data
+- API routes (`web/app/api/`) handle Supabase connections server-side
+- This keeps credentials secure and allows proper validation/authorization
 
 ### Incubator Isolation
 The `incubator/` directory contains Token Tank experimental AI businesses. These are **strictly isolated** from the main codebase.
@@ -126,6 +133,8 @@ await clearThreadState(subscriberId);
 
 ### SMS Messages
 All SMS must stay under 670 UCS-2 code units (10 segments). Auto-shorten if exceeded.
+
+**Full guide**: `sms-bot/documentation/SMS-MESSAGE-FORMATTING.md` — includes helper functions, sentence extraction, and reference implementations.
 
 **URL formatting**: Always add text AFTER URLs to prevent iMessage/Twilio from splitting the message:
 ```typescript
