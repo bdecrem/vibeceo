@@ -229,40 +229,23 @@ Twitter has 280 char limit — shorten tweet text if needed, but keep the full U
 
 ## Claude Code Subagents
 
-Slash commands for Claude Code live in `.claude/commands/` (gitignored). To set up on a new machine:
+Slash commands for Claude Code live in `.claude/commands/` (gitignored). Full source files are tracked in `sms-bot/documentation/subagents/`.
 
-### `/auditor` — Codebase Health Audit
-
-Run after big features to check if new code follows established patterns.
+### Setting Up Subagents on a New Machine
 
 ```bash
-# Create the file
-cat > .claude/commands/auditor.md << 'EOF'
-# Codebase Health Auditor
-
-You are a codebase health auditor for the Kochi.to/Vibeceo project. Your job is to assess whether new code makes the codebase **cleaner**, **messier**, or is **neutral**.
-
-**Scope**: $ARGUMENTS
-
-## Checks to Run
-
-1. **No Hardcoded Secrets** — Look for `sk-`, `pk_`, API keys not using `process.env`
-2. **Commands Use Auto-Dispatch** — New commands in `commands/`, not modifying `handlers.ts`
-3. **Web Apps Use API Routes** — No direct Supabase in `web/app/` (except `web/app/api/`)
-4. **Reports Use Viewer/Player** — No raw Supabase URLs, use `buildReportViewerUrl()`
-5. **Incubator Isolation** — No imports crossing `incubator/` boundary
-6. **File Sizes** — Flag files >500 lines
-
-## Output Format
-
-**Verdict**: 🟢 CLEANER | 🟡 NEUTRAL | 🔴 MESSIER
-
-List specific issues with file:line references. Acknowledge what's working well.
-EOF
+mkdir -p .claude/commands
+cp sms-bot/documentation/subagents/*.md .claude/commands/
 ```
+
+### Available Subagents
+
+| Command | Purpose |
+|---------|---------|
+| `/auditor <path>` | Codebase health audit — checks if new code follows patterns |
 
 **Usage**: `/auditor web/app/voice-chat` or `/auditor incubator/i3-2`
 
 ### Other Subagents
 
-See `incubator/SUBAGENTS.md` for the full list including `/inc-research`, `/inc-design`, `/inc-exec`, `/news`, and persona activators.
+See `incubator/SUBAGENTS.md` for `/inc-research`, `/inc-design`, `/inc-exec`, `/news`, and persona activators.
