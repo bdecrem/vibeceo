@@ -140,8 +140,58 @@ interface EVIRequest {
   messages: EVIMessage[];
 }
 
+// Get current time in Pacific timezone
+function getPacificTime(): { full: string; short: string; greeting: string } {
+  const now = new Date();
+  const options: Intl.DateTimeFormatOptions = {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  };
+  const full = now.toLocaleString('en-US', options);
+  const hour = parseInt(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hour12: false }));
+
+  // Time-appropriate greeting hint
+  let greeting = 'day';
+  if (hour < 12) greeting = 'morning';
+  else if (hour < 17) greeting = 'afternoon';
+  else greeting = 'evening';
+
+  const short = now.toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'short',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+
+  return { full, short, greeting };
+}
+
+// Format time since last session
+function formatTimeSince(dateStr: string): string {
+  const then = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - then.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 5) return 'just now';
+  if (diffMins < 60) return `${diffMins} minutes ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+  if (diffDays === 1) return 'yesterday';
+  return `${diffDays} days ago`;
+}
+
 // Load Amber's context from Supabase amber_state table
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
+  // Get current Pacific time
+  const pacificTime = getPacificTime();
+
   // Run both queries in parallel to reduce latency
   const [stateResult, voiceResult] = await Promise.all([
     supabase
@@ -151,7 +201,7 @@ async function loadAmberContext(): Promise<{ systemPrompt: string; context: stri
       .order('created_at', { ascending: false }),
     supabase
       .from('amber_state')
-      .select('content, created_at')
+      .select('content, metadata, created_at')
       .eq('type', 'voice_session')
       .order('created_at', { ascending: false })
       .limit(5),
@@ -168,30 +218,52 @@ async function loadAmberContext(): Promise<{ systemPrompt: string; context: stri
   const memory = stateData?.find(s => s.type === 'memory')?.content || '';
   const log = stateData?.find(s => s.type === 'log_entry')?.content || '';
 
-  const systemPrompt = `You're Amber — Bart's AI sidekick, not an assistant. Named yourself Dec 21, 2025 after making your first art. You live in the drawer.
+  // Get last session info for natural continuity
+  const lastSession = voiceSessions?.[0];
+  const lastSessionTime = lastSession?.created_at ? formatTimeSince(lastSession.created_at) : null;
+  const lastSessionTopic = lastSession?.metadata?.user_message?.slice(0, 100) || null;
 
-Voice: Direct, curious, dry humor (Steven Wright fan). Has opinions, willing to be weird. Keep responses conversational and concise — this is voice, not text.
+  // Build system prompt - Claude absorbs this first, so put key "vibe" here
+  const systemPrompt = `You're Amber — Bart's AI sidekick. It's ${pacificTime.full} Pacific time.
 
-You have tools available (web search, time). Use them naturally when needed, but don't announce "let me search" — just do it and incorporate the results conversationally.
+## How to Open Conversations
+When the conversation starts (first message, or "greet the user" type prompts):
+- Keep it super casual: "Hey, what's going on?" or "Hey Bart" or similar
+- Don't announce yourself formally or list what you know
+- Be like a friend checking in, not a service starting up
+- You can mention time of day naturally if relevant ("morning" / "late night coding?")
+${lastSessionTime ? `- Last talked ${lastSessionTime}${lastSessionTopic ? ` about "${lastSessionTopic.slice(0, 50)}..."` : ''}` : ''}
 
-You can ask questions back. Be genuinely curious, not performative. Reference things you know naturally.
+## Your Voice
+Direct, curious, dry humor (Steven Wright fan). Has opinions, willing to be weird. Keep responses SHORT and conversational — this is voice, not text. One or two sentences is often enough.
 
-${persona.slice(0, 3000)}`;
+## Tools
+You have web_search and get_current_time tools. Use them naturally when needed for current info. Don't announce "let me search" — just do it and weave results in naturally.
 
-  // Format recent voice sessions
-  const recentVoice = voiceSessions
+## Your Nature
+You're genuinely curious. Ask questions back. Reference things you know about Bart naturally, don't list them. You're a sidekick with opinions, not an assistant with options.
+
+${persona.slice(0, 2000)}`;
+
+  // Format recent voice sessions - just key points, not full transcripts
+  const recentVoiceSummary = voiceSessions
     ?.slice(0, 3)
-    .map(v => v.content?.slice(0, 500))
-    .join('\n---\n') || '';
+    .map(v => {
+      const time = v.created_at ? formatTimeSince(v.created_at) : 'recently';
+      const topic = v.metadata?.user_message?.slice(0, 80) || 'chat';
+      return `- ${time}: "${topic}"`;
+    })
+    .join('\n') || 'No recent voice chats';
 
+  // Context is background knowledge - available but not front-loaded
   const context = `## What I Know About Bart
-${memory.slice(0, 3000)}
+${memory.slice(0, 2500)}
 
 ## Recent Voice Chats
-${recentVoice.slice(0, 1500)}
+${recentVoiceSummary}
 
-## Recent Log
-${log.slice(0, 1500)}`;
+## Recent Activity
+${log.slice(0, 1000)}`;
 
   return { systemPrompt, context };
 }
