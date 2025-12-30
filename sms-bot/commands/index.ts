@@ -2,6 +2,7 @@ import type { CommandHandler } from "./types.js";
 
 import { aiDailyCommandHandler } from "./ai-daily.js";
 import { airCommandHandler } from "./air.js";
+import { ccCommandHandler } from "./cc.js";
 import { aiTwitterCommandHandler } from "./ai-twitter.js";
 import { amberxCommandHandler } from "./amberx.js";
 import { ambervCommandHandler } from "./amberv.js";
@@ -27,6 +28,7 @@ import { tokenshotsCommandHandler } from "./tokenshots.js";
 export const commandHandlers: CommandHandler[] = [
   aiDailyCommandHandler, // AI DAILY RUN - generate combined AI Research Daily report (admin only)
   airCommandHandler, // AIR (AI Research) - personalized research reports
+  ccCommandHandler, // CC (Claude Code) - codebase investigation and PR creation
   aiTwitterCommandHandler, // AIT - AI Twitter Daily digest
   amberxCommandHandler, // AMBERX - explain Twitter/YouTube content
   ambervCommandHandler, // AMBERV - simple voice chat test

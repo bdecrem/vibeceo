@@ -1167,6 +1167,10 @@ const youtubeAgentStates = new Map<string, YouTubeAgentState>();
 // KG (Knowledge Graph) Agent state
 const kgAgentStates = new Map<string, KGAgentState>();
 
+// CC (Claude Code) Agent state - imported inline to avoid circular deps
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ccAgentStates = new Map<string, any>();
+
 // Pending CS posts - when user sends just "CS", wait up to 30s for URL follow-up
 // (iMessage often splits "CS https://..." into two messages)
 interface PendingCSPost {
@@ -1203,6 +1207,7 @@ function endConversation(phoneNumber: string) {
   youtubeSearchStates.delete(phoneNumber);
   youtubeAgentStates.delete(phoneNumber);
   kgAgentStates.delete(phoneNumber);
+  ccAgentStates.delete(phoneNumber);
 }
 
 // Check if user is in active conversation
@@ -1980,6 +1985,7 @@ export async function processIncomingSms(
         youtubeSearchStates,
         youtubeAgentStates,
         kgAgentStates,
+        ccAgentStates,
       },
     };
 
