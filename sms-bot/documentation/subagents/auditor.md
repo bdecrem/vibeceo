@@ -54,6 +54,33 @@ For code sending SMS messages:
 - URLs should have trailing text to prevent iMessage splitting
 - Example: `kochi.to/link — description` not `kochi.to/link` alone
 
+**7. SMS Message Length**
+For code sending SMS messages with dynamic content (agent responses, reports, etc.):
+- Should import from `lib/utils/sms-length.ts` (`truncateToSmsLimit`, `countUCS2CodeUnits`, `MAX_SMS_CODE_UNITS`)
+- OR use `sendChunkedSmsResponse` for intentionally multi-segment messages
+- Static short responses (error messages, confirmations < 100 chars) are exempt
+- Reference: `sms-bot/documentation/SMS-MESSAGE-FORMATTING.md`
+
+**8. Supabase Table Discipline**
+New features should minimize table creation to maintain codebase simplicity:
+- Query existing tables via MCP: `mcp__supabase__execute_sql` with `SELECT table_name FROM information_schema.tables WHERE table_name LIKE '<prefix>%'`
+- Flag if >1 new table created - ask whether data could fit in existing tables or JSONB columns
+- Consider `agent_subscriptions`, `conversation_context`, or subscriber `preferences` JSONB before new tables
+
+**9. Middleware Route Registration**
+For new web pages on kochi.to domain:
+- Check `web/middleware.ts` for route bypass
+- New routes like `/code-voice`, `/cc/[id]` need explicit bypass or they get rewritten to `/kochi/*`
+- Pattern: `pathname.startsWith('/your-route')` → `return NextResponse.next()`
+- Look for routes in bypass list around lines 55-84 and 234-261
+
+**10. Shortlink Usage**
+For URLs sent via SMS:
+- Agent reports: Use `buildReportViewerUrl()` from `lib/utils/report-viewer-link.ts`
+- Audio content: Use `buildMusicPlayerUrl()` from `lib/utils/music-player-link.ts`
+- External URLs needing tracking: Use `createShortLink()` from `lib/utils/shortlink-service.ts`
+- Internal kochi.to paths (like `/cc/123`) can be direct but must have trailing text
+
 ### B. Isolation Checks
 
 **1. Incubator Isolation**
@@ -164,6 +191,10 @@ Look for copy-pasted code that should be extracted to shared utilities.
 3. **Commands**: Live in `commands/` and auto-dispatch - no `handlers.ts` changes needed
 4. **Web DB Access**: Web apps never call Supabase directly - use API routes
 5. **Incubator**: Strictly isolated - no imports crossing boundaries
-6. **SMS**: Under 670 UCS-2 code units, URLs need trailing text
-7. **Multi-turn**: Use thread state system in `lib/context-loader.ts`
-8. **Reports/Audio**: Always use `/report-viewer` and `/music-player`, never raw URLs
+6. **SMS URLs**: URLs need trailing text to prevent iMessage splitting
+7. **SMS Length**: Under 670 UCS-2 code units - use `truncateToSmsLimit()` for dynamic content
+8. **Multi-turn**: Use thread state system in `lib/context-loader.ts`
+9. **Reports/Audio**: Always use `/report-viewer` and `/music-player`, never raw URLs
+10. **Table Discipline**: Flag >1 new table per feature - prefer JSONB or existing tables
+11. **Middleware**: New kochi.to routes need bypass in `web/middleware.ts`
+12. **Shortlinks**: Use `buildReportViewerUrl()`, `buildMusicPlayerUrl()`, or `createShortLink()`
