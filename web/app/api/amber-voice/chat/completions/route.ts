@@ -340,19 +340,17 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    // Convert EVI messages to Claude format
+    // Convert EVI messages to Claude format (clean, no context injection)
     const initialMessages: Anthropic.MessageParam[] = messages.map(m => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }));
 
-    // Inject context into first user message
-    if (initialMessages.length > 0 && initialMessages[0].role === 'user') {
-      initialMessages[0] = {
-        role: 'user',
-        content: `[Context for this conversation:\n${context}]\n\n${initialMessages[0].content}`,
-      };
-    }
+    // Combine system prompt + context (context belongs in system prompt, not messages)
+    const fullSystemPrompt = `${systemPrompt}
+
+## Context
+${context}`;
 
     // Generate unique ID for this completion
     const completionId = `chatcmpl-${sessionId}-${Date.now()}`;
@@ -379,7 +377,7 @@ export async function POST(request: NextRequest) {
             const stream = await anthropic.messages.stream({
               model: 'claude-sonnet-4-20250514',
               max_tokens: 1024,
-              system: systemPrompt,
+              system: fullSystemPrompt,
               messages: currentMessages,
               tools,
             });

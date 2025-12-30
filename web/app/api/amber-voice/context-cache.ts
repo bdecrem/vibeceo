@@ -1,11 +1,8 @@
 /**
  * Simple in-memory cache for pre-loaded Amber context.
  *
- * Uses a "current session" approach since there's typically only one
- * voice chat active at a time. The preload sets the current context,
- * and the completions endpoint reads it.
- *
- * This works because the voice endpoint runs on Node.js runtime (not edge).
+ * Uses globalThis to persist across Next.js module recompilations.
+ * The preload sets the current context, and the completions endpoint reads it.
  */
 
 interface CachedContext {
@@ -15,8 +12,10 @@ interface CachedContext {
   sessionId: string;
 }
 
-// Single current session
-let currentSession: CachedContext | null = null;
+// Use globalThis to survive module recompilations in Next.js dev mode
+const globalCache = globalThis as typeof globalThis & {
+  __amberContextCache?: CachedContext | null;
+};
 
 // 10 minute TTL
 const TTL_MS = 10 * 60 * 1000;
@@ -25,7 +24,7 @@ export function setContextCache(
   sessionId: string,
   data: { systemPrompt: string; context: string }
 ): void {
-  currentSession = {
+  globalCache.__amberContextCache = {
     ...data,
     timestamp: Date.now(),
     sessionId,
@@ -36,25 +35,26 @@ export function setContextCache(
 export function getContextCache(
   sessionId?: string
 ): { systemPrompt: string; context: string } | null {
-  if (!currentSession) {
+  const cached = globalCache.__amberContextCache;
+  if (!cached) {
     console.log(`[context-cache] No current session`);
     return null;
   }
 
   // Check if expired
-  if (Date.now() - currentSession.timestamp > TTL_MS) {
-    console.log(`[context-cache] Current session expired: ${currentSession.sessionId}`);
-    currentSession = null;
+  if (Date.now() - cached.timestamp > TTL_MS) {
+    console.log(`[context-cache] Current session expired: ${cached.sessionId}`);
+    globalCache.__amberContextCache = null;
     return null;
   }
 
-  console.log(`[context-cache] Using current session: ${currentSession.sessionId}`);
+  console.log(`[context-cache] Using current session: ${cached.sessionId}`);
   return {
-    systemPrompt: currentSession.systemPrompt,
-    context: currentSession.context,
+    systemPrompt: cached.systemPrompt,
+    context: cached.context,
   };
 }
 
 export function clearContextCache(): void {
-  currentSession = null;
+  globalCache.__amberContextCache = null;
 }

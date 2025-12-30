@@ -12,8 +12,11 @@ function VoiceChatBridgeInner() {
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isPreloading, setIsPreloading] = useState(false);
   const [preloadStatus, setPreloadStatus] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const reconnectAttempts = useRef(0);
-  const maxReconnectAttempts = 3;
+  const maxReconnectAttempts = 5;
+  const wasConnected = useRef(false);
+  const intentionalDisconnect = useRef(false);
 
   // Fetch token (with refresh capability)
   const fetchToken = useCallback(async () => {
@@ -64,13 +67,46 @@ function VoiceChatBridgeInner() {
     }
   }, [error, connect, fetchToken]);
 
-  // Reset reconnect counter on successful connection
+  // Track connection state and auto-reconnect on unexpected disconnect
   useEffect(() => {
     if (readyState === VoiceReadyState.OPEN) {
+      // Successfully connected
+      wasConnected.current = true;
       reconnectAttempts.current = 0;
       setConnectionError(null);
+      setIsReconnecting(false);
+      console.log('[VoiceBridge] Connected');
+    } else if (readyState === VoiceReadyState.CLOSED && wasConnected.current && !intentionalDisconnect.current) {
+      // Unexpected disconnect - try to reconnect
+      console.log('[VoiceBridge] Unexpected disconnect, attempting reconnect...');
+
+      if (reconnectAttempts.current < maxReconnectAttempts) {
+        reconnectAttempts.current += 1;
+        setIsReconnecting(true);
+        setConnectionError(`Connection lost. Reconnecting (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+
+        const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 10000); // Exponential backoff, max 10s
+
+        setTimeout(async () => {
+          const newToken = await fetchToken();
+          if (newToken) {
+            try {
+              await connect({
+                auth: { type: 'accessToken', value: newToken },
+                configId: EVI_CONFIG_ID,
+              });
+            } catch (e) {
+              console.error('[VoiceBridge] Reconnect failed:', e);
+            }
+          }
+        }, delay);
+      } else {
+        setConnectionError('Connection lost. Please click Start to reconnect.');
+        setIsReconnecting(false);
+        wasConnected.current = false;
+      }
     }
-  }, [readyState]);
+  }, [readyState, connect, fetchToken]);
 
   // Preload Amber's context before connecting (cached server-side)
   const preloadContext = useCallback(async (): Promise<boolean> => {
@@ -96,6 +132,11 @@ function VoiceChatBridgeInner() {
   }, []);
 
   const handleStart = useCallback(async () => {
+    // Reset disconnect tracking
+    intentionalDisconnect.current = false;
+    wasConnected.current = false;
+    reconnectAttempts.current = 0;
+
     // Step 1: Preload context (cached server-side)
     const success = await preloadContext();
     if (!success) {
@@ -131,13 +172,16 @@ function VoiceChatBridgeInner() {
   }, [accessToken, connect, fetchToken, preloadContext]);
 
   const handleStop = useCallback(() => {
-    disconnect();
+    intentionalDisconnect.current = true;
+    wasConnected.current = false;
     reconnectAttempts.current = 0;
+    setIsReconnecting(false);
+    disconnect();
   }, [disconnect]);
 
   const isConnected = readyState === VoiceReadyState.OPEN;
   const isConnecting = readyState === VoiceReadyState.CONNECTING;
-  const isBusy = isPreloading || isConnecting;
+  const isBusy = isPreloading || isConnecting || isReconnecting;
 
   return (
     <div className="p-8 max-w-xl mx-auto">
@@ -172,9 +216,10 @@ function VoiceChatBridgeInner() {
           disabled={!accessToken || !EVI_CONFIG_ID || isBusy}
           className="bg-amber-600 text-white px-6 py-3 rounded-lg text-lg disabled:opacity-50 hover:bg-amber-700"
         >
-          {isPreloading ? 'Loading...' : isConnecting ? 'Connecting...' : isConnected ? 'Stop' : 'Start Talking'}
+          {isPreloading ? 'Loading...' : isReconnecting ? 'Reconnecting...' : isConnecting ? 'Connecting...' : isConnected ? 'Stop' : 'Start Talking'}
         </button>
         {isConnected && <span className="ml-4 text-green-600">● Connected</span>}
+        {isReconnecting && <span className="ml-4 text-orange-500 animate-pulse">● Reconnecting...</span>}
       </div>
 
       <div className="border rounded p-4 h-80 overflow-y-auto bg-gray-50">
