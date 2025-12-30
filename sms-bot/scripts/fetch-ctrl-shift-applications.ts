@@ -6,8 +6,6 @@
  */
 
 import * as dotenv from 'dotenv';
-
-// Load env from sms-bot/.env.local (run from sms-bot dir)
 dotenv.config({ path: '.env.local' });
 
 import { google } from 'googleapis';
@@ -46,17 +44,6 @@ interface Application {
   fromName: string;
   subject: string;
   rawContent: string;
-  // Extracted fields (populated by Claude)
-  applicantName?: string;
-  email?: string;
-  company?: string;
-  role?: string;
-  location?: string;
-  linkedIn?: string;
-  website?: string;
-  twitter?: string;
-  summary?: string;
-  keyPoints?: string[];
 }
 
 async function getGmailClient() {
@@ -162,7 +149,7 @@ async function main() {
       return;
     }
 
-    // Save raw data first
+    // Save raw data
     const outputDir = '/Users/bart/Documents/code/vibeceo/sms-bot/data/ctrl-shift-applications';
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
@@ -174,16 +161,14 @@ async function main() {
     fs.writeFileSync(rawPath, JSON.stringify(applications, null, 2));
     console.log(`\nSaved raw data to: ${rawPath}`);
 
-    // Show sample of first few for review
-    console.log('\n=== SAMPLE APPLICATION (first one) ===\n');
+    // Show sample
+    console.log('\n=== SAMPLE APPLICATION ===\n');
     console.log('From:', applications[0].fromName, `<${applications[0].fromEmail}>`);
     console.log('Date:', applications[0].date);
-    console.log('Subject:', applications[0].subject);
-    console.log('\n--- Content Preview (first 2000 chars) ---\n');
-    console.log(applications[0].rawContent.substring(0, 2000));
-    console.log('\n...\n');
+    console.log('\n--- Content Preview (first 3000 chars) ---\n');
+    console.log(applications[0].rawContent.substring(0, 3000));
 
-    console.log(`\nTotal applications: ${applications.length}`);
+    console.log(`\n\nTotal applications: ${applications.length}`);
     console.log(`Raw JSON saved to: ${rawPath}`);
 
   } catch (error: any) {
