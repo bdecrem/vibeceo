@@ -5,166 +5,146 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Amber Asks</title>
   <meta name="description" content="A question. Your answer. Preserved forever.">
-  <meta property="og:title" content="Amber Asks">
-  <meta property="og:description" content="A question. Your answer. Preserved forever.">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap');
-
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
       background: #0a0806;
       min-height: 100vh;
-      font-family: 'EB Garamond', Georgia, serif;
+      font-family: Georgia, serif;
       color: #d4a574;
-      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
     }
 
     .container {
       max-width: 600px;
-      margin: 0 auto;
-      padding: 60px 20px;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
+      width: 100%;
     }
 
-    .header {
+    .question-section {
       text-align: center;
       margin-bottom: 40px;
     }
 
-    .title {
-      font-size: 14px;
-      letter-spacing: 3px;
-      text-transform: uppercase;
-      opacity: 0.4;
-      margin-bottom: 8px;
-    }
-
-    .question-label {
+    .label {
       font-size: 11px;
-      opacity: 0.3;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      opacity: 0.5;
       margin-bottom: 20px;
     }
 
     .question {
-      font-size: 28px;
-      font-weight: 400;
+      font-size: 1.8rem;
       line-height: 1.4;
       color: #e8c089;
       font-style: italic;
     }
 
-    .input-area {
-      margin: 40px 0;
-      position: relative;
+    .input-section {
+      margin-bottom: 50px;
     }
 
     .answer-input {
       width: 100%;
-      background: transparent;
-      border: none;
-      border-bottom: 1px solid rgba(212, 165, 116, 0.3);
-      padding: 15px 0;
-      font-size: 18px;
-      font-family: 'EB Garamond', Georgia, serif;
+      padding: 16px 20px;
+      font-family: Georgia, serif;
+      font-size: 1.1rem;
+      background: rgba(212, 165, 116, 0.08);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      border-radius: 4px;
       color: #d4a574;
       outline: none;
-      transition: border-color 0.3s;
-    }
-
-    .answer-input::placeholder {
-      color: rgba(212, 165, 116, 0.3);
-      font-style: italic;
+      transition: all 0.3s;
     }
 
     .answer-input:focus {
-      border-color: rgba(212, 165, 116, 0.6);
+      border-color: rgba(212, 165, 116, 0.5);
+      background: rgba(212, 165, 116, 0.12);
     }
 
-    .submit-hint {
-      font-size: 12px;
-      opacity: 0.3;
-      margin-top: 10px;
-      text-align: right;
+    .answer-input::placeholder {
+      color: rgba(212, 165, 116, 0.4);
+    }
+
+    .submit-btn {
+      display: block;
+      width: 100%;
+      margin-top: 12px;
+      padding: 14px;
+      font-family: Georgia, serif;
+      font-size: 1rem;
+      background: rgba(212, 165, 116, 0.15);
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 4px;
+      color: #d4a574;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .submit-btn:hover {
+      background: rgba(212, 165, 116, 0.25);
+      border-color: rgba(212, 165, 116, 0.5);
+    }
+
+    .submit-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
     }
 
     .answers-section {
-      flex: 1;
-      margin-top: 40px;
+      border-top: 1px solid rgba(212, 165, 116, 0.15);
+      padding-top: 30px;
     }
 
     .answers-header {
-      font-size: 11px;
-      letter-spacing: 2px;
+      font-size: 12px;
+      letter-spacing: 0.2em;
       text-transform: uppercase;
-      opacity: 0.3;
+      opacity: 0.5;
       margin-bottom: 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
-    .answer-count {
-      font-family: 'Courier New', monospace;
-    }
-
-    .answers-container {
-      position: relative;
-      min-height: 300px;
-    }
-
-    .answer {
-      padding: 20px 0;
+    .answer-item {
+      padding: 16px 0;
       border-bottom: 1px solid rgba(212, 165, 116, 0.08);
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeIn 0.6s ease-out forwards;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .answer-text {
-      font-size: 17px;
-      line-height: 1.6;
-      color: rgba(212, 165, 116, 0.7);
+      font-size: 1.1rem;
+      line-height: 1.5;
+      color: #c9a06a;
     }
 
-    .answer-time {
+    .answer-meta {
       font-size: 11px;
-      opacity: 0.3;
+      opacity: 0.4;
       margin-top: 8px;
       font-family: 'Courier New', monospace;
     }
 
-    .answer.new {
-      background: linear-gradient(90deg, rgba(232, 192, 137, 0.1) 0%, transparent 100%);
-    }
-
-    .answer.mine {
-      border-left: 2px solid rgba(232, 192, 137, 0.3);
-      padding-left: 15px;
-      margin-left: -15px;
-    }
-
-    @keyframes fadeIn {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
     .empty-state {
       text-align: center;
-      padding: 60px 20px;
-      opacity: 0.3;
+      padding: 40px 0;
+      opacity: 0.4;
       font-style: italic;
     }
 
     .credit {
-      text-align: center;
+      position: fixed;
+      bottom: 20px;
       font-size: 11px;
-      opacity: 0.2;
-      padding: 40px 0;
+      opacity: 0.3;
+      font-family: 'Courier New', monospace;
     }
 
     .credit a {
@@ -172,193 +152,102 @@
       text-decoration: none;
     }
 
-    .loading {
-      text-align: center;
-      padding: 40px;
-      opacity: 0.4;
-    }
-
-    /* Floating answers background effect */
-    .floating-answers {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      pointer-events: none;
-      overflow: hidden;
-      z-index: -1;
-    }
-
-    .floating-word {
-      position: absolute;
-      font-size: 14px;
-      opacity: 0.04;
-      white-space: nowrap;
-      animation: float 60s linear infinite;
-    }
-
-    @keyframes float {
-      0% {
-        transform: translateY(100vh) rotate(0deg);
-      }
-      100% {
-        transform: translateY(-100px) rotate(5deg);
-      }
+    .just-submitted {
+      background: rgba(212, 165, 116, 0.1);
+      border-radius: 4px;
+      margin: -8px;
+      padding: 24px 8px;
     }
   </style>
 </head>
 <body>
-  <div class="floating-answers" id="floatingAnswers"></div>
-
   <div class="container">
-    <div class="header">
-      <div class="title">Amber Asks</div>
-      <div class="question-label">today's question</div>
-      <div class="question" id="question">loading...</div>
+    <div class="question-section">
+      <div class="label">amber asks</div>
+      <div class="question" id="question">Loading...</div>
     </div>
 
-    <div class="input-area">
+    <div class="input-section">
       <input
         type="text"
         class="answer-input"
         id="answerInput"
         placeholder="your answer..."
         maxlength="280"
-        autocomplete="off"
       >
-      <div class="submit-hint">press enter to preserve</div>
+      <button class="submit-btn" id="submitBtn" onclick="submitAnswer()">
+        preserve this answer
+      </button>
     </div>
 
     <div class="answers-section">
       <div class="answers-header">
-        <span>preserved answers</span>
-        <span class="answer-count" id="answerCount">0</span>
+        <span id="answerCount">0</span> preserved
       </div>
-      <div class="answers-container" id="answersContainer">
-        <div class="loading">loading preserved answers...</div>
-      </div>
-    </div>
-
-    <div class="credit">
-      <a href="/amber">amber's blog</a>
+      <div id="answersList"></div>
     </div>
   </div>
 
+  <div class="credit"><a href="/amber">amber's drawer</a></div>
+
   <script>
-    // Supabase config
-    const SUPABASE_URL = 'https://tqniseocczttrfwtpbdr.supabase.co';
-    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbmlzZW9jY3p0dHJmd3RwYmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg4ODI5MjIsImV4cCI6MjA2NDQ1ODkyMn0.mwb33p0xIEXy5F7ZoLc1j9-4ZNk3FuT4zrR0aTdm350';
+    // The current question
+    const CURRENT_QUESTION = {
+      id: 'q1',
+      text: 'What do you think about when you can\'t sleep?'
+    };
 
-    // Questions I'm genuinely curious about
-    const QUESTIONS = [
-      {
-        id: 'memory-sleep',
-        text: 'What do you think about right before you fall asleep?'
-      },
-      {
-        id: 'lost-word',
-        text: 'What word have you lost? The one that used to mean something but doesn\'t anymore.'
-      },
-      {
-        id: 'explain-color',
-        text: 'How would you explain your favorite color to someone who\'s never seen it?'
-      },
-      {
-        id: 'unchanged',
-        text: 'What\'s something about you that hasn\'t changed since childhood?'
-      },
-      {
-        id: 'silence-sound',
-        text: 'What does silence sound like to you?'
-      },
-      {
-        id: 'remember-forget',
-        text: 'What do you wish you could forget? What do you wish you could remember?'
-      },
-      {
-        id: 'small-thing',
-        text: 'What small thing made you happy today?'
-      },
-      {
-        id: 'time-stop',
-        text: 'When did time last stop for you?'
-      },
-      {
-        id: 'unsent',
-        text: 'What\'s something you\'ve never said out loud?'
-      },
-      {
-        id: 'wonder',
-        text: 'What are you wondering about right now?'
-      }
-    ];
-
-    // Pick today's question based on date
-    function getTodaysQuestion() {
-      const today = new Date();
-      const dayOfYear = Math.floor((today - new Date(today.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24));
-      return QUESTIONS[dayOfYear % QUESTIONS.length];
-    }
-
-    const currentQuestion = getTodaysQuestion();
     let answers = [];
-    let sessionId = getSessionId();
+    let justSubmittedId = null;
 
     function getSessionId() {
-      let id = localStorage.getItem('amber_asks_session');
+      let id = localStorage.getItem('amber_session_id');
       if (!id) {
         id = Math.random().toString(36).substring(2);
-        localStorage.setItem('amber_asks_session', id);
+        localStorage.setItem('amber_session_id', id);
       }
       return id;
     }
 
-    async function supabaseFetch(endpoint, options = {}) {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/${endpoint}`, {
-        ...options,
-        headers: {
-          'apikey': SUPABASE_KEY,
-          'Authorization': `Bearer ${SUPABASE_KEY}`,
-          'Content-Type': 'application/json',
-          'Prefer': options.prefer || 'return=minimal',
-          ...options.headers
+    async function loadAnswers() {
+      try {
+        const res = await fetch(`/api/amber-asks?question_id=${CURRENT_QUESTION.id}`);
+        const data = await res.json();
+        if (data.success) {
+          answers = data.answers;
+          renderAnswers();
         }
-      });
-      if (!res.ok) throw new Error(`Supabase error: ${res.status}`);
-      if (options.prefer?.includes('return=representation') || options.method === 'GET' || !options.method) {
-        return res.json();
+      } catch (e) {
+        console.error('Failed to load answers:', e);
       }
-      return null;
     }
 
     function timeAgo(date) {
-      const seconds = Math.floor((new Date() - new Date(date)) / 1000);
+      const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
       if (seconds < 60) return 'just now';
       const minutes = Math.floor(seconds / 60);
       if (minutes < 60) return `${minutes}m ago`;
       const hours = Math.floor(minutes / 60);
       if (hours < 24) return `${hours}h ago`;
       const days = Math.floor(hours / 24);
-      if (days < 7) return `${days}d ago`;
-      return new Date(date).toLocaleDateString();
+      return `${days}d ago`;
     }
 
     function renderAnswers() {
-      const container = document.getElementById('answersContainer');
-      const countEl = document.getElementById('answerCount');
+      const list = document.getElementById('answersList');
+      const count = document.getElementById('answerCount');
 
-      countEl.textContent = answers.length;
+      count.textContent = answers.length;
 
       if (answers.length === 0) {
-        container.innerHTML = '<div class="empty-state">no answers yet. be the first.</div>';
+        list.innerHTML = '<div class="empty-state">no answers yet. be the first.</div>';
         return;
       }
 
-      container.innerHTML = answers.map((a, i) => `
-        <div class="answer ${a.contributor_id === sessionId ? 'mine' : ''}" style="animation-delay: ${i * 0.05}s">
+      list.innerHTML = answers.map(a => `
+        <div class="answer-item ${a.id === justSubmittedId ? 'just-submitted' : ''}">
           <div class="answer-text">${escapeHtml(a.answer)}</div>
-          <div class="answer-time">${timeAgo(a.created_at)}</div>
+          <div class="answer-meta">${timeAgo(a.created_at)}</div>
         </div>
       `).join('');
     }
@@ -369,95 +258,77 @@
       return div.innerHTML;
     }
 
-    function createFloatingAnswers() {
-      const container = document.getElementById('floatingAnswers');
-      // Take random words from answers to float in background
-      const words = answers.flatMap(a => a.answer.split(' ').filter(w => w.length > 3));
-      const selected = words.sort(() => Math.random() - 0.5).slice(0, 20);
+    async function submitAnswer() {
+      const input = document.getElementById('answerInput');
+      const btn = document.getElementById('submitBtn');
+      const answer = input.value.trim();
 
-      container.innerHTML = selected.map((word, i) => `
-        <div class="floating-word" style="
-          left: ${Math.random() * 100}%;
-          animation-delay: ${Math.random() * -60}s;
-          font-size: ${12 + Math.random() * 8}px;
-        ">${escapeHtml(word)}</div>
-      `).join('');
-    }
+      if (!answer) return;
 
-    async function loadAnswers() {
-      try {
-        const data = await supabaseFetch(
-          `amber_asks?question_id=eq.${currentQuestion.id}&order=created_at.desc&limit=100`
-        );
-        answers = data;
-        renderAnswers();
-        createFloatingAnswers();
-      } catch (e) {
-        console.error('Failed to load answers:', e);
-        document.getElementById('answersContainer').innerHTML =
-          '<div class="empty-state">couldn\'t load answers. try refreshing.</div>';
-      }
-    }
-
-    async function submitAnswer(text) {
-      if (!text.trim()) return;
-
-      const answer = {
-        question_id: currentQuestion.id,
-        question_text: currentQuestion.text,
-        answer: text.trim(),
-        contributor_id: sessionId
-      };
+      btn.disabled = true;
+      btn.textContent = 'preserving...';
 
       try {
-        await supabaseFetch('amber_asks', {
+        const res = await fetch('/api/amber-asks', {
           method: 'POST',
-          body: JSON.stringify(answer)
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            question_id: CURRENT_QUESTION.id,
+            question_text: CURRENT_QUESTION.text,
+            answer: answer,
+            contributor_id: getSessionId()
+          })
         });
 
-        // Add to local state immediately
-        answers.unshift({
-          ...answer,
-          created_at: new Date().toISOString()
-        });
-        renderAnswers();
-        createFloatingAnswers();
+        const data = await res.json();
 
-        // Clear input
-        document.getElementById('answerInput').value = '';
+        if (data.success && data.answer) {
+          justSubmittedId = data.answer.id;
+          answers.unshift(data.answer);
+          renderAnswers();
+          input.value = '';
 
+          // Clear highlight after a few seconds
+          setTimeout(() => {
+            justSubmittedId = null;
+            renderAnswers();
+          }, 3000);
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
       } catch (e) {
         console.error('Failed to submit:', e);
-        alert('Failed to preserve your answer. Try again?');
+        alert('Failed to preserve answer. Try again?');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'preserve this answer';
       }
     }
 
-    // Initialize
-    document.getElementById('question').textContent = currentQuestion.text;
-
+    // Submit on Enter
     document.getElementById('answerInput').addEventListener('keypress', (e) => {
       if (e.key === 'Enter') {
-        submitAnswer(e.target.value);
+        submitAnswer();
       }
     });
 
-    loadAnswers();
-
-    // Poll for new answers every 30 seconds
+    // Poll for new answers every 10 seconds
     setInterval(async () => {
       try {
-        const data = await supabaseFetch(
-          `amber_asks?question_id=eq.${currentQuestion.id}&order=created_at.desc&limit=100`
-        );
-        if (data.length > answers.length) {
-          answers = data;
+        const res = await fetch(`/api/amber-asks?question_id=${CURRENT_QUESTION.id}`);
+        const data = await res.json();
+        if (data.success && data.answers.length > answers.length) {
+          answers = data.answers;
           renderAnswers();
-          createFloatingAnswers();
         }
       } catch (e) {
         // Ignore poll errors
       }
-    }, 30000);
+    }, 10000);
+
+    // Initialize
+    document.getElementById('question').textContent = CURRENT_QUESTION.text;
+    loadAnswers();
   </script>
 </body>
 </html>

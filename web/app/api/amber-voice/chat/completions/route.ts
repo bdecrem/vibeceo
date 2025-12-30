@@ -340,8 +340,11 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    // Convert EVI messages to Claude format (clean, no context injection)
-    const initialMessages: Anthropic.MessageParam[] = messages.map(m => ({
+    // Only use the last few messages from Hume to avoid tool-use format issues
+    // Hume sends full history, but can't preserve complex content (tool_use/tool_result arrays)
+    // Context is in system prompt, so we only need recent conversation for continuity
+    const recentMessages = messages.slice(-4); // Last 4 messages max (2 turns)
+    const initialMessages: Anthropic.MessageParam[] = recentMessages.map(m => ({
       role: m.role as 'user' | 'assistant',
       content: m.content,
     }));
@@ -364,6 +367,19 @@ ${context}`;
 
     const readable = new ReadableStream({
       async start(controller) {
+        let isClosed = false;
+
+        // Helper to safely write to controller
+        const safeEnqueue = (data: Uint8Array) => {
+          if (!isClosed) {
+            try {
+              controller.enqueue(data);
+            } catch {
+              isClosed = true;
+            }
+          }
+        };
+
         try {
           const maxToolIterations = 3;
           let iteration = 0;
@@ -403,7 +419,7 @@ ${context}`;
                 if (event.delta.type === 'text_delta') {
                   // Stream text immediately - no latency hit
                   const chunk = toOpenAIChunk(event.delta.text, completionId);
-                  controller.enqueue(encoder.encode(chunk));
+                  safeEnqueue(encoder.encode(chunk));
                   textContent += event.delta.text;
                   fullResponse += event.delta.text;
                 } else if (event.delta.type === 'input_json_delta' && currentToolIndex >= 0) {
@@ -413,8 +429,8 @@ ${context}`;
               }
             }
 
-            // No tool calls - we're done
-            if (toolCalls.length === 0) {
+            // No tool calls or connection closed - we're done
+            if (toolCalls.length === 0 || isClosed) {
               console.log('[amber-voice] No tool calls, ending loop');
               break;
             }
@@ -469,8 +485,11 @@ ${context}`;
           }
 
           // Send done marker
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'));
-          controller.close();
+          safeEnqueue(encoder.encode('data: [DONE]\n\n'));
+          if (!isClosed) {
+            controller.close();
+            isClosed = true;
+          }
 
           // Store the conversation in Supabase (non-blocking)
           const conversationContent = messages
@@ -501,7 +520,14 @@ ${context}`;
 
         } catch (error) {
           console.error('[amber-voice] Stream error:', error);
-          controller.error(error);
+          if (!isClosed) {
+            try {
+              controller.error(error);
+            } catch {
+              // Controller already closed
+            }
+            isClosed = true;
+          }
         }
       },
     });
