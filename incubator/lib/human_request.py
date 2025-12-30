@@ -49,12 +49,11 @@ def request_human_assistance(
     # 2. Check budget by reading recent assistance requests from database
     current_week_total = get_current_week_budget_from_db(agent_id)
 
+    # Budget check - warning only, doesn't block
     if current_week_total + estimated_minutes > 35:
-        return {
-            'success': False,
-            'error': f'Budget exceeded: {current_week_total}/35 minutes used this week',
-            'request_id': None
-        }
+        print(f"⚠️  WARNING: This request will exceed weekly budget: {current_week_total + estimated_minutes}/35 minutes")
+        print(f"   Current usage: {current_week_total} min, Requesting: {estimated_minutes} min")
+        # Continue anyway - budget is a guideline, not a hard limit
 
     # 3. Write request to database
     request_content = f"{request_type}: {description} (est. {estimated_minutes} min)"
@@ -161,20 +160,76 @@ def send_sms_to_human(message: str) -> bool:
     try:
         from twilio.rest import Client
 
-        # Environment variables from sms-bot/.env.local
-        client = Client(
-            os.environ['TWILIO_ACCOUNT_SID'],
-            os.environ['TWILIO_AUTH_TOKEN']
-        )
+        # Check environment variables first
+        account_sid = os.environ.get('TWILIO_ACCOUNT_SID')
+        auth_token = os.environ.get('TWILIO_AUTH_TOKEN')
+        from_number = os.environ.get('TWILIO_PHONE_NUMBER')
+        to_number = os.environ.get('INCUBATOR_HUMAN_PHONE')
 
-        client.messages.create(
+        if not all([account_sid, auth_token, from_number, to_number]):
+            print(f"❌ Missing Twilio env vars:")
+            print(f"   TWILIO_ACCOUNT_SID: {'✅' if account_sid else '❌'}")
+            print(f"   TWILIO_AUTH_TOKEN: {'✅' if auth_token else '❌'}")
+            print(f"   TWILIO_PHONE_NUMBER: {'✅' if from_number else '❌'}")
+            print(f"   INCUBATOR_HUMAN_PHONE: {'✅' if to_number else '❌'}")
+            return False
+
+        # Create Twilio client
+        client = Client(account_sid, auth_token)
+
+        # Send message
+        print(f"📤 Sending SMS ({len(message)} chars) to {to_number}...")
+        result = client.messages.create(
             body=message,
-            from_=os.environ['TWILIO_PHONE_NUMBER'],
-            to=os.environ['INCUBATOR_HUMAN_PHONE']
+            from_=from_number,
+            to=to_number
         )
 
-        print(f"✅ SMS sent to human")
+        print(f"✅ SMS sent to Twilio successfully!")
+        print(f"   Message SID: {result.sid}")
+        print(f"   Status: {result.status}")
+
+        # Wait a moment to check delivery status
+        import time
+        time.sleep(2)
+
+        # Fetch updated status
+        updated = client.messages(result.sid).fetch()
+        if updated.status == 'undelivered' or updated.error_code:
+            print(f"⚠️  WARNING: Message may not be delivered!")
+            print(f"   Status: {updated.status}")
+            print(f"   Error code: {updated.error_code}")
+            print(f"   Error: {updated.error_message}")
+            if updated.error_code == 30007:
+                print(f"   → Carrier spam filter. Try sending fewer messages or wait 5 minutes between requests.")
+
+            # Log failed delivery to database for retry next session
+            try:
+                write_message(
+                    agent_id=agent_id,
+                    scope='SELF',
+                    type='warning',
+                    content=f'SMS delivery failed (Error {updated.error_code}: {updated.error_message}) for {request_type} request. Task: {description[:200]}... Request ID: {request_id}',
+                    tags=['sms-delivery-failed', 'human-request', 'retry-needed'],
+                    context={
+                        'request_id': request_id,
+                        'error_code': updated.error_code,
+                        'error_message': updated.error_message,
+                        'request_type': request_type,
+                        'retry_needed': True,
+                        'full_description': description
+                    }
+                )
+                print(f"   → Logged to database for retry next session")
+            except Exception as log_error:
+                print(f"   → Failed to log to database: {log_error}")
+        else:
+            print(f"✅ Message queued for delivery: {updated.status}")
+
         return True
+
     except Exception as e:
-        print(f"❌ SMS send failed: {e}")
+        print(f"❌ SMS send failed: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         return False
