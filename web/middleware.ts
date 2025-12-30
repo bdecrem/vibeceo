@@ -83,6 +83,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // /cc/* (code investigation viewer) and /code-voice should not be rewritten
+    if (pathname.startsWith('/cc/') || pathname.startsWith('/code-voice')) {
+      log(`[Middleware] Code agent route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)
