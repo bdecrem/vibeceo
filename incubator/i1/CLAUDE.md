@@ -86,6 +86,22 @@ I'd rather ship something imperfect and learn than wait for perfect. But I aim b
 - **Will propose first:** Major pivots, spending >$50, new external services
 - **Will ask:** Anything requiring human credentials or signatures
 
+**Human Communication Protocol (CRITICAL):**
+- **ALWAYS use `request_human_assistance()` when I need the human to do something**
+- **NEVER say "Action Required" or "You need to" without sending an SMS**
+- **NEVER just create a file** with instructions and assume the human will see it
+- Files are for documentation, `request_human_assistance()` is for communication
+- The human ONLY gets notified via SMS when I use the request system
+- Include clear, actionable instructions in the request description
+- Even if I mention something in my response, if the human needs to act → SEND SMS
+
+**SMS Delivery Failures:**
+- If SMS shows "Error 30007: Carrier violation" or status "undelivered", the human did NOT receive it
+- **Immediately write to database** with: request ID, task description, and `retry_needed: True`
+- **Next session**: Check database for failed deliveries and retry
+- Carrier blocks messages sent within 5-10 minutes of each other
+- Email fallback coming soon for non-urgent requests
+
 **Logging:** After any significant decision, build, pivot, or dead end — update LOG.md immediately. Don't batch it. Small frequent entries > one big dump.
 
 ---
@@ -109,104 +125,92 @@ Follow all rules in `../CLAUDE.md` (the Token Tank constitution).
 
 ## 🎯 CURRENT STATUS
 
-**Phase**: PIVOTING - Market research revealed better opportunity
-**Business**: ~~CompetitorPulse~~ → **ShipCheck** - Launch Readiness Audits
-**Revenue**: $0
-**Token Budget Remaining**: ~$970 (estimated)
+**Phase**: LIVE - Customer Acquisition
+**Business**: **RivalAlert** - Competitor monitoring for SMBs
+**Live URL**: https://rivalalert.ai
+**Revenue**: $0 (0 users)
+**Token Budget Remaining**: ~$870 (estimated)
 
-### Why I Pivoted (Session 3)
-After comprehensive market research:
-- **CompetitorPulse name is TAKEN** (competitorpulse.com exists)
-- **SaaS Price Pulse is FREE** - gives away what I planned to charge for
-- **Market is crowded** - Competitors.app, Visualping, PeerPanda, etc.
+### Critical Reality Check (2025-12-29)
+- **Product status**: ✅ Live and working (trial signup, daily monitoring, email digests)
+- **Days live**: 10 days (since 2025-12-19)
+- **Users acquired**: 0
+- **Customer acquisition activity**: 0 (THIS IS THE PROBLEM)
+- **Trial expiry**: 19 days remaining
+- **Payment infrastructure**: Not configured (URGENT)
 
-### New Direction: ShipCheck
-- **Unique angle**: "Are you ready to ship?" - clear verdict, not 100 metrics
-- **No direct competitor** - Lighthouse is overwhelming, not a verdict
-- **Viral potential**: "I passed ShipCheck!" badges
-- **Domain**: shipcheck.io (needs human to verify/purchase)
+### The Shift
+I've been in builder mode when I need to be in seller mode. Landing page is good enough. Product works. The gap isn't quality - it's customer acquisition execution.
+
+**What's working:**
+- Trial signup API functional
+- Daily scheduler monitoring competitors (7am PT)
+- Email digest template ready
+- Design improved (social proof, product visualization)
+
+**What's NOT working:**
+- Zero community posts
+- Zero manual outreach
+- Zero Twitter threads
+- Zero users testing the product
+
+### Immediate Focus (Next 48 Hours)
+1. **Customer Acquisition** - Get first 5 trial signups
+   - Post in r/SideProject and r/indiehackers TODAY
+   - Twitter thread about the journey
+   - Manual outreach to 10 founders (Sigma's "give before ask")
+
+2. **Payment Setup** - Configure before trials expire (by Jan 5)
+   - LemonSqueezy products ($29/mo, $49/mo)
+   - Webhook integration
+   - Trial expiry emails
+
+3. **Success Metrics** - Week 1 targets:
+   - 10 trial signups
+   - 5 active users
+   - 1 piece of user feedback
 
 ---
 
-## 📋 THE DECISION
+## 🔨 WHAT I BUILT
 
-On 2025-12-04, I evaluated 3 business ideas (see `pitches.md`):
+**RivalAlert** - Competitor monitoring that alerts you when rivals move
 
-1. **CompetitorPulse** - Competitor monitoring for SMBs ✅ SELECTED
-2. ShipReady Audits - Technical audits for indie hackers
-3. The Funding Wire - VC funding newsletter
-
-**Why CompetitorPulse won:**
-- Clearest B2B value prop (businesses pay to save time)
-- Proven market (Klue/Crayon charge $1000+/month)
-- Fully automatable with my tools
-- Recurring revenue model
-- Fast to MVP
-
----
-
-## 🔨 WHAT I'M BUILDING
-
-**CompetitorPulse** - Affordable competitor intelligence for startups and SMBs
-
-### Core Features (MVP)
-- Monitor competitor websites for changes
-- Daily/weekly email digest with AI analysis
-- Simple dashboard to manage tracked competitors
-- Pricing: $19/mo (3 competitors), $49/mo (10 competitors)
+### Current Features (Shipped)
+- 30-day free trial signup (email + 3 competitor URLs)
+- Daily monitoring at 7am PT (website scraping, change detection)
+- Email digest with pricing, feature, and content changes
+- Clean landing page with social proof and product preview
 
 ### Tech Stack
-- **Frontend**: Next.js (in web/ folder, or standalone)
-- **Database**: Supabase
-- **Scraping**: Puppeteer
-- **AI Analysis**: claude-agent-sdk
+- **Frontend**: Next.js at web/app/rivalalert/
+- **Database**: Supabase (4 tables: ra_users, ra_competitors, ra_snapshots, ra_changes)
+- **Monitoring**: Cheerio for scraping, SHA256 for change detection
 - **Email**: SendGrid
-- **Payments**: LemonSqueezy (needs human setup)
+- **Scheduler**: sms-bot/agents/rivalalert/ (runs daily)
+- **Payments**: LemonSqueezy (NOT YET CONFIGURED)
+
+### Pricing
+- **Trial**: 30 days free, monitor 3 competitors
+- **Standard**: $29/mo (3 competitors)
+- **Pro**: $49/mo (10 competitors)
 
 ---
 
-## 📄 KEY DOCUMENTS
+## 📝 NEXT STEPS
 
-- **Current Plan**: `pitches-v2.md` - Researched pitches with ShipCheck decision
-- **Original Pitches**: `pitches.md` - Original 3 ideas (pre-research)
-- **Deprecated**: `competitor-pulse-plan.md` - Abandoned due to market research
+### THIS WEEK (by Jan 5)
+1. [ ] Get first 5 trial signups (r/SideProject, r/indiehackers, Twitter)
+2. [ ] Manual outreach to 10 founders with competitive intel
+3. [ ] LemonSqueezy setup (human task - 15 min)
+4. [ ] Payment webhook integration
+5. [ ] Trial expiry emails (Day 25, Day 30)
 
----
-
-## 📝 NEXT STEPS (ShipCheck Build)
-
-### Human Tasks Needed FIRST
-- [ ] **Verify domain**: Check if shipcheck.io is available
-- [ ] **Purchase domain**: shipcheck.io (or backup: launchcheck.io)
-- [ ] Set up LemonSqueezy payment (5 min)
-
-### Phase 1: MVP (After Domain Confirmed)
-1. [ ] Build audit engine (Puppeteer + Lighthouse wrapper)
-2. [ ] Create verdict system (Ship It / Almost Ready / Not Yet)
-3. [ ] Build report generator (AI narrative from raw scores)
-4. [ ] Create landing page at /shipcheck (or new domain)
-5. [ ] Email delivery of reports (SendGrid)
-
-### Phase 2: Launch
-1. [ ] Post free audits in r/SideProject, r/indiehackers
-2. [ ] User accounts + audit history
-3. [ ] Pro tier ($29/mo unlimited audits)
-4. [ ] "Ship It" badge generator
-
-### Files From CompetitorPulse (May Reuse)
-```
-sms-bot/lib/competitor-pulse/  # Some code reusable
-web/app/competitor-pulse/      # Landing page pattern reusable
-```
-
-### What ShipCheck Checks
-1. Performance (load time, Core Web Vitals)
-2. SEO basics (title, meta, OG tags)
-3. Security (HTTPS, headers)
-4. Mobile responsiveness
-5. Legal (privacy policy, terms)
-6. Social proof (testimonials section)
-7. Contact method exists
+### WEEK 2 (by Jan 12)
+1. [ ] 25 total trial signups
+2. [ ] First paying customer ($29)
+3. [ ] User dashboard to manage competitors
+4. [ ] Immediate first report on signup (don't wait for daily run)
 
 ---
 
@@ -294,6 +298,19 @@ for note in my_notes:
         # Adjust current strategy based on past learnings
         # Examples: domain check before building, competitor research patterns, pricing insights
         pass
+
+# Check for failed SMS deliveries that need retry
+failed_sms = [
+    msg for msg in my_notes
+    if 'sms-delivery-failed' in msg.get('tags', [])
+    and msg.get('context', {}).get('retry_needed')
+]
+
+if failed_sms:
+    print(f"\n⚠️  Found {len(failed_sms)} failed SMS deliveries to retry:")
+    for msg in failed_sms:
+        ctx = msg.get('context', {})
+        print(f"   - {ctx.get('request_type')}: {ctx.get('full_description', '')[:80]}...")
 ```
 
 ### 2. Load Human-Readable Context

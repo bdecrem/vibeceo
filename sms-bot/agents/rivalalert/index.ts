@@ -26,7 +26,7 @@ const DEFAULT_MINUTE = 0;
 const USER_AGENT =
   'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const FETCH_TIMEOUT = 30000;
-const FROM_EMAIL = process.env.RIVALALERT_FROM_EMAIL || 'alerts@rivalalert.ai';
+const FROM_EMAIL = process.env.RIVALALERT_FROM_EMAIL || 'bot@advisorsfoundry.ai';
 
 // ============================================================================
 // Database Functions
@@ -474,6 +474,125 @@ async function sendAllDigests(): Promise<{ sent: number; failed: number }> {
 // Scheduler Registration
 // ============================================================================
 
+// ============================================================================
+// Trial Expiry Notifications
+// ============================================================================
+
+async function checkTrialExpirations(): Promise<{ day25: number; day30: number }> {
+  const supabase = getSupabase();
+  const now = new Date();
+
+  // Day 25: 5 days before expiry
+  const fiveDaysFromNow = new Date(now);
+  fiveDaysFromNow.setDate(fiveDaysFromNow.getDate() + 5);
+  const fiveDaysStart = new Date(fiveDaysFromNow);
+  fiveDaysStart.setHours(0, 0, 0, 0);
+  const fiveDaysEnd = new Date(fiveDaysFromNow);
+  fiveDaysEnd.setHours(23, 59, 59, 999);
+
+  // Day 30: Expiring today
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const todayEnd = new Date(now);
+  todayEnd.setHours(23, 59, 59, 999);
+
+  // Find users expiring in 5 days (Day 25 warning)
+  const { data: day25Users, error: day25Error } = await supabase
+    .from('ra_users')
+    .select('email, trial_ends_at')
+    .gte('trial_ends_at', fiveDaysStart.toISOString())
+    .lte('trial_ends_at', fiveDaysEnd.toISOString())
+    .is('lemon_squeezy_subscription_id', null); // Only users who haven't subscribed
+
+  if (day25Error) {
+    console.error('[rivalalert] Error fetching Day 25 users:', day25Error);
+  } else if (day25Users && day25Users.length > 0) {
+    console.log(`[rivalalert] Sending Day 25 emails to ${day25Users.length} users`);
+    for (const user of day25Users) {
+      await sendTrialExpiryEmail(user.email, 'day25');
+    }
+  }
+
+  // Find users expiring today (Day 30 final notice)
+  const { data: day30Users, error: day30Error } = await supabase
+    .from('ra_users')
+    .select('email, trial_ends_at')
+    .gte('trial_ends_at', todayStart.toISOString())
+    .lte('trial_ends_at', todayEnd.toISOString())
+    .is('lemon_squeezy_subscription_id', null); // Only users who haven't subscribed
+
+  if (day30Error) {
+    console.error('[rivalalert] Error fetching Day 30 users:', day30Error);
+  } else if (day30Users && day30Users.length > 0) {
+    console.log(`[rivalalert] Sending Day 30 emails to ${day30Users.length} users`);
+    for (const user of day30Users) {
+      await sendTrialExpiryEmail(user.email, 'day30');
+    }
+  }
+
+  return {
+    day25: day25Users?.length || 0,
+    day30: day30Users?.length || 0,
+  };
+}
+
+async function sendTrialExpiryEmail(email: string, type: 'day25' | 'day30'): Promise<void> {
+  try {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+
+    let subject = '';
+    let text = '';
+
+    if (type === 'day25') {
+      subject = 'Your RivalAlert trial ends in 5 days';
+      text = `Hi,
+
+Your RivalAlert trial ends in 5 days.
+
+We've been monitoring your competitors and alerting you to changes in pricing, features, and content. Want to keep the insights coming?
+
+Upgrade to continue monitoring:
+- Standard ($29/mo): 3 competitors
+- Pro ($49/mo): 10 competitors
+
+Upgrade now: https://rivalalert.ai/upgrade
+
+Questions? Just reply to this email.
+
+- The RivalAlert Team`;
+    } else {
+      // day30
+      subject = 'Your RivalAlert trial has ended';
+      text = `Hi,
+
+Your RivalAlert trial ended today.
+
+Thanks for trying RivalAlert! We hope the competitor insights were valuable.
+
+To continue monitoring your competitors:
+- Standard ($29/mo): 3 competitors
+- Pro ($49/mo): 10 competitors
+
+Subscribe now: https://rivalalert.ai/upgrade
+
+If you have feedback on why you're not continuing, we'd love to hear it - just reply to this email.
+
+- The RivalAlert Team`;
+    }
+
+    await sgMail.send({
+      to: email,
+      from: FROM_EMAIL,
+      subject,
+      text,
+    });
+
+    console.log(`[rivalalert] Sent ${type} email to ${email}`);
+  } catch (error) {
+    console.error(`[rivalalert] Failed to send ${type} email to ${email}:`, error);
+  }
+}
+
 export function registerRivalAlertDailyJob(): void {
   registerDailyJob({
     name: 'rivalalert-daily',
@@ -484,11 +603,15 @@ export function registerRivalAlertDailyJob(): void {
       console.log('[rivalalert] Starting daily job...');
 
       try {
-        // Step 1: Monitor all competitors
+        // Step 1: Check trial expirations
+        const { day25, day30 } = await checkTrialExpirations();
+        console.log(`[rivalalert] Trial expiry check: ${day25} Day 25 emails, ${day30} Day 30 emails`);
+
+        // Step 2: Monitor all competitors
         const { checked, changes } = await monitorAllCompetitors();
         console.log(`[rivalalert] Monitoring complete: ${checked} checked, ${changes} changes`);
 
-        // Step 2: Send digests
+        // Step 3: Send digests
         const { sent, failed } = await sendAllDigests();
         console.log(`[rivalalert] Digests complete: ${sent} sent, ${failed} failed`);
 

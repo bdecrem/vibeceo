@@ -4,6 +4,69 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+async function sendTrialConfirmationEmail(email: string, competitors: string[]): Promise<void> {
+  try {
+    const sendgridApiKey = process.env.SENDGRID_API_KEY;
+    if (!sendgridApiKey) {
+      console.error('[RivalAlert] Missing SendGrid API key - confirmation email not sent');
+      return;
+    }
+
+    const sgMail = (await import('@sendgrid/mail')).default;
+    sgMail.setApiKey(sendgridApiKey);
+
+    const competitorList = competitors.map(url => {
+      try {
+        return new URL(url).hostname.replace('www.', '');
+      } catch {
+        return url;
+      }
+    }).join('\n- ');
+
+    const subject = 'Welcome to RivalAlert - Your trial has started!';
+    const text = `Welcome to RivalAlert!
+
+Your 30-day free trial has started. We're now monitoring your competitors:
+
+- ${competitorList}
+
+What happens next:
+✓ Every day at 7:00 AM PT, we'll check your competitors' websites
+✓ If we detect any changes (pricing, features, content), you'll get an email alert
+✓ You'll receive an AI-powered summary of what changed and why it matters
+
+Your first report will arrive tomorrow at 7:00 AM PT.
+
+Trial details:
+• Duration: 30 days
+• Competitors monitored: ${competitors.length} (max 3 for trial)
+• First report: Tomorrow at 7:00 AM PT
+
+Want to monitor more competitors? Upgrade anytime:
+• Standard: $29/mo (3 competitors)
+• Pro: $49/mo (10 competitors)
+
+Upgrade: https://rivalalert.ai/upgrade
+
+Questions? Just reply to this email.
+
+Happy monitoring!
+- The RivalAlert Team`;
+
+    await sgMail.send({
+      to: email,
+      from: 'RivalAlert <bot@advisorsfoundry.ai>', // Using verified sender
+      subject,
+      text,
+    });
+
+    console.log(`[RivalAlert] Confirmation email sent to ${email}`);
+  } catch (error) {
+    console.error('[RivalAlert] Failed to send confirmation email:', error);
+    // Don't fail the signup if email fails
+  }
+}
+
 export async function POST(request: NextRequest) {
   console.log('[RivalAlert] Trial signup request received');
   try {
@@ -153,13 +216,16 @@ export async function POST(request: NextRequest) {
       // Don't fail - user is created, they can add competitors later
     }
 
+    // Send confirmation email
+    await sendTrialConfirmationEmail(email, competitorsToAdd);
+
     // TODO: Trigger immediate report generation
-    // For now, the daily scheduler will pick this up
+    // For now, the daily scheduler will pick this up at 7am PT
     // In the future, we could call the monitor directly here
 
     return NextResponse.json({
       success: true,
-      message: 'Trial started! Your first report is being generated.',
+      message: 'Trial started! Check your email for confirmation.',
       competitors_added: competitorsToAdd.length,
     });
   } catch (error) {
