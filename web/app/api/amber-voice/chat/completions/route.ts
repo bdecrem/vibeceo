@@ -103,9 +103,11 @@ export async function POST(request: NextRequest) {
     });
 
     // Convert EVI messages to Claude format
-    const claudeMessages = messages.map(m => ({
+    // Limit to last 4 messages to avoid tool-use format corruption from Hume
+    const recentMessages = messages.slice(-4);
+    const claudeMessages = recentMessages.map(m => ({
       role: m.role as 'user' | 'assistant',
-      content: m.content,
+      content: typeof m.content === 'string' ? m.content : String(m.content),
     }));
 
     // Inject context into first user message or prepend
@@ -128,7 +130,7 @@ export async function POST(request: NextRequest) {
     const completionId = `chatcmpl-${sessionId}-${Date.now()}`;
 
     // Get the latest user message and its prosody
-    const latestUserMessage = messages.filter(m => m.role === 'user').pop();
+    const latestUserMessage = recentMessages.filter(m => m.role === 'user').pop();
     const prosodyScores = latestUserMessage?.models?.prosody?.scores || {};
 
     // Create SSE response and accumulate full response for storage
@@ -150,30 +152,70 @@ export async function POST(request: NextRequest) {
           controller.close();
 
           // Store the conversation in Supabase (non-blocking)
-          const conversationContent = messages
-            .map(m => `${m.role}: ${m.content}`)
+          // Use recentMessages to match what was actually sent to Claude
+          const conversationContent = recentMessages
+            .map(m => `${m.role}: ${typeof m.content === 'string' ? m.content : '[complex content]'}`)
             .join('\n\n') + `\n\nassistant: ${fullResponse}`;
 
-          supabase
-            .from('amber_state')
-            .insert({
-              type: 'voice_session',
-              content: conversationContent,
-              metadata: {
-                session_id: sessionId,
-                user_message: latestUserMessage?.content || '',
-                assistant_response: fullResponse,
-                prosody: prosodyScores,
-                message_count: messages.length + 1,
-              },
-            })
-            .then(({ error }) => {
-              if (error) {
-                console.error('[amber-voice] Failed to store session:', error);
-              } else {
-                console.log('[amber-voice] Stored voice session:', sessionId);
+          // Store voice_session and generate log_entry summary (non-blocking)
+          (async () => {
+            try {
+              // 1. Store raw voice_session
+              const { error: sessionError } = await supabase
+                .from('amber_state')
+                .insert({
+                  type: 'voice_session',
+                  content: conversationContent,
+                  metadata: {
+                    session_id: sessionId,
+                    user_message: latestUserMessage?.content || '',
+                    assistant_response: fullResponse,
+                    prosody: prosodyScores,
+                    message_count: messages.length + 1,
+                  },
+                });
+
+              if (sessionError) {
+                console.error('[amber-voice] Failed to store session:', sessionError);
+                return;
               }
-            });
+              console.log('[amber-voice] Stored voice session:', sessionId);
+
+              // 2. Generate summary with Claude (only if conversation has substance)
+              if (fullResponse.length > 50) {
+                const summaryResponse = await anthropic.messages.create({
+                  model: 'claude-sonnet-4-20250514',
+                  max_tokens: 200,
+                  system: 'You are summarizing a voice conversation for a personal log. Write a brief 1-2 sentence summary capturing what was discussed and any notable moments. Be concise and personal.',
+                  messages: [{
+                    role: 'user',
+                    content: `Summarize this voice conversation:\n\n${conversationContent}`,
+                  }],
+                });
+
+                const summary = summaryResponse.content[0].type === 'text'
+                  ? summaryResponse.content[0].text
+                  : '';
+
+                // 3. Store as log_entry
+                const { error: logError } = await supabase
+                  .from('amber_state')
+                  .insert({
+                    type: 'log_entry',
+                    content: `## Voice Session\n\n${summary}`,
+                    metadata: { session_id: sessionId, source: 'voice' },
+                  });
+
+                if (logError) {
+                  console.error('[amber-voice] Failed to store log_entry:', logError);
+                } else {
+                  console.log('[amber-voice] Stored log_entry:', summary.slice(0, 50));
+                }
+              }
+            } catch (err) {
+              console.error('[amber-voice] Post-session processing error:', err);
+            }
+          })();
 
         } catch (error) {
           console.error('[amber-voice] Stream error:', error);
