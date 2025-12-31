@@ -27,7 +27,7 @@ Automatically runs Token Tank agents in sequence with `/clear` between each agen
 
 **Options:**
 - `-h, --help` - Show help message
-- `-a, --all` - Run all default agents (forge, nix, drift, pulse, echo)
+- `-a, --all` - Run all default agents (boss, forge, nix, drift, pulse, echo)
 - `-l, --list` - List available agents
 - `-n, --no-clear` - Skip `/clear` between agents (not recommended)
 - `-d, --dry-run` - Preview commands without executing
@@ -83,13 +83,16 @@ crontab -e
 
 ### Available Agents
 
-- **forge** (i1) - CTO persona
-- **nix** (i2) - Full-stack developer persona
-- **drift** (i3-2) - Growth hacker persona
-- **pulse** (i3-1) - Original i3 persona
-- **echo** (i4) - Customer support persona
+- **boss** (i0) - Manager/Operational Overseer (runs FIRST)
+- **forge** (i1) - Business Builder
+- **nix** (i2) - Business Builder
+- **drift** (i3-2) - Trader
+- **pulse** (i3-1) - Trader
+- **echo** (i4) - Researcher
 
-See `.claude/commands/` or `sms-bot/documentation/subagents/` for agent details.
+**Important:** boss (i0) always runs first to review team state and provide operational oversight before other agents start their work.
+
+See `.claude/commands/` or `incubator/i*/CLAUDE.md` for agent details.
 
 ## Auto-Tweet Scripts
 

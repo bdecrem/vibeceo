@@ -13,7 +13,8 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default agents (Token Tank personas)
-DEFAULT_AGENTS=("forge" "nix" "drift" "pulse" "echo")
+# boss (i0) runs FIRST to provide operational oversight
+DEFAULT_AGENTS=("boss" "forge" "nix" "drift" "pulse" "echo")
 
 # Log file
 LOG_DIR="/home/whitcodes/Work/Dev/kochito/incubator/scripts"
@@ -37,7 +38,7 @@ usage() {
     echo ""
     echo "Options:"
     echo "  -h, --help          Show this help message"
-    echo "  -a, --all           Run all default agents (forge, nix, drift, pulse, echo)"
+    echo "  -a, --all           Run all default agents (boss, forge, nix, drift, pulse, echo)"
     echo "  -l, --list          List available agents and exit"
     echo "  -n, --no-clear      Skip /clear between agents (not recommended)"
     echo "  -d, --dry-run       Show what would be executed without running"
@@ -114,9 +115,9 @@ if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}[DRY RUN] Commands that would be executed:${NC}"
     for agent in "${AGENTS[@]}"; do
         if [ "$NO_CLEAR" = false ]; then
-            echo "  claude '/clear' --no-resume"
+            echo "  claude '/clear'"
         fi
-        echo "  claude '/$agent autonomous' --no-resume"
+        echo "  claude '/$agent autonomous'"
     done
     exit 0
 fi
@@ -156,7 +157,7 @@ for i in "${!AGENTS[@]}"; do
         echo -e "${YELLOW}Clearing context...${NC}"
         log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Clearing context"
 
-        if claude '/clear' --no-resume; then
+        if claude '/clear'; then
             log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Context cleared successfully"
         else
             log "${RED}Warning: /clear command failed${NC}"
@@ -166,7 +167,7 @@ for i in "${!AGENTS[@]}"; do
     # Run the agent
     log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Starting /$agent"
 
-    if claude "/$agent autonomous" --no-resume; then
+    if claude "/$agent autonomous"; then
         COMPLETED=$((COMPLETED + 1))
         log "${GREEN}✓ /$agent completed successfully${NC}"
         log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent completed successfully"
