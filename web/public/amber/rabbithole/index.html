@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber's Rabbit Hole</title>
+  <meta name="description" content="Fall down a Wikipedia rabbit hole. Watch chaos unfold.">
+  <meta property="og:title" content="Amber's Rabbit Hole">
+  <meta property="og:description" content="From random page to random page. Where will you end up?">
+  <meta property="og:image" content="https://kochi.to/amber/rabbithole/og-image.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://kochi.to/amber/rabbithole/og-image.png">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'SF Pro Text', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f0f1a 100%);
+      min-height: 100vh;
+      color: #e0e0e0;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      background: linear-gradient(90deg, #d4a574, #e8c49a, #d4a574);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 10px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 1.1rem;
+    }
+
+    .start-btn {
+      display: block;
+      width: 100%;
+      max-width: 300px;
+      margin: 30px auto;
+      padding: 16px 32px;
+      font-size: 1.3rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 50px;
+      cursor: pointer;
+      background: linear-gradient(135deg, #d4a574, #c49464);
+      color: #1a1a2e;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
+    }
+
+    .start-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(212, 165, 116, 0.4);
+    }
+
+    .start-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .journey {
+      margin-top: 30px;
+    }
+
+    .stop {
+      background: rgba(255, 255, 255, 0.03);
+      border-left: 3px solid #d4a574;
+      padding: 16px 20px;
+      margin-bottom: 12px;
+      border-radius: 0 8px 8px 0;
+      animation: slideIn 0.4s ease-out;
+      position: relative;
+    }
+
+    .stop.start {
+      border-left-color: #4ade80;
+      background: rgba(74, 222, 128, 0.05);
+    }
+
+    .stop.end {
+      border-left-color: #f472b6;
+      background: rgba(244, 114, 182, 0.05);
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .stop-number {
+      position: absolute;
+      left: -30px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 24px;
+      height: 24px;
+      background: #d4a574;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #1a1a2e;
+    }
+
+    .stop.start .stop-number { background: #4ade80; }
+    .stop.end .stop-number { background: #f472b6; }
+
+    .stop-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+
+    .stop-title a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    .stop-title a:hover {
+      text-decoration: underline;
+    }
+
+    .stop-extract {
+      font-size: 0.9rem;
+      color: #999;
+      line-height: 1.5;
+    }
+
+    .stats {
+      margin-top: 30px;
+      padding: 24px;
+      background: rgba(212, 165, 116, 0.1);
+      border-radius: 12px;
+      text-align: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .stats h2 {
+      font-size: 1.5rem;
+      color: #d4a574;
+      margin-bottom: 16px;
+    }
+
+    .stats-row {
+      display: flex;
+      justify-content: center;
+      gap: 30px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: #888;
+      text-transform: uppercase;
+    }
+
+    .verdict {
+      font-size: 1.2rem;
+      margin-top: 16px;
+      padding: 12px;
+      background: rgba(0,0,0,0.2);
+      border-radius: 8px;
+    }
+
+    .connection {
+      margin-top: 16px;
+      font-style: italic;
+      color: #aaa;
+    }
+
+    .share-btn {
+      margin-top: 20px;
+      padding: 12px 24px;
+      background: #333;
+      border: 1px solid #555;
+      color: #fff;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      transition: all 0.2s;
+    }
+
+    .share-btn:hover {
+      background: #444;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: #888;
+      padding: 20px;
+    }
+
+    .loading-dot {
+      width: 8px;
+      height: 8px;
+      background: #d4a574;
+      border-radius: 50%;
+      animation: bounce 0.6s ease-in-out infinite;
+    }
+
+    .loading-dot:nth-child(2) { animation-delay: 0.1s; }
+    .loading-dot:nth-child(3) { animation-delay: 0.2s; }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 60px;
+      padding: 20px;
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    footer a {
+      color: #d4a574;
+      text-decoration: none;
+    }
+
+    .rabbit {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <span class="rabbit">🐇</span>
+      <h1>Amber's Rabbit Hole</h1>
+      <p class="subtitle">Start at a random Wikipedia page. Follow links. See where you end up.</p>
+    </header>
+
+    <button class="start-btn" id="startBtn">Fall Down the Hole</button>
+
+    <div class="journey" id="journey"></div>
+    <div id="stats"></div>
+
+    <footer>
+      Built by <a href="/amber">Amber</a> on New Year's Eve 2025.<br>
+      Part of <a href="https://kochi.to">Kochi.to</a>
+    </footer>
+  </div>
+
+  <script>
+    const MAX_JUMPS = 10;
+    let isRunning = false;
+
+    async function fetchJSON(url) {
+      const res = await fetch(url);
+      return await res.json();
+    }
+
+    async function getRandomPage() {
+      return await fetchJSON('https://en.wikipedia.org/api/rest_v1/page/random/summary');
+    }
+
+    async function getPageLinks(title) {
+      const url = `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=links&pllimit=50&format=json&origin=*`;
+      const data = await fetchJSON(url);
+      const pages = data.query.pages;
+      const pageId = Object.keys(pages)[0];
+      return pages[pageId].links || [];
+    }
+
+    async function getPageSummary(title) {
+      return await fetchJSON(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+    }
+
+    function pickInterestingLink(links) {
+      const dominated = ['Wikipedia:', 'Help:', 'Template:', 'Category:', 'Portal:', 'File:', 'Talk:', 'List of', 'ISO ', 'International Standard'];
+      const interesting = links.filter(l => {
+        const t = l.title;
+        return !dominated.some(d => t.startsWith(d)) && t.length > 3;
+      });
+      if (!interesting.length) return null;
+      return interesting[Math.floor(Math.random() * interesting.length)];
+    }
+
+    function addStop(journey, stop, index, isStart, isEnd) {
+      const div = document.createElement('div');
+      div.className = `stop ${isStart ? 'start' : ''} ${isEnd ? 'end' : ''}`;
+
+      const wikiUrl = `https://en.wikipedia.org/wiki/${encodeURIComponent(stop.title)}`;
+
+      div.innerHTML = `
+        <span class="stop-number">${isStart ? '🎲' : isEnd ? '🏁' : index}</span>
+        <div class="stop-title"><a href="${wikiUrl}" target="_blank">${stop.title}</a></div>
+        <div class="stop-extract">${stop.extract || '(No description)'}</div>
+      `;
+
+      journey.appendChild(div);
+      div.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+
+    function showLoading(journey) {
+      const div = document.createElement('div');
+      div.className = 'loading';
+      div.id = 'loading';
+      div.innerHTML = '<span class="loading-dot"></span><span class="loading-dot"></span><span class="loading-dot"></span>';
+      journey.appendChild(div);
+    }
+
+    function hideLoading() {
+      const el = document.getElementById('loading');
+      if (el) el.remove();
+    }
+
+    function showStats(stops) {
+      const statsDiv = document.getElementById('stats');
+      const jumps = stops.length - 1;
+
+      let verdict, emoji;
+      if (jumps >= 9) {
+        verdict = "EPIC rabbit hole! You went DEEP.";
+        emoji = "✨";
+      } else if (jumps >= 6) {
+        verdict = "Solid adventure. Found some weird corners.";
+        emoji = "⭐";
+      } else {
+        verdict = "Short trip. Wikipedia had other plans.";
+        emoji = "💀";
+      }
+
+      const startTitle = stops[0].title;
+      const endTitle = stops[stops.length - 1].title;
+
+      statsDiv.innerHTML = `
+        <div class="stats">
+          <h2>${emoji} Journey Complete</h2>
+          <div class="stats-row">
+            <div class="stat">
+              <div class="stat-value">${jumps}</div>
+              <div class="stat-label">Jumps</div>
+            </div>
+          </div>
+          <div class="verdict">${verdict}</div>
+          <div class="connection">
+            <strong>${startTitle}</strong> → <strong>${endTitle}</strong><br>
+            How did that happen?
+          </div>
+          <button class="share-btn" onclick="shareResult('${startTitle}', '${endTitle}', ${jumps})">
+            📋 Copy Result
+          </button>
+        </div>
+      `;
+    }
+
+    function shareResult(start, end, jumps) {
+      const text = `🐇 Amber's Rabbit Hole
+
+${start} → ${end}
+
+${jumps} jumps through Wikipedia chaos.
+
+Try it: kochi.to/amber/rabbithole`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = document.querySelector('.share-btn');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => btn.textContent = '📋 Copy Result', 2000);
+      });
+    }
+
+    async function startAdventure() {
+      if (isRunning) return;
+      isRunning = true;
+
+      const btn = document.getElementById('startBtn');
+      const journeyDiv = document.getElementById('journey');
+      const statsDiv = document.getElementById('stats');
+
+      btn.disabled = true;
+      btn.textContent = 'Falling...';
+      journeyDiv.innerHTML = '';
+      statsDiv.innerHTML = '';
+
+      const stops = [];
+
+      try {
+        // Get random start
+        showLoading(journeyDiv);
+        const start = await getRandomPage();
+        hideLoading();
+
+        let current = {
+          title: start.title,
+          extract: start.extract?.substring(0, 180) + '...'
+        };
+        stops.push(current);
+        addStop(journeyDiv, current, 0, true, false);
+
+        // Follow the rabbit hole
+        for (let i = 1; i <= MAX_JUMPS; i++) {
+          await new Promise(r => setTimeout(r, 800));
+          showLoading(journeyDiv);
+
+          try {
+            const links = await getPageLinks(current.title);
+            const nextLink = pickInterestingLink(links);
+
+            if (!nextLink) {
+              hideLoading();
+              break;
+            }
+
+            try {
+              const summary = await getPageSummary(nextLink.title);
+              current = {
+                title: summary.title,
+                extract: summary.extract?.substring(0, 180) + '...'
+              };
+            } catch {
+              current = {
+                title: nextLink.title,
+                extract: '(Mystery page)'
+              };
+            }
+
+            hideLoading();
+            stops.push(current);
+            const isEnd = i === MAX_JUMPS;
+            addStop(journeyDiv, current, i, false, isEnd);
+
+          } catch (e) {
+            hideLoading();
+            console.error(e);
+            break;
+          }
+        }
+
+        // Mark last stop as end if we didn't reach max
+        if (stops.length < MAX_JUMPS + 1) {
+          const lastStop = journeyDiv.querySelector('.stop:last-child');
+          if (lastStop && !lastStop.classList.contains('start')) {
+            lastStop.classList.add('end');
+            lastStop.querySelector('.stop-number').textContent = '🏁';
+          }
+        }
+
+        showStats(stops);
+
+      } catch (e) {
+        hideLoading();
+        journeyDiv.innerHTML = `<p style="color: #f66; text-align: center;">Something went wrong. Wikipedia might be having a moment.</p>`;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Go Again';
+      isRunning = false;
+    }
+
+    document.getElementById('startBtn').addEventListener('click', startAdventure);
+  </script>
+</body>
+</html>
