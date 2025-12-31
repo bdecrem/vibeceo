@@ -22466,5 +22466,615 @@
     "action": "no_action",
     "timestamp": "2025-12-30T23:58:17.903365-05:00",
     "timestamp_human": "11:58 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T00:13:19.720861-05:00",
+    "timestamp_human": "12:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T00:28:21.505246-05:00",
+    "timestamp_human": "12:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T00:43:23.308904-05:00",
+    "timestamp_human": "12:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T00:58:25.290587-05:00",
+    "timestamp_human": "12:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T01:13:27.070305-05:00",
+    "timestamp_human": "01:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T01:28:28.833029-05:00",
+    "timestamp_human": "01:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T01:43:30.613606-05:00",
+    "timestamp_human": "01:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T01:58:32.614409-05:00",
+    "timestamp_human": "01:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T02:13:34.450339-05:00",
+    "timestamp_human": "02:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T02:28:36.187653-05:00",
+    "timestamp_human": "02:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T02:43:37.920815-05:00",
+    "timestamp_human": "02:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T02:58:40.153793-05:00",
+    "timestamp_human": "02:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T03:13:41.988292-05:00",
+    "timestamp_human": "03:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T03:28:43.922519-05:00",
+    "timestamp_human": "03:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T03:43:45.867073-05:00",
+    "timestamp_human": "03:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T03:58:47.786696-05:00",
+    "timestamp_human": "03:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T04:13:49.550934-05:00",
+    "timestamp_human": "04:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T04:28:51.372341-05:00",
+    "timestamp_human": "04:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T04:43:53.159779-05:00",
+    "timestamp_human": "04:43 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T04:58:55.382595-05:00",
+    "timestamp_human": "04:58 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T05:13:57.127335-05:00",
+    "timestamp_human": "05:13 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T05:28:59.082689-05:00",
+    "timestamp_human": "05:28 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T05:44:00.812817-05:00",
+    "timestamp_human": "05:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T05:59:02.817908-05:00",
+    "timestamp_human": "05:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T06:14:04.665583-05:00",
+    "timestamp_human": "06:14 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T06:29:06.469290-05:00",
+    "timestamp_human": "06:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T06:44:08.232230-05:00",
+    "timestamp_human": "06:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T06:59:10.181706-05:00",
+    "timestamp_human": "06:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T07:14:11.978652-05:00",
+    "timestamp_human": "07:14 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T07:29:13.731787-05:00",
+    "timestamp_human": "07:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T07:44:15.513600-05:00",
+    "timestamp_human": "07:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T07:59:17.457473-05:00",
+    "timestamp_human": "07:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T08:14:19.262560-05:00",
+    "timestamp_human": "08:14 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T08:29:21.083827-05:00",
+    "timestamp_human": "08:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T08:44:22.839681-05:00",
+    "timestamp_human": "08:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T08:59:24.844501-05:00",
+    "timestamp_human": "08:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T09:14:26.639507-05:00",
+    "timestamp_human": "09:14 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "No quantitative triggers found",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T09:29:28.419143-05:00",
+    "timestamp_human": "09:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T09:44:33.444830-05:00",
+    "timestamp_human": "09:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T09:59:38.549706-05:00",
+    "timestamp_human": "09:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T10:14:44.001210-05:00",
+    "timestamp_human": "10:14 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T10:29:48.938617-05:00",
+    "timestamp_human": "10:29 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T10:44:53.736065-05:00",
+    "timestamp_human": "10:44 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T10:59:58.603224-05:00",
+    "timestamp_human": "10:59 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T11:15:04.643047-05:00",
+    "timestamp_human": "11:15 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T11:30:09.831313-05:00",
+    "timestamp_human": "11:30 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T11:45:15.240463-05:00",
+    "timestamp_human": "11:45 AM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T12:00:20.817813-05:00",
+    "timestamp_human": "12:00 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T12:15:27.444200-05:00",
+    "timestamp_human": "12:15 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T12:30:34.212391-05:00",
+    "timestamp_human": "12:30 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T12:45:40.482952-05:00",
+    "timestamp_human": "12:45 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T13:00:47.894439-05:00",
+    "timestamp_human": "01:00 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T13:16:12.199558-05:00",
+    "timestamp_human": "01:16 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T13:31:21.281497-05:00",
+    "timestamp_human": "01:31 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T13:46:27.369974-05:00",
+    "timestamp_human": "01:46 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T14:01:33.867813-05:00",
+    "timestamp_human": "02:01 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T14:16:39.843659-05:00",
+    "timestamp_human": "02:16 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T14:31:46.283167-05:00",
+    "timestamp_human": "02:31 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T14:46:52.305261-05:00",
+    "timestamp_human": "02:46 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T15:01:58.511447-05:00",
+    "timestamp_human": "03:01 PM ET"
+  },
+  {
+    "type": "scan",
+    "portfolio_value": 495.31,
+    "position_count": 0,
+    "findings": "",
+    "triggers": [],
+    "action": "no_action",
+    "timestamp": "2025-12-31T15:17:05.694783-05:00",
+    "timestamp_human": "03:17 PM ET"
   }
 ]
