@@ -40,10 +40,11 @@ interface EVIRequest {
 
 // Load Amber's context from drawer
 async function loadAmberContext(): Promise<{ systemPrompt: string; context: string }> {
-  const [persona, memory, log] = await Promise.all([
+  const [persona, memory, log, blog] = await Promise.all([
     fs.readFile(path.join(DRAWER_PATH, 'PERSONA.md'), 'utf-8').catch(() => ''),
     fs.readFile(path.join(DRAWER_PATH, 'MEMORY.md'), 'utf-8').catch(() => ''),
     fs.readFile(path.join(DRAWER_PATH, 'LOG.md'), 'utf-8').catch(() => ''),
+    fs.readFile(path.join(DRAWER_PATH, 'BLOG.md'), 'utf-8').catch(() => ''),
   ]);
 
   // Extract recent log entries
@@ -62,7 +63,9 @@ ${persona.slice(0, 3000)}`;
 ${memory.slice(0, 3000)}
 
 ## Recent Sessions
-${recentLog}`;
+${recentLog}
+
+${blog}`;
 
   return { systemPrompt, context };
 }
@@ -102,21 +105,52 @@ export async function POST(request: NextRequest) {
       apiKey: process.env.ANTHROPIC_API_KEY,
     });
 
-    // Convert EVI messages to Claude format
-    // Limit to last 4 messages to avoid tool-use format corruption from Hume
-    const recentMessages = messages.slice(-4);
-    const claudeMessages = recentMessages.map(m => ({
-      role: m.role as 'user' | 'assistant',
-      content: typeof m.content === 'string' ? m.content : String(m.content),
-    }));
+    // Normalize messages for Claude:
+    // 1. Hume sends chunked assistant messages (5 separate messages for one greeting)
+    // 2. Claude requires: first message = user, alternating roles
+    // Solution: Merge consecutive same-role messages, ensure valid structure
 
-    // Inject context into first user message or prepend
+    // First, merge consecutive same-role messages
+    const merged: { role: 'user' | 'assistant'; content: string }[] = [];
+    for (const m of messages) {
+      const content = typeof m.content === 'string' ? m.content : String(m.content);
+      const role = m.role as 'user' | 'assistant';
+
+      if (merged.length > 0 && merged[merged.length - 1].role === role) {
+        // Same role as previous - merge
+        merged[merged.length - 1].content += '\n\n' + content;
+      } else {
+        merged.push({ role, content });
+      }
+    }
+
+    // Take last 4 merged messages
+    const recentMerged = merged.slice(-4);
+
+    // Ensure first message is user (Claude requirement)
+    // If it starts with assistant, find the first user message and start there
+    let claudeMessages = recentMerged;
+    if (claudeMessages.length > 0 && claudeMessages[0].role === 'assistant') {
+      const firstUserIdx = claudeMessages.findIndex(m => m.role === 'user');
+      if (firstUserIdx > 0) {
+        claudeMessages = claudeMessages.slice(firstUserIdx);
+      } else if (firstUserIdx === -1) {
+        // No user message at all - this shouldn't happen in normal flow
+        // Prepend a minimal user message
+        claudeMessages = [{ role: 'user', content: '(continuing conversation)' }, ...claudeMessages];
+      }
+    }
+
+    // Inject context into first user message
     if (claudeMessages.length > 0 && claudeMessages[0].role === 'user') {
       claudeMessages[0] = {
         role: 'user',
         content: `[Context for this conversation:\n${context}]\n\n${claudeMessages[0].content}`,
       };
     }
+
+    // Track for logging (use the last few raw messages)
+    const recentMessages = messages.slice(-4);
 
     // Create streaming response
     const stream = await anthropic.messages.stream({
@@ -152,16 +186,17 @@ export async function POST(request: NextRequest) {
           controller.close();
 
           // Store the conversation in Supabase (non-blocking)
-          // Use recentMessages to match what was actually sent to Claude
+          // Use Bart/Amber labels instead of user/assistant for clarity
+          const roleLabel = (role: string) => role === 'user' ? 'Bart' : 'Amber';
           const conversationContent = recentMessages
-            .map(m => `${m.role}: ${typeof m.content === 'string' ? m.content : '[complex content]'}`)
-            .join('\n\n') + `\n\nassistant: ${fullResponse}`;
+            .map(m => `${roleLabel(m.role)}: ${typeof m.content === 'string' ? m.content : '[complex content]'}`)
+            .join('\n\n') + `\n\nAmber: ${fullResponse}`;
 
           // Store voice_session and generate log_entry summary (non-blocking)
           (async () => {
             try {
               // 1. Store raw voice_session
-              const { error: sessionError } = await supabase
+              const { data: sessionData, error: sessionError } = await supabase
                 .from('amber_state')
                 .insert({
                   type: 'voice_session',
@@ -173,43 +208,70 @@ export async function POST(request: NextRequest) {
                     prosody: prosodyScores,
                     message_count: messages.length + 1,
                   },
-                });
+                })
+                .select('id')
+                .single();
 
               if (sessionError) {
                 console.error('[amber-voice] Failed to store session:', sessionError);
                 return;
               }
-              console.log('[amber-voice] Stored voice session:', sessionId);
+              const voiceSessionId = sessionData?.id;
+              console.log('[amber-voice] Stored voice session:', voiceSessionId);
 
               // 2. Generate summary with Claude (only if conversation has substance)
               if (fullResponse.length > 50) {
                 const summaryResponse = await anthropic.messages.create({
                   model: 'claude-sonnet-4-20250514',
-                  max_tokens: 200,
-                  system: 'You are summarizing a voice conversation for a personal log. Write a brief 1-2 sentence summary capturing what was discussed and any notable moments. Be concise and personal.',
+                  max_tokens: 100,
+                  system: `Decide if this voice conversation is worth logging.
+
+Reply with EXACTLY "SKIP" (nothing else) for:
+- Greetings, hellos, small talk
+- Testing, debugging, "is this working"
+- Status updates without real discussion
+- Short exchanges with no substance
+- Anything under 3 meaningful exchanges
+
+Reply with a 1-sentence summary ONLY for:
+- Real conversations with actual content discussed
+- Bart shared something specific and memorable
+
+Default to SKIP. When in doubt, SKIP.`,
                   messages: [{
                     role: 'user',
-                    content: `Summarize this voice conversation:\n\n${conversationContent}`,
+                    content: `SKIP or summarize:\n\n${conversationContent}`,
                   }],
                 });
 
                 const summary = summaryResponse.content[0].type === 'text'
-                  ? summaryResponse.content[0].text
+                  ? summaryResponse.content[0].text.trim()
                   : '';
 
-                // 3. Store as log_entry
-                const { error: logError } = await supabase
-                  .from('amber_state')
-                  .insert({
-                    type: 'log_entry',
-                    content: `## Voice Session\n\n${summary}`,
-                    metadata: { session_id: sessionId, source: 'voice' },
-                  });
+                // 3. Store as log_entry only if not skipped
+                const shouldSkip = summary.toUpperCase().startsWith('SKIP') ||
+                  summary.toUpperCase().includes('SKIP') ||
+                  summary.length < 15;
 
-                if (logError) {
-                  console.error('[amber-voice] Failed to store log_entry:', logError);
+                if (shouldSkip) {
+                  console.log('[amber-voice] Skipped log_entry:', summary.slice(0, 30));
                 } else {
-                  console.log('[amber-voice] Stored log_entry:', summary.slice(0, 50));
+                  const { error: logError } = await supabase
+                    .from('amber_state')
+                    .insert({
+                      type: 'log_entry',
+                      content: `## Voice Session\n\n${summary}`,
+                      metadata: {
+                        source: 'voice',
+                        voice_session_id: voiceSessionId,  // Link to full transcript
+                      },
+                    });
+
+                  if (logError) {
+                    console.error('[amber-voice] Failed to store log_entry:', logError);
+                  } else {
+                    console.log('[amber-voice] Stored log_entry:', summary.slice(0, 50));
+                  }
                 }
               }
             } catch (err) {

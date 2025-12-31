@@ -24,7 +24,7 @@ export async function POST() {
     console.log('[preload] Fetching from Supabase...');
 
     // Fetch from Supabase
-    const [personaResult, memoryResult, logResult] = await Promise.all([
+    const [personaResult, memoryResult, logResult, blogResult] = await Promise.all([
       supabase
         .from('amber_state')
         .select('content')
@@ -45,6 +45,13 @@ export async function POST() {
         .eq('type', 'log_entry')
         .order('created_at', { ascending: false })
         .limit(3),
+      supabase
+        .from('amber_state')
+        .select('content, metadata')
+        .eq('type', 'blog_post')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single(),
     ]);
 
     const persona = personaResult.data?.content || '';
@@ -52,16 +59,23 @@ export async function POST() {
     const logEntries = logResult.data || [];
     const log = '# Log\n\nRecent entries:\n\n' + logEntries.map(l => l.content).join('\n\n---\n\n');
 
+    // Latest blog post (just title + summary for context)
+    const blogData = blogResult.data;
+    const blog = blogData
+      ? `# Latest Blog Post\n\n**${blogData.metadata?.title}** (${blogData.metadata?.date})\n${blogData.metadata?.summary}`
+      : '';
+
     // Write to local drawer files
     await Promise.all([
       fs.writeFile(path.join(DRAWER_PATH, 'PERSONA.md'), persona),
       fs.writeFile(path.join(DRAWER_PATH, 'MEMORY.md'), memory),
       fs.writeFile(path.join(DRAWER_PATH, 'LOG.md'), log),
+      fs.writeFile(path.join(DRAWER_PATH, 'BLOG.md'), blog),
     ]);
 
     const loadTime = Date.now() - startTime;
     console.log(`[preload] Synced Supabase → drawer in ${loadTime}ms`);
-    console.log(`[preload] Persona: ${persona.length}, Memory: ${memory.length}, Log: ${log.length} chars`);
+    console.log(`[preload] Persona: ${persona.length}, Memory: ${memory.length}, Log: ${log.length}, Blog: ${blog.length} chars`);
 
     return Response.json({
       success: true,
@@ -70,6 +84,7 @@ export async function POST() {
       persona: persona.length,
       memory: memory.length,
       log: log.length,
+      blog: blog.length,
     });
   } catch (error) {
     console.error('[preload] Error:', error);
