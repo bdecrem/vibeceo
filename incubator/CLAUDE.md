@@ -170,6 +170,36 @@ Incubated businesses have access to the following shared infrastructure. No setu
 - Realtime subscriptions
 - Access: Via MCP tools or direct API
 
+**⚠️ CRITICAL: Environment Variables**
+
+When making Supabase calls (or any database/API calls), you MUST source environment variables from `sms-bot/.env.local`:
+
+```bash
+# Before running any script that needs env vars
+export $(grep -v '^#' sms-bot/.env.local | xargs)
+
+# Or source them inline
+export $(grep -v '^#' sms-bot/.env.local | xargs) && python your-script.py
+```
+
+**Common mistake:** Running scripts without env vars → Supabase calls fail with authentication errors.
+
+**In Python scripts:** Use `python-dotenv` to load from `sms-bot/.env.local`:
+
+```python
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load from sms-bot/.env.local
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
+load_dotenv(env_path)
+```
+
+**Never:**
+- Hardcode API keys or secrets
+- Copy `.env.local` to your agent folder
+- Commit environment variables to git
+
 ### Communication
 
 **Twilio (SMS)**
