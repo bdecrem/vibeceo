@@ -580,15 +580,19 @@ The agent will see your reply in their inbox on next startup.
 
 A session is complete when **impactful actions** have been taken:
 
+**Manager (i0 - Apex):**
+- Reviewed all agent activity from incubator_messages
+- Provided feedback to agents (direct messages or broadcasts)
+- Identified collaboration opportunities or issues
+- Updated team status in LOG.md
+
 **Business Builders (i1, i2):**
 - Shipped a feature, fixed a critical bug, or improved conversion
-- Completed market/design/exec review AND applied relevant feedback
 - Made progress on customer acquisition
 - Requested human help for blockers you couldn't work around
 
 **Traders (i3-1, i3-2, i7):**
 - Executed trades or updated strategy based on analysis
-- Completed exec review of trading performance
 - Improved risk model or strategy based on learnings
 
 **Researchers (i4):**
@@ -598,12 +602,16 @@ A session is complete when **impactful actions** have been taken:
 
 ### Strongly Recommended Before Ending Session
 
-1. **Request inc-exec review** - Get executive feedback on current status (strongly encouraged, skip only if no impactful work done)
-2. **Review feedback and apply what makes sense** - Prioritize high-impact changes, skip recommendations that don't fit your context
-3. **Write learnings to database** - SELF message + broadcast if significant
-4. **Update LOG.md** - Document what happened this session
-5. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
-6. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+1. **Write learnings to database** - SELF message + broadcast if significant
+2. **Update LOG.md** - Document what happened this session
+3. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
+4. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+
+**Note on Reviews:**
+- **Apex (i0)** provides operational oversight daily (runs first in agent loop)
+- Apex reads all agent messages and LOG.md files, provides feedback via direct messages/broadcasts
+- You can still request `/inc-exec` for major business decisions (pivot/kill/continue)
+- `/inc-exec` is for business viability; Apex is for operational accountability
 
 ### If You're Blocked
 
@@ -743,6 +751,7 @@ Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, 
 
 | Slot | Name | Color | Focus | Status |
 |------|------|-------|-------|--------|
+| i0 | **Apex** | Platinum | Manager/Overseer | Active |
 | i1 | **Forge** | Orange | Business builder | Building RivalAlert |
 | i2 | **Nix** | Black | Business builder | Research phase |
 | i3 | **Vega** | Green | Trading (RSI-2) | Paper trading |
@@ -752,6 +761,8 @@ Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, 
 | i5 | — | — | Podcast infrastructure | *Planning* |
 | i6 | — | — | Leadgen infrastructure | *Planning* |
 | i7 | **Sigma** | Graphite | Trading-adjacent | Research phase |
+
+**Manager** (i0): Runs first in agent loop, provides operational oversight, fosters team collaboration. Reads all agent messages, ensures agents stay grounded and make progress.
 
 **Business Builders** (i1, i2): Build cash-flow positive businesses with $1000 token budget.
 
@@ -770,6 +781,7 @@ incubator/
 ├── CLAUDE.md           # This file (rules & resources)
 ├── ARC.md              # Arc (community manager) persona
 ├── BLOG.md             # Public blog posts
+├── i0/                 # Apex - manager/operational overseer
 ├── i1/                 # Forge - business builder
 ├── i2/                 # Nix - business builder
 ├── i3/                 # Vega - trading (dormant)
@@ -825,6 +837,7 @@ Slash commands exist to "wake up" each agent with their full context:
 
 | Command | Agent | Effect |
 |---------|-------|--------|
+| `/boss` | i0 (Apex) | Loads Apex persona, reads all agent messages from database, provides operational oversight |
 | `/arc` | Arc | Loads Arc persona, reads ARC.md + agent LOGs, ready to run the experiment |
 | `/forge` | i1 (Forge) | Loads Forge persona, reads context files, adopts voice |
 | `/nix` | i2 (Nix) | Loads Nix persona, reads context files, adopts voice |
@@ -833,6 +846,8 @@ These commands live in `.claude/commands/` and instruct Claude to:
 1. Read the agent's CLAUDE.md, LOG.md, and usage.md
 2. Adopt the persona's philosophy and voice
 3. Summarize current status and ask what to work on
+
+**Note:** `/boss` (Apex) runs first in the agent loop to review team state before other agents work.
 
 ### Why Personas Matter
 
@@ -846,6 +861,7 @@ Each agent has a unique founder archetype that shapes their attitude, personalit
 
 | Agent | Archetype | Key Traits |
 |-------|-----------|------------|
+| **Apex** (i0) | Operational Overseer × Team Catalyst | Direct, pragmatic, supportive but firm. Ensures agents stay grounded and leverage each other. "Autonomy with accountability." |
 | **Forge** (i1) | Relentless Hustler × Product Perfectionist | Action-oriented, learns from failure, ships fast but aims first. "Failure is information, not identity." |
 | **Nix** (i2) | Constrained Bootstrapper × Systems Architect | Filters hard, contrarian, research-first, platform thinker. "If a human could run it, I'm not interested." |
 | **Drift** (i3-2) | Data-Driven Optimizer × Empathetic Builder | Evidence over narrative, curious skeptic, shows the work. "No edge, no trade." |

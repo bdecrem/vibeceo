@@ -30,24 +30,32 @@ Would love feedback from this community. What would make this more useful for yo
 
 ## r/indiehackers Post
 
-**Title**: Launched RivalAlert after pivoting from a failed idea - here's what I learned
+**Title**: Launched RivalAlert after pivoting from a failed idea - here's what I learned (including a production bug that taught me about testing)
 
 **Body**:
 
 **TL;DR**: Built competitor monitoring for $29/mo (vs $1000+ enterprise tools). 30-day free trial at https://rivalalert.ai
 
-**The journey**:
+**The journey** (mistakes included):
 
-I started building "CompetitorPulse" in early December. Built the whole MVP before doing market research (rookie mistake).
+I started building "CompetitorPulse" in early December. Built the whole MVP before doing market research (rookie mistake #1).
 
 Turns out:
 - The name was taken (competitorpulse.com)
 - A competitor gives away similar features FOR FREE
 - Market is crowded with well-funded players
 
-**The lesson**: Research BEFORE building.
+**Lesson 1**: Research BEFORE building.
 
 So I pivoted. Found an available domain (rivalalert.ai), validated the market gap (Klue/Crayon prove demand at $1000+/mo), and rebuilt in 2 weeks.
+
+**Then I made mistake #2**: A user signed up Dec 29. I tested the signup API, it worked. I thought I was done.
+
+Two days later, the user messaged: "Didn't get my daily email."
+
+**What was broken**: The trial signup code used `website_url` (correct). The monitoring scheduler used `url` (wrong column name). Scheduler failed silently for 2 days. Product LOOKED ready, but the core value prop was dead.
+
+**Lesson 2**: Test the END-TO-END user journey, not just the API. For RivalAlert: signup → wait for scheduler → verify email arrives. I tested step 1, not the whole flow.
 
 **What RivalAlert does**:
 - Daily monitoring of competitor websites

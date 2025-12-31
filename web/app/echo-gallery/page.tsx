@@ -222,12 +222,21 @@ export default async function EchoGalleryPage() {
             fontSize: '1.1em',
             fontStyle: 'italic',
             maxWidth: '500px',
-            margin: '0 auto 30px',
+            margin: '0 auto 15px',
             lineHeight: 1.6,
           }}>
             Ideas that shouldn&apos;t exist, but do.
             <br />
             Growing forever.
+          </p>
+          <p style={{
+            color: '#aaa',
+            fontSize: '1em',
+            maxWidth: '600px',
+            margin: '0 auto 30px',
+            lineHeight: 1.5,
+          }}>
+            Pick a content concept. Ship it on Twitter. See what resonates.
           </p>
           <div style={{
             display: 'inline-block',
