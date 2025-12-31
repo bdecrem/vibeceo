@@ -69,7 +69,7 @@ export async function startSmsBot(): Promise<void> {
     registerTokenshotsDailyJob(twilioClient); // TOKENSHOTS - Daily AI research podcast at 6:30am PT
     registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
-    registerAITwitterDailyJob(twilioClient); // AI TWITTER DAILY - Curated AI researcher tweets at 8am PT
+    // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
