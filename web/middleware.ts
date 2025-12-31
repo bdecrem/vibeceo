@@ -82,6 +82,10 @@ export function middleware(request: NextRequest) {
       log(`[Middleware] Voice chat route bypassed: ${pathname}`)
       return NextResponse.next()
     }
+    if (pathname === '/simple-voice' || pathname.startsWith('/simple-voice')) {
+      log(`[Middleware] Simple voice route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
 
     // /cc/* (code investigation viewer) and /code-voice should not be rewritten
     if (pathname.startsWith('/cc/') || pathname.startsWith('/code-voice')) {
@@ -264,6 +268,7 @@ export function middleware(request: NextRequest) {
       pathname.startsWith('/coinrundown') ||
       pathname.startsWith('/amber') ||
       pathname.startsWith('/voice-chat') ||
+      pathname.startsWith('/simple-voice') ||
       pathname.startsWith('/cs')) {
     log(`[Middleware] Auth/global route bypassed: ${pathname}`)
     return NextResponse.next()
