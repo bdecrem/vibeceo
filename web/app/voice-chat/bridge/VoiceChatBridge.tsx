@@ -17,6 +17,26 @@ function VoiceChatBridgeInner() {
   const maxReconnectAttempts = 5;
   const wasConnected = useRef(false);
   const intentionalDisconnect = useRef(false);
+  const mountedRef = useRef(true);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // CRITICAL: Cleanup on unmount to prevent state pollution
+  useEffect(() => {
+    mountedRef.current = true;
+    console.log('[VoiceBridge] Component mounted');
+
+    return () => {
+      console.log('[VoiceBridge] Component unmounting - cleaning up');
+      mountedRef.current = false;
+      // Clear any pending reconnect timers
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+      // Force disconnect to close WebSocket
+      disconnect();
+    };
+  }, [disconnect]);
 
   // Fetch token (with refresh capability)
   const fetchToken = useCallback(async () => {
@@ -40,23 +60,29 @@ function VoiceChatBridgeInner() {
   useEffect(() => {
     if (error) {
       console.error('[VoiceBridge] Error:', error);
-      setConnectionError(error.message || 'Connection error');
+      if (mountedRef.current) {
+        setConnectionError(error.message || 'Connection error');
+      }
 
-      // Attempt reconnect on certain errors
-      if (reconnectAttempts.current < maxReconnectAttempts) {
+      // Attempt reconnect on certain errors (only if mounted)
+      if (mountedRef.current && reconnectAttempts.current < maxReconnectAttempts) {
         reconnectAttempts.current += 1;
         console.log(`[VoiceBridge] Reconnect attempt ${reconnectAttempts.current}/${maxReconnectAttempts}`);
 
-        setTimeout(async () => {
+        reconnectTimeoutRef.current = setTimeout(async () => {
+          if (!mountedRef.current) return; // Abort if unmounted
+
           // Refresh token and reconnect
           const newToken = await fetchToken();
-          if (newToken) {
+          if (newToken && mountedRef.current) {
             try {
               await connect({
                 auth: { type: 'accessToken', value: newToken },
                 configId: EVI_CONFIG_ID,
               });
-              setConnectionError(null);
+              if (mountedRef.current) {
+                setConnectionError(null);
+              }
               reconnectAttempts.current = 0;
             } catch (e) {
               console.error('[VoiceBridge] Reconnect failed:', e);
@@ -73,23 +99,29 @@ function VoiceChatBridgeInner() {
       // Successfully connected
       wasConnected.current = true;
       reconnectAttempts.current = 0;
-      setConnectionError(null);
-      setIsReconnecting(false);
+      if (mountedRef.current) {
+        setConnectionError(null);
+        setIsReconnecting(false);
+      }
       console.log('[VoiceBridge] Connected');
-    } else if (readyState === VoiceReadyState.CLOSED && wasConnected.current && !intentionalDisconnect.current) {
-      // Unexpected disconnect - try to reconnect
+    } else if (readyState === VoiceReadyState.CLOSED && wasConnected.current && !intentionalDisconnect.current && mountedRef.current) {
+      // Unexpected disconnect - try to reconnect (only if still mounted)
       console.log('[VoiceBridge] Unexpected disconnect, attempting reconnect...');
 
       if (reconnectAttempts.current < maxReconnectAttempts) {
         reconnectAttempts.current += 1;
-        setIsReconnecting(true);
-        setConnectionError(`Connection lost. Reconnecting (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+        if (mountedRef.current) {
+          setIsReconnecting(true);
+          setConnectionError(`Connection lost. Reconnecting (${reconnectAttempts.current}/${maxReconnectAttempts})...`);
+        }
 
         const delay = Math.min(1000 * Math.pow(2, reconnectAttempts.current - 1), 10000); // Exponential backoff, max 10s
 
-        setTimeout(async () => {
+        reconnectTimeoutRef.current = setTimeout(async () => {
+          if (!mountedRef.current) return; // Abort if unmounted
+
           const newToken = await fetchToken();
-          if (newToken) {
+          if (newToken && mountedRef.current) {
             try {
               await connect({
                 auth: { type: 'accessToken', value: newToken },
@@ -100,7 +132,7 @@ function VoiceChatBridgeInner() {
             }
           }
         }, delay);
-      } else {
+      } else if (mountedRef.current) {
         setConnectionError('Connection lost. Please click Start to reconnect.');
         setIsReconnecting(false);
         wasConnected.current = false;
@@ -239,8 +271,26 @@ function VoiceChatBridgeInner() {
 }
 
 export default function VoiceChatBridge() {
+  // Force fresh VoiceProvider on each mount to prevent state pollution
+  const [providerKey, setProviderKey] = useState(() => Date.now());
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    console.log('[VoiceChatBridge] Wrapper mounted, setting fresh provider key');
+    setProviderKey(Date.now());
+    setMounted(true);
+
+    return () => {
+      console.log('[VoiceChatBridge] Wrapper unmounting');
+    };
+  }, []);
+
+  if (!mounted) {
+    return <div className="p-8">Loading...</div>;
+  }
+
   return (
-    <VoiceProvider>
+    <VoiceProvider key={providerKey}>
       <VoiceChatBridgeInner />
     </VoiceProvider>
   );
