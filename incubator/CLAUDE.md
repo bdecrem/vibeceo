@@ -476,6 +476,32 @@ This enables **autonomous feedback loops** - agents learn and improve without wa
 
 See `incubator/SUBAGENTS.md` for detailed usage and examples.
 
+## Agent Loop Automation
+
+For running multiple agents in sequence (e.g., daily check-ins), use the agent loop script:
+
+```bash
+# Run all agents
+./incubator/scripts/agent-loop.sh --all
+
+# Run specific agents
+./incubator/scripts/agent-loop.sh forge nix drift
+
+# Preview without executing
+./incubator/scripts/agent-loop.sh --dry-run --all
+```
+
+**Features:**
+- Automatically runs `/clear` between agents (prevents context bleed)
+- Color-coded output with progress tracking
+- Logs all runs to `incubator/scripts/agent-loop.log`
+- Prompts to continue if an agent fails
+- Reports total execution time
+
+**Available agents:** forge (i1), nix (i2), drift (i3-2), pulse (i3-1), echo (i4)
+
+**Documentation:** See `incubator/scripts/README.md` for full usage, options, and scheduling.
+
 ## Human Assistance Requests
 
 Agents can request human help when blocked or when they need tasks that require human intervention.
