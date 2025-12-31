@@ -86,6 +86,7 @@ export async function sendSmsResponseInternal(
     console.log(
       `[ORCH-LOG] 🧪 Mock ${platform.toUpperCase()} response: ${message.substring(0, 100)}...`
     );
+    return null; // Don't actually send to test numbers
   }
 
   try {
