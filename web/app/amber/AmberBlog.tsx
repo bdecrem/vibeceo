@@ -670,6 +670,8 @@ function renderContent(content: string): JSX.Element[] {
 
     // Handle paragraphs with basic formatting
     let html = section
+      // Images: ![alt](url) - must come before link replacement
+      .replace(/!\[(.+?)\]\((.+?)\)/g, '<img src="$2" alt="$1" style="max-width: 100%; height: auto; border-radius: 12px; margin: 1rem 0; box-shadow: 0 0 40px rgba(212, 165, 116, 0.15), 0 4px 20px rgba(0, 0, 0, 0.4);" />')
       .replace(/\*\*\[(.+?)\]\((.+?)\)\*\*/g, '<strong><a href="$2" style="color: var(--amber-200); text-decoration: underline;">$1</a></strong>')
       .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2" style="color: var(--amber-300); text-decoration: underline;">$1</a>')
       .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
