@@ -47,7 +47,7 @@ interface RaCompetitor {
   id: string;
   user_id: string;
   name: string;
-  url: string;
+  website_url: string;
 }
 
 interface RaSnapshot {
@@ -118,7 +118,7 @@ async function getLatestSnapshot(competitorId: string): Promise<RaSnapshot | nul
     .from('ra_snapshots')
     .select('*')
     .eq('competitor_id', competitorId)
-    .order('created_at', { ascending: false })
+    .order('captured_at', { ascending: false })
     .limit(1)
     .single();
 
@@ -164,7 +164,7 @@ async function recordChange(
 async function getRecentChanges(userId: string, since: Date): Promise<any[]> {
   const supabase = getSupabase();
 
-  const { data, error } = await supabase
+  const { data, error} = await supabase
     .from('ra_changes')
     .select(
       `
@@ -172,15 +172,15 @@ async function getRecentChanges(userId: string, since: Date): Promise<any[]> {
       ra_competitors!inner (
         id,
         name,
-        url,
+        website_url,
         user_id
       )
     `
     )
     .eq('ra_competitors.user_id', userId)
-    .gte('created_at', since.toISOString())
+    .gte('detected_at', since.toISOString())
     .eq('notified', false)
-    .order('created_at', { ascending: false });
+    .order('detected_at', { ascending: false });
 
   if (error) {
     console.error('[rivalalert] Error fetching changes:', error);
@@ -332,9 +332,9 @@ function detectChanges(
 
 async function monitorCompetitor(competitor: RaCompetitor): Promise<number> {
   try {
-    console.log(`[rivalalert] Monitoring: ${competitor.name} (${competitor.url})`);
+    console.log(`[rivalalert] Monitoring: ${competitor.name} (${competitor.website_url})`);
 
-    const html = await fetchWebsite(competitor.url);
+    const html = await fetchWebsite(competitor.website_url);
     const content = extractContent(html);
     const contentHash = createHash('sha256').update(JSON.stringify(content)).digest('hex');
 
