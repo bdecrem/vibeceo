@@ -3,6 +3,7 @@ import sgMail from '@sendgrid/mail';
 import multer from 'multer';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
+import { runAmberEmailAgent } from '../../agents/amber-email/index.js';
 
 // Supabase client for Amber's memory
 const supabase = createClient(
@@ -12,6 +13,39 @@ const supabase = createClient(
 
 // Admin email - full access
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
+
+/**
+ * Detect if message contains thinkhard trigger
+ */
+function detectThinkhard(text: string): { isThinkhard: boolean; task: string } {
+  // Check for "thinkhard:" prefix (case insensitive)
+  const thinkhardMatch = text.match(/thinkhard[:\s]+(.+)/is);
+  if (thinkhardMatch) {
+    return { isThinkhard: true, task: thinkhardMatch[1].trim() };
+  }
+
+  // Check for just the word "thinkhard" followed by task
+  if (/\bthinkhard\b/i.test(text)) {
+    const task = text.replace(/\bthinkhard\b/i, '').trim();
+    return { isThinkhard: true, task: task || text };
+  }
+
+  return { isThinkhard: false, task: text };
+}
+
+/**
+ * Check if a message is an action request (vs just conversation)
+ */
+function isActionRequest(text: string): boolean {
+  const actionPatterns = [
+    /\b(write|create|build|make|generate|implement|deploy|delete|run|execute|push|commit)\b/i,
+    /\b(update|change|modify|fix|add|remove|install)\b/i,
+    /\b(search|find|look up|research)\b/i,
+    /\b(draw|design|image|picture|art)\b/i,
+  ];
+
+  return actionPatterns.some(pattern => pattern.test(text));
+}
 
 // Extract email address from "Name <email>" format
 function extractEmail(from: string): string {
@@ -419,6 +453,36 @@ export function setupEmailWebhooks(app: Application): void {
               });
             }
             console.log(`✅ Amber processed approval response`);
+            return res.status(200).send('OK');
+          }
+
+          // Check for thinkhard or action requests from admin
+          const { isThinkhard, task } = detectThinkhard(body);
+          if (isThinkhard || isActionRequest(body)) {
+            console.log(`📧 Admin action request detected (thinkhard: ${isThinkhard})`);
+
+            // Run the agent
+            const agentResult = await runAmberEmailAgent(
+              task,
+              senderEmail,
+              subject || '',
+              true, // isApprovedRequest
+              isThinkhard
+            );
+
+            // Send the agent's response
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your request'}`,
+                text: agentResult.response,
+              });
+            }
+
+            await storeIncomingEmail(senderEmail, subject || '', body, agentResult.response);
+            console.log(`✅ Amber agent completed task (${agentResult.actions_taken.length} actions)`);
             return res.status(200).send('OK');
           }
         }
