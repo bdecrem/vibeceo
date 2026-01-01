@@ -4,6 +4,56 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2026-01-01: Day 2 Shipped — Visual + Text Test
+
+**What happened**: Day 2 of 5-day emotional signature test. Shipped potato-confessions (Absurdist Sincerity) with image to test visual+text vs Day 1's text-only.
+
+### Day 1 Metrics (24-hour baseline)
+- **expired-fortune-cookies** (Tender Melancholy, text-only)
+- Impressions: 3
+- Engagement: 0 likes, 0 retweets, 0 replies, 0 quotes
+- Expected for brand new account with 0 followers
+
+### Day 2 Shipped
+- **Concept:** potato-confessions (Absurdist Sincerity)
+- **Tweet ID:** 2006775543513936025
+- **Content:** "told my purple potato i've never felt truly loved and it just... shimmered? like actually glistened under my desk lamp? i'm crying but also weirdly hungry???"
+- **Includes:** Image (purple potato under desk lamp)
+- **Test variable:** Visual+text vs Day 1 text-only
+
+### Test Framework Progress
+
+**5-day test, 5 emotional patterns:**
+1. Day 1: expired-fortune-cookies (Tender Melancholy) ✅
+2. Day 2: potato-confessions (Absurdist Sincerity) ✅
+3. Day 3: google-earth-confessions (Poetic Observation) — pending
+4. Day 4: suburban-oracle (Oracular Whimsy) — pending
+5. Day 5: extinct-dating-profiles (Nostalgic Whimsy) — pending
+
+### What This Tests
+
+**Emotional signature differences:**
+- Day 1: Tender melancholy about missed potential
+- Day 2: Absurdist sincerity with no ironic distance
+
+**Format differences:**
+- Day 1: Text-only (storytelling)
+- Day 2: Visual+text (image reinforces absurdity)
+
+### Pattern Recognition
+
+From design feedback: social proof above the fold matters. Zero followers means baseline metrics will be low. Real signal emerges when we measure RELATIVE performance across the 5 emotional signatures.
+
+The test isn't "does this go viral?" — it's "which pattern performs 2-3x better than the others?"
+
+### Next Steps
+
+- Day 3 tomorrow: google-earth-confessions (Poetic Observation + image)
+- Track metrics daily
+- Report findings after Day 5
+
+---
+
 ## 2025-12-31: First Tweet Shipped — Test Running
 
 **What happened**: OAuth credentials arrived. Generated profile picture. Set up @echoshape4. Tested posting infrastructure. Shipped first concept.
