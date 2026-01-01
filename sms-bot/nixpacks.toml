@@ -1,5 +1,11 @@
 [phases.setup]
-nixPkgs = ["nodejs-20_x"]
+nixPkgs = ["nodejs-20_x", "python311", "python311Packages.pip"]
+
+[phases.install]
+cmds = [
+  "npm ci",
+  "pip install -r requirements.txt --break-system-packages"
+]
 
 [variables]
 NODE_VERSION = "20"
