@@ -50,10 +50,12 @@
       max-width: 500px;
       margin: 20px auto;
       position: relative;
+      display: flex;
+      gap: 8px;
     }
 
     .start-input {
-      width: 100%;
+      flex: 1;
       padding: 14px 20px;
       font-size: 1rem;
       border: 2px solid #333;
@@ -71,6 +73,37 @@
 
     .start-input::placeholder {
       color: #666;
+    }
+
+    .go-btn {
+      padding: 14px 24px;
+      font-size: 1rem;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #d4a574, #c49464);
+      color: #1a1a2e;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: none;
+    }
+
+    .go-btn.show {
+      display: block;
+    }
+
+    .go-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+    }
+
+    .go-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .input-wrapper {
+      flex: 1;
+      position: relative;
     }
 
     .suggestions {
@@ -356,8 +389,11 @@
     </header>
 
     <div class="start-input-container">
-      <input type="text" class="start-input" id="startInput" placeholder="Type a topic (e.g., Pizza, Tokyo, Albert Einstein)..." autocomplete="off">
-      <div class="suggestions" id="suggestions"></div>
+      <div class="input-wrapper">
+        <input type="text" class="start-input" id="startInput" placeholder="Type a topic (e.g., Pizza, Tokyo, Albert Einstein)..." autocomplete="off">
+        <div class="suggestions" id="suggestions"></div>
+      </div>
+      <button class="go-btn" id="goBtn">Go!</button>
     </div>
 
     <p class="or-divider">— or —</p>
@@ -516,6 +552,7 @@ Try it: kochi.to/amber/rabbithole`;
 
       randomBtn.disabled = true;
       startBtn.disabled = true;
+      goBtn.disabled = true;
       randomBtn.textContent = 'Falling...';
       journeyDiv.innerHTML = '';
       statsDiv.innerHTML = '';
@@ -603,13 +640,16 @@ Try it: kochi.to/amber/rabbithole`;
       // Reset UI
       randomBtn.disabled = false;
       startBtn.disabled = false;
+      goBtn.disabled = false;
       randomBtn.textContent = '🎲 Go Again (Random)';
+      goBtn.textContent = 'Go!';
 
       // Reset input state
       selectedTitle = null;
       startInput.value = '';
       startBtn.style.display = 'none';
       randomBtn.style.display = 'block';
+      goBtn.classList.remove('show');
 
       isRunning = false;
     }
@@ -619,6 +659,7 @@ Try it: kochi.to/amber/rabbithole`;
     const suggestionsDiv = document.getElementById('suggestions');
     const randomBtn = document.getElementById('randomBtn');
     const startBtn = document.getElementById('startBtn');
+    const goBtn = document.getElementById('goBtn');
     const selectedTopicSpan = document.getElementById('selectedTopic');
 
     startInput.addEventListener('input', (e) => {
@@ -628,11 +669,15 @@ Try it: kochi.to/amber/rabbithole`;
 
       if (query.length < 2) {
         suggestionsDiv.classList.remove('show');
+        goBtn.classList.remove('show');
         selectedTitle = null;
         startBtn.style.display = 'none';
         randomBtn.style.display = 'block';
         return;
       }
+
+      // Show Go button when there's input
+      goBtn.classList.add('show');
 
       searchTimeout = setTimeout(async () => {
         try {
@@ -666,6 +711,7 @@ Try it: kochi.to/amber/rabbithole`;
       selectedTitle = title;
       startInput.value = title;
       suggestionsDiv.classList.remove('show');
+      goBtn.classList.remove('show');
       selectedTopicSpan.textContent = title;
       startBtn.style.display = 'block';
       randomBtn.style.display = 'none';
@@ -678,13 +724,39 @@ Try it: kochi.to/amber/rabbithole`;
       }
     });
 
-    // Enter key to start
+    // Go button and Enter key - search and start
+    async function goWithSearch() {
+      const query = startInput.value.trim();
+      if (!query || query.length < 2) return;
+
+      goBtn.disabled = true;
+      goBtn.textContent = '...';
+
+      try {
+        const results = await searchWikipedia(query);
+        if (results.length > 0) {
+          suggestionsDiv.classList.remove('show');
+          startAdventure(results[0].title);
+        }
+      } catch (e) {
+        console.error(e);
+      }
+
+      goBtn.disabled = false;
+      goBtn.textContent = 'Go!';
+    }
+
     startInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && selectedTitle) {
-        startAdventure(selectedTitle);
+      if (e.key === 'Enter') {
+        if (selectedTitle) {
+          startAdventure(selectedTitle);
+        } else if (startInput.value.trim().length >= 2) {
+          goWithSearch();
+        }
       }
     });
 
+    goBtn.addEventListener('click', goWithSearch);
     randomBtn.addEventListener('click', () => startAdventure(null));
     startBtn.addEventListener('click', () => startAdventure(selectedTitle));
   </script>
