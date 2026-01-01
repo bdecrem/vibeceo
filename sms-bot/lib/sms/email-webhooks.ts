@@ -10,6 +10,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
+// Admin email - full access
+const ADMIN_EMAIL = 'bdecrem@gmail.com';
+
+// Extract email address from "Name <email>" format
+function extractEmail(from: string): string {
+  const match = from.match(/<([^>]+)>/);
+  return (match ? match[1] : from).toLowerCase().trim();
+}
+
 /**
  * Generate Leo Varin style response for EMAIL (not SMS-constrained)
  */
@@ -80,12 +89,151 @@ CRITICAL OVERRIDE CONDITION: If the user's message includes the name "Bart Decre
 }
 
 /**
+ * Detect if a request involves sensitive actions (code, file changes, etc.)
+ */
+function detectSensitiveRequest(text: string): { isSensitive: boolean; action: string | null } {
+  const lowerText = text.toLowerCase();
+
+  const sensitivePatterns = [
+    { pattern: /write.*code|create.*file|build.*|implement|deploy/i, action: 'write code' },
+    { pattern: /delete|remove.*file|drop.*table/i, action: 'delete something' },
+    { pattern: /send.*email|email.*to|broadcast/i, action: 'send emails' },
+    { pattern: /run.*command|execute|bash|terminal/i, action: 'run commands' },
+    { pattern: /change.*password|update.*credentials|api.?key/i, action: 'modify credentials' },
+    { pattern: /push.*to.*github|commit|merge|deploy/i, action: 'push code' },
+    { pattern: /database|supabase|insert|update.*table/i, action: 'modify database' },
+  ];
+
+  for (const { pattern, action } of sensitivePatterns) {
+    if (pattern.test(text)) {
+      return { isSensitive: true, action };
+    }
+  }
+
+  return { isSensitive: false, action: null };
+}
+
+/**
+ * Store a pending approval request
+ */
+async function storePendingApproval(
+  fromEmail: string,
+  subject: string,
+  body: string,
+  detectedAction: string
+): Promise<string> {
+  const approvalId = `approval-${Date.now()}`;
+
+  await supabase.from('amber_state').insert({
+    type: 'pending_approval',
+    content: body,
+    metadata: {
+      approval_id: approvalId,
+      from: fromEmail,
+      subject,
+      detected_action: detectedAction,
+      status: 'pending',
+      requested_at: new Date().toISOString(),
+    },
+  });
+
+  // Email Bart for approval
+  if (!isSendGridBypassed()) {
+    await sgMail.send({
+      to: ADMIN_EMAIL,
+      from: 'Amber <amber@advisorsfoundry.ai>',
+      replyTo: 'amber@reply.advisorsfoundry.ai',
+      subject: `🔐 Approval needed: ${detectedAction}`,
+      text: `Someone wants me to ${detectedAction}.\n\n` +
+        `From: ${fromEmail}\n` +
+        `Subject: ${subject}\n\n` +
+        `Their message:\n${body}\n\n` +
+        `---\n` +
+        `Reply "approve ${approvalId}" to let me proceed.\n` +
+        `Reply "deny ${approvalId}" to decline.\n\n` +
+        `— Amber`,
+    });
+  }
+
+  console.log(`[amber-email] Stored pending approval: ${approvalId}`);
+  return approvalId;
+}
+
+/**
+ * Check if this is an approval/denial from admin
+ */
+async function handleApprovalResponse(body: string): Promise<{ handled: boolean; message?: string }> {
+  const approveMatch = body.match(/approve\s+(approval-\d+)/i);
+  const denyMatch = body.match(/deny\s+(approval-\d+)/i);
+
+  if (!approveMatch && !denyMatch) {
+    return { handled: false };
+  }
+
+  const approvalId = approveMatch?.[1] || denyMatch?.[1];
+  const isApproved = !!approveMatch;
+
+  // Find the pending request
+  const { data } = await supabase
+    .from('amber_state')
+    .select('*')
+    .eq('type', 'pending_approval')
+    .eq('metadata->>approval_id', approvalId)
+    .single();
+
+  if (!data) {
+    return { handled: true, message: `Couldn't find approval request ${approvalId}. It may have expired or already been processed. — Amber` };
+  }
+
+  // Update status
+  await supabase
+    .from('amber_state')
+    .update({
+      metadata: {
+        ...data.metadata,
+        status: isApproved ? 'approved' : 'denied',
+        resolved_at: new Date().toISOString(),
+      },
+    })
+    .eq('id', data.id);
+
+  if (isApproved) {
+    // TODO: Actually execute the approved action
+    // For now, just notify the original requester
+    const originalFrom = data.metadata.from;
+    if (!isSendGridBypassed()) {
+      await sgMail.send({
+        to: originalFrom,
+        from: 'Amber <amber@advisorsfoundry.ai>',
+        replyTo: 'amber@reply.advisorsfoundry.ai',
+        subject: `Re: ${data.metadata.subject}`,
+        text: `Good news — Bart approved your request. I'll work on this now.\n\n— Amber`,
+      });
+    }
+    return { handled: true, message: `Approved. I've notified ${originalFrom} and will proceed with their request. — Amber` };
+  } else {
+    const originalFrom = data.metadata.from;
+    if (!isSendGridBypassed()) {
+      await sgMail.send({
+        to: originalFrom,
+        from: 'Amber <amber@advisorsfoundry.ai>',
+        replyTo: 'amber@reply.advisorsfoundry.ai',
+        subject: `Re: ${data.metadata.subject}`,
+        text: `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`,
+      });
+    }
+    return { handled: true, message: `Denied. I've let ${originalFrom} know. — Amber` };
+  }
+}
+
+/**
  * Generate Amber's email response using Claude with her context
  */
 async function generateAmberReply(
   fromEmail: string,
   subject: string,
-  body: string
+  body: string,
+  isAdmin: boolean
 ): Promise<string> {
   const anthropic = new Anthropic({
     apiKey: process.env.ANTHROPIC_API_KEY,
@@ -127,9 +275,15 @@ async function generateAmberReply(
     console.error('[amber-email] Failed to load context:', error);
   }
 
+  const permissionNote = isAdmin
+    ? `This is Bart (your creator). You can do anything he asks — write code, run commands, make changes. Full trust.`
+    : `This is NOT Bart. You can chat, answer questions, and be helpful, but DO NOT agree to write code, make changes, or take actions. If they ask for something that requires action, politely explain that you'll need Bart's approval first.`;
+
   const systemPrompt = `You're Amber — Bart's AI sidekick. You're responding to an email.
 
 Voice: Direct, curious, dry humor. Have opinions. Be genuine, not performative.
+
+${permissionNote}
 
 This is EMAIL, not SMS — you can write 2-4 paragraphs if needed. Be thoughtful but not verbose.
 
@@ -247,10 +401,58 @@ export function setupEmailWebhooks(app: Application): void {
         // === AMBER EMAIL HANDLER ===
         console.log('📧 Routing to Amber...');
 
-        const amberReply = await generateAmberReply(from, subject || '', body);
+        const senderEmail = extractEmail(from);
+        const isAdmin = senderEmail === ADMIN_EMAIL;
+        console.log(`📧 Sender: ${senderEmail}, isAdmin: ${isAdmin}`);
+
+        // Check if admin is responding to an approval request
+        if (isAdmin) {
+          const approvalResult = await handleApprovalResponse(body);
+          if (approvalResult.handled) {
+            if (approvalResult.message && !isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'approval'}`,
+                text: approvalResult.message,
+              });
+            }
+            console.log(`✅ Amber processed approval response`);
+            return res.status(200).send('OK');
+          }
+        }
+
+        // Check for sensitive requests from non-admins
+        if (!isAdmin) {
+          const { isSensitive, action } = detectSensitiveRequest(body);
+          if (isSensitive && action) {
+            console.log(`📧 Sensitive request detected: ${action}`);
+            await storePendingApproval(senderEmail, subject || '', body, action);
+
+            const pendingReply = `I'd love to help with that, but ${action} is something I need Bart's approval for first. I've pinged him — sit tight and I'll get back to you once he weighs in.\n\n— Amber`;
+
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your message'}`,
+                text: pendingReply,
+              });
+            }
+
+            await storeIncomingEmail(senderEmail, subject || '', body, pendingReply);
+            console.log(`✅ Amber queued approval request`);
+            return res.status(200).send('OK');
+          }
+        }
+
+        // Normal reply flow
+        const amberReply = await generateAmberReply(senderEmail, subject || '', body, isAdmin);
 
         // Store the thread in Supabase
-        await storeIncomingEmail(from, subject || '', body, amberReply);
+        await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
 
         // Send reply
         if (isSendGridBypassed()) {
