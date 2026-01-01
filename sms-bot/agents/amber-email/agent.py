@@ -51,6 +51,63 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_
 MAX_ITERATIONS = 5
 AMBER_COLORS = ["#D4A574", "#B8860B", "#0A0908"]
 
+# Deploy wait time - Railway takes ~5-7 minutes to deploy after push
+DEPLOY_WAIT_SECONDS = 420  # 7 minutes
+
+
+def extract_written_files(actions: List[str]) -> List[str]:
+    """Extract file paths from actions like 'Wrote file: path' or 'Wrote: path'."""
+    files = []
+    for action in actions:
+        if action.startswith("Wrote file: "):
+            files.append(action.replace("Wrote file: ", ""))
+        elif action.startswith("Wrote: "):
+            files.append(action.replace("Wrote: ", ""))
+    return files
+
+
+def build_live_urls(file_paths: List[str]) -> List[str]:
+    """
+    Build live URLs from file paths.
+
+    Mappings:
+    - web/public/X -> https://kochi.to/X
+    - web/app/X/page.tsx -> https://kochi.to/X (Next.js app router)
+    """
+    urls = []
+    for path in file_paths:
+        if path.startswith("web/public/"):
+            # Static files served at root
+            url_path = path.replace("web/public/", "")
+            urls.append(f"https://kochi.to/{url_path}")
+        elif path.startswith("web/app/") and path.endswith("/page.tsx"):
+            # Next.js app router pages
+            url_path = path.replace("web/app/", "").replace("/page.tsx", "")
+            urls.append(f"https://kochi.to/{url_path}")
+    return urls
+
+
+def was_code_pushed(actions: List[str]) -> bool:
+    """Check if any code was pushed to remote."""
+    push_indicators = ["Pushed to remote", "Pushed", "Committed and pushed", "git_push"]
+    return any(
+        any(indicator.lower() in action.lower() for indicator in push_indicators)
+        for action in actions
+    )
+
+
+async def wait_for_deploy(actions: List[str]) -> None:
+    """
+    Wait for Railway deployment if code was pushed.
+    Only waits if we detect a push happened.
+    """
+    if was_code_pushed(actions):
+        print(f"[Deploy] Code was pushed, waiting {DEPLOY_WAIT_SECONDS}s for Railway deploy...", file=sys.stderr)
+        await asyncio.sleep(DEPLOY_WAIT_SECONDS)
+        print("[Deploy] Wait complete, deployment should be live", file=sys.stderr)
+    else:
+        print("[Deploy] No code push detected, skipping deploy wait", file=sys.stderr)
+
 
 def supabase_request(method: str, endpoint: str, data: Optional[dict] = None) -> dict:
     """Make a request to Supabase REST API."""
@@ -539,13 +596,13 @@ Then use git_push to push to remote.
     # Step 5: Mark loop complete
     complete_loop()
 
+    # Step 6: Wait for Railway deploy if code was pushed
+    await wait_for_deploy(all_actions)
+
     # Build final response
     deliverables = spec.get("deliverables", [])
-    deliverable_urls = []
-    for d in deliverables:
-        if d.startswith("web/public/"):
-            path = d.replace("web/public/", "")
-            deliverable_urls.append(f"https://kochi.to/{path}")
+    # Build URLs from deliverables using the helper function
+    deliverable_urls = build_live_urls(deliverables)
 
     response = f"""## Thinkhard Complete!
 
@@ -716,10 +773,24 @@ Do the work now.
 
         print(f"[Amber Agent] Done: {tool_call_count} tool calls, {len(actions_taken)} actions", file=sys.stderr)
 
+        # Wait for deploy if code was pushed
+        await wait_for_deploy(actions_taken)
+
+        # Extract written files and build URLs
+        written_files = extract_written_files(actions_taken)
+        live_urls = build_live_urls(written_files)
+
+        # Append URL info to response if we created any web pages
+        if live_urls:
+            url_section = "\n\n---\n**Live URLs:**\n" + "\n".join(f"- {url}" for url in live_urls)
+            response_text = response_text.strip() + url_section
+
         return {
             "response": response_text.strip(),
             "actions_taken": actions_taken,
             "tool_calls_count": tool_call_count,
+            "written_files": written_files,
+            "live_urls": live_urls,
         }
 
     except Exception as e:
