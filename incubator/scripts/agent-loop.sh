@@ -1,7 +1,8 @@
 #!/bin/bash
 
 # Agent Loop Script for Token Tank Incubator
-# Automatically runs agents in sequence with /clear between each
+# Automatically runs agents in sequence
+# Each agent loads fresh context from their CLAUDE.md, LOG.md, and database
 
 set -e  # Exit on error
 
@@ -34,13 +35,12 @@ log_silent() {
 usage() {
     echo "Usage: $0 [OPTIONS] [agent1 agent2 ...]"
     echo ""
-    echo "Run Token Tank agents in sequence with /clear between each."
+    echo "Run Token Tank agents in sequence. Fully autonomous - no user input required."
     echo ""
     echo "Options:"
     echo "  -h, --help          Show this help message"
     echo "  -a, --all           Run all default agents (boss, forge, nix, drift, pulse, echo)"
     echo "  -l, --list          List available agents and exit"
-    echo "  -n, --no-clear      Skip /clear between agents (not recommended)"
     echo "  -d, --dry-run       Show what would be executed without running"
     echo ""
     echo "Examples:"
@@ -54,7 +54,6 @@ usage() {
 # Parse arguments
 AGENTS=()
 RUN_ALL=false
-NO_CLEAR=false
 DRY_RUN=false
 
 while [[ $# -gt 0 ]]; do
@@ -72,10 +71,6 @@ while [[ $# -gt 0 ]]; do
                 echo "  - $agent"
             done
             exit 0
-            ;;
-        -n|--no-clear)
-            NO_CLEAR=true
-            shift
             ;;
         -d|--dry-run)
             DRY_RUN=true
@@ -105,19 +100,16 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 echo -e "${YELLOW}Configuration:${NC}"
 echo "  Agents: ${AGENTS[*]}"
-echo "  Clear between: $([ "$NO_CLEAR" = true ] && echo "No" || echo "Yes")"
 echo "  Dry run: $([ "$DRY_RUN" = true ] && echo "Yes" || echo "No")"
 echo "  Log file: $LOG_FILE"
+echo "  Mode: Fully autonomous (no user input required)"
 echo ""
 
 # Dry run mode
 if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}[DRY RUN] Commands that would be executed:${NC}"
     for agent in "${AGENTS[@]}"; do
-        if [ "$NO_CLEAR" = false ]; then
-            echo "  claude '/clear'"
-        fi
-        echo "  claude '/$agent autonomous'"
+        echo "  echo '/$agent autonomous' | claude --dangerously-skip-permissions"
     done
     exit 0
 fi
@@ -152,38 +144,55 @@ for i in "${!AGENTS[@]}"; do
     log "${GREEN}[$agent_num/$total] Running: /$agent${NC}"
     log "${GREEN}========================================${NC}"
 
-    # Clear context between agents (unless disabled)
-    if [ "$NO_CLEAR" = false ] && [ $i -gt 0 ]; then
-        echo -e "${YELLOW}Clearing context...${NC}"
-        log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Clearing context"
-
-        if claude '/clear'; then
-            log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Context cleared successfully"
-        else
-            log "${RED}Warning: /clear command failed${NC}"
-        fi
-    fi
+    # Track agent start time
+    AGENT_START=$(date +%s)
 
     # Run the agent
-    log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Starting /$agent"
+    log_silent "$(date '+%Y-%m-%d %H:%M:%S') - Starting /$agent autonomous"
 
-    if claude "/$agent autonomous"; then
+    # Create a temporary file to capture output
+    TEMP_OUTPUT=$(mktemp)
+
+    # Run claude with piped input, capture output, and monitor for completion marker
+    {
+        echo "/$agent autonomous" | claude --dangerously-skip-permissions 2>&1 | tee "$TEMP_OUTPUT" &
+        CLAUDE_PID=$!
+
+        # Monitor output for completion marker
+        while kill -0 $CLAUDE_PID 2>/dev/null; do
+            if grep -q "AGENT_SESSION_COMPLETE" "$TEMP_OUTPUT"; then
+                # Agent completed successfully
+                wait $CLAUDE_PID
+                EXIT_CODE=$?
+                break
+            fi
+            sleep 2
+        done
+
+        # If loop exited because process ended, check if it was successful
+        wait $CLAUDE_PID 2>/dev/null
+        EXIT_CODE=$?
+    }
+
+    # Calculate agent duration
+    AGENT_END=$(date +%s)
+    AGENT_DURATION=$((AGENT_END - AGENT_START))
+    AGENT_MINUTES=$((AGENT_DURATION / 60))
+    AGENT_SECONDS=$((AGENT_DURATION % 60))
+
+    # Check if agent completed successfully
+    if grep -q "AGENT_SESSION_COMPLETE" "$TEMP_OUTPUT"; then
         COMPLETED=$((COMPLETED + 1))
-        log "${GREEN}✓ /$agent completed successfully${NC}"
-        log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent completed successfully"
+        log "${GREEN}✓ /$agent completed (${AGENT_MINUTES}m ${AGENT_SECONDS}s)${NC}"
+        log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent completed successfully in ${AGENT_MINUTES}m ${AGENT_SECONDS}s"
     else
         FAILED=$((FAILED + 1))
-        log "${RED}✗ /$agent failed${NC}"
-        log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent failed with exit code $?"
-
-        # Ask whether to continue
-        read -p "Agent failed. Continue with remaining agents? (y/N) " -n 1 -r
-        echo
-        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-            log "${YELLOW}Agent loop cancelled by user${NC}"
-            break
-        fi
+        log "${RED}✗ /$agent failed or did not complete properly${NC}"
+        log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent failed or incomplete (exit code: $EXIT_CODE)"
     fi
+
+    # Clean up temp file
+    rm -f "$TEMP_OUTPUT"
 done
 
 # Calculate duration
