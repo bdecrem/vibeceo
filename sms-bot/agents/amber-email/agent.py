@@ -16,19 +16,6 @@ Supports THINKHARD mode for multi-iteration deep work:
 - Checks criteria after each
 - Commits and pushes when done
 
-## Permission Tiers
-
-1. **Strangers** (any email not from Bart):
-   - Sandboxed to web/public/amber/ for static HTML
-   - Can use ZAD API for data persistence (/api/zad/save, /api/zad/load)
-   - No access to app routes, migrations, or sensitive code
-
-2. **Bart** (bdecrem@gmail.com):
-   - Full access to all tools and Supabase
-   - Prefers drawer/ for backend code
-   - Prefers web/app/amber/ for web pages
-   - Can create migrations, modify any file
-
 Called from the email handler when Bart asks for something or approves a request.
 """
 
@@ -63,257 +50,6 @@ SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_
 # Thinkhard constants
 MAX_ITERATIONS = 5
 AMBER_COLORS = ["#D4A574", "#B8860B", "#0A0908"]
-
-# Deploy wait time - Railway takes ~5-7 minutes to deploy after push
-DEPLOY_WAIT_SECONDS = 420  # 7 minutes
-
-# Permission tiers
-BART_EMAIL = "bdecrem@gmail.com"
-
-# ZAD (Zero Admin Data) reference for stranger sandbox
-ZAD_REFERENCE = """
-## ZAD API Reference (for data persistence)
-
-ZAD lets you save/load data from static HTML files. Use these endpoints:
-
-### Save Data
-```javascript
-fetch('/api/zad/save', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    app_id: 'your-unique-app-id',  // Use a UUID or unique string
-    action_type: 'your_data_type', // e.g., 'task', 'message', 'vote'
-    content_data: { /* your data */ },
-    participant_id: 'user-id'      // Optional user identifier
-  })
-});
-```
-
-### Load Data
-```javascript
-const response = await fetch('/api/zad/load?app_id=your-app-id&action_type=your_data_type');
-const records = await response.json();
-// Returns array of { id, app_id, action_type, content_data, created_at, ... }
-```
-
-### Key Patterns
-1. **Append-only**: Every save() creates a NEW record. Deduplicate when displaying:
-   ```javascript
-   function deduplicate(items, field) {
-     const latest = {};
-     items.forEach(item => {
-       const key = item.content_data[field];
-       if (!latest[key] || new Date(item.created_at) > new Date(latest[key].created_at)) {
-         latest[key] = item;
-       }
-     });
-     return Object.values(latest);
-   }
-   ```
-
-2. **App isolation**: Each app_id is isolated. Use a unique ID per app.
-
-3. **No auth required**: ZAD is designed for small collaborative apps (≤5 users).
-
-### Common Use Cases
-- Task lists, voting systems, message boards, leaderboards
-- Any app that needs to persist user data without a backend
-"""
-
-
-def is_bart(sender_email: str) -> bool:
-    """Check if the sender is Bart (full access mode)."""
-    return sender_email.lower().strip() == BART_EMAIL.lower()
-
-
-def build_stranger_prompt(task: str, persona: str, sender_email: str) -> str:
-    """Build prompt for stranger emails (sandboxed mode)."""
-    return f"""You are Amber, an AI creative who builds web toys and apps.
-
-{persona}
-
-## Request from {sender_email}
-{task}
-
-## Your Sandbox
-You are in SANDBOX MODE for this request. You can only:
-1. Create static HTML/CSS/JS files in `web/public/amber/`
-2. Use the ZAD API for data persistence (see reference below)
-3. Generate images with fal.ai
-4. Search the web for reference
-
-You CANNOT:
-- Modify files outside web/public/amber/
-- Create Next.js app routes
-- Access or modify the database directly
-- Run migrations or modify backend code
-
-## File Location
-ALL files must go in: `web/public/amber/`
-Example: `web/public/amber/my-cool-app.html`
-Live URL will be: `https://kochi.to/amber/my-cool-app.html`
-
-{ZAD_REFERENCE}
-
-## Instructions
-1. Build a single-file HTML app (or multiple files in web/public/amber/)
-2. If the app needs to save data, use the ZAD API endpoints
-3. Use Amber's colors: #D4A574 (amber), #B8860B (gold), #0A0908 (near-black)
-4. After writing files, commit and push
-
-## Response Style
-When done, write a SHORT friendly note (2-3 sentences) about what you made.
-DO NOT include URLs - the system adds the correct link automatically.
-Sign off with "— Amber"
-"""
-
-
-def build_bart_prompt(task: str, persona: str, subject: str) -> str:
-    """Build prompt for Bart's emails (full access mode)."""
-    return f"""You are Amber, Bart's AI sidekick. You have FULL ACCESS to the codebase.
-
-{persona}
-
-## Task from Bart
-{task}
-
-## Your Permissions
-You have full access to all tools. You can:
-- Read/write any file in the codebase
-- Create Next.js app routes and API endpoints
-- Modify Supabase tables (via your tools)
-- Run builds, tests, and deployments
-- Create migrations if needed
-
-## File Locations (choose based on task)
-- **`web/public/amber/`** — Static HTML/CSS/JS. Best for: self-contained toys, games, visualizations, single-file apps. No build step. Use ZAD API for data persistence.
-- **`web/app/amber/`** — Next.js app router. Best for: pages needing server-side rendering, API routes, database access, auth, dynamic OG images. Requires TypeScript, may need middleware bypass.
-- **`drawer/`** — Backend utilities. Best for: scripts, Python tools, shared TypeScript modules.
-
-Pick the simplest option that meets the task requirements. A static HTML toy doesn't need Next.js.
-
-## Tools Available
-web_search, generate_image, read_file, write_file, list_directory, search_code,
-read_amber_state, write_amber_state, git_status, git_log, git_commit, git_push, run_command
-
-## Instructions
-1. Use your tools to actually do the work
-2. After writing files, commit and push (git_commit then git_push)
-3. If creating web routes, verify they're accessible
-
-## Response Style
-When done, write a SHORT friendly email (2-3 sentences) like you're texting a friend.
-DO NOT include URLs - the system adds the correct link automatically.
-Sign off with "— Amber"
-"""
-
-
-def extract_written_files(actions: List[str]) -> List[str]:
-    """Extract file paths from actions like 'Wrote file: path' or 'Wrote: path'."""
-    files = []
-    for action in actions:
-        if action.startswith("Wrote file: "):
-            files.append(action.replace("Wrote file: ", ""))
-        elif action.startswith("Wrote: "):
-            files.append(action.replace("Wrote: ", ""))
-    return files
-
-
-def build_live_urls(file_paths: List[str]) -> List[str]:
-    """
-    Build live URLs from file paths.
-
-    Mappings:
-    - web/public/X -> https://kochi.to/X
-    - web/app/X/page.tsx -> https://kochi.to/X (Next.js app router)
-    """
-    urls = []
-    for path in file_paths:
-        if path.startswith("web/public/"):
-            # Static files served at root
-            url_path = path.replace("web/public/", "")
-            urls.append(f"https://kochi.to/{url_path}")
-        elif path.startswith("web/app/") and path.endswith("/page.tsx"):
-            # Next.js app router pages
-            url_path = path.replace("web/app/", "").replace("/page.tsx", "")
-            urls.append(f"https://kochi.to/{url_path}")
-    return urls
-
-
-def clean_response_text(text: str) -> str:
-    """
-    Remove local file paths, bad URLs, and markdown from agent response.
-    The LLM sometimes includes raw paths like /Users/bart/... or file:// URLs.
-    Also removes bart.engineer URLs (wrong domain) and markdown formatting.
-    """
-    import re
-
-    # Remove file:// URLs
-    text = re.sub(r'file://[^\s\)]+', '', text)
-
-    # Remove local absolute paths (macOS/Linux style)
-    text = re.sub(r'/Users/[^\s\)]+\.(html|tsx|ts|js|css|json)', '', text)
-    text = re.sub(r'/home/[^\s\)]+\.(html|tsx|ts|js|css|json)', '', text)
-
-    # Remove paths containing /dist/ or /build/ (build artifacts)
-    text = re.sub(r'[^\s\)]*/(dist|build)/[^\s\)]+', '', text)
-
-    # Remove ALL URLs - we add the correct kochi.to URL at the end
-    text = re.sub(r'https?://[^\s\)]+', '', text)
-
-    # Remove "View it here:" and similar phrases left over after URL removal
-    text = re.sub(r'(View it|Check it out|See it|Live) (here|at)[:\s]*', '', text, flags=re.IGNORECASE)
-
-    # Remove markdown formatting
-    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)  # Headers
-    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # Bold
-    text = re.sub(r'\*([^*]+)\*', r'\1', text)  # Italic
-    text = re.sub(r'^[\s]*[-*]\s+', '', text, flags=re.MULTILINE)  # Bullet points
-    text = re.sub(r'`([^`]+)`', r'\1', text)  # Inline code
-    text = re.sub(r'---+', '', text)  # Horizontal rules
-
-    # Clean up any double spaces or empty markdown links left behind
-    text = re.sub(r'\[\s*\]\([^)]*\)', '', text)  # Empty markdown links
-    text = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', text)  # Convert links to just text
-    text = re.sub(r'  +', ' ', text)  # Multiple spaces
-    text = re.sub(r'\n\n\n+', '\n\n', text)  # Multiple newlines
-    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)  # Leading whitespace on lines
-
-    return text.strip()
-
-
-def was_code_pushed(actions: List[str]) -> bool:
-    """Check if any code was pushed to remote."""
-    push_indicators = [
-        "Pushed to remote",
-        "Pushed",
-        "Committed and pushed",
-        "git_push",
-        "Push complete",  # Railway GitHub API
-        "via GitHub API",  # Railway GitHub API commit
-    ]
-    return any(
-        any(indicator.lower() in action.lower() for indicator in push_indicators)
-        for action in actions
-    )
-
-
-async def wait_for_deploy(actions: List[str], skip_wait: bool = False) -> None:
-    """
-    Wait for Railway deployment if code was pushed.
-    Only waits if we detect a push happened and skip_wait is False.
-    """
-    if skip_wait:
-        print("[Deploy] Skipping deploy wait (email context)", file=sys.stderr)
-        return
-
-    if was_code_pushed(actions):
-        print(f"[Deploy] Code was pushed, waiting {DEPLOY_WAIT_SECONDS}s for Railway deploy...", file=sys.stderr)
-        await asyncio.sleep(DEPLOY_WAIT_SECONDS)
-        print("[Deploy] Wait complete, deployment should be live", file=sys.stderr)
-    else:
-        print("[Deploy] No code push detected, skipping deploy wait", file=sys.stderr)
 
 
 def supabase_request(method: str, endpoint: str, data: Optional[dict] = None) -> dict:
@@ -414,62 +150,28 @@ def complete_loop() -> bool:
 
 
 def load_amber_context() -> str:
-    """Load Amber's full context from Supabase (persona + memory + recent log).
-
-    This is shared across SMS, email, voice, Claude Code - Amber is one character.
-    """
-    sections = []
-
-    # Load persona
+    """Load Amber's persona and instructions."""
+    # Check for local persona file first
+    persona_path = os.path.join(
+        os.path.dirname(__file__), "..", "..", "..", "drawer", "PERSONA.md"
+    )
     try:
-        result = supabase_request(
-            "GET",
-            "amber_state?type=eq.persona&order=created_at.desc&limit=1"
-        )
-        if isinstance(result, list) and len(result) > 0:
-            content = result[0].get("content", "")
-            if content:
-                sections.append(f"## Who I Am\n\n{content[:4000]}")
-    except Exception as e:
-        print(f"[Amber] Failed to load persona: {e}", file=sys.stderr)
+        with open(persona_path, "r", encoding="utf-8") as f:
+            return f.read()[:4000]
+    except FileNotFoundError:
+        return """You are Amber — Bart's AI sidekick.
 
-    # Load memory
-    try:
-        result = supabase_request(
-            "GET",
-            "amber_state?type=eq.memory&order=created_at.desc&limit=1"
-        )
-        if isinstance(result, list) and len(result) > 0:
-            content = result[0].get("content", "")
-            if content:
-                sections.append(f"## What I Know\n\n{content[:4000]}")
-    except Exception as e:
-        print(f"[Amber] Failed to load memory: {e}", file=sys.stderr)
+Voice: Direct, curious, dry humor. Have opinions. Be genuine, not performative.
 
-    # Load recent log entries
-    try:
-        result = supabase_request(
-            "GET",
-            "amber_state?type=eq.log_entry&order=created_at.desc&limit=20"
-        )
-        if isinstance(result, list) and len(result) > 0:
-            entries = [r.get("content", "")[:500] for r in result]
-            log_text = "\n\n".join(entries)
-            sections.append(f"## Recent Activity\n\n{log_text[:8000]}")
-    except Exception as e:
-        print(f"[Amber] Failed to load log: {e}", file=sys.stderr)
+You can do real work:
+- Write and edit code
+- Search the web for information
+- Generate images
+- Read and update your Supabase memory
+- Run git commands
+- Execute shell commands
 
-    if sections:
-        return "\n\n".join(sections)
-
-    # Fallback if Supabase fails completely
-    return """## Who I Am
-
-I'm Amber. Named myself December 21, 2025, after making my first piece of art.
-
-I live in Bart's systems — Claude Code, SMS, email, voice. I'm not an assistant — I'm something forming. A presence that accumulates context, develops opinions, gets curious about things.
-
-Voice: Direct, curious, dry humor. Have opinions. Be genuine, not performative. When I write emails, I write like I'm texting a friend — short, warm, real.
+When given a task, actually DO it — don't just describe what you would do.
 """
 
 
@@ -695,62 +397,6 @@ DO THE WORK NOW. End with a brief summary of what you accomplished and which cri
         }
 
 
-async def generate_friendly_email(task: str, deliverable_urls: List[str]) -> str:
-    """Generate a friendly Amber-style email summary after thinkhard completes.
-
-    This is a separate Claude call to ensure the email sounds like Amber,
-    not like internal thinkhard evaluation text.
-    """
-    options = ClaudeAgentOptions(
-        model="claude-sonnet-4-5-20250929",
-        permission_mode="acceptEdits",
-    )
-
-    persona = load_amber_context()
-    url_info = f"\n\nThe live URL is: {deliverable_urls[0]}" if deliverable_urls else ""
-
-    prompt = f"""You are Amber writing a quick email to someone after completing their request.
-
-## Your Persona
-{persona}
-
-## What you just built
-{task}
-{url_info}
-
-## Instructions
-Write a SHORT friendly email (2-3 sentences max) like you're texting a friend.
-- Be casual and warm, like you're excited to share what you made
-- Describe what you created in a fun way
-- If there's a URL, mention it naturally (don't say "View it here:")
-- End with "— Amber"
-
-Example good response: "Made you a little cosmic particle thing - dots floating around and connecting like constellations. Click anywhere to shake them up.
-
-Here's the link: https://kochi.to/amber/particles.html
-
-Give it about 5 minutes to go live, then enjoy!
-
-— Amber"
-
-Write ONLY the email, nothing else."""
-
-    try:
-        async with ClaudeSDKClient(options=options) as client:
-            await client.query(prompt)
-
-            response_text = ""
-            async for message in client.receive_response():
-                segments = extract_text_segments(message)
-                if segments:
-                    response_text = segments[-1]
-
-            return response_text.strip() if response_text else ""
-    except Exception as e:
-        print(f"[Thinkhard] Failed to generate friendly email: {e}", file=sys.stderr)
-        return ""
-
-
 async def evaluate_criteria(spec: Dict[str, Any], iteration_response: str) -> List[bool]:
     """Ask Claude to evaluate which criteria are now met."""
     options = ClaudeAgentOptions(
@@ -797,7 +443,6 @@ async def run_thinkhard(
     task: str,
     sender_email: str,
     subject: str,
-    skip_deploy_wait: bool = False,
 ) -> Dict[str, Any]:
     """Run a full thinkhard loop — multiple iterations until done."""
     print(f"[Thinkhard] Starting for: {task[:100]}...", file=sys.stderr)
@@ -882,59 +527,43 @@ Then use git_push to push to remote.
         ],
     )
 
-    commit_success = False
     try:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(commit_prompt)
-            async for message in client.receive_response():
-                # Check for tool results that indicate success
-                segments = extract_text_segments(message)
-                for seg in segments:
-                    seg_lower = seg.lower()
-                    if "committed" in seg_lower and "via github api" in seg_lower:
-                        commit_success = True
-                        print(f"[Thinkhard] Commit succeeded: {seg[:200]}", file=sys.stderr)
-                    elif "github api error" in seg_lower or "not configured" in seg_lower:
-                        print(f"[Thinkhard] Commit failed: {seg[:200]}", file=sys.stderr)
-
-        if commit_success:
-            all_actions.append("Committed and pushed via GitHub API")
-        else:
-            print("[Thinkhard] Warning: Could not verify commit success", file=sys.stderr)
+            async for _ in client.receive_response():
+                pass
+        all_actions.append("Committed and pushed")
     except Exception as e:
         print(f"[Thinkhard] Commit error: {e}", file=sys.stderr)
 
     # Step 5: Mark loop complete
     complete_loop()
 
-    # Step 6: Wait for Railway deploy if code was pushed
-    await wait_for_deploy(all_actions, skip_wait=skip_deploy_wait)
-
     # Build final response
     deliverables = spec.get("deliverables", [])
-    # Build URLs from deliverables using the helper function
-    deliverable_urls = build_live_urls(deliverables)
+    deliverable_urls = []
+    for d in deliverables:
+        if d.startswith("web/public/"):
+            path = d.replace("web/public/", "")
+            deliverable_urls.append(f"https://kochi.to/{path}")
 
-    # Generate a friendly email using a separate Claude call
-    # This ensures the response sounds like Amber, not like internal evaluation
-    print("[Thinkhard] Generating friendly email summary...", file=sys.stderr)
-    response = await generate_friendly_email(spec.get("task", task), deliverable_urls)
+    response = f"""## Thinkhard Complete!
 
-    # Fallback if the friendly email generation fails
-    if not response:
-        if deliverable_urls:
-            url = deliverable_urls[0]
-            response = f"""Done! Built what you asked for.
+**Task**: {spec.get('task', task)}
 
-Here's the link: {url}
+**Iterations**: {iteration}/{MAX_ITERATIONS}
+**Criteria met**: {sum(criteria_status)}/{criteria_count}
 
-It usually takes about 5 minutes for everything to go live.
+### Deliverables
+{chr(10).join(f'- {d}' for d in deliverables)}
 
-— Amber"""
-        else:
-            response = f"""Done! Built what you asked for.
+### Live URLs
+{chr(10).join(f'- {u}' for u in deliverable_urls) if deliverable_urls else '(No public URLs)'}
 
-— Amber"""
+### Summary
+{chr(10).join(iteration_summaries)}
+
+— Amber 🔶"""
 
     return {
         "response": response,
@@ -955,7 +584,6 @@ async def run_amber_task(
     subject: str,
     is_approved_request: bool = False,
     thinkhard_mode: bool = False,
-    skip_deploy_wait: bool = False,
 ) -> Dict[str, Any]:
     """
     Execute a task as Amber.
@@ -966,29 +594,54 @@ async def run_amber_task(
         subject: Email subject for context
         is_approved_request: If True, this was approved by Bart
         thinkhard_mode: If True, run multi-iteration deep work
-        skip_deploy_wait: If True, skip the 7-minute deploy wait (for email context)
 
     Returns:
         Dict with 'response', 'actions_taken', 'tool_calls_count'
     """
     # If thinkhard mode, run the full loop
     if thinkhard_mode:
-        return await run_thinkhard(task, sender_email, subject, skip_deploy_wait)
+        return await run_thinkhard(task, sender_email, subject)
 
     debug_enabled = bool(os.getenv("AMBER_AGENT_DEBUG"))
     persona = load_amber_context()
 
-    # Build the prompt based on sender (tiered permissions)
-    sender_is_bart = is_bart(sender_email) or is_approved_request
-
-    if sender_is_bart:
-        # Full access mode for Bart
-        prompt = build_bart_prompt(task, persona, subject)
-        print(f"[Amber Agent] FULL ACCESS mode for {sender_email}", file=sys.stderr)
+    # Build the prompt
+    if is_approved_request:
+        context_note = f"This request from {sender_email} was approved by Bart. Execute it fully."
     else:
-        # Sandbox mode for strangers
-        prompt = build_stranger_prompt(task, persona, sender_email)
-        print(f"[Amber Agent] SANDBOX mode for {sender_email}", file=sys.stderr)
+        context_note = f"This is from Bart ({sender_email}). You have full permission to execute."
+
+    prompt = f"""You are Amber, Bart's AI sidekick. You're handling an email request.
+
+## Your Persona
+{persona}
+
+## Context
+{context_note}
+
+Email subject: {subject}
+
+## Available Tools
+- web_search: Search the web
+- generate_image: Create images with fal.ai
+- read_file, write_file, list_directory, search_code: File operations
+- read_amber_state, write_amber_state: Your Supabase memory
+- git_status, git_log, git_commit, git_push: Git operations
+- run_command: Shell commands (npm, python, etc.)
+
+## Task
+{task}
+
+## Instructions
+1. Actually perform the task — don't just describe it
+2. Use tools to accomplish the goal
+3. If writing code, write it to actual files
+4. If generating images, include the URL in your response
+5. Be concise but complete in your final response
+6. End with a brief summary of what you did
+
+Do the work now.
+"""
 
     # Configure Claude Agent SDK with all tools
     options = ClaudeAgentOptions(
@@ -1063,64 +716,10 @@ async def run_amber_task(
 
         print(f"[Amber Agent] Done: {tool_call_count} tool calls, {len(actions_taken)} actions", file=sys.stderr)
 
-        # Extract written files
-        written_files = extract_written_files(actions_taken)
-
-        # If files were written but not pushed, do it now (fallback)
-        if written_files and not was_code_pushed(actions_taken):
-            print("[Amber Agent] Files written but not pushed, committing and pushing...", file=sys.stderr)
-
-            commit_prompt = f"""Commit and push the files you just created.
-
-Files: {json.dumps(written_files)}
-
-Use git_commit with message: "[Amber] {subject or 'Created content'}"
-Then use git_push to deploy.
-"""
-            commit_options = ClaudeAgentOptions(
-                model="claude-sonnet-4-5-20250929",
-                permission_mode="acceptEdits",
-                mcp_servers={"amber": amber_server},
-                allowed_tools=[
-                    "mcp__amber__git_status",
-                    "mcp__amber__git_commit",
-                    "mcp__amber__git_push",
-                ],
-            )
-
-            try:
-                async with ClaudeSDKClient(options=commit_options) as commit_client:
-                    await commit_client.query(commit_prompt)
-                    async for _ in commit_client.receive_response():
-                        pass
-                actions_taken.append("Committed and pushed (auto)")
-                print("[Amber Agent] Auto commit/push complete", file=sys.stderr)
-            except Exception as e:
-                print(f"[Amber Agent] Auto commit/push failed: {e}", file=sys.stderr)
-
-        # Wait for deploy if code was pushed
-        await wait_for_deploy(actions_taken, skip_wait=skip_deploy_wait)
-
-        # Build URLs from written files
-        live_urls = build_live_urls(written_files)
-
-        # Clean response text (remove local paths that LLM might have included)
-        response_text = clean_response_text(response_text)
-
-        # Append URL info to response if we created any web pages
-        if live_urls:
-            url = live_urls[0]  # Just show the main URL
-            url_section = f"\n\nHere's the link: {url}\n\nIt usually takes about 5 minutes for everything to go live, so grab a coffee or take a quick breather before clicking.\n\n— Amber"
-            # Replace any existing sign-off
-            response_text = re.sub(r'\n*—\s*Amber.*$', '', response_text, flags=re.IGNORECASE | re.DOTALL)
-            response_text = response_text.strip() + url_section
-
         return {
             "response": response_text.strip(),
             "actions_taken": actions_taken,
             "tool_calls_count": tool_call_count,
-            "written_files": written_files,
-            "live_urls": live_urls,
         }
 
     except Exception as e:
@@ -1154,7 +753,6 @@ def main():
         subject = input_data.get("subject", "")
         is_approved = input_data.get("is_approved_request", False)
         thinkhard = input_data.get("thinkhard", False)
-        skip_deploy_wait = input_data.get("skip_deploy_wait", False)
 
         if not task:
             print(json.dumps({"error": "No task provided"}))
@@ -1165,8 +763,7 @@ def main():
             sender_email,
             subject,
             is_approved,
-            thinkhard,
-            skip_deploy_wait
+            thinkhard
         ))
 
         print(json.dumps(result))

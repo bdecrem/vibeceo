@@ -3,8 +3,8 @@ import sgMail from '@sendgrid/mail';
 import multer from 'multer';
 import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
-import { runAmberEmailAgent } from '../../agents/amber-email/index.js';
+import { spawn } from 'child_process';
+import * as path from 'path';
 
 // Supabase client for Amber's memory
 const supabase = createClient(
@@ -15,60 +15,11 @@ const supabase = createClient(
 // Admin email - full access
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
 
-// =============================================================================
-// DEDUPLICATION HELPERS - Prevent SendGrid retry storms
-// =============================================================================
-
-/**
- * Generate a unique hash for an email to detect duplicates
- */
-function generateEmailHash(sender: string, subject: string, body: string): string {
-  const key = `${sender}:${(subject || '').slice(0, 50)}:${(body || '').slice(0, 100)}`;
-  return crypto.createHash('sha256').update(key).digest('hex').slice(0, 32);
-}
-
-/**
- * Check if we're already processing this email (deduplication)
- * Returns true if duplicate, false if new
- */
-async function isDuplicateEmail(hash: string): Promise<boolean> {
-  try {
-    const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
-    const { data } = await supabase
-      .from('amber_state')
-      .select('id')
-      .eq('type', 'email_processing')
-      .eq('metadata->>hash', hash)
-      .gte('created_at', twoHoursAgo)
-      .limit(1);
-
-    return (data && data.length > 0);
-  } catch (error) {
-    console.error('[dedup] Error checking duplicate:', error);
-    return false; // On error, allow processing (better to double-process than miss)
-  }
-}
-
-/**
- * Mark an email as being processed (for deduplication)
- */
-async function markEmailProcessing(hash: string, sender: string, subject: string): Promise<void> {
-  try {
-    await supabase.from('amber_state').insert({
-      type: 'email_processing',
-      content: `Processing: ${subject || 'no subject'}`,
-      source: 'email_webhook',
-      metadata: {
-        hash,
-        from: sender,
-        subject: subject || '',
-        started_at: new Date().toISOString(),
-      },
-    });
-  } catch (error) {
-    console.error('[dedup] Error marking email as processing:', error);
-  }
-}
+// Path to Amber email agent
+const AMBER_AGENT_PATH = path.resolve(
+  path.dirname(new URL(import.meta.url).pathname),
+  '..', '..', 'agents', 'amber-email', 'agent.py'
+);
 
 /**
  * Detect if message contains thinkhard trigger
@@ -82,11 +33,107 @@ function detectThinkhard(text: string): { isThinkhard: boolean; task: string } {
 
   // Check for just the word "thinkhard" followed by task
   if (/\bthinkhard\b/i.test(text)) {
+    // Remove "thinkhard" and use the rest as the task
     const task = text.replace(/\bthinkhard\b/i, '').trim();
     return { isThinkhard: true, task: task || text };
   }
 
   return { isThinkhard: false, task: text };
+}
+
+/**
+ * Run the Amber email agent (Python) to execute a task
+ */
+async function runAmberAgent(
+  task: string,
+  senderEmail: string,
+  subject: string,
+  isApprovedRequest: boolean = false,
+  thinkhard: boolean = false
+): Promise<{ response: string; actions_taken: string[]; error?: string; thinkhard?: boolean }> {
+  return new Promise((resolve) => {
+    const input = JSON.stringify({
+      task,
+      sender_email: senderEmail,
+      subject,
+      is_approved_request: isApprovedRequest,
+      thinkhard,
+    });
+
+    console.log(`[amber-agent] Starting agent for task from ${senderEmail}`);
+
+    // Use the Python venv if available
+    const pythonPath = process.env.AMBER_PYTHON_PATH || 'python3';
+
+    const proc = spawn(pythonPath, [AMBER_AGENT_PATH, '--input', input], {
+      cwd: path.dirname(AMBER_AGENT_PATH),
+      env: {
+        ...process.env,
+        AMBER_CODEBASE_PATH: path.resolve(path.dirname(AMBER_AGENT_PATH), '..', '..', '..'),
+      },
+    });
+
+    let stdout = '';
+    let stderr = '';
+
+    proc.stdout.on('data', (data) => {
+      stdout += data.toString();
+    });
+
+    proc.stderr.on('data', (data) => {
+      stderr += data.toString();
+      console.log(`[amber-agent] ${data.toString().trim()}`);
+    });
+
+    proc.on('close', (code) => {
+      console.log(`[amber-agent] Process exited with code ${code}`);
+
+      if (code !== 0) {
+        resolve({
+          response: `Agent error (exit ${code}): ${stderr.slice(0, 500)}`,
+          actions_taken: [],
+          error: stderr,
+        });
+        return;
+      }
+
+      try {
+        const result = JSON.parse(stdout);
+        resolve({
+          response: result.response || 'Task completed.',
+          actions_taken: result.actions_taken || [],
+          error: result.error,
+          thinkhard: result.thinkhard,
+        });
+      } catch (e) {
+        resolve({
+          response: `Couldn't parse agent output: ${stdout.slice(0, 500)}`,
+          actions_taken: [],
+          error: String(e),
+        });
+      }
+    });
+
+    proc.on('error', (err) => {
+      console.error(`[amber-agent] Failed to start:`, err);
+      resolve({
+        response: `Failed to start agent: ${err.message}`,
+        actions_taken: [],
+        error: err.message,
+      });
+    });
+
+    // Timeout: 5 minutes for normal, 30 minutes for thinkhard
+    const timeoutMs = thinkhard ? 30 * 60 * 1000 : 5 * 60 * 1000;
+    setTimeout(() => {
+      proc.kill();
+      resolve({
+        response: `Agent timed out after ${thinkhard ? '30' : '5'} minutes.`,
+        actions_taken: [],
+        error: 'timeout',
+      });
+    }, timeoutMs);
+  });
 }
 
 /**
@@ -203,125 +250,6 @@ function detectSensitiveRequest(text: string): { isSensitive: boolean; action: s
   return { isSensitive: false, action: null };
 }
 
-// =============================================================================
-// SCHEDULED EMAIL HELPERS - Delay emails until Railway deploys
-// =============================================================================
-
-const DEPLOY_DELAY_MS = 7 * 60 * 1000; // 7 minutes for Railway deploy
-
-/**
- * Store an email to be sent after a delay (for Railway deploy to complete)
- */
-async function storeScheduledEmail(
-  to: string,
-  subject: string,
-  body: string,
-  delayMs: number = DEPLOY_DELAY_MS
-): Promise<void> {
-  const sendAt = new Date(Date.now() + delayMs).toISOString();
-
-  const { error } = await supabase.from('amber_state').insert({
-    type: 'pending_email',
-    content: body,
-    source: 'email_webhook',
-    metadata: {
-      to,
-      subject,
-      send_at: sendAt,
-      status: 'pending',
-      created_at: new Date().toISOString(),
-    },
-  });
-
-  if (error) {
-    console.error(`[scheduled-email] Failed to queue email to ${to}:`, error);
-    throw new Error(`Failed to store scheduled email: ${error.message}`);
-  }
-
-  console.log(`[scheduled-email] Queued email to ${to} for ${sendAt}`);
-}
-
-/**
- * Check for and send any scheduled emails that are ready.
- * Called by the scheduler every minute.
- */
-export async function sendScheduledEmails(): Promise<void> {
-  try {
-    const now = new Date().toISOString();
-
-    // Find pending emails where send_at has passed
-    const { data: pendingEmails, error } = await supabase
-      .from('amber_state')
-      .select('*')
-      .eq('type', 'pending_email')
-      .eq('metadata->>status', 'pending')
-      .lte('metadata->>send_at', now);
-
-    if (error) {
-      console.error('[scheduled-email] Error querying pending emails:', error);
-      return;
-    }
-
-    if (!pendingEmails || pendingEmails.length === 0) {
-      // Only log occasionally to avoid spam (every ~5 minutes)
-      if (Math.random() < 0.1) {
-        console.log('[scheduled-email] Check complete, no pending emails');
-      }
-      return; // Nothing to send
-    }
-
-    console.log(`[scheduled-email] Found ${pendingEmails.length} email(s) ready to send`);
-
-    for (const email of pendingEmails) {
-      const { to, subject } = email.metadata;
-      const body = email.content;
-
-      console.log(`[scheduled-email] Processing email id=${email.id} to=${to} subject="${subject}" body_length=${body?.length || 0}`);
-
-      try {
-        console.log(`[scheduled-email] Calling sendAmberEmail for ${to}...`);
-        await sendAmberEmail(to, subject, body);
-        console.log(`[scheduled-email] sendAmberEmail returned successfully for ${to}`);
-
-        // Mark as sent
-        await supabase
-          .from('amber_state')
-          .update({
-            metadata: {
-              ...email.metadata,
-              status: 'sent',
-              sent_at: new Date().toISOString(),
-            },
-          })
-          .eq('id', email.id);
-
-        console.log(`[scheduled-email] Sent delayed email to ${to}`);
-      } catch (sendError) {
-        console.error(`[scheduled-email] Failed to send to ${to}:`, sendError);
-
-        // Mark as failed
-        await supabase
-          .from('amber_state')
-          .update({
-            metadata: {
-              ...email.metadata,
-              status: 'failed',
-              error: String(sendError),
-              failed_at: new Date().toISOString(),
-            },
-          })
-          .eq('id', email.id);
-      }
-    }
-  } catch (error) {
-    console.error('[scheduled-email] Error in sendScheduledEmails:', error);
-  }
-}
-
-// =============================================================================
-// APPROVAL HELPERS
-// =============================================================================
-
 /**
  * Store a pending approval request
  */
@@ -347,18 +275,22 @@ async function storePendingApproval(
   });
 
   // Email Bart for approval
-  await sendAmberEmail(
-    ADMIN_EMAIL,
-    `🔐 Approval needed: ${detectedAction}`,
-    `Someone wants me to ${detectedAction}.\n\n` +
-      `From: ${fromEmail}\n` +
-      `Subject: ${subject}\n\n` +
-      `Their message:\n${body}\n\n` +
-      `---\n` +
-      `Reply "approve" to let me proceed.\n` +
-      `Reply "deny" to decline.\n\n` +
-      `— Amber`
-  );
+  if (!isSendGridBypassed()) {
+    await sgMail.send({
+      to: ADMIN_EMAIL,
+      from: 'Amber <amber@advisorsfoundry.ai>',
+      replyTo: 'amber@reply.advisorsfoundry.ai',
+      subject: `🔐 Approval needed: ${detectedAction}`,
+      text: `Someone wants me to ${detectedAction}.\n\n` +
+        `From: ${fromEmail}\n` +
+        `Subject: ${subject}\n\n` +
+        `Their message:\n${body}\n\n` +
+        `---\n` +
+        `Reply "approve ${approvalId}" to let me proceed.\n` +
+        `Reply "deny ${approvalId}" to decline.\n\n` +
+        `— Amber`,
+    });
+  }
 
   console.log(`[amber-email] Stored pending approval: ${approvalId}`);
   return approvalId;
@@ -368,48 +300,29 @@ async function storePendingApproval(
  * Check if this is an approval/denial from admin
  */
 async function handleApprovalResponse(body: string): Promise<{ handled: boolean; message?: string }> {
-  // Support both "approve" / "deny" (simple) and "approve approval-123" (with ID)
-  const approveWithIdMatch = body.match(/approve\s+(approval-\d+)/i);
-  const denyWithIdMatch = body.match(/deny\s+(approval-\d+)/i);
-  const simpleApproveMatch = /\bapprove\b/i.test(body) && !approveWithIdMatch;
-  const simpleDenyMatch = /\bdeny\b/i.test(body) && !denyWithIdMatch;
+  // Support: "approve approval-123" or "approve thinkhard approval-123"
+  const approveMatch = body.match(/approve\s+(thinkhard\s+)?(approval-\d+)/i);
+  const denyMatch = body.match(/deny\s+(approval-\d+)/i);
+  const useThinkhard = approveMatch?.[1] ? true : false;
 
-  if (!approveWithIdMatch && !denyWithIdMatch && !simpleApproveMatch && !simpleDenyMatch) {
+  if (!approveMatch && !denyMatch) {
     return { handled: false };
   }
 
-  const isApproved = !!(approveWithIdMatch || simpleApproveMatch);
-  let data;
+  // approveMatch[2] is the approval ID (after optional "thinkhard")
+  const approvalId = approveMatch?.[2] || denyMatch?.[1];
+  const isApproved = !!approveMatch;
 
-  if (approveWithIdMatch || denyWithIdMatch) {
-    // Specific approval ID provided
-    const approvalId = approveWithIdMatch?.[1] || denyWithIdMatch?.[1];
-    const result = await supabase
-      .from('amber_state')
-      .select('*')
-      .eq('type', 'pending_approval')
-      .eq('metadata->>approval_id', approvalId)
-      .single();
-    data = result.data;
+  // Find the pending request
+  const { data } = await supabase
+    .from('amber_state')
+    .select('*')
+    .eq('type', 'pending_approval')
+    .eq('metadata->>approval_id', approvalId)
+    .single();
 
-    if (!data) {
-      return { handled: true, message: `Couldn't find approval request ${approvalId}. It may have expired or already been processed. — Amber` };
-    }
-  } else {
-    // Simple "approve" or "deny" — find most recent pending approval
-    const result = await supabase
-      .from('amber_state')
-      .select('*')
-      .eq('type', 'pending_approval')
-      .eq('metadata->>status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
-    data = result.data;
-
-    if (!data) {
-      return { handled: true, message: `No pending approval requests found. — Amber` };
-    }
+  if (!data) {
+    return { handled: true, message: `Couldn't find approval request ${approvalId}. It may have expired or already been processed. — Amber` };
   }
 
   // Update status
@@ -427,41 +340,60 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
   if (isApproved) {
     // Execute the approved action using the agent
     const originalFrom = data.metadata.from;
-    const originalBody = data.content;
+    const originalTask = data.content;
     const originalSubject = data.metadata.subject || '';
 
-    // Check if it's a thinkhard request - either from original message OR from approval message
-    // Admin can force thinkhard by replying "approve thinkhard"
-    const forceThinkhard = /\bapprove\s+thinkhard\b/i.test(body);
-    const { isThinkhard: originalThinkhard, task } = detectThinkhard(originalBody);
-    const isThinkhard = forceThinkhard || originalThinkhard;
+    // Notify them we're starting
+    const thinkhardNote = useThinkhard ? ' (thinkhard mode — this may take a while)' : '';
+    if (!isSendGridBypassed()) {
+      await sgMail.send({
+        to: originalFrom,
+        from: 'Amber <amber@advisorsfoundry.ai>',
+        replyTo: 'amber@reply.advisorsfoundry.ai',
+        subject: `Re: ${originalSubject}`,
+        text: `Good news — Bart approved your request${thinkhardNote}. I'm working on it now...\n\n— Amber`,
+      });
+    }
 
-    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard})`);
+    // Run the agent
+    console.log(`[amber-email] Executing approved request from ${originalFrom}${useThinkhard ? ' (thinkhard)' : ''}`);
+    const agentResult = await runAmberAgent(originalTask, originalFrom, originalSubject, true, useThinkhard);
 
-    // Run the agent with the approved request
-    const agentResult = await runAmberEmailAgent(
-      isThinkhard ? task : originalBody,
-      originalFrom,
-      originalSubject,
-      true, // isApprovedRequest
-      isThinkhard
-    );
+    // Send the result to the original requester
+    let resultEmail = agentResult.response;
+    if (agentResult.actions_taken.length > 0) {
+      resultEmail += `\n\nActions taken:\n- ${agentResult.actions_taken.join('\n- ')}`;
+    }
+    resultEmail += '\n\n— Amber';
 
-    // Send immediately - the agent already takes several minutes to run,
-    // which is usually enough time for Railway to deploy any committed changes
-    await sendAmberEmail(originalFrom, `Re: ${originalSubject}`, agentResult.response);
-    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email sent`);
+    if (!isSendGridBypassed()) {
+      await sgMail.send({
+        to: originalFrom,
+        from: 'Amber <amber@advisorsfoundry.ai>',
+        replyTo: 'amber@reply.advisorsfoundry.ai',
+        subject: `Re: ${originalSubject}`,
+        text: resultEmail,
+      });
+    }
 
-    await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
+    // Store the execution in Supabase
+    await storeIncomingEmail(originalFrom, originalSubject, originalTask, resultEmail);
 
-    return { handled: true, message: `Approved and executed. Results will be sent to ${originalFrom}. — Amber` };
+    return {
+      handled: true,
+      message: `Done! Executed the request and sent results to ${originalFrom}. Actions: ${agentResult.actions_taken.join(', ') || 'completed task'}. — Amber`
+    };
   } else {
     const originalFrom = data.metadata.from;
-    await sendAmberEmail(
-      originalFrom,
-      `Re: ${data.metadata.subject}`,
-      `Sorry — I'm not able to help with that request. If you think this was a mistake, you can reach out to Bart directly.\n\n— Amber`
-    );
+    if (!isSendGridBypassed()) {
+      await sgMail.send({
+        to: originalFrom,
+        from: 'Amber <amber@advisorsfoundry.ai>',
+        replyTo: 'amber@reply.advisorsfoundry.ai',
+        subject: `Re: ${data.metadata.subject}`,
+        text: `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`,
+      });
+    }
     return { handled: true, message: `Denied. I've let ${originalFrom} know. — Amber` };
   }
 }
@@ -597,131 +529,6 @@ function isSendGridBypassed(): boolean {
   return process.env.SENDGRID_ENABLED === 'FALSE';
 }
 
-/**
- * Send an email from Amber with click tracking disabled.
- * SendGrid's click tracking mangles URLs and causes 404s.
- */
-async function sendAmberEmail(to: string, subject: string, text: string): Promise<void> {
-  if (isSendGridBypassed()) {
-    console.log(`🚫 SendGrid Bypassed: Would send Amber email to ${to}`);
-    return;
-  }
-
-  try {
-    const [response] = await sgMail.send({
-      to,
-      from: 'Amber <amber@intheamber.com>',
-      replyTo: 'amber@intheamber.com',
-      subject,
-      text,
-      trackingSettings: {
-        clickTracking: {
-          enable: false,
-          enableText: false,
-        },
-      },
-    });
-    console.log(`[sendgrid] Email to ${to} accepted: status=${response.statusCode}, messageId=${response.headers['x-message-id']}`);
-  } catch (error: any) {
-    console.error(`[sendgrid] Failed to send to ${to}:`, error?.response?.body || error.message || error);
-    throw error;
-  }
-}
-
-// =============================================================================
-// BACKGROUND EMAIL PROCESSING - Runs async after returning 200 to SendGrid
-// =============================================================================
-
-/**
- * Process an Amber email in the background.
- * This runs AFTER we've already returned 200 to SendGrid.
- */
-async function processAmberEmailAsync(
-  from: string,
-  senderEmail: string,
-  subject: string,
-  body: string
-): Promise<void> {
-  const isAdmin = senderEmail === ADMIN_EMAIL;
-
-  try {
-    // Check if admin is responding to an approval request
-    if (isAdmin) {
-      const approvalResult = await handleApprovalResponse(body);
-      if (approvalResult.handled) {
-        if (approvalResult.message) {
-          await sendAmberEmail(from, `Re: ${subject || 'approval'}`, approvalResult.message);
-        }
-        console.log(`✅ Amber processed approval response`);
-        return;
-      }
-
-      // Check for thinkhard or action requests from admin
-      const { isThinkhard, task } = detectThinkhard(body);
-      if (isThinkhard || isActionRequest(body)) {
-        console.log(`📧 Admin action request detected (thinkhard: ${isThinkhard})`);
-
-        // Run the agent (this can take up to 45 minutes!)
-        const agentResult = await runAmberEmailAgent(
-          task,
-          senderEmail,
-          subject || '',
-          true, // isApprovedRequest
-          isThinkhard
-        );
-
-        // Send the agent's response
-        await sendAmberEmail(from, `Re: ${subject || 'your request'}`, agentResult.response);
-
-        await storeIncomingEmail(senderEmail, subject || '', body, agentResult.response);
-        console.log(`✅ Amber agent completed task (${agentResult.actions_taken.length} actions)`);
-        return;
-      }
-    }
-
-    // Check for action requests from non-admins — queue for approval silently
-    if (!isAdmin) {
-      const { isSensitive, action } = detectSensitiveRequest(body);
-      const needsApproval = isSensitive || isActionRequest(body);
-      const actionDescription = action || 'take action on your request';
-
-      if (needsApproval) {
-        console.log(`📧 Action request from non-admin detected: ${actionDescription}`);
-        await storePendingApproval(senderEmail, subject || '', body, actionDescription);
-
-        // Do NOT reply to the third party — wait for Bart's approval/rejection
-        // The response will come via handleApprovalResponse when Bart decides
-        console.log(`✅ Amber queued approval request — awaiting Bart's decision (no reply sent to ${senderEmail})`);
-        return;
-      }
-    }
-
-    // Normal reply flow
-    const amberReply = await generateAmberReply(senderEmail, subject || '', body, isAdmin);
-
-    // Store the thread in Supabase
-    await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
-
-    // Send reply
-    await sendAmberEmail(from, `Re: ${subject || 'your message'}`, amberReply);
-
-    console.log(`✅ Amber replied to ${from}`);
-
-  } catch (error) {
-    console.error('❌ Background Amber email processing failed:', error);
-    // Optionally notify admin of failure
-    try {
-      await sendAmberEmail(
-        ADMIN_EMAIL,
-        '⚠️ Email processing failed',
-        `Failed to process email from ${senderEmail}.\n\nSubject: ${subject}\n\nError: ${error}\n\n— Amber`
-      );
-    } catch (notifyError) {
-      console.error('Failed to notify admin of email processing failure:', notifyError);
-    }
-  }
-}
-
 export function setupEmailWebhooks(app: Application): void {
   // Skip SendGrid setup if bypassed
   if (isSendGridBypassed()) {
@@ -762,85 +569,163 @@ export function setupEmailWebhooks(app: Application): void {
       console.log(`📧 Processing inbound email from ${from} to ${toAddress}: ${subject}`);
 
       // Route based on recipient address
-      if (toAddress.includes('ambercc@')) {
-        // === AMBERCC INBOX (store only, NO amber-email agent processing) ===
-        // These emails are reviewed by Claude Code with full conversation context.
-        // Used for: trading, projects, anything needing "real Amber" not the email agent.
-        console.log('📧 Routing to ambercc (CC inbox for Claude Code)...');
-
-        const senderEmail = extractEmail(from);
-
-        // Dedup check
-        const emailHash = generateEmailHash(senderEmail, subject || '', body);
-        const isDuplicate = await isDuplicateEmail(emailHash);
-        if (isDuplicate) {
-          console.log(`📧 Duplicate ambercc email detected, skipping`);
-          return res.status(200).send('OK');
-        }
-        await markEmailProcessing(emailHash, senderEmail, subject || '');
-
-        // Store for Claude Code to review (NOT processed by amber-email agent)
-        await supabase.from('amber_state').insert({
-          type: 'cc_inbox',
-          content: body,
-          source: 'ambercc_webhook',
-          metadata: {
-            from: senderEmail,
-            subject: subject || '',
-            to: toAddress,
-            received_at: new Date().toISOString(),
-            status: 'unread',
-          },
-        });
-
-        // Forward to Bart so he doesn't miss it
-        if (!isSendGridBypassed()) {
-          await sgMail.send({
-            to: 'bdecrem@gmail.com',
-            from: 'Amber <amber@intheamber.com>',
-            replyTo: 'ambercc@intheamber.com',
-            subject: `[CC] ${subject || 'New message'}`,
-            text: `From: ${senderEmail}\n\n${body}\n\n---\nThis was sent to ambercc@intheamber.com. Tell Claude Code to "check your cc inbox" to handle it.`,
-            trackingSettings: { clickTracking: { enable: false, enableText: false } },
-          });
-        }
-
-        console.log(`📧 CC inbox email stored + forwarded to Bart`);
-        return res.status(200).send('OK');
-
-      } else if (toAddress.includes('amber@')) {
-        // === AMBER EMAIL HANDLER (with dedup + background processing) ===
+      if (toAddress.includes('amber@')) {
+        // === AMBER EMAIL HANDLER ===
         console.log('📧 Routing to Amber...');
 
         const senderEmail = extractEmail(from);
-        console.log(`📧 Sender: ${senderEmail}`);
+        const isAdmin = senderEmail === ADMIN_EMAIL;
+        console.log(`📧 Sender: ${senderEmail}, isAdmin: ${isAdmin}`);
 
-        // STEP 1: Generate dedup hash
-        const emailHash = generateEmailHash(senderEmail, subject || '', body);
-
-        // STEP 2: Check if already processing (prevents SendGrid retry storms)
-        const isDuplicate = await isDuplicateEmail(emailHash);
-        if (isDuplicate) {
-          console.log(`📧 Duplicate email detected (hash: ${emailHash}), skipping`);
-          return res.status(200).send('OK');
+        // Check if admin is responding to an approval request
+        if (isAdmin) {
+          const approvalResult = await handleApprovalResponse(body);
+          if (approvalResult.handled) {
+            if (approvalResult.message && !isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'approval'}`,
+                text: approvalResult.message,
+              });
+            }
+            console.log(`✅ Amber processed approval response`);
+            return res.status(200).send('OK');
+          }
         }
 
-        // STEP 3: Mark as processing BEFORE returning 200
-        await markEmailProcessing(emailHash, senderEmail, subject || '');
+        // Check for sensitive requests from non-admins
+        if (!isAdmin) {
+          const { isSensitive, action } = detectSensitiveRequest(body);
+          if (isSensitive && action) {
+            console.log(`📧 Sensitive request detected: ${action}`);
+            await storePendingApproval(senderEmail, subject || '', body, action);
 
-        // STEP 4: Return 200 immediately to prevent SendGrid retries
-        // This is the key fix - SendGrid gets its response in milliseconds
-        res.status(200).send('OK');
-        console.log(`📧 Returned 200 to SendGrid, processing in background...`);
+            const pendingReply = `I'd love to help with that, but ${action} is something I need Bart's approval for first. I've pinged him — sit tight and I'll get back to you once he weighs in.\n\n— Amber`;
 
-        // STEP 5: Process email in background (no await!)
-        // This runs after the HTTP response is sent
-        processAmberEmailAsync(from, senderEmail, subject || '', body).catch((err) => {
-          console.error('📧 Background processing error:', err);
-        });
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your message'}`,
+                text: pendingReply,
+              });
+            }
 
-        // Return from handler (response already sent)
-        return;
+            await storeIncomingEmail(senderEmail, subject || '', body, pendingReply);
+            console.log(`✅ Amber queued approval request`);
+            return res.status(200).send('OK');
+          }
+        }
+
+        // Check if admin is asking for an action (vs just chatting)
+        if (isAdmin && isActionRequest(body)) {
+          // Check for thinkhard trigger
+          const { isThinkhard, task } = detectThinkhard(body);
+
+          if (isThinkhard) {
+            console.log('📧 THINKHARD request detected — running multi-iteration agent...');
+
+            // Acknowledge receipt with thinkhard notice
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your request'}`,
+                text: `🔶 Going deep on this. Starting thinkhard — up to 5 iterations.\n\nI'll email you when I'm done.\n\n— Amber`,
+              });
+            }
+
+            // Run thinkhard agent
+            const agentResult = await runAmberAgent(task, senderEmail, subject || '', false, true);
+
+            // Build response
+            let amberReply = agentResult.response;
+            if (agentResult.actions_taken.length > 0) {
+              amberReply += `\n\nActions taken:\n- ${agentResult.actions_taken.join('\n- ')}`;
+            }
+            amberReply += '\n\n— Amber';
+
+            // Store the thread
+            await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
+
+            // Send result
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'thinkhard complete'}`,
+                text: amberReply,
+              });
+            }
+
+            console.log(`✅ Amber completed thinkhard for ${from}`);
+          } else {
+            console.log('📧 Admin action request detected — running agent...');
+
+            // Acknowledge receipt
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your request'}`,
+                text: `On it! Working on this now...\n\n— Amber`,
+              });
+            }
+
+            // Run the agent
+            const agentResult = await runAmberAgent(body, senderEmail, subject || '', false, false);
+
+            // Build response
+            let amberReply = agentResult.response;
+            if (agentResult.actions_taken.length > 0) {
+              amberReply += `\n\nActions taken:\n- ${agentResult.actions_taken.join('\n- ')}`;
+            }
+            amberReply += '\n\n— Amber';
+
+            // Store the thread
+            await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
+
+            // Send result
+            if (!isSendGridBypassed()) {
+              await sgMail.send({
+                to: from,
+                from: 'Amber <amber@advisorsfoundry.ai>',
+                replyTo: 'amber@reply.advisorsfoundry.ai',
+                subject: `Re: ${subject || 'your request'}`,
+                text: amberReply,
+              });
+            }
+
+            console.log(`✅ Amber completed action for ${from}`);
+          }
+        } else {
+          // Normal conversational reply flow
+          const amberReply = await generateAmberReply(senderEmail, subject || '', body, isAdmin);
+
+          // Store the thread in Supabase
+          await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
+
+          // Send reply
+          if (isSendGridBypassed()) {
+            console.log(`🚫 SendGrid Bypassed: Would send Amber reply to ${from}`);
+          } else {
+            await sgMail.send({
+              to: from,
+              from: 'Amber <amber@advisorsfoundry.ai>',
+              replyTo: 'amber@reply.advisorsfoundry.ai',
+              subject: `Re: ${subject || 'your message'}`,
+              text: amberReply,
+            });
+          }
+
+          console.log(`✅ Amber replied to ${from}`);
+        }
 
       } else {
         // === LEO EMAIL HANDLER (default) ===

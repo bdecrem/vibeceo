@@ -331,9 +331,27 @@ cp sms-bot/documentation/subagents/*.md .claude/commands/
 
 | Command | Purpose |
 |---------|---------|
+| `/amber` | Amber sidekick — persistent AI companion with memory and thinkhard loops |
 | `/auditor <path>` | Codebase health audit — checks if new code follows patterns |
 
 **Usage**: `/auditor web/app/voice-chat` or `/auditor incubator/i3-2`
+
+### Amber + Thinkhard Setup
+
+Amber requires additional hooks for thinkhard (multi-iteration autonomous work). Run the setup script:
+
+```bash
+./sms-bot/documentation/hooks/setup-amber.sh
+```
+
+Or manually:
+1. Copy command: `cp sms-bot/documentation/subagents/amber.md ~/.claude/commands/`
+2. Copy hooks: `cp sms-bot/documentation/hooks/check-amber-loop.* .claude/hooks/`
+3. Create `.claude/settings.json` with Stop hook pointing to `.claude/hooks/check-amber-loop.sh`
+
+**Requirements**: `sms-bot/.env.local` must have `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+
+**Thinkhard usage**: After `/amber`, say "thinkhard: build something wild" for 5-iteration deep work.
 
 ### Other Subagents
 
