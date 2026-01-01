@@ -267,6 +267,13 @@ export const amberxCommandHandler: CommandHandler = {
 
     if (!hasPrefix) return false;
 
+    // Pass through to amber.ts agent handler for these subcommands
+    const agentSubcommands = ['SCAN', 'EMAIL', 'STATUS', 'HELP', 'SERVICES'];
+    const words = normalized.split(/\s+/);
+    if (words[0] === 'AMBER' && words.length >= 2 && agentSubcommands.includes(words[1])) {
+      return false;
+    }
+
     return true;
   },
 
