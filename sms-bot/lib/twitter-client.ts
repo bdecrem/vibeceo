@@ -793,3 +793,224 @@ export async function replyToTweet(text: string, inReplyToTweetId: string): Prom
     };
   }
 }
+
+// ============================================================================
+// Tweet Lookup and Conversation APIs (for amberx)
+// ============================================================================
+
+export interface TweetUrl {
+  url: string;
+  expandedUrl: string;
+  displayUrl: string;
+  title?: string;
+  description?: string;
+}
+
+export interface TweetDetail {
+  id: string;
+  text: string;
+  authorId: string;
+  authorUsername?: string;
+  authorName?: string;
+  createdAt?: string;
+  conversationId?: string;
+  urls: TweetUrl[];
+  metrics?: {
+    likeCount?: number;
+    retweetCount?: number;
+    replyCount?: number;
+  };
+}
+
+export interface TweetDetailResult {
+  success: boolean;
+  tweet?: TweetDetail;
+  error?: string;
+}
+
+export interface ConversationResult {
+  success: boolean;
+  replies?: Tweet[];
+  error?: string;
+}
+
+/**
+ * Get a single tweet by ID with full details
+ * Includes conversation_id, URLs, metrics, and author info
+ */
+export async function getTweet(tweetId: string): Promise<TweetDetailResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  try {
+    const queryParams: Record<string, string> = {
+      'tweet.fields': 'created_at,conversation_id,entities,public_metrics',
+      'expansions': 'author_id',
+      'user.fields': 'username,name',
+    };
+
+    const baseUrl = `https://api.twitter.com/2/tweets/${tweetId}`;
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Get tweet failed:', data);
+      return {
+        success: false,
+        error: data.detail || data.title || JSON.stringify(data),
+      };
+    }
+
+    if (!data.data) {
+      return {
+        success: false,
+        error: 'Tweet not found',
+      };
+    }
+
+    // Get author info from expansions
+    const author = data.includes?.users?.[0];
+
+    // Extract URLs from entities
+    const urls: TweetUrl[] = (data.data.entities?.urls || []).map((u: any) => ({
+      url: u.url,
+      expandedUrl: u.expanded_url,
+      displayUrl: u.display_url,
+      title: u.title,
+      description: u.description,
+    }));
+
+    const tweet: TweetDetail = {
+      id: data.data.id,
+      text: data.data.text,
+      authorId: data.data.author_id,
+      authorUsername: author?.username,
+      authorName: author?.name,
+      createdAt: data.data.created_at,
+      conversationId: data.data.conversation_id,
+      urls,
+      metrics: data.data.public_metrics ? {
+        likeCount: data.data.public_metrics.like_count,
+        retweetCount: data.data.public_metrics.retweet_count,
+        replyCount: data.data.public_metrics.reply_count,
+      } : undefined,
+    };
+
+    console.log(`[Twitter] Fetched tweet ${tweetId} by @${tweet.authorUsername}`);
+
+    return {
+      success: true,
+      tweet,
+    };
+  } catch (error) {
+    console.error('[Twitter] Get tweet error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
+/**
+ * Get replies to a tweet using conversation_id
+ * @param conversationId - The conversation_id of the root tweet
+ * @param maxResults - Max replies to fetch (default 50, max 100)
+ */
+export async function getConversationReplies(
+  conversationId: string,
+  maxResults: number = 50
+): Promise<ConversationResult> {
+  const creds = getTwitterCredentials();
+  if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    return {
+      success: false,
+      error: 'Twitter credentials not configured',
+    };
+  }
+
+  try {
+    // Search for tweets in this conversation (excludes the original tweet)
+    const query = `conversation_id:${conversationId}`;
+
+    const queryParams: Record<string, string> = {
+      query,
+      max_results: Math.min(Math.max(maxResults, 10), 100).toString(),
+      'tweet.fields': 'created_at,in_reply_to_user_id,author_id',
+      'expansions': 'author_id',
+      'user.fields': 'username,name',
+    };
+
+    const baseUrl = 'https://api.twitter.com/2/tweets/search/recent';
+    const urlParams = new URLSearchParams(queryParams);
+    const fullUrl = `${baseUrl}?${urlParams.toString()}`;
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+
+    const response = await fetch(fullUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': authHeader,
+      },
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      console.error('[Twitter] Get conversation failed:', data);
+      return {
+        success: false,
+        error: data.detail || data.title || JSON.stringify(data),
+      };
+    }
+
+    // Build user lookup map from expansions
+    const userMap = new Map<string, { username: string; name: string }>();
+    if (data.includes?.users) {
+      for (const user of data.includes.users) {
+        userMap.set(user.id, { username: user.username, name: user.name });
+      }
+    }
+
+    // Transform replies
+    const replies: Tweet[] = (data.data || []).map((tweet: any) => {
+      const user = userMap.get(tweet.author_id);
+      return {
+        id: tweet.id,
+        text: tweet.text,
+        authorId: tweet.author_id,
+        authorUsername: user?.username,
+        authorName: user?.name,
+        createdAt: tweet.created_at,
+        conversationId: tweet.conversation_id,
+        inReplyToUserId: tweet.in_reply_to_user_id,
+      };
+    });
+
+    console.log(`[Twitter] Fetched ${replies.length} replies for conversation ${conversationId}`);
+
+    return {
+      success: true,
+      replies,
+    };
+  } catch (error) {
+    console.error('[Twitter] Get conversation error:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}

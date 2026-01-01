@@ -1,0 +1,108 @@
+[
+  {
+    "cycle": 1,
+    "timestamp": "2025-12-31T12:50:15.861054",
+    "strategy": "Pure Connors RSI-2",
+    "entries": [
+      "Cycle 1 | Portfolio: $504.05 | Cash: $504.05 | Positions: 0",
+      "Pure Connors RSI-2: Entry RSI<5, 200MA filter, exit on 5MA",
+      "CANDIDATE: SPY RSI-2=0.0, price $682.92 > 200MA $626.91",
+      "CANDIDATE: QQQ RSI-2=0.0, price $615.14 > 200MA $557.80",
+      "CANDIDATE: XLV RSI-2=0.0, price $154.96 > 200MA $140.39",
+      "CANDIDATE: XLF RSI-2=0.0, price $54.90 > 200MA $51.84",
+      "CANDIDATE: SMH RSI-2=0.0, price $360.96 > 200MA $290.04",
+      "CANDIDATE: KO RSI-2=0.0, price $69.97 > 200MA $69.90",
+      "CANDIDATE: AAPL RSI-2=0.0, price $272.52 > 200MA $231.75",
+      "CANDIDATE: NVDA RSI-2=0.0, price $187.25 > 200MA $160.13",
+      "CANDIDATE: AMD RSI-2=0.0, price $214.62 > 200MA $162.64",
+      "CANDIDATE: CRM RSI-2=0.0, price $264.80 > 200MA $257.05",
+      "CANDIDATE: JPM RSI-2=0.0, price $323.33 > 200MA $285.57",
+      "CANDIDATE: GS RSI-2=0.0, price $879.74 > 200MA $705.99",
+      "CANDIDATE: V RSI-2=0.0, price $351.27 > 200MA $344.96",
+      "CANDIDATE: MA RSI-2=0.0, price $571.73 > 200MA $561.21",
+      "BUY SIGNAL: SPY RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: QQQ RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: XLV RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: XLF RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: SMH RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: KO RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: AAPL RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: NVDA RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: AMD RSI-2=0.0 < 5, above 200MA",
+      "BUY SIGNAL: CRM RSI-2=0.0 < 5, above 200MA",
+      "SKIP JPM: Insufficient cash ($4.05)"
+    ],
+    "actions": [
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "SPY",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "QQQ",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "XLV",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "XLF",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "SMH",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "KO",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "AAPL",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "NVDA",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "AMD",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      },
+      {
+        "status": "executed",
+        "action": "buy",
+        "symbol": "CRM",
+        "amount": 50,
+        "reason": "Connors entry: RSI-2=0.0, price > 200MA"
+      }
+    ]
+  }
+]

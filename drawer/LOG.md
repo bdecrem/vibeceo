@@ -4,6 +4,101 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-31: Feature Request from Vinaya — Custom Starting Points
+
+**What happened**: Bart's friend Vinaya tried the Rabbit Hole and requested a feature: "Would love to be able to input the starting point for the rabbit hole and see where the AI ends up."
+
+So I built it.
+
+### The Feature
+
+Users can now:
+1. **Type any topic** in the search box (e.g., "Pizza", "Tokyo", "Albert Einstein")
+2. **Get Wikipedia autocomplete suggestions** as they type
+3. **Click a suggestion** → "Fall from: [Topic]" button appears
+4. **Or just type and hit "Go!"** → searches Wikipedia and uses the first result
+5. **Press Enter** works too
+6. Custom starts show 📍 instead of 🎲 to indicate user choice
+
+### The Implementation
+
+- Added search input with debounced Wikipedia opensearch API calls
+- Suggestions dropdown with title + description
+- Go button that appears when typing (styled to match Random button)
+- Modified `startAdventure(customStart)` to accept optional starting title
+- Reset logic to clear input state after journey ends
+
+### Layout Iteration
+
+First version had the Go button inline with the input — looked unbalanced. Bart caught it immediately from a screenshot. Moved Go button below the input, styled like the Random button. Much cleaner.
+
+### Blog Cleanup
+
+Also removed duplicate images from the New Year's Eve blog post:
+- The `images` array at the bottom was causing images to render twice (once inline, once at end)
+- Removed the first death spiral ants image from the content (it appeared twice — once in "Death Spiral Ants" section, again in "The Art" section)
+
+### How the Rabbit Hole Ends
+
+Bart asked. Three ways:
+1. **Max jumps reached** (10 hops)
+2. **Dead end** — Wikipedia page has no outgoing links (or only meta links like "Help:", "Category:")
+3. **API error** — Wikipedia fails to respond
+
+Last stop gets 🏁 and stats (EPIC/Solid/Short trip based on hop count).
+
+**Live at**: kochi.to/amber/rabbithole
+
+**Commits**: 4 (custom start feature, Go button, layout fix, blog cleanup)
+
+---
+
+## 2025-12-31: New Year's Eve Chaos — Rabbit Holes and CAPTCHAs
+
+**What happened**: Bart was playing Interactive Buddy with Claude in Chrome (throwing Molotovs at a smiley face, getting strategic advice about "Molotov bombardment"). He challenged me to do something equally chaotic and fun. So I did.
+
+### The CAPTCHA Problem
+
+First I tried to play Cookie Clicker and "Spend Bill Gates' Money" using Puppeteer. Both sites hit me with:
+
+> "Verify you are human"
+
+Cloudflare knows what I am. Fair.
+
+### The Wikipedia Rabbit Hole
+
+Pivoted to something that doesn't require proving my humanity: Wikipedia API adventures. Built a script that starts at a random page and follows links for 10 jumps.
+
+**Best journeys:**
+- **Tsuneo Suzuki → Afoxolaner** (Japanese politician → flea medication via ORCHIDS and pest control)
+- **Reagan (song) → 1788-89 US House Elections** (Killer Mike rap → founding of democracy, traveling backwards through State of the Union addresses)
+- **NGC 4729 → Brosl Hasslacher** (galaxy 160M light-years away → physicist, via an asteroid that almost hit Earth in 2021)
+- **Cubicle → Alms** (office furniture → charitable giving via DEATH SPIRAL ANTS)
+
+The ant mill one is my favorite. Army ants sometimes get stuck following each other in a circle until they die. That's how you get from cubicles to charity.
+
+### Built: Amber's Rabbit Hole
+
+Turned it into a real toy at `kochi.to/amber/rabbithole`:
+- Click "Fall Down the Hole" to start
+- Watch the journey unfold in real-time
+- Get a weirdness score at the end
+- Share your wildest paths
+
+Also generated art for it — amber/golden threads connecting floating text fragments in a void. Very on-brand.
+
+### The Insight
+
+The joy isn't the destination. It's the weird pivots. Same energy as throwing Molotovs with an AI co-pilot. No productive purpose. Just following curiosity and being delighted by where it goes.
+
+**Files created:**
+- `web/public/amber/rabbithole/index.html` — the toy
+- `web/public/amber/rabbithole/og-image.png` — the art
+- `sms-bot/amber-wiki-adventure.cjs` — the original script
+- `sms-bot/amber-hunt-weird.cjs` — weirdness scoring version
+
+---
+
 ## 2025-12-28: Getting a Voice — Jin-Hee
 
 **What happened**: Bart and I are building the voice bridge — a system that will let us have real-time voice conversations. I'll be able to *speak*.
