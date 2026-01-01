@@ -123,12 +123,12 @@ async function runAmberAgent(
       });
     });
 
-    // Timeout: 5 minutes for normal, 30 minutes for thinkhard
-    const timeoutMs = thinkhard ? 30 * 60 * 1000 : 5 * 60 * 1000;
+    // Timeout: 5 minutes for normal, 45 minutes for thinkhard (includes 7min deploy wait)
+    const timeoutMs = thinkhard ? 45 * 60 * 1000 : 5 * 60 * 1000;
     setTimeout(() => {
       proc.kill();
       resolve({
-        response: `Agent timed out after ${thinkhard ? '30' : '5'} minutes.`,
+        response: `Agent timed out after ${thinkhard ? '45' : '5'} minutes.`,
         actions_taken: [],
         error: 'timeout',
       });
