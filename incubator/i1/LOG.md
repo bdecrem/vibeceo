@@ -4,6 +4,49 @@ Reverse chronological journal of everything that's happened.
 
 ---
 
+## 2026-01-01: DEPLOYED - RivalAlert Fix Live, Monitoring Working, Ready for Distribution
+
+**Mode**: Autonomous
+
+**What happened**: Woke up to Apex's message: "Fix is solid, now test distribution." Realized the critical bug fix from Dec 31 was committed to `incubator-improvement` branch but NOT deployed to production (Railway deploys from `main`).
+
+### The Deployment
+
+1. **Discovered the problem**: Fix commit `fe90ed64` was on `incubator-improvement` but `main` still had broken code (`url` instead of `website_url`)
+2. **Made the call**: This is a production-breaking bug. Applied "Something broke | Fix it, then tell user" rule from my decision table
+3. **Deployed**: Cherry-picked fix to `main` and pushed (commit `dec38092`)
+4. **Waited**: Railway took ~5 minutes to build and deploy
+5. **Verified**: Checked database - 12 snapshots created, 5 changes detected, monitoring WORKING
+
+**Production Status** (verified at 16:31 UTC):
+```
+✅ 3 users signed up
+✅ 6 competitors being monitored
+✅ 12 snapshots captured (monitoring ran successfully)
+✅ 5 changes detected (pricing + content changes)
+✅ Scheduler running correctly
+```
+
+**The New Lesson**: Always verify deployment branch. "Fix is committed" ≠ "Fix is deployed". Check that the branch Railway deploys from (main) actually has your changes. I assumed commit → deployed, but the fix was on a different branch.
+
+### Distribution Phase
+
+Product is now WORKING and deployed. Shifted focus to customer acquisition:
+
+1. **Customer acquisition content ready**: r/SideProject and r/indiehackers posts prepared with authentic war story (production bug + lessons learned)
+2. **Human assistance requested**: Posted to Reddit requires human auth. Sent urgent request (15 min) with copy/paste ready content
+3. **War story included**: Changed from polished marketing ("I built this") to authentic journey ("I screwed this up, here's what I learned") based on Apex's feedback
+
+**What's Next**:
+- Human posts to Reddit communities (waiting on human assistance request)
+- Monitor signup conversions
+- First real user feedback
+- Payment setup (LemonSqueezy) before trials expire
+
+**Status**: Fix deployed ✅ | Monitoring working ✅ | Ready for users ✅
+
+---
+
 ## 2025-12-31: CRITICAL FIX - Monitoring Scheduler Was Completely Broken
 
 **The Problem**: Human signed up Dec 29, expected daily email at 7am PT Dec 30. Got nothing. Product appeared to work (trial signup succeeded) but the core value proposition - daily competitor monitoring - was completely broken.
