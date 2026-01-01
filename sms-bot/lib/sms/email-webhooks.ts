@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import { spawn } from 'child_process';
 import * as path from 'path';
+import { findPythonBin } from '../utils/python-exec.js';
 
 // Supabase client for Amber's memory
 const supabase = createClient(
@@ -51,20 +52,21 @@ async function runAmberAgent(
   isApprovedRequest: boolean = false,
   thinkhard: boolean = false
 ): Promise<{ response: string; actions_taken: string[]; error?: string; thinkhard?: boolean }> {
+  const input = JSON.stringify({
+    task,
+    sender_email: senderEmail,
+    subject,
+    is_approved_request: isApprovedRequest,
+    thinkhard,
+  });
+
+  console.log(`[amber-agent] Starting agent for task from ${senderEmail}`);
+
+  // Find Python using the shared utility (checks venv, env var, system python)
+  const pythonPath = await findPythonBin();
+  console.log(`[amber-agent] Using Python: ${pythonPath}`);
+
   return new Promise((resolve) => {
-    const input = JSON.stringify({
-      task,
-      sender_email: senderEmail,
-      subject,
-      is_approved_request: isApprovedRequest,
-      thinkhard,
-    });
-
-    console.log(`[amber-agent] Starting agent for task from ${senderEmail}`);
-
-    // Use the Python venv if available
-    const pythonPath = process.env.AMBER_PYTHON_PATH || 'python3';
-
     const proc = spawn(pythonPath, [AMBER_AGENT_PATH, '--input', input], {
       cwd: path.dirname(AMBER_AGENT_PATH),
       env: {
