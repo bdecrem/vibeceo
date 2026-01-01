@@ -50,12 +50,10 @@
       max-width: 500px;
       margin: 20px auto;
       position: relative;
-      display: flex;
-      gap: 8px;
     }
 
     .start-input {
-      flex: 1;
+      width: 100%;
       padding: 14px 20px;
       font-size: 1rem;
       border: 2px solid #333;
@@ -76,16 +74,20 @@
     }
 
     .go-btn {
-      padding: 14px 24px;
-      font-size: 1rem;
+      display: none;
+      width: 100%;
+      max-width: 300px;
+      margin: 15px auto 0;
+      padding: 16px 32px;
+      font-size: 1.3rem;
       font-weight: 600;
       border: none;
-      border-radius: 12px;
+      border-radius: 50px;
       background: linear-gradient(135deg, #d4a574, #c49464);
       color: #1a1a2e;
       cursor: pointer;
-      transition: all 0.2s;
-      display: none;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
     }
 
     .go-btn.show {
@@ -93,17 +95,13 @@
     }
 
     .go-btn:hover:not(:disabled) {
-      transform: scale(1.05);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(212, 165, 116, 0.4);
     }
 
     .go-btn:disabled {
       opacity: 0.5;
       cursor: not-allowed;
-    }
-
-    .input-wrapper {
-      flex: 1;
-      position: relative;
     }
 
     .suggestions {
@@ -389,12 +387,11 @@
     </header>
 
     <div class="start-input-container">
-      <div class="input-wrapper">
-        <input type="text" class="start-input" id="startInput" placeholder="Type a topic (e.g., Pizza, Tokyo, Albert Einstein)..." autocomplete="off">
-        <div class="suggestions" id="suggestions"></div>
-      </div>
-      <button class="go-btn" id="goBtn">Go!</button>
+      <input type="text" class="start-input" id="startInput" placeholder="Type a topic (e.g., Pizza, Tokyo, Albert Einstein)..." autocomplete="off">
+      <div class="suggestions" id="suggestions"></div>
     </div>
+
+    <button class="go-btn" id="goBtn">Go!</button>
 
     <p class="or-divider">— or —</p>
 
