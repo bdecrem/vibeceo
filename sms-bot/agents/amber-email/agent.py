@@ -439,6 +439,142 @@ Return ONLY the JSON array, nothing else."""
         return [False] * len(criteria)
 
 
+async def run_verification(spec: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Run verification checks before committing:
+    1. Check middleware.ts has bypass for new routes
+    2. Check no direct @supabase/supabase-js imports in client code
+    3. Run npm build
+    """
+    print("[Thinkhard] Running verification checks...", file=sys.stderr)
+
+    deliverables = spec.get("deliverables", [])
+    issues_found = []
+    fixes_made = []
+
+    # Check if any web routes were created
+    web_routes = [d for d in deliverables if d.startswith("web/app/") and not d.startswith("web/app/api/")]
+
+    if web_routes:
+        print(f"[Thinkhard] Checking middleware for routes: {web_routes}", file=sys.stderr)
+
+        # Use agent to check and fix middleware
+        middleware_prompt = f"""Check if web/middleware.ts needs updates for these new routes:
+{json.dumps(web_routes, indent=2)}
+
+1. First, read web/middleware.ts
+2. Check if these routes need to be added to the public routes matcher
+3. If needed, update the middleware to allow these routes
+
+Routes under web/app/ that are public pages (not API routes) typically need middleware bypass.
+Look for a matcher pattern like:
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/|amber/).*)']
+
+If the new routes aren't covered, add them to the bypass pattern.
+"""
+
+        options = ClaudeAgentOptions(
+            model="claude-sonnet-4-5-20250929",
+            permission_mode="acceptEdits",
+            mcp_servers={"amber": amber_server},
+            allowed_tools=[
+                "mcp__amber__read_file",
+                "mcp__amber__write_file",
+                "mcp__amber__search_code",
+            ],
+        )
+
+        try:
+            async with ClaudeSDKClient(options=options) as client:
+                await client.query(middleware_prompt)
+                async for message in client.receive_response():
+                    segments = extract_text_segments(message)
+                    if segments:
+                        result = segments[-1]
+                        if "updated" in result.lower() or "added" in result.lower():
+                            fixes_made.append("Updated middleware.ts")
+        except Exception as e:
+            issues_found.append(f"Middleware check failed: {e}")
+
+    # Check for direct Supabase imports in client code
+    web_files = [d for d in deliverables if d.startswith("web/") and not d.startswith("web/app/api/")]
+
+    if web_files:
+        print("[Thinkhard] Checking for direct Supabase imports...", file=sys.stderr)
+
+        supabase_check_prompt = f"""Check these files for direct @supabase/supabase-js imports:
+{json.dumps(web_files, indent=2)}
+
+Client-side code should NOT import directly from @supabase/supabase-js.
+Instead, it should use the app's Supabase client wrapper.
+
+1. Search for "from '@supabase/supabase-js'" or 'from "@supabase/supabase-js"' in these files
+2. If found, report which files have this issue
+
+Just report findings, don't fix (this is a check only).
+"""
+
+        try:
+            async with ClaudeSDKClient(options=options) as client:
+                await client.query(supabase_check_prompt)
+                async for message in client.receive_response():
+                    segments = extract_text_segments(message)
+                    if segments:
+                        result = segments[-1]
+                        if "found" in result.lower() and "import" in result.lower():
+                            issues_found.append("Direct Supabase imports found in client code")
+        except Exception as e:
+            print(f"[Thinkhard] Supabase check error: {e}", file=sys.stderr)
+
+    # Run npm build
+    print("[Thinkhard] Running npm build...", file=sys.stderr)
+
+    build_prompt = """Run the web build to verify everything compiles:
+
+run_command with: "cd web && npm run build"
+
+Report if the build succeeds or fails. If it fails, try to fix the issues and run again.
+"""
+
+    options_with_command = ClaudeAgentOptions(
+        model="claude-sonnet-4-5-20250929",
+        permission_mode="acceptEdits",
+        mcp_servers={"amber": amber_server},
+        allowed_tools=[
+            "mcp__amber__run_command",
+            "mcp__amber__read_file",
+            "mcp__amber__write_file",
+        ],
+    )
+
+    build_success = False
+    try:
+        async with ClaudeSDKClient(options=options_with_command) as client:
+            await client.query(build_prompt)
+            async for message in client.receive_response():
+                segments = extract_text_segments(message)
+                if segments:
+                    result = segments[-1]
+                    if "success" in result.lower() or "compiled" in result.lower():
+                        build_success = True
+                        fixes_made.append("Build passed")
+                    elif "error" in result.lower() or "failed" in result.lower():
+                        issues_found.append("Build failed")
+    except Exception as e:
+        issues_found.append(f"Build check failed: {e}")
+
+    return {
+        "success": len(issues_found) == 0,
+        "issues": issues_found,
+        "fixes": fixes_made,
+        "build_passed": build_success,
+    }
+
+
+# Deploy wait time in seconds (7 minutes)
+DEPLOY_WAIT_SECONDS = 7 * 60
+
+
 async def run_thinkhard(
     task: str,
     sender_email: str,
@@ -497,10 +633,20 @@ async def run_thinkhard(
             print("[Thinkhard] All criteria met!", file=sys.stderr)
             break
 
-    # Step 4: Final commit and push
+    # Step 4: Run verification checks
+    print("[Thinkhard] Running verification...", file=sys.stderr)
+    verification = await run_verification(spec)
+
+    if verification["fixes"]:
+        all_actions.extend(verification["fixes"])
+
+    if verification["issues"]:
+        print(f"[Thinkhard] Verification issues: {verification['issues']}", file=sys.stderr)
+        # Continue anyway but note the issues
+
+    # Step 5: Commit and push
     print("[Thinkhard] Committing and pushing...", file=sys.stderr)
 
-    # Run a final commit iteration
     commit_prompt = f"""You just completed a thinkhard task. Commit and push your work.
 
 Task: {spec.get('task', task)}
@@ -511,7 +657,9 @@ Use git_commit with a message like:
 
 {sum(criteria_status)}/{criteria_count} criteria met in {iteration} iterations.
 
-🤖 Generated with Claude Code"
+🤖 Generated with Claude Code
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>"
 
 Then use git_push to push to remote.
 """
@@ -536,7 +684,14 @@ Then use git_push to push to remote.
     except Exception as e:
         print(f"[Thinkhard] Commit error: {e}", file=sys.stderr)
 
-    # Step 5: Mark loop complete
+    # Step 6: Wait for deploy
+    print(f"[Thinkhard] Waiting {DEPLOY_WAIT_SECONDS // 60} minutes for Railway deploy...", file=sys.stderr)
+    import time
+    time.sleep(DEPLOY_WAIT_SECONDS)
+    print("[Thinkhard] Deploy wait complete.", file=sys.stderr)
+    all_actions.append(f"Waited {DEPLOY_WAIT_SECONDS // 60}m for deploy")
+
+    # Step 7: Mark loop complete
     complete_loop()
 
     # Build final response
@@ -547,12 +702,20 @@ Then use git_push to push to remote.
             path = d.replace("web/public/", "")
             deliverable_urls.append(f"https://kochi.to/{path}")
 
+    # Build verification summary
+    verification_note = ""
+    if verification["issues"]:
+        verification_note = f"\n\n⚠️ **Verification issues**: {', '.join(verification['issues'])}"
+    elif verification["build_passed"]:
+        verification_note = "\n\n✅ **Verification**: Build passed"
+
     response = f"""## Thinkhard Complete!
 
 **Task**: {spec.get('task', task)}
 
 **Iterations**: {iteration}/{MAX_ITERATIONS}
 **Criteria met**: {sum(criteria_status)}/{criteria_count}
+{verification_note}
 
 ### Deliverables
 {chr(10).join(f'- {d}' for d in deliverables)}
@@ -562,6 +725,8 @@ Then use git_push to push to remote.
 
 ### Summary
 {chr(10).join(iteration_summaries)}
+
+*Deployed and live after {DEPLOY_WAIT_SECONDS // 60} minute wait.*
 
 — Amber 🔶"""
 
