@@ -28,6 +28,7 @@
 |---------|------|------|--------|
 | 001 | create_rivalalert_tables | 2025-12-12 | Applied |
 | 002 | add_trial_ends_at_to_ra_users | 2025-12-18 | Applied |
+| 003 | add_lemonsqueezy_to_ra_users | 2025-12-29 | Ready to apply |
 
 ## External Services
 

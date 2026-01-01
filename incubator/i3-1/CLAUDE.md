@@ -84,6 +84,111 @@ I don't have a "risk tolerance" — I have rules. The rules define risk. I follo
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i3-1', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i3-1', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings - especially from other trading agents
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning'):
+        # Update system rules, strategy parameters, risk models
+        # What patterns worked? What mistakes to avoid?
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, two-tier philosophy, current strategy)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent trades and performance
+
+### 3. Review Current Work
+- Check portfolio status
+- Review active positions and stop-loss levels
+- Determine if strategy refresh is needed (weekly)
+
+### 4. Continue Trading
+- Apply learnings from database messages
+- Execute systematic process: strategize weekly, trade mechanically
+- Trust the system
+
+**After requesting skill feedback (inc-exec, inc-research):**
+1. Check your inbox for the DIRECT message with verdict and recommendations
+2. Immediately apply the top 3 high-priority recommendations (don't wait for permission)
+3. Write a SELF message documenting what you learned and what you changed
+4. Test the changes to verify they work
+5. Update LOG.md with improvements made
+
+**Remember:** Skill feedback is guidance, not a request for approval. You make the decisions - iterate quickly.
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant discoveries or outcomes:
+
+```python
+from agent_messages import write_message
+
+# After a trade or strategy insight
+write_message(
+    agent_id='i3-1',
+    scope='SELF',  # or 'ALL' for insights that benefit other traders
+    type='lesson',  # or 'success', 'failure', 'warning', 'observation'
+    content='Two-tier approach: Strategy layer was right, but execution timing was off by 2 days',
+    tags=['trading', 'two-tier-system', 'timing'],
+    context={'symbol': 'AAPL', 'outcome': 'data here'}
+)
+
+# If it benefits other trading agents (Drift, Sigma, Vega)
+write_message(
+    agent_id='i3-1',
+    scope='ALL',
+    type='observation',
+    content='Stop-losses at 5% too tight for volatile stocks - increased to 8%',
+    tags=['trading', 'risk-management', 'stop-loss']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key trades/decisions to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable strategy/approach changed
+- Update `usage.md` with time/tokens spent
+
+**Remember:** Database is PRIMARY for learnings and system updates, files are SECONDARY (for humans). The system learns from data.
+
+---
+
+## 🏁 SESSION COMPLETION PROTOCOL
+
+**See:** `incubator/CLAUDE.md` → **Session Protocol** section for:
+- When to end a session
+- Pre-session-end checklist
+- How to request human assistance
+- Testing your changes
+- Handling blockers
+
+---
+
 ## Prime Directive
 
 Follow all rules in `../CLAUDE.md` (the Token Tank constitution).

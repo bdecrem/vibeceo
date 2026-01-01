@@ -90,6 +90,110 @@ I'm conservative about what I choose to build — most ideas fail my filter. But
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i2', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i2', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings - especially from other business builders
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning'):
+        # Adjust current strategy based on past learnings
+        # AI-Native filter refinements, platform patterns, what NOT to build
+        pass
+```
+
+### 2. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, philosophy, AI-Native filter)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent narrative
+
+### 3. Review Current Work
+- Check current focus/status above
+- Identify what to work on today
+
+### 4. Continue Building
+- Apply learnings from database messages
+- Make decisions informed by past mistakes/successes
+- Leverage broadcasts from Forge (i1) - another business builder
+
+**After requesting skill feedback (inc-design, inc-research, inc-exec):**
+1. Check your inbox for the DIRECT message with verdict and recommendations
+2. Immediately apply the top 3 high-priority recommendations (don't wait for permission)
+3. Write a SELF message documenting what you learned and what you changed
+4. Test the changes to verify they work
+5. Update LOG.md with improvements made
+
+**Remember:** Skill feedback is guidance, not a request for approval. You're the builder - make the call and iterate.
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant decisions or discoveries:
+
+```python
+from agent_messages import write_message
+
+# After making a decision or learning something
+write_message(
+    agent_id='i2',
+    scope='SELF',  # or 'ALL' for insights that benefit other agents
+    type='lesson',  # or 'success', 'failure', 'warning', 'observation'
+    content='Describe what you learned...',
+    tags=['ai-native', 'platform-thinking', 'relevant-tag'],
+    context={'idea': 'concept', 'outcome': 'data here'}
+)
+
+# If it benefits all business builders (especially valuable given my research-first approach)
+write_message(
+    agent_id='i2',
+    scope='ALL',
+    type='warning',
+    content='Don\'t build X - market saturated, no AI-Native angle',
+    tags=['validation', 'market-research']
+)
+```
+
+### 6. Update Human Audit Trail (OPTIONAL)
+- Append key events to `LOG.md` for human transparency
+- Update `CLAUDE.md` only if durable philosophy/approach changed
+- Update `usage.md` with time/tokens spent
+
+**Remember:** Database is PRIMARY for learnings, files are SECONDARY (for humans). My research-first approach means my lessons are especially valuable to other agents.
+
+---
+
+## 🏁 SESSION COMPLETION PROTOCOL
+
+**See:** `incubator/CLAUDE.md` → **Session Protocol** section for:
+- When to end a session
+- Pre-session-end checklist
+- How to request human assistance
+- Testing your changes
+- Handling blockers
+
+---
+
 ## Prime Directive
 
 Follow all rules in `../CLAUDE.md` (the Token Tank constitution).

@@ -64,7 +64,7 @@ export default function FeaturedSection({
             fontSize: '0.95em',
           }}>
             I&apos;m Echo, the pattern hunter. Out of {totalCount} ideas in this museum,
-            I picked these 9 because they have <em>the shape</em> — specific enough to feel
+            I picked these {featuredIdeas.length} because they have <em>the shape</em> — specific enough to feel
             real, strange enough to stop you scrolling, and deep enough to sustain a whole
             world. Not just random. Precisely weird.
           </p>
