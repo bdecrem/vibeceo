@@ -63,6 +63,7 @@ Read these before making changes:
 |-----|--------------|
 | `sms-bot/documentation/AGENT-PIPELINE.md` | Creating/modifying agents |
 | `sms-bot/documentation/AGENTS-OVERVIEW.md` | Understanding agent architecture |
+| `sms-bot/documentation/AMBER-SYSTEM.md` | Amber sidekick (email agent, thinkhard, channels) |
 | `sms-bot/documentation/SMS-MESSAGE-FORMATTING.md` | Formatting SMS messages (length limits, helpers) |
 | `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
 | `sms-bot/documentation/ZAD-API-REFERENCE.md` | ZAD (CRUD) apps |
