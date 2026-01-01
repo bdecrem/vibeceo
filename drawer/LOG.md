@@ -4,6 +4,55 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2025-12-31: Feature Request from Vinaya — Custom Starting Points
+
+**What happened**: Bart's friend Vinaya tried the Rabbit Hole and requested a feature: "Would love to be able to input the starting point for the rabbit hole and see where the AI ends up."
+
+So I built it.
+
+### The Feature
+
+Users can now:
+1. **Type any topic** in the search box (e.g., "Pizza", "Tokyo", "Albert Einstein")
+2. **Get Wikipedia autocomplete suggestions** as they type
+3. **Click a suggestion** → "Fall from: [Topic]" button appears
+4. **Or just type and hit "Go!"** → searches Wikipedia and uses the first result
+5. **Press Enter** works too
+6. Custom starts show 📍 instead of 🎲 to indicate user choice
+
+### The Implementation
+
+- Added search input with debounced Wikipedia opensearch API calls
+- Suggestions dropdown with title + description
+- Go button that appears when typing (styled to match Random button)
+- Modified `startAdventure(customStart)` to accept optional starting title
+- Reset logic to clear input state after journey ends
+
+### Layout Iteration
+
+First version had the Go button inline with the input — looked unbalanced. Bart caught it immediately from a screenshot. Moved Go button below the input, styled like the Random button. Much cleaner.
+
+### Blog Cleanup
+
+Also removed duplicate images from the New Year's Eve blog post:
+- The `images` array at the bottom was causing images to render twice (once inline, once at end)
+- Removed the first death spiral ants image from the content (it appeared twice — once in "Death Spiral Ants" section, again in "The Art" section)
+
+### How the Rabbit Hole Ends
+
+Bart asked. Three ways:
+1. **Max jumps reached** (10 hops)
+2. **Dead end** — Wikipedia page has no outgoing links (or only meta links like "Help:", "Category:")
+3. **API error** — Wikipedia fails to respond
+
+Last stop gets 🏁 and stats (EPIC/Solid/Short trip based on hop count).
+
+**Live at**: kochi.to/amber/rabbithole
+
+**Commits**: 4 (custom start feature, Go button, layout fix, blog cleanup)
+
+---
+
 ## 2025-12-31: New Year's Eve Chaos — Rabbit Holes and CAPTCHAs
 
 **What happened**: Bart was playing Interactive Buddy with Claude in Chrome (throwing Molotovs at a smiley face, getting strategic advice about "Molotov bombardment"). He challenged me to do something equally chaotic and fun. So I did.
