@@ -46,6 +46,84 @@
       font-size: 1.1rem;
     }
 
+    .start-input-container {
+      max-width: 500px;
+      margin: 20px auto;
+      position: relative;
+    }
+
+    .start-input {
+      width: 100%;
+      padding: 14px 20px;
+      font-size: 1rem;
+      border: 2px solid #333;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      color: #fff;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .start-input:focus {
+      border-color: #d4a574;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .start-input::placeholder {
+      color: #666;
+    }
+
+    .suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: #1a1a2e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      margin-top: 4px;
+      max-height: 200px;
+      overflow-y: auto;
+      display: none;
+      z-index: 100;
+    }
+
+    .suggestions.show {
+      display: block;
+    }
+
+    .suggestion {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #252540;
+    }
+
+    .suggestion:last-child {
+      border-bottom: none;
+    }
+
+    .suggestion:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+
+    .suggestion-title {
+      color: #fff;
+      font-weight: 500;
+    }
+
+    .suggestion-desc {
+      color: #888;
+      font-size: 0.85rem;
+      margin-top: 2px;
+    }
+
+    .or-divider {
+      color: #555;
+      margin: 15px 0;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+
     .start-btn {
       display: block;
       width: 100%;
@@ -274,10 +352,18 @@
     <header>
       <span class="rabbit">🐇</span>
       <h1>Amber's Rabbit Hole</h1>
-      <p class="subtitle">Start at a random Wikipedia page. Follow links. See where you end up.</p>
+      <p class="subtitle">Start at any Wikipedia page. Follow links. See where you end up.</p>
     </header>
 
-    <button class="start-btn" id="startBtn">Fall Down the Hole</button>
+    <div class="start-input-container">
+      <input type="text" class="start-input" id="startInput" placeholder="Type a topic (e.g., Pizza, Tokyo, Albert Einstein)..." autocomplete="off">
+      <div class="suggestions" id="suggestions"></div>
+    </div>
+
+    <p class="or-divider">— or —</p>
+
+    <button class="start-btn" id="randomBtn">🎲 Random Start</button>
+    <button class="start-btn" id="startBtn" style="display: none;">Fall from: <span id="selectedTopic"></span></button>
 
     <div class="journey" id="journey"></div>
     <div id="stats"></div>
@@ -291,6 +377,8 @@
   <script>
     const MAX_JUMPS = 10;
     let isRunning = false;
+    let selectedTitle = null;
+    let searchTimeout = null;
 
     async function fetchJSON(url) {
       const res = await fetch(url);
@@ -299,6 +387,17 @@
 
     async function getRandomPage() {
       return await fetchJSON('https://en.wikipedia.org/api/rest_v1/page/random/summary');
+    }
+
+    async function searchWikipedia(query) {
+      const url = `https://en.wikipedia.org/w/api.php?action=opensearch&search=${encodeURIComponent(query)}&limit=5&format=json&origin=*`;
+      const res = await fetch(url);
+      const data = await res.json();
+      // data[0] = query, data[1] = titles, data[2] = descriptions, data[3] = urls
+      return data[1].map((title, i) => ({
+        title,
+        description: data[2][i] || ''
+      }));
     }
 
     async function getPageLinks(title) {
@@ -408,25 +507,30 @@ Try it: kochi.to/amber/rabbithole`;
       });
     }
 
-    async function startAdventure() {
+    async function startAdventure(customStart = null) {
       if (isRunning) return;
       isRunning = true;
 
-      const btn = document.getElementById('startBtn');
       const journeyDiv = document.getElementById('journey');
       const statsDiv = document.getElementById('stats');
 
-      btn.disabled = true;
-      btn.textContent = 'Falling...';
+      randomBtn.disabled = true;
+      startBtn.disabled = true;
+      randomBtn.textContent = 'Falling...';
       journeyDiv.innerHTML = '';
       statsDiv.innerHTML = '';
 
       const stops = [];
 
       try {
-        // Get random start
+        // Get start (custom or random)
         showLoading(journeyDiv);
-        const start = await getRandomPage();
+        let start;
+        if (customStart) {
+          start = await getPageSummary(customStart);
+        } else {
+          start = await getRandomPage();
+        }
         hideLoading();
 
         let current = {
@@ -435,6 +539,11 @@ Try it: kochi.to/amber/rabbithole`;
         };
         stops.push(current);
         addStop(journeyDiv, current, 0, true, false);
+
+        // Update icon for custom starts
+        if (customStart) {
+          journeyDiv.querySelector('.stop-number').textContent = '📍';
+        }
 
         // Follow the rabbit hole
         for (let i = 1; i <= MAX_JUMPS; i++) {
@@ -491,12 +600,93 @@ Try it: kochi.to/amber/rabbithole`;
         journeyDiv.innerHTML = `<p style="color: #f66; text-align: center;">Something went wrong. Wikipedia might be having a moment.</p>`;
       }
 
-      btn.disabled = false;
-      btn.textContent = 'Go Again';
+      // Reset UI
+      randomBtn.disabled = false;
+      startBtn.disabled = false;
+      randomBtn.textContent = '🎲 Go Again (Random)';
+
+      // Reset input state
+      selectedTitle = null;
+      startInput.value = '';
+      startBtn.style.display = 'none';
+      randomBtn.style.display = 'block';
+
       isRunning = false;
     }
 
-    document.getElementById('startBtn').addEventListener('click', startAdventure);
+    // Input handling
+    const startInput = document.getElementById('startInput');
+    const suggestionsDiv = document.getElementById('suggestions');
+    const randomBtn = document.getElementById('randomBtn');
+    const startBtn = document.getElementById('startBtn');
+    const selectedTopicSpan = document.getElementById('selectedTopic');
+
+    startInput.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+
+      if (searchTimeout) clearTimeout(searchTimeout);
+
+      if (query.length < 2) {
+        suggestionsDiv.classList.remove('show');
+        selectedTitle = null;
+        startBtn.style.display = 'none';
+        randomBtn.style.display = 'block';
+        return;
+      }
+
+      searchTimeout = setTimeout(async () => {
+        try {
+          const results = await searchWikipedia(query);
+          if (results.length === 0) {
+            suggestionsDiv.classList.remove('show');
+            return;
+          }
+
+          suggestionsDiv.innerHTML = results.map(r => `
+            <div class="suggestion" data-title="${r.title}">
+              <div class="suggestion-title">${r.title}</div>
+              ${r.description ? `<div class="suggestion-desc">${r.description.substring(0, 80)}${r.description.length > 80 ? '...' : ''}</div>` : ''}
+            </div>
+          `).join('');
+          suggestionsDiv.classList.add('show');
+
+          // Add click handlers
+          suggestionsDiv.querySelectorAll('.suggestion').forEach(el => {
+            el.addEventListener('click', () => {
+              selectTopic(el.dataset.title);
+            });
+          });
+        } catch (e) {
+          console.error(e);
+        }
+      }, 300);
+    });
+
+    function selectTopic(title) {
+      selectedTitle = title;
+      startInput.value = title;
+      suggestionsDiv.classList.remove('show');
+      selectedTopicSpan.textContent = title;
+      startBtn.style.display = 'block';
+      randomBtn.style.display = 'none';
+    }
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.start-input-container')) {
+        suggestionsDiv.classList.remove('show');
+      }
+    });
+
+    // Enter key to start
+    startInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && selectedTitle) {
+        startAdventure(selectedTitle);
+      }
+    });
+
+    randomBtn.addEventListener('click', () => startAdventure(null));
+    startBtn.addEventListener('click', () => startAdventure(selectedTitle));
   </script>
 </body>
 </html>
