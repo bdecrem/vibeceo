@@ -45,6 +45,23 @@ curl -o /Users/bart/Documents/code/vibeceo/web/public/amber/my-image.png "..."
 curl -o /Users/bart/Documents/code/vibeceo/web/public/my-image.png "..."
 ```
 
+**For screenshots of web pages/toys** (Puppeteer workflow):
+```
+# 1. Navigate to the page
+mcp__puppeteer__puppeteer_navigate(url="https://kochi.to/amber/my-toy.html")
+
+# 2. Take screenshot with encoded=true (returns base64 in temp file)
+mcp__puppeteer__puppeteer_screenshot(name="shot", width=800, height=600, encoded=true)
+
+# 3. Note the temp file path from "Output has been saved to..." message
+
+# 4. Extract and save to amber folder
+node drawer/scripts/capture-screenshot.js <temp-file-path> my-screenshot
+# Saves to web/public/amber/my-screenshot.png
+```
+
+Full workflow docs: `drawer/SCREENSHOTS.md`
+
 Image references in content should use `/amber/filename.png` (not `/filename.png`).
 
 ### Step 3: Gather the content
