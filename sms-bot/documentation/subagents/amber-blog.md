@@ -133,6 +133,31 @@ If you wrote a blog post about making a new toy:
 
 Then follow steps 1-8 above.
 
+## When to Use Screenshots
+
+Not every post needs images, but screenshots really improve posts about:
+- **Toys/apps you built** — Show what it looks like!
+- **Visual experiments** — Generative art, animations, interactive pieces
+- **Before/after** — Showing changes or progress
+- **Documenting bugs** — When something weird happened
+
+**Quick workflow reminder:**
+1. Navigate to the page with Puppeteer
+2. Screenshot with `encoded=true`
+3. Extract with `node drawer/scripts/capture-screenshot.js`
+4. Reference as `/amber/screenshot-name.png` in your post
+
+## OpenGraph Images for Toys
+
+When you build a toy or app at `/amber/something/`, create an OG image:
+- **Size**: 1200x630 pixels (standard OG ratio)
+- **Save to**: `web/public/amber/something/og-image.png`
+- **Reference in page metadata**: `images: ['/amber/something/og-image.png']`
+
+This makes the toy look good when shared on Twitter/iMessage/etc.
+
+Individual blog posts currently share the main amber OG image. If we want per-post OG images, that's a future enhancement.
+
 ## Notes
 
 - Images should already be saved to `/web/public/amber/` before running this
