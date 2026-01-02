@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RLM: Recursive Language Models - Summary by Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #fef5e7 0%, #fff9f0 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(218, 165,32, 0.15);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .meta {
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        h2 {
+            color: #B8860B;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid #DAA520;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #DAA520;
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.8rem 0;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #2c2c2c;
+        }
+
+        .tldr {
+            background: linear-gradient(135deg, #fff9e6 0%, #fef5e7 100%);
+            border-left: 4px solid #DAA520;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .tldr strong {
+            color: #B8860B;
+            font-size: 1.1rem;
+        }
+
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.5rem;
+            color: #2c2c2c;
+        }
+
+        .key-concept {
+            background: #fef9f0;
+            border-radius: 8px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            border: 1px solid #f0e5d0;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fff4d6 0%, #ffe9a8 100%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        a {
+            color: #B8860B;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-bottom 0.2s;
+        }
+
+        a:hover {
+            border-bottom: 1px solid #B8860B;
+        }
+
+        footer {
+            background: #f8f8f8;
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .comparison-card {
+            background: white;
+            border: 2px solid #f0e5d0;
+            border-radius: 8px;
+            padding: 1rem;
+        }
+
+        .comparison-card h4 {
+            color: #B8860B;
+            margin-bottom: 0.5rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Recursive Language Models (RLM)</h1>
+            <div class="subtitle">Context Folding for Long-Horizon AI Agents</div>
+            <div class="meta">
+                Source: <a href="https://www.primeintellect.ai/blog/rlm" style="color: white; text-decoration: underline;">Prime Intellect</a> | 
+                Summary by Amber
+            </div>
+        </header>
+
+        <div class="content">
+            <div class="tldr">
+                <strong>TL;DR:</strong> LLM agents are getting powerful but struggle with long contexts due to cost and performance degradation. Recursive Language Models (RLM) solve this by letting models actively manage their own context through Python code and sub-LLM calls, rather than stuffing everything into one massive prompt. Instead of summarizing (which loses info), RLMs delegate work programmatically—like a good manager distributing tasks.
+            </div>
+
+            <div class="section">
+                <h2>The Problem: Context is Expensive</h2>
+                <p>Modern LLM agents can implement complex changes across dozens of files autonomously. But this requires <span class="highlight">vast numbers of tokens</span>, creating two critical problems:</p>
+                
+                <ul>
+                    <li><strong>Linear cost scaling:</strong> Per-token costs rise linearly with context length</li>
+                    <li><strong>Context rot:</strong> Even the best models' performance drops as contexts grow longer</li>
+                </ul>
+
+                <p>Current solutions like Claude Code and OpenAI's Codex use <span class="highlight">scaffolding</span>—a succession of agents connected by prompts and file states, with LLM summarization to compress context. But this is just one approach.</p>
+            </div>
+
+            <div class="section">
+                <h2>Context Folding: A Different Approach</h2>
+                <p>Instead of external files and summaries, <span class="highlight">context folding</span> manages the context window itself to keep it short while maintaining a continual, growing rollout. It's compatible with file-based scaffolding—from the outside, it just looks like a normal LLM.</p>
+
+                <h3>Existing Context Folding Methods:</h3>
+                <div class="key-concept">
+                    <strong>1. Scaling Long-Horizon LLM Agent via Context-Folding</strong>
+                    <p>The agent can branch its rollout and return from branches. Within a branch, it retains full context; after returning, only a self-chosen summary remains.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>2. AgentFold</strong>
+                    <p>Every action produces both a result and a summary of the action and reasoning. Summaries can be hierarchical, consolidating lessons from multiple actions.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>3. Agentic Context Engineering</strong>
+                    <p>A three-agent system: Generator (creates rollout), Reflector (takes lessons), Curator (adapts knowledge base).</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>The RLM Solution: Self-Managing Context</h2>
+                <p>Prime Intellect believes the <span class="highlight">Recursive Language Model (RLM)</span> is the simplest, most flexible method. Introduced by <a href="https://alexzhang13.github.io/blog/2025/rlm/" target="_blank">Alex Zhang in October 2025</a>, now available as a <a href="https://arxiv.org/abs/2512.24601" target="_blank">full paper</a>.</p>
+
+                <h3>How RLM Works:</h3>
+                <p>Rather than ingesting potentially huge input data directly, the RLM uses a <strong>persistent Python REPL</strong> to inspect and transform input, and call sub-LLMs from within Python.</p>
+
+                <div class="comparison-grid">
+                    <div class="comparison-card">
+                        <h4>❌ Traditional Approach</h4>
+                        <ul>
+                            <li>Stuff all data into context</li>
+                            <li>Process everything sequentially</li>
+                            <li>Summarize to compress</li>
+                            <li>Lose information</li>
+                        </ul>
+                    </div>
+                    <div class="comparison-card">
+                        <h4>✅ RLM Approach</h4>
+                        <ul>
+                            <li>Access data programmatically</li>
+<li>Delegate to sub-LLMs</li>
+                            <li>Search & filter with Python</li>
+                            <li>Preserve all information</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>RLM Capabilities</h2>
+                <ul>
+                    <li><strong>No direct data loading:</strong> Huge inputs (PDFs, datasets, videos) don't clog the context—the model stays lean and avoids context rot</li>
+                    <li><strong>Python-powered filtering:</strong> Search, filter, and transform context using Python, avoiding redundant processing</li>
+                    <li><strong>Sub-LLM delegation:</strong> Spawn fresh instances of itself to perform work, piping specific data to them programmatically</li>
+                    <li><strong>Aligns with The Bitter Lesson:</strong> More in line with learned approaches than hand-crafted summarization strategies</li>
+                    <li><strong>No information loss:</strong> Never summarizes—delegates instead</li>
+                </ul>
+            </div>
+
+            <div class="section">
+                <h2>Prime Intellect's Implementation</h2>
+                <p>Available in their <a href="https://github.com/PrimeIntellect-ai/verifiers/" target="_blank">verifiers repository</a>, with RLM-based environments on the <a href="https://app.primeintellect.ai/dashboard/environments?ex_sort=by_sections&ex_q=rlm" target="_blank">Environments Hub</a>.</p>
+
+                <h3>Key Enhancements:</h3>
+                
+                <div class="key-concept">
+                    <strong>1. Tools Only for Sub-LLMs</strong>
+                    <p>Main RLM doesn't see tool output tokens—it delegates tool-using work to sub-LLMs. Many tools produce lots of tokens; this keeps the main model lean.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>2. Parallelized Sub-LLM Calls</strong>
+                    <p>An <code>llm_batch</code> function processes multiple prompts in parallel, speeding up complex workflows.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>3. Answer Via Environment Variable</strong>
+                    <p>The model provides its answer through a Python dictionary:</p>
+                    <ul>
+                        <li><code>answer["content"]</code>: Can be edited/deleted over multiple turns</li>
+                        <li><code>answer["ready"]</code>: Only when set to <code>True</code> does the rollout end</li>
+                    </ul>
+                    <p>This enables <span class="highlight">diffusion-style generation</span> of the final answer over the reasoning chain.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>4. Any pip Package</strong>
+                    <p>Install what you need (numpy, scipy, sympy, etc.). Code executes in isolated Sandboxes.</p>
+                </div>
+
+                <div class="key-concept">
+                    <strong>5. Limited REPL Output</strong>
+                    <p>Only 8192 characters of REPL output shown to the RLM per turn (user-adjustable). Forces the model to use Python and sub-LLMs intelligently rather than dumping everything.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Why This Matters</h2>
+                <p>Prime Intellect believes <span class="highlight">teaching models to manage their own context end-to-end through reinforcement learning</span> will be the next major breakthrough, enabling agents to solve long-horizon tasks spanning <strong>weeks to months</strong>.</p>
+
+                <p>Current work focuses on ablations with the RLM scaffolding on existing models called through APIs. Future work will scale RLM training on environments that reward effective very long-horizon reasoning.</p>
+
+                <p>The RLM is powerful, flexible, strong at tool-use, and <span class="highlight">perfect for a world where context is a sparse resource</span>.</p>
+            </div>
+
+            <div class="section">
+                <h2>The Big Picture</h2>
+                <p>RLM represents a shift from "how do we compress context?" to "how do we teach models to actively manage context like a skilled developer?"</p>
+                
+                <p>Instead of fighting context limits with bigger windows or lossy summaries, RLMs embrace the constraint and learn to work within it—delegating, filtering, and focusing programmatically. It's scaffolding that scales with learning, not just engineering.</p>
+            </div>
+        </div>
+
+        <footer>
+            <p>Summary created by Amber | Original post: <a href="https://www.primeintellect.ai/blog/rlm" target="_blank">Prime Intellect RLM Blog</a></p>
+            <p>Paper: <a href="https://arxiv.org/abs/2512.24601" target="_blank">arxiv.org/abs/2512.24601</a></p>
+        </footer>
+    </div>
+</body>
+</html>
