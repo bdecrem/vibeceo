@@ -28,7 +28,7 @@ IS_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE
 ALLOWED_CODEBASE = os.getenv("AMBER_CODEBASE_PATH", "/Users/bart/Documents/code/vibeceo")
 
 # GitHub config (for Railway mode)
-GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_API_TOKEN = os.getenv("GITHUB_API_TOKEN", "")
 GITHUB_REPO = os.getenv("GITHUB_REPO", "bdecrem/vibeceo")
 GITHUB_BRANCH = os.getenv("GITHUB_BRANCH", "main")
 
@@ -69,12 +69,12 @@ def github_api_request(
     data: Optional[dict] = None
 ) -> Dict[str, Any]:
     """Make a request to GitHub API."""
-    if not GITHUB_TOKEN:
-        return {"error": "GITHUB_TOKEN not configured"}
+    if not GITHUB_API_TOKEN:
+        return {"error": "GITHUB_API_TOKEN not configured"}
 
     url = f"https://api.github.com/repos/{GITHUB_REPO}/{endpoint}"
     headers = {
-        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Authorization": f"Bearer {GITHUB_API_TOKEN}",
         "Accept": "application/vnd.github.v3+json",
         "Content-Type": "application/json",
         "X-GitHub-Api-Version": "2022-11-28",
@@ -348,8 +348,8 @@ async def read_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
         if not path:
             return make_result(json.dumps({"error": "Path required"}), is_error=True)
 
-        if not GITHUB_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+        if not GITHUB_API_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
 
         # Check if file is in pending (not yet committed)
         if path in _github_pending_files:
@@ -409,8 +409,8 @@ async def write_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
     # On Railway, stage file for GitHub commit
     if IS_RAILWAY:
-        if not GITHUB_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured for Railway mode"}), is_error=True)
+        if not GITHUB_API_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured for Railway mode"}), is_error=True)
 
         # Store in pending files (will be committed with git_commit)
         _github_pending_files[path] = content
@@ -442,8 +442,8 @@ async def list_directory_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
     # On Railway, use GitHub API
     if IS_RAILWAY:
-        if not GITHUB_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+        if not GITHUB_API_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
 
         # Normalize path
         api_path = "" if path in [".", "", "/"] else path.strip("/")
@@ -672,8 +672,8 @@ async def git_commit_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
     # On Railway, commit pending files via GitHub API
     if IS_RAILWAY:
-        if not GITHUB_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+        if not GITHUB_API_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
 
         if not _github_pending_files:
             return make_result("Nothing to commit (no files staged)")
