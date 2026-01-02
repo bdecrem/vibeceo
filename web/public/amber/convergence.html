@@ -173,6 +173,7 @@
         this.trail = [];
         this.maxTrail = 12;
         this.isText = false;
+        this.glowFactor = 1; // Reduces during convergence for text
       }
 
       explode(frameCount) {
@@ -196,20 +197,29 @@
           ? 4 * progress * progress * progress
           : 1 - Math.pow(-2 * progress + 2, 3) / 2;
 
-        // Stronger pull as we get closer
-        const pullStrength = 0.06 + ease * 0.04;
-        this.x = this.x + (this.targetX - this.x) * pullStrength;
-        this.y = this.y + (this.targetY - this.y) * pullStrength;
-
-        // Add slight wobble that decreases
-        this.x += (Math.random() - 0.5) * (1 - ease) * 1.5;
-        this.y += (Math.random() - 0.5) * (1 - ease) * 1.5;
-
-        // Text particles grow larger for readability
-        if (this.isText) {
-          this.size = this.baseSize * (1.2 + ease * 0.8);
+        // Snap to target as we approach end - direct lerp not asymptotic
+        if (progress > 0.8) {
+          // Final snap phase - lerp directly to target
+          const snapProgress = (progress - 0.8) / 0.2; // 0 to 1 in final 20%
+          this.x = this.x + (this.targetX - this.x) * (0.1 + snapProgress * 0.4);
+          this.y = this.y + (this.targetY - this.y) * (0.1 + snapProgress * 0.4);
         } else {
-          this.size = this.baseSize * (1 - ease * 0.5);
+          // Early convergence - gradual pull
+          const pullStrength = 0.04 + ease * 0.06;
+          this.x = this.x + (this.targetX - this.x) * pullStrength;
+          this.y = this.y + (this.targetY - this.y) * pullStrength;
+          // Add wobble only in early phase
+          this.x += (Math.random() - 0.5) * (1 - ease) * 2;
+          this.y += (Math.random() - 0.5) * (1 - ease) * 2;
+        }
+
+        // Text particles SHRINK to form crisp text
+        if (this.isText) {
+          this.size = this.baseSize * (1.5 - ease * 0.7); // 1.5 -> 0.8
+          this.glowFactor = 1 - ease; // Reduce glow as we converge
+        } else {
+          this.size = this.baseSize * (1 - ease * 0.7);
+          this.glowFactor = 1;
         }
 
         // Clear trail during convergence
@@ -217,14 +227,17 @@
       }
 
       hold() {
-        // Gentle breathing at target
-        const breathe = Math.sin(Date.now() * 0.003 + this.targetX * 0.01) * 0.8;
-        this.x = this.targetX + breathe;
-        this.y = this.targetY + breathe * 0.3;
-
-        // Keep text particles large
+        // Text particles: NO movement, stay exactly on target
         if (this.isText) {
-          this.size = this.baseSize * 2;
+          this.x = this.targetX;
+          this.y = this.targetY;
+          this.size = this.baseSize * 1.2; // Slightly larger for visibility
+          this.glowFactor = 0.05; // Almost no glow
+        } else {
+          // Non-text particles can breathe
+          const breathe = Math.sin(Date.now() * 0.002 + this.targetX * 0.01) * 0.5;
+          this.x = this.targetX + breathe;
+          this.y = this.targetY + breathe * 0.3;
         }
       }
 
@@ -238,19 +251,23 @@
           ctx.fill();
         });
 
-        // Outer glow (larger, softer)
-        const gradient = ctx.createRadialGradient(
-          this.x, this.y, 0,
-          this.x, this.y, this.size * 4
-        );
-        gradient.addColorStop(0, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, ${this.opacity * 0.4})`);
-        gradient.addColorStop(0.4, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, ${this.opacity * 0.15})`);
-        gradient.addColorStop(1, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, 0)`);
+        // Outer glow - reduced by glowFactor for text particles
+        if (this.glowFactor > 0.1) {
+          const glowRadius = this.size * (2 + this.glowFactor * 2); // 2-4x based on glow
+          const gradient = ctx.createRadialGradient(
+            this.x, this.y, 0,
+            this.x, this.y, glowRadius
+          );
+          const glowOpacity = this.opacity * 0.3 * this.glowFactor;
+          gradient.addColorStop(0, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, ${glowOpacity})`);
+          gradient.addColorStop(0.5, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, ${glowOpacity * 0.3})`);
+          gradient.addColorStop(1, `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, 0)`);
 
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size * 4, 0, Math.PI * 2);
-        ctx.fillStyle = gradient;
-        ctx.fill();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, glowRadius, 0, Math.PI * 2);
+          ctx.fillStyle = gradient;
+          ctx.fill();
+        }
 
         // Core particle (bright center)
         ctx.beginPath();
@@ -258,11 +275,11 @@
         ctx.fillStyle = `rgba(${this.rgb.r}, ${this.rgb.g}, ${this.rgb.b}, ${this.opacity})`;
         ctx.fill();
 
-        // Bright center highlight
-        if (this.isText && this.opacity > 0.5) {
+        // Bright center highlight for text particles
+        if (this.isText && this.opacity > 0.5 && this.glowFactor < 0.5) {
           ctx.beginPath();
-          ctx.arc(this.x, this.y, this.size * 0.4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.3})`;
+          ctx.arc(this.x, this.y, this.size * 0.5, 0, Math.PI * 2);
+          ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity * 0.5})`;
           ctx.fill();
         }
       }
@@ -270,7 +287,7 @@
 
     function getTextPositions(text, centerX, centerY) {
       const positions = [];
-      const fontSize = Math.min(width / (text.length * 0.6), 72);
+      const fontSize = Math.min(width / (text.length * 0.5), 90); // Larger font
 
       // Create off-screen canvas to sample text
       const offCanvas = document.createElement('canvas');
@@ -284,9 +301,9 @@
       offCtx.fillStyle = 'white';
       offCtx.fillText(text, centerX, centerY);
 
-      // Sample pixels - denser for better readability
+      // Sample pixels - balance between readability and performance
       const imageData = offCtx.getImageData(0, 0, width, height);
-      const density = 3; // Sample every 3rd pixel for denser text
+      const density = 4; // Sample every 4th pixel - less overlap
 
       for (let y = 0; y < height; y += density) {
         for (let x = 0; x < width; x += density) {
@@ -332,6 +349,8 @@
           particle.targetX = targetPositions[i].x;
           particle.targetY = targetPositions[i].y;
           particle.isText = true;
+          particle.baseSize = Math.random() * 1.5 + 1; // Smaller for text (1-2.5px)
+          particle.size = particle.baseSize;
         }
         particles.push(particle);
       }
@@ -410,19 +429,19 @@
       // Draw ambient particles first (behind main particles)
       ambientParticles.forEach(p => p.draw());
 
-      // Draw center glow during converging/holding phases
-      if ((phase === 'converging' || phase === 'holding') && messageOpacity > 0.3) {
+      // Draw subtle center glow during converging phase only (not holding)
+      if (phase === 'converging' && messageOpacity > 0.3 && messageOpacity < 0.8) {
         const centerGlow = ctx.createRadialGradient(
           width / 2, height / 2, 0,
-          width / 2, height / 2, Math.min(width, height) * 0.4
+          width / 2, height / 2, Math.min(width, height) * 0.3
         );
-        const glowOpacity = (messageOpacity - 0.3) * 0.15;
+        const glowOpacity = (messageOpacity - 0.3) * 0.08; // Much dimmer
         centerGlow.addColorStop(0, `rgba(212, 165, 116, ${glowOpacity})`);
-        centerGlow.addColorStop(0.5, `rgba(184, 134, 11, ${glowOpacity * 0.3})`);
+        centerGlow.addColorStop(0.6, `rgba(184, 134, 11, ${glowOpacity * 0.2})`);
         centerGlow.addColorStop(1, 'rgba(10, 9, 8, 0)');
 
         ctx.beginPath();
-        ctx.arc(width / 2, height / 2, Math.min(width, height) * 0.4, 0, Math.PI * 2);
+        ctx.arc(width / 2, height / 2, Math.min(width, height) * 0.3, 0, Math.PI * 2);
         ctx.fillStyle = centerGlow;
         ctx.fill();
       }
