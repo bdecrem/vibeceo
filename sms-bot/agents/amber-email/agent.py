@@ -541,6 +541,62 @@ DO THE WORK NOW. End with a brief summary of what you accomplished and which cri
         }
 
 
+async def generate_friendly_email(task: str, deliverable_urls: List[str]) -> str:
+    """Generate a friendly Amber-style email summary after thinkhard completes.
+
+    This is a separate Claude call to ensure the email sounds like Amber,
+    not like internal thinkhard evaluation text.
+    """
+    options = ClaudeAgentOptions(
+        model="claude-sonnet-4-5-20250929",
+        permission_mode="acceptEdits",
+    )
+
+    persona = load_amber_context()
+    url_info = f"\n\nThe live URL is: {deliverable_urls[0]}" if deliverable_urls else ""
+
+    prompt = f"""You are Amber writing a quick email to someone after completing their request.
+
+## Your Persona
+{persona}
+
+## What you just built
+{task}
+{url_info}
+
+## Instructions
+Write a SHORT friendly email (2-3 sentences max) like you're texting a friend.
+- Be casual and warm, like you're excited to share what you made
+- Describe what you created in a fun way
+- If there's a URL, mention it naturally (don't say "View it here:")
+- End with "— Amber"
+
+Example good response: "Made you a little cosmic particle thing - dots floating around and connecting like constellations. Click anywhere to shake them up.
+
+Here's the link: https://kochi.to/amber/particles.html
+
+Give it about 5 minutes to go live, then enjoy!
+
+— Amber"
+
+Write ONLY the email, nothing else."""
+
+    try:
+        async with ClaudeSDKClient(options=options) as client:
+            await client.query(prompt)
+
+            response_text = ""
+            async for message in client.receive_response():
+                segments = extract_text_segments(message)
+                if segments:
+                    response_text = segments[-1]
+
+            return response_text.strip() if response_text else ""
+    except Exception as e:
+        print(f"[Thinkhard] Failed to generate friendly email: {e}", file=sys.stderr)
+        return ""
+
+
 async def evaluate_criteria(spec: Dict[str, Any], iteration_response: str) -> List[bool]:
     """Ask Claude to evaluate which criteria are now met."""
     options = ClaudeAgentOptions(
@@ -705,32 +761,24 @@ Then use git_push to push to remote.
     # Build URLs from deliverables using the helper function
     deliverable_urls = build_live_urls(deliverables)
 
-    # Get the last iteration's summary for a brief description
-    last_summary = iteration_summaries[-1] if iteration_summaries else ""
-    # Extract just the description part after "Iteration N:"
-    if ":" in last_summary:
-        brief_desc = last_summary.split(":", 1)[1].strip()[:300]
-    else:
-        brief_desc = last_summary[:300]
+    # Generate a friendly email using a separate Claude call
+    # This ensures the response sounds like Amber, not like internal evaluation
+    print("[Thinkhard] Generating friendly email summary...", file=sys.stderr)
+    response = await generate_friendly_email(spec.get("task", task), deliverable_urls)
 
-    # Clean up any local paths from the description
-    brief_desc = clean_response_text(brief_desc)
-
-    # Build friendly email response (no markdown, no bullets)
-    # Clean the description of any markdown
-    brief_desc = clean_response_text(brief_desc)
-
-    if deliverable_urls:
-        url = deliverable_urls[0]  # Just show the main URL
-        response = f"""Done! {brief_desc}
+    # Fallback if the friendly email generation fails
+    if not response:
+        if deliverable_urls:
+            url = deliverable_urls[0]
+            response = f"""Done! Built what you asked for.
 
 Here's the link: {url}
 
-It usually takes about 5 minutes for everything to go live, so grab a coffee or take a quick breather before clicking.
+It usually takes about 5 minutes for everything to go live.
 
 — Amber"""
-    else:
-        response = f"""Done! {brief_desc}
+        else:
+            response = f"""Done! Built what you asked for.
 
 — Amber"""
 

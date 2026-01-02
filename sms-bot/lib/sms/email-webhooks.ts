@@ -430,10 +430,13 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     const originalBody = data.content;
     const originalSubject = data.metadata.subject || '';
 
-    // Check if it's a thinkhard request
-    const { isThinkhard, task } = detectThinkhard(originalBody);
+    // Check if it's a thinkhard request - either from original message OR from approval message
+    // Admin can force thinkhard by replying "approve thinkhard"
+    const forceThinkhard = /\bapprove\s+thinkhard\b/i.test(body);
+    const { isThinkhard: originalThinkhard, task } = detectThinkhard(originalBody);
+    const isThinkhard = forceThinkhard || originalThinkhard;
 
-    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard})`);
+    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard})`);
 
     // Run the agent with the approved request
     const agentResult = await runAmberEmailAgent(
