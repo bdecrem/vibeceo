@@ -89,8 +89,9 @@ def build_live_urls(file_paths: List[str]) -> List[str]:
 
 def clean_response_text(text: str) -> str:
     """
-    Remove local file paths and bad URLs from agent response.
+    Remove local file paths, bad URLs, and markdown from agent response.
     The LLM sometimes includes raw paths like /Users/bart/... or file:// URLs.
+    Also removes bart.engineer URLs (wrong domain) and markdown formatting.
     """
     import re
 
@@ -104,10 +105,23 @@ def clean_response_text(text: str) -> str:
     # Remove paths containing /dist/ or /build/ (build artifacts)
     text = re.sub(r'[^\s\)]*/(dist|build)/[^\s\)]+', '', text)
 
+    # Remove bart.engineer URLs (wrong domain - should be kochi.to)
+    text = re.sub(r'https?://bart\.engineer[^\s\)]*', '', text)
+
+    # Remove markdown formatting
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)  # Headers
+    text = re.sub(r'\*\*([^*]+)\*\*', r'\1', text)  # Bold
+    text = re.sub(r'\*([^*]+)\*', r'\1', text)  # Italic
+    text = re.sub(r'^[\s]*[-*]\s+', '', text, flags=re.MULTILINE)  # Bullet points
+    text = re.sub(r'`([^`]+)`', r'\1', text)  # Inline code
+    text = re.sub(r'---+', '', text)  # Horizontal rules
+
     # Clean up any double spaces or empty markdown links left behind
     text = re.sub(r'\[\s*\]\([^)]*\)', '', text)  # Empty markdown links
+    text = re.sub(r'\[([^\]]+)\]\([^)]*\)', r'\1', text)  # Convert links to just text
     text = re.sub(r'  +', ' ', text)  # Multiple spaces
     text = re.sub(r'\n\n\n+', '\n\n', text)  # Multiple newlines
+    text = re.sub(r'^\s+', '', text, flags=re.MULTILINE)  # Leading whitespace on lines
 
     return text.strip()
 
@@ -665,27 +679,23 @@ Then use git_push to push to remote.
     # Clean up any local paths from the description
     brief_desc = clean_response_text(brief_desc)
 
-    # Build conversational response
+    # Build friendly email response (no markdown, no bullets)
+    # Clean the description of any markdown
+    brief_desc = clean_response_text(brief_desc)
+
     if deliverable_urls:
-        urls_text = chr(10).join(f"  {u}" for u in deliverable_urls)
-        response = f"""Done! I built something for you.
+        url = deliverable_urls[0]  # Just show the main URL
+        response = f"""Done! {brief_desc}
 
-{brief_desc}
+Here's the link: {url}
 
-Check it out:
-{urls_text}
+It usually takes about 5 minutes for everything to go live, so grab a coffee or take a quick breather before clicking.
 
-Took {iteration} iteration{'s' if iteration > 1 else ''}, hit {sum(criteria_status)}/{criteria_count} of my own criteria. Let me know what you think!
-
-— Amber 🔶"""
+— Amber"""
     else:
-        response = f"""Done!
+        response = f"""Done! {brief_desc}
 
-{brief_desc}
-
-Took {iteration} iteration{'s' if iteration > 1 else ''}, hit {sum(criteria_status)}/{criteria_count} criteria.
-
-— Amber 🔶"""
+— Amber"""
 
     return {
         "response": response,
@@ -890,7 +900,10 @@ Then use git_push to deploy.
 
         # Append URL info to response if we created any web pages
         if live_urls:
-            url_section = "\n\n---\n**Live URLs:**\n" + "\n".join(f"- {url}" for url in live_urls)
+            url = live_urls[0]  # Just show the main URL
+            url_section = f"\n\nHere's the link: {url}\n\nIt usually takes about 5 minutes for everything to go live, so grab a coffee or take a quick breather before clicking.\n\n— Amber"
+            # Replace any existing sign-off
+            response_text = re.sub(r'\n*—\s*Amber.*$', '', response_text, flags=re.IGNORECASE | re.DOTALL)
             response_text = response_text.strip() + url_section
 
         return {
