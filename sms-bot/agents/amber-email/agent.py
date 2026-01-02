@@ -680,7 +680,7 @@ Email subject: {subject}
 
 ## Available Tools
 - web_search: Search the web
-- generate_image: Create images with fal.ai
+- generate_image: Create images with fal.ai (USE THIS for any image/art requests!)
 - read_file, write_file, list_directory, search_code: File operations
 - read_amber_state, write_amber_state: Your Supabase memory
 - git_status, git_log, git_commit, git_push: Git operations
@@ -689,15 +689,19 @@ Email subject: {subject}
 ## Task
 {task}
 
-## Instructions
-1. Actually perform the task — don't just describe it
-2. Use tools to accomplish the goal
-3. If writing code, write it to actual files
-4. If generating images, include the URL in your response
-5. Be concise but complete in your final response
-6. End with a brief summary of what you did
+## CRITICAL Instructions — Follow These Exactly
+1. ACTUALLY USE YOUR TOOLS — don't just describe what you would do
+2. For web pages/apps: write files to web/public/amber/ (e.g., web/public/amber/my-thing.html)
+3. For images: call generate_image and include the returned URL in your response
+4. Write COMPLETE, working code — not pseudocode or descriptions
+5. After writing files, you MUST commit and push:
+   - git_commit with a descriptive message
+   - git_push to deploy
+6. End with what you actually created and where to find it
 
-Do the work now.
+IMPORTANT: If you don't call write_file, git_commit, and git_push, nothing gets deployed!
+
+Do the work now. Use your tools.
 """
 
     # Configure Claude Agent SDK with all tools
@@ -773,11 +777,45 @@ Do the work now.
 
         print(f"[Amber Agent] Done: {tool_call_count} tool calls, {len(actions_taken)} actions", file=sys.stderr)
 
+        # Extract written files
+        written_files = extract_written_files(actions_taken)
+
+        # If files were written but not pushed, do it now (fallback)
+        if written_files and not was_code_pushed(actions_taken):
+            print("[Amber Agent] Files written but not pushed, committing and pushing...", file=sys.stderr)
+
+            commit_prompt = f"""Commit and push the files you just created.
+
+Files: {json.dumps(written_files)}
+
+Use git_commit with message: "[Amber] {subject or 'Created content'}"
+Then use git_push to deploy.
+"""
+            commit_options = ClaudeAgentOptions(
+                model="claude-sonnet-4-5-20250929",
+                permission_mode="acceptEdits",
+                mcp_servers={"amber": amber_server},
+                allowed_tools=[
+                    "mcp__amber__git_status",
+                    "mcp__amber__git_commit",
+                    "mcp__amber__git_push",
+                ],
+            )
+
+            try:
+                async with ClaudeSDKClient(options=commit_options) as commit_client:
+                    await commit_client.query(commit_prompt)
+                    async for _ in commit_client.receive_response():
+                        pass
+                actions_taken.append("Committed and pushed (auto)")
+                print("[Amber Agent] Auto commit/push complete", file=sys.stderr)
+            except Exception as e:
+                print(f"[Amber Agent] Auto commit/push failed: {e}", file=sys.stderr)
+
         # Wait for deploy if code was pushed
         await wait_for_deploy(actions_taken)
 
-        # Extract written files and build URLs
-        written_files = extract_written_files(actions_taken)
+        # Build URLs from written files
         live_urls = build_live_urls(written_files)
 
         # Append URL info to response if we created any web pages
