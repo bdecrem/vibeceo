@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Slide Puzzle - Kochi Games</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      color: #e8e8e8;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00d9ff, #00ff88);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      color: #888;
+      margin-bottom: 20px;
+      font-size: 0.9rem;
+    }
+
+    .stats-bar {
+      display: flex;
+      gap: 30px;
+      margin-bottom: 20px;
+      background: rgba(255,255,255,0.05);
+      padding: 15px 30px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: bold;
+      color: #00d9ff;
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .difficulty-selector {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .difficulty-btn {
+      padding: 8px 20px;
+      border: 2px solid rgba(255,255,255,0.2);
+      background: transparent;
+      color: #e8e8e8;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-size: 0.9rem;
+    }
+
+    .difficulty-btn:hover {
+      border-color: #00d9ff;
+      color: #00d9ff;
+    }
+
+    .difficulty-btn.active {
+      background: #00d9ff;
+      color: #1a1a2e;
+      border-color: #00d9ff;
+      font-weight: bold;
+    }
+
+    .game-container {
+      position: relative;
+    }
+
+    .puzzle-grid {
+      display: grid;
+      gap: 4px;
+      background: rgba(0,0,0,0.3);
+      padding: 8px;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    .puzzle-grid.size-3 {
+      grid-template-columns: repeat(3, 80px);
+      grid-template-rows: repeat(3, 80px);
+    }
+
+    .puzzle-grid.size-4 {
+      grid-template-columns: repeat(4, 70px);
+      grid-template-rows: repeat(4, 70px);
+    }
+
+    .puzzle-grid.size-5 {
+      grid-template-columns: repeat(5, 60px);
+      grid-template-rows: repeat(5, 60px);
+    }
+
+    .tile {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: transform 0.15s ease-out, box-shadow 0.15s;
+      user-select: none;
+      background: linear-gradient(145deg, #2d3a4f, #1e2833);
+      color: #e8e8e8;
+      border: 1px solid rgba(255,255,255,0.1);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .tile:hover:not(.empty) {
+      transform: scale(1.02);
+      box-shadow: 0 6px 12px rgba(0,217,255,0.2);
+    }
+
+    .tile.empty {
+      background: transparent;
+      border: 2px dashed rgba(255,255,255,0.1);
+      cursor: default;
+      box-shadow: none;
+    }
+
+    .tile.movable {
+      border-color: #00d9ff;
+      box-shadow: 0 0 15px rgba(0,217,255,0.3);
+    }
+
+    .tile.correct {
+      background: linear-gradient(145deg, #1a4d3a, #0d3026);
+      color: #00ff88;
+    }
+
+    .controls {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .btn {
+      padding: 12px 30px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: linear-gradient(90deg, #00d9ff, #00b8d4);
+      color: #1a1a2e;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(0,217,255,0.4);
+    }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.1);
+      color: #e8e8e8;
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .win-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+
+    .win-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-content {
+      text-align: center;
+      transform: scale(0.8);
+      transition: transform 0.3s;
+    }
+
+    .win-overlay.show .win-content {
+      transform: scale(1);
+    }
+
+    .win-title {
+      font-size: 3rem;
+      margin-bottom: 10px;
+      background: linear-gradient(90deg, #00ff88, #00d9ff);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .win-score {
+      font-size: 4rem;
+      font-weight: bold;
+      color: #00d9ff;
+      margin: 20px 0;
+    }
+
+    .win-stats {
+      display: flex;
+      gap: 40px;
+      justify-content: center;
+      margin: 20px 0 30px;
+    }
+
+    .win-stat {
+      text-align: center;
+    }
+
+    .win-stat-value {
+      font-size: 1.5rem;
+      color: #00ff88;
+    }
+
+    .win-stat-label {
+      font-size: 0.8rem;
+      color: #888;
+    }
+
+    .score-breakdown {
+      background: rgba(255,255,255,0.05);
+      padding: 15px 30px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+
+    .level-indicator {
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      color: #888;
+    }
+
+    .level-indicator span {
+      color: #00d9ff;
+      font-weight: bold;
+    }
+
+    @media (max-width: 400px) {
+      .puzzle-grid.size-3 {
+        grid-template-columns: repeat(3, 70px);
+        grid-template-rows: repeat(3, 70px);
+      }
+      .puzzle-grid.size-4 {
+        grid-template-columns: repeat(4, 60px);
+        grid-template-rows: repeat(4, 60px);
+      }
+      .puzzle-grid.size-5 {
+        grid-template-columns: repeat(5, 50px);
+        grid-template-rows: repeat(5, 50px);
+      }
+      .tile {
+        font-size: 1.2rem;
+      }
+      .stats-bar {
+        gap: 20px;
+        padding: 12px 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Slide Puzzle</h1>
+  <p class="subtitle">Arrange tiles in order, 1 to N</p>
+
+  <div class="level-indicator">Level <span id="level">1</span> / 10</div>
+
+  <div class="stats-bar">
+    <div class="stat">
+      <div class="stat-value" id="moves">0</div>
+      <div class="stat-label">Moves</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="time">0:00</div>
+      <div class="stat-label">Time</div>
+    </div>
+    <div class="stat">
+      <div class="stat-value" id="score">0</div>
+      <div class="stat-label">Score</div>
+    </div>
+  </div>
+
+  <div class="difficulty-selector">
+    <button class="difficulty-btn active" data-size="3">3×3</button>
+    <button class="difficulty-btn" data-size="4">4×4</button>
+    <button class="difficulty-btn" data-size="5">5×5</button>
+  </div>
+
+  <div class="game-container">
+    <div class="puzzle-grid size-3" id="grid"></div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-secondary" id="hint-btn">Show Hint</button>
+    <button class="btn btn-primary" id="new-btn">New Puzzle</button>
+  </div>
+
+  <div class="win-overlay" id="win-overlay">
+    <div class="win-content">
+      <div class="win-title">Puzzle Solved!</div>
+      <div class="win-score" id="win-score">0</div>
+      <div class="win-stats">
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-moves">0</div>
+          <div class="win-stat-label">Moves</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-time">0:00</div>
+          <div class="win-stat-label">Time</div>
+        </div>
+        <div class="win-stat">
+          <div class="win-stat-value" id="win-optimal">0</div>
+          <div class="win-stat-label">Optimal</div>
+        </div>
+      </div>
+      <div class="score-breakdown" id="score-breakdown"></div>
+      <button class="btn btn-primary" id="next-btn">Next Level</button>
+    </div>
+  </div>
+
+  <script>
+    // Game State
+    let gridSize = 3;
+    let tiles = [];
+    let emptyPos = 0;
+    let moves = 0;
+    let startTime = null;
+    let timerInterval = null;
+    let totalScore = 0;
+    let currentLevel = 1;
+    let optimalMoves = 0;
+
+    // DOM Elements
+    const grid = document.getElementById('grid');
+    const movesEl = document.getElementById('moves');
+    const timeEl = document.getElementById('time');
+    const scoreEl = document.getElementById('score');
+    const levelEl = document.getElementById('level');
+    const winOverlay = document.getElementById('win-overlay');
+    const winScore = document.getElementById('win-score');
+    const winMoves = document.getElementById('win-moves');
+    const winTime = document.getElementById('win-time');
+    const winOptimal = document.getElementById('win-optimal');
+    const scoreBreakdown = document.getElementById('score-breakdown');
+
+    // Initialize
+    function init() {
+      setupDifficultyButtons();
+      document.getElementById('new-btn').addEventListener('click', () => newPuzzle());
+      document.getElementById('hint-btn').addEventListener('click', showHint);
+      document.getElementById('next-btn').addEventListener('click', nextLevel);
+      newPuzzle();
+    }
+
+    function setupDifficultyButtons() {
+      document.querySelectorAll('.difficulty-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.difficulty-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          gridSize = parseInt(btn.dataset.size);
+          grid.className = `puzzle-grid size-${gridSize}`;
+          currentLevel = 1;
+          totalScore = 0;
+          scoreEl.textContent = '0';
+          newPuzzle();
+        });
+      });
+    }
+
+    // Generate a solvable puzzle by making random moves from solved state
+    // This guarantees solvability since we only make legal moves
+    function generateSolvablePuzzle() {
+      const n = gridSize * gridSize;
+      let puzzle = [...Array(n).keys()];
+      let empty = 0;
+      let lastMove = -1;
+
+      // More moves = harder puzzle. Scale with grid size and level
+      const baseMoves = 30 + (gridSize - 3) * 20;
+      const levelMoves = currentLevel * 5;
+      const numMoves = baseMoves + levelMoves + Math.floor(Math.random() * 20);
+
+      for (let i = 0; i < numMoves; i++) {
+        const neighbors = getNeighbors(empty, gridSize);
+        // Avoid immediately undoing the last move for better shuffling
+        const validNeighbors = neighbors.filter(n => n !== lastMove);
+        const nextNeighbors = validNeighbors.length > 0 ? validNeighbors : neighbors;
+        const randomNeighbor = nextNeighbors[Math.floor(Math.random() * nextNeighbors.length)];
+
+        lastMove = empty;
+        [puzzle[empty], puzzle[randomNeighbor]] = [puzzle[randomNeighbor], puzzle[empty]];
+        empty = randomNeighbor;
+      }
+
+      return puzzle;
+    }
+
+    function getNeighbors(pos, size) {
+      const neighbors = [];
+      const row = Math.floor(pos / size);
+      const col = pos % size;
+
+      if (row > 0) neighbors.push(pos - size);
+      if (row < size - 1) neighbors.push(pos + size);
+      if (col > 0) neighbors.push(pos - 1);
+      if (col < size - 1) neighbors.push(pos + 1);
+
+      return neighbors;
+    }
+
+    // New puzzle
+    function newPuzzle() {
+      stopTimer();
+      tiles = generateSolvablePuzzle();
+      emptyPos = tiles.indexOf(0);
+      moves = 0;
+      startTime = null;
+      optimalMoves = estimateOptimalMoves();
+
+      movesEl.textContent = '0';
+      timeEl.textContent = '0:00';
+      levelEl.textContent = currentLevel;
+
+      renderGrid();
+      hideWin();
+    }
+
+    function estimateOptimalMoves() {
+      // Manhattan distance heuristic
+      let distance = 0;
+      for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i] !== 0) {
+          const currentRow = Math.floor(i / gridSize);
+          const currentCol = i % gridSize;
+          const targetRow = Math.floor(tiles[i] / gridSize);
+          const targetCol = tiles[i] % gridSize;
+          distance += Math.abs(currentRow - targetRow) + Math.abs(currentCol - targetCol);
+        }
+      }
+      return distance;
+    }
+
+    // Render the grid
+    function renderGrid() {
+      grid.innerHTML = '';
+      const movableTiles = getNeighbors(emptyPos, gridSize);
+
+      tiles.forEach((tile, index) => {
+        const div = document.createElement('div');
+        div.className = 'tile';
+
+        if (tile === 0) {
+          div.classList.add('empty');
+        } else {
+          div.textContent = tile;
+
+          // Check if tile is in correct position
+          if (tile === index) {
+            div.classList.add('correct');
+          }
+
+          // Check if tile is movable
+          if (movableTiles.includes(index)) {
+            div.classList.add('movable');
+          }
+
+          div.addEventListener('click', () => moveTile(index));
+        }
+
+        grid.appendChild(div);
+      });
+    }
+
+    // Move a tile
+    function moveTile(index) {
+      const neighbors = getNeighbors(emptyPos, gridSize);
+
+      if (!neighbors.includes(index)) return;
+
+      // Start timer on first move
+      if (startTime === null) {
+        startTime = Date.now();
+        startTimer();
+      }
+
+      // Swap tiles
+      [tiles[emptyPos], tiles[index]] = [tiles[index], tiles[emptyPos]];
+      emptyPos = index;
+      moves++;
+      movesEl.textContent = moves;
+
+      renderGrid();
+
+      // Check win
+      if (checkWin()) {
+        handleWin();
+      }
+    }
+
+    // Check if puzzle is solved
+    function checkWin() {
+      for (let i = 0; i < tiles.length; i++) {
+        if (tiles[i] !== i) return false;
+      }
+      return true;
+    }
+
+    // Handle win
+    function handleWin() {
+      stopTimer();
+
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      const timeBonus = Math.max(0, 300 - elapsedSeconds) * 10;
+      const moveBonus = Math.max(0, (optimalMoves * 3 - moves)) * 50;
+      const baseScore = 1000 * gridSize;
+      const levelBonus = currentLevel * 100;
+
+      const puzzleScore = baseScore + timeBonus + moveBonus + levelBonus;
+      totalScore += puzzleScore;
+
+      scoreEl.textContent = totalScore;
+      winScore.textContent = puzzleScore;
+      winMoves.textContent = moves;
+      winTime.textContent = formatTime(elapsedSeconds);
+      winOptimal.textContent = `~${optimalMoves}`;
+
+      scoreBreakdown.innerHTML = `
+        Base: ${baseScore} + Time: ${timeBonus} + Moves: ${moveBonus} + Level: ${levelBonus}
+      `;
+
+      showWin();
+    }
+
+    function showWin() {
+      winOverlay.classList.add('show');
+    }
+
+    function hideWin() {
+      winOverlay.classList.remove('show');
+    }
+
+    function nextLevel() {
+      currentLevel++;
+      if (currentLevel > 10) {
+        currentLevel = 1;
+        if (gridSize < 5) {
+          gridSize++;
+          grid.className = `puzzle-grid size-${gridSize}`;
+          document.querySelectorAll('.difficulty-btn').forEach(btn => {
+            btn.classList.toggle('active', parseInt(btn.dataset.size) === gridSize);
+          });
+        }
+      }
+      newPuzzle();
+    }
+
+    // Show hint - highlight tiles that should move next
+    function showHint() {
+      const tiles = document.querySelectorAll('.tile:not(.empty)');
+      tiles.forEach(tile => {
+        if (tile.classList.contains('movable')) {
+          tile.style.animation = 'pulse 0.5s ease-in-out 2';
+          setTimeout(() => {
+            tile.style.animation = '';
+          }, 1000);
+        }
+      });
+    }
+
+    // Timer functions
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        timeEl.textContent = formatTime(elapsed);
+      }, 1000);
+    }
+
+    function stopTimer() {
+      if (timerInterval) {
+        clearInterval(timerInterval);
+        timerInterval = null;
+      }
+    }
+
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Add CSS animation for hint
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); box-shadow: 0 0 20px rgba(0,255,136,0.5); }
+      }
+    `;
+    document.head.appendChild(style);
+
+    // Start the game
+    init();
+  </script>
+</body>
+</html>
