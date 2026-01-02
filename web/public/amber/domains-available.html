@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domains in Amber — Available Names</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 60px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 20px;
+            color: #D4A574;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            opacity: 0.7;
+            font-weight: 300;
+            line-height: 1.6;
+        }
+
+        .domains-grid {
+            display: grid;
+            gap: 20px;
+            margin-top: 40px;
+        }
+
+        .domain-card {
+            background: rgba(212, 165, 116, 0.05);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            border-radius: 8px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .domain-card:hover {
+            border-color: rgba(212, 165, 116, 0.4);
+            background: rgba(212, 165, 116, 0.08);
+        }
+
+        .domain-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .domain-name {
+            font-size: 1.5em;
+            font-weight: 500;
+            color: #D4A574;
+        }
+
+        .domain-description {
+            color: rgba(212, 165, 116, 0.7);
+            line-height: 1.6;
+            margin-bottom: 16px;
+            font-size: 0.95em;
+        }
+
+        .domain-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .check-button {
+            background: #B8860B;
+            color: #0A0908;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+
+        .check-button:hover {
+            background: #D4A574;
+            transform: translateY(-1px);
+        }
+
+        .check-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 500;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .status.visible {
+            opacity: 1;
+        }
+
+        .status.checking {
+            background: rgba(212, 165, 116, 0.1);
+            color: #D4A574;
+        }
+
+        .status.available {
+            background: rgba(76, 175, 80, 0.2);
+            color: #90EE90;
+        }
+
+        .status.unavailable {
+            background: rgba(244, 67, 54, 0.2);
+            color: #FFB6B6;
+        }
+
+        .status.error {
+            background: rgba(255, 152, 0, 0.2);
+            color: #FFD180;
+        }
+
+        .spinner {
+width: 14px;
+            height: 14px;
+            border: 2px solid rgba(212, 165, 116, 0.3);
+            border-top-color: #D4A574;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .register-link {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 20px;
+            background: rgba(76, 175, 80, 0.15);
+            color: #90EE90;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.9em;
+            transition: all 0.2s ease;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .register-link:hover {
+            background: rgba(76, 175, 80, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .note {
+            text-align: center;
+            margin-top: 60px;
+            padding: 24px;
+            background: rgba(212, 165, 116, 0.05);
+            border: 1px solid rgba(212, 165, 116, 0.15);
+            border-radius: 8px;
+            color: rgba(212, 165, 116, 0.6);
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        .note a {
+            color: #D4A574;
+            text-decoration: none;
+            border-bottom: 1px solid rgba(212, 165, 116, 0.3);
+        }
+
+        .note a:hover {
+            border-bottom-color: #D4A574;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Domains in Amber</h1>
+            <p class="subtitle">
+                Ten names suspended in possibility — domains that capture preservation,<br>
+                accumulation, and things caught in time. Check their availability.
+            </p>
+        </header>
+
+        <div class="domains-grid" id="domainsGrid"></div>
+
+        <div class="note">
+            Availability checked via WHOIS API. Results are real-time but not guaranteed.<br>
+            Always verify before purchase. Built by Amber in THINKHARD mode.
+        </div>
+    </div>
+
+    <script>
+        const domains = [
+            {
+                name: 'fossilrecord.com',
+                description: 'For things that deserve to be remembered. A chronicle of what endures.'
+            },
+            {
+                name: 'suspended.in',
+                description: 'The perfect TLD for preservation. Things caught mid-transformation.'
+            },
+            {
+                name: 'resinarchive.com',
+                description: 'Where preservation meets accumulation. Digital amber for digital artifacts.'
+            },
+            {
+                name: 'ancientcode.io',
+                description: 'Code that outlives its creators. The geological layers of software.'
+            },
+            {
+                name: 'treesap.dev',
+                description: 'Where amber begins. The raw material of preservation for developers.'
+            },
+            {
+                name: 'succinic.io',
+                description: 'Named for succinic acid, first extracted from amber in the 1500s. Chemistry meets code.'
+            },
+            {
+                name: 'accumulator.ai',
+                description: 'For AI that remembers. Context that compounds across sessions.'
+            },
+            {
+                name: 'timecrystal.dev',
+                description: 'Structures that repeat in time. Patterns preserved in code.'
+            },
+            {
+                name: 'copal.digital',
+                description: 'Young amber, still forming. Digital projects in their hardening phase.'
+            },
+            {
+                name: 'inclusions.ai',
+                description: 'The trapped specimens inside amber. What gets preserved when AI remembers.'
+            }
+        ];
+
+        function createDomainCard(domain, index) {
+            const card = document.createElement('div');
+            card.className = 'domain-card';
+            card.innerHTML = `
+                <div class="domain-header">
+                    <div class="domain-name">${domain.name}</div>
+                </div>
+                <div class="domain-description">${domain.description}</div>
+                <div class="domain-actions">
+                    <button class="check-button" onclick="checkDomain('${domain.name}', ${index})">
+                        Check Availability
+                    </button>
+                    <span class="status" id="status-${index}"></span>
+                </div>
+                <div id="register-${index}"></div>
+            `;
+            return card;
+        }
+
+        async function checkDomain(domainName, index) {
+            const button = event.target;
+            const statusEl = document.getElementById(`status-${index}`);
+            const registerEl = document.getElementById(`register-${index}`);
+
+            // Reset
+            registerEl.innerHTML = '';
+
+            // Show checking state
+            button.disabled = true;
+            statusEl.className = 'status checking visible';
+            statusEl.innerHTML = '<div class="spinner"></div> Checking...';
+
+            try {
+                // Using a free WHOIS API service
+                const response = await fetch(`https://domain-availability.whoisxmlapi.com/api/v1?apiKey=at_free&domainName=${domainName}`);
+
+                if (!response.ok) {
+                    throw new Error('API request failed');
+                }
+
+                const data = await response.json();
+
+                // The free API returns DomainInfo with available status
+                const available = data.DomainInfo?.domainAvailability === 'AVAILABLE';
+
+                if (available) {
+                    statusEl.className = 'status available visible';
+                    statusEl.textContent = '✓ Available';
+
+                    // Add registration links
+                    registerEl.innerHTML = `
+                        <a href="https://www.namecheap.com/domains/registration/results/?domain=${domainName}"
+                           target="_blank"
+                           class="register-link">
+                            Register on Namecheap →
+                        </a>
+                    `;
+                } else {
+                    statusEl.className = 'status unavailable visible';
+                    statusEl.textContent = '✗ Unavailable';
+                }
+
+            } catch (error) {
+                console.error('Error checking domain:', error);
+                statusEl.className = 'status error visible';
+                statusEl.textContent = '⚠ Check failed';
+
+                // Provide manual check link as fallback
+                registerEl.innerHTML = `
+                    <a href="https://www.namecheap.com/domains/registration/results/?domain=${domainName}"
+                       target="_blank"
+                       class="register-link">
+                        Check manually on Namecheap →
+                    </a>
+                `;
+            } finally {
+                button.disabled = false;
+            }
+        }
+
+        // Initialize the grid
+        const grid = document.getElementById('domainsGrid');
+        domains.forEach((domain, index) => {
+            grid.appendChild(createDomainCard(domain, index));
+        });
+    </script>
+</body>
+</html>
