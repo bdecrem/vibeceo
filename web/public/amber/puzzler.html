@@ -140,10 +140,51 @@
       transition: background 0.15s ease;
     }
 
+    @media (max-width: 500px) {
+      .header {
+        flex-direction: column;
+        gap: 0.5rem;
+        text-align: center;
+      }
+
+      .title {
+        font-size: 1rem;
+      }
+    }
+
     @media (max-width: 400px) {
       .cell {
-        width: 42px;
-        height: 42px;
+        width: 44px;
+        height: 44px;
+      }
+
+      .board-wrapper {
+        padding: 0.75rem;
+      }
+
+      .endpoint-dot {
+        width: 20px;
+        height: 20px;
+      }
+
+      .flow-segment.horizontal {
+        height: 8px;
+      }
+
+      .flow-segment.vertical {
+        width: 8px;
+      }
+
+      .flow-segment.center {
+        width: 8px;
+        height: 8px;
+      }
+    }
+
+    @media (max-width: 360px) {
+      .cell {
+        width: 38px;
+        height: 38px;
       }
     }
 
@@ -227,6 +268,16 @@
       opacity: 0.85;
       z-index: 1;
       pointer-events: none;
+      animation: segmentAppear 0.15s ease-out;
+    }
+
+    @keyframes segmentAppear {
+      0% { opacity: 0; transform: scale(0.5); }
+      100% { opacity: 0.85; transform: scale(1); }
+    }
+
+    .flow-segment.center {
+      animation: segmentAppear 0.15s ease-out;
     }
 
     .flow-segment.horizontal {
@@ -254,14 +305,57 @@
       box-shadow: inset 0 0 20px rgba(var(--flow-rgb), 0.15);
     }
 
-    /* Active drawing indicator */
-    .cell.drawing {
-      animation: cellPulse 0.3s ease infinite alternate;
+    /* Active drawing state - glow around board */
+    .board-wrapper.drawing {
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02),
+        0 0 30px rgba(var(--active-color-rgb), 0.2);
+      transition: box-shadow 0.2s ease;
     }
 
-    @keyframes cellPulse {
-      0% { background: rgba(255, 255, 255, 0.02); }
-      100% { background: rgba(255, 255, 255, 0.06); }
+    /* Trail glow on cells being drawn */
+    .cell.in-path {
+      background: rgba(var(--active-color-rgb), 0.08);
+      transition: background 0.1s ease;
+    }
+
+    .cell.path-head {
+      background: rgba(var(--active-color-rgb), 0.15);
+    }
+
+    .cell.path-head::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, rgba(var(--active-color-rgb), 0.3) 0%, transparent 70%);
+      animation: headPulse 0.4s ease infinite alternate;
+    }
+
+    @keyframes headPulse {
+      0% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* Win celebration particles */
+    .win-particle {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: particleFall 2s ease-out forwards;
+    }
+
+    @keyframes particleFall {
+      0% {
+        transform: translateY(0) rotate(0deg) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) rotate(720deg) scale(0);
+        opacity: 0;
+      }
     }
 
     /* Controls */
@@ -487,6 +581,7 @@
         this.size = 5;
 
         this.boardEl = document.getElementById('board');
+        this.boardWrapperEl = document.querySelector('.board-wrapper');
         this.levelNumEl = document.getElementById('levelNum');
         this.moveCountEl = document.getElementById('moveCount');
         this.flowCountEl = document.getElementById('flowCount');
@@ -707,7 +802,10 @@
           this.moveCount++;
           this.moveCountEl.textContent = this.moveCount;
 
+          // Visual feedback
+          this.setActiveDrawingState(this.currentFlow.color);
           this.renderFlows();
+          this.updatePathHighlight();
           return;
         }
 
@@ -725,10 +823,48 @@
             this.moveCount++;
             this.moveCountEl.textContent = this.moveCount;
 
+            // Visual feedback
+            this.setActiveDrawingState(flow.color);
             this.renderFlows();
+            this.updatePathHighlight();
             return;
           }
         }
+      }
+
+      setActiveDrawingState(color) {
+        this.boardWrapperEl.classList.add('drawing');
+        this.boardWrapperEl.style.setProperty('--active-color-rgb', color.rgb);
+        document.body.style.setProperty('--active-color-rgb', color.rgb);
+      }
+
+      clearActiveDrawingState() {
+        this.boardWrapperEl.classList.remove('drawing');
+        document.querySelectorAll('.cell.in-path, .cell.path-head').forEach(el => {
+          el.classList.remove('in-path', 'path-head');
+        });
+      }
+
+      updatePathHighlight() {
+        // Clear old highlights
+        document.querySelectorAll('.cell.in-path, .cell.path-head').forEach(el => {
+          el.classList.remove('in-path', 'path-head');
+        });
+
+        if (!this.currentFlow || this.currentPath.length === 0) return;
+
+        // Highlight current path
+        this.currentPath.forEach((pos, idx) => {
+          const cell = this.getCell(pos[0], pos[1]);
+          if (cell) {
+            cell.style.setProperty('--active-color-rgb', this.currentFlow.color.rgb);
+            if (idx === this.currentPath.length - 1) {
+              cell.classList.add('path-head');
+            } else {
+              cell.classList.add('in-path');
+            }
+          }
+        });
       }
 
       handleMove(e) {
@@ -752,6 +888,7 @@
             this.currentPath.pop();
             this.currentFlow.path = [...this.currentPath];
             this.renderFlows();
+            this.updatePathHighlight();
             return;
           }
         }
@@ -779,7 +916,12 @@
           this.currentPath.push([pos.row, pos.col]);
           this.currentFlow.path = [...this.currentPath];
           this.currentFlow.connected = true;
+
+          // Celebration effect
+          this.showConnectionCelebration(pos.row, pos.col, this.currentFlow.color);
+
           this.drawing = false;
+          this.clearActiveDrawingState();
           this.currentFlow = null;
           this.currentPath = [];
           this.renderFlows();
@@ -798,13 +940,36 @@
         this.currentPath.push([pos.row, pos.col]);
         this.currentFlow.path = [...this.currentPath];
         this.renderFlows();
+        this.updatePathHighlight();
       }
 
       handleEnd() {
         if (this.drawing) {
           this.drawing = false;
+          this.clearActiveDrawingState();
           this.currentFlow = null;
           this.currentPath = [];
+        }
+      }
+
+      showConnectionCelebration(row, col, color) {
+        const cell = this.getCell(row, col);
+        if (!cell) return;
+
+        // Add just-connected class for animation
+        cell.classList.add('just-connected');
+        setTimeout(() => cell.classList.remove('just-connected'), 600);
+
+        // Create ripple effect
+        const ripple = document.createElement('div');
+        ripple.className = 'connection-ripple';
+        ripple.style.color = color.hex;
+        cell.appendChild(ripple);
+        setTimeout(() => ripple.remove(), 600);
+
+        // Haptic feedback on mobile if available
+        if (navigator.vibrate) {
+          navigator.vibrate(50);
         }
       }
 
@@ -837,9 +1002,34 @@
           localStorage.setItem('flowCompleted', JSON.stringify(this.completedLevels));
         }
 
+        // Confetti celebration
+        this.spawnConfetti();
+
+        // Haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([100, 50, 100]);
+        }
+
         this.winStatsEl.textContent = `Level ${this.currentLevel + 1} solved in ${this.moveCount} moves`;
         this.winOverlay.classList.add('show');
         this.renderLevelSelect();
+      }
+
+      spawnConfetti() {
+        const colors = COLORS.map(c => c.hex);
+        for (let i = 0; i < 30; i++) {
+          setTimeout(() => {
+            const particle = document.createElement('div');
+            particle.className = 'win-particle';
+            particle.style.left = `${Math.random() * 100}vw`;
+            particle.style.top = `-10px`;
+            particle.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            particle.style.animationDuration = `${1.5 + Math.random()}s`;
+            particle.style.animationDelay = `${Math.random() * 0.3}s`;
+            document.body.appendChild(particle);
+            setTimeout(() => particle.remove(), 3000);
+          }, i * 30);
+        }
       }
 
       reset() {
