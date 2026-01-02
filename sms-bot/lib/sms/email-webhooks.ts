@@ -444,9 +444,21 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
       isThinkhard
     );
 
-    // Send the response immediately (scheduling was unreliable)
-    await sendAmberEmail(originalFrom, `Re: ${originalSubject}`, agentResult.response);
-    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email sent`);
+    // Delay email by 7 minutes for Railway to deploy, using setTimeout (simpler than DB scheduler)
+    const emailTo = originalFrom;
+    const emailSubject = `Re: ${originalSubject}`;
+    const emailBody = agentResult.response;
+
+    setTimeout(async () => {
+      try {
+        await sendAmberEmail(emailTo, emailSubject, emailBody);
+        console.log(`[delayed-email] Sent delayed email to ${emailTo} after 7 min`);
+      } catch (err) {
+        console.error(`[delayed-email] Failed to send to ${emailTo}:`, err);
+      }
+    }, 7 * 60 * 1000);
+
+    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email scheduled for 7 min via setTimeout`);
 
     await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
 
