@@ -591,12 +591,25 @@ Then use git_push to push to remote.
         ],
     )
 
+    commit_success = False
     try:
         async with ClaudeSDKClient(options=options) as client:
             await client.query(commit_prompt)
-            async for _ in client.receive_response():
-                pass
-        all_actions.append("Committed and pushed")
+            async for message in client.receive_response():
+                # Check for tool results that indicate success
+                segments = extract_text_segments(message)
+                for seg in segments:
+                    seg_lower = seg.lower()
+                    if "committed" in seg_lower and "via github api" in seg_lower:
+                        commit_success = True
+                        print(f"[Thinkhard] Commit succeeded: {seg[:200]}", file=sys.stderr)
+                    elif "github api error" in seg_lower or "not configured" in seg_lower:
+                        print(f"[Thinkhard] Commit failed: {seg[:200]}", file=sys.stderr)
+
+        if commit_success:
+            all_actions.append("Committed and pushed via GitHub API")
+        else:
+            print("[Thinkhard] Warning: Could not verify commit success", file=sys.stderr)
     except Exception as e:
         print(f"[Thinkhard] Commit error: {e}", file=sys.stderr)
 
