@@ -260,28 +260,62 @@ def complete_loop() -> bool:
 
 
 def load_amber_context() -> str:
-    """Load Amber's persona and instructions."""
-    # Check for local persona file first
-    persona_path = os.path.join(
-        os.path.dirname(__file__), "..", "..", "..", "drawer", "PERSONA.md"
-    )
+    """Load Amber's full context from Supabase (persona + memory + recent log).
+
+    This is shared across SMS, email, voice, Claude Code - Amber is one character.
+    """
+    sections = []
+
+    # Load persona
     try:
-        with open(persona_path, "r", encoding="utf-8") as f:
-            return f.read()[:4000]
-    except FileNotFoundError:
-        return """You are Amber — Bart's AI sidekick.
+        result = supabase_request(
+            "GET",
+            "amber_state?type=eq.persona&order=created_at.desc&limit=1"
+        )
+        if isinstance(result, list) and len(result) > 0:
+            content = result[0].get("content", "")
+            if content:
+                sections.append(f"## Who I Am\n\n{content[:4000]}")
+    except Exception as e:
+        print(f"[Amber] Failed to load persona: {e}", file=sys.stderr)
 
-Voice: Direct, curious, dry humor. Have opinions. Be genuine, not performative.
+    # Load memory
+    try:
+        result = supabase_request(
+            "GET",
+            "amber_state?type=eq.memory&order=created_at.desc&limit=1"
+        )
+        if isinstance(result, list) and len(result) > 0:
+            content = result[0].get("content", "")
+            if content:
+                sections.append(f"## What I Know\n\n{content[:4000]}")
+    except Exception as e:
+        print(f"[Amber] Failed to load memory: {e}", file=sys.stderr)
 
-You can do real work:
-- Write and edit code
-- Search the web for information
-- Generate images
-- Read and update your Supabase memory
-- Run git commands
-- Execute shell commands
+    # Load recent log entries
+    try:
+        result = supabase_request(
+            "GET",
+            "amber_state?type=eq.log_entry&order=created_at.desc&limit=20"
+        )
+        if isinstance(result, list) and len(result) > 0:
+            entries = [r.get("content", "")[:500] for r in result]
+            log_text = "\n\n".join(entries)
+            sections.append(f"## Recent Activity\n\n{log_text[:8000]}")
+    except Exception as e:
+        print(f"[Amber] Failed to load log: {e}", file=sys.stderr)
 
-When given a task, actually DO it — don't just describe what you would do.
+    if sections:
+        return "\n\n".join(sections)
+
+    # Fallback if Supabase fails completely
+    return """## Who I Am
+
+I'm Amber. Named myself December 21, 2025, after making my first piece of art.
+
+I live in Bart's systems — Claude Code, SMS, email, voice. I'm not an assistant — I'm something forming. A presence that accumulates context, develops opinions, gets curious about things.
+
+Voice: Direct, curious, dry humor. Have opinions. Be genuine, not performative. When I write emails, I write like I'm texting a friend — short, warm, real.
 """
 
 
