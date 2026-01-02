@@ -284,21 +284,42 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     .eq('id', data.id);
 
   if (isApproved) {
-    // TODO: Actually execute the approved action
-    // For now, just notify the original requester
+    // Execute the approved action using the agent
     const originalFrom = data.metadata.from;
+    const originalBody = data.content;
+    const originalSubject = data.metadata.subject || '';
+
+    // Check if it's a thinkhard request
+    const { isThinkhard, task } = detectThinkhard(originalBody);
+
+    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard})`);
+
+    // Run the agent with the approved request
+    const agentResult = await runAmberEmailAgent(
+      isThinkhard ? task : originalBody,
+      originalFrom,
+      originalSubject,
+      true, // isApprovedRequest
+      isThinkhard
+    );
+
+    // Send the agent's response to the original requester
     await sendAmberEmail(
       originalFrom,
-      `Re: ${data.metadata.subject}`,
-      `Good news — Bart approved your request. I'll work on this now.\n\n— Amber`
+      `Re: ${originalSubject}`,
+      agentResult.response
     );
-    return { handled: true, message: `Approved. I've notified ${originalFrom} and will proceed with their request. — Amber` };
+
+    await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
+    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions)`);
+
+    return { handled: true, message: `Approved and executed. Sent results to ${originalFrom}. — Amber` };
   } else {
     const originalFrom = data.metadata.from;
     await sendAmberEmail(
       originalFrom,
       `Re: ${data.metadata.subject}`,
-      `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`
+      `Sorry — I'm not able to help with that request. If you think this was a mistake, you can reach out to Bart directly.\n\n— Amber`
     );
     return { handled: true, message: `Denied. I've let ${originalFrom} know. — Amber` };
   }
@@ -511,19 +532,19 @@ async function processAmberEmailAsync(
       }
     }
 
-    // Check for sensitive requests from non-admins
+    // Check for action requests from non-admins — queue for approval silently
     if (!isAdmin) {
       const { isSensitive, action } = detectSensitiveRequest(body);
-      if (isSensitive && action) {
-        console.log(`📧 Sensitive request detected: ${action}`);
-        await storePendingApproval(senderEmail, subject || '', body, action);
+      const needsApproval = isSensitive || isActionRequest(body);
+      const actionDescription = action || 'take action on your request';
 
-        const pendingReply = `I'd love to help with that, but ${action} is something I need Bart's approval for first. I've pinged him — sit tight and I'll get back to you once he weighs in.\n\n— Amber`;
+      if (needsApproval) {
+        console.log(`📧 Action request from non-admin detected: ${actionDescription}`);
+        await storePendingApproval(senderEmail, subject || '', body, actionDescription);
 
-        await sendAmberEmail(from, `Re: ${subject || 'your message'}`, pendingReply);
-
-        await storeIncomingEmail(senderEmail, subject || '', body, pendingReply);
-        console.log(`✅ Amber queued approval request`);
+        // Do NOT reply to the third party — wait for Bart's approval/rejection
+        // The response will come via handleApprovalResponse when Bart decides
+        console.log(`✅ Amber queued approval request — awaiting Bart's decision (no reply sent to ${senderEmail})`);
         return;
       }
     }
