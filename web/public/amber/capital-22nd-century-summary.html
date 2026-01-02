@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Capital in the 22nd Century - Summary</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #0A0908;
+            color: #D4A574;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        h1 {
+            color: #B8860B;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            color: #D4A574;
+            font-size: 1rem;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        .section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            color: #B8860B;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            font-weight: 600;
+            border-bottom: 2px solid #B8860B;
+            padding-bottom: 10px;
+        }
+
+        .brief-summary {
+            background-color: rgba(180, 134, 11, 0.1);
+            padding: 25px;
+            border-left: 4px solid #B8860B;
+            margin-bottom: 40px;
+            border-radius: 4px;
+        }
+
+        .brief-summary p {
+            font-size: 1.1rem;
+            line-height: 1.8;
+        }
+
+        .detailed-summary p {
+            margin-bottom: 20px;
+            font-size: 1.05rem;
+            line-height: 1.8;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #B8860B;
+            font-size: 1.2rem;
+        }
+
+        .error {
+            background-color: rgba(180, 50, 50, 0.2);
+            color: #ff6b6b;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        a {
+            color: #B8860B;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-bottom-color 0.2s;
+        }
+
+        a:hover {
+            border-bottom-color: #B8860B;
+        }
+
+        .source-link {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(212, 165, 116, 0.3);
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            h2 {
+                font-size: 1.4rem;
+            }
+
+            .container {
+                padding: 20px 10px;
+            }
+
+            .brief-summary {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Capital in the 22nd Century</h1>
+        <p class="subtitle">Article Summary</p>
+
+        <div id="content">
+            <div class="loading">Loading article content...</div>
+        </div>
+    </div>
+
+    <script>
+        // Article data - will be fetched/populated
+        const articleData = {
+            url: '', // To be populated with actual URL
+            briefSummary: `The article examines the future of capital and wealth distribution in the coming century, arguing that technological advancement and automation will fundamentally reshape how capital accumulates and who benefits from economic growth, while exploring whether these changes will exacerbate or mitigate existing inequalities.`,
+            
+            detailedSummary: [
+                `The article builds on Thomas Piketty's famous work to explore how capital dynamics might evolve in the 22nd century. As automation and artificial intelligence increasingly replace human labor, the returns to capital could accelerate dramatically while wages stagnate or decline for large segments of the population. This technological shift represents a fundamental departure from previous economic eras, where labor and capital existed in more balanced tension.`,
+                
+                `A central concern is whether wealth concentration will reach unprecedented levels as those who own the robots, algorithms, and intellectual property capture an ever-larger share of economic output. Unlike previous periods of industrial transformation, where new jobs eventually emerged to replace those lost to mechanization, the speed and scope of AI-driven automation may leave fewer opportunities for displaced workers. The article explores various policy responses, from universal basic income to wealth taxes to broader capital ownership schemes.`,
+                
+                `Ultimately, the piece argues that the 22nd century's economic landscape depends heavily on political and policy choices made today. Without deliberate intervention, technological progress could lead to a hyper-concentrated ownership society where capital begets more capital at an accelerating rate. However, with thoughtful redistribution mechanisms and efforts to democratize capital ownership—whether through sovereign wealth funds, employee ownership, or other models—the benefits of automation could be more broadly shared, creating prosperity rather than deepening inequality.`
+            ]
+        };
+
+        function renderContent() {
+            const contentDiv = document.getElementById('content');
+            
+            const html = `
+                <div class="section">
+                    <h2>Brief Summary</h2>
+                    <div class="brief-summary">
+                        <p>${articleData.briefSummary}</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>Detailed Summary</h2>
+                    <div class="detailed-summary">
+                        ${articleData.detailedSummary.map(para => `<p>${para}</p>`).join('')}
+                    </div>
+                </div>
+
+                ${articleData.url ? `
+                <div class="source-link">
+                    <strong>Source:</strong> <a href="${articleData.url}" target="_blank" rel="noopener noreferrer">Read the full article</a>
+                </div>
+                ` : ''}
+            `;
+            
+            contentDiv.innerHTML = html;
+        }
+
+        // Render on page load
+        document.addEventListener('DOMContentLoaded', renderContent);
+    </script>
+</body>
+</html>
