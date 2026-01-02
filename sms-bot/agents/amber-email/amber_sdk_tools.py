@@ -5,9 +5,9 @@ Amber SDK Tools for Claude Agent SDK
 In-process MCP server providing Amber's capabilities:
 - Web search
 - Image generation (fal.ai)
-- File operations (restricted to codebase)
+- File operations (via GitHub API when on Railway, local filesystem otherwise)
 - Supabase queries (amber_state)
-- Git operations
+- Git operations (via GitHub API when on Railway)
 - Bash commands (restricted)
 """
 
@@ -17,16 +17,27 @@ import os
 import subprocess
 import urllib.request
 import urllib.parse
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-# Security: Restrict file operations to codebase
+# Detect if running on Railway (cloud) vs local
+IS_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_NAME"))
+
+# Security: Restrict file operations to codebase (for local mode)
 ALLOWED_CODEBASE = os.getenv("AMBER_CODEBASE_PATH", "/Users/bart/Documents/code/vibeceo")
+
+# GitHub config (for Railway mode)
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = os.getenv("GITHUB_REPO", "bdecrem/vibeceo")
+GITHUB_BRANCH = os.getenv("GITHUB_BRANCH", "main")
 
 # Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+
+# Track files written via GitHub API (for commit batching)
+_github_pending_files: Dict[str, str] = {}  # path -> content
 
 
 def is_safe_path(path: str) -> bool:
@@ -46,6 +57,142 @@ def make_result(text: str, is_error: bool = False) -> Dict[str, Any]:
     if is_error:
         result["isError"] = True
     return result
+
+
+# =============================================================================
+# GITHUB API HELPERS (for Railway mode)
+# =============================================================================
+
+def github_api_request(
+    method: str,
+    endpoint: str,
+    data: Optional[dict] = None
+) -> Dict[str, Any]:
+    """Make a request to GitHub API."""
+    if not GITHUB_TOKEN:
+        return {"error": "GITHUB_TOKEN not configured"}
+
+    url = f"https://api.github.com/repos/{GITHUB_REPO}/{endpoint}"
+    headers = {
+        "Authorization": f"Bearer {GITHUB_TOKEN}",
+        "Accept": "application/vnd.github.v3+json",
+        "Content-Type": "application/json",
+        "X-GitHub-Api-Version": "2022-11-28",
+    }
+
+    try:
+        if data:
+            payload = json.dumps(data).encode()
+            req = urllib.request.Request(url, data=payload, method=method, headers=headers)
+        else:
+            req = urllib.request.Request(url, method=method, headers=headers)
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            return json.loads(response.read().decode())
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        return {"error": f"GitHub API error {e.code}: {error_body}"}
+    except Exception as e:
+        return {"error": str(e)}
+
+
+def github_get_file_sha(path: str) -> Optional[str]:
+    """Get the SHA of an existing file (needed for updates)."""
+    result = github_api_request("GET", f"contents/{path}?ref={GITHUB_BRANCH}")
+    if "sha" in result:
+        return result["sha"]
+    return None
+
+
+def github_create_or_update_file(path: str, content: str, message: str) -> Dict[str, Any]:
+    """Create or update a file via GitHub API."""
+    # Encode content as base64
+    content_b64 = base64.b64encode(content.encode()).decode()
+
+    data = {
+        "message": message,
+        "content": content_b64,
+        "branch": GITHUB_BRANCH,
+    }
+
+    # Check if file exists (need SHA for update)
+    existing_sha = github_get_file_sha(path)
+    if existing_sha:
+        data["sha"] = existing_sha
+
+    return github_api_request("PUT", f"contents/{path}", data)
+
+
+def github_commit_multiple_files(files: Dict[str, str], message: str) -> Dict[str, Any]:
+    """
+    Commit multiple files in a single commit using Git Data API.
+    files: dict of {path: content}
+    """
+    if not files:
+        return {"error": "No files to commit"}
+
+    try:
+        # 1. Get the current commit SHA for the branch
+        ref_result = github_api_request("GET", f"git/ref/heads/{GITHUB_BRANCH}")
+        if "error" in ref_result:
+            return ref_result
+        current_commit_sha = ref_result["object"]["sha"]
+
+        # 2. Get the tree SHA from the current commit
+        commit_result = github_api_request("GET", f"git/commits/{current_commit_sha}")
+        if "error" in commit_result:
+            return commit_result
+        base_tree_sha = commit_result["tree"]["sha"]
+
+        # 3. Create blobs for each file
+        tree_items = []
+        for path, content in files.items():
+            blob_result = github_api_request("POST", "git/blobs", {
+                "content": content,
+                "encoding": "utf-8"
+            })
+            if "error" in blob_result:
+                return blob_result
+
+            tree_items.append({
+                "path": path,
+                "mode": "100644",
+                "type": "blob",
+                "sha": blob_result["sha"]
+            })
+
+        # 4. Create a new tree
+        tree_result = github_api_request("POST", "git/trees", {
+            "base_tree": base_tree_sha,
+            "tree": tree_items
+        })
+        if "error" in tree_result:
+            return tree_result
+
+        # 5. Create a new commit
+        new_commit_result = github_api_request("POST", "git/commits", {
+            "message": message,
+            "tree": tree_result["sha"],
+            "parents": [current_commit_sha]
+        })
+        if "error" in new_commit_result:
+            return new_commit_result
+
+        # 6. Update the branch reference
+        update_ref_result = github_api_request("PATCH", f"git/refs/heads/{GITHUB_BRANCH}", {
+            "sha": new_commit_result["sha"]
+        })
+        if "error" in update_ref_result:
+            return update_ref_result
+
+        return {
+            "success": True,
+            "commit_sha": new_commit_result["sha"],
+            "files_committed": list(files.keys())
+        }
+
+    except Exception as e:
+        return {"error": f"GitHub commit failed: {str(e)}"}
 
 
 # =============================================================================
@@ -196,6 +343,39 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 async def read_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     path = args.get("path", "")
 
+    # On Railway, fetch from GitHub API
+    if IS_RAILWAY:
+        if not path:
+            return make_result(json.dumps({"error": "Path required"}), is_error=True)
+
+        if not GITHUB_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+
+        # Check if file is in pending (not yet committed)
+        if path in _github_pending_files:
+            content = _github_pending_files[path]
+            if len(content) > 50000:
+                content = content[:50000] + "\n\n... [truncated at 50000 chars]"
+            return make_result(f"[From pending changes]\n{content}")
+
+        # Fetch from GitHub
+        result = github_api_request("GET", f"contents/{path}?ref={GITHUB_BRANCH}")
+        if "error" in result:
+            return make_result(json.dumps({"error": result["error"]}), is_error=True)
+
+        if result.get("type") == "dir":
+            return make_result(json.dumps({"error": f"{path} is a directory, not a file"}), is_error=True)
+
+        # Decode base64 content
+        try:
+            content = base64.b64decode(result.get("content", "")).decode("utf-8", errors="replace")
+            if len(content) > 50000:
+                content = content[:50000] + "\n\n... [truncated at 50000 chars]"
+            return make_result(content)
+        except Exception as e:
+            return make_result(json.dumps({"error": f"Failed to decode: {e}"}), is_error=True)
+
+    # Local mode: read from filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -217,7 +397,7 @@ async def read_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "write_file",
-    "Write content to a file. Creates file if it doesn't exist.",
+    "Write content to a file. Creates file if it doesn't exist. On Railway, stages file for commit.",
     {"path": str, "content": str}
 )
 async def write_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -227,6 +407,16 @@ async def write_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     if not path:
         return make_result(json.dumps({"error": "Path required"}), is_error=True)
 
+    # On Railway, stage file for GitHub commit
+    if IS_RAILWAY:
+        if not GITHUB_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured for Railway mode"}), is_error=True)
+
+        # Store in pending files (will be committed with git_commit)
+        _github_pending_files[path] = content
+        return make_result(f"Staged {len(content)} bytes to {path} (will commit with git_commit)")
+
+    # Local mode: write directly to filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -250,6 +440,27 @@ async def list_directory_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     path = args.get("path", ".")
     recursive = args.get("recursive", False)
 
+    # On Railway, use GitHub API
+    if IS_RAILWAY:
+        if not GITHUB_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+
+        # Normalize path
+        api_path = "" if path in [".", "", "/"] else path.strip("/")
+        endpoint = f"contents/{api_path}?ref={GITHUB_BRANCH}" if api_path else f"contents?ref={GITHUB_BRANCH}"
+
+        result = github_api_request("GET", endpoint)
+        if "error" in result:
+            return make_result(json.dumps({"error": result["error"]}), is_error=True)
+
+        # GitHub returns array for directories
+        if isinstance(result, list):
+            items = [item["name"] for item in result]
+            return make_result(json.dumps(sorted(items)))
+        else:
+            return make_result(json.dumps({"error": f"{path} is not a directory"}), is_error=True)
+
+    # Local mode: use filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -403,6 +614,15 @@ async def write_amber_state_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool("git_status", "Show git status of the repository.", {})
 async def git_status_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    # On Railway, report pending files instead of using git subprocess
+    if IS_RAILWAY:
+        if _github_pending_files:
+            files_list = "\n".join(f"  staged: {path}" for path in _github_pending_files.keys())
+            return make_result(f"## main...origin/main\n{len(_github_pending_files)} files staged for commit:\n{files_list}")
+        else:
+            return make_result("## main...origin/main\nNo files staged (working tree clean)")
+
+    # Local mode: use git subprocess
     try:
         result = subprocess.run(
             ["git", "status", "--porcelain", "-b"],
@@ -440,15 +660,39 @@ async def git_log_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "git_commit",
-    "Stage all changes and create a commit.",
+    "Stage all changes and create a commit. On Railway, commits pending files via GitHub API.",
     {"message": str}
 )
 async def git_commit_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    global _github_pending_files
     message = args.get("message", "")
 
     if not message:
         return make_result(json.dumps({"error": "Commit message required"}), is_error=True)
 
+    # On Railway, commit pending files via GitHub API
+    if IS_RAILWAY:
+        if not GITHUB_TOKEN:
+            return make_result(json.dumps({"error": "GITHUB_TOKEN not configured"}), is_error=True)
+
+        if not _github_pending_files:
+            return make_result("Nothing to commit (no files staged)")
+
+        # Commit all pending files in a single commit
+        result = github_commit_multiple_files(_github_pending_files, message)
+
+        if "error" in result:
+            return make_result(json.dumps({"error": result["error"]}), is_error=True)
+
+        # Clear pending files after successful commit
+        files_committed = list(_github_pending_files.keys())
+        _github_pending_files = {}
+
+        return make_result(f"Committed {len(files_committed)} files via GitHub API:\n" +
+                          "\n".join(f"  - {f}" for f in files_committed) +
+                          f"\nCommit SHA: {result.get('commit_sha', 'unknown')}")
+
+    # Local mode: use git subprocess
     try:
         # Stage all changes
         subprocess.run(["git", "add", "-A"], cwd=ALLOWED_CODEBASE, timeout=10)
@@ -472,10 +716,15 @@ async def git_commit_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "git_push",
-    "Push commits to remote.",
+    "Push commits to remote. On Railway, this is automatic (GitHub API commits push immediately).",
     {}
 )
 async def git_push_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    # On Railway, GitHub API commits already push (they update branch ref directly)
+    if IS_RAILWAY:
+        return make_result("Push complete (GitHub API commits are pushed automatically)")
+
+    # Local mode: use git subprocess
     try:
         result = subprocess.run(
             ["git", "push"],

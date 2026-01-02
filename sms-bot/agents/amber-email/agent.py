@@ -89,7 +89,14 @@ def build_live_urls(file_paths: List[str]) -> List[str]:
 
 def was_code_pushed(actions: List[str]) -> bool:
     """Check if any code was pushed to remote."""
-    push_indicators = ["Pushed to remote", "Pushed", "Committed and pushed", "git_push"]
+    push_indicators = [
+        "Pushed to remote",
+        "Pushed",
+        "Committed and pushed",
+        "git_push",
+        "Push complete",  # Railway GitHub API
+        "via GitHub API",  # Railway GitHub API commit
+    ]
     return any(
         any(indicator.lower() in action.lower() for indicator in push_indicators)
         for action in actions
