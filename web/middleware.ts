@@ -17,6 +17,7 @@ export function middleware(request: NextRequest) {
   const isKochiDomain = host === 'kochi.to' || host === 'www.kochi.to'
   const isCtrlShiftDomain = host === 'ctrlshift.so' || host === 'www.ctrlshift.so' || host === 'ctrlshift.pizza' || host === 'www.ctrlshift.pizza'
   const isRivalAlertDomain = host === 'rivalalert.ai' || host === 'www.rivalalert.ai'
+  const isInTheAmberDomain = host === 'intheamber.com' || host === 'www.intheamber.com'
 
   // Handle token-tank domain (mirror kochi pattern)
   if (isTokenTankDomain) {
@@ -209,6 +210,31 @@ export function middleware(request: NextRequest) {
     }
 
     return NextResponse.next()
+  }
+
+  // Handle intheamber.com domain (Amber's blog)
+  if (isInTheAmberDomain) {
+    if (
+      pathname.startsWith('/_next/') ||
+      pathname.startsWith('/api/') ||
+      pathname.startsWith('/images/') ||
+      pathname.startsWith('/favicon') ||
+      pathname.includes('.')
+    ) {
+      return NextResponse.next()
+    }
+
+    // Root → /amber
+    if (pathname === '/' || pathname === '') {
+      const newUrl = new URL('/amber', request.url)
+      log(`[Middleware] intheamber.com root rewrite -> ${newUrl.pathname}`)
+      return NextResponse.rewrite(newUrl)
+    }
+
+    // All other paths → /amber/*
+    const newUrl = new URL(`/amber${pathname}`, request.url)
+    log(`[Middleware] intheamber.com rewrite ${pathname} -> ${newUrl.pathname}`)
+    return NextResponse.rewrite(newUrl)
   }
 
   // SPECIFIC FIX: Bypass music player route immediately
