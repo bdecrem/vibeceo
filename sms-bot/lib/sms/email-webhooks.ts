@@ -203,6 +203,112 @@ function detectSensitiveRequest(text: string): { isSensitive: boolean; action: s
   return { isSensitive: false, action: null };
 }
 
+// =============================================================================
+// SCHEDULED EMAIL HELPERS - Delay emails until Railway deploys
+// =============================================================================
+
+const DEPLOY_DELAY_MS = 7 * 60 * 1000; // 7 minutes for Railway deploy
+
+/**
+ * Store an email to be sent after a delay (for Railway deploy to complete)
+ */
+async function storeScheduledEmail(
+  to: string,
+  subject: string,
+  body: string,
+  delayMs: number = DEPLOY_DELAY_MS
+): Promise<void> {
+  const sendAt = new Date(Date.now() + delayMs).toISOString();
+
+  await supabase.from('amber_state').insert({
+    type: 'pending_email',
+    content: body,
+    source: 'email_webhook',
+    metadata: {
+      to,
+      subject,
+      send_at: sendAt,
+      status: 'pending',
+      created_at: new Date().toISOString(),
+    },
+  });
+
+  console.log(`[scheduled-email] Queued email to ${to} for ${sendAt}`);
+}
+
+/**
+ * Check for and send any scheduled emails that are ready.
+ * Called by the scheduler every minute.
+ */
+export async function sendScheduledEmails(): Promise<void> {
+  try {
+    const now = new Date().toISOString();
+
+    // Find pending emails where send_at has passed
+    const { data: pendingEmails, error } = await supabase
+      .from('amber_state')
+      .select('*')
+      .eq('type', 'pending_email')
+      .eq('metadata->>status', 'pending')
+      .lte('metadata->>send_at', now);
+
+    if (error) {
+      console.error('[scheduled-email] Error querying pending emails:', error);
+      return;
+    }
+
+    if (!pendingEmails || pendingEmails.length === 0) {
+      return; // Nothing to send
+    }
+
+    console.log(`[scheduled-email] Found ${pendingEmails.length} email(s) ready to send`);
+
+    for (const email of pendingEmails) {
+      const { to, subject } = email.metadata;
+      const body = email.content;
+
+      try {
+        await sendAmberEmail(to, subject, body);
+
+        // Mark as sent
+        await supabase
+          .from('amber_state')
+          .update({
+            metadata: {
+              ...email.metadata,
+              status: 'sent',
+              sent_at: new Date().toISOString(),
+            },
+          })
+          .eq('id', email.id);
+
+        console.log(`[scheduled-email] Sent delayed email to ${to}`);
+      } catch (sendError) {
+        console.error(`[scheduled-email] Failed to send to ${to}:`, sendError);
+
+        // Mark as failed
+        await supabase
+          .from('amber_state')
+          .update({
+            metadata: {
+              ...email.metadata,
+              status: 'failed',
+              error: String(sendError),
+              failed_at: new Date().toISOString(),
+            },
+          })
+          .eq('id', email.id);
+      }
+    }
+  } catch (error) {
+    console.error('[scheduled-email] Error in sendScheduledEmails:', error);
+  }
+}
+
+// =============================================================================
+// APPROVAL HELPERS
+// =============================================================================
+
 /**
  * Store a pending approval request
  */
@@ -236,8 +342,8 @@ async function storePendingApproval(
       `Subject: ${subject}\n\n` +
       `Their message:\n${body}\n\n` +
       `---\n` +
-      `Reply "approve ${approvalId}" to let me proceed.\n` +
-      `Reply "deny ${approvalId}" to decline.\n\n` +
+      `Reply "approve" to let me proceed.\n` +
+      `Reply "deny" to decline.\n\n` +
       `— Amber`
   );
 
@@ -249,26 +355,48 @@ async function storePendingApproval(
  * Check if this is an approval/denial from admin
  */
 async function handleApprovalResponse(body: string): Promise<{ handled: boolean; message?: string }> {
-  const approveMatch = body.match(/approve\s+(approval-\d+)/i);
-  const denyMatch = body.match(/deny\s+(approval-\d+)/i);
+  // Support both "approve" / "deny" (simple) and "approve approval-123" (with ID)
+  const approveWithIdMatch = body.match(/approve\s+(approval-\d+)/i);
+  const denyWithIdMatch = body.match(/deny\s+(approval-\d+)/i);
+  const simpleApproveMatch = /\bapprove\b/i.test(body) && !approveWithIdMatch;
+  const simpleDenyMatch = /\bdeny\b/i.test(body) && !denyWithIdMatch;
 
-  if (!approveMatch && !denyMatch) {
+  if (!approveWithIdMatch && !denyWithIdMatch && !simpleApproveMatch && !simpleDenyMatch) {
     return { handled: false };
   }
 
-  const approvalId = approveMatch?.[1] || denyMatch?.[1];
-  const isApproved = !!approveMatch;
+  const isApproved = !!(approveWithIdMatch || simpleApproveMatch);
+  let data;
 
-  // Find the pending request
-  const { data } = await supabase
-    .from('amber_state')
-    .select('*')
-    .eq('type', 'pending_approval')
-    .eq('metadata->>approval_id', approvalId)
-    .single();
+  if (approveWithIdMatch || denyWithIdMatch) {
+    // Specific approval ID provided
+    const approvalId = approveWithIdMatch?.[1] || denyWithIdMatch?.[1];
+    const result = await supabase
+      .from('amber_state')
+      .select('*')
+      .eq('type', 'pending_approval')
+      .eq('metadata->>approval_id', approvalId)
+      .single();
+    data = result.data;
 
-  if (!data) {
-    return { handled: true, message: `Couldn't find approval request ${approvalId}. It may have expired or already been processed. — Amber` };
+    if (!data) {
+      return { handled: true, message: `Couldn't find approval request ${approvalId}. It may have expired or already been processed. — Amber` };
+    }
+  } else {
+    // Simple "approve" or "deny" — find most recent pending approval
+    const result = await supabase
+      .from('amber_state')
+      .select('*')
+      .eq('type', 'pending_approval')
+      .eq('metadata->>status', 'pending')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+    data = result.data;
+
+    if (!data) {
+      return { handled: true, message: `No pending approval requests found. — Amber` };
+    }
   }
 
   // Update status
@@ -303,17 +431,18 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
       isThinkhard
     );
 
-    // Send the agent's response to the original requester
-    await sendAmberEmail(
+    // Schedule the email to be sent after Railway deploys (7 min delay)
+    // This ensures any URLs in the response are live when the recipient clicks them
+    await storeScheduledEmail(
       originalFrom,
       `Re: ${originalSubject}`,
       agentResult.response
     );
 
     await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
-    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions)`);
+    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email scheduled for 7 min`);
 
-    return { handled: true, message: `Approved and executed. Sent results to ${originalFrom}. — Amber` };
+    return { handled: true, message: `Approved and executed. Results will be sent to ${originalFrom} in ~7 min (after deploy). — Amber` };
   } else {
     const originalFrom = data.metadata.from;
     await sendAmberEmail(

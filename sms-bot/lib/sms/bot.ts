@@ -2,13 +2,13 @@
 import bodyParser from "body-parser";
 import { setupTwilioWebhooks, setupWhatsAppWebhooks } from "./webhooks.js";
 import { setupSupabaseWebhooks } from "./supabase-webhooks.js";
-import { setupEmailWebhooks } from "./email-webhooks.js";
+import { setupEmailWebhooks, sendScheduledEmails } from "./email-webhooks.js";
 import { initializeMessageHandlers } from "./handlers.js";
 import { registerAiDailyJob } from "./ai-daily-scheduler.js";
 import { initializeTwilioClient } from "./webhooks.js";
 import { initializeAI } from "./ai.js";
 import { initializeScheduler } from "./stock-scheduler.js";
-import { startScheduler } from "../scheduler/index.js";
+import { startScheduler, registerIntervalTask } from "../scheduler/index.js";
 import { registerCryptoDailyJob } from "../../agents/crypto-research/index.js";
 import { registerMedicalDailyJob } from "../../agents/medical-daily/index.js";
 import { registerPeerReviewJob } from "./peer-review-scheduler.js";
@@ -81,6 +81,13 @@ export async function startSmsBot(): Promise<void> {
 
   // Initialize stock scheduler service
   await initializeScheduler();
+
+  // Register interval task to send scheduled emails (checks every minute)
+  registerIntervalTask({
+    name: 'send-scheduled-emails',
+    run: sendScheduledEmails,
+    onError: (error) => console.error('[scheduled-email] Interval task error:', error),
+  });
 
   startScheduler();
 

@@ -87,6 +87,31 @@ def build_live_urls(file_paths: List[str]) -> List[str]:
     return urls
 
 
+def clean_response_text(text: str) -> str:
+    """
+    Remove local file paths and bad URLs from agent response.
+    The LLM sometimes includes raw paths like /Users/bart/... or file:// URLs.
+    """
+    import re
+
+    # Remove file:// URLs
+    text = re.sub(r'file://[^\s\)]+', '', text)
+
+    # Remove local absolute paths (macOS/Linux style)
+    text = re.sub(r'/Users/[^\s\)]+\.(html|tsx|ts|js|css|json)', '', text)
+    text = re.sub(r'/home/[^\s\)]+\.(html|tsx|ts|js|css|json)', '', text)
+
+    # Remove paths containing /dist/ or /build/ (build artifacts)
+    text = re.sub(r'[^\s\)]*/(dist|build)/[^\s\)]+', '', text)
+
+    # Clean up any double spaces or empty markdown links left behind
+    text = re.sub(r'\[\s*\]\([^)]*\)', '', text)  # Empty markdown links
+    text = re.sub(r'  +', ' ', text)  # Multiple spaces
+    text = re.sub(r'\n\n\n+', '\n\n', text)  # Multiple newlines
+
+    return text.strip()
+
+
 def was_code_pushed(actions: List[str]) -> bool:
     """Check if any code was pushed to remote."""
     push_indicators = [
@@ -637,6 +662,9 @@ Then use git_push to push to remote.
     else:
         brief_desc = last_summary[:300]
 
+    # Clean up any local paths from the description
+    brief_desc = clean_response_text(brief_desc)
+
     # Build conversational response
     if deliverable_urls:
         urls_text = chr(10).join(f"  {u}" for u in deliverable_urls)
@@ -856,6 +884,9 @@ Then use git_push to deploy.
 
         # Build URLs from written files
         live_urls = build_live_urls(written_files)
+
+        # Clean response text (remove local paths that LLM might have included)
+        response_text = clean_response_text(response_text)
 
         # Append URL info to response if we created any web pages
         if live_urls:

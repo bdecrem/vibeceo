@@ -250,3 +250,165 @@ cp sms-bot/documentation/subagents/*.md .claude/commands/
 ### Other Subagents
 
 See `incubator/SUBAGENTS.md` for `/inc-research`, `/inc-design`, `/inc-exec`, `/news`, and persona activators.
+
+---
+
+## Thinkhard Mode (Always Available)
+
+Multi-iteration deep work mode. When the user says "thinkhard:" followed by a task, enter this mode.
+
+### Step 0: Check for Active Loop
+
+**FIRST**, check if you're mid-loop:
+
+```sql
+SELECT content, metadata, created_at
+FROM amber_state
+WHERE type = 'loop_state'
+ORDER BY created_at DESC
+LIMIT 1;
+```
+
+If `metadata->>'active'` is `true`, you're continuing a **thinkhard loop**. Skip to "Continuing a Loop" below.
+
+Otherwise, proceed with starting a new loop.
+
+### Starting a New Loop
+
+When the user says "thinkhard:", enter deep work mode:
+
+#### 1. Generate a Spec (internal, don't show to user)
+
+From the vague request, create a concrete spec:
+
+```yaml
+task: [1-sentence description of what to build]
+
+deliverables:
+  - [specific file path 1]
+  - [specific file path 2]
+
+constraints:
+  - [scope: e.g., "single HTML file under 500 lines"]
+  - [tech: e.g., "vanilla JS, no frameworks"]
+  - [location: e.g., "web/public/"]
+
+evaluation_criteria:
+  - [ ] [criterion 1 - testable]
+  - [ ] [criterion 2 - testable]
+  - [ ] [criterion 3 - testable]
+  - [ ] [criterion 4 - testable]
+  - [ ] [criterion 5 - testable]
+```
+
+#### 2. Initialize Loop State
+
+```sql
+INSERT INTO amber_state (type, content, source, metadata)
+VALUES (
+  'loop_state',
+  '[task description]',
+  'thinkhard',
+  '{
+    "active": true,
+    "iteration": 1,
+    "max_iterations": 5,
+    "spec": {
+      "task": "[task]",
+      "deliverables": ["[file1]", "[file2]"],
+      "criteria": ["[c1]", "[c2]", "[c3]", "[c4]", "[c5]"]
+    },
+    "criteria_status": [false, false, false, false, false],
+    "started_at": "[ISO timestamp]"
+  }'
+);
+```
+
+#### 3. Announce and Start Working
+
+Say briefly: "Going deep on this. Planning up to 5 iterations. Starting now."
+
+Then **do the work** for iteration 1. Focus on:
+- Creating initial files
+- Setting up structure
+- Making something that runs (even if broken)
+
+#### 4. End of Iteration
+
+After doing substantial work, update the loop state:
+
+```sql
+UPDATE amber_state
+SET metadata = jsonb_set(
+  jsonb_set(metadata, '{iteration}', '2'),
+  '{criteria_status}', '[true, false, false, false, false]'
+)
+WHERE type = 'loop_state' AND (metadata->>'active')::boolean = true;
+```
+
+Then say briefly: "Iteration 1/5 complete. [What you did]. [What's next]."
+
+The Stop hook will re-invoke you for the next iteration.
+
+### Continuing a Loop
+
+If you wake up and find `active: true` in loop_state, you're mid-loop.
+
+#### 1. Read the State
+
+From the loop_state metadata, get:
+- Current iteration number
+- The spec (task, deliverables, criteria)
+- Which criteria are already met (criteria_status)
+
+#### 2. Work on Unmet Criteria
+
+Focus this iteration on criteria that are still `false`. Don't repeat work.
+
+#### 3. Check Completion
+
+After working, evaluate each criterion. Update criteria_status.
+
+**If more work needed:** Increment iteration, update criteria_status, say what's next. The hook continues the loop.
+
+**If all criteria are met OR iteration >= max_iterations:** Run the completion sequence:
+
+#### Completion Sequence
+
+**Step A: Verify**
+1. If new web routes created: Check `web/middleware.ts` has bypass for the route
+2. If web code created: Verify no direct `@supabase/supabase-js` imports in client code
+3. Run build if applicable: `cd web && npm run build` — must pass
+
+**Step B: Commit and Push**
+```bash
+git add [files created]
+git commit -m "$(cat <<'EOF'
+[Thinkhard] [Brief description]
+
+[What was built in 1-2 sentences]
+- [file 1]
+- [file 2]
+
+[N] iterations, [M]/5 criteria met.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+git push origin main
+```
+
+**Step C: Mark Complete**
+```sql
+UPDATE amber_state
+SET
+  metadata = jsonb_set(metadata, '{active}', 'false'),
+  content = 'Completed: ' || content
+WHERE type = 'loop_state' AND (metadata->>'active')::boolean = true;
+```
+
+**Step D: Announce**
+
+"Done! Built [what] at [URL if applicable]. [N] iterations, [M]/5 criteria met. Committed and pushed."

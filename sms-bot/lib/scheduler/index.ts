@@ -7,12 +7,19 @@ interface DailyJob {
   onError?: (error: unknown) => void;
 }
 
+interface IntervalTask {
+  name: string;
+  run: () => Promise<void> | void;
+  onError?: (error: unknown) => void;
+}
+
 interface InternalDailyJob extends DailyJob {
   timezone: string;
   lastRunDateKey?: string;
 }
 
 const jobs: InternalDailyJob[] = [];
+const intervalTasks: IntervalTask[] = [];
 const DEFAULT_TIMEZONE = 'America/Los_Angeles';
 const DEFAULT_INTERVAL_MS = 60 * 1000;
 
@@ -36,6 +43,21 @@ async function checkJobs(): Promise<void> {
   isChecking = true;
 
   try {
+    // Run interval tasks (every check cycle)
+    for (const task of intervalTasks) {
+      const result = task.run();
+      if (result && typeof result.catch === 'function') {
+        result.catch((error) => {
+          if (task.onError) {
+            task.onError(error);
+          } else {
+            console.error(`Scheduler interval task ${task.name} failed:`, error);
+          }
+        });
+      }
+    }
+
+    // Run daily jobs at their scheduled times
     for (const job of jobs) {
       const zonedNow = getZonedDate(job.timezone);
       const dateKey = getDateKey(zonedNow, job.timezone);
@@ -74,6 +96,10 @@ export function registerDailyJob(job: DailyJob): void {
   jobs.push(internalJob);
 }
 
+export function registerIntervalTask(task: IntervalTask): void {
+  intervalTasks.push(task);
+}
+
 export function startScheduler(intervalMs: number = DEFAULT_INTERVAL_MS): void {
   if (schedulerTimer) {
     return;
@@ -84,7 +110,7 @@ export function startScheduler(intervalMs: number = DEFAULT_INTERVAL_MS): void {
   }, intervalMs);
 
   console.log(
-    `Scheduler started with ${jobs.length} daily job(s) at interval ${intervalMs}ms.`
+    `Scheduler started with ${jobs.length} daily job(s) and ${intervalTasks.length} interval task(s) at ${intervalMs}ms.`
   );
 }
 

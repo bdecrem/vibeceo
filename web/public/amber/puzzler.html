@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Chromatic Flow</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-deep: #0a0a0f;
+      --bg-surface: #12121a;
+      --grid-line: rgba(255, 255, 255, 0.03);
+      --text-primary: #f0f0f5;
+      --text-muted: #6b6b80;
+      --glow-intensity: 0.6;
+
+      /* Flow colors - rich, saturated */
+      --color-1: #ff3366;
+      --color-2: #00d4aa;
+      --color-3: #ffaa00;
+      --color-4: #6644ff;
+      --color-5: #00aaff;
+      --color-6: #ff66aa;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg-deep);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-primary);
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    /* Subtle animated background */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse at 20% 20%, rgba(102, 68, 255, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, rgba(255, 51, 102, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(0, 212, 170, 0.04) 0%, transparent 70%);
+      pointer-events: none;
+      animation: bgPulse 8s ease-in-out infinite alternate;
+    }
+
+    @keyframes bgPulse {
+      0% { opacity: 0.6; }
+      100% { opacity: 1; }
+    }
+
+    .game-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.5rem;
+      padding: 1rem;
+      max-width: 100vw;
+      position: relative;
+      z-index: 1;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      max-width: 400px;
+      padding: 0 0.5rem;
+    }
+
+    .title {
+      font-weight: 300;
+      font-size: 1.2rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+
+    .level-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .level-badge {
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 2rem;
+      padding: 0.4rem 1rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+    }
+
+    .moves {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-weight: 300;
+    }
+
+    .board-wrapper {
+      position: relative;
+      padding: 1rem;
+      background: var(--bg-surface);
+      border-radius: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+      box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.02);
+    }
+
+    .board {
+      display: grid;
+      gap: 2px;
+      background: var(--grid-line);
+      border-radius: 0.5rem;
+      overflow: hidden;
+    }
+
+    .cell {
+      width: 50px;
+      height: 50px;
+      background: var(--bg-deep);
+      position: relative;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    @media (max-width: 400px) {
+      .cell {
+        width: 42px;
+        height: 42px;
+      }
+    }
+
+    .cell:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .cell.endpoint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .endpoint-dot {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      position: relative;
+      z-index: 2;
+      transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+      box-shadow: 0 0 20px currentColor;
+    }
+
+    .endpoint-dot::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      background: rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+    }
+
+    .cell.endpoint:hover .endpoint-dot {
+      transform: scale(1.1);
+    }
+
+    .cell.endpoint.connected .endpoint-dot {
+      animation: pulseConnect 0.5s ease;
+    }
+
+    @keyframes pulseConnect {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+    }
+
+    /* Flow connection celebration */
+    .cell.endpoint.just-connected .endpoint-dot {
+      animation: celebrateDot 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @keyframes celebrateDot {
+      0% { transform: scale(1); filter: brightness(1); }
+      30% { transform: scale(1.5); filter: brightness(1.5); }
+      60% { transform: scale(0.9); }
+      100% { transform: scale(1); filter: brightness(1); }
+    }
+
+    /* Ripple effect on connection */
+    .connection-ripple {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%) scale(0);
+      opacity: 1;
+      pointer-events: none;
+      animation: rippleOut 0.6s ease-out forwards;
+    }
+
+    @keyframes rippleOut {
+      0% { transform: translate(-50%, -50%) scale(0); opacity: 1; }
+      100% { transform: translate(-50%, -50%) scale(2); opacity: 0; }
+    }
+
+    /* Flow paths */
+    .flow-segment {
+      position: absolute;
+      background: currentColor;
+      opacity: 0.85;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    .flow-segment.horizontal {
+      height: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+
+    .flow-segment.vertical {
+      width: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+    }
+
+    .flow-segment.center {
+      width: 10px;
+      height: 10px;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 2px;
+    }
+
+    .cell.has-flow {
+      box-shadow: inset 0 0 20px rgba(var(--flow-rgb), 0.15);
+    }
+
+    /* Active drawing indicator */
+    .cell.drawing {
+      animation: cellPulse 0.3s ease infinite alternate;
+    }
+
+    @keyframes cellPulse {
+      0% { background: rgba(255, 255, 255, 0.02); }
+      100% { background: rgba(255, 255, 255, 0.06); }
+    }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      gap: 0.75rem;
+    }
+
+    .btn {
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-primary);
+      padding: 0.6rem 1.2rem;
+      border-radius: 0.5rem;
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .btn:active {
+      transform: scale(0.97);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--color-4), var(--color-1));
+      border: none;
+    }
+
+    .btn.primary:hover {
+      opacity: 0.9;
+    }
+
+    /* Level select */
+    .level-select {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 320px;
+    }
+
+    .level-btn {
+      width: 44px;
+      height: 44px;
+      background: var(--bg-surface);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 0.5rem;
+      color: var(--text-muted);
+      font-family: inherit;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .level-btn:hover {
+      border-color: rgba(255, 255, 255, 0.2);
+      color: var(--text-primary);
+    }
+
+    .level-btn.completed {
+      background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(0, 170, 255, 0.2));
+      border-color: rgba(0, 212, 170, 0.3);
+      color: var(--color-2);
+    }
+
+    .level-btn.current {
+      border-color: var(--color-4);
+      color: var(--text-primary);
+      box-shadow: 0 0 12px rgba(102, 68, 255, 0.3);
+    }
+
+    /* Win overlay */
+    .win-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 10, 15, 0.95);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.5rem;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.4s ease;
+    }
+
+    .win-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .win-title {
+      font-size: 2rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--color-2), var(--color-5));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      animation: winPulse 1s ease infinite alternate;
+    }
+
+    @keyframes winPulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
+
+    .win-stats {
+      color: var(--text-muted);
+      font-size: 1rem;
+    }
+
+    /* Progress bar */
+    .progress-bar {
+      width: 100%;
+      max-width: 320px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--color-2), var(--color-5));
+      transition: width 0.3s ease;
+    }
+
+    .flow-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="game-container">
+    <div class="header">
+      <span class="title">Chromatic Flow</span>
+      <div class="level-info">
+        <span class="level-badge">Level <span id="levelNum">1</span></span>
+        <span class="moves">Moves: <span id="moveCount">0</span></span>
+      </div>
+    </div>
+
+    <div class="board-wrapper">
+      <div class="board" id="board"></div>
+    </div>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+    </div>
+    <div class="flow-count"><span id="flowCount">0</span>/<span id="flowTotal">0</span> flows connected</div>
+
+    <div class="controls">
+      <button class="btn" id="resetBtn">Reset</button>
+      <button class="btn" id="levelSelectBtn">Levels</button>
+    </div>
+
+    <div class="level-select" id="levelSelect" style="display: none;"></div>
+  </div>
+
+  <div class="win-overlay" id="winOverlay">
+    <div class="win-title">Complete!</div>
+    <div class="win-stats" id="winStats">Level solved in 0 moves</div>
+    <div class="controls">
+      <button class="btn primary" id="nextLevelBtn">Next Level</button>
+      <button class="btn" id="replayBtn">Replay</button>
+    </div>
+  </div>
+
+  <script>
+    const COLORS = [
+      { name: 'red', hex: '#ff3366', rgb: '255, 51, 102' },
+      { name: 'green', hex: '#00d4aa', rgb: '0, 212, 170' },
+      { name: 'orange', hex: '#ffaa00', rgb: '255, 170, 0' },
+      { name: 'purple', hex: '#6644ff', rgb: '102, 68, 255' },
+      { name: 'blue', hex: '#00aaff', rgb: '0, 170, 255' },
+      { name: 'pink', hex: '#ff66aa', rgb: '255, 102, 170' },
+    ];
+
+    // Level definitions: [size, [[r1,c1,r2,c2,colorIdx], ...]]
+    const LEVELS = [
+      // Easy 5x5 levels
+      [5, [[0,0,4,4,0], [0,4,4,0,1], [2,2,2,4,2]]],
+      [5, [[0,0,2,2,0], [0,4,4,4,1], [4,0,2,4,2], [1,1,3,3,3]]],
+      [5, [[0,0,4,0,0], [0,2,2,4,1], [0,4,4,2,2], [2,0,4,4,3]]],
+
+      // Medium 6x6 levels
+      [6, [[0,0,5,5,0], [0,5,5,0,1], [2,2,3,3,2], [1,3,4,2,3]]],
+      [6, [[0,0,3,5,0], [0,3,5,3,1], [5,0,2,5,2], [3,0,5,5,3], [1,1,4,4,4]]],
+      [6, [[0,0,2,0,0], [0,2,5,2,1], [0,5,3,5,2], [2,2,5,0,3], [3,3,5,5,4]]],
+
+      // Hard 7x7 levels
+      [7, [[0,0,6,6,0], [0,6,6,0,1], [3,3,3,6,2], [1,2,5,4,3], [2,5,6,3,4]]],
+      [7, [[0,0,4,0,0], [0,3,6,3,1], [0,6,4,6,2], [2,1,6,1,3], [3,4,6,6,4], [1,5,5,2,5]]],
+      [7, [[0,0,6,0,0], [0,2,3,6,1], [0,4,6,2,2], [0,6,6,4,3], [2,3,4,5,4], [3,1,5,3,5]]],
+
+      // Expert 8x8 levels
+      [8, [[0,0,7,7,0], [0,7,7,0,1], [3,3,4,4,2], [1,5,6,2,3], [2,1,5,6,4], [4,0,7,3,5]]],
+      [8, [[0,0,4,7,0], [0,4,7,4,1], [7,0,3,7,2], [4,0,7,7,3], [2,2,6,5,4], [1,6,5,1,5]]],
+      [8, [[0,0,3,0,0], [0,3,7,3,1], [0,7,5,7,2], [3,3,7,0,3], [4,5,7,7,4], [2,5,6,2,5]]],
+    ];
+
+    class FlowGame {
+      constructor() {
+        this.currentLevel = parseInt(localStorage.getItem('flowLevel') || '0');
+        this.completedLevels = JSON.parse(localStorage.getItem('flowCompleted') || '[]');
+        this.board = [];
+        this.flows = [];
+        this.endpoints = [];
+        this.drawing = false;
+        this.currentFlow = null;
+        this.currentPath = [];
+        this.moveCount = 0;
+        this.size = 5;
+
+        this.boardEl = document.getElementById('board');
+        this.levelNumEl = document.getElementById('levelNum');
+        this.moveCountEl = document.getElementById('moveCount');
+        this.flowCountEl = document.getElementById('flowCount');
+        this.flowTotalEl = document.getElementById('flowTotal');
+        this.progressFillEl = document.getElementById('progressFill');
+        this.winOverlay = document.getElementById('winOverlay');
+        this.winStatsEl = document.getElementById('winStats');
+        this.levelSelectEl = document.getElementById('levelSelect');
+
+        this.bindEvents();
+        this.loadLevel(this.currentLevel);
+        this.renderLevelSelect();
+      }
+
+      bindEvents() {
+        // Mouse events
+        this.boardEl.addEventListener('mousedown', (e) => this.handleStart(e));
+        document.addEventListener('mousemove', (e) => this.handleMove(e));
+        document.addEventListener('mouseup', () => this.handleEnd());
+
+        // Touch events
+        this.boardEl.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          this.handleStart(e.touches[0]);
+        }, { passive: false });
+        document.addEventListener('touchmove', (e) => {
+          if (this.drawing) {
+            e.preventDefault();
+            this.handleMove(e.touches[0]);
+          }
+        }, { passive: false });
+        document.addEventListener('touchend', () => this.handleEnd());
+
+        // Buttons
+        document.getElementById('resetBtn').addEventListener('click', () => this.reset());
+        document.getElementById('levelSelectBtn').addEventListener('click', () => this.toggleLevelSelect());
+        document.getElementById('nextLevelBtn').addEventListener('click', () => this.nextLevel());
+        document.getElementById('replayBtn').addEventListener('click', () => {
+          this.winOverlay.classList.remove('show');
+          this.reset();
+        });
+      }
+
+      loadLevel(levelIdx) {
+        if (levelIdx >= LEVELS.length) levelIdx = 0;
+        this.currentLevel = levelIdx;
+        localStorage.setItem('flowLevel', levelIdx);
+
+        const [size, flowDefs] = LEVELS[levelIdx];
+        this.size = size;
+        this.moveCount = 0;
+        this.flows = [];
+        this.endpoints = [];
+        this.board = Array(size).fill(null).map(() => Array(size).fill(null));
+
+        // Create flows from definitions
+        flowDefs.forEach(([r1, c1, r2, c2, colorIdx], flowIdx) => {
+          const color = COLORS[colorIdx];
+          this.flows.push({
+            id: flowIdx,
+            color: color,
+            endpoints: [[r1, c1], [r2, c2]],
+            path: [],
+            connected: false
+          });
+          this.endpoints.push({ row: r1, col: c1, flowId: flowIdx });
+          this.endpoints.push({ row: r2, col: c2, flowId: flowIdx });
+        });
+
+        this.levelNumEl.textContent = levelIdx + 1;
+        this.flowTotalEl.textContent = this.flows.length;
+        this.render();
+        this.updateProgress();
+      }
+
+      render() {
+        this.boardEl.innerHTML = '';
+        this.boardEl.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+
+        for (let r = 0; r < this.size; r++) {
+          for (let c = 0; c < this.size; c++) {
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+
+            // Check if endpoint
+            const ep = this.endpoints.find(e => e.row === r && e.col === c);
+            if (ep) {
+              cell.classList.add('endpoint');
+              const dot = document.createElement('div');
+              dot.className = 'endpoint-dot';
+              dot.style.backgroundColor = this.flows[ep.flowId].color.hex;
+              dot.style.color = this.flows[ep.flowId].color.hex;
+              cell.appendChild(dot);
+            }
+
+            this.boardEl.appendChild(cell);
+          }
+        }
+
+        this.renderFlows();
+      }
+
+      renderFlows() {
+        // Clear existing flow segments
+        document.querySelectorAll('.flow-segment').forEach(el => el.remove());
+        document.querySelectorAll('.cell.has-flow').forEach(el => el.classList.remove('has-flow'));
+        document.querySelectorAll('.cell.endpoint.connected').forEach(el => el.classList.remove('connected'));
+
+        this.flows.forEach(flow => {
+          if (flow.path.length === 0) return;
+
+          flow.path.forEach((pos, idx) => {
+            const cell = this.getCell(pos[0], pos[1]);
+            if (!cell) return;
+
+            cell.classList.add('has-flow');
+            cell.style.setProperty('--flow-rgb', flow.color.rgb);
+
+            const prev = idx > 0 ? flow.path[idx - 1] : null;
+            const next = idx < flow.path.length - 1 ? flow.path[idx + 1] : null;
+
+            // Determine connections
+            const fromTop = prev && prev[0] < pos[0];
+            const fromBottom = prev && prev[0] > pos[0];
+            const fromLeft = prev && prev[1] < pos[1];
+            const fromRight = prev && prev[1] > pos[1];
+
+            const toTop = next && next[0] < pos[0];
+            const toBottom = next && next[0] > pos[0];
+            const toLeft = next && next[1] < pos[1];
+            const toRight = next && next[1] > pos[1];
+
+            // Create segments
+            const segments = [];
+
+            // Center piece
+            segments.push({ type: 'center' });
+
+            // Connections
+            if (fromTop || toTop) segments.push({ type: 'vertical', side: 'top' });
+            if (fromBottom || toBottom) segments.push({ type: 'vertical', side: 'bottom' });
+            if (fromLeft || toLeft) segments.push({ type: 'horizontal', side: 'left' });
+            if (fromRight || toRight) segments.push({ type: 'horizontal', side: 'right' });
+
+            segments.forEach(seg => {
+              const el = document.createElement('div');
+              el.className = 'flow-segment';
+              el.style.color = flow.color.hex;
+              el.style.backgroundColor = flow.color.hex;
+
+              if (seg.type === 'center') {
+                el.classList.add('center');
+              } else if (seg.type === 'horizontal') {
+                el.classList.add('horizontal');
+                if (seg.side === 'left') {
+                  el.style.left = '0';
+                  el.style.width = '50%';
+                } else {
+                  el.style.left = '50%';
+                  el.style.width = '50%';
+                }
+              } else if (seg.type === 'vertical') {
+                el.classList.add('vertical');
+                if (seg.side === 'top') {
+                  el.style.top = '0';
+                  el.style.height = '50%';
+                } else {
+                  el.style.top = '50%';
+                  el.style.height = '50%';
+                }
+              }
+
+              cell.appendChild(el);
+            });
+          });
+
+          // Mark connected endpoints
+          if (flow.connected) {
+            flow.endpoints.forEach(([r, c]) => {
+              const cell = this.getCell(r, c);
+              if (cell) cell.classList.add('connected');
+            });
+          }
+        });
+      }
+
+      getCell(row, col) {
+        return this.boardEl.querySelector(`[data-row="${row}"][data-col="${col}"]`);
+      }
+
+      getCellFromPoint(x, y) {
+        const el = document.elementFromPoint(x, y);
+        if (!el) return null;
+        const cell = el.closest('.cell');
+        if (!cell) return null;
+        return {
+          row: parseInt(cell.dataset.row),
+          col: parseInt(cell.dataset.col)
+        };
+      }
+
+      handleStart(e) {
+        const pos = this.getCellFromPoint(e.clientX, e.clientY);
+        if (!pos) return;
+
+        // Check if starting from an endpoint
+        const ep = this.endpoints.find(ep => ep.row === pos.row && ep.col === pos.col);
+        if (ep) {
+          this.drawing = true;
+          this.currentFlow = this.flows[ep.flowId];
+
+          // Clear existing path for this flow
+          this.currentFlow.path = [[pos.row, pos.col]];
+          this.currentFlow.connected = false;
+          this.currentPath = [[pos.row, pos.col]];
+          this.moveCount++;
+          this.moveCountEl.textContent = this.moveCount;
+
+          this.renderFlows();
+          return;
+        }
+
+        // Check if starting from existing flow path
+        for (const flow of this.flows) {
+          const pathIdx = flow.path.findIndex(p => p[0] === pos.row && p[1] === pos.col);
+          if (pathIdx !== -1) {
+            this.drawing = true;
+            this.currentFlow = flow;
+
+            // Truncate path from this point
+            flow.path = flow.path.slice(0, pathIdx + 1);
+            flow.connected = false;
+            this.currentPath = [...flow.path];
+            this.moveCount++;
+            this.moveCountEl.textContent = this.moveCount;
+
+            this.renderFlows();
+            return;
+          }
+        }
+      }
+
+      handleMove(e) {
+        if (!this.drawing || !this.currentFlow) return;
+
+        const pos = this.getCellFromPoint(e.clientX, e.clientY);
+        if (!pos) return;
+
+        const lastPos = this.currentPath[this.currentPath.length - 1];
+        if (pos.row === lastPos[0] && pos.col === lastPos[1]) return;
+
+        // Check adjacency
+        const dr = Math.abs(pos.row - lastPos[0]);
+        const dc = Math.abs(pos.col - lastPos[1]);
+        if (dr + dc !== 1) return;
+
+        // Check if going back on own path
+        if (this.currentPath.length > 1) {
+          const prevPos = this.currentPath[this.currentPath.length - 2];
+          if (pos.row === prevPos[0] && pos.col === prevPos[1]) {
+            this.currentPath.pop();
+            this.currentFlow.path = [...this.currentPath];
+            this.renderFlows();
+            return;
+          }
+        }
+
+        // Check if cell is occupied by another flow
+        for (const flow of this.flows) {
+          if (flow.id === this.currentFlow.id) continue;
+
+          // Check endpoints
+          const isOtherEndpoint = flow.endpoints.some(ep => ep[0] === pos.row && ep[1] === pos.col);
+          if (isOtherEndpoint) return;
+
+          // Check path
+          const onOtherPath = flow.path.some(p => p[0] === pos.row && p[1] === pos.col);
+          if (onOtherPath) return;
+        }
+
+        // Check if hitting own endpoint (completing flow)
+        const otherEndpoint = this.currentFlow.endpoints.find(
+          ep => ep[0] === pos.row && ep[1] === pos.col &&
+               (ep[0] !== this.currentPath[0][0] || ep[1] !== this.currentPath[0][1])
+        );
+
+        if (otherEndpoint) {
+          this.currentPath.push([pos.row, pos.col]);
+          this.currentFlow.path = [...this.currentPath];
+          this.currentFlow.connected = true;
+          this.drawing = false;
+          this.currentFlow = null;
+          this.currentPath = [];
+          this.renderFlows();
+          this.updateProgress();
+          this.checkWin();
+          return;
+        }
+
+        // Check if hitting own starting endpoint (invalid)
+        const startEp = this.currentFlow.endpoints.find(
+          ep => ep[0] === pos.row && ep[1] === pos.col
+        );
+        if (startEp && this.currentPath.length > 1) return;
+
+        // Add to path
+        this.currentPath.push([pos.row, pos.col]);
+        this.currentFlow.path = [...this.currentPath];
+        this.renderFlows();
+      }
+
+      handleEnd() {
+        if (this.drawing) {
+          this.drawing = false;
+          this.currentFlow = null;
+          this.currentPath = [];
+        }
+      }
+
+      updateProgress() {
+        const connected = this.flows.filter(f => f.connected).length;
+        this.flowCountEl.textContent = connected;
+        this.progressFillEl.style.width = `${(connected / this.flows.length) * 100}%`;
+      }
+
+      checkWin() {
+        const allConnected = this.flows.every(f => f.connected);
+        if (allConnected) {
+          // Check if all cells are filled
+          const totalCells = this.size * this.size;
+          const filledCells = new Set();
+
+          this.flows.forEach(flow => {
+            flow.path.forEach(([r, c]) => filledCells.add(`${r},${c}`));
+          });
+
+          if (filledCells.size === totalCells) {
+            this.showWin();
+          }
+        }
+      }
+
+      showWin() {
+        if (!this.completedLevels.includes(this.currentLevel)) {
+          this.completedLevels.push(this.currentLevel);
+          localStorage.setItem('flowCompleted', JSON.stringify(this.completedLevels));
+        }
+
+        this.winStatsEl.textContent = `Level ${this.currentLevel + 1} solved in ${this.moveCount} moves`;
+        this.winOverlay.classList.add('show');
+        this.renderLevelSelect();
+      }
+
+      reset() {
+        this.loadLevel(this.currentLevel);
+      }
+
+      nextLevel() {
+        this.winOverlay.classList.remove('show');
+        this.loadLevel(this.currentLevel + 1);
+        this.renderLevelSelect();
+      }
+
+      toggleLevelSelect() {
+        const isVisible = this.levelSelectEl.style.display !== 'none';
+        this.levelSelectEl.style.display = isVisible ? 'none' : 'flex';
+      }
+
+      renderLevelSelect() {
+        this.levelSelectEl.innerHTML = '';
+
+        LEVELS.forEach((_, idx) => {
+          const btn = document.createElement('button');
+          btn.className = 'level-btn';
+          btn.textContent = idx + 1;
+
+          if (this.completedLevels.includes(idx)) {
+            btn.classList.add('completed');
+          }
+          if (idx === this.currentLevel) {
+            btn.classList.add('current');
+          }
+
+          btn.addEventListener('click', () => {
+            this.winOverlay.classList.remove('show');
+            this.loadLevel(idx);
+            this.levelSelectEl.style.display = 'none';
+          });
+
+          this.levelSelectEl.appendChild(btn);
+        });
+      }
+    }
+
+    // Initialize game
+    new FlowGame();
+  </script>
+</body>
+</html>
