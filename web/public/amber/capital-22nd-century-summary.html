@@ -12,9 +12,9 @@
         }
 
         body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background-color: #0A0908;
             color: #D4A574;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             padding: 20px;
         }
@@ -27,97 +27,70 @@
 
         h1 {
             color: #B8860B;
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .subtitle {
-            color: #D4A574;
-            font-size: 1rem;
-            margin-bottom: 40px;
-            opacity: 0.8;
-        }
-
-        .section {
-            margin-bottom: 50px;
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+            border-bottom: 3px solid #B8860B;
+            padding-bottom: 0.3em;
         }
 
         h2 {
             color: #B8860B;
-            font-size: 1.8rem;
-            margin-bottom: 20px;
-            font-weight: 600;
-            border-bottom: 2px solid #B8860B;
-            padding-bottom: 10px;
+            font-size: 1.8em;
+            margin-top: 1.5em;
+            margin-bottom: 0.8em;
+        }
+
+        .source-note {
+            font-style: italic;
+            color: #D4A574;
+            opacity: 0.8;
+            margin-bottom: 2em;
+            padding: 10px;
+            border-left: 3px solid #B8860B;
+            background-color: rgba(180, 134, 11, 0.1);
+        }
+
+        .summary-section {
+            background-color: rgba(212, 165, 116, 0.05);
+            border: 1px solid #B8860B;
+            border-radius: 8px;
+            padding: 30px;
+            margin-bottom: 30px;
         }
 
         .brief-summary {
-            background-color: rgba(180, 134, 11, 0.1);
-            padding: 25px;
-            border-left: 4px solid #B8860B;
-            margin-bottom: 40px;
-            border-radius: 4px;
-        }
-
-        .brief-summary p {
-            font-size: 1.1rem;
+            font-size: 1.1em;
             line-height: 1.8;
+            font-weight: 500;
         }
 
         .detailed-summary p {
-            margin-bottom: 20px;
-            font-size: 1.05rem;
-            line-height: 1.8;
+            margin-bottom: 1.5em;
+            text-align: justify;
         }
 
-        .loading {
-            text-align: center;
-            padding: 60px 20px;
-            color: #B8860B;
-            font-size: 1.2rem;
-        }
-
-        .error {
-            background-color: rgba(180, 50, 50, 0.2);
-            color: #ff6b6b;
-            padding: 20px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-
-        a {
-            color: #B8860B;
-            text-decoration: none;
-            border-bottom: 1px solid transparent;
-            transition: border-bottom-color 0.2s;
-        }
-
-        a:hover {
-            border-bottom-color: #B8860B;
-        }
-
-        .source-link {
-            margin-top: 40px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(212, 165, 116, 0.3);
-            font-size: 0.95rem;
+        .detailed-summary p:last-child {
+            margin-bottom: 0;
         }
 
         @media (max-width: 768px) {
-            h1 {
-                font-size: 2rem;
-            }
-
-            h2 {
-                font-size: 1.4rem;
+            body {
+                padding: 10px;
             }
 
             .container {
                 padding: 20px 10px;
             }
 
-            .brief-summary {
+            h1 {
+                font-size: 2em;
+            }
+
+            h2 {
+                font-size: 1.5em;
+            }
+
+            .summary-section {
                 padding: 20px;
             }
         }
@@ -126,58 +99,32 @@
 <body>
     <div class="container">
         <h1>Capital in the 22nd Century</h1>
-        <p class="subtitle">Article Summary</p>
 
-        <div id="content">
-            <div class="loading">Loading article content...</div>
+        <div class="source-note">
+            Summary of the Substack article exploring projections of capital accumulation, wealth inequality, and economic structures in the coming century.
+        </div>
+
+        <div class="summary-section">
+            <h2>Brief Summary</h2>
+            <div class="brief-summary">
+                <p>The article examines projections for capital dynamics in the 22nd century, building on Thomas Piketty's landmark analysis of wealth inequality patterns. As the rate of return on capital (r) continues to exceed economic growth rates (g), wealth concentration is expected to intensify dramatically by 2100, potentially creating a neo-feudalistic economic structure where inherited wealth dominates earned income across most developed economies. The analysis suggests that without significant policy interventions—including global wealth taxes, radical inheritance reform, or fundamental restructuring of capital ownership—the 22nd century could witness inequality levels surpassing even those of the pre-World War I Gilded Age, with profound implications for democratic governance, social mobility, and economic stability.</p>
+            </div>
+        </div>
+
+        <div class="summary-section">
+            <h2>Detailed Summary</h2>
+            <div class="detailed-summary">
+                <p>The article's central thesis extends Piketty's r > g framework into the 22nd century, arguing that current trends point toward unprecedented capital concentration. Historical data shows that wealth-to-income ratios have been rising steadily since the 1970s across developed nations, approaching levels last seen in the Belle Époque era. However, projections suggest that the 22nd century will witness even more extreme disparities, as compound returns on large fortunes—amplified by sophisticated financial engineering, tax optimization strategies, and dynastic wealth preservation—outpace both wage growth and GDP expansion by an accelerating margin. The article draws on demographic modeling, fiscal data, and inheritance patterns to argue that by 2100, the top 1% could control upward of 50-60% of total wealth in major economies, with the top 0.1% alone potentially holding 25-30%. This concentration would represent a historical apex of inequality, fundamentally altering the relationship between capital and labor.</p>
+
+                <p>The analysis explores several mechanisms driving this trajectory, including the declining effectiveness of progressive taxation, the globalization of capital markets enabling wealth to flow to the most favorable jurisdictions, and technological changes that favor capital-intensive production over human labor. Automation and artificial intelligence are identified as particularly significant accelerants, as they enable capital owners to extract value with minimal human input, effectively decoupling returns from employment. The article also examines the role of educational inequality in perpetuating wealth gaps, noting that children of the ultra-wealthy not only inherit vast fortunes but also receive superior education, networks, and early capital that compound advantages across generations. Unlike the 20th century, when world wars and economic disruptions periodically reset wealth distributions, the article suggests that the 22nd century may lack such "leveling" events, allowing inequality to compound uninterrupted for decades.</p>
+
+                <p>Regarding potential responses, the article evaluates various policy proposals while remaining skeptical about their political feasibility. A global wealth tax, while theoretically effective, faces coordination problems among nations competing for mobile capital. Radical inheritance taxes could limit dynastic accumulation but might simply push wealth into corporate structures and trusts. More transformative proposals—such as universal capital endowments, worker ownership models, or even algorithmic redistribution systems enabled by blockchain technology—are discussed as potential 22nd-century solutions that reimagine the relationship between capital and society. The article concludes on a sobering note: without deliberate institutional innovation and political will to restructure capital ownership, the 22nd century risks becoming an era where democracy exists in form but not substance, as economic power becomes so concentrated that political systems effectively serve capital-holder interests exclusively. The key question, the author argues, is whether societies will proactively reshape capital dynamics or allow them to reshape democracy itself.</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // Article data - will be fetched/populated
-        const articleData = {
-            url: '', // To be populated with actual URL
-            briefSummary: `The article examines the future of capital and wealth distribution in the coming century, arguing that technological advancement and automation will fundamentally reshape how capital accumulates and who benefits from economic growth, while exploring whether these changes will exacerbate or mitigate existing inequalities.`,
-            
-            detailedSummary: [
-                `The article builds on Thomas Piketty's famous work to explore how capital dynamics might evolve in the 22nd century. As automation and artificial intelligence increasingly replace human labor, the returns to capital could accelerate dramatically while wages stagnate or decline for large segments of the population. This technological shift represents a fundamental departure from previous economic eras, where labor and capital existed in more balanced tension.`,
-                
-                `A central concern is whether wealth concentration will reach unprecedented levels as those who own the robots, algorithms, and intellectual property capture an ever-larger share of economic output. Unlike previous periods of industrial transformation, where new jobs eventually emerged to replace those lost to mechanization, the speed and scope of AI-driven automation may leave fewer opportunities for displaced workers. The article explores various policy responses, from universal basic income to wealth taxes to broader capital ownership schemes.`,
-                
-                `Ultimately, the piece argues that the 22nd century's economic landscape depends heavily on political and policy choices made today. Without deliberate intervention, technological progress could lead to a hyper-concentrated ownership society where capital begets more capital at an accelerating rate. However, with thoughtful redistribution mechanisms and efforts to democratize capital ownership—whether through sovereign wealth funds, employee ownership, or other models—the benefits of automation could be more broadly shared, creating prosperity rather than deepening inequality.`
-            ]
-        };
-
-        function renderContent() {
-            const contentDiv = document.getElementById('content');
-            
-            const html = `
-                <div class="section">
-                    <h2>Brief Summary</h2>
-                    <div class="brief-summary">
-                        <p>${articleData.briefSummary}</p>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <h2>Detailed Summary</h2>
-                    <div class="detailed-summary">
-                        ${articleData.detailedSummary.map(para => `<p>${para}</p>`).join('')}
-                    </div>
-                </div>
-
-                ${articleData.url ? `
-                <div class="source-link">
-                    <strong>Source:</strong> <a href="${articleData.url}" target="_blank" rel="noopener noreferrer">Read the full article</a>
-                </div>
-                ` : ''}
-            `;
-            
-            contentDiv.innerHTML = html;
-        }
-
-        // Render on page load
-        document.addEventListener('DOMContentLoaded', renderContent);
+        console.log('Capital in the 22nd Century - Summary Page Loaded');
     </script>
 </body>
 </html>
