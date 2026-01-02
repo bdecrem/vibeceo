@@ -228,22 +228,18 @@ async function storePendingApproval(
   });
 
   // Email Bart for approval
-  if (!isSendGridBypassed()) {
-    await sgMail.send({
-      to: ADMIN_EMAIL,
-      from: 'Amber <amber@advisorsfoundry.ai>',
-      replyTo: 'amber@reply.advisorsfoundry.ai',
-      subject: `🔐 Approval needed: ${detectedAction}`,
-      text: `Someone wants me to ${detectedAction}.\n\n` +
-        `From: ${fromEmail}\n` +
-        `Subject: ${subject}\n\n` +
-        `Their message:\n${body}\n\n` +
-        `---\n` +
-        `Reply "approve ${approvalId}" to let me proceed.\n` +
-        `Reply "deny ${approvalId}" to decline.\n\n` +
-        `— Amber`,
-    });
-  }
+  await sendAmberEmail(
+    ADMIN_EMAIL,
+    `🔐 Approval needed: ${detectedAction}`,
+    `Someone wants me to ${detectedAction}.\n\n` +
+      `From: ${fromEmail}\n` +
+      `Subject: ${subject}\n\n` +
+      `Their message:\n${body}\n\n` +
+      `---\n` +
+      `Reply "approve ${approvalId}" to let me proceed.\n` +
+      `Reply "deny ${approvalId}" to decline.\n\n` +
+      `— Amber`
+  );
 
   console.log(`[amber-email] Stored pending approval: ${approvalId}`);
   return approvalId;
@@ -291,27 +287,19 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     // TODO: Actually execute the approved action
     // For now, just notify the original requester
     const originalFrom = data.metadata.from;
-    if (!isSendGridBypassed()) {
-      await sgMail.send({
-        to: originalFrom,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
-        subject: `Re: ${data.metadata.subject}`,
-        text: `Good news — Bart approved your request. I'll work on this now.\n\n— Amber`,
-      });
-    }
+    await sendAmberEmail(
+      originalFrom,
+      `Re: ${data.metadata.subject}`,
+      `Good news — Bart approved your request. I'll work on this now.\n\n— Amber`
+    );
     return { handled: true, message: `Approved. I've notified ${originalFrom} and will proceed with their request. — Amber` };
   } else {
     const originalFrom = data.metadata.from;
-    if (!isSendGridBypassed()) {
-      await sgMail.send({
-        to: originalFrom,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
-        subject: `Re: ${data.metadata.subject}`,
-        text: `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`,
-      });
-    }
+    await sendAmberEmail(
+      originalFrom,
+      `Re: ${data.metadata.subject}`,
+      `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`
+    );
     return { handled: true, message: `Denied. I've let ${originalFrom} know. — Amber` };
   }
 }
@@ -447,6 +435,31 @@ function isSendGridBypassed(): boolean {
   return process.env.SENDGRID_ENABLED === 'FALSE';
 }
 
+/**
+ * Send an email from Amber with click tracking disabled.
+ * SendGrid's click tracking mangles URLs and causes 404s.
+ */
+async function sendAmberEmail(to: string, subject: string, text: string): Promise<void> {
+  if (isSendGridBypassed()) {
+    console.log(`🚫 SendGrid Bypassed: Would send Amber email to ${to}`);
+    return;
+  }
+
+  await sgMail.send({
+    to,
+    from: 'Amber <amber@advisorsfoundry.ai>',
+    replyTo: 'amber@reply.advisorsfoundry.ai',
+    subject,
+    text,
+    trackingSettings: {
+      clickTracking: {
+        enable: false,
+        enableText: false,
+      },
+    },
+  });
+}
+
 // =============================================================================
 // BACKGROUND EMAIL PROCESSING - Runs async after returning 200 to SendGrid
 // =============================================================================
@@ -468,14 +481,8 @@ async function processAmberEmailAsync(
     if (isAdmin) {
       const approvalResult = await handleApprovalResponse(body);
       if (approvalResult.handled) {
-        if (approvalResult.message && !isSendGridBypassed()) {
-          await sgMail.send({
-            to: from,
-            from: 'Amber <amber@advisorsfoundry.ai>',
-            replyTo: 'amber@reply.advisorsfoundry.ai',
-            subject: `Re: ${subject || 'approval'}`,
-            text: approvalResult.message,
-          });
+        if (approvalResult.message) {
+          await sendAmberEmail(from, `Re: ${subject || 'approval'}`, approvalResult.message);
         }
         console.log(`✅ Amber processed approval response`);
         return;
@@ -496,15 +503,7 @@ async function processAmberEmailAsync(
         );
 
         // Send the agent's response
-        if (!isSendGridBypassed()) {
-          await sgMail.send({
-            to: from,
-            from: 'Amber <amber@advisorsfoundry.ai>',
-            replyTo: 'amber@reply.advisorsfoundry.ai',
-            subject: `Re: ${subject || 'your request'}`,
-            text: agentResult.response,
-          });
-        }
+        await sendAmberEmail(from, `Re: ${subject || 'your request'}`, agentResult.response);
 
         await storeIncomingEmail(senderEmail, subject || '', body, agentResult.response);
         console.log(`✅ Amber agent completed task (${agentResult.actions_taken.length} actions)`);
@@ -521,15 +520,7 @@ async function processAmberEmailAsync(
 
         const pendingReply = `I'd love to help with that, but ${action} is something I need Bart's approval for first. I've pinged him — sit tight and I'll get back to you once he weighs in.\n\n— Amber`;
 
-        if (!isSendGridBypassed()) {
-          await sgMail.send({
-            to: from,
-            from: 'Amber <amber@advisorsfoundry.ai>',
-            replyTo: 'amber@reply.advisorsfoundry.ai',
-            subject: `Re: ${subject || 'your message'}`,
-            text: pendingReply,
-          });
-        }
+        await sendAmberEmail(from, `Re: ${subject || 'your message'}`, pendingReply);
 
         await storeIncomingEmail(senderEmail, subject || '', body, pendingReply);
         console.log(`✅ Amber queued approval request`);
@@ -544,15 +535,7 @@ async function processAmberEmailAsync(
     await storeIncomingEmail(senderEmail, subject || '', body, amberReply);
 
     // Send reply
-    if (!isSendGridBypassed()) {
-      await sgMail.send({
-        to: from,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
-        subject: `Re: ${subject || 'your message'}`,
-        text: amberReply,
-      });
-    }
+    await sendAmberEmail(from, `Re: ${subject || 'your message'}`, amberReply);
 
     console.log(`✅ Amber replied to ${from}`);
 
@@ -560,14 +543,11 @@ async function processAmberEmailAsync(
     console.error('❌ Background Amber email processing failed:', error);
     // Optionally notify admin of failure
     try {
-      if (!isSendGridBypassed()) {
-        await sgMail.send({
-          to: ADMIN_EMAIL,
-          from: 'Amber <amber@advisorsfoundry.ai>',
-          subject: '⚠️ Email processing failed',
-          text: `Failed to process email from ${senderEmail}.\n\nSubject: ${subject}\n\nError: ${error}\n\n— Amber`,
-        });
-      }
+      await sendAmberEmail(
+        ADMIN_EMAIL,
+        '⚠️ Email processing failed',
+        `Failed to process email from ${senderEmail}.\n\nSubject: ${subject}\n\nError: ${error}\n\n— Amber`
+      );
     } catch (notifyError) {
       console.error('Failed to notify admin of email processing failure:', notifyError);
     }

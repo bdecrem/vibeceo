@@ -604,21 +604,33 @@ Then use git_push to push to remote.
     # Build URLs from deliverables using the helper function
     deliverable_urls = build_live_urls(deliverables)
 
-    response = f"""## Thinkhard Complete!
+    # Get the last iteration's summary for a brief description
+    last_summary = iteration_summaries[-1] if iteration_summaries else ""
+    # Extract just the description part after "Iteration N:"
+    if ":" in last_summary:
+        brief_desc = last_summary.split(":", 1)[1].strip()[:300]
+    else:
+        brief_desc = last_summary[:300]
 
-**Task**: {spec.get('task', task)}
+    # Build conversational response
+    if deliverable_urls:
+        urls_text = chr(10).join(f"  {u}" for u in deliverable_urls)
+        response = f"""Done! I built something for you.
 
-**Iterations**: {iteration}/{MAX_ITERATIONS}
-**Criteria met**: {sum(criteria_status)}/{criteria_count}
+{brief_desc}
 
-### Deliverables
-{chr(10).join(f'- {d}' for d in deliverables)}
+Check it out:
+{urls_text}
 
-### Live URLs
-{chr(10).join(f'- {u}' for u in deliverable_urls) if deliverable_urls else '(No public URLs)'}
+Took {iteration} iteration{'s' if iteration > 1 else ''}, hit {sum(criteria_status)}/{criteria_count} of my own criteria. Let me know what you think!
 
-### Summary
-{chr(10).join(iteration_summaries)}
+— Amber 🔶"""
+    else:
+        response = f"""Done!
+
+{brief_desc}
+
+Took {iteration} iteration{'s' if iteration > 1 else ''}, hit {sum(criteria_status)}/{criteria_count} criteria.
 
 — Amber 🔶"""
 
