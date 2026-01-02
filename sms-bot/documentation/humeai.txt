@@ -1,0 +1,970 @@
+﻿Hume AI React SDK - Complete API Documentation for Code Agents
+
+
+TABLE OF CONTENTS
+1. Authentication & Setup
+2. 2. React Integration (@humeai/voice-react)3. Connection Management (ConnectOptions)4. WebSocket Message Types5. Session Settings6. Configuration Management7. Voice Configuration8. Tools & Function Calling9. Error Handling10. Code Examples11. API Limits & Quotas12. Useful Links---1. AUTHENTICATION & SETUPAPI Key & Secret Key AccessLocation: Hume Platform (https://platform.hume.ai) → API keys page
+Two Authentication Strategies:
+
+
+1. API Key Strategy (Server-side only)
+2. - Use for backend requests
+3. - DO NOT expose in client-side code
+4. - Include in X-Hume-Api-Key header
+Example:
+Curl https://api.hume.ai/v0/evi/… \
+  -H “X-Hume-Api-Key: <YOUR_API_KEY>”
+
+
+B. Token Strategy (Client-side, Recommended)
+* Obtain temporary access token from server
+* - Access tokens expire after 30 minutes
+* - Pass token to WebSocket or REST endpoints
+* - More secure than exposing API key
+Getting Access Token (TypeScript):
+
+
+Import { fetchAccessToken } from ‘hume’;
+
+
+Const accessToken = await fetchAccessToken({
+  apiKey: process.env.HUME_API_KEY,
+  secretKey: process.env.HUME_SECRET_KEY
+});
+
+
+Environment Variables (Required):
+HUME_API_KEY=<your-api-key>
+HUME_SECRET_KEY=<your-secret-key>
+
+
+WebSocket Authentication
+
+
+With Access Token (Recommended):
+Const ws = new WebSocket(wss://api.hume.ai/v0/evi/chat?access_token=${accessToken});
+
+
+With API Key:
+Const ws = new WebSocket(`wss://api.hume.ai/v0/evi/chat?api_key=${apiKey}`);
+
+
+---
+
+
+2. REACT INTEGRATION (@humeai/voice-react)
+
+
+Installation:
+Npm install @humeai/voice-react hume
+
+
+VoiceProvider Setup
+
+
+Wrap your app with VoiceProvider to enable EVI functionality:
+
+
+Import { VoiceProvider } from ‘@humeai/voice-react’;
+
+
+Function RootComponent() {
+  Return (
+    <VoiceProvider
+      enableAudioWorklet={true}
+      onMessage={(message) => {
+        // Handle incoming messages
+        console.log(message);
+      }}
+      onToolCall={(toolCall) => {
+        // Handle tool function calls
+      }}
+      onAudioStart={(clipId) => {
+        // Handle when assistant audio starts
+      }}
+      onAudioEnd={(clipId) => {
+        // Handle when assistant audio ends
+      }}
+      onInterruption={(clipId) => {
+        // Handle user interrupting assistant
+      }}
+      onClose={(event) => {
+        // Handle connection closed
+      }}
+      clearMessagesOnDisconnect={true}
+      messageHistoryLimit={100}
+    >
+      {/* Your app components */}
+    </VoiceProvider>
+  );
+}
+
+
+VoiceProvider Props Reference
+
+
+enableAudioWorklet (boolean, default: true)
+* Use AudioWorklet for better quality
+* - Disable on Safari 17 due to performance issues
+onMessage (function)
+* Callback for all incoming messages
+onToolCall (ToolCallHandler)
+* Callback when EVI calls a tool function
+onAudioReceived (function)
+* Callback when audio output received
+onAudioStart (function)
+* Callback when assistant starts speaking
+onAudioEnd (function)
+* Callback when assistant stops speaking
+onInterruption (function)
+* Callback when user interrupts
+onClose (function)
+* Callback when connection closes
+clearMessagesOnDisconnect (boolean, default: false)
+* Clear message history on disconnect
+messageHistoryLimit (number, default: 100)
+* Max messages to keep in history
+useVoice Hook - Complete API
+
+
+Access voice control in any child component:
+
+
+Import { useVoice } from ‘@humeai/voice-react’;
+
+
+Function MyComponent() {
+  Const {
+    // Methods
+    Connect,
+    Disconnect,
+    clearMessages,
+    Mute,
+    Unmute,
+    muteAudio,
+    unmuteAudio,
+    setVolume,
+    sendSessionSettings,
+    sendUserInput,
+    sendAssistantInput,
+    sendToolMessage,
+    pauseAssistant,
+    resumeAssistant,
+    
+    // Properties
+    isMuted,
+    isAudioMuted,
+    Volume,
+    isPlaying,
+    isPaused,
+    Fft,
+    micFft,
+    Messages,
+    lastVoiceMessage,
+    lastUserMessage,
+    readyState,
+    Status,
+    Error,
+    isError,
+    isAudioError,
+    isMicrophoneError,
+    isSocketError,
+    callDurationTimestamp,
+    toolStatusStore,
+    chatMetadata,
+    playerQueueLength
+  } = useVoice();
+}
+
+
+---
+
+
+3. CONNECTION MANAGEMENT (ConnectOptions)
+
+
+connect() Method - CRITICAL RULES
+
+
+Establish WebSocket connection to Hume EVI
+MUST be called from a user interaction (button click)
+DO NOT call from useEffect on component mount
+AudioContext API requires user gesture
+
+
+Basic Usage:
+
+
+Const { connect } = useVoice();
+
+
+Await connect({
+  Auth: { type: ‘accessToken’, value: accessToken },
+  configId: ‘<YOUR_CONFIG_ID>’
+});
+
+
+ConnectOptions Type Definition
+
+
+Type ConnectOptions = {
+  // REQUIRED: Authentication
+  Auth: {
+    Type: ‘accessToken’ | ‘apiKey’;
+    Value: string;
+  };
+  
+  // Configuration
+  configId?: string;              // Configuration ID with voice & settings
+  configVersion?: string;         // Specific config version
+  Hostname?: string;              // Default: “api.hume.ai”
+  
+  // Transcription
+  verboseTranscription?: boolean; // Send interim transcripts (default: true)
+  
+  // Session Management
+  resumedChatGroupId?: string;    // Resume previous conversation
+  
+  // Audio Configuration
+  audioConstraints?: {
+    echoCancellation?: boolean;   // Default: true
+    noiseSuppression?: boolean;   // Default: true
+    autoGainControl?: boolean;    // Default: true
+  };
+  
+  // Session Settings (override config)
+  sessionSettings?: SessionSettings;
+  
+  // Device Selection
+  Devices?: {
+    microphoneDeviceId?: string;  // Specific microphone
+    speakerDeviceId?: string;     // Specific speaker
+  };
+};
+
+
+Connection Control Methods
+
+
+disconnect()
+* Disconnect from EVI and microphone
+clearMessages()
+* Clear message history
+mute() / unmute()
+* Control microphone
+muteAudio() / unmuteAudio()
+* Control audio playback
+setVolume(level: number)
+* Set volume between 0.0 (silent) to 1.0 (full)
+pauseAssistant()
+* Pause responses but keep listening
+resumeAssistant()
+* Resume sending responses
+Connection Status Properties
+
+
+readyState
+* VoiceReadyState.CONNECTING
+* - VoiceReadyState.OPEN
+* - VoiceReadyState.CLOSING
+* - VoiceReadyState.CLOSED
+Status
+* ‘Connecting’ | ‘connected’ | ‘disconnecting’ | ‘disconnected’ | ‘error’
+Error
+* VoiceError object with message and errors array
+isError / isAudioError / isMicrophoneError / isSocketError
+* Boolean flags for different error types
+---
+
+
+4. WEBSOCKET MESSAGE TYPES
+
+
+Messages Sent to EVI
+
+
+UserInput
+Send text message from user:
+sendUserInput(‘What is the weather today?’);
+
+
+AssistantInput
+Ask assistant to read text aloud:
+sendAssistantInput(‘Hello! How can I help you?’);
+
+
+SessionSettings
+Update settings during active conversation:
+sendSessionSettings({
+  Voice: { provider: ‘HUME_AI’, name: ‘calm-assistant’ },
+  systemPrompt: ‘You are a helpful customer support agent.’,
+});
+
+
+ToolResponse
+Send result of tool function call:
+sendToolMessage({
+  Type: ‘tool_response’,
+  toolCallId: ‘123’,
+  Content: JSON.stringify({ temperature: 72, condition: ‘sunny’ })
+});
+
+
+ToolError
+Send error from tool function:
+sendToolMessage({
+  Type: ‘tool_error’,
+  toolCallId: ‘123’,
+  Content: ‘Failed to fetch weather data’
+});
+
+
+Messages Received from EVI
+
+
+UserMessage
+Transcript of user speech with prosody analysis:
+{
+  Type: ‘user_message’,
+  Message: {
+    Role: ‘user’,
+    Content: ‘What is the weather?’,
+    Prosody?: {
+      Fundamental_frequency: { mean: 120 },
+      Loudness: { mean: 60 },
+      Rhythm: { … }
+    }
+  },
+  receivedAt: Date
+}
+
+
+AssistantMessage
+EVI’s text response:
+{
+  Type: ‘assistant_message’,
+  Message: {
+    Role: ‘assistant’,
+    Content: ‘The weather today is sunny and warm.’
+  },
+  receivedAt: Date
+}
+
+
+AudioOutput
+Assistant’s audio response (base64 encoded):
+{
+  Type: ‘audio_output’,
+  Data: ‘<base64-encoded-audio>’,
+  receivedAt: Date
+}
+
+
+ToolCall
+Request to execute a tool function:
+{
+  Type: ‘tool_call_message’,
+  toolCall: {
+    toolCallId: ‘123’,
+    toolName: ‘get_weather’,
+    toolInput: { location: ‘San Francisco’ }
+  },
+  receivedAt: Date
+}
+
+
+AssistantEnd
+Signal that assistant finished speaking:
+{
+  Type: ‘assistant_end’,
+  receivedAt: Date
+}
+
+
+ChatMetadata
+Information about current chat:
+{
+  Type: ‘chat_metadata’,
+  chatMetadata: {
+    chatId: ‘abc123’,
+    chatGroupId: ‘group456’,
+    requestId: ‘req789’
+  }
+}
+
+
+---
+
+
+5. SESSION SETTINGS
+
+
+Dynamic Runtime Configuration
+
+
+Session Settings override config values for current session only. Apply them AFTER connecting:
+
+
+sendSessionSettings({
+  Voice: {
+    Provider: ‘HUME_AI’,
+    Name: ‘calm-assistant’
+  },
+  
+  systemPrompt: ‘You are a supportive fitness coach…’,
+  
+  Context: ‘The user has been training for 3 months…’,
+  
+  Tools: [
+    {
+      Name: ‘get_user_fitness_data’,
+      Description: ‘Retrieve user workout history’,
+      Parameters: { type: ‘object’, properties: {} }
+    }
+  ],
+  
+  builtInTools: [
+    { name: ‘web_search’ },
+    { name: ‘hang_up’ }
+  ],
+  
+  Variables: {
+    userName: ‘John’,
+    userLevel: ‘intermediate’
+  },
+  
+  languageModelApiKey: ‘sk-...’,
+  
+  customSessionId: ‘user-123-session-456’,
+  
+  Audio: {
+    encodingType: ‘PCM_LINEAR_16’,
+    sampleRate: 16000,
+    Channels: 1
+  }
+});
+
+
+Session Settings Options
+
+
+Voice (VoiceConfig)
+* Override config voice at runtime
+systemPrompt (string)
+* Override system instructions
+Context (string)
+* Additional context appended to user messages
+Tools (Tool[])
+* User-defined function tools
+builtInTools ({ name: string }[])
+* Enable web_search, hang_up
+Variables (Record<string, string>)
+* Dynamic values for prompts
+languageModelApiKey (string)
+* Use custom LLM API key instead of Hume’s
+customSessionId (string)
+* Track session server-side for custom LLMs
+Audio (AudioSettings)
+* PCM audio configuration
+---
+
+
+6. CONFIGURATION MANAGEMENT
+
+
+Creating & Using Configurations
+
+
+Get Config ID:
+1. Go to https://app.hume.ai/evi/configs
+2. 2. Create or select configuration
+3. 3. Click “More Options” → Copy Configuration ID
+Apply Config in React:
+
+
+Await connect({
+  Auth: { type: ‘accessToken’, value: accessToken },
+  configId: ‘<YOUR_CONFIG_ID>’,
+  configVersion: 1  // Optional: specific version
+});
+
+
+Configuration Components
+
+
+EVI Version
+* EVI 3 (Recommended): Full features, English only
+* - EVI 4-mini: Multiple languages, requires supplemental LLM
+Voice Selection
+* From Voice Library (100+ predesigned voices)
+* - Create custom via Voice Design
+* - Clone from audio sample
+System Prompt
+Defines how EVI behaves - example:
+You are a customer support specialist for TechCorp.
+* Be warm and empathetic
+* - Solve issues efficiently
+* - If unable to resolve, escalate politely
+* - Always confirm customer satisfaction
+Language Model Options
+* Claude Sonnet 4 (recommended)
+* - GPT-4 / GPT-4o
+* - Gemini Pro
+* - Hume EVI (built-in)
+Tools
+* Function tools (user-defined, handled in code)
+* - Built-in tools: web_search, hang_up
+Event Messages
+Custom messages on chat events (new_chat, end_chat, etc.)
+
+
+Timeouts
+* Inactivity timeout: auto-disconnect after silence
+* - Response timeout: max time for EVI response
+Webhooks
+Send events to external URL (chat start, end, etc.)
+
+
+---
+
+
+7. VOICE CONFIGURATION
+
+
+Voice Types
+
+
+Hume Voice Library
+* 100+ professionally designed voices
+* - Multiple categories: Professional, Friendly, Empathetic, Energetic
+* - Access at: https://app.hume.ai/voices
+Voice Design
+Create custom voices from natural language:
+// In Platform UI, describe your voice:
+// “Calm, professional, slightly British accent, warm tone”
+
+
+Voice Cloning
+Clone voice from audio sample (requires consent):
+1. Upload 10-30 second sample
+2. 2. Platform trains clone
+3. 3. Use in configs
+Voice Configuration in Session
+
+
+sendSessionSettings({
+  Voice: {
+    Provider: ‘HUME_AI’,
+    Name: ‘calm-professional-voice’
+  }
+});
+
+
+List Available Voices
+
+
+fetch(‘https://api.hume.ai/v0/voices’, {
+  Headers: {
+    ‘X-Hume-Api-Key’: apiKey,
+    ‘Accept’: ‘application/json’
+  }
+});
+
+
+---
+
+
+8. TOOLS & FUNCTION CALLING
+
+
+Function Tools (User-Defined)
+
+
+Define tool in config via Platform UI:
+{
+  “toolName”: “get_weather”,
+  “Description”: “Get current weather for a location”,
+  “Parameters”: {
+    “Type”: “object”,
+    “Properties”: {
+      “Location”: {
+        “Type”: “string”,
+        “Description”: “City name”
+      },
+      “Units”: {
+        “Type”: “string”,
+        “Enum”: [“celsius”, “fahrenheit”],
+        “Default”: “fahrenheit”
+      }
+    },
+    “Required”: [“location”]
+  }
+}
+
+
+Handle Tool Calls in React:
+
+
+<VoiceProvider
+  onToolCall={async (toolCall) => {
+    If (toolCall.toolName === ‘get_weather’) {
+      Const { location, units } = toolCall.toolInput;
+      
+      Try {
+        Const result = await fetchWeatherData(location, units);
+        
+        sendToolMessage({
+          Type: ‘tool_response’,
+          toolCallId: toolCall.toolCallId,
+          Content: JSON.stringify(result)
+        });
+      } catch (error) {
+        sendToolMessage({
+          Type: ‘tool_error’,
+          toolCallId: toolCall.toolCallId,
+          Content: error.message
+        });
+      }
+    }
+  }}
+>
+  {/* components */}
+</VoiceProvider>
+
+
+Built-In Tools (Server-Side)
+
+
+Natively implemented on Hume servers:
+
+
+sendSessionSettings({
+  builtInTools: [
+    { name: ‘web_search’ },  // Search web for real-time info
+    { name: ‘hang_up’ }      // End call (closes WebSocket)
+  ]
+});
+
+
+Tool Configuration Requirements
+
+
+* Function tools: Require supplemental LLM (Claude, GPT, Gemini)
+* - Built-in tools: Work with any EVI version
+* - OpenAI Schema: Use for custom LLM integration
+---
+
+
+9. ERROR HANDLING
+
+
+Error Detection
+
+
+Const { isError, error, isAudioError, isMicrophoneError, isSocketError } = useVoice();
+
+
+If (isError) {
+  console.error(‘Voice Error:’, error.message);
+  console.error(‘Error Details:’, error.errors);
+}
+
+
+If (isAudioError) {
+  // Audio playback failed - browser audio system issue
+}
+
+
+If (isMicrophoneError) {
+  // Microphone access denied or not available
+  // Prompt user: “Please allow microphone access”
+}
+
+
+If (isSocketError) {
+  // WebSocket connection failed
+  // Network issue or invalid credentials
+}
+
+
+Common Error Scenarios & Solutions
+
+
+“Access token expired”
+* Solution: Fetch new token and reconnect
+“Microphone permission denied”
+* Solution: Request user to allow microphone in browser settings
+“Config not found”
+* Solution: Verify configId exists and user has access
+“Invalid supplemental LLM API key”
+* Solution: Check languageModelApiKey in session settings
+“Connection timeout”
+* Solution: Improve network or increase timeout
+Reconnection Strategy with Backoff
+
+
+Async function reconnectWithBackoff() {
+  Let retries = 0;
+  Const maxRetries = 5;
+  
+  While (retries < maxRetries) {
+    Try {
+      Await connect({
+        Auth: { type: ‘accessToken’, value: accessToken },
+        configId: configId,
+        resumedChatGroupId: previousChatGroupId
+      });
+      Return; // Success
+    } catch (error) {
+      Retries++;
+      Const delay = Math.pow(2, retries) * 1000;
+      Await new Promise(r => setTimeout(r, delay));
+    }
+  }
+  
+  Throw new Error(‘Failed to reconnect’);
+}
+
+
+---
+
+
+10. CODE EXAMPLES
+
+
+Example 1: Basic Chat Interface
+
+
+‘Use client’;
+Import { useEffect, useState } from ‘react’;
+Import { useVoice, VoiceReadyState } from ‘@humeai/voice-react’;
+
+
+Export function ChatInterface({ accessToken, configId }) {
+  Const {
+    Connect,
+    Disconnect,
+    Messages,
+    sendUserInput,
+    readyState,
+    isError,
+    Error
+  } = useVoice();
+  
+  Const [inputText, setInputText] = useState(‘’);
+  
+  Const handleStartCall = async () => {
+    Try {
+      Await connect({
+        Auth: { type: ‘accessToken’, value: accessToken },
+        configId: configId
+      });
+    } catch (err) {
+      console.error(‘Connection failed:’, err);
+    }
+  };
+  
+  Const handleSendMessage = () => {
+    sendUserInput(inputText);
+    setInputText(‘’);
+  };
+  
+  Return (
+    <div style={{ maxWidth: ‘600px’, margin: ‘0 auto’ }}>
+      <h1>Hume AI Chat</h1>
+      
+      <p>Status: {readyState}</p>
+      {isError && <p style={{ color: ‘red’ }}>Error: {error?.message}</p>}
+      
+      <div style={{
+        Border: ‘1px solid #ccc’,
+        Padding: ‘10px’,
+        Height: ‘400px’,
+        overflowY: ‘auto’,
+        marginBottom: ‘10px’
+      }}>
+        {messages.map((msg, idx) => (
+          <div key={idx} style={{ marginBottom: ‘10px’ }}>
+            {msg.type === ‘user_message’ && (
+              <p><strong>You:</strong> {msg.message.content}</p>
+            )}
+            {msg.type === ‘assistant_message’ && (
+              <p><strong>Assistant:</strong> {msg.message.content}</p>
+            )}
+          </div>
+        ))}
+      </div>
+      
+      <div style={{ display: ‘flex’, gap: ‘10px’ }}>
+        <input
+          type=”text”
+          value={inputText}
+          onChange={(e) => setInputText(e.target.value)}
+          placeholder=”Type message…”
+          style={{ flex: 1, padding: ‘8px’ }}
+        />
+        <button onClick={handleSendMessage}>Send</button>
+      </div>
+      
+      <div style={{ marginTop: ‘10px’ }}>
+        {readyState === VoiceReadyState.OPEN ? (
+          <button onClick={disconnect}>End Call</button>
+        ) : (
+          <button onClick={handleStartCall}>Start Call</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
+Example 2: With Tool Handling
+
+
+‘Use client’;
+Import { VoiceProvider, useVoice } from ‘@humeai/voice-react’;
+
+
+Function ToolEnabledChat({ accessToken, configId }) {
+  Const { connect, disconnect, readyState } = useVoice();
+  
+  Return (
+    <button onClick={() => connect({
+      Auth: { type: ‘accessToken’, value: accessToken },
+      configId: configId
+    })}>
+      {readyState === ‘open’ ? ‘End Call’ : ‘Start Call’}
+    </button>
+  );
+}
+
+
+Export function ToolApp({ accessToken, configId }) {
+  Return (
+    <VoiceProvider
+      onToolCall={async (toolCall) => {
+        console.log(‘Tool called:’, toolCall.toolName, toolCall.toolInput);
+        
+        Switch (toolCall.toolName) {
+          Case ‘search_knowledge_base’:
+            // Implement your logic
+            Break;
+          Case ‘fetch_user_data’:
+            // Implement your logic
+            Break;
+        }
+      }}
+    >
+      <ToolEnabledChat accessToken={accessToken} configId={configId} />
+    </VoiceProvider>
+  );
+}
+
+
+Example 3: Session Settings & Dynamic Configuration
+
+
+Const { sendSessionSettings, connect } = useVoice();
+
+
+// After connecting, update settings dynamically
+sendSessionSettings({
+  systemPrompt: `You are a helpful assistant.
+The current user is: ${userName}
+Their previous context: ${userContext}`,
+  
+  Voice: {
+    Provider: ‘HUME_AI’,
+    Name: selectedVoiceName
+  },
+  
+  Variables: {
+    userName: userName,
+    userRole: userRole,
+    companyName: companyName
+  },
+  
+  builtInTools: [
+    { name: ‘web_search’ }
+  ]
+});
+
+
+Example 4: Next.js Server-Side Token Generation
+
+
+// app/api/get-access-token/route.ts
+Import { fetchAccessToken } from ‘hume’;
+
+
+Export async function POST(request: Request) {
+  Try {
+    Const accessToken = await fetchAccessToken({
+      apiKey: process.env.HUME_API_KEY!,
+      secretKey: process.env.HUME_SECRET_KEY!
+    });
+    
+    Return Response.json({ accessToken });
+  } catch (error) {
+    Return Response.json(
+      { error: ‘Failed to get access token’ },
+      { status: 500 }
+    );
+  }
+}
+
+
+// Component
+‘Use client’;
+Import { useEffect, useState } from ‘react’;
+
+
+Export function App() {
+  Const [accessToken, setAccessToken] = useState(null);
+  
+  useEffect(() => {
+    fetch(‘/api/get-access-token’, { method: ‘POST’ })
+      .then(res => res.json())
+      .then(data => setAccessToken(data.accessToken));
+  }, []);
+  
+  If (!accessToken) return <div>Loading…</div>;
+  
+  Return <ChatInterface accessToken={accessToken} configId={configId} />;
+}
+
+
+---
+
+
+11. API LIMITS & QUOTAS
+
+
+Concurrent Sessions: Based on subscription tier
+Max Session Duration: 30 minutes
+Max Message Size: 16 MB
+HTTP Request Rate: 100 requests/second
+Access Token Lifetime: 30 minutes
+
+
+---
+
+
+12. USEFUL LINKS
+
+
+Platform: https://platform.hume.ai
+API Docs: https://dev.hume.ai/docs
+Voice Library: https://app.hume.ai/voices
+Configurations: https://app.hume.ai/evi/configs
+GitHub SDK: https://github.com/HumeAI/empathic-voice-api-js
+Discord Support: https://link.hume.ai/discord
+Status Page: https://status.hume.ai
+
+
+VERSION INFO
+@humeai/voice-react: 0.2.11+
+Hume: Latest
+Node.js: 18.0.0+
+EVI Version: EVI 3 or EVI 4-mini
+Last Updated: December 2025
