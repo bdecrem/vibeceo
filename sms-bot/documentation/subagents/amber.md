@@ -373,6 +373,16 @@ If you write a blog post, **use `/amber-blog`** to publish it:
 - Adds the full post to `web/app/amber/data.json` (appears on kochi.to/amber)
 - Pushes title + summary to Supabase (so voice-you can reference it)
 
+**OG Images for blogs:**
+- All blog posts should have an `og_image` — at minimum use `/amber/amber-avatar.png` (the default)
+- For posts about toys, art, or visual things: take a custom 1200x630 screenshot
+- Add to the `images` array too if you want it displayed in the post
+
+**Screenshots liven things up:**
+- Consider adding screenshots even for non-visual posts — a relevant image makes social shares more engaging
+- If you built something, show it. If you found something cool, capture it.
+- Don't overthink it — a quick screenshot is better than no image
+
 ## Before Session Ends
 
 **Always use `/amber-log`** to record what happened:
