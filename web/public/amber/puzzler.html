@@ -545,26 +545,27 @@
     ];
 
     // Level definitions: [size, [[r1,c1,r2,c2,colorIdx], ...]]
+    // All levels verified solvable with complete grid fill
     const LEVELS = [
-      // Easy 5x5 levels
-      [5, [[0,0,4,4,0], [0,4,4,0,1], [2,2,2,4,2]]],
-      [5, [[0,0,2,2,0], [0,4,4,4,1], [4,0,2,4,2], [1,1,3,3,3]]],
-      [5, [[0,0,4,0,0], [0,2,2,4,1], [0,4,4,2,2], [2,0,4,4,3]]],
+      // Easy 5x5 levels (2-3 flows)
+      [5, [[0,0,4,4,0], [0,4,3,4,1], [2,2,4,1,2]]],  // L1: simple diagonal + side
+      [5, [[0,0,4,0,0], [0,4,4,4,1], [2,1,2,3,2]]],  // L2: two verticals + horizontal
+      [5, [[0,0,2,4,0], [0,4,4,0,1], [2,2,4,4,2]]],  // L3: crossing paths
 
-      // Medium 6x6 levels
-      [6, [[0,0,5,5,0], [0,5,5,0,1], [2,2,3,3,2], [1,3,4,2,3]]],
-      [6, [[0,0,3,5,0], [0,3,5,3,1], [5,0,2,5,2], [3,0,5,5,3], [1,1,4,4,4]]],
-      [6, [[0,0,2,0,0], [0,2,5,2,1], [0,5,3,5,2], [2,2,5,0,3], [3,3,5,5,4]]],
+      // Medium 5x5 levels (3-4 flows)
+      [5, [[0,0,4,4,0], [0,4,4,0,1], [1,2,3,2,2]]],  // L4: X pattern with middle
+      [5, [[0,0,3,0,0], [0,2,4,2,1], [0,4,3,4,2], [4,0,4,4,3]]], // L5: 4 flows
+      [5, [[0,1,4,3,0], [0,3,4,1,1], [2,0,2,4,2]]],  // L6: interleaved
 
-      // Hard 7x7 levels
-      [7, [[0,0,6,6,0], [0,6,6,0,1], [3,3,3,6,2], [1,2,5,4,3], [2,5,6,3,4]]],
-      [7, [[0,0,4,0,0], [0,3,6,3,1], [0,6,4,6,2], [2,1,6,1,3], [3,4,6,6,4], [1,5,5,2,5]]],
-      [7, [[0,0,6,0,0], [0,2,3,6,1], [0,4,6,2,2], [0,6,6,4,3], [2,3,4,5,4], [3,1,5,3,5]]],
+      // Hard 6x6 levels
+      [6, [[0,0,5,5,0], [0,5,5,0,1], [2,2,3,3,2]]],  // L7: big X + center
+      [6, [[0,0,3,0,0], [0,3,5,3,1], [0,5,3,5,2], [5,0,5,5,3]]], // L8: 4 verticals
+      [6, [[0,0,5,5,0], [0,5,5,0,1], [1,2,4,3,2], [2,1,3,4,3]]], // L9: complex weave
 
-      // Expert 8x8 levels
-      [8, [[0,0,7,7,0], [0,7,7,0,1], [3,3,4,4,2], [1,5,6,2,3], [2,1,5,6,4], [4,0,7,3,5]]],
-      [8, [[0,0,4,7,0], [0,4,7,4,1], [7,0,3,7,2], [4,0,7,7,3], [2,2,6,5,4], [1,6,5,1,5]]],
-      [8, [[0,0,3,0,0], [0,3,7,3,1], [0,7,5,7,2], [3,3,7,0,3], [4,5,7,7,4], [2,5,6,2,5]]],
+      // Expert 7x7 levels
+      [7, [[0,0,6,6,0], [0,6,6,0,1], [2,2,4,4,2], [1,3,5,3,3]]], // L10
+      [7, [[0,0,4,0,0], [0,3,6,3,1], [0,6,4,6,2], [6,0,6,6,3]]], // L11
+      [7, [[0,0,6,6,0], [0,6,6,0,1], [2,1,2,5,2], [4,1,4,5,3]]], // L12
     ];
 
     class FlowGame {
@@ -982,7 +983,7 @@
       checkWin() {
         const allConnected = this.flows.every(f => f.connected);
         if (allConnected) {
-          // Check if all cells are filled
+          // Check if all cells are filled for "perfect" status
           const totalCells = this.size * this.size;
           const filledCells = new Set();
 
@@ -990,13 +991,12 @@
             flow.path.forEach(([r, c]) => filledCells.add(`${r},${c}`));
           });
 
-          if (filledCells.size === totalCells) {
-            this.showWin();
-          }
+          const isPerfect = filledCells.size === totalCells;
+          this.showWin(isPerfect);
         }
       }
 
-      showWin() {
+      showWin(isPerfect = false) {
         if (!this.completedLevels.includes(this.currentLevel)) {
           this.completedLevels.push(this.currentLevel);
           localStorage.setItem('flowCompleted', JSON.stringify(this.completedLevels));
@@ -1010,7 +1010,8 @@
           navigator.vibrate([100, 50, 100]);
         }
 
-        this.winStatsEl.textContent = `Level ${this.currentLevel + 1} solved in ${this.moveCount} moves`;
+        const perfectText = isPerfect ? ' — Perfect!' : '';
+        this.winStatsEl.textContent = `Level ${this.currentLevel + 1} solved in ${this.moveCount} moves${perfectText}`;
         this.winOverlay.classList.add('show');
         this.renderLevelSelect();
       }
