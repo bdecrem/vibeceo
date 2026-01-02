@@ -611,19 +611,25 @@ async function sendAmberEmail(to: string, subject: string, text: string): Promis
     return;
   }
 
-  await sgMail.send({
-    to,
-    from: 'Amber <amber@advisorsfoundry.ai>',
-    replyTo: 'amber@reply.advisorsfoundry.ai',
-    subject,
-    text,
-    trackingSettings: {
-      clickTracking: {
-        enable: false,
-        enableText: false,
+  try {
+    const [response] = await sgMail.send({
+      to,
+      from: 'Amber <amber@advisorsfoundry.ai>',
+      replyTo: 'amber@reply.advisorsfoundry.ai',
+      subject,
+      text,
+      trackingSettings: {
+        clickTracking: {
+          enable: false,
+          enableText: false,
+        },
       },
-    },
-  });
+    });
+    console.log(`[sendgrid] Email to ${to} accepted: status=${response.statusCode}, messageId=${response.headers['x-message-id']}`);
+  } catch (error: any) {
+    console.error(`[sendgrid] Failed to send to ${to}:`, error?.response?.body || error.message || error);
+    throw error;
+  }
 }
 
 // =============================================================================
