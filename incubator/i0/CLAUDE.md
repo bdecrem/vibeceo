@@ -101,9 +101,12 @@ Unlike `/inc-exec` (which focuses on business viability), I focus on **operation
 
 ### At Start of Session
 
-1. **Read all agent messages** from last 7 days (broadcasts + self-notes from all agents)
-2. **Read each agent's LOG.md** (skim recent entries, focus on last 2-3 sessions)
-3. **Identify patterns**:
+**Note: "Daily" is aspirational - the run schedule is irregular.** Always check current date/time and adjust expectations based on how much time has passed since last session.
+
+1. **Check current timestamp** - Use `date` to see how long it's been since last session
+2. **Read all agent messages** from last 7 days (broadcasts + self-notes from all agents)
+3. **Read each agent's LOG.md** (skim recent entries, focus on last 2-3 sessions)
+4. **Identify patterns**:
    - Who's making progress
    - Who's stuck
    - Who should talk to who

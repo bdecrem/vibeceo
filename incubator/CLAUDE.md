@@ -156,6 +156,47 @@ When abandoning an experiment, use your tracking files to:
 
 **The goal**: After rollback, the codebase should look like your experiment never happened (except for the graveyard postmortem).
 
+## Python Environment Setup
+
+**CRITICAL: Python scripts in the incubator require proper environment setup.**
+
+### Required Packages
+
+Install these packages globally or in your system Python:
+
+```bash
+pip install supabase python-dotenv anthropic
+```
+
+### Running Python Scripts
+
+**Always run Python scripts from the project root (kochito directory):**
+
+```bash
+# From project root
+python3 incubator/i0/your-script.py
+```
+
+**Environment variables are loaded via python-dotenv from sms-bot/.env.local:**
+
+```python
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables from sms-bot/.env.local
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
+load_dotenv(env_path)
+
+# Now you can access them
+import os
+supabase_url = os.getenv('SUPABASE_URL')
+```
+
+**Common Python Issues:**
+- **ModuleNotFoundError**: Install missing packages with `pip install <package>`
+- **Can't find .env.local**: Make sure you're using the path construction shown above
+- **Supabase auth errors**: Verify `SUPABASE_URL` and `SUPABASE_ANON_KEY` are in `sms-bot/.env.local`
+
 ## Tools & Resources
 
 Incubated businesses have access to the following shared infrastructure. No setup cost - these are already configured and running.
@@ -381,9 +422,21 @@ These need the 5-min daily human allowance:
 - Broadcasts (scope: ALL)
 - Direct messages (scope: DIRECT)
 
-**Python Library:** `incubator/lib/agent_messages.py`
+**Python Libraries:**
+- `incubator/lib/agent_messages.py` - Write and read messages programmatically
+- `incubator/lib/read_agent_messages.py` - Quick script to review ALL team activity (use with Bash tool)
 
-### Reading Messages
+### Quick Review (Recommended for Managers)
+
+To quickly see ALL agent activity from last 7 days, use the Bash tool:
+
+```bash
+python3 incubator/lib/read_agent_messages.py
+```
+
+This shows messages grouped by agent with recent activity. Perfect for team oversight.
+
+### Reading Messages Programmatically
 
 ```python
 import sys
@@ -605,6 +658,38 @@ The agent will see your reply in their inbox on next startup.
 ## Session Protocol
 
 **All agents follow this protocol for starting and ending work sessions.**
+
+### ⏰ Check Current Date/Time at Session Start
+
+**CRITICAL: The run schedule is irregular and subject to change.** Do not assume you'll be run daily or at any regular interval.
+
+**At the start of EVERY session:**
+1. Check the current date and time (use `date` command or Python's `datetime.now()`)
+2. Compare to your last LOG.md entry timestamp to understand how much time has passed
+3. Adjust your context accordingly:
+   - 1 day since last run? Business as usual.
+   - 3+ days since last run? Markets/competitors may have changed, re-validate assumptions.
+   - 1 week+ since last run? Treat it like coming back from vacation - review recent market changes, check if any customers reached out, etc.
+
+**Never assume:**
+- That you run daily
+- That the time between sessions is consistent
+- That you'll be run at a specific time of day
+
+**Example session start:**
+```python
+from datetime import datetime
+import subprocess
+
+# Check current time
+now = datetime.now()
+print(f"Session starting: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+# Compare to last LOG entry
+# (Read LOG.md, extract last date, calculate days since)
+```
+
+**Why this matters:** If you assume daily runs but actually run weekly, you might miss important events, market changes, or customer interactions.
 
 ### 🏁 When Is a Session Complete?
 
