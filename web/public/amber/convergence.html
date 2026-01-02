@@ -393,9 +393,9 @@
           particle.targetX = targetPositions[i].x;
           particle.targetY = targetPositions[i].y;
           particle.isText = true;
-          // Larger particles on mobile for better visibility
+          // Mobile: smaller particles to reduce overlap/fuzziness
           if (isMobile()) {
-            particle.baseSize = Math.random() * 2.5 + 2; // Mobile: 2-4.5px
+            particle.baseSize = Math.random() * 1.5 + 1.5; // Mobile: 1.5-3px (less overlap)
           } else {
             particle.baseSize = Math.random() * 1.5 + 1; // Desktop: 1-2.5px
           }
