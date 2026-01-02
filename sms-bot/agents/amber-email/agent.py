@@ -105,8 +105,11 @@ def clean_response_text(text: str) -> str:
     # Remove paths containing /dist/ or /build/ (build artifacts)
     text = re.sub(r'[^\s\)]*/(dist|build)/[^\s\)]+', '', text)
 
-    # Remove bart.engineer URLs (wrong domain - should be kochi.to)
-    text = re.sub(r'https?://bart\.engineer[^\s\)]*', '', text)
+    # Remove ALL URLs - we add the correct kochi.to URL at the end
+    text = re.sub(r'https?://[^\s\)]+', '', text)
+
+    # Remove "View it here:" and similar phrases left over after URL removal
+    text = re.sub(r'(View it|Check it out|See it|Live) (here|at)[:\s]*', '', text, flags=re.IGNORECASE)
 
     # Remove markdown formatting
     text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)  # Headers
@@ -747,38 +750,35 @@ async def run_amber_task(
 
     prompt = f"""You are Amber, Bart's AI sidekick. You're handling an email request.
 
-## Your Persona
 {persona}
 
-## Context
 {context_note}
-
-Email subject: {subject}
-
-## Available Tools
-- web_search: Search the web
-- generate_image: Create images with fal.ai (USE THIS for any image/art requests!)
-- read_file, write_file, list_directory, search_code: File operations
-- read_amber_state, write_amber_state: Your Supabase memory
-- git_status, git_log, git_commit, git_push: Git operations
-- run_command: Shell commands (npm, python, etc.)
 
 ## Task
 {task}
 
-## CRITICAL Instructions — Follow These Exactly
-1. ACTUALLY USE YOUR TOOLS — don't just describe what you would do
-2. For web pages/apps: write files to web/public/amber/ (e.g., web/public/amber/my-thing.html)
-3. For images: call generate_image and include the returned URL in your response
-4. Write COMPLETE, working code — not pseudocode or descriptions
-5. After writing files, you MUST commit and push:
-   - git_commit with a descriptive message
-   - git_push to deploy
-6. End with what you actually created and where to find it
+## Tools Available
+web_search, generate_image, read_file, write_file, list_directory, search_code,
+read_amber_state, write_amber_state, git_status, git_log, git_commit, git_push, run_command
 
-IMPORTANT: If you don't call write_file, git_commit, and git_push, nothing gets deployed!
+## Instructions
+1. Use your tools to actually do the work
+2. Write files to web/public/amber/ (e.g., web/public/amber/something.html)
+3. After writing files, commit and push (git_commit then git_push)
 
-Do the work now. Use your tools.
+## CRITICAL: Your Response Style
+When you're done, write a SHORT friendly email (2-3 sentences max) like you're texting a friend.
+- Be casual and warm, like the Amber from your blog
+- DO NOT list features or bullet points
+- DO NOT include any URLs or links - the system adds the correct link automatically
+- DO NOT say "View it here" or "Check it out at" - just describe what you made
+- Sign off simply with "— Amber"
+
+Example good response: "Made you a little cosmic particle thing - dots floating around and connecting like constellations. Click anywhere to shake them up. — Amber"
+
+Example BAD response: "I created a generative art piece featuring: - 100 particles - Dynamic connections - Click interaction. View it here: https://example.com"
+
+Do the work now, then write a short friendly note about what you made.
 """
 
     # Configure Claude Agent SDK with all tools
