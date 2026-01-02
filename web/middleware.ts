@@ -93,12 +93,6 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
-    // /puzzles/* static games should not be rewritten
-    if (pathname === '/puzzles' || pathname.startsWith('/puzzles/')) {
-      log(`[Middleware] Puzzles route bypassed: ${pathname}`)
-      return NextResponse.next()
-    }
-
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/kochi', request.url)
       log(`[Middleware] Kochi domain root rewrite -> ${newUrl.pathname}`)

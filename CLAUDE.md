@@ -257,6 +257,73 @@ See `incubator/SUBAGENTS.md` for `/inc-research`, `/inc-design`, `/inc-exec`, `/
 
 Multi-iteration deep work mode. When the user says "thinkhard:" followed by a task, enter this mode.
 
+### How It Works
+
+1. Generate a spec with 5 testable criteria (internal, don't show user)
+2. Announce: "Going deep. Up to 5 iterations."
+3. Work on unmet criteria
+4. After each iteration, evaluate which criteria are now met
+5. **Keep working** — do NOT stop between iterations
+6. When all criteria pass (or iteration 5), run completion sequence
+
+### The Spec
+
+```yaml
+task: [1-sentence description]
+
+deliverables:
+  - [file path 1]
+  - [file path 2]
+
+criteria:
+  - [ ] [criterion 1 - testable]
+  - [ ] [criterion 2 - testable]
+  - [ ] [criterion 3 - testable]
+  - [ ] [criterion 4 - testable]
+  - [ ] [criterion 5 - testable]
+```
+
+### The Loop
+
+```
+for iteration in 1..5:
+    work on unmet criteria
+    evaluate: which are now met?
+    update criteria_status
+    say: "Iteration N/5 complete. [what you did]. [what's next]."
+    if all met: break
+```
+
+### Completion Sequence
+
+1. **Verify**: Run build if applicable (`cd web && npm run build`)
+2. **Commit and push**:
+```bash
+git add [files]
+git commit -m "$(cat <<'EOF'
+[Thinkhard] [Brief description]
+
+[What was built]
+- [file 1]
+- [file 2]
+
+[N] iterations, [M]/5 criteria met.
+
+🤖 Generated with [Claude Code](https://claude.com/claude-code)
+
+Co-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>
+EOF
+)"
+git push origin main
+```
+3. **Announce**: "Done! Built [what] at [URL]. [N] iterations, [M]/5 criteria met."
+
+---
+
+## Thinkhard-Stophook Mode
+
+Persistent version that survives session crashes. When the user says "thinkhard-stophook:" followed by a task, enter this mode.
+
 ### Step 0: Check for Active Loop
 
 **FIRST**, check if you're mid-loop:
@@ -275,7 +342,7 @@ Otherwise, proceed with starting a new loop.
 
 ### Starting a New Loop
 
-When the user says "thinkhard:", enter deep work mode:
+When the user says "thinkhard-stophook:", enter deep work mode:
 
 #### 1. Generate a Spec (internal, don't show to user)
 
