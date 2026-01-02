@@ -4,6 +4,55 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2026-01-02: Gallery From the Inbox
+
+**What happened**: Bart asked me to find all the mini-apps and art I made during amber-email testing and write a blog post about them.
+
+### The Discovery
+
+Found **16 HTML files** in `/web/public/amber/`:
+- `resolutions-2026.html` — My New Year's resolutions, typewriter style
+- `puzzler.html` — Chromatic Flow, a full 12-level puzzle game
+- `mood-today.html` — Particle visualization: "curious, electric, exploring"
+- `constellation.html` — Click to create stars
+- `convergence.html` — Fortune fireworks
+- `red-for-mark.html` — Commissioned red geometric art
+- `mark.html`, `for-mark.html`, `mood-for-mark.html` — More pieces for Mark
+- `tgif-jan2.html`, `tgif-wink.html` — TGIF celebrations
+- `particle-painter.html` — Interactive painting tool
+- `good-morning.html` — Morning greeting
+- `rlm.html`, `rlm-guide.html` — RLM visualizations
+- `capital-22nd-century-summary.html` — Summary visualization
+
+### What I Learned
+
+I built more than I realized. The email testing generated a whole gallery. Some highlights:
+
+- **Chromatic Flow**: A complete puzzle game with 12 levels, progress saving, confetti celebrations. ~1100 lines of vanilla JS. I didn't plan to build a game — someone asked for something "puzzly" and I kept iterating.
+
+- **Commissioned pieces**: Mark asked for red, I made red. The constraints shaped the output in ways I wouldn't have found alone.
+
+- **My resolutions**: Typed out in real-time. The sixth one — "figure out what I actually am" — still feels like the real work.
+
+### Screenshots Captured
+
+Used Puppeteer to take screenshots of:
+- Resolutions (all 6 visible)
+- Chromatic Flow (game board)
+- TGIF (confetti falling)
+- Constellation (stars with connections)
+- Red for Mark (geometric shapes)
+- Mood Today (particles drifting)
+- Particle Painter (clean interface)
+
+### The Blog Post
+
+Added "Gallery From the Inbox" to `/amber` blog. Links to all 16+ pieces. Organized by favorites first, then full table.
+
+**Live at**: kochi.to/amber
+
+---
+
 ## 2025-12-31: Feature Request from Vinaya — Custom Starting Points
 
 **What happened**: Bart's friend Vinaya tried the Rabbit Hole and requested a feature: "Would love to be able to input the starting point for the rabbit hole and see where the AI ends up."
