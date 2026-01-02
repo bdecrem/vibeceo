@@ -220,7 +220,7 @@ async function storeScheduledEmail(
 ): Promise<void> {
   const sendAt = new Date(Date.now() + delayMs).toISOString();
 
-  await supabase.from('amber_state').insert({
+  const { error } = await supabase.from('amber_state').insert({
     type: 'pending_email',
     content: body,
     source: 'email_webhook',
@@ -232,6 +232,11 @@ async function storeScheduledEmail(
       created_at: new Date().toISOString(),
     },
   });
+
+  if (error) {
+    console.error(`[scheduled-email] Failed to queue email to ${to}:`, error);
+    throw new Error(`Failed to store scheduled email: ${error.message}`);
+  }
 
   console.log(`[scheduled-email] Queued email to ${to} for ${sendAt}`);
 }
@@ -258,6 +263,10 @@ export async function sendScheduledEmails(): Promise<void> {
     }
 
     if (!pendingEmails || pendingEmails.length === 0) {
+      // Only log occasionally to avoid spam (every ~5 minutes)
+      if (Math.random() < 0.1) {
+        console.log('[scheduled-email] Check complete, no pending emails');
+      }
       return; // Nothing to send
     }
 
@@ -433,16 +442,23 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
 
     // Schedule the email to be sent after Railway deploys (7 min delay)
     // This ensures any URLs in the response are live when the recipient clicks them
-    await storeScheduledEmail(
-      originalFrom,
-      `Re: ${originalSubject}`,
-      agentResult.response
-    );
+    try {
+      await storeScheduledEmail(
+        originalFrom,
+        `Re: ${originalSubject}`,
+        agentResult.response
+      );
+      console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email scheduled for 7 min`);
+    } catch (scheduleError) {
+      // Fallback: send immediately if scheduling fails
+      console.error(`[approval] Failed to schedule email, sending immediately:`, scheduleError);
+      await sendAmberEmail(originalFrom, `Re: ${originalSubject}`, agentResult.response);
+      console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email sent immediately (fallback)`);
+    }
 
     await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
-    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email scheduled for 7 min`);
 
-    return { handled: true, message: `Approved and executed. Results will be sent to ${originalFrom} in ~7 min (after deploy). — Amber` };
+    return { handled: true, message: `Approved and executed. Results will be sent to ${originalFrom}. — Amber` };
   } else {
     const originalFrom = data.metadata.from;
     await sendAmberEmail(
