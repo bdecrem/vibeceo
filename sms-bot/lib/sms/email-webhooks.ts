@@ -276,8 +276,12 @@ export async function sendScheduledEmails(): Promise<void> {
       const { to, subject } = email.metadata;
       const body = email.content;
 
+      console.log(`[scheduled-email] Processing email id=${email.id} to=${to} subject="${subject}" body_length=${body?.length || 0}`);
+
       try {
+        console.log(`[scheduled-email] Calling sendAmberEmail for ${to}...`);
         await sendAmberEmail(to, subject, body);
+        console.log(`[scheduled-email] sendAmberEmail returned successfully for ${to}`);
 
         // Mark as sent
         await supabase
@@ -440,21 +444,9 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
       isThinkhard
     );
 
-    // Schedule the email to be sent after Railway deploys (7 min delay)
-    // This ensures any URLs in the response are live when the recipient clicks them
-    try {
-      await storeScheduledEmail(
-        originalFrom,
-        `Re: ${originalSubject}`,
-        agentResult.response
-      );
-      console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email scheduled for 7 min`);
-    } catch (scheduleError) {
-      // Fallback: send immediately if scheduling fails
-      console.error(`[approval] Failed to schedule email, sending immediately:`, scheduleError);
-      await sendAmberEmail(originalFrom, `Re: ${originalSubject}`, agentResult.response);
-      console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email sent immediately (fallback)`);
-    }
+    // Send the response immediately (scheduling was unreliable)
+    await sendAmberEmail(originalFrom, `Re: ${originalSubject}`, agentResult.response);
+    console.log(`✅ Executed approved request for ${originalFrom} (${agentResult.actions_taken.length} actions) — email sent`);
 
     await storeIncomingEmail(originalFrom, originalSubject, originalBody, agentResult.response);
 
