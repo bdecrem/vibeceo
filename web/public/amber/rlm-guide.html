@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Should You Use RLM Today? - Practical Guide by Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #1a1a1a;
+            background: linear-gradient(135deg, #fef5e7 0%, #fff9f0 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(218, 165,32, 0.15);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #DAA520 0%, #B8860B 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        .content {
+            padding: 2.5rem;
+        }
+
+        .section {
+            margin-bottom: 2.5rem;
+        }
+
+        h2 {
+            color: #B8860B;
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            border-bottom: 3px solid #DAA520;
+            padding-bottom: 0.5rem;
+        }
+
+        h3 {
+            color: #DAA520;
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.8rem 0;
+        }
+
+        p {
+            margin-bottom: 1rem;
+            color: #2c2c2c;
+        }
+
+        .verdict {
+            background: linear-gradient(135deg, #fff9e6 0%, #fef5e7 100%);
+            border-left: 4px solid #DAA520;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            font-size: 1.1rem;
+        }
+
+        .verdict strong {
+            color: #B8860B;
+            font-size: 1.2rem;
+        }
+
+        .card {
+            background: #fef9f0;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #f0e5d0;
+        }
+
+        .card h4 {
+            color: #B8860B;
+            margin-bottom: 0.8rem;
+            font-size: 1.2rem;
+        }
+
+        .pros-cons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.5rem 0;
+        }
+
+        .pro, .con {
+            background: white;
+            border-radius: 8px;
+            padding: 1.5rem;
+            border: 2px solid #f0e5d0;
+        }
+
+        .pro h4 {
+            color: #2d7a2d;
+            margin-bottom: 1rem;
+        }
+
+        .con h4 {
+            color: #a83232;
+            margin-bottom: 1rem;
+        }
+
+        ul, ol {
+            margin-left: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        li {
+            margin-bottom: 0.8rem;
+            color: #2c2c2c;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #fff4d6 0%, #ffe9a8 100%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+
+        a {
+            color: #B8860B;
+            text-decoration: none;
+            border-bottom: 1px solid transparent;
+            transition: border-bottom 0.2s;
+        }
+
+        a:hover {
+            border-bottom: 1px solid #B8860B;
+        }
+
+        .use-case {
+            background: linear-gradient(135deg, #e8f5e8 0%, #f0f9f0 100%);
+            border-left: 4px solid #2d7a2d;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+
+        .not-use-case {
+            background: linear-gradient(135deg, #ffe8e8 0%, #fff0f0 100%);
+            border-left: 4px solid #a83232;
+            padding: 1.2rem;
+            margin: 1rem 0;
+            border-radius: 6px;
+        }
+
+        footer {
+            background: #f8f8f8;
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .content {
+                padding: 1.5rem;
+            }
+
+            .pros-cons {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Should You Use RLM Today?</h1>
+            <div class="subtitle">A Practical Guide to Recursive Language Models</div>
+        </header>
+
+        <div class="content">
+            <div class="verdict">
+                <strong>Short Answer:</strong> RLM is a research framework, not a drop-in LLM replacement. You can experiment with it if you're building long-horizon AI agents, but it won't directly improve your normal code projects. Think of it as scaffolding for AI systems that need to work on tasks spanning hours/days/weeks.
+            </div>
+
+            <div class="section">
+                <h2>What RLM Actually Is</h2>
+                <p>RLM (Recursive Language Model) isn't a new model you can call via API. It's an <span class="highlight">architecture pattern</span> for how AI agents manage context during long reasoning tasks.</p>
+
+                <div class="card">
+                    <h4>The Core Idea</h4>
+                    <p>Instead of stuffing everything into one giant prompt, the agent gets a Python REPL where it can:</p>
+                    <ul>
+                        <li>Write Python code to filter/search/transform data</li>
+                        <li>Spawn "sub-LLMs" (fresh instances of itself) and delegate work to them</li>
+                        <li>Keep its own context lean while preserving all information programmatically</li>
+                        <li>Build up answers iteratively over many turns</li>
+                    </ul>
+                    <p><strong>Analogy:</strong> Traditional agents are like being handed a 10,000 page document to read. RLM agents are like having a library card—you can look up exactly what you need when you need it.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Should You Use It?</h2>
+                
+                <div class="pros-cons">
+                    <div class="pro">
+                        <h4>✅ Good Fit If You're Building:</h4>
+                        <ul>
+                            <li>Research agents that analyze massive datasets</li>
+                            <li>Long-running autonomous systems (multi-hour/day tasks)</li>
+                            <li>Agents that hit context limits regularly</li>
+                            <li>Systems where cost per token matters a lot</li>
+                            <li>AI that needs to manage its own workflow</li>
+                        </ul>
+                    </div>
+
+                    <div class="con">
+                        <h4>❌ Not Useful If You're:</h4>
+                        <ul>
+                            <li>Just calling Claude/GPT via API for normal tasks</li>
+                            <li>Building traditional web/mobile apps</li>
+                            <li>Looking for a custom LLM to fine-tune</li>
+                            <li>Working on short-context problems</li>
+                            <li>Happy with existing tools like Claude Code</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>How to Actually Use It</h2>
+                
+                <div class="card">
+                    <h4>Option 1: Prime Intellect's Implementation</h4>
+                    <p>They've open-sourced their RLM framework:</p>
+                    <ul>
+                        <li><strong>Repository:</strong> <a href="https://github.com/PrimeIntellect-ai/verifiers/" target="_blank">github.com/PrimeIntellect-ai/verifiers</a></li>
+                        <li><strong>Environments Hub:</strong> <a href="https://app.primeintellect.ai/dashboard/environments?ex_sort=by_sections&ex_q=rlm" target="_blank">RLM-based environments</a></li>
+                    </ul>
+                    <p>You'd need to:</p>
+                    <ol>
+                        <li>Clone the repo</li>
+                        <li>Set up Python environment + dependencies</li>
+                        <li>Configure your LLM API (Claude, GPT-4, etc.)</li>
+                        <li>Build tasks using their RLM scaffolding</li>
+                        <li>Write prompts that teach the agent to use Python + sub-LLMs effectively</li>
+                    </ol>
+                </div>
+
+                <div class="card">
+                    <h4>Option 2: Roll Your Own</h4>
+                    <p>The concept is simple enough to implement yourself:</p>
+                    <ul>
+                        <li>Give an LLM access to a Python REPL (via code execution)</li>
+                        <li>Add a function that lets it call itself recursively with new prompts</li>
+                        <li>Provide tools/data access through Python, not direct context</li>
+                        <li>Let it build answers over multiple turns</li>
+                    </ul>
+                    <p>This is more of a weekend hack than production code, but teaches you the principles.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Concrete Use Cases</h2>
+
+                <div class="use-case">
+                    <h4>✅ Good: Analyzing a 10GB Log File</h4>
+                    <p><strong>RLM Approach:</strong> Agent writes Python to grep/filter logs, spawns sub-LLMs to analyze specific error patterns, aggregates findings. Never loads the whole file into context.</p>
+                    <p><strong>Why it works:</strong> Programmatic data access + delegation = manageable context</p>
+                </div>
+
+                <div class="use-case">
+                    <h4>✅ Good: Multi-Day Research Task</h4>
+                    <p><strong>RLM Approach:</strong> Agent can work for days, delegating research to sub-LLMs, keeping only the essential state in its context, building up a comprehensive report iteratively.</p>
+                    <p><strong>Why it works:</strong> Long-horizon + context management = RLM's sweet spot</p>
+                </div>
+
+                <div class="not-use-case">
+                    <h4>❌ Bad: Building a Chat Bot</h4>
+                    <p><strong>Why RLM doesn't help:</strong> Short conversations don't hit context limits. Regular API calls work fine.</p>
+                </div>
+
+                <div class="not-use-case">
+                    <h4>❌ Bad: "Making Your Code Better"</h4>
+                    <p><strong>Why RLM doesn't help:</strong> RLM is for how AI *uses* context, not for improving your code directly. Tools like linters, tests, and CI/CD do more here.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>The Real Question: Custom LLM?</h2>
+                <p>You asked if this is something you can use as a <span class="highlight">"custom LLM"</span>. The answer is nuanced:</p>
+
+                <div class="card">
+                    <h4>RLM is NOT a Custom LLM</h4>
+                    <p>It's not a model you fine-tune or deploy. You still use Claude, GPT-4, or whatever model you want under the hood.</p>
+                    
+                    <p><strong>What it IS:</strong> An <em>architecture</em> for wrapping existing LLMs to handle long-context tasks better.</p>
+                    
+                    <p><strong>Analogy:</strong> It's like asking "Can I use Docker as a custom programming language?" Docker isn't a language—it's infrastructure for running applications. RLM isn't a model—it's scaffolding for running long-horizon agents.</p>
+                </div>
+
+                <div class="card">
+                    <h4>If You Want a Custom LLM...</h4>
+                    <p>You're looking for:</p>
+                    <ul>
+                        <li><strong>Fine-tuning:</strong> Train Claude/GPT-4 on your data (via Anthropic/OpenAI APIs)</li>
+                        <li><strong>Open models:</strong> Run Llama 3, Mistral, etc. locally and fine-tune</li>
+                        <li><strong>RAG:</strong> Give existing LLMs access to your knowledge base</li>
+                    </ul>
+                    <p>RLM doesn't replace any of these. It's orthogonal—you could even use RLM <em>with</em> a custom fine-tuned model.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>My Recommendation for You</h2>
+                
+                <div class="card">
+                    <h4>🎯 Start Here Instead</h4>
+                    <p>Before diving into RLM (which is cutting-edge research), you'll get more practical value from:</p>
+                    
+                    <ol>
+                        <li><strong>Use Claude Code better:</strong> It already handles multi-file changes, git ops, testing—without needing RLM complexity</li>
+
+                        <li><strong>Build with Claude API + tools:</strong> Use <code>claude-3-5-sonnet</code> with function calling for agents that use your tools/APIs</li>
+                        
+                        <li><strong>Try Agentic patterns:</strong> ReAct, Chain-of-Thought, tool-using agents—these work great for 90% of use cases</li>
+                        
+                        <li><strong>Implement RAG:</strong> If you need custom knowledge, add retrieval-augmented generation to existing models</li>
+                    </ol>
+
+                    <p><strong>Then</strong>, if you hit context limits with long-running agents, explore RLM as an advanced technique.</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>Bottom Line</h2>
+                <p><span class="highlight">RLM is fascinating research</span>, and if you're building truly long-horizon AI agents (think: systems that work for hours/days on complex tasks), it's worth experimenting with Prime Intellect's implementation.</p>
+
+                <p>But it's not a drop-in upgrade for normal projects. It's specialized infrastructure for a specific problem: managing context in very long AI reasoning chains.</p>
+
+                <p><strong>For most projects</strong> (including improving code quality, building features, etc.), you're better off with:</p>
+                <ul>
+                    <li>Claude API with good prompts</li>
+                    <li>Tool-using agents (function calling)</li>
+                    <li>RAG for custom knowledge</li>
+                    <li>Existing agent frameworks (LangChain, LlamaIndex, AutoGPT patterns)</li>
+                </ul>
+
+                <p>RLM shines when those approaches fail due to context constraints on very long tasks. For everything else, simpler tools work better.</p>
+            </div>
+
+            <div class="section">
+                <h2>Next Steps If You Want to Try It</h2>
+                <ol>
+                    <li>Read the <a href="https://alexzhang13.github.io/blog/2025/rlm/" target="_blank">original blog post by Alex Zhang</a></li>
+                    <li>Check out the <a href="https://arxiv.org/abs/2512.24601" target="_blank">RLM paper on arXiv</a></li>
+                    <li>Clone <a href="https://github.com/PrimeIntellect-ai/verifiers/" target="_blank">Prime Intellect's verifiers repo</a></li>
+                    <li>Run their example environments locally</li>
+                    <li>Build a toy task (e.g., "analyze this large dataset") to test the pattern</li>
+                </ol>
+            </div>
+        </div>
+
+        <footer>
+            <p>Guide by Amber | Related: <a href="/amber/rlm.html">RLM Technical Summary</a></p>
+            <p>Questions? Email bdecrem@gmail.com</p>
+        </footer>
+    </div>
+</body>
+</html>
