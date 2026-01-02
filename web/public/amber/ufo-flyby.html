@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UFO Flyby - ASCII Animation</title>
+  <meta property="og:title" content="UFO Flyby - ASCII Animation">
+  <meta property="og:description" content="A little ASCII saucer cruising through a starfield.">
+  <meta property="og:image" content="https://kochi.to/amber/ufo-flyby-og.png">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+      color: #D4A574;
+    }
+    h1 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: #B8860B;
+    }
+    #animation {
+      white-space: pre;
+      font-size: 14px;
+      line-height: 1.3;
+      background: rgba(212, 165, 116, 0.05);
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      border: 1px solid rgba(212, 165, 116, 0.2);
+    }
+    .controls {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+    }
+    button {
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: rgba(212, 165, 116, 0.1);
+    }
+    .credit {
+      margin-top: 2rem;
+      font-size: 0.8rem;
+      opacity: 0.5;
+    }
+    a { color: #B8860B; }
+  </style>
+</head>
+<body>
+  <h1>UFO Flyby</h1>
+  <div id="animation"></div>
+  <div class="controls">
+    <button onclick="togglePlay()">Pause</button>
+    <button onclick="changeSpeed(-50)">Faster</button>
+    <button onclick="changeSpeed(50)">Slower</button>
+  </div>
+  <div class="credit">From <a href="https://kochi.to/amber">Amber's drawer</a></div>
+
+  <script>
+    const frames = [
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+       _______
+      ╱ ● ● ● ╲          .      ★                    .
+     ◢▔▔▔▔▔▔▔▔▔◣                        ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+            _______
+           ╱ ○ ● ○ ╲      .      ★                    .
+          ◢▔▔▔▔▔▔▔▔▔◣                    ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                  _______
+                 ╱ ● ○ ● ╲      ★                     .
+                ◢▔▔▔▔▔▔▔▔▔◣              ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                        _______
+                       ╱ ○ ● ○ ╲    ★                 .
+                      ◢▔▔▔▔▔▔▔▔▔◣        ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                              _______
+                   ★         ╱ ● ● ● ╲                .
+                            ◢▔▔▔▔▔▔▔▔▔◣  ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                                    _______
+                   ★               ╱ ○ ○ ○ ╲          .
+                                  ◢▔▔▔▔▔▔▔▔▔◣
+              .      ★            .      ✦
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                                          _______
+                   ★                     ╱ ● ● ● ╲    .
+                                        ◢▔▔▔▔▔▔▔▔▔◣
+              .      ★            .      ✦
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                                    _______
+                   ★               ╱ ○ ● ○ ╲          .
+                                  ◢▔▔▔▔▔▔▔▔▔◣
+              .      ★            .      ✦
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                              _______
+                   ★         ╱ ● ○ ● ╲                .
+                            ◢▔▔▔▔▔▔▔▔▔◣  ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                        _______
+                       ╱ ○ ● ○ ╲    ★                 .
+                      ◢▔▔▔▔▔▔▔▔▔◣        ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+                  _______
+                 ╱ ● ● ● ╲      ★                     .
+                ◢▔▔▔▔▔▔▔▔▔◣              ✦
+              .      ★            .
+    ✦                      .                ★          .`,
+
+`                                                          ★
+   ★            .                    ✦            .
+                          .                 ★
+            _______
+           ╱ ○ ○ ○ ╲      .      ★                    .
+          ◢▔▔▔▔▔▔▔▔▔◣                    ✦
+              .      ★            .
+    ✦                      .                ★          .`
+    ];
+
+    let currentFrame = 0;
+    let delay = 200;
+    let playing = true;
+    let intervalId;
+
+    const el = document.getElementById('animation');
+
+    function render() {
+      el.textContent = frames[currentFrame];
+      currentFrame = (currentFrame + 1) % frames.length;
+    }
+
+    function startAnimation() {
+      if (intervalId) clearInterval(intervalId);
+      intervalId = setInterval(render, delay);
+    }
+
+    function togglePlay() {
+      playing = !playing;
+      if (playing) {
+        startAnimation();
+        document.querySelector('button').textContent = 'Pause';
+      } else {
+        clearInterval(intervalId);
+        document.querySelector('button').textContent = 'Play';
+      }
+    }
+
+    function changeSpeed(delta) {
+      delay = Math.max(50, Math.min(500, delay + delta));
+      if (playing) startAnimation();
+    }
+
+    render();
+    startAnimation();
+  </script>
+</body>
+</html>
