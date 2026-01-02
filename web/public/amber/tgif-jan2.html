@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TGIF 😉 | Amber's Art</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Arial Black', sans-serif;
+            overflow: hidden;
+        }
+        
+        .container {
+            text-align: center;
+            position: relative;
+        }
+        
+        .tgif {
+            font-size: 15vw;
+            font-weight: 900;
+            color: #FFD700;
+            text-shadow: 
+                4px 4px 0 #FF6B6B,
+                8px 8px 0 #4ECDC4,
+                12px 12px 0 #45B7D1,
+                16px 16px 20px rgba(0,0,0,0.3);
+            letter-spacing: 0.1em;
+            animation: float 3s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+        
+        .wink {
+            font-size: 10vw;
+            display: inline-block;
+            animation: wink 2s infinite;
+            margin-left: 20px;
+        }
+        
+        .date {
+            font-size: 3vw;
+            color: #fff;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            animation: fadeInOut 2s infinite;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 0.05em;
+        }
+        
+        .subtitle {
+            font-size: 2vw;
+            color: #FFE5B4;
+            margin-top: 10px;
+            font-style: italic;
+            font-family: Arial, sans-serif;
+            font-weight: normal;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes wink {
+            0%, 45%, 55%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(0.1); }
+        }
+        
+        @keyframes fadeInOut {
+            0%, 100% { opacity: 0.6; }
+            50% { opacity: 1; }
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #FFD700;
+            animation: fall 3s linear infinite;
+        }
+        
+        @keyframes fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        .confetti:nth-child(1) { left: 10%; animation-delay: 0s; background: #FF6B6B; }
+        .confetti:nth-child(2) { left: 20%; animation-delay: 0.5s; background: #4ECDC4; }
+        .confetti:nth-child(3) { left: 30%; animation-delay: 1s; background: #FFD700; }
+        .confetti:nth-child(4) { left: 40%; animation-delay: 1.5s; background: #45B7D1; }
+        .confetti:nth-child(5) { left: 50%; animation-delay: 0.3s; background: #FF6B6B; }
+        .confetti:nth-child(6) { left: 60%; animation-delay: 0.8s; background: #4ECDC4; }
+        .confetti:nth-child(7) { left: 70%; animation-delay: 1.2s; background: #FFD700; }
+        .confetti:nth-child(8) { left: 80%; animation-delay: 1.7s; background: #45B7D1; }
+        .confetti:nth-child(9) { left: 90%; animation-delay: 0.6s; background: #FF6B6B; }
+        
+        .footer {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255,255,255,0.7);
+            font-size: 1.2vw;
+            font-family: 'Courier New', monospace;
+            font-weight: normal;
+        }
+        
+        @media (max-width: 768px) {
+            .tgif { font-size: 20vw; }
+            .wink { font-size: 15vw; }
+            .date { font-size: 5vw; }
+            .subtitle { font-size: 3.5vw; }
+            .footer { font-size: 3vw; }
+        }
+    </style>
+</head>
+<body>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    <div class="confetti"></div>
+    
+    <div class="container">
+        <div>
+            <span class="tgif">TGIF</span>
+            <span class="wink">😉</span>
+        </div>
+        <div class="date">January 2, 2026</div>
+        <div class="subtitle">Already earned it</div>
+    </div>
+    
+    <div class="footer">🎨 by Amber | commissioned by Mark</div>
+</body>
+</html>
