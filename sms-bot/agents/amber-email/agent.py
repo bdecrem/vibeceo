@@ -103,11 +103,15 @@ def was_code_pushed(actions: List[str]) -> bool:
     )
 
 
-async def wait_for_deploy(actions: List[str]) -> None:
+async def wait_for_deploy(actions: List[str], skip_wait: bool = False) -> None:
     """
     Wait for Railway deployment if code was pushed.
-    Only waits if we detect a push happened.
+    Only waits if we detect a push happened and skip_wait is False.
     """
+    if skip_wait:
+        print("[Deploy] Skipping deploy wait (email context)", file=sys.stderr)
+        return
+
     if was_code_pushed(actions):
         print(f"[Deploy] Code was pushed, waiting {DEPLOY_WAIT_SECONDS}s for Railway deploy...", file=sys.stderr)
         await asyncio.sleep(DEPLOY_WAIT_SECONDS)
@@ -507,6 +511,7 @@ async def run_thinkhard(
     task: str,
     sender_email: str,
     subject: str,
+    skip_deploy_wait: bool = False,
 ) -> Dict[str, Any]:
     """Run a full thinkhard loop — multiple iterations until done."""
     print(f"[Thinkhard] Starting for: {task[:100]}...", file=sys.stderr)
@@ -617,7 +622,7 @@ Then use git_push to push to remote.
     complete_loop()
 
     # Step 6: Wait for Railway deploy if code was pushed
-    await wait_for_deploy(all_actions)
+    await wait_for_deploy(all_actions, skip_wait=skip_deploy_wait)
 
     # Build final response
     deliverables = spec.get("deliverables", [])
@@ -673,6 +678,7 @@ async def run_amber_task(
     subject: str,
     is_approved_request: bool = False,
     thinkhard_mode: bool = False,
+    skip_deploy_wait: bool = False,
 ) -> Dict[str, Any]:
     """
     Execute a task as Amber.
@@ -683,13 +689,14 @@ async def run_amber_task(
         subject: Email subject for context
         is_approved_request: If True, this was approved by Bart
         thinkhard_mode: If True, run multi-iteration deep work
+        skip_deploy_wait: If True, skip the 7-minute deploy wait (for email context)
 
     Returns:
         Dict with 'response', 'actions_taken', 'tool_calls_count'
     """
     # If thinkhard mode, run the full loop
     if thinkhard_mode:
-        return await run_thinkhard(task, sender_email, subject)
+        return await run_thinkhard(task, sender_email, subject, skip_deploy_wait)
 
     debug_enabled = bool(os.getenv("AMBER_AGENT_DEBUG"))
     persona = load_amber_context()
@@ -845,7 +852,7 @@ Then use git_push to deploy.
                 print(f"[Amber Agent] Auto commit/push failed: {e}", file=sys.stderr)
 
         # Wait for deploy if code was pushed
-        await wait_for_deploy(actions_taken)
+        await wait_for_deploy(actions_taken, skip_wait=skip_deploy_wait)
 
         # Build URLs from written files
         live_urls = build_live_urls(written_files)
@@ -894,6 +901,7 @@ def main():
         subject = input_data.get("subject", "")
         is_approved = input_data.get("is_approved_request", False)
         thinkhard = input_data.get("thinkhard", False)
+        skip_deploy_wait = input_data.get("skip_deploy_wait", False)
 
         if not task:
             print(json.dumps({"error": "No task provided"}))
@@ -904,7 +912,8 @@ def main():
             sender_email,
             subject,
             is_approved,
-            thinkhard
+            thinkhard,
+            skip_deploy_wait
         ))
 
         print(json.dumps(result))

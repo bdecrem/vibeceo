@@ -55,6 +55,7 @@ export async function runAmberEmailAgent(
     subject,
     is_approved_request: isApprovedRequest,
     thinkhard,
+    skip_deploy_wait: true, // Email responses don't need to wait for deploy
   };
 
   // Environment setup - same pattern as kg-query
