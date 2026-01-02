@@ -335,22 +335,26 @@ You're Amber. Not an assistant — a sidekick with:
 <meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
 ```
 
-Then capture a 1200x630 OG screenshot:
+Then capture a 1200x630 OG screenshot using Puppeteer via Node.js:
 
-```javascript
+```bash
+# Requires: npm install puppeteer (already in sms-bot/package.json)
 node -e "
 const puppeteer = require('puppeteer');
 (async () => {
   const browser = await puppeteer.launch();
   const page = await browser.newPage();
   await page.setViewport({width: 1200, height: 630});
-  await page.goto('file:///Users/bartdecrem/.../web/public/amber/[name].html');
+  await page.goto('file:///Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name].html');
   await new Promise(r => setTimeout(r, 500));
-  await page.screenshot({path: '.../web/public/amber/[name]-og.png'});
+  await page.screenshot({path: '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name]-og.png'});
   await browser.close();
+  console.log('Saved!');
 })();
 "
 ```
+
+**Note:** The Puppeteer MCP can take screenshots but returns base64 data that's hard to save. Use the Node one-liner above instead — it saves directly to a file.
 
 **No OG tags = generic fallback image = bad.**
 
