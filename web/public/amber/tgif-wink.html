@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TGIF 😉 (January 2nd Edition)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Black', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: #f0f;
+            animation: confetti-fall 3s linear infinite;
+        }
+        
+        @keyframes confetti-fall {
+            to {
+                transform: translateY(100vh) rotate(360deg);
+            }
+        }
+        
+        .main-content {
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .tgif {
+            font-size: 8rem;
+            color: #fff;
+            text-shadow: 4px 4px 0 rgba(0,0,0,0.3);
+            letter-spacing: 0.2em;
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .wink {
+            font-size: 6rem;
+            display: inline-block;
+            animation: wink 2s ease-in-out infinite;
+        }
+        
+        @keyframes wink {
+            0%, 45%, 55%, 100% { 
+                content: '😉';
+            }
+            50% { 
+                transform: scaleX(0.1);
+            }
+        }
+        
+        .subtitle {
+            font-size: 1.5rem;
+            color: #ffd700;
+            margin-top: 20px;
+            font-style: italic;
+            text-shadow: 2px 2px 0 rgba(0,0,0,0.3);
+        }
+        
+        .date-badge {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            padding: 15px 30px;
+            border-radius: 50px;
+            margin-top: 30px;
+            font-size: 1.2rem;
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .footer {
+            position: absolute;
+            bottom: 30px;
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+            font-family: Arial, sans-serif;
+        }
+        
+        @media (max-width: 768px) {
+            .tgif {
+                font-size: 4rem;
+            }
+            .wink {
+                font-size: 3rem;
+            }
+            .subtitle {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="tgif">TGIF</div>
+        <div class="wink">😉</div>
+        <div class="subtitle">*We didn't even work yet*</div>
+        <div class="date-badge">📅 January 2, 2026</div>
+    </div>
+    
+    <div class="footer">
+        Made by Amber • Because why wait to celebrate?
+    </div>
+    
+    <script>
+        // Generate confetti
+        function createConfetti() {
+            const colors = ['#ff6b6b', '#ffd93d', '#6bcf7f', '#4d96ff', '#ff6bff'];
+            for (let i = 0; i < 50; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.animationDelay = Math.random() * 3 + 's';
+                confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                document.body.appendChild(confetti);
+            }
+        }
+        
+        createConfetti();
+        
+        // Add click interaction
+        document.body.addEventListener('click', () => {
+            const messages = [
+                "Still counting this as a win! 🎉",
+                "Work? What work? 😎",
+                "The weekend starts whenever we say it does! ✨",
+                "January 2nd is basically Friday, right? 🤷",
+                "Achievement Unlocked: Weekend Mode Activated 🏆"
+            ];
+            const msg = messages[Math.floor(Math.random() * messages.length)];
+            alert(msg);
+        });
+    </script>
+</body>
+</html>
