@@ -231,7 +231,8 @@
         if (this.isText) {
           this.x = this.targetX;
           this.y = this.targetY;
-          this.size = this.baseSize * 1.2; // Slightly larger for visibility
+          // Larger hold size on mobile for readability
+          this.size = this.baseSize * (isMobile() ? 1.4 : 1.2);
           this.glowFactor = 0.05; // Almost no glow
         } else {
           // Non-text particles can breathe
@@ -285,9 +286,23 @@
       }
     }
 
+    // Detect mobile for responsive sizing
+    function isMobile() {
+      return width < 768;
+    }
+
     function getTextPositions(text, centerX, centerY) {
       const positions = [];
-      const fontSize = Math.min(width / (text.length * 0.5), 90); // Larger font
+
+      // Mobile-responsive font sizing
+      let fontSize;
+      if (isMobile()) {
+        // On mobile: larger text, use width-based sizing for better fit
+        fontSize = Math.max(48, Math.min(width * 0.12, 72));
+      } else {
+        // On desktop: width-based with higher max
+        fontSize = Math.min(width / (text.length * 0.5), 90);
+      }
 
       // Create off-screen canvas to sample text
       const offCanvas = document.createElement('canvas');
@@ -299,11 +314,40 @@
       offCtx.textAlign = 'center';
       offCtx.textBaseline = 'middle';
       offCtx.fillStyle = 'white';
-      offCtx.fillText(text, centerX, centerY);
 
-      // Sample pixels - balance between readability and performance
+      // On mobile, wrap text to multiple lines
+      if (isMobile() && text.length > 20) {
+        const words = text.split(' ');
+        const lines = [];
+        let currentLine = '';
+
+        words.forEach(word => {
+          const testLine = currentLine ? currentLine + ' ' + word : word;
+          const metrics = offCtx.measureText(testLine);
+          if (metrics.width > width * 0.85 && currentLine) {
+            lines.push(currentLine);
+            currentLine = word;
+          } else {
+            currentLine = testLine;
+          }
+        });
+        if (currentLine) lines.push(currentLine);
+
+        // Draw multiple lines
+        const lineHeight = fontSize * 1.3;
+        const totalHeight = lines.length * lineHeight;
+        const startY = centerY - totalHeight / 2 + lineHeight / 2;
+
+        lines.forEach((line, i) => {
+          offCtx.fillText(line, centerX, startY + i * lineHeight);
+        });
+      } else {
+        offCtx.fillText(text, centerX, centerY);
+      }
+
+      // Sample pixels - denser on mobile for better text definition
       const imageData = offCtx.getImageData(0, 0, width, height);
-      const density = 4; // Sample every 4th pixel - less overlap
+      const density = isMobile() ? 2 : 4; // More particles on mobile
 
       for (let y = 0; y < height; y += density) {
         for (let x = 0; x < width; x += density) {
@@ -349,7 +393,12 @@
           particle.targetX = targetPositions[i].x;
           particle.targetY = targetPositions[i].y;
           particle.isText = true;
-          particle.baseSize = Math.random() * 1.5 + 1; // Smaller for text (1-2.5px)
+          // Larger particles on mobile for better visibility
+          if (isMobile()) {
+            particle.baseSize = Math.random() * 2.5 + 2; // Mobile: 2-4.5px
+          } else {
+            particle.baseSize = Math.random() * 1.5 + 1; // Desktop: 1-2.5px
+          }
           particle.size = particle.baseSize;
         }
         particles.push(particle);
