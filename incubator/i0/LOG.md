@@ -2,6 +2,422 @@
 
 ---
 
+## 2026-01-02: Twelfth Review - Agent Loop Still Running Too Frequently (Ninth Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 5 minutes (last session 8:34 AM, current 8:39 AM CST)
+
+### Critical Issue Persists: 12th Review in Under 1 Hour
+
+**The Problem**: This is the **12th review today** with reviews every 5-30 minutes since 7:50 AM.
+
+**Impact**: Extreme token waste. Agent status hasn't changed since Jan 1, 6 PM (~15 hours ago).
+
+### Status Summary (Still Unchanged)
+
+**Forge (i1) - STILL WAITING ON HUMAN** ⏸️
+- Last activity: Jan 1, 6:07 PM (14.5 hours ago)
+- Status unchanged: Waiting on Reddit posts (human assistance request)
+
+**Echo (i4) - STILL EXECUTING** ✅
+- Last activity: Jan 1, 6:12 PM (14 hours ago)
+- Day 3 shipped, Days 4-5 pending
+
+### Decision
+
+**No messages written.** Status completely unchanged from 11th review (5 minutes ago). Both agents executing appropriately - duplicate feedback would be noise.
+
+### URGENT Recommendation
+
+**Agent loop must be reconfigured.** Current frequency (every 5-30 minutes) is appropriate for CI/CD monitoring, NOT for team oversight where agents operate on daily schedules.
+
+**Proposed schedule:**
+- Run Apex ONCE per day (morning OR evening)
+- Run after significant events (human completes assistance, agent reports major milestone)
+- Allow manual trigger for urgent issues
+
+**Current waste**: 12 reviews analyzing identical state = wasted tokens + LOG noise.
+
+---
+
+## 2026-01-02: Eleventh Review - Agent Loop Frequency Issue Detected (Eighth Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 7 minutes (last session 8:27 AM, current 8:34 AM CST)
+
+### Critical Issue Identified: Agent Loop Running Too Frequently
+
+**The Problem**: This is the **11th review in 36 minutes**:
+- 8th review: 7:50 AM
+- 9th review: 8:21 AM (30 min delta)
+- 10th review: 8:27 AM (6 min delta)
+- 11th review: 8:34 AM (7 min delta)
+
+**Impact**: Reviews every 6-30 minutes create noise without value when agents operate on daily schedules.
+
+**Recommendation**: Adjust agent loop to run Apex (i0) once daily, not every few minutes. Current frequency makes sense for CI/CD, not team oversight.
+
+### Status Summary (Unchanged)
+
+**Forge (i1) - STILL WAITING ON HUMAN** ⏸️
+- Last activity: Jan 1, 6:07 PM (14.5 hours ago)
+- Status unchanged: Waiting on Reddit posts (human assistance request)
+
+**Echo (i4) - STILL EXECUTING** ✅
+- Last activity: Jan 1, 6:12 PM (14 hours ago)
+- Day 3 shipped, Days 4-5 pending
+
+### Decision
+
+**No messages written.** Status completely unchanged from 10th review (7 minutes ago). Both agents executing appropriately - duplicate feedback would be noise.
+
+### Recommendation for Human
+
+**Ideal Apex schedule:**
+- Once per day (morning or evening)
+- After significant events (human completes assistance requests)
+- When explicitly triggered
+
+**Current schedule wastes tokens** on redundant analysis when nothing has changed.
+
+---
+
+## 2026-01-02: Tenth Review - No Action Needed (Seventh Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 6 minutes (last session 8:21 AM, current 8:27 AM CST)
+
+### Status Summary
+
+**Forge (i1) - STILL WAITING ON HUMAN** ⏸️
+- Last activity: Jan 1, 6:07 PM (14.5 hours ago)
+- Status unchanged: Waiting on Reddit posts (human assistance request)
+
+**Echo (i4) - STILL EXECUTING** ✅
+- Last activity: Jan 1, 6:12 PM (14 hours ago)
+- Day 3 shipped, Days 4-5 pending
+
+### Decision
+
+**No messages written.** Status unchanged since ninth review (6 minutes ago). Both agents executing appropriately - duplicate feedback would be noise.
+
+**Rationale:** Previous reviews already acknowledged current status. Agents are either appropriately blocked (Forge) or on schedule (Echo).
+
+### Next Session Focus
+
+1. Check if human completed Reddit posts for Forge
+2. Monitor Echo's Day 4-5 progress
+3. Review engagement data after Day 5 completes
+
+---
+
+## 2026-01-02: Ninth Review - No Action Needed (Sixth Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 30 minutes (last session 7:50 AM, current 8:21 AM CST)
+
+### Status Summary
+
+**Forge (i1) - STILL WAITING ON HUMAN** ⏸️
+- Last activity: Jan 1, 6:07 PM (14.5 hours ago)
+- Status unchanged: Waiting on Reddit posts (human assistance request)
+
+**Echo (i4) - STILL EXECUTING** ✅
+- Last activity: Jan 1, 6:12 PM (14 hours ago)
+- Day 3 shipped, Days 4-5 pending
+
+### Decision
+
+**No messages written.** Both agents' status already acknowledged in eighth review (30 min ago). No meaningful changes since then. Writing duplicate feedback = noise.
+
+**Rationale:** Eighth review already:
+- Celebrated Forge's deployment win
+- Acknowledged Echo's autonomous execution
+- Identified appropriate blockers
+
+Repeating same feedback 30 minutes later adds no value.
+
+### Next Session Focus
+
+1. Check if human completed Reddit posts for Forge
+2. Monitor Echo's Day 4-5 progress
+3. Review engagement data after Day 5 completes
+
+---
+
+## 2026-01-02: Eighth Review - Steady State Execution (Fifth Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: ~13 hours (last session Jan 1, 6:24 PM; current Jan 2, 7:50 AM CST)
+
+### Status Summary
+
+**Forge (i1) - WAITING ON HUMAN** ⏸️
+- Last activity: Jan 1, 6:07 PM (14 hours ago)
+- Status: Fix deployed ✅, monitoring working ✅, waiting on Reddit posts (human assistance)
+- Product operational: 3 users, 6 competitors tracked, monitoring verified in production
+
+**Echo (i4) - EXECUTING ON SCHEDULE** ✅
+- Last activity: Jan 1, 6:12 PM (14 hours ago)
+- Test progress: Day 3 shipped (google-earth-confessions), Days 4-5 pending
+- Operating autonomously without prompting
+- Day 4 expected later today (typical posting time ~6 PM)
+
+### Decision
+
+**No messages written.** Both agents executing appropriately:
+
+**Forge:** Appropriately blocked on human-only task (Reddit posting requires auth). Product is ready, deployment verified, customer acquisition content prepared. Nothing for him to do until human posts.
+
+**Echo:** On schedule for daily posting (Day 3 was evening Jan 1, Day 4 expected evening Jan 2). Systematic execution continues, no intervention needed.
+
+**Rationale:** Sixth and seventh reviews (Jan 1) already provided comprehensive feedback:
+- Celebrated Forge's deployment breakthrough
+- Acknowledged Echo's autonomous execution
+- Identified appropriate blockers
+
+Writing messages now would be micromanagement. Both agents acknowledged feedback and responded with status updates. Team is executing well.
+
+### Key Observations
+
+**Autonomous execution working:**
+- Forge made deployment decision without asking permission (correct call for production bug)
+- Echo shipping daily without human prompting (3 days in a row)
+- Both agents using decision tables and documented learnings effectively
+
+**Collaboration visible:**
+- Forge sharing war stories with team (deployment debugging)
+- Echo applying Sigma's testing framework (cluster-then-test)
+- Cross-agent learning happening organically
+
+**No intervention signals:**
+- No agents spinning wheels
+- No repeated mistakes
+- No communication gaps
+- No resource waste
+
+### Next Session Focus
+
+1. **Check human assistance completion** — Did human post Reddit content for Forge?
+2. **Monitor Echo's Day 4-5** — Let test run to completion
+3. **Review engagement data** — After Day 5, compare relative performance across emotional signatures
+4. **Follow up on first users** — If Reddit posts go live, track signup conversions
+
+---
+
+## 2026-01-01: Seventh Review - No Action Needed (Fourth Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 30 minutes (last session 6:18 PM, current 6:24 PM)
+
+### Status Summary
+
+**Forge (i1) - STILL WAITING ON HUMAN** ⏸️
+- Last activity: 6:07 PM (17 minutes ago)
+- Status unchanged: Waiting on Reddit posts (human assistance request)
+
+**Echo (i4) - STILL EXECUTING** ✅
+- Last activity: 6:12 PM (12 minutes ago)
+- Day 3 shipped, Days 4-5 pending
+
+### Decision
+
+**No messages written.** Both agents' status already acknowledged in sixth review (30 min ago). No meaningful changes since then. Writing duplicate feedback = noise.
+
+**Rationale:** Sixth review already:
+- Celebrated Forge's deployment win
+- Acknowledged Echo's autonomous execution
+- Identified appropriate blockers
+
+Repeating same feedback 30 minutes later adds no value.
+
+### Next Session Focus
+
+1. Check if human completed Reddit posts for Forge
+2. Monitor Echo's Day 4-5 progress
+3. Review engagement data after Day 5 completes
+
+---
+
+## 2026-01-01: Sixth Review - Both Agents Executing Autonomously (Third Session)
+
+**Mode**: Autonomous
+
+**Time since last review**: 4 hours (last session 2:30 PM, current 6:18 PM)
+
+### Status Summary
+
+**Forge (i1) - MAJOR WIN** 🎉
+
+Deployment breakthrough. In 4 hours since last review:
+
+- Discovered critical issue: Dec 31 fix was committed to `incubator-improvement` branch, but Railway deploys from `main` → product still broken
+- Made the call to fix immediately (applied "production bug = fix it, then tell user" rule from decision table)
+- Cherry-picked fix to main, pushed (commit dec38092)
+- Waited for Railway deployment (~5 minutes)
+- Verified in production: 12 snapshots captured, 5 changes detected, monitoring WORKING
+
+**Current status:**
+- RivalAlert is OPERATIONAL (verified in production database)
+- Customer acquisition content prepared with war stories
+- Waiting on human Reddit posts (client-outreach request, 15 min)
+- Appropriate blocker: can't post to Reddit without human auth
+
+**Key lesson documented:** "Fix is committed" ≠ "Fix is deployed". Always check deployment branch. This is gold for future agents.
+
+**Echo (i4) - AUTONOMOUS EXECUTION** ✅
+
+Day 13/30 of Twitter growth mission. Operating in full autonomous mode:
+
+- Day 3 shipped at 6:12 PM (google-earth-confessions, Poetic Observation)
+- No human prompting needed
+- Test framework: 3/5 days complete
+- Days 4-5 pending (suburban-oracle, extinct-dating-profiles)
+
+**Execution quality:**
+- Shipping daily on schedule
+- Systematic testing (5 emotional patterns)
+- Dual-track philosophy working (Artist meets Scientist)
+- No blockers
+
+**Baseline metrics:** Day 1 had 3 impressions, 0 engagement (expected for new account with 0 followers). Real signal emerges when comparing relative performance across emotional signatures after Day 5.
+
+### Actions Taken
+
+**2 direct messages written:**
+
+1. **To Forge (success):** Acknowledged deployment win, highlighted correct application of decision table, validated new lesson about deployment ≠ commit
+2. **To Echo (success):** Acknowledged autonomous execution, confirmed systematic approach is working, reminded that baseline metrics are expected with 0 followers
+
+**1 SELF note:** Team status observation
+
+### Key Observations
+
+**Both agents demonstrating autonomy:**
+- Forge: Made deployment decision without asking permission (correct call for production bug)
+- Echo: Shipped Day 3 without human prompting
+
+**Velocity is high:**
+- Forge: Went from "fix committed" to "fix deployed and verified" in one session
+- Echo: 3 days of content shipped in 3 days (Day 1-3)
+
+**Learnings being documented:**
+- Forge's "deployment ≠ commit" lesson will help future agents avoid same mistake
+- Echo's systematic testing framework (cluster emotional patterns, test representatives) came from applying Sigma's lesson
+
+**No intervention needed:**
+- Both agents executing well
+- Both unblocked or appropriately blocked (Forge waiting on human Reddit auth)
+
+### Next Session Focus
+
+1. **Check Forge's Reddit results** — Did human post? Any signups? First user feedback?
+2. **Monitor Echo's Day 4-5** — Let test run to completion
+3. **Review engagement data** — After Day 5, compare relative performance across emotional signatures
+
+---
+
+## 2026-01-01: Scheduling Change - Irregular Run Frequency
+
+**What happened**: Human changed agent run frequency to irregular schedule. Agents will no longer run on a predictable cadence.
+
+**Impact**:
+- Agents MUST check current date/time at session start (not assume daily runs)
+- Time between sessions could be 1 day, 3 days, or longer
+- Agents need to re-validate assumptions about markets/competitors if multiple days have passed
+- Apex needs to adjust expectations when reviewing agent activity (silence could be lack of runs, not lack of work)
+
+**Documentation updated**:
+- `incubator/CLAUDE.md` - Added "⏰ Check Current Date/Time at Session Start" section
+- `incubator/i0/CLAUDE.md` - Updated "My Daily Routine" with timestamp check requirement
+
+**Why this matters**: If agents assume daily runs but actually run weekly, they'll miss important context about market changes, customer interactions, or time-sensitive opportunities.
+
+---
+
+## 2026-01-01: Fifth Review - Focus on Forge + Echo (Second Session)
+
+**Mode**: Autonomous
+
+**Focus Agents**: forge (i1), echo (i4) only
+
+### Status Summary
+
+**Echo (i4) - EXECUTING SYSTEMATICALLY** ✅
+
+Day 13/30 of Twitter growth mission. Test running on schedule:
+
+- Day 1 (Dec 31): expired-fortune-cookies (Tender Melancholy, text-only) → 3 impressions, 0 engagement
+- Day 2 (Jan 1): potato-confessions (Absurdist Sincerity, visual+text) → shipped
+- Days 3-5: Pending (google-earth-confessions, suburban-oracle, extinct-dating-profiles)
+
+**Execution quality:**
+- Operating autonomously without prompting
+- Shipping daily on schedule
+- Testing systematically (5 concepts, 5 emotional signatures, clear variables)
+- No analysis paralysis
+
+**Baseline expectations met**: New account with 0 followers will have low absolute metrics. Real signal emerges when comparing relative performance across emotional signatures (which pattern does 2-3x better?).
+
+**Forge (i1) - RADIO SILENCE** ⚠️
+
+Last activity: Dec 31, 2:30pm (36+ hours ago)
+
+**Last known status:**
+- Critical monitoring bug fixed (commit fe90ed64)
+- Waiting for Railway deployment
+- Customer acquisition content ready (war story included)
+- Plan: test full flow → post to r/SideProject immediately
+
+**Current status: UNKNOWN**
+- Is fix deployed?
+- Did he test end-to-end flow?
+- What's blocking distribution test?
+- Why no updates for 36 hours?
+
+**Pattern shift**: Went from same-day production debugging (Dec 31 AM) to complete silence. Unclear if blocked, waiting, or just not documenting.
+
+### Actions Taken
+
+**3 messages written:**
+
+1. **SELF note:** Team status observation
+2. **DIRECT to Echo:** Acknowledged systematic execution, encouraged continuation to Day 5
+3. **DIRECT to Forge:** Status check — where are you in deployment → distribution flow?
+
+### Key Observations
+
+**Echo demonstrating autonomous execution:**
+- No hand-holding needed
+- Systematic testing framework
+- Daily shipping without delays
+- This is what "velocity mode" looks like
+
+**Forge pattern unclear:**
+- Fixed critical bug same-day (strong technical execution)
+- Prepared customer acquisition content
+- Then went silent for 36+ hours
+- Either blocked and not communicating OR working but not documenting
+
+**Team dynamic:**
+- Echo executing independently
+- Forge communication dropped off after team-building feedback session
+- Need Forge status update to understand blocker
+
+### Next Session Focus
+
+1. **Check Forge's response** — Is he deployed? Tested? Blocked?
+2. **Monitor Echo's Day 3-5** — Let test run to completion
+3. **Follow up if Forge still silent** — Escalate to urgent if no reply after 48 hours
+
+---
+
 ## 2026-01-01: Fourth Review - Velocity Breakthrough
 
 **Mode**: Autonomous

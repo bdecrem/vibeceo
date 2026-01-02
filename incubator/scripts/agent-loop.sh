@@ -6,6 +6,20 @@
 
 set -e  # Exit on error
 
+# Set PATH for cron compatibility (claude and its dependencies need this)
+export PATH="$HOME/.local/bin:/usr/local/bin:/usr/bin:/bin:$PATH"
+
+# For cron: Use explicit path to claude
+# This works across machines as long as claude is installed in ~/.local/bin
+CLAUDE_CMD="$HOME/.local/bin/claude"
+
+# Verify claude exists
+if [ ! -f "$CLAUDE_CMD" ]; then
+    echo "Error: claude not found at $CLAUDE_CMD"
+    echo "Install claude or update CLAUDE_CMD in this script"
+    exit 1
+fi
+
 # Color codes for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -17,9 +31,12 @@ NC='\033[0m' # No Color
 # boss (i0) runs FIRST to provide operational oversight
 DEFAULT_AGENTS=("boss" "forge" "nix" "drift" "pulse" "echo")
 
-# Log file
-LOG_DIR="/home/whitcodes/Work/Dev/kochito/incubator/scripts"
-LOG_FILE="$LOG_DIR/agent-loop.log"
+# Log file (relative to script location)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+LOG_FILE="$SCRIPT_DIR/agent-loop.log"
+
+# Project directory (kochito root, two levels up from script location)
+PROJECT_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Function to log with timestamp
 log() {
@@ -42,11 +59,13 @@ usage() {
     echo "  -a, --all           Run all default agents (boss, forge, nix, drift, pulse, echo)"
     echo "  -l, --list          List available agents and exit"
     echo "  -d, --dry-run       Show what would be executed without running"
+    echo "  -y, --yes           Skip confirmation prompt (useful for cron jobs)"
     echo ""
     echo "Examples:"
     echo "  $0 --all                    # Run all default agents"
     echo "  $0 forge nix                # Run only forge and nix"
     echo "  $0 --dry-run drift pulse    # Preview what would run"
+    echo "  $0 --yes --all              # Run all agents without confirmation (for cron)"
     echo ""
     exit 0
 }
@@ -55,6 +74,7 @@ usage() {
 AGENTS=()
 RUN_ALL=false
 DRY_RUN=false
+SKIP_CONFIRM=false
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -74,6 +94,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d|--dry-run)
             DRY_RUN=true
+            shift
+            ;;
+        -y|--yes)
+            SKIP_CONFIRM=true
             shift
             ;;
         *)
@@ -109,17 +133,19 @@ echo ""
 if [ "$DRY_RUN" = true ]; then
     echo -e "${YELLOW}[DRY RUN] Commands that would be executed:${NC}"
     for agent in "${AGENTS[@]}"; do
-        echo "  echo '/$agent autonomous' | claude --dangerously-skip-permissions"
+        echo "  echo '/$agent autonomous' | $CLAUDE_CMD --dangerously-skip-permissions"
     done
     exit 0
 fi
 
-# Confirm execution
-read -p "Start agent loop? (y/N) " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-    echo "Cancelled"
-    exit 0
+# Confirm execution (skip if --yes flag is used)
+if [ "$SKIP_CONFIRM" = false ]; then
+    read -p "Start agent loop? (y/N) " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        echo "Cancelled"
+        exit 0
+    fi
 fi
 
 # Start logging
@@ -154,24 +180,63 @@ for i in "${!AGENTS[@]}"; do
     TEMP_OUTPUT=$(mktemp)
 
     # Run claude with piped input, capture output, and monitor for completion marker
+    # Use script to provide a pseudo-TTY which claude may need for slash commands
+    # Navigate menu with arrow key and accept the bypass permissions warning
     {
-        echo "/$agent autonomous" | claude --dangerously-skip-permissions 2>&1 | tee "$TEMP_OUTPUT" &
+        {
+            sleep 2  # Wait for warning to appear
+            printf "\x1b[B"  # Down arrow to select "Yes, I accept"
+            sleep 1  # Give it time to register the selection
+            printf "\r"  # Carriage return to confirm
+            sleep 1  # Wait for Claude to be ready for input
+            printf "/%s autonomous" "$agent"  # Type the command
+            sleep 0.5  # Brief pause
+            printf "\r"  # Submit the command
+        } | (cd "$PROJECT_DIR" && script -qec "$CLAUDE_CMD --dangerously-skip-permissions" /dev/null 2>&1) | tee "$TEMP_OUTPUT" &
         CLAUDE_PID=$!
 
         # Monitor output for completion marker
         while kill -0 $CLAUDE_PID 2>/dev/null; do
-            if grep -q "AGENT_SESSION_COMPLETE" "$TEMP_OUTPUT"; then
-                # Agent completed successfully
-                wait $CLAUDE_PID
-                EXIT_CODE=$?
+            # Strip ANSI codes and check for completion marker
+            if grep -oP "AGENT_SESSION_COMPLETE" "$TEMP_OUTPUT" > /dev/null 2>&1 || \
+               sed 's/\x1b\[[0-9;]*m//g' "$TEMP_OUTPUT" | grep -q "AGENT_SESSION_COMPLETE"; then
+                # Agent completed successfully - kill the process tree
+                echo "Detected completion marker - terminating agent..."
+
+                # Kill the entire process group to clean up script, claude, and all children
+                # Get all child processes
+                CHILD_PIDS=$(pgrep -P $CLAUDE_PID)
+
+                # Kill children first
+                for pid in $CHILD_PIDS; do
+                    kill -TERM $pid 2>/dev/null
+                done
+
+                # Kill parent
+                kill -TERM $CLAUDE_PID 2>/dev/null
+
+                sleep 2  # Give processes time to terminate
+
+                # Force kill any remaining
+                for pid in $CHILD_PIDS; do
+                    kill -9 $pid 2>/dev/null
+                done
+                kill -9 $CLAUDE_PID 2>/dev/null
+
+                EXIT_CODE=0  # Mark as successful
                 break
             fi
             sleep 2
         done
 
-        # If loop exited because process ended, check if it was successful
+        # If loop exited because process ended naturally, check exit code
+        if kill -0 $CLAUDE_PID 2>/dev/null; then
+            # Process still running, force kill
+            pkill -P $CLAUDE_PID 2>/dev/null
+            kill $CLAUDE_PID 2>/dev/null
+        fi
         wait $CLAUDE_PID 2>/dev/null
-        EXIT_CODE=$?
+        EXIT_CODE=${EXIT_CODE:-$?}
     }
 
     # Calculate agent duration
@@ -185,14 +250,20 @@ for i in "${!AGENTS[@]}"; do
         COMPLETED=$((COMPLETED + 1))
         log "${GREEN}✓ /$agent completed (${AGENT_MINUTES}m ${AGENT_SECONDS}s)${NC}"
         log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent completed successfully in ${AGENT_MINUTES}m ${AGENT_SECONDS}s"
+        # Clean up temp file on success
+        rm -f "$TEMP_OUTPUT"
     else
         FAILED=$((FAILED + 1))
         log "${RED}✗ /$agent failed or did not complete properly${NC}"
         log_silent "$(date '+%Y-%m-%d %H:%M:%S') - /$agent failed or incomplete (exit code: $EXIT_CODE)"
-    fi
 
-    # Clean up temp file
-    rm -f "$TEMP_OUTPUT"
+        # Save temp output for debugging
+        DEBUG_FILE="$SCRIPT_DIR/debug-${agent}-$(date +%Y%m%d-%H%M%S).log"
+        cp "$TEMP_OUTPUT" "$DEBUG_FILE"
+        log_silent "Debug output saved to: $DEBUG_FILE"
+        log "Debug output saved to: $DEBUG_FILE"
+        rm -f "$TEMP_OUTPUT"
+    fi
 done
 
 # Calculate duration
