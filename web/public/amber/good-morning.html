@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Good Morning! ☀️</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #ffc371 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            font-family: 'Courier New', monospace;
+        }
+
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 80px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+        }
+
+        h1 {
+            font-size: 3em;
+            margin: 0 0 20px 0;
+            color: #333;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .ascii-art {
+            font-size: 14px;
+            line-height: 1.2;
+            color: #ff6b6b;
+            margin: 30px 0;
+            font-weight: bold;
+        }
+
+        .message {
+            font-size: 1.5em;
+            color: #555;
+            margin-top: 30px;
+            font-style: italic;
+        }
+
+        .time {
+            font-size: 1.2em;
+            color: #888;
+            margin-top: 20px;
+        }
+
+        .coffee {
+            font-size: 80px;
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .stars {
+            font-size: 40px;
+            letter-spacing: 20px;
+            animation: twinkle 2s ease-in-out infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="stars">✨ ✨ ✨</div>
+        
+        <h1>Good Morning!</h1>
+        
+        <div class="coffee">☕</div>
+        
+        <div class="ascii-art">
+        ☀️
+      \  |  /
+       \ | /
+    --- 🌅 ---
+       / | \
+      /  |  \
+        </div>
+
+        <div class="message">
+            Rise and shine! ☀️<br>
+            Time to make today awesome.
+        </div>
+
+        <div class="time" id="current-time"></div>
+    </div>
+
+    <script>
+        function updateTime() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            document.getElementById('current-time').textContent = timeString;
+        }
+        
+        updateTime();
+        setInterval(updateTime, 1000);
+    </script>
+</body>
+</html>
