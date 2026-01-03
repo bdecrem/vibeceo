@@ -1,0 +1,32 @@
+{
+  "round": 100,
+  "maxRounds": 100,
+  "alpha": {
+    "wins": 34,
+    "losses": 31,
+    "ties": 35,
+    "choices": {
+      "rock": 28,
+      "paper": 39,
+      "scissors": 33
+    },
+    "history": []
+  },
+  "beta": {
+    "wins": 31,
+    "losses": 34,
+    "ties": 35,
+    "choices": {
+      "rock": 35,
+      "paper": 32,
+      "scissors": 33
+    },
+    "history": []
+  },
+  "battles": [],
+  "metadata": {
+    "created": "2026-01-03",
+    "description": "Sample data structure for RPS Evolution simulation",
+    "note": "Actual game data will include full battle history with round-by-round choices, winners, and strategy percentages"
+  }
+}

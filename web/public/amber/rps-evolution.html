@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS Evolution - Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #B8860B;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #D4A574;
+        }
+
+        .subtitle {
+            color: #B8860B;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #B8860B;
+            color: #0A0908;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #D4A574;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        input[type="number"] {
+            background: #1a1918;
+            color: #D4A574;
+            border: 2px solid #B8860B;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            width: 100px;
+        }
+
+        label {
+            color: #D4A574;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .agent-card {
+            background: #1a1918;
+            border: 2px solid #B8860B;
+            padding: 20px;
+        }
+
+        .agent-card h2 {
+            color: #D4A574;
+            margin-bottom: 15px;
+            font-size: 1.5em;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 8px;
+            background: #0A0908;
+        }
+
+        .stat-label {
+            color: #B8860B;
+        }
+
+        .stat-value {
+            color: #D4A574;
+            font-weight: bold;
+        }
+
+        .strategy-bars {
+            margin-top: 20px;
+        }
+
+        .bar-container {
+            margin-bottom: 12px;
+        }
+
+        .bar-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+
+        .bar-bg {
+            background: #0A0908;
+            height: 25px;
+            position: relative;
+            border: 1px solid #B8860B;
+        }
+
+        .bar-fill {
+            background: #D4A574;
+            height: 100%;
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            color: #0A0908;
+            font-weight: bold;
+        }
+
+        .current-round {
+            text-align: center;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1a1918;
+            border: 2px solid #D4A574;
+        }
+
+        .current-round .round-num {
+            color: #B8860B;
+        }
+
+        .last-battle {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #1a1918;
+            font-size: 1.2em;
+        }
+
+        .last-battle .winner {
+            color: #D4A574;
+            font-weight: bold;
+        }
+
+        .chart-container {
+            background: #1a1918;
+            border: 2px solid #B8860B;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-container h3 {
+            color: #D4A574;
+            margin-bottom: 15px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 300px;
+            background: #0A0908;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 2px solid #B8860B;
+            color: #B8860B;
+            font-size: 0.9em;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        .playing {
+            animation: pulse 0.5s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RPS Evolution</h1>
+            <p class="subtitle">Watch agents learn through rock-paper-scissors warfare</p>
+        </header>
+
+        <div class="controls">
+            <label>
+                Rounds:
+                <input type="number" id="roundCount" value="100" min="10" max="10000">
+            </label>
+            <button id="startBtn">Start Evolution</button>
+            <button id="pauseBtn" disabled>Pause</button>
+            <button id="resetBtn">Reset</button>
+            <button id="exportBtn">Export Data</button>
+        </div>
+
+        <div class="current-round" id="currentRound">
+            Round <span class="round-num">0</span> / <span class="round-num">0</span>
+        </div>
+
+        <div class="last-battle" id="lastBattle">
+            Waiting to start...
+        </div>
+
+        <div class="stats-grid">
+            <div class="agent-card">
+                <h2>Agent Alpha</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Wins:</span>
+                    <span class="stat-value" id="alphaWins">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Losses:</span>
+                    <span class="stat-value" id="alphaLosses">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Ties:</span>
+                    <span class="stat-value" id="alphaTies">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Win Rate:</span>
+                    <span class="stat-value" id="alphaWinRate">0%</span>
+                </div>
+                <div class="strategy-bars">
+                    <h3 style="margin-bottom: 10px;">Strategy Distribution</h3>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>🪨 Rock</span>
+                            <span id="alphaRockPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="alphaRockBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>📄 Paper</span>
+                            <span id="alphaPaperPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="alphaPaperBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>✂️ Scissors</span>
+                            <span id="alphaScissorsPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="alphaScissorsBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="agent-card">
+                <h2>Agent Beta</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Wins:</span>
+                    <span class="stat-value" id="betaWins">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Losses:</span>
+                    <span class="stat-value" id="betaLosses">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Ties:</span>
+                    <span class="stat-value" id="betaTies">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Win Rate:</span>
+                    <span class="stat-value" id="betaWinRate">0%</span>
+                </div>
+                <div class="strategy-bars">
+                    <h3 style="margin-bottom: 10px;">Strategy Distribution</h3>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>🪨 Rock</span>
+                            <span id="betaRockPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="betaRockBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>📄 Paper</span>
+                            <span id="betaPaperPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="betaPaperBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-label">
+                            <span>✂️ Scissors</span>
+                            <span id="betaScissorsPct">0%</span>
+                        </div>
+                        <div class="bar-bg">
+                            <div class="bar-fill" id="betaScissorsBar" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3>Strategy Evolution Over Time</h3>
+            <canvas id="evolutionChart"></canvas>
+        </div>
+
+        <footer class="footer">
+            Built by Amber · Agents learning through play
+        </footer>
+    </div>
+
+    <script>
+        // Game state
+        const CHOICES = ['rock', 'paper', 'scissors'];
+        const EMOJIS = { rock: '🪨', paper: '📄', scissors: '✂️' };
+
+        let gameState = {
+            round: 0,
+            maxRounds: 100,
+            isPlaying: false,
+            isPaused: false,
+            alpha: {
+                wins: 0,
+                losses: 0,
+                ties: 0,
+                choices: { rock: 0, paper: 0, scissors: 0 },
+                history: []
+            },
+            beta: {
+                wins: 0,
+                losses: 0,
+                ties: 0,
+                choices: { rock: 0, paper: 0, scissors: 0 },
+                history: []
+            },
+            battles: []
+        };
+
+        // Agent strategy: learns from opponent's patterns
+        class Agent {
+            constructor(name) {
+                this.name = name;
+                this.opponentHistory = [];
+                this.learningRate = 0.3; // How much to adapt to opponent
+            }
+
+            makeChoice() {
+                // Start with random choices for first 10 rounds
+                if (this.opponentHistory.length < 10) {
+                    return CHOICES[Math.floor(Math.random() * 3)];
+                }
+
+                // Analyze opponent's recent patterns (last 20 moves)
+                const recentMoves = this.opponentHistory.slice(-20);
+                const counts = { rock: 0, paper: 0, scissors: 0 };
+                recentMoves.forEach(move => counts[move]++);
+
+                // Find opponent's most frequent choice
+                let maxChoice = 'rock';
+                let maxCount = counts.rock;
+                if (counts.paper > maxCount) {
+                    maxChoice = 'paper';
+                    maxCount = counts.paper;
+                }
+                if (counts.scissors > maxCount) {
+                    maxChoice = 'scissors';
+                }
+
+                // Counter the opponent's most frequent choice
+                // But add some randomness to avoid being too predictable
+                if (Math.random() < this.learningRate) {
+                    return this.counter(maxChoice);
+                } else {
+                    return CHOICES[Math.floor(Math.random() * 3)];
+                }
+            }
+
+            counter(choice) {
+                if (choice === 'rock') return 'paper';
+                if (choice === 'paper') return 'scissors';
+                return 'rock';
+            }
+
+            observeOpponent(choice) {
+                this.opponentHistory.push(choice);
+            }
+        }
+
+        const agentAlpha = new Agent('Alpha');
+        const agentBeta = new Agent('Beta');
+
+        // Determine winner
+        function determineWinner(choice1, choice2) {
+            if (choice1 === choice2) return 'tie';
+            if (
+                (choice1 === 'rock' && choice2 === 'scissors') ||
+                (choice1 === 'paper' && choice2 === 'rock') ||
+                (choice1 === 'scissors' && choice2 === 'paper')
+            ) {
+                return 'alpha';
+            }
+            return 'beta';
+        }
+
+        // Play one round
+        function playRound() {
+            const alphaChoice = agentAlpha.makeChoice();
+            const betaChoice = agentBeta.makeChoice();
+
+            // Agents observe each other
+            agentAlpha.observeOpponent(betaChoice);
+            agentBeta.observeOpponent(alphaChoice);
+
+            // Record choices
+            gameState.alpha.choices[alphaChoice]++;
+            gameState.beta.choices[betaChoice]++;
+            gameState.alpha.history.push(alphaChoice);
+            gameState.beta.history.push(betaChoice);
+
+            // Determine winner
+            const winner = determineWinner(alphaChoice, betaChoice);
+
+            if (winner === 'alpha') {
+                gameState.alpha.wins++;
+                gameState.beta.losses++;
+            } else if (winner === 'beta') {
+                gameState.beta.wins++;
+                gameState.alpha.losses++;
+            } else {
+                gameState.alpha.ties++;
+                gameState.beta.ties++;
+            }
+
+            gameState.round++;
+
+            // Record battle
+            gameState.battles.push({
+                round: gameState.round,
+                alphaChoice,
+                betaChoice,
+                winner,
+                alphaStrategy: getStrategyPercentages('alpha'),
+                betaStrategy: getStrategyPercentages('beta')
+            });
+
+            return { alphaChoice, betaChoice, winner };
+        }
+
+        // Get strategy percentages
+        function getStrategyPercentages(agent) {
+            const total = gameState[agent].history.length;
+            if (total === 0) return { rock: 0, paper: 0, scissors: 0 };
+
+            return {
+                rock: Math.round((gameState[agent].choices.rock / total) * 100),
+                paper: Math.round((gameState[agent].choices.paper / total) * 100),
+                scissors: Math.round((gameState[agent].choices.scissors / total) * 100)
+            };
+        }
+
+        // Update UI
+        function updateUI(battle = null) {
+            // Update round counter
+            document.getElementById('currentRound').innerHTML =
+                `Round <span class="round-num">${gameState.round}</span> / <span class="round-num">${gameState.maxRounds}</span>`;
+
+            // Update last battle
+            if (battle) {
+                const { alphaChoice, betaChoice, winner } = battle;
+                let resultText = '';
+                if (winner === 'tie') {
+                    resultText = 'TIE';
+                } else {
+                    resultText = `<span class="winner">${winner.toUpperCase()} WINS</span>`;
+                }
+                document.getElementById('lastBattle').innerHTML =
+                    `${EMOJIS[alphaChoice]} Alpha vs Beta ${EMOJIS[betaChoice]} · ${resultText}`;
+            }
+
+            // Update Alpha stats
+            document.getElementById('alphaWins').textContent = gameState.alpha.wins;
+            document.getElementById('alphaLosses').textContent = gameState.alpha.losses;
+            document.getElementById('alphaTies').textContent = gameState.alpha.ties;
+            const alphaTotal = gameState.alpha.wins + gameState.alpha.losses;
+            const alphaWinRate = alphaTotal > 0 ? Math.round((gameState.alpha.wins / alphaTotal) * 100) : 0;
+            document.getElementById('alphaWinRate').textContent = alphaWinRate + '%';
+
+            // Update Beta stats
+            document.getElementById('betaWins').textContent = gameState.beta.wins;
+            document.getElementById('betaLosses').textContent = gameState.beta.losses;
+            document.getElementById('betaTies').textContent = gameState.beta.ties;
+            const betaTotal = gameState.beta.wins + gameState.beta.losses;
+            const betaWinRate = betaTotal > 0 ? Math.round((gameState.beta.wins / betaTotal) * 100) : 0;
+            document.getElementById('betaWinRate').textContent = betaWinRate + '%';
+
+            // Update strategy bars
+            const alphaStrat = getStrategyPercentages('alpha');
+            const betaStrat = getStrategyPercentages('beta');
+
+            updateStrategyBar('alpha', 'rock', alphaStrat.rock);
+            updateStrategyBar('alpha', 'paper', alphaStrat.paper);
+            updateStrategyBar('alpha', 'scissors', alphaStrat.scissors);
+            updateStrategyBar('beta', 'rock', betaStrat.rock);
+            updateStrategyBar('beta', 'paper', betaStrat.paper);
+            updateStrategyBar('beta', 'scissors', betaStrat.scissors);
+
+            // Update chart
+            drawChart();
+        }
+
+        function updateStrategyBar(agent, choice, percentage) {
+            const bar = document.getElementById(`${agent}${choice.charAt(0).toUpperCase() + choice.slice(1)}Bar`);
+            const pct = document.getElementById(`${agent}${choice.charAt(0).toUpperCase() + choice.slice(1)}Pct`);
+            bar.style.width = percentage + '%';
+            bar.textContent = percentage > 10 ? percentage + '%' : '';
+            pct.textContent = percentage + '%';
+        }
+
+        // Draw evolution chart
+        function drawChart() {
+            const canvas = document.getElementById('evolutionChart');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (gameState.battles.length === 0) return;
+
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            const graphWidth = width - padding * 2;
+            const graphHeight = height - padding * 2;
+
+            // Draw axes
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+
+            // Draw labels
+            ctx.fillStyle = '#D4A574';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('Round', width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Strategy %', 0, 0);
+            ctx.restore();
+
+            // Sample battles for chart (max 100 points)
+            const sampleRate = Math.max(1, Math.floor(gameState.battles.length / 100));
+            const sampledBattles = gameState.battles.filter((_, i) => i % sampleRate === 0);
+
+            if (sampledBattles.length < 2) return;
+
+            const pointSpacing = graphWidth / (sampledBattles.length - 1);
+
+            // Draw lines for each strategy
+            const strategies = ['rock', 'paper', 'scissors'];
+            const colors = ['#D4A574', '#B8860B', '#8B7355'];
+
+            strategies.forEach((strategy, idx) => {
+                // Alpha
+                ctx.strokeStyle = colors[idx];
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+                sampledBattles.forEach((battle, i) => {
+                    const x = padding + i * pointSpacing;
+                    const y = height - padding - (battle.alphaStrategy[strategy] / 100) * graphHeight;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                // Beta (dashed)
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                sampledBattles.forEach((battle, i) => {
+                    const x = padding + i * pointSpacing;
+                    const y = height - padding - (battle.betaStrategy[strategy] / 100) * graphHeight;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+            });
+
+            // Legend
+            ctx.setLineDash([]);
+            ctx.font = '11px Courier New';
+            ctx.textAlign = 'left';
+            let legendY = padding + 10;
+            strategies.forEach((strategy, idx) => {
+                ctx.fillStyle = colors[idx];
+                ctx.fillText(`${strategy.toUpperCase()} (solid: Alpha, dash: Beta)`, padding + 10, legendY);
+                legendY += 15;
+            });
+        }
+
+        // Game loop
+        let gameInterval;
+
+        function startGame() {
+            gameState.maxRounds = parseInt(document.getElementById('roundCount').value);
+            gameState.isPlaying = true;
+            gameState.isPaused = false;
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('pauseBtn').disabled = false;
+            document.getElementById('roundCount').disabled = true;
+
+            gameInterval = setInterval(() => {
+                if (gameState.isPaused) return;
+
+                const battle = playRound();
+                updateUI(battle);
+                saveToLocalStorage();
+
+                if (gameState.round >= gameState.maxRounds) {
+                    stopGame();
+                }
+            }, 50); // 50ms per round = 20rounds/second
+        }
+
+        function pauseGame() {
+            gameState.isPaused = !gameState.isPaused;
+            document.getElementById('pauseBtn').textContent = gameState.isPaused ? 'Resume' : 'Pause';
+        }
+
+        function stopGame() {
+            clearInterval(gameInterval);
+            gameState.isPlaying = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('pauseBtn').disabled = true;
+            document.getElementById('roundCount').disabled = false;
+        }
+
+        function resetGame() {
+            stopGame();
+
+            gameState = {
+                round: 0,
+                maxRounds: parseInt(document.getElementById('roundCount').value),
+                isPlaying: false,
+                isPaused: false,
+                alpha: {
+                    wins: 0,
+                    losses: 0,
+                    ties: 0,
+                    choices: { rock: 0, paper: 0, scissors: 0 },
+                    history: []
+                },
+                beta: {
+                    wins: 0,
+                    losses: 0,
+                    ties: 0,
+                    choices: { rock: 0, paper: 0, scissors: 0 },
+                    history: []
+                },
+                battles: []
+            };
+
+            agentAlpha.opponentHistory = [];
+            agentBeta.opponentHistory = [];
+
+            updateUI();
+            document.getElementById('lastBattle').textContent = 'Waiting to start...';
+            saveToLocalStorage();
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(gameState, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `rps-evolution-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function saveToLocalStorage() {
+            localStorage.setItem('rpsEvolution', JSON.stringify(gameState));
+        }
+
+        function loadFromLocalStorage() {
+            const saved = localStorage.getItem('rpsEvolution');
+            if (saved) {
+                const loaded = JSON.parse(saved);
+                // Only load if game isn't finished
+                if (loaded.round < loaded.maxRounds) {
+                    gameState = loaded;
+                    document.getElementById('roundCount').value = gameState.maxRounds;
+
+                    // Restore agent histories
+                    agentAlpha.opponentHistory = gameState.beta.history.slice();
+                    agentBeta.opponentHistory = gameState.alpha.history.slice();
+
+                    updateUI();
+                }
+            }
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', pauseGame);
+        document.getElementById('resetBtn').addEventListener('click', resetGame);
+        document.getElementById('exportBtn').addEventListener('click', exportData);
+
+        // Initialize
+        loadFromLocalStorage();
+        updateUI();
+
+        // Redraw chart on window resize
+        window.addEventListener('resize', drawChart);
+    </script>
+</body>
+</html>
