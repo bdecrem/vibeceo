@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Match - Learn the Periodic Table</title>
+    <meta name="description" content="A game to learn the periodic table by matching elements to their symbols">
+    <meta property="og:title" content="Element Match">
+    <meta property="og:description" content="Learn the periodic table through visual matching">
+    <meta property="og:image" content="https://intheamber.com/amber/og-element-match.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #ffaa00;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .element-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .element-name {
+            font-size: 3em;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-transform: capitalize;
+        }
+
+        .element-category {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .option-btn {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 25px 20px;
+            font-size: 2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-family: 'Courier New', monospace;
+        }
+
+        .option-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-3px);
+            border-color: #ffaa00;
+        }
+
+        .option-btn.correct {
+            background: rgba(76, 175, 80, 0.4);
+            border-color: #4CAF50;
+            animation: pulse 0.5s ease;
+        }
+
+        .option-btn.wrong {
+            background: rgba(244, 67, 54, 0.4);
+            border-color: #f44336;
+            animation: shake 0.5s ease;
+        }
+
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            text-align: center;
+            min-height: 50px;
+        }
+
+        .feedback.correct {
+            background: rgba(76, 175, 80, 0.2);
+            color: #81C784;
+        }
+
+        .feedback.wrong {
+            background: rgba(244, 67, 54, 0.2);
+            color: #E57373;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+            display: none;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .next-btn.show {
+            display: inline-block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ffaa00);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .completion-screen.show {
+            display: block;
+        }
+
+        .completion-title {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .completion-stats {
+            font-size: 1.5em;
+            margin: 30px 0;
+            line-height: 2;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Category colors */
+        .element-card[data-category="noble-gas"] { border-color: #9C27B0; }
+        .element-card[data-category="alkali-metal"] { border-color: #F44336; }
+        .element-card[data-category="alkaline-earth-metal"] { border-color: #FF9800; }
+        .element-card[data-category="transition-metal"] { border-color: #2196F3; }
+        .element-card[data-category="post-transition-metal"] { border-color: #00BCD4; }
+        .element-card[data-category="metalloid"] { border-color: #4CAF50; }
+        .element-card[data-category="nonmetal"] { border-color: #8BC34A; }
+        .element-card[data-category="halogen"] { border-color: #FFEB3B; }
+        .element-card[data-category="lanthanide"] { border-color: #FF5722; }
+        .element-card[data-category="actinide"] { border-color: #E91E63; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚛️ Element Match</h1>
+        <p class="subtitle">Match elements to their chemical symbols</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-label">Score:</span>
+            <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Streak:</span>
+            <span class="stat-value" id="streak">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Round:</span>
+            <span class="stat-value" id="round">1/20</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <div id="game-area">
+            <div class="element-card" id="element-card">
+                <div class="element-name" id="element-name"></div>
+                <div class="element-category" id="element-category"></div>
+            </div>
+
+            <div class="options" id="options"></div>
+
+            <div class="feedback" id="feedback"></div>
+            <button class="next-btn" id="next-btn">Next Element →</button>
+        </div>
+
+        <div class="completion-screen" id="completion-screen">
+            <div class="completion-title">🎉 Game Complete!</div>
+            <div class="completion-stats" id="final-stats"></div>
+            <button class="restart-btn" onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const elements = [
+            { name: "hydrogen", symbol: "H", category: "nonmetal" },
+            { name: "helium", symbol: "He", category: "noble-gas" },
+            { name: "lithium", symbol: "Li", category: "alkali-metal" },
+            { name: "carbon", symbol: "C", category: "nonmetal" },
+            { name: "nitrogen", symbol: "N", category: "nonmetal" },
+            { name: "oxygen", symbol: "O", category: "nonmetal" },
+            { name: "fluorine", symbol: "F", category: "halogen" },
+            { name: "neon", symbol: "Ne", category: "noble-gas" },
+            { name: "sodium", symbol: "Na", category: "alkali-metal" },
+            { name: "magnesium", symbol: "Mg", category: "alkaline-earth-metal" },
+            { name: "aluminum", symbol: "Al", category: "post-transition-metal" },
+            { name: "silicon", symbol: "Si", category: "metalloid" },
+            { name: "phosphorus", symbol: "P", category: "nonmetal" },
+            { name: "sulfur", symbol: "S", category: "nonmetal" },
+            { name: "chlorine", symbol: "Cl", category: "halogen" },
+            { name: "argon", symbol: "Ar", category: "noble-gas" },
+            { name: "potassium", symbol: "K", category: "alkali-metal" },
+            { name: "calcium", symbol: "Ca", category: "alkaline-earth-metal" },
+            { name: "iron", symbol: "Fe", category: "transition-metal" },
+            { name: "copper", symbol: "Cu", category: "transition-metal" },
+            { name: "zinc", symbol: "Zn", category: "transition-metal" },
+            { name: "silver", symbol: "Ag", category: "transition-metal" },
+            { name: "gold", symbol: "Au", category: "transition-metal" },
+            { name: "mercury", symbol: "Hg", category: "transition-metal" },
+            { name: "lead", symbol: "Pb", category: "post-transition-metal" },
+            { name: "uranium", symbol: "U", category: "actinide" },
+            { name: "bromine", symbol: "Br", category: "halogen" },
+            { name: "iodine", symbol: "I", category: "halogen" },
+            { name: "xenon", symbol: "Xe", category: "noble-gas" },
+            { name: "krypton", symbol: "Kr", category: "noble-gas" },
+        ];
+
+        let gameState = {
+            score: 0,
+            streak: 0,
+            round: 0,
+            totalRounds: 20,
+            usedElements: [],
+            currentElement: null,
+            isAnswered: false
+        };
+
+        function getRandomElements(exclude, count) {
+            const available = elements.filter(e => e !== exclude);
+            const shuffled = available.sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, count);
+        }
+
+        function startNewRound() {
+            if (gameState.round >= gameState.totalRounds) {
+                showCompletionScreen();
+                return;
+            }
+
+            gameState.round++;
+            gameState.isAnswered = false;
+
+            // Pick a random element
+            const availableElements = elements.filter(e => !gameState.usedElements.includes(e));
+            if (availableElements.length === 0) {
+                gameState.usedElements = [];
+            }
+            
+            const randomIndex = Math.floor(Math.random() * (availableElements.length || elements.length));
+            gameState.currentElement = availableElements[randomIndex] || elements[randomIndex];
+            gameState.usedElements.push(gameState.currentElement);
+
+            // Display element
+            document.getElementById('element-name').textContent = gameState.currentElement.name;
+            document.getElementById('element-category').textContent = gameState.currentElement.category.replace('-', ' ');
+            document.getElementById('element-card').setAttribute('data-category', gameState.currentElement.category);
+
+            // Generate options (1 correct + 3 wrong)
+            const wrongOptions = getRandomElements(gameState.currentElement, 3);
+            const allOptions = [gameState.currentElement, ...wrongOptions].sort(() => Math.random() - 0.5);
+
+            // Render options
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            allOptions.forEach(element => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.textContent = element.symbol;
+                btn.onclick = () => checkAnswer(element, btn);
+                optionsContainer.appendChild(btn);
+            });
+
+            // Clear feedback and hide next button
+            document.getElementById('feedback').textContent = '';
+            document.getElementById('feedback').className = 'feedback';
+            document.getElementById('next-btn').classList.remove('show');
+
+            // Update UI
+            updateUI();
+        }
+
+        function checkAnswer(selectedElement, btn) {
+            if (gameState.isAnswered) return;
+            gameState.isAnswered = true;
+
+            const isCorrect = selectedElement.symbol === gameState.currentElement.symbol;
+            const feedback = document.getElementById('feedback');
+
+            // Disable all buttons
+            document.querySelectorAll('.option-btn').forEach(b => b.disabled = true);
+
+            if (isCorrect) {
+                btn.classList.add('correct');
+                gameState.score += 10;
+                gameState.streak++;
+                feedback.textContent = `✓ Correct! ${gameState.currentElement.name} is ${gameState.currentElement.symbol}`;
+                feedback.className = 'feedback correct';
+            } else {
+                btn.classList.add('wrong');
+                gameState.streak = 0;
+                feedback.textContent = `✗ Wrong! ${gameState.currentElement.name} is ${gameState.currentElement.symbol}, not ${selectedElement.symbol}`;
+                feedback.className = 'feedback wrong';
+                
+                // Highlight correct answer
+                document.querySelectorAll('.option-btn').forEach(b => {
+                    if (b.textContent === gameState.currentElement.symbol) {
+                        b.classList.add('correct');
+                    }
+                });
+            }
+
+            updateUI();
+            document.getElementById('next-btn').classList.add('show');
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('streak').textContent = gameState.streak;
+            document.getElementById('round').textContent = `${gameState.round}/${gameState.totalRounds}`;
+            
+            const progress = (gameState.round / gameState.totalRounds) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('game-area').style.display = 'none';
+            const completionScreen = document.getElementById('completion-screen');
+            completionScreen.classList.add('show');
+            
+            const accuracy = ((gameState.score / (gameState.totalRounds * 10)) * 100).toFixed(0);
+            document.getElementById('final-stats').innerHTML = `
+                <div>Final Score: <strong>${gameState.score}</strong></div>
+                <div>Accuracy: <strong>${accuracy}%</strong></div>
+                <div>Best Streak: <strong>${Math.max(...gameState.usedElements.map((_, i) => i))}</strong></div>
+            `;
+        }
+
+        function restartGame() {
+            gameState = {
+                score: 0,
+                streak: 0,
+                round: 0,
+                totalRounds: 20,
+                usedElements: [],
+                currentElement: null,
+                isAnswered: false
+            };
+            
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('completion-screen').classList.remove('show');
+            startNewRound();
+        }
+
+        // Initialize game
+        document.getElementById('next-btn').onclick = startNewRound;
+        startNewRound();
+    </script>
+</body>
+</html>
