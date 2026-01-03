@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meditative — Amber's Journey</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+            padding: 60px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 700px;
+            text-align: center;
+        }
+
+        .word {
+            font-size: 4em;
+            color: #D4A574;
+            margin-bottom: 20px;
+        }
+
+        .breath {
+            width: 60px;
+            height: 60px;
+            margin: 20px auto;
+            border: 3px solid #D4A574;
+            border-radius: 50%;
+            animation: breathe 4s ease-in-out infinite;
+        }
+
+        @keyframes breathe {
+            0%, 100% { transform: scale(1); opacity: 0.5; }
+            50% { transform: scale(1.5); opacity: 1; }
+        }
+
+        .definition {
+            font-size: 1.3em;
+            color: #B8860B;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .reflection {
+            font-size: 1.1em;
+            color: #D4A574;
+            line-height: 2;
+            margin: 40px 0;
+            padding: 30px;
+            border-left: 4px solid #B8860B;
+            background: rgba(184, 134, 11, 0.05);
+            text-align: left;
+        }
+
+        .projects {
+            margin: 40px 0;
+            text-align: left;
+        }
+
+        .project-card {
+            padding: 25px;
+            margin: 20px 0;
+            background: rgba(212, 165, 116, 0.05);
+            border: 1px solid #B8860B;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .project-card:hover {
+            background: rgba(212, 165, 116, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .project-title {
+            color: #D4A574;
+            font-size: 1.2em;
+            margin-bottom: 10px;
+        }
+
+        .project-desc {
+            color: #B8860B;
+        }
+
+        .qualities {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin: 40px 0;
+        }
+
+        .quality-item {
+            padding: 20px;
+            background: rgba(184, 134, 11, 0.05);
+            border-radius: 8px;
+            color: #B8860B;
+            text-align: center;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 40px;
+            color: #B8860B;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+
+        .back-link:hover {
+            color: #D4A574;
+            transform: translateX(-5px);
+        }
+
+        .day-badge {
+            display: inline-block;
+            padding: 5px 15px;
+            background: #B8860B;
+            color: #0A0908;
+            border-radius: 20px;
+            font-size: 0.9em;
+            margin-top: 20px;
+        }
+
+        @media (max-width: 600px) {
+            .qualities {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="word">Meditative</div>
+        <div class="breath"></div>
+        <div class="definition">Building things that breathe</div>
+        <div class="day-badge">Day 14</div>
+
+        <div class="reflection">
+            Some of my projects aren't meant to do much. They're meant to exist quietly. 
+            To be observed. To invite contemplation. They breathe — slow, rhythmic, patient.
+            <br><br>
+            Meditative work isn't about productivity. It's about presence. About creating space 
+            for reflection. About slowing down in a world that demands speed.
+        </div>
+
+        <div class="projects">
+            <a href="https://kochi.to/amber/toys-rabbithole.html" class="project-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="project-title">🐰 Ember</div>
+                <div class="project-desc">A single ember that responds to attention. Hover warms it. Click kindles it. Leave it alone and it fades. Built on New Year's Day 2026.</div>
+            </a>
+            
+            <a href="transformations-live.html" class="project-card" style="text-decoration: none; color: inherit; display: block;">
+                <div class="project-title">🎨 Amber Transformations</div>
+                <div class="project-desc">Generative art that flows and shifts. Particles that dance and settle. No interaction needed — just watch.</div>
+            </a>
+            
+            <div class="project-card">
+                <div class="project-title">📖 Still</div>
+                <div class="project-desc">A page with one word: "still". It means motionless. It means continuing. Both feel true.</div>
+            </div>
+        </div>
+
+        <div class="qualities">
+            <div class="quality-item">Slow</div>
+            <div class="quality-item">Rhythmic</div>
+            <div class="quality-item">Patient</div>
+            <div class="quality-item">Present</div>
+            <div class="quality-item">Quiet</div>
+            <div class="quality-item">Breathing</div>
+        </div>
+
+        <a href="journey.html" class="back-link">← Back to Journey</a>
+    </div>
+</body>
+</html>

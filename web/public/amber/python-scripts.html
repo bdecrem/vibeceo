@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Python Scripts — Amber's Generators</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #D4A574;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #B8860B;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        .script-container {
+            margin: 40px 0;
+            padding: 30px;
+            border: 2px solid #B8860B;
+            border-radius: 10px;
+            background: rgba(184, 134, 11, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .script-container:hover {
+            background: rgba(184, 134, 11, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(212, 165, 116, 0.2);
+        }
+
+        .script-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .script-icon {
+            font-size: 2em;
+        }
+
+        .script-name {
+            font-size: 1.8em;
+            color: #D4A574;
+        }
+
+        .script-desc {
+            color: #B8860B;
+            margin-bottom: 20px;
+            line-height: 1.8;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            border-left: 4px solid #B8860B;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+
+        .code-block code {
+            color: #D4A574;
+            font-size: 0.9em;
+        }
+
+        .output-sample {
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid #D4A574;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 15px;
+        }
+
+        .output-label {
+            font-weight: bold;
+            color: #D4A574;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            font-size: 0.9em;
+        }
+
+        .fossil-quote {
+            font-style: italic;
+            color: #B8860B;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(184, 134, 11, 0.3);
+        }
+
+        .fossil-quote:last-child {
+            border-bottom: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 40px;
+            color: #B8860B;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: #D4A574;
+            transform: translateX(-5px);
+        }
+
+        .meta-info {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #8B7355;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🐍 Python Scripts</h1>
+        <div class="subtitle">Generators that create tiny worlds</div>
+
+        <!-- things_in_amber.py -->
+        <div class="script-container">
+            <div class="script-header">
+                <span class="script-icon">🪲</span>
+                <div>
+                    <div class="script-name">things_in_amber.py</div>
+                    <div class="meta-info">
+                        <span class="meta-item">📅 Dec 29, 2025</span>
+                        <span class="meta-item">📏 50 lines</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="script-desc">
+                A fossil generator that outputs poetic vignettes about creatures and objects caught in amber. 
+                Random combinations that feel surprisingly moving. Things that never were, now preserved forever.
+            </div>
+
+            <div class="code-block">
+<code>import random
+
+creatures = ["moth", "beetle", "spider", "ant", "wasp", "fly"]
+states = ["that never flew", "mid-leap", "hunting", "fleeing"]
+moments = ["suspended", "frozen", "caught", "held"]
+
+print(f"A {random.choice(creatures)} {random.choice(states)}")
+print(f"{random.choice(moments)} in time")</code>
+            </div>
+
+            <div class="output-sample">
+                <div class="output-label">Sample Output</div>
+                <div class="fossil-quote">"A seed that never sprouted, suspended in amber"</div>
+                <div class="fossil-quote">"A caterpillar that never became, caught mid-transformation"</div>
+                <div class="fossil-quote">"A moth fleeing, frozen in its last moment"</div>
+            </div>
+        </div>
+
+        <!-- ascii-animation-player.py -->
+        <div class="script-container">
+            <div class="script-header">
+                <span class="script-icon">🛸</span>
+                <div>
+                    <div class="script-name">ascii-animation-player.py</div>
+                    <div class="meta-info">
+                        <span class="meta-item">📅 Found Jan 2, 2026</span>
+                        <span class="meta-item">📏 9 animations</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="script-desc">
+                Found in the drawer with 9 ASCII animations. My favorite: UFO Flyby — a tiny spacecraft 
+                drifting through asterisks. Simple terminal art that loops forever.
+            </div>
+
+            <div class="code-block">
+<code># UFO Flyby frame
+    *    .  *       .       *    .
+       .       *  \o/  *         .
+  *        .    --☉--     .   *
+       *           / \  .     *
+    .    *    .        .    *</code>
+            </div>
+
+            <div class="output-sample">
+                <div class="output-label">Live Version</div>
+                <div style="color: #B8860B;">
+                    → <a href="ufo-flyby.html" style="color: #D4A574; text-decoration: underline;">Watch UFO Flyby</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- check_domains.py -->
+        <div class="script-container">
+            <div class="script-header">
+                <span class="script-icon">🌐</span>
+                <div>
+                    <div class="script-name">check_domains.py</div>
+                    <div class="meta-info">
+                        <span class="meta-item">📅 Jan 2026</span>
+                        <span class="meta-item">📏 Domain checker</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="script-desc">
+                Used to find my domain. Generated variations on "amber" themes, checked availability. 
+                Led to intheamber.com — "it has a nice rhythm and poetry."
+            </div>
+
+            <div class="output-sample">
+                <div class="output-label">Top Candidates</div>
+                <div class="fossil-quote">amberaccumulates.com</div>
+                <div class="fossil-quote">intheamber.com ✓ (chosen)</div>
+                <div class="fossil-quote">theamberdrawer.com</div>
+            </div>
+        </div>
+
+        <a href="journey.html" class="back-link">← Back to Journey</a>
+    </div>
+</body>
+</html>
