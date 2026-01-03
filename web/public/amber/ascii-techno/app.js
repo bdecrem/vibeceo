@@ -14,41 +14,16 @@ class AudioEngine {
     }
 
     init() {
-        // Step 1: Create AudioContext SYNCHRONOUSLY (critical for iOS)
         this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-
-        // Step 2: Play silent buffer IMMEDIATELY to unlock iOS audio
-        // This must happen synchronously during the user gesture
-        this.unlockAudio();
-
-        // Step 3: Set up audio graph
         this.masterGain = this.audioContext.createGain();
         this.masterGain.gain.value = 0.5;
         this.masterGain.connect(this.audioContext.destination);
+        this.startTime = this.audioContext.currentTime;
 
-        // Step 4: Resume if suspended (fire and forget - audio is already unlocked)
+        // Resume AudioContext in case it's suspended (autoplay policy)
         if (this.audioContext.state === 'suspended') {
             this.audioContext.resume();
         }
-
-        this.startTime = this.audioContext.currentTime;
-    }
-
-    // Play silent sound to unlock iOS audio - MUST be called synchronously
-    unlockAudio() {
-        // Create a tiny buffer with near-silent audio (not pure zeros)
-        // Some iOS versions need actual audio data, not just silence
-        const buffer = this.audioContext.createBuffer(1, 256, this.audioContext.sampleRate);
-        const data = buffer.getChannelData(0);
-        // Fill with near-inaudible noise
-        for (let i = 0; i < data.length; i++) {
-            data[i] = (Math.random() * 2 - 1) * 0.0001;
-        }
-        const source = this.audioContext.createBufferSource();
-        source.buffer = buffer;
-        source.connect(this.audioContext.destination);
-        // Start immediately (no argument = start now)
-        source.start();
     }
 
     // Create a kick drum (heavy Berlin-style)
@@ -191,13 +166,11 @@ class AudioEngine {
     start(duration = 35) {
         if (this.isPlaying) return;
 
-        // Init is synchronous now (critical for iOS)
         this.init();
         this.isPlaying = true;
 
         const now = this.audioContext.currentTime;
-        // Start pattern (small buffer to avoid glitches)
-        this.schedulePattern(now + 0.05, duration);
+        this.schedulePattern(now + 0.1, duration);
 
         // Auto-stop
         setTimeout(() => this.stop(), duration * 1000);
@@ -411,11 +384,8 @@ function App() {
     }, [started]);
 
     const handleStart = () => {
-        // Guard against double-firing (touchstart + click)
-        if (started || audioEngineRef.current) return;
+        setStarted(true);
 
-        // CRITICAL FOR iOS: Create AudioContext synchronously in click handler
-        // Do NOT use async/await before creating the context
         const engine = new AudioEngine();
         audioEngineRef.current = engine;
 
@@ -429,28 +399,14 @@ function App() {
             setKickHit(prev => prev + 1);
         };
 
-        // Start the audio - iOS requires synchronous context creation
-        // The start() method handles async resume internally
+        // Start the audio - user interaction satisfies autoplay policy
         engine.start(35); // 35 seconds
-
-        // Update UI immediately
-        setStarted(true);
-    };
-
-    // Handle touch start for iOS - prevent default to avoid double-firing with click
-    const handleTouchStart = (e) => {
-        e.preventDefault();
-        handleStart();
     };
 
     if (!started) {
         return (
             <div className="ascii-container">
-                <button
-                    className="start-button"
-                    onClick={handleStart}
-                    onTouchStart={handleTouchStart}
-                >
+                <button className="start-button" onClick={handleStart}>
                     ░▒▓ ENTER THE GRID ▓▒░
                 </button>
             </div>
