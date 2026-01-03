@@ -8,13 +8,28 @@ import fs from 'fs';
 import path from 'path';
 
 // Read env vars at runtime (not module load) to support late dotenv loading
-function getTwitterCredentials() {
-  return {
-    apiKey: process.env.TWITTER_API_KEY,
-    apiSecret: process.env.TWITTER_API_SECRET,
-    accessToken: process.env.TWITTER_ACCESS_TOKEN,
-    accessSecret: process.env.TWITTER_ACCESS_SECRET,
-  };
+// Optional account parameter for multi-account support (e.g., "intheamber", "echo")
+function getTwitterCredentials(account?: string) {
+  // API key/secret are app-level (same for all accounts)
+  const apiKey = process.env.TWITTER_API_KEY;
+  const apiSecret = process.env.TWITTER_API_SECRET;
+
+  // Access token/secret are per-account
+  // If account specified, look for TWITTER_<ACCOUNT>_ACCESS_TOKEN, etc.
+  // Otherwise use default TWITTER_ACCESS_TOKEN
+  let accessToken: string | undefined;
+  let accessSecret: string | undefined;
+
+  if (account) {
+    const prefix = `TWITTER_${account.toUpperCase()}_`;
+    accessToken = process.env[`${prefix}ACCESS_TOKEN`];
+    accessSecret = process.env[`${prefix}ACCESS_SECRET`];
+  } else {
+    accessToken = process.env.TWITTER_ACCESS_TOKEN;
+    accessSecret = process.env.TWITTER_ACCESS_SECRET;
+  }
+
+  return { apiKey, apiSecret, accessToken, accessSecret };
 }
 
 /**
@@ -52,11 +67,13 @@ function generateOAuthSignature(
 function generateOAuthHeader(
   method: string,
   url: string,
-  extraParams: Record<string, string> = {}
+  extraParams: Record<string, string> = {},
+  account?: string
 ): string {
-  const creds = getTwitterCredentials();
+  const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
-    throw new Error('Twitter credentials not configured');
+    const accountMsg = account ? ` for account "${account}"` : '';
+    throw new Error(`Twitter credentials not configured${accountMsg}`);
   }
 
   const oauthParams: Record<string, string> = {
@@ -194,17 +211,28 @@ export async function uploadMedia(imagePath: string): Promise<MediaUploadResult>
   }
 }
 
+export interface PostTweetOptions {
+  /** Media IDs from uploadMedia() - string or array of up to 4 */
+  mediaIds?: string | string[];
+  /** Account to post from (e.g., "intheamber"). Omit for default account. */
+  account?: string;
+}
+
 /**
  * Post a tweet to Twitter/X
  * @param text - Tweet text
- * @param mediaIds - Optional media_id(s) from uploadMedia() - string or array of up to 4
+ * @param options - Optional: mediaIds and/or account
  */
-export async function postTweet(text: string, mediaIds?: string | string[]): Promise<TweetResult> {
-  const creds = getTwitterCredentials();
+export async function postTweet(text: string, options?: PostTweetOptions): Promise<TweetResult> {
+  const account = options?.account;
+  const mediaIds = options?.mediaIds;
+
+  const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    const accountMsg = account ? ` for account "${account}"` : '';
     return {
       success: false,
-      error: 'Twitter credentials not configured. Set TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET',
+      error: `Twitter credentials not configured${accountMsg}. Set TWITTER_API_KEY, TWITTER_API_SECRET, TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_SECRET`,
     };
   }
 
@@ -218,7 +246,7 @@ export async function postTweet(text: string, mediaIds?: string | string[]): Pro
   const url = 'https://api.twitter.com/2/tweets';
 
   try {
-    const authHeader = generateOAuthHeader('POST', url);
+    const authHeader = generateOAuthHeader('POST', url, {}, account);
 
     // Build tweet payload
     const payload: any = { text };
@@ -275,18 +303,20 @@ export async function postTweet(text: string, mediaIds?: string | string[]): Pro
 
 /**
  * Check if Twitter posting is configured
+ * @param account - Optional account name to check (e.g., "intheamber")
  */
-export function isTwitterConfigured(): boolean {
-  const creds = getTwitterCredentials();
+export function isTwitterConfigured(account?: string): boolean {
+  const creds = getTwitterCredentials(account);
   return !!(creds.apiKey && creds.apiSecret && creds.accessToken && creds.accessSecret);
 }
 
 /**
  * Post a tweet with an image
  * Convenience function that uploads media then posts
+ * @param account - Optional account name (e.g., "intheamber")
  */
-export async function postTweetWithImage(text: string, imagePath: string): Promise<TweetResult> {
-  // First upload the image
+export async function postTweetWithImage(text: string, imagePath: string, account?: string): Promise<TweetResult> {
+  // First upload the image (uses default account for upload, which is fine)
   const uploadResult = await uploadMedia(imagePath);
   if (!uploadResult.success) {
     return {
@@ -296,16 +326,17 @@ export async function postTweetWithImage(text: string, imagePath: string): Promi
   }
 
   // Then post the tweet with the media
-  return postTweet(text, uploadResult.mediaId);
+  return postTweet(text, { mediaIds: uploadResult.mediaId, account });
 }
 
 /**
  * Post a tweet with multiple images (up to 4)
  * Convenience function that uploads all media then posts
+ * @param account - Optional account name (e.g., "intheamber")
  */
-export async function postTweetWithImages(text: string, imagePaths: string[]): Promise<TweetResult> {
+export async function postTweetWithImages(text: string, imagePaths: string[], account?: string): Promise<TweetResult> {
   if (imagePaths.length === 0) {
-    return postTweet(text);
+    return postTweet(text, { account });
   }
 
   if (imagePaths.length > 4) {
@@ -331,7 +362,7 @@ export async function postTweetWithImages(text: string, imagePaths: string[]): P
   const mediaIds = uploadResults.map(r => r.mediaId!);
 
   // Post with all media
-  return postTweet(text, mediaIds);
+  return postTweet(text, { mediaIds, account });
 }
 
 /**
