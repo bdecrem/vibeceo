@@ -27,8 +27,20 @@ export interface Artifact {
   modifiedAt: string;
 }
 
+async function getExclusions(): Promise<Set<string>> {
+  const exceptionsPath = path.join(process.cwd(), 'public', 'amber', '.drawer-exceptions.json');
+  try {
+    const content = await fs.readFile(exceptionsPath, 'utf-8');
+    const data = JSON.parse(content);
+    return new Set(data.exclude || []);
+  } catch {
+    return new Set();
+  }
+}
+
 async function getArtifacts(): Promise<Artifact[]> {
   const artifacts: Artifact[] = [];
+  const exclusions = await getExclusions();
 
   // 1. Scan public/amber/ for static HTML files and images
   const publicAmberPath = path.join(process.cwd(), 'public', 'amber');
@@ -41,10 +53,12 @@ async function getArtifacts(): Promise<Artifact[]> {
       const name = entry.name;
       const ext = path.extname(name).toLowerCase();
 
-      // Skip meta files
+      // Skip meta files and exclusions
       if (name.endsWith('-og.png') || name.endsWith('-screenshot.png')) continue;
       if (name === 'og-image.png') continue;
       if (ext === '.json') continue;
+      if (name.startsWith('.')) continue;
+      if (exclusions.has(name)) continue;
 
       const filePath = path.join(publicAmberPath, name);
       const stats = await fs.stat(filePath);

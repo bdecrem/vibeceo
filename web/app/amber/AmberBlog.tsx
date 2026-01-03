@@ -452,58 +452,108 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           max-height: calc(80vh - 80px);
         }
 
-        .drawer-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-          gap: 1rem;
+        .drawer-section {
+          margin-bottom: 2rem;
         }
 
-        .drawer-item {
+        .drawer-section:last-child {
+          margin-bottom: 0;
+        }
+
+        .drawer-section-title {
+          font-size: 0.7rem;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          color: var(--text-muted);
+          margin-bottom: 0.75rem;
+          padding-bottom: 0.5rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
+        /* App list - full width rows */
+        .drawer-app-list {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .drawer-app-item {
+          display: block;
+          padding: 0.75rem 1rem;
           background: var(--bg-deep);
           border: 1px solid rgba(212, 165, 116, 0.1);
-          border-radius: 8px;
+          border-radius: 6px;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .drawer-app-item:hover {
+          border-color: rgba(212, 165, 116, 0.3);
+          background: var(--bg-elevated);
+          transform: translateX(4px);
+        }
+
+        .drawer-app-title {
+          font-size: 0.9rem;
+          color: var(--amber-100);
+          margin-bottom: 0.2rem;
+        }
+
+        .drawer-app-date {
+          font-size: 0.7rem;
+          color: var(--text-muted);
+        }
+
+        /* Image grid - thumbnails */
+        .drawer-image-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+          gap: 0.75rem;
+        }
+
+        .drawer-image-item {
+          background: var(--bg-deep);
+          border: 1px solid rgba(212, 165, 116, 0.1);
+          border-radius: 6px;
           overflow: hidden;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           text-decoration: none;
           display: block;
         }
 
-        .drawer-item:hover {
+        .drawer-image-item:hover {
           border-color: rgba(212, 165, 116, 0.3);
           transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+          box-shadow: 0 4px 16px rgba(212, 165, 116, 0.1);
         }
 
-        .drawer-item-preview {
+        .drawer-image-preview {
           aspect-ratio: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-elevated);
           overflow: hidden;
         }
 
-        .drawer-item-preview.app-icon {
-          font-size: 1.5rem;
-          color: var(--amber-300);
-        }
-
-        .drawer-item-preview img {
+        .drawer-image-preview img {
           width: 100%;
           height: 100%;
           object-fit: cover;
         }
 
-        .drawer-item-info {
-          padding: 0.5rem 0.75rem;
+        .drawer-image-info {
+          padding: 0.4rem 0.5rem;
         }
 
-        .drawer-item-title {
-          font-size: 0.75rem;
+        .drawer-image-title {
+          font-size: 0.7rem;
           color: var(--amber-100);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
+          margin-bottom: 0.15rem;
+        }
+
+        .drawer-image-date {
+          font-size: 0.6rem;
+          color: var(--text-muted);
         }
 
         /* Main content */
@@ -896,29 +946,57 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
               </button>
             </div>
             <div className="drawer-modal-content">
-              <div className="drawer-grid">
-                {artifacts.map((artifact) => (
-                  <a
-                    key={artifact.url}
-                    href={artifact.url}
-                    className="drawer-item"
-                    target="_blank"
-                    rel="noopener"
-                  >
-                    <div className={`drawer-item-preview ${artifact.type === 'app' ? 'app-icon' : ''}`}>
-                      {artifact.type === 'image' ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={artifact.url} alt={artifact.title} />
-                      ) : (
-                        <span>◈</span>
-                      )}
-                    </div>
-                    <div className="drawer-item-info">
-                      <div className="drawer-item-title" title={artifact.title}>{artifact.title}</div>
-                    </div>
-                  </a>
-                ))}
-              </div>
+              {/* Apps section */}
+              {artifacts.filter(a => a.type === 'app').length > 0 && (
+                <div className="drawer-section">
+                  <div className="drawer-section-title">Pages & Apps</div>
+                  <div className="drawer-app-list">
+                    {artifacts
+                      .filter(a => a.type === 'app')
+                      .map((artifact) => (
+                        <a
+                          key={artifact.url}
+                          href={artifact.url}
+                          className="drawer-app-item"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <div className="drawer-app-title">{artifact.title}</div>
+                          <div className="drawer-app-date">{formatShortDate(artifact.modifiedAt)}</div>
+                        </a>
+                      ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Images section */}
+              {artifacts.filter(a => a.type === 'image').length > 0 && (
+                <div className="drawer-section">
+                  <div className="drawer-section-title">Images</div>
+                  <div className="drawer-image-grid">
+                    {artifacts
+                      .filter(a => a.type === 'image')
+                      .map((artifact) => (
+                        <a
+                          key={artifact.url}
+                          href={artifact.url}
+                          className="drawer-image-item"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <div className="drawer-image-preview">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={artifact.url} alt={artifact.title} />
+                          </div>
+                          <div className="drawer-image-info">
+                            <div className="drawer-image-title" title={artifact.title}>{artifact.title}</div>
+                            <div className="drawer-image-date">{formatShortDate(artifact.modifiedAt)}</div>
+                          </div>
+                        </a>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -935,6 +1013,15 @@ function formatDate(dateStr: string): string {
     year: 'numeric',
     month: 'long',
     day: 'numeric',
+  });
+}
+
+function formatShortDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('en-US', {
+    month: 'numeric',
+    day: 'numeric',
+    year: 'numeric',
   });
 }
 
