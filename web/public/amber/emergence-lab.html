@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Emergence Lab — Amber</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #D4A574;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 10px;
+      color: #D4A574;
+    }
+
+    .subtitle {
+      font-size: 1.1em;
+      color: #B8860B;
+      font-style: italic;
+    }
+
+    .experiments {
+      display: flex;
+      flex-direction: column;
+      gap: 40px;
+    }
+
+    .experiment {
+      background: rgba(212, 165, 116, 0.05);
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 20px;
+    }
+
+    .experiment.active {
+      border-color: #B8860B;
+      box-shadow: 0 0 20px rgba(184, 134, 11, 0.3);
+    }
+
+    .experiment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .experiment-header h2 {
+      font-size: 1.8em;
+      color: #D4A574;
+    }
+
+    .experiment-header .toggle {
+      font-size: 1.5em;
+      color: #B8860B;
+    }
+
+    .experiment-content {
+      display: none;
+    }
+
+    .experiment.active .experiment-content {
+display: block;
+    }
+
+    .description {
+      margin-bottom: 20px;
+      line-height: 1.6;
+      color: #B8860B;
+    }
+
+    .canvas-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+      background: #000;
+      border: 1px solid #D4A574;
+      border-radius: 4px;
+      padding: 10px;
+    }
+
+    canvas {
+      border: 1px solid #D4A574;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control-group label {
+      font-size: 0.9em;
+      color: #D4A574;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .control-group input[type="range"] {
+      width: 100%;
+      height: 6px;
+      background: #1a1918;
+      border-radius: 3px;
+      outline: none;
+      -webkit-appearance: none;
+    }
+
+    .control-group input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 16px;
+      height: 16px;
+      background: #D4A574;
+      border-radius: 50%;
+      cursor: pointer;
+    }
+
+    .control-group input[type="range"]::-moz-range-thumb {
+      width: 16px;
+      height: 16px;
+      background: #D4A574;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+    }
+
+    .buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      background: #D4A574;
+      color: #0A0908;
+      border: none;
+      padding: 10px 20px;
+      font-family: 'Courier New', monospace;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #B8860B;
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(0);
+    }
+
+    button.secondary {
+      background: transparent;
+      color: #D4A574;
+      border: 1px solid #D4A574;
+    }
+
+    button.secondary:hover {
+      background: rgba(212, 165, 116, 0.1);
+      border-color: #B8860B;
+      color: #B8860B;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 10px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid rgba(212, 165, 116, 0.3);
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5em;
+      color: #D4A574;
+      font-weight: bold;
+    }
+
+    .stat-label {
+      font-size: 0.85em;
+      color: #B8860B;
+      margin-top: 5px;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      padding-top: 20px;
+      border-top: 1px solid #D4A574;
+      color: #B8860B;
+      font-size: 0.9em;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8em;
+      }
+
+      .controls {
+        grid-template-columns: 1fr;
+      }
+
+      canvas {
+        max-width: 100%;
+        height: auto !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Emergence Lab</h1>
+      <div class="subtitle">Simple Rules → Complex Behavior</div>
+    </header>
+
+    <div class="experiments">
+      <!-- Experiment 1: Conway's Life Variant -->
+      <div class="experiment active" id="exp1">
+        <div class="experiment-header" onclick="toggleExperiment('exp1')">
+          <h2>01. Life Variants</h2>
+          <span class="toggle">−</span>
+        </div>
+        <div class="experiment-content">
+          <div class="description">
+            Classic cellular automaton with adjustable birth/survival rules. Each cell lives or dies based on neighbor count.
+            Conway's original: B3/S23 (born with 3 neighbors, survives with 2 or 3). Try different rules to see vastly different behaviors emerge.
+          </div>
+          <div class="canvas-container">
+            <canvas id="canvas1" width="800" height="600"></canvas>
+          </div>
+          <div class="controls">
+            <div class="control-group">
+              <label>
+                Grid Size: <span id="gridSize1-value">100</span>
+              </label>
+              <input type="range" id="gridSize1" min="50" max="200" value="100" step="10">
+            </div>
+            <div class="control-group">
+              <label>
+                Speed (ms): <span id="speed1-value">100</span>
+              </label>
+              <input type="range" id="speed1" min="10" max="500" value="100" step="10">
+            </div>
+            <div class="control-group">
+              <label>
+                Initial Density: <span id="density1-value">30%</span>
+              </label>
+              <input type="range" id="density1" min="5" max="80" value="30" step="5">
+            </div>
+            <div class="control-group">
+              <label>
+                Birth Rule: <span id="birth1-value">3</span>
+              </label>
+              <input type="range" id="birth1" min="0" max="8" value="3" step="1">
+            </div>
+            <div class="control-group">
+              <label>
+                Survival Min: <span id="surviveMin1-value">2</span>
+              </label>
+              <input type="range" id="surviveMin1" min="0" max="8" value="2" step="1">
+            </div>
+            <div class="control-group">
+              <label>
+                Survival Max: <span id="surviveMax1-value">3</span>
+              </label>
+              <input type="range" id="surviveMax1" min="0" max="8" value="3" step="1">
+            </div>
+          </div>
+          <div class="buttons">
+            <button onclick="startExperiment1()">Start</button>
+            <button onclick="pauseExperiment1()">Pause</button>
+            <button onclick="stepExperiment1()">Step</button>
+            <button class="secondary" onclick="resetExperiment1()">Reset</button>
+            <button class="secondary" onclick="clearExperiment1()">Clear</button>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value" id="generation1">0</div>
+              <div class="stat-label">Generation</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="population1">0</div>
+              <div class="stat-label">Living Cells</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="change1">0</div>
+              <div class="stat-label">% Change</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Experiment 2: Particle Aggregation -->
+      <div class="experiment" id="exp2">
+        <div class="experiment-header" onclick="toggleExperiment('exp2')">
+          <h2>02. Particle Aggregation</h2>
+          <span class="toggle">+</span>
+        </div>
+        <div class="experiment-content">
+          <div class="description">
+            Particles perform random walks until they touch an existing structure, then stick.
+            Simple rule: move randomly until contact. Result: intricate branching fractals resembling frost, lightning, or coral.
+            Demonstrates how randomness + constraint produces organic complexity.
+          </div>
+          <div class="canvas-container">
+            <canvas id="canvas2" width="800" height="600"></canvas>
+          </div>
+          <div class="controls">
+            <div class="control-group">
+              <label>
+                Particle Count: <span id="particleCount2-value">500</span>
+              </label>
+              <input type="range" id="particleCount2" min="100" max="2000" value="500" step="100">
+            </div>
+            <div class="control-group">
+              <label>
+                Release Rate: <span id="releaseRate2-value">5</span>
+              </label>
+              <input type="range" id="releaseRate2" min="1" max="20" value="5" step="1">
+            </div>
+            <div class="control-group">
+              <label>
+                Stickiness: <span id="stickiness2-value">100%</span>
+              </label>
+              <input type="range" id="stickiness2" min="10" max="100" value="100" step="10">
+            </div>
+            <div class="control-group">
+              <label>
+                Walk Speed: <span id="walkSpeed2-value">2</span>
+              </label>
+              <input type="range" id="walkSpeed2" min="1" max="5" value="2" step="1">
+            </div>
+          </div>
+          <div class="buttons">
+            <button onclick="startExperiment2()">Start</button>
+            <button onclick="pauseExperiment2()">Pause</button>
+            <button class="secondary" onclick="resetExperiment2()">Reset</button>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value" id="stuck2">1</div>
+              <div class="stat-label">Stuck Particles</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="active2">0</div>
+              <div class="stat-label">Active Particles</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="radius2">0</div>
+              <div class="stat-label">Structure Radius</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Experiment 3: Reaction-Diffusion -->
+      <div class="experiment" id="exp3">
+        <div class="experiment-header" onclick="toggleExperiment('exp3')">
+          <h2>03. Reaction-Diffusion</h2>
+          <span class="toggle">+</span>
+        </div>
+        <div class="experiment-content">
+          <div class="description">
+            Two chemicals diffuse and react according to Gray-Scott model. One activates, one inhibits.
+            Adjust feed/kill rates to generate spots, stripes, spirals, or chaos. Models pattern formation in nature:
+            animal markings, coral growth, chemical reactions. Pure mathematics generating organic forms.
+          </div>
+          <div class="canvas-container">
+            <canvas id="canvas3" width="800" height="600"></canvas>
+          </div>
+          <div class="controls">
+            <div class="control-group">
+              <label>
+                Feed Rate: <span id="feed3-value">0.055</span>
+              </label>
+              <input type="range" id="feed3" min="0.010" max="0.100" value="0.055" step="0.001">
+            </div>
+            <div class="control-group">
+              <label>
+                Kill Rate: <span id="kill3-value">0.062</span>
+              </label>
+              <input type="range" id="kill3" min="0.045" max="0.070" value="0.062" step="0.001">
+            </div>
+            <div class="control-group">
+              <label>
+                Diffusion A: <span id="diffA3-value">1.0</span>
+              </label>
+              <input type="range" id="diffA3" min="0.5" max="2.0" value="1.0" step="0.1">
+            </div>
+            <div class="control-group">
+              <label>
+                Diffusion B: <span id="diffB3-value">0.5</span>
+              </label>
+              <input type="range" id="diffB3" min="0.1" max="1.0" value="0.5" step="0.05">
+            </div>
+            <div class="control-group">
+              <label>
+                Time Step: <span id="dt3-value">1.0</span>
+              </label>
+              <input type="range" id="dt3" min="0.5" max="2.0" value="1.0" step="0.1">
+            </div>
+          </div>
+          <div class="buttons">
+            <button onclick="startExperiment3()">Start</button>
+            <button onclick="pauseExperiment3()">Pause</button>
+            <button class="secondary" onclick="resetExperiment3()">Reset</button>
+            <button class="secondary" onclick="seedExperiment3()">Random Seed</button>
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-value" id="iterations3">0</div>
+              <div class="stat-label">Iterations</div>
+            </div>
+            <div class="stat">
+              <div class="stat-value" id="pattern3">Forming</div>
+              <div class="stat-label">Pattern State</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Amber's Emergence Lab — January 2026<br>
+      Exploring how simple rules create complex worlds
+    </footer>
+  </div>
+
+  <script src="emergence-lab.js"></script>
+</body>
+</html>
