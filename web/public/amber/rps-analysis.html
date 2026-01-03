@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPS Analysis - Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #B8860B;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #D4A574;
+        }
+
+        .subtitle {
+            color: #B8860B;
+            font-size: 1.1em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        button {
+            background: #B8860B;
+            color: #0A0908;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            background: #D4A574;
+            transform: translateY(-2px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .analysis-card {
+            background: #1a1918;
+            border: 2px solid #B8860B;
+            padding: 20px;
+        }
+
+        .analysis-card h2 {
+            color: #D4A574;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            border-bottom: 1px solid #B8860B;
+            padding-bottom: 10px;
+        }
+
+        .observation {
+            margin-bottom: 15px;
+            padding: 12px;
+            background: #0A0908;
+            border-left: 3px solid #D4A574;
+        }
+
+        .observation-title {
+            color: #D4A574;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .observation-detail {
+            color: #B8860B;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .pattern-type {
+            display: inline-block;
+            padding: 4px 8px;
+            background: #D4A574;
+            color: #0A0908;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .metric {
+            padding: 10px;
+            background: #0A0908;
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: 1.5em;
+            color: #D4A574;
+            font-weight: bold;
+        }
+
+        .metric-label {
+            font-size: 0.85em;
+            color: #B8860B;
+            margin-top: 5px;
+        }
+
+        .heatmap {
+            margin-top: 20px;
+        }
+
+        .heatmap-row {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+
+        .heatmap-cell {
+            flex: 1;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            border: 1px solid #B8860B;
+        }
+
+        .heatmap-label {
+            width: 80px;
+            display: flex;
+            align-items: center;
+            color: #B8860B;
+            font-size: 0.9em;
+        }
+
+        .status {
+            text-align: center;
+            padding: 15px;
+            background: #1a1918;
+            border: 2px solid #D4A574;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .status.running {
+            animation: pulse 1s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { border-color: #D4A574; }
+            50% { border-color: #B8860B; }
+        }
+
+        .chart-container {
+            background: #1a1918;
+            border: 2px solid #B8860B;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        canvas {
+            width: 100%;
+            height: 300px;
+            background: #0A0908;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 20px;
+            border-top: 2px solid #B8860B;
+            color: #B8860B;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>RPS Pattern Analysis</h1>
+            <p class="subtitle">Deep analysis of evolutionary game theory patterns</p>
+        </header>
+
+        <div class="controls">
+            <button id="run100">Run 100 Rounds</button>
+            <button id="run500">Run 500 Rounds</button>
+            <button id="run1000">Run 1000 Rounds</button>
+            <button id="exportBtn">Export Results</button>
+        </div>
+
+        <div class="status" id="status">
+            Ready to analyze. Click a button to start.
+        </div>
+
+        <div class="analysis-grid" id="analysisGrid">
+            <!-- Analysis cards will be inserted here -->
+        </div>
+
+        <div class="chart-container">
+            <h3 style="color: #D4A574; margin-bottom: 15px;">Strategy Divergence Over Time</h3>
+            <canvas id="divergenceChart"></canvas>
+        </div>
+
+        <footer class="footer">
+            Built by Amber · Observing emergent behavior
+        </footer>
+    </div>
+
+    <script>
+        // Game mechanics
+        const CHOICES = ['rock', 'paper', 'scissors'];
+
+        class Agent {
+            constructor(name) {
+                this.name = name;
+                this.opponentHistory = [];
+                this.learningRate = 0.3;
+                this.memory = [];
+            }
+
+            makeChoice() {
+                if (this.opponentHistory.length < 10) {
+                    return CHOICES[Math.floor(Math.random() * 3)];
+                }
+
+                const recentMoves = this.opponentHistory.slice(-20);
+                const counts = { rock: 0, paper: 0, scissors: 0 };
+                recentMoves.forEach(move => counts[move]++);
+
+                let maxChoice = 'rock';
+                let maxCount = counts.rock;
+                if (counts.paper > maxCount) {
+                    maxChoice = 'paper';
+                    maxCount = counts.paper;
+                }
+                if (counts.scissors > maxCount) {
+                    maxChoice = 'scissors';
+                }
+
+                if (Math.random() < this.learningRate) {
+                    return this.counter(maxChoice);
+                } else {
+                    return CHOICES[Math.floor(Math.random() * 3)];
+                }
+            }
+
+            counter(choice) {
+                if (choice === 'rock') return 'paper';
+                if (choice === 'paper') return 'scissors';
+                return 'rock';
+            }
+
+            observeOpponent(choice) {
+                this.opponentHistory.push(choice);
+            }
+
+            getStrategy() {
+                const total = this.opponentHistory.length;
+                if (total === 0) return { rock: 33.33, paper: 33.33, scissors: 33.33 };
+                
+                const counts = { rock: 0, paper: 0, scissors: 0 };
+                this.opponentHistory.forEach(move => counts[move]++);
+                
+                return {
+                    rock: (counts.rock / total) * 100,
+                    paper: (counts.paper / total) * 100,
+                    scissors: (counts.scissors / total) * 100
+                };
+            }
+        }
+
+        function determineWinner(choice1, choice2) {
+            if (choice1 === choice2) return 'tie';
+            if (
+                (choice1 === 'rock' && choice2 === 'scissors') ||
+                (choice1 === 'paper' && choice2 === 'rock') ||
+                (choice1 === 'scissors' && choice2 === 'paper')
+            ) {
+                return 'alpha';
+            }
+            return 'beta';
+        }
+
+        // Analysis functions
+        function analyzeConvergence(history) {
+            // Check if strategies converge to Nash equilibrium (33/33/33)
+            const windows = [];
+            const windowSize = 50;
+            
+            for (let i = windowSize; i <= history.length; i++) {
+                const window = history.slice(i - windowSize, i);
+                const counts = { rock: 0, paper: 0, scissors: 0 };
+                window.forEach(h => {
+                    counts[h.alphaChoice]++;
+                });
+                const rockPct = (counts.rock / windowSize) * 100;
+                const paperPct = (counts.paper / windowSize) * 100;
+                const scissorsPct = (counts.scissors / windowSize) * 100;
+                
+                // Calculate deviation from Nash equilibrium
+                const deviation = Math.sqrt(
+                    Math.pow(rockPct - 33.33, 2) +
+                    Math.pow(paperPct - 33.33, 2) +
+                    Math.pow(scissorsPct - 33.33, 2)
+                );
+                
+                windows.push({ round: i, deviation, strategy: { rock: rockPct, paper: paperPct, scissors: scissorsPct } });
+            }
+            
+            // Check if converging (deviation decreasing over time)
+            if (windows.length < 2) return { type: 'insufficient_data', confidence: 0 };
+            
+            const firstHalf = windows.slice(0, Math.floor(windows.length / 2));
+            const secondHalf = windows.slice(Math.floor(windows.length / 2));
+            
+            const avgFirst = firstHalf.reduce((sum, w) => sum + w.deviation, 0) / firstHalf.length;
+            const avgSecond = secondHalf.reduce((sum, w) => sum + w.deviation, 0) / secondHalf.length;
+            
+            const finalDeviation = windows[windows.length - 1].deviation;
+            
+            if (finalDeviation < 5 && avgSecond < avgFirst) {
+                return { 
+                    type: 'nash_equilibrium', 
+                    confidence: Math.max(0, 100 - finalDeviation * 10),
+                    finalDeviation,
+                    windows
+                };
+            } else if (avgSecond < avgFirst) {
+                return {
+                    type: 'converging',
+                    confidence: Math.max(0, 100 - finalDeviation * 5),
+                    finalDeviation,
+                    windows
+                };
+            } else {
+                return {
+                    type: 'diverging',
+                    confidence: Math.min(100, finalDeviation * 5),
+                    finalDeviation,
+                    windows
+                };
+            }
+        }
+
+        function analyzeCycling(history) {
+            // Look for cyclical patterns in strategy shifts
+            const windowSize = 30;
+            const shifts = [];
+            
+            for (let i = windowSize; i < history.length; i += windowSize) {
+                const window = history.slice(i - windowSize, i);
+                const counts = { rock: 0, paper: 0, scissors: 0 };
+                window.forEach(h => counts[h.alphaChoice]++);
+                
+                let dominant = 'rock';
+                let maxCount = counts.rock;
+                if (counts.paper > maxCount) { dominant = 'paper'; maxCount = counts.paper; }
+                if (counts.scissors > maxCount) { dominant = 'scissors'; }
+                
+                shifts.push({ round: i, dominant, confidence: (maxCount / windowSize) * 100 });
+            }
+            
+            if (shifts.length < 3) return { type: 'insufficient_data', cycles: [] };
+            
+            // Check if dominant strategy cycles through rock -> paper -> scissors -> rock
+            let cycles = 0;
+            for (let i = 0; i < shifts.length - 2;i++) {
+                const seq = [shifts[i].dominant, shifts[i + 1].dominant, shifts[i + 2].dominant];
+                if (
+                    (seq[0] === 'rock' && seq[1] === 'paper' && seq[2] === 'scissors') ||
+                    (seq[0] === 'paper' && seq[1] === 'scissors' && seq[2] === 'rock') ||
+                    (seq[0] === 'scissors' && seq[1] === 'rock' && seq[2] === 'paper')
+                ) {
+                    cycles++;
+                }
+            }
+            
+            const isCycling = cycles >= 2;
+            
+            return {
+                type: isCycling ? 'cycling' : 'no_cycles',
+                cycles,
+                shifts,
+                confidence: isCycling ? Math.min(100, cycles * 30) : 0
+            };
+        }
+
+        function analyzeExploitation(alpha, beta, history) {
+            // Check if one agent consistently exploits the other
+            const windowSize = 50;
+            const windows = [];
+            
+            for (let i = windowSize; i <= history.length; i++) {
+                const window = history.slice(i - windowSize, i);
+                let alphaWins = 0, betaWins = 0;
+                
+                window.forEach(h => {
+                    if (h.winner === 'alpha') alphaWins++;
+                    if (h.winner === 'beta') betaWins++;
+                });
+                
+                const alphaWinRate = (alphaWins / (alphaWins + betaWins)) * 100;
+                windows.push({ round: i, alphaWinRate });
+            }
+            
+            if (windows.length === 0) return { type: 'balanced', exploiter: null };
+            
+            const avgWinRate = windows.reduce((sum, w) => sum + w.alphaWinRate, 0) / windows.length;
+            const finalWinRate = windows[windows.length - 1].alphaWinRate;
+            
+            // Check for consistent exploitation (>60% win rate)
+            if (finalWinRate > 60) {
+                return {
+                    type: 'exploitation',
+                    exploiter: 'alpha',
+                    winRate: finalWinRate,
+                    confidence: Math.min(100, (finalWinRate - 50) * 2)
+                };
+            } else if (finalWinRate < 40) {
+                return {
+                    type: 'exploitation',
+                    exploiter: 'beta',
+                    winRate: 100 - finalWinRate,
+                    confidence: Math.min(100, (50 - finalWinRate) * 2)
+                };
+            } else {
+                return {
+                    type: 'balanced',
+                    exploiter: null,
+                    winRate: finalWinRate,
+                    confidence: 100 - Math.abs(finalWinRate - 50) * 2
+                };
+            }
+        }
+
+        function analyzeAdaptation(history) {
+            // Measure how quickly agents adapt to each other
+            const windowSize = 20;
+            const adaptations = [];
+            
+            for (let i = windowSize; i < history.length - windowSize; i += windowSize) {
+                const before = history.slice(i - windowSize, i);
+                const after = history.slice(i, i + windowSize);
+                
+                // Count strategy in before window
+                const beforeCounts = { rock: 0, paper: 0, scissors: 0 };
+                before.forEach(h => beforeCounts[h.betaChoice]++);
+                
+                // Find dominant beta strategy
+                let betaDominant = 'rock';
+                let maxCount = beforeCounts.rock;
+                if (beforeCounts.paper > maxCount) { betaDominant = 'paper'; maxCount = beforeCounts.paper; }
+                if (beforeCounts.scissors > maxCount) { betaDominant = 'scissors'; }
+                
+                // Check if alpha countered in after window
+                const afterCounts = { rock: 0, paper: 0, scissors: 0 };
+                after.forEach(h => afterCounts[h.alphaChoice]++);
+                
+                const counter = betaDominant === 'rock' ? 'paper' : (betaDominant === 'paper' ? 'scissors' : 'rock');
+                const counterRate = (afterCounts[counter] / windowSize) * 100;
+                
+                adaptations.push({ round: i, counterRate, betaDominant, counter });
+            }
+            
+            if (adaptations.length === 0) return { type: 'insufficient_data', adaptiveness: 0 };
+            
+            const avgCounterRate = adaptations.reduce((sum, a) => sum + a.counterRate, 0) / adaptations.length;
+            
+            let adaptationType;
+            if (avgCounterRate > 45) adaptationType = 'highly_adaptive';
+            else if (avgCounterRate > 35) adaptationType = 'adaptive';
+            else adaptationType = 'slow_adaptation';
+            
+            return {
+                type: adaptationType,
+                adaptiveness: avgCounterRate,
+                adaptations,
+                confidence: Math.min(100, avgCounterRate * 2)
+            };
+        }
+
+        // Run simulation
+        async function runSimulation(rounds) {
+            const statusEl = document.getElementById('status');
+            statusEl.className = 'status running';
+            statusEl.textContent = `Running ${rounds} rounds...`;
+            
+            const alpha = new Agent('Alpha');
+            const beta = new Agent('Beta');
+            const history = [];
+            
+            for (let i = 0; i < rounds; i++) {
+                const alphaChoice = alpha.makeChoice();
+                const betaChoice = beta.makeChoice();
+                
+                alpha.observeOpponent(betaChoice);
+                beta.observeOpponent(alphaChoice);
+                
+                const winner = determineWinner(alphaChoice, betaChoice);
+                
+                history.push({
+                    round: i + 1,
+                    alphaChoice,
+                    betaChoice,
+                    winner,
+                    alphaStrategy: alpha.getStrategy(),
+                    betaStrategy: beta.getStrategy()
+                });
+                
+                // Update UI periodically
+                if (i % 50 === 0) {
+                    statusEl.textContent = `Running ${rounds} rounds... (${i}/${rounds})`;
+                    await new Promise(resolve => setTimeout(resolve, 0));
+                }
+            }
+            
+            statusEl.className = 'status';
+            statusEl.textContent = `Completed ${rounds} rounds. Analyzing patterns...`;
+            
+            // Analyze
+            const convergence = analyzeConvergence(history);
+            const cycling = analyzeCycling(history);
+            const exploitation = analyzeExploitation(alpha, beta, history);
+            const adaptation = analyzeAdaptation(history);
+            
+            displayAnalysis({ convergence, cycling, exploitation, adaptation, history, alpha, beta });
+            drawDivergenceChart(history);
+            
+            statusEl.textContent = `Analysis complete. ${rounds} rounds simulated.`;
+            
+            return { convergence, cycling, exploitation, adaptation, history };
+        }
+
+        function displayAnalysis({ convergence, cycling, exploitation, adaptation, history, alpha, beta }) {
+            const grid = document.getElementById('analysisGrid');
+            grid.innerHTML = '';
+            
+            // Convergence card
+            const convCard = createAnalysisCard('Convergence Pattern', convergence);
+            grid.appendChild(convCard);
+            
+            // Cycling card
+            const cycleCard = createAnalysisCard('Cyclical Behavior', cycling);
+            grid.appendChild(cycleCard);
+            
+            // Exploitation card
+            const exploitCard = createAnalysisCard('Exploitation Pattern', exploitation);
+            grid.appendChild(exploitCard);
+            
+            // Adaptation card
+            const adaptCard = createAnalysisCard('Adaptation Speed', adaptation);
+            grid.appendChild(adaptCard);
+            
+// Overall metrics card
+            const metricsCard = createMetricsCard(alpha, beta, history);
+            grid.appendChild(metricsCard);
+        }
+
+        function createAnalysisCard(title, analysis) {
+            const card = document.createElement('div');
+            card.className = 'analysis-card';
+            
+            let content = `<h2>${title}</h2>`;
+            
+            // Pattern type badge
+            content += `<div class="pattern-type">${analysis.type.replace(/_/g, ' ').toUpperCase()}</div>`;
+            
+            // Observations
+            if (analysis.type === 'nash_equilibrium') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Nash Equilibrium Achieved</div>
+                        <div class="observation-detail">
+                            Strategies have converged to near-optimal randomness (33/33/33 split).
+                            Final deviation: ${analysis.finalDeviation.toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'converging') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Trending Toward Equilibrium</div>
+                        <div class="observation-detail">
+                            Agents are adapting toward balanced play, but haven't fully stabilized yet.
+                            Current deviation: ${analysis.finalDeviation.toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'diverging') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Unstable Strategies</div>
+                        <div class="observation-detail">
+                            Strategies are diverging from equilibrium. Agents may be exploiting or over-adapting.
+                            Current deviation: ${analysis.finalDeviation.toFixed(2)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'cycling') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Cyclical Pattern Detected</div>
+                        <div class="observation-detail">
+                            Strategies cycle through rock → paper → scissors in predictable waves.
+                            ${analysis.cycles} complete cycles observed.
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'exploitation') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">${analysis.exploiter.toUpperCase()} Exploiting Successfully</div>
+                        <div class="observation-detail">
+                            One agent has found a consistent advantage, achieving ${analysis.winRate.toFixed(1)}% win rate.
+                            The other agent hasn't adapted effectively.
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'balanced') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Balanced Competition</div>
+                        <div class="observation-detail">
+                            Neither agent has sustained advantage. Win rates hover around 50/50.
+                            Alpha win rate: ${analysis.winRate.toFixed(1)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'highly_adaptive') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Rapid Counter-Adaptation</div>
+                        <div class="observation-detail">
+                            Agents quickly identify and counter opponent patterns.
+                            Average counter rate: ${analysis.adaptiveness.toFixed(1)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'adaptive') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Moderate Adaptation</div>
+                        <div class="observation-detail">
+                            Agents adapt to patterns but with some lag.
+                            Average counter rate: ${analysis.adaptiveness.toFixed(1)}%
+                        </div>
+                    </div>
+                `;
+            } else if (analysis.type === 'slow_adaptation') {
+                content += `
+                    <div class="observation">
+                        <div class="observation-title">Slow Learning</div>
+                        <div class="observation-detail">
+                            Agents struggle to identify or counter opponent strategies.
+                            Average counter rate: ${analysis.adaptiveness.toFixed(1)}%
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Confidence metric
+            if (analysis.confidence !== undefined) {
+                content += `
+                    <div class="metrics">
+                        <div class="metric">
+                            <div class="metric-value">${analysis.confidence.toFixed(0)}%</div>
+                            <div class="metric-label">Confidence</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = content;
+            return card;
+        }
+
+        function createMetricsCard(alpha, beta, history) {
+            const card = document.createElement('div');
+            card.className = 'analysis-card';
+            
+            const alphaStrat = alpha.getStrategy();
+            const betaStrat = beta.getStrategy();
+            
+            let alphaWins = 0, betaWins = 0, ties = 0;
+            history.forEach(h => {
+                if (h.winner === 'alpha') alphaWins++;
+                else if (h.winner === 'beta') betaWins++;
+                else ties++;
+            });
+            
+            const content = `
+                <h2>Overall Metrics</h2>
+                <div class="metrics">
+                    <div class="metric">
+                        <div class="metric-value">${alphaWins}</div>
+                        <div class="metric-label">Alpha Wins</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${betaWins}</div>
+                        <div class="metric-label">Beta Wins</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${ties}</div>
+                        <div class="metric-label">Ties</div>
+                    </div>
+                    <div class="metric">
+                        <div class="metric-value">${history.length}</div>
+                        <div class="metric-label">Total Rounds</div>
+                    </div>
+                </div>
+                <div class="heatmap">
+                    <h3 style="margin-bottom: 10px; color: #D4A574;">Final Strategy Distribution</h3>
+                    <div class="heatmap-row">
+                        <div class="heatmap-label">Alpha:</div>
+                        <div class="heatmap-cell" style="background: rgba(212, 165, 116, ${alphaStrat.rock / 100});">
+                            🪨 ${alphaStrat.rock.toFixed(0)}%
+                        </div>
+<div class="heatmap-cell" style="background: rgba(212, 165, 116, ${alphaStrat.paper / 100});">
+                            📄 ${alphaStrat.paper.toFixed(0)}%
+                        </div>
+                        <div class="heatmap-cell" style="background: rgba(212, 165, 116, ${alphaStrat.scissors / 100});">
+                            ✂️ ${alphaStrat.scissors.toFixed(0)}%
+                        </div>
+                    </div>
+                    <div class="heatmap-row">
+                        <div class="heatmap-label">Beta:</div>
+                        <div class="heatmap-cell" style="background: rgba(184, 134, 11, ${betaStrat.rock / 100});">
+                            🪨 ${betaStrat.rock.toFixed(0)}%
+                        </div>
+                        <div class="heatmap-cell" style="background: rgba(184, 134, 11, ${betaStrat.paper / 100});">
+                            📄 ${betaStrat.paper.toFixed(0)}%
+                        </div>
+                        <div class="heatmap-cell" style="background: rgba(184, 134, 11, ${betaStrat.scissors / 100});">
+                            ✂️ ${betaStrat.scissors.toFixed(0)}%
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            card.innerHTML = content;
+            return card;
+        }
+
+        function drawDivergenceChart(history) {
+            const canvas = document.getElementById('divergenceChart');
+            const ctx = canvas.getContext('2d');
+            
+            canvas.width = canvas.offsetWidth;
+            canvas.height = 300;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const width = canvas.width;
+            const height = canvas.height;
+            const padding = 40;
+            const graphWidth = width - padding * 2;
+            const graphHeight = height - padding * 2;
+            
+            // Draw axes
+            ctx.strokeStyle = '#B8860B';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(padding, padding);
+            ctx.lineTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Sample data
+            const sampleRate = Math.max(1, Math.floor(history.length / 200));
+            const sampled = history.filter((_, i) => i % sampleRate === 0);
+            
+            if (sampled.length < 2) return;
+            
+            const pointSpacing = graphWidth / (sampled.length - 1);
+            
+            // Draw divergence from Nash equilibrium
+            ctx.strokeStyle = '#D4A574';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            sampled.forEach((h, i) => {
+                const deviation = Math.sqrt(
+                    Math.pow(h.alphaStrategy.rock - 33.33, 2) +
+                    Math.pow(h.alphaStrategy.paper - 33.33, 2) +
+                    Math.pow(h.alphaStrategy.scissors - 33.33, 2)
+                );
+                
+                const x = padding + i * pointSpacing;
+                const y = height - padding - (deviation / 50) * graphHeight; // Scale to 50% max deviation
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            
+            ctx.stroke();
+            
+            // Draw Nash equilibrium line
+            ctx.strokeStyle = '#B8860B';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(padding, height - padding);
+            ctx.lineTo(width - padding, height - padding);
+            ctx.stroke();
+            
+            // Labels
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#D4A574';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText('Round', width / 2, height - 10);
+            ctx.save();
+            ctx.translate(15, height / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Deviation from Nash (%)', 0, 0);
+            ctx.restore();
+            
+            // Legend
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#D4A574';
+            ctx.fillText('Alpha divergence from 33/33/33', padding + 10, padding + 15);
+            ctx.strokeStyle = '#B8860B';
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(padding + 10, padding + 30);
+            ctx.lineTo(padding + 50, padding + 30);
+            ctx.stroke();
+            ctx.fillStyle = '#B8860B';
+            ctx.fillText('Nash Equilibrium', padding + 55, padding + 33);
+        }
+
+        // Event listeners
+        document.getElementById('run100').addEventListener('click', () => runSimulation(100));
+        document.getElementById('run500').addEventListener('click', () => runSimulation(500));
+        document.getElementById('run1000').addEventListener('click', () => runSimulation(1000));
+        
+        document.getElementById('exportBtn').addEventListener('click', () => {
+            const data = {
+                timestamp: new Date().toISOString(),
+                analysis: 'RPS Pattern Analysis',
+                note: 'Export data from current analysis'
+            };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `rps-analysis-${Date.now()}.json`;
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
+</html>
