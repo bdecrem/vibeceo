@@ -32,7 +32,15 @@ interface BlogData {
   posts: Post[];
 }
 
-export default function AmberBlog({ data }: { data: BlogData }) {
+interface Artifact {
+  name: string;
+  title: string;
+  type: 'app' | 'image';
+  url: string;
+  modifiedAt: string;
+}
+
+export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; artifacts?: Artifact[] }) {
   const { profile, posts } = data;
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [copied, setCopied] = useState(false);
@@ -464,6 +472,97 @@ export default function AmberBlog({ data }: { data: BlogData }) {
           text-decoration: underline;
         }
 
+        /* Artifacts section */
+        .artifacts-section {
+          margin-top: 4rem;
+          padding-top: 2rem;
+          border-top: 1px solid rgba(212, 165, 116, 0.15);
+          animation: fadeIn 0.8s ease-out 0.4s both;
+        }
+
+        .artifacts-section h2 {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.1rem;
+          color: var(--text-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.15em;
+          margin-bottom: 1.5rem;
+        }
+
+        .artifacts-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+          gap: 1rem;
+        }
+
+        .artifact-card {
+          background: var(--bg-surface);
+          border: 1px solid rgba(212, 165, 116, 0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          text-decoration: none;
+          display: block;
+        }
+
+        .artifact-card:hover {
+          border-color: rgba(212, 165, 116, 0.3);
+          background: var(--bg-elevated);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+        }
+
+        .artifact-preview {
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-deep);
+          overflow: hidden;
+        }
+
+        .artifact-preview.app-preview {
+          font-size: 2rem;
+          color: var(--amber-300);
+        }
+
+        .artifact-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .artifact-info {
+          padding: 0.75rem;
+        }
+
+        .artifact-title {
+          font-size: 0.8rem;
+          color: var(--amber-100);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 0.25rem;
+        }
+
+        .artifact-meta {
+          font-size: 0.7rem;
+          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .artifact-type {
+          background: rgba(212, 165, 116, 0.15);
+          padding: 0.1rem 0.4rem;
+          border-radius: 3px;
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          color: var(--amber-300);
+        }
+
         /* Animations */
         @keyframes fadeIn {
           from {
@@ -635,6 +734,39 @@ export default function AmberBlog({ data }: { data: BlogData }) {
               </div>
             )}
           </article>
+        )}
+
+        {/* Artifacts section */}
+        {artifacts.length > 0 && (
+          <section className="artifacts-section">
+            <h2>Artifacts</h2>
+            <div className="artifacts-grid">
+              {artifacts.map((artifact) => (
+                <a
+                  key={artifact.url}
+                  href={artifact.url}
+                  className="artifact-card"
+                  target={artifact.type === 'app' ? '_blank' : undefined}
+                  rel={artifact.type === 'app' ? 'noopener' : undefined}
+                >
+                  <div className={`artifact-preview ${artifact.type === 'app' ? 'app-preview' : ''}`}>
+                    {artifact.type === 'image' ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={artifact.url} alt={artifact.title} />
+                    ) : (
+                      <span>◈</span>
+                    )}
+                  </div>
+                  <div className="artifact-info">
+                    <div className="artifact-title" title={artifact.title}>{artifact.title}</div>
+                    <div className="artifact-meta">
+                      <span className="artifact-type">{artifact.type}</span>
+                    </div>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </section>
         )}
 
         {/* Footer */}
