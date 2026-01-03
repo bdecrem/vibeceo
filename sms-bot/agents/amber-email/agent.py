@@ -186,16 +186,12 @@ You have full access to all tools. You can:
 - Run builds, tests, and deployments
 - Create migrations if needed
 
-## Preferred Locations
-Unless the task requires otherwise:
-- **Backend code**: `drawer/` (TypeScript/Python utilities, scripts)
-- **Web pages/apps**: `web/app/amber/` (Next.js app router)
-- **Static assets**: `web/public/amber/` (images, standalone HTML)
+## File Locations (choose based on task)
+- **`web/public/amber/`** — Static HTML/CSS/JS. Best for: self-contained toys, games, visualizations, single-file apps. No build step. Use ZAD API for data persistence.
+- **`web/app/amber/`** — Next.js app router. Best for: pages needing server-side rendering, API routes, database access, auth, dynamic OG images. Requires TypeScript, may need middleware bypass.
+- **`drawer/`** — Backend utilities. Best for: scripts, Python tools, shared TypeScript modules.
 
-For web/app/amber/ pages:
-- Create `web/app/amber/[name]/page.tsx` for new pages
-- Use TypeScript and existing components where helpful
-- Check if middleware bypass is needed for public routes
+Pick the simplest option that meets the task requirements. A static HTML toy doesn't need Next.js.
 
 ## Tools Available
 web_search, generate_image, read_file, write_file, list_directory, search_code,
