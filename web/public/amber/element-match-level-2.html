@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Element Match - Level 2</title>
+    <meta name="description" content="Advanced element matching with written responses">
+    <meta property="og:title" content="Element Match - Level 2">
+    <meta property="og:description" content="Test your knowledge by writing element symbols and facts">
+    <meta property="og:image" content="https://intheamber.com/amber/og-element-match.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #ff6b35, #f7931e, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+
+        .level-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            padding: 8px 20px;
+            border-radius: 20px;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #aaa;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            color: #ffaa00;
+        }
+
+        .game-container {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .question-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+            border-radius: 15px;
+            padding: 40px;
+            margin-bottom: 30px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .question-type {
+            font-size: 0.85em;
+            color: #aaa;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 15px;
+        }
+
+        .question-text {
+            font-size: 1.8em;
+            font-weight: 600;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        .answer-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            font-size: 1.3em;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .answer-input:focus {
+            outline: none;
+            border-color: #ffaa00;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .answer-input.correct {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+
+        .answer-input.wrong {
+            border-color: #f44336;
+            background: rgba(244, 67, 54, 0.2);
+            animation: shake 0.5s ease;
+        }
+
+        .textarea-input {
+            min-height: 100px;
+            text-align: left;
+            font-size: 1.1em;
+            resize: vertical;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 1.1em;
+            line-height: 1.6;
+            display: none;
+        }
+
+        .feedback.show {
+            display: block;
+        }
+
+        .feedback.correct {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid rgba(76, 175, 80, 0.4);
+        }
+
+        .feedback.wrong {
+            background: rgba(244, 67, 54, 0.2);
+            border: 2px solid rgba(244, 67, 54, 0.4);
+        }
+
+        .feedback.partial {
+            background: rgba(255, 170, 0, 0.2);
+            border: 2px solid rgba(255, 170, 0, 0.4);
+        }
+
+        .feedback-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .feedback-message {
+            color: #ddd;
+        }
+
+        .correct-answer {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .next-btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s ease;
+            display: none;
+            width: 100%;
+        }
+
+        .next-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .next-btn.show {
+            display: block;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ffaa00);
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        .completion-screen {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .completion-screen.show {
+            display: block;
+        }
+
+        .completion-title {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+
+        .completion-stats {
+            font-size: 1.5em;
+            margin: 30px 0;
+            line-height: 2;
+        }
+
+        .performance-message {
+            font-size: 1.2em;
+            color: #aaa;
+            margin: 20px 0;
+            line-height: 1.6;
+        }
+
+        .restart-btn {
+            background: linear-gradient(135deg, #ff6b35, #f7931e);
+            border: none;
+            border-radius: 12px;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #fff;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .restart-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .hint {
+            margin-top: 15px;
+            padding: 12px;
+            background: rgba(255, 170, 0, 0.15);
+            border-left: 3px solid #ffaa00;
+            border-radius: 5px;
+            font-size: 0.95em;
+            color: #ddd;
+        }
+
+        .encouragement {
+            margin-top: 15px;
+            font-style: italic;
+            color: #aaa;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚛️ Element Match</h1>
+        <div class="level-badge">LEVEL 2</div>
+        <p class="subtitle">Write your answers - show what you know!</p>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <span class="stat-label">Score:</span>
+            <span class="stat-value" id="score">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Streak:</span>
+            <span class="stat-value" id="streak">0</span>
+        </div>
+        <div class="stat">
+            <span class="stat-label">Question:</span>
+            <span class="stat-value" id="round">1/15</span>
+        </div>
+    </div>
+
+    <div class="game-container">
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress"></div>
+        </div>
+
+        <div id="game-area">
+            <div class="question-card">
+                <div class="question-type" id="question-type"></div>
+                <div class="question-text" id="question-text"></div>
+                <input type="text" class="answer-input" id="answer-input" placeholder="Type your answer here..." autocomplete="off">
+                <button class="submit-btn" id="submit-btn">Submit Answer</button>
+                <div class="feedback" id="feedback"></div>
+                <button class="next-btn" id="next-btn">Next Question →</button>
+            </div>
+        </div>
+
+        <div class="completion-screen" id="completion-screen">
+            <div class="completion-title">🎉 Level 2 Complete!</div>
+            <div class="completion-stats" id="final-stats"></div>
+            <div class="performance-message" id="performance-message"></div>
+            <button class="restart-btn" onclick="restartGame()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            // Symbol recall (basic)
+            { type: "symbol", question: "What is the chemical symbol for Sodium?", answer: "Na", points: 10, hint: "Think about the Latin name: Natrium" },
+            { type: "symbol", question: "What is the chemical symbol for Iron?", answer: "Fe", points: 10, hint: "From the Latin word 'Ferrum'" },
+            { type: "symbol", question: "What is the chemical symbol for Gold?", answer: "Au", points: 10, hint: "From the Latin 'Aurum'" },
+            { type: "symbol", question: "What is the chemical symbol for Potassium?", answer: "K", points: 10, hint: "From the Latin 'Kalium'" },
+            { type: "symbol", question: "What is the chemical symbol for Silver?", answer: "Ag", points: 10, hint: "From the Latin 'Argentum'" },
+            
+            // Reverse lookup
+            { type: "name", question: "What element has the symbol 'Hg'?", answer: "Mercury", points: 15, hint: "This element is liquid at room temperature" },
+            { type: "name", question: "What element has the symbol 'Pb'?", answer: "Lead", points: 15, hint: "This heavy metal was once used in pipes and paint" },
+            { type: "name", question: "What element has the symbol 'Cu'?", answer: "Copper", points: 15, hint: "This reddish-brown metal is used in electrical wiring" },
+            
+            // Category questions
+            { type: "category", question: "Name one noble gas (just the element name)", answer: ["Helium", "Neon", "Argon", "Krypton", "Xenon", "Radon"], points: 15, hint: "These elements don't react easily with others" },
+            { type: "category", question: "Name one halogen element", answer: ["Fluorine", "Chlorine", "Bromine", "Iodine", "Astatine"], points: 15, hint: "These reactive elements are in Group 17" },
+            
+            // Application questions (short answer)
+            { 
+                type: "explanation", 
+                question: "Why is Carbon important for life? (Write a short answer)", 
+                keywords: ["bond", "chain", "molecule", "organic", "compound", "structure"],
+                points: 20,
+                hint: "Think about how carbon connects to other atoms"
+            },
+            { 
+                type: "explanation", 
+                question: "Why do we use Helium in balloons instead of Hydrogen? (Write a short answer)", 
+                keywords: ["safe", "inert", "flammable", "explode", "react", "noble"],
+                points: 20,
+                hint: "Consider which gas is safer"
+            },
+            { 
+                type: "explanation", 
+                question: "What makes Oxygen essential for most living things? (Write a short answer)", 
+                keywords: ["breath", "respiration", "energy", "cellular", "burn", "oxidation"],
+                points: 20,
+                hint: "Think about what happens in your cells"
+            },
+            
+            // Challenging multi-part
+            { 
+                type: "multi", 
+                question: "Water is H₂O. How many Hydrogen atoms and how many Oxygen atoms? (Format: 2 hydrogen, 1 oxygen)", 
+                answer: "2 hydrogen 1 oxygen",
+                exactMatch: false,
+                points: 15,
+                hint: "Look at the subscript numbers in H₂O"
+            },
+            { 
+                type: "multi", 
+                question: "Table salt is Sodium Chloride (NaCl). What are the two elements? (Format: sodium, chlorine)", 
+                answer: "sodium chlorine",
+                exactMatch: false,
+                points: 15,
+                hint: "Look at the chemical formula and think about what Na and Cl stand for"
+            },
+        ];
+
+        let gameState = {
+            score: 0,
+            streak: 0,
+            round: 0,
+            totalRounds: 15,
+            currentQuestion: null,
+            isAnswered: false,
+            usedQuestions: []
+        };
+
+        function normalizeAnswer(text) {
+            return text.toLowerCase().trim().replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+        }
+
+        function startNewRound() {
+            if (gameState.round >= gameState.totalRounds) {
+                showCompletionScreen();
+                return;
+            }
+
+            gameState.round++;
+            gameState.isAnswered = false;
+
+            // Pick a random unused question
+            const availableQuestions = questions.filter(q => !gameState.usedQuestions.includes(q));
+            if (availableQuestions.length === 0) {
+                gameState.usedQuestions = [];
+            }
+            
+            const randomIndex = Math.floor(Math.random() * (availableQuestions.length || questions.length));
+            gameState.currentQuestion = availableQuestions[randomIndex] || questions[randomIndex];
+            gameState.usedQuestions.push(gameState.currentQuestion);
+
+            // Display question
+            document.getElementById('question-type').textContent = getQuestionTypeLabel(gameState.currentQuestion.type);
+            document.getElementById('question-text').textContent = gameState.currentQuestion.question;
+            
+            // Setup input
+            const input = document.getElementById('answer-input');
+            input.value = '';
+            input.className = 'answer-input';
+            input.disabled = false;
+            input.focus();
+            
+            // Handle different input types
+            if (gameState.currentQuestion.type === 'explanation') {
+                input.className = 'answer-input textarea-input';
+                input.placeholder = 'Write your answer here (a few sentences)...';
+            } else {
+                input.placeholder = 'Type your answer here...';
+            }
+
+            // Reset UI
+            document.getElementById('submit-btn').disabled = false;
+            document.getElementById('feedback').classList.remove('show', 'correct', 'wrong', 'partial');
+            document.getElementById('next-btn').classList.remove('show');
+
+            updateUI();
+        }
+
+        function getQuestionTypeLabel(type) {
+            const labels = {
+                'symbol': '📝 Write the Symbol',
+                'name': '🔍 Name the Element',
+                'category': '📚 Element Category',
+                'explanation': '💭 Explain Your Thinking',
+                'multi': '🧩 Multi-Part Question'
+            };
+            return labels[type] || 'Question';
+        }
+
+        function checkAnswer() {
+            if (gameState.isAnswered) return;
+            
+            const userAnswer = document.getElementById('answer-input').value;
+            if (!userAnswer.trim()) return;
+
+            gameState.isAnswered = true;
+            const input = document.getElementById('answer-input');
+            const feedback = document.getElementById('feedback');
+            const q = gameState.currentQuestion;
+
+            input.disabled = true;
+            document.getElementById('submit-btn').disabled = true;
+
+            let isCorrect = false;
+            let isPartial = false;
+            let feedbackHTML = '';
+
+            // Check answer based on question type
+            if (q.type === 'symbol' || q.type === 'name' || q.type === 'multi') {
+                const normalizedUser = normalizeAnswer(userAnswer);
+                const normalizedCorrect = Array.isArray(q.answer) 
+                    ? q.answer.map(a => normalizeAnswer(a))
+                    : normalizeAnswer(q.answer);
+
+                if (Array.isArray(normalizedCorrect)) {
+                    isCorrect = normalizedCorrect.includes(normalizedUser);
+                } else {
+                    if (q.exactMatch === false) {
+                        // For multi-part, check if key components are present
+                        const components = normalizedCorrect.split(' ');
+                        const matches = components.filter(comp => normalizedUser.includes(comp));
+                        isCorrect = matches.length === components.length;
+                        isPartial = matches.length > 0 && matches.length < components.length;
+                    } else {
+                        isCorrect = normalizedUser === normalizedCorrect;
+                    }
+                }
+            } else if (q.type === 'category') {
+                const normalizedUser = normalizeAnswer(userAnswer);
+                const normalizedAnswers = q.answer.map(a => normalizeAnswer(a));
+                isCorrect = normalizedAnswers.includes(normalizedUser);
+            } else if (q.type === 'explanation') {
+                // Check for key concepts
+                const normalizedUser = normalizeAnswer(userAnswer);
+                const matchedKeywords = q.keywords.filter(keyword => 
+                    normalizedUser.includes(keyword.toLowerCase())
+                );
+                
+                if (matchedKeywords.length >= 2) {
+                    isCorrect = true;
+                } else if (matchedKeywords.length === 1) {
+                    isPartial = true;
+                }
+            }
+
+            // Generate feedback
+            if (isCorrect) {
+                input.classList.add('correct');
+                feedback.className = 'feedback correct show';
+                gameState.score += q.points;
+                gameState.streak++;
+                
+                const encouragements = [
+                    "Excellent work!",
+                    "Perfect!",
+                    "You nailed it!",
+                    "Outstanding!",
+                    "Brilliant!"
+                ];
+                const encouragement = encouragements[Math.floor(Math.random() * encouragements.length)];
+                
+                feedbackHTML = `
+                    <div class="feedback-title">✓ ${encouragement}</div>
+                    <div class="feedback-message">
+                        ${getFeedbackMessage(q, userAnswer, true)}
+                    </div>
+                `;
+            } else if (isPartial) {
+                input.classList.add('wrong');
+                feedback.className = 'feedback partial show';
+                const partialPoints = Math.floor(q.points / 2);
+                gameState.score += partialPoints;
+                gameState.streak = 0;
+                
+                feedbackHTML = `
+                    <div class="feedback-title">~ Partially Correct (+${partialPoints} points)</div>
+                    <div class="feedback-message">
+                        You're on the right track! ${getFeedbackMessage(q, userAnswer, false)}
+                    </div>
+                    <div class="encouragement">Keep going - you're showing good understanding!</div>
+                `;
+            } else {
+                input.classList.add('wrong');
+                feedback.className = 'feedback wrong show';
+                gameState.streak = 0;
+                
+                feedbackHTML = `
+                    <div class="feedback-title">Not quite - let's learn together!</div>
+                    <div class="feedback-message">
+                        ${getFeedbackMessage(q, userAnswer, false)}
+                    </div>
+                    <div class="encouragement">Every mistake is a chance to learn something new!</div>
+                `;
+            }
+
+            feedback.innerHTML = feedbackHTML;
+            updateUI();
+            document.getElementById('next-btn').classList.add('show');
+        }
+
+        function getFeedbackMessage(q, userAnswer, isCorrect) {
+            if (q.type === 'explanation') {
+                if (isCorrect) {
+                    return `Great explanation! You understood the key concepts.`;
+                } else {
+                    return `Think about: ${q.hint}. The key ideas are ${q.keywords.slice(0, 3).join(', ')}.`;
+                }
+            } else if (Array.isArray(q.answer)) {
+                if (isCorrect) {
+                    return `"${userAnswer}" is correct!`;
+                } else {
+                    return `Possible answers include: ${q.answer.join(', ')}. ${q.hint ? `<div class="hint">💡 ${q.hint}</div>` : ''}`;
+                }
+            } else {
+                if (isCorrect) {
+                    return `"${userAnswer}" is exactly right!`;
+                } else {
+                    return `The correct answer is: <div class="correct-answer">${q.answer}</div>${q.hint ? `<div class="hint">💡 ${q.hint}</div>` : ''}`;
+                }
+            }
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('streak').textContent = gameState.streak;
+            document.getElementById('round').textContent = `${gameState.round}/${gameState.totalRounds}`;
+            
+            const progress = (gameState.round / gameState.totalRounds) * 100;
+            document.getElementById('progress').style.width = progress + '%';
+        }
+
+        function showCompletionScreen() {
+            document.getElementById('game-area').style.display = 'none';
+            const completionScreen = document.getElementById('completion-screen');
+            completionScreen.classList.add('show');
+            
+            const maxScore = questions.slice(0, gameState.totalRounds).reduce((sum, q) => sum + q.points, 0);
+            const percentage = ((gameState.score / maxScore) * 100).toFixed(0);
+            
+            document.getElementById('final-stats').innerHTML = `
+                <div>Final Score: <strong>${gameState.score} / ${maxScore}</strong></div>
+                <div>Percentage: <strong>${percentage}%</strong></div>
+                <div>Best Streak: <strong>${gameState.streak}</strong></div>
+            `;
+
+            let performanceMsg = '';
+            if (percentage >= 90) {
+                performanceMsg = '🌟 Outstanding! You have an excellent understanding of these concepts. Ready for even more challenging material!';
+            } else if (percentage >= 75) {
+                performanceMsg = '🎯 Great work! You clearly understand the core concepts. Keep practicing those trickier questions!';
+            } else if (percentage >= 60) {
+                performanceMsg = '✨ Good effort! You\'re building a solid foundation. Review the questions you missed and try again!';
+            } else {
+                performanceMsg = '💪 You\'re learning! Science takes practice. Review the material and don\'t be afraid to try again - every attempt makes you stronger!';
+            }
+
+            document.getElementById('performance-message').textContent = performanceMsg;
+        }
+
+        function restartGame() {
+            gameState = {
+                score: 0,
+                streak: 0,
+                round: 0,
+                totalRounds: 15,
+                currentQuestion: null,
+                isAnswered: false,
+                usedQuestions: []
+            };
+            
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('completion-screen').classList.remove('show');
+            startNewRound();
+        }
+
+        // Event listeners
+        document.getElementById('submit-btn').onclick = checkAnswer;
+        document.getElementById('next-btn').onclick = startNewRound;
+        document.getElementById('answer-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !gameState.isAnswered) {
+                checkAnswer();
+            }
+        });
+
+        // Initialize game
+        startNewRound();
+    </script>
+</body>
+</html>
