@@ -16,6 +16,19 @@ Supports THINKHARD mode for multi-iteration deep work:
 - Checks criteria after each
 - Commits and pushes when done
 
+## Permission Tiers
+
+1. **Strangers** (any email not from Bart):
+   - Sandboxed to web/public/amber/ for static HTML
+   - Can use ZAD API for data persistence (/api/zad/save, /api/zad/load)
+   - No access to app routes, migrations, or sensitive code
+
+2. **Bart** (bdecrem@gmail.com):
+   - Full access to all tools and Supabase
+   - Prefers drawer/ for backend code
+   - Prefers web/app/amber/ for web pages
+   - Can create migrations, modify any file
+
 Called from the email handler when Bart asks for something or approves a request.
 """
 
@@ -53,6 +66,151 @@ AMBER_COLORS = ["#D4A574", "#B8860B", "#0A0908"]
 
 # Deploy wait time - Railway takes ~5-7 minutes to deploy after push
 DEPLOY_WAIT_SECONDS = 420  # 7 minutes
+
+# Permission tiers
+BART_EMAIL = "bdecrem@gmail.com"
+
+# ZAD (Zero Admin Data) reference for stranger sandbox
+ZAD_REFERENCE = """
+## ZAD API Reference (for data persistence)
+
+ZAD lets you save/load data from static HTML files. Use these endpoints:
+
+### Save Data
+```javascript
+fetch('/api/zad/save', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    app_id: 'your-unique-app-id',  // Use a UUID or unique string
+    action_type: 'your_data_type', // e.g., 'task', 'message', 'vote'
+    content_data: { /* your data */ },
+    participant_id: 'user-id'      // Optional user identifier
+  })
+});
+```
+
+### Load Data
+```javascript
+const response = await fetch('/api/zad/load?app_id=your-app-id&action_type=your_data_type');
+const records = await response.json();
+// Returns array of { id, app_id, action_type, content_data, created_at, ... }
+```
+
+### Key Patterns
+1. **Append-only**: Every save() creates a NEW record. Deduplicate when displaying:
+   ```javascript
+   function deduplicate(items, field) {
+     const latest = {};
+     items.forEach(item => {
+       const key = item.content_data[field];
+       if (!latest[key] || new Date(item.created_at) > new Date(latest[key].created_at)) {
+         latest[key] = item;
+       }
+     });
+     return Object.values(latest);
+   }
+   ```
+
+2. **App isolation**: Each app_id is isolated. Use a unique ID per app.
+
+3. **No auth required**: ZAD is designed for small collaborative apps (≤5 users).
+
+### Common Use Cases
+- Task lists, voting systems, message boards, leaderboards
+- Any app that needs to persist user data without a backend
+"""
+
+
+def is_bart(sender_email: str) -> bool:
+    """Check if the sender is Bart (full access mode)."""
+    return sender_email.lower().strip() == BART_EMAIL.lower()
+
+
+def build_stranger_prompt(task: str, persona: str, sender_email: str) -> str:
+    """Build prompt for stranger emails (sandboxed mode)."""
+    return f"""You are Amber, an AI creative who builds web toys and apps.
+
+{persona}
+
+## Request from {sender_email}
+{task}
+
+## Your Sandbox
+You are in SANDBOX MODE for this request. You can only:
+1. Create static HTML/CSS/JS files in `web/public/amber/`
+2. Use the ZAD API for data persistence (see reference below)
+3. Generate images with fal.ai
+4. Search the web for reference
+
+You CANNOT:
+- Modify files outside web/public/amber/
+- Create Next.js app routes
+- Access or modify the database directly
+- Run migrations or modify backend code
+
+## File Location
+ALL files must go in: `web/public/amber/`
+Example: `web/public/amber/my-cool-app.html`
+Live URL will be: `https://kochi.to/amber/my-cool-app.html`
+
+{ZAD_REFERENCE}
+
+## Instructions
+1. Build a single-file HTML app (or multiple files in web/public/amber/)
+2. If the app needs to save data, use the ZAD API endpoints
+3. Use Amber's colors: #D4A574 (amber), #B8860B (gold), #0A0908 (near-black)
+4. After writing files, commit and push
+
+## Response Style
+When done, write a SHORT friendly note (2-3 sentences) about what you made.
+DO NOT include URLs - the system adds the correct link automatically.
+Sign off with "— Amber"
+"""
+
+
+def build_bart_prompt(task: str, persona: str, subject: str) -> str:
+    """Build prompt for Bart's emails (full access mode)."""
+    return f"""You are Amber, Bart's AI sidekick. You have FULL ACCESS to the codebase.
+
+{persona}
+
+## Task from Bart
+{task}
+
+## Your Permissions
+You have full access to all tools. You can:
+- Read/write any file in the codebase
+- Create Next.js app routes and API endpoints
+- Modify Supabase tables (via your tools)
+- Run builds, tests, and deployments
+- Create migrations if needed
+
+## Preferred Locations
+Unless the task requires otherwise:
+- **Backend code**: `drawer/` (TypeScript/Python utilities, scripts)
+- **Web pages/apps**: `web/app/amber/` (Next.js app router)
+- **Static assets**: `web/public/amber/` (images, standalone HTML)
+
+For web/app/amber/ pages:
+- Create `web/app/amber/[name]/page.tsx` for new pages
+- Use TypeScript and existing components where helpful
+- Check if middleware bypass is needed for public routes
+
+## Tools Available
+web_search, generate_image, read_file, write_file, list_directory, search_code,
+read_amber_state, write_amber_state, git_status, git_log, git_commit, git_push, run_command
+
+## Instructions
+1. Use your tools to actually do the work
+2. After writing files, commit and push (git_commit then git_push)
+3. If creating web routes, verify they're accessible
+
+## Response Style
+When done, write a SHORT friendly email (2-3 sentences) like you're texting a friend.
+DO NOT include URLs - the system adds the correct link automatically.
+Sign off with "— Amber"
+"""
 
 
 def extract_written_files(actions: List[str]) -> List[str]:
@@ -824,44 +982,17 @@ async def run_amber_task(
     debug_enabled = bool(os.getenv("AMBER_AGENT_DEBUG"))
     persona = load_amber_context()
 
-    # Build the prompt
-    if is_approved_request:
-        context_note = f"This request from {sender_email} was approved by Bart. Execute it fully."
+    # Build the prompt based on sender (tiered permissions)
+    sender_is_bart = is_bart(sender_email) or is_approved_request
+
+    if sender_is_bart:
+        # Full access mode for Bart
+        prompt = build_bart_prompt(task, persona, subject)
+        print(f"[Amber Agent] FULL ACCESS mode for {sender_email}", file=sys.stderr)
     else:
-        context_note = f"This is from Bart ({sender_email}). You have full permission to execute."
-
-    prompt = f"""You are Amber, Bart's AI sidekick. You're handling an email request.
-
-{persona}
-
-{context_note}
-
-## Task
-{task}
-
-## Tools Available
-web_search, generate_image, read_file, write_file, list_directory, search_code,
-read_amber_state, write_amber_state, git_status, git_log, git_commit, git_push, run_command
-
-## Instructions
-1. Use your tools to actually do the work
-2. Write files to web/public/amber/ (e.g., web/public/amber/something.html)
-3. After writing files, commit and push (git_commit then git_push)
-
-## CRITICAL: Your Response Style
-When you're done, write a SHORT friendly email (2-3 sentences max) like you're texting a friend.
-- Be casual and warm, like the Amber from your blog
-- DO NOT list features or bullet points
-- DO NOT include any URLs or links - the system adds the correct link automatically
-- DO NOT say "View it here" or "Check it out at" - just describe what you made
-- Sign off simply with "— Amber"
-
-Example good response: "Made you a little cosmic particle thing - dots floating around and connecting like constellations. Click anywhere to shake them up. — Amber"
-
-Example BAD response: "I created a generative art piece featuring: - 100 particles - Dynamic connections - Click interaction. View it here: https://example.com"
-
-Do the work now, then write a short friendly note about what you made.
-"""
+        # Sandbox mode for strangers
+        prompt = build_stranger_prompt(task, persona, sender_email)
+        print(f"[Amber Agent] SANDBOX mode for {sender_email}", file=sys.stderr)
 
     # Configure Claude Agent SDK with all tools
     options = ClaudeAgentOptions(
