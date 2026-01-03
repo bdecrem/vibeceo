@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amber Transformations — Live</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(10, 9, 8, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #B8860B;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            color: #D4A574;
+            margin-bottom: 15px;
+        }
+
+        .control-group {
+            margin: 10px 0;
+        }
+
+        label {
+            display: block;
+            color: #B8860B;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        select, button {
+            background: #1A1918;
+            color: #D4A574;
+            border: 1px solid #B8860B;
+            padding: 8px 12px;
+            font-family: 'Courier New', monospace;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        button:hover, select:hover {
+            background: #2A2928;
+            border-color: #D4A574;
+        }
+
+        .back-link {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: #B8860B;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #B8860B;
+            border-radius: 20px;
+            background: rgba(10, 9, 8, 0.9);
+            transition: all 0.3s ease;
+            z-index: 10;
+        }
+
+        .back-link:hover {
+            background: rgba(184, 134, 11, 0.2);
+            color: #D4A574;
+        }
+
+        .info {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(10, 9, 8, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #B8860B;
+            max-width: 300px;
+            font-size: 0.85em;
+            color: #B8860B;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            .controls, .info {
+                position: relative;
+                top: auto;
+                left: auto;
+                right: auto;
+                margin: 10px;
+            }
+
+            .back-link {
+                bottom: 10px;
+                left: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas"></canvas>
+
+        <div class="controls">
+            <h1>Amber Transformations</h1>
+            <div class="control-group">
+                <label for="pattern">Pattern</label>
+                <select id="pattern" onchange="changePattern()">
+                    <option value="flow">Flow</option>
+                    <option value="crystallize">Crystallize</option>
+                    <option value="suspend">Suspend</option>
+                    <option value="accumulate">Accumulate</option>
+                    <option value="ripple">Ripple</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <button onclick="toggleAnimation()">Pause/Resume</button>
+            </div>
+            <div class="control-group">
+                <button onclick="resetAnimation()">Reset</button>
+            </div>
+        </div>
+
+        <div class="info">
+            Generative art inspired by transformation through time. 
+            Each pattern represents a different aspect of preservation and change.
+        </div>
+
+        <a href="journey.html" class="back-link">← Back to Journey</a>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        let particles = [];
+        let animationId;
+        let isAnimating = true;
+        let currentPattern = 'flow';
+        let time = 0;
+
+        const colors = {
+            amber1: '#D4A574',
+            amber2: '#B8860B',
+            amber3: '#8B7355',
+            dark: '#0A0908'
+        };
+
+        class Particle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1.0;
+                this.size = Math.random() * 3 + 1;
+                this.color = Math.random() > 0.5 ? colors.amber1 : colors.amber2;
+            }
+
+            update() {
+                switch(currentPattern) {
+                    case 'flow':
+                        this.flowPattern();
+                        break;
+                    case 'crystallize':
+                        this.crystallizePattern();
+                        break;
+                    case 'suspend':
+                        this.suspendPattern();
+                        break;
+                    case 'accumulate':
+                        this.accumulatePattern();
+                        break;
+                    case 'ripple':
+                        this.ripplePattern();
+                        break;
+                }
+
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.005;
+
+                // Wrap around screen
+                if (this.x < 0) this.x = width;
+                if (this.x > width) this.x = 0;
+                if (this.y < 0) this.y = height;
+                if (this.y > height) this.y = 0;
+            }
+
+            flowPattern() {
+                const flowX = Math.sin(this.y * 0.01 + time * 0.02) * 0.5;
+                const flowY = Math.cos(this.x * 0.01 + time * 0.02) * 0.5;
+                this.vx = flowX;
+                this.vy = flowY;
+            }
+
+            crystallizePattern() {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const angle = Math.atan2(this.y - centerY, this.x - centerX);
+                const quantizedAngle = Math.round(angle / (Math.PI / 6)) * (Math.PI / 6);
+                const force = 0.2;
+                this.vx += Math.cos(quantizedAngle) * force;
+                this.vy += Math.sin(quantizedAngle) * force;
+                this.vx *= 0.95;
+                this.vy *= 0.95;
+            }
+
+            suspendPattern() {
+                const drift = Math.sin(time * 0.05 + this.x * 0.01) * 0.1;
+                this.vy = drift;
+                this.vx *= 0.98;
+                this.life -= 0.001; // Slower decay
+            }
+
+            accumulatePattern() {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const dx = centerX - this.x;
+                const dy = centerY - this.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                
+                if(dist > 50) {
+                    this.vx += dx * 0.0001;
+                    this.vy += dy * 0.0001;
+                } else {
+                    this.vx *= 0.9;
+                    this.vy *= 0.9;
+                }
+            }
+
+            ripplePattern() {
+                const centerX = width / 2;
+                const centerY = height / 2;
+                const dx = this.x - centerX;
+                const dy = this.y - centerY;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const angle = Math.atan2(dy, dx);
+                
+                const ripple = Math.sin(dist * 0.05 - time * 0.1) * 2;
+                this.vx = Math.cos(angle) * ripple;
+                this.vy = Math.sin(angle) * ripple;
+            }
+
+            draw() {
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Connections to nearby particles
+                particles.forEach(other => {
+                    if (other === this) return;
+                    const dx = other.x - this.x;
+                    const dy = other.y - this.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 80) {
+                        ctx.globalAlpha = (1 - dist / 80) * this.life * 0.3;
+                        ctx.strokeStyle = this.color;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(this.x, this.y);
+                        ctx.lineTo(other.x, other.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < 100; i++) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const vx = (Math.random() - 0.5) * 2;
+                const vy = (Math.random() - 0.5) * 2;
+                particles.push(new Particle(x, y, vx, vy));
+            }
+        }
+
+        function animate() {
+            if (!isAnimating) return;
+
+            // Fade effect instead of clearing
+            ctx.fillStyle = 'rgba(10, 9, 8, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                particles[i].update();
+                particles[i].draw();
+
+                if (particles[i].isDead()) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            // Add new particles
+            if (particles.length < 100) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const vx = (Math.random() - 0.5) * 2;
+                const vy = (Math.random() - 0.5) * 2;
+                particles.push(new Particle(x, y, vx, vy));
+            }
+
+            time++;
+            animationId = requestAnimationFrame(animate);
+        }
+
+        function changePattern() {
+            currentPattern = document.getElementById('pattern').value;
+        }
+
+        function toggleAnimation() {
+            isAnimating = !isAnimating;
+            if (isAnimating) {
+                animate();
+            }
+        }
+
+        function resetAnimation() {
+            time = 0;
+            initParticles();
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Start
+        initParticles();
+        animate();
+    </script>
+</body>
+</html>

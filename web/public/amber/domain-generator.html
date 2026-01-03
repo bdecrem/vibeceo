@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Domain Generator — Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            color: #D4A574;
+            margin-bottom: 20px;
+            animation: glow 3s ease-in-out infinite;
+        }
+
+        @keyframes glow {
+            0%, 100% { text-shadow: 0 0 10px rgba(212, 165, 116, 0.3); }
+            50% { text-shadow: 0 0 20px rgba(212, 165, 116, 0.6); }
+        }
+
+        .subtitle {
+            color: #B8860B;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+
+        .domain-display {
+            background: rgba(184, 134, 11, 0.1);
+            border: 2px solid #B8860B;
+            border-radius: 15px;
+            padding: 40px 20px;
+            margin: 40px 0;
+            min-height: 150px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+
+        .domain-display:hover {
+            background: rgba(184, 134, 11, 0.15);
+            border-color: #D4A574;
+        }
+
+        .domain-text {
+            font-size: 2em;
+            color: #D4A574;
+            font-weight: bold;
+            margin-bottom: 10px;
+            word-break: break-all;
+        }
+
+        .tld {
+            color: #B8860B;
+        }
+
+        .available-tag {
+            display: inline-block;
+            background: rgba(184, 134, 11, 0.3);
+            color: #D4A574;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            margin-top: 10px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #B8860B, #D4A574);
+            color: #0A0908;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            font-family: 'Courier New', monospace;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: bold;
+            margin: 10px;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(212, 165, 116, 0.4);
+        }
+
+        button:active {
+            transform: scale(0.95);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 30px;
+            color: #B8860B;
+            text-decoration: none;
+            padding: 10px 20px;
+            border: 1px solid #B8860B;
+            border-radius: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(184, 134, 11, 0.2);
+            color: #D4A574;
+        }
+
+        .history {
+            margin-top: 40px;
+            padding: 20px;
+            border-top: 1px solid #B8860B;
+        }
+
+        .history-title {
+            font-size: 1.2em;
+            color: #D4A574;
+            margin-bottom: 15px;
+        }
+
+        .history-item {
+            display: inline-block;
+            margin: 5px;
+            padding: 8px 15px;
+            background: rgba(184, 134, 11, 0.1);
+            border: 1px solid #B8860B;
+            border-radius: 15px;
+            font-size: 0.9em;
+            color: #B8860B;
+            opacity: 0;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .particle {
+            position: fixed;
+            width: 4px;
+            height: 4px;
+            background: #D4A574;
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: float 3s ease-out;
+        }
+
+        @keyframes float {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-200px) scale(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Domain Generator</h1>
+        <div class="subtitle">Finding names with rhythm and poetry</div>
+
+        <div class="domain-display" id="domainDisplay">
+            <div class="domain-text" id="domainText">Click below to generate</div>
+        </div>
+
+        <button id="generateBtn" onclick="generateDomain()">Generate Domain</button>
+        <button id="copyBtn" onclick="copyDomain()" style="display: none;">Copy</button>
+
+        <div class="history" id="history" style="display: none;">
+            <div class="history-title">Generated Names</div>
+            <div id="historyList"></div>
+        </div>
+
+        <a href="journey.html" class="back-link">← Back to Journey</a>
+    </div>
+
+    <script>
+        const prefixes = [
+            'amber', 'crystal', 'echo', 'drift', 'pulse', 'spark',
+            'glow', 'flow', 'flux', 'shift', 'bloom', 'ripple',
+            'weave', 'trace', 'dawn', 'ember', 'frost', 'mist'
+        ];
+
+        const middles = [
+            'accumulates', 'preserves', 'transforms', 'suspends', 'captures',
+            'in', 'through', 'within', 'beneath', 'across', 'beyond',
+            'maker', 'keeper', 'finder', 'seeker', 'holder', 'bearer'
+        ];
+
+        const suffixes = [
+            'amber', 'time', 'light', 'space', 'mind', 'code',
+            'art', 'form', 'wave', 'field', 'void', 'core'
+        ];
+
+        const tlds = ['.com', '.io', '.ai', '.co', '.dev', '.art', '.xyz', '.today'];
+
+        let history = [];
+        let currentDomain = '';
+
+        function createParticles(x, y) {
+            for (let i = 0; i < 10; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = x + (Math.random() - 0.5) * 100 + 'px';
+                particle.style.top = y + 'px';
+                document.body.appendChild(particle);
+                
+                setTimeout(() => particle.remove(), 3000);
+            }
+        }
+
+        function generateDomain() {
+            const btn = document.getElementById('generateBtn');
+            const rect = btn.getBoundingClientRect();
+            createParticles(rect.left + rect.width / 2, rect.top);
+
+            let domain;
+            const pattern = Math.random();
+
+            if (pattern < 0.3) {
+                // prefix + middle + suffix pattern (e.g., "amberinthetime")
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const middle = middles[Math.floor(Math.random() * middles.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                domain = prefix + middle + suffix;
+            } else if (pattern < 0.6) {
+                // prefix + suffix pattern (e.g., "ambertime")
+                const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                domain = prefix + suffix;
+            } else {
+                // middle + suffix pattern (e.g., "intheamber")
+                const middle = middles[Math.floor(Math.random() * middles.length)];
+                const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+                domain = middle + 'the' + suffix;
+            }
+
+            const tld = tlds[Math.floor(Math.random() * tlds.length)];
+            const fullDomain = domain + tld;
+
+            currentDomain = fullDomain;
+
+            // Display domain
+            const domainEl = document.getElementById('domainText');
+            const displayText = domain + '<span class="tld">' + tld + '</span>';
+            domainEl.innerHTML = displayText;
+
+            // Add to history
+            if (!history.includes(fullDomain)) {
+                history.unshift(fullDomain);
+                if (history.length > 10) history.pop();
+                updateHistory();
+            }
+
+            // Show copy button
+            document.getElementById('copyBtn').style.display = 'inline-block';
+        }
+
+        function updateHistory() {
+            const historyContainer = document.getElementById('history');
+            const historyList = document.getElementById('historyList');
+            
+            if (history.length > 0) {
+                historyContainer.style.display = 'block';
+                historyList.innerHTML = '';
+                
+                history.forEach((domain, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.textContent = domain;
+                    item.style.animationDelay = (index * 0.1) + 's';
+                    historyList.appendChild(item);
+                });
+            }
+        }
+
+        function copyDomain() {
+            if (currentDomain) {
+                navigator.clipboard.writeText(currentDomain).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const originalText = btn.textContent;
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        btn.textContent = originalText;
+                    }, 1500);
+                });
+            }
+        }
+
+        // Generate one on load
+        window.addEventListener('load', () => {
+            setTimeout(generateDomain, 500);
+        });
+    </script>
+</body>
+</html>
