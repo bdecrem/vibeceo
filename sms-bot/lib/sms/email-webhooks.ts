@@ -610,8 +610,8 @@ async function sendAmberEmail(to: string, subject: string, text: string): Promis
   try {
     const [response] = await sgMail.send({
       to,
-      from: 'Amber <amber@advisorsfoundry.ai>',
-      replyTo: 'amber@reply.advisorsfoundry.ai',
+      from: 'Amber <amber@intheamber.com>',
+      replyTo: 'amber@intheamber.com',
       subject,
       text,
       trackingSettings: {
