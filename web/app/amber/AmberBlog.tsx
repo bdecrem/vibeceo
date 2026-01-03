@@ -666,8 +666,42 @@ function formatDate(dateStr: string): string {
 function renderContent(content: string): JSX.Element[] {
   const sections = content.split('\n\n');
   return sections.map((section, idx) => {
-    if (section.trim() === '---') {
+    const trimmed = section.trim();
+
+    if (trimmed === '---') {
       return <hr key={idx} />;
+    }
+
+    // Handle h2 headers: ## Title
+    if (trimmed.startsWith('## ')) {
+      const headerText = trimmed.slice(3);
+      return (
+        <h3 key={idx} style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: '1.5rem',
+          fontWeight: 600,
+          color: 'var(--amber-200)',
+          marginTop: '2.5rem',
+          marginBottom: '1rem',
+          borderBottom: '1px solid rgba(212, 165, 116, 0.15)',
+          paddingBottom: '0.5rem'
+        }}>{headerText}</h3>
+      );
+    }
+
+    // Handle h3 headers: ### Title
+    if (trimmed.startsWith('### ')) {
+      const headerText = trimmed.slice(4);
+      return (
+        <h4 key={idx} style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontSize: '1.25rem',
+          fontWeight: 600,
+          color: 'var(--amber-300)',
+          marginTop: '2rem',
+          marginBottom: '0.75rem'
+        }}>{headerText}</h4>
+      );
     }
 
     // Handle paragraphs with basic formatting
