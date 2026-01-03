@@ -35,7 +35,7 @@ function App() {
             setKickHit(prev => prev + 1);
         };
 
-        // Start the audio
+        // Start the audio - user interaction satisfies autoplay policy
         engine.start(35); // 35 seconds
     };
 
@@ -43,7 +43,7 @@ function App() {
         return (
             <div className="ascii-container">
                 <button className="start-button" onClick={handleStart}>
-                    Enter Berghain
+                    ░▒▓ ENTER THE GRID ▓▒░
                 </button>
             </div>
         );

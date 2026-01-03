@@ -17,6 +17,11 @@ class AudioEngine {
         this.masterGain.gain.value = 0.5;
         this.masterGain.connect(this.audioContext.destination);
         this.startTime = this.audioContext.currentTime;
+        
+        // Resume AudioContext in case it's suspended (autoplay policy)
+        if (this.audioContext.state === 'suspended') {
+            this.audioContext.resume();
+        }
     }
 
     // Create a kick drum (heavy Berlin-style)
