@@ -45,6 +45,7 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
   const [copied, setCopied] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   const VISIBLE_POSTS = 2;
   const recentPosts = posts.slice(0, VISIBLE_POSTS);
@@ -69,6 +70,17 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, [posts]);
+
+  // Handle escape key for drawer modal
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && drawerOpen) {
+        setDrawerOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
+  }, [drawerOpen]);
 
   const selectPost = (post: Post) => {
     setSelectedPost(post);
@@ -309,6 +321,191 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           animation: fadeIn 0.3s ease-out;
         }
 
+        /* The Drawer button */
+        .drawer-btn {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          width: 100%;
+          padding: 0.875rem 1.25rem;
+          margin-top: 0.5rem;
+          background: rgba(212, 165, 116, 0.03);
+          border: 1px solid rgba(212, 165, 116, 0.15);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          color: var(--text-muted);
+          font-family: inherit;
+          font-size: 0.9rem;
+        }
+
+        .drawer-btn:hover {
+          border-color: var(--amber-300);
+          color: var(--amber-200);
+          background: rgba(212, 165, 116, 0.08);
+          box-shadow: 0 0 20px rgba(212, 165, 116, 0.1);
+        }
+
+        .drawer-btn-content {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+        }
+
+        .drawer-icon {
+          display: flex;
+          gap: 3px;
+        }
+
+        .drawer-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 2px;
+          background: var(--amber-400);
+          opacity: 0.6;
+        }
+
+        .drawer-btn:hover .drawer-dot {
+          opacity: 1;
+        }
+
+        .drawer-label {
+          font-weight: 500;
+        }
+
+        .drawer-count {
+          opacity: 0.6;
+          font-weight: 400;
+        }
+
+        /* Drawer Modal */
+        .drawer-modal-overlay {
+          position: fixed;
+          inset: 0;
+          background: rgba(10, 9, 8, 0.9);
+          backdrop-filter: blur(4px);
+          z-index: 1000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          padding: 2rem;
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .drawer-modal {
+          background: var(--bg-surface);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 12px;
+          max-width: 800px;
+          max-height: 80vh;
+          width: 100%;
+          overflow: hidden;
+          box-shadow: 0 0 60px rgba(212, 165, 116, 0.15);
+          animation: modalSlideIn 0.3s ease-out;
+        }
+
+        @keyframes modalSlideIn {
+          from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.98);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .drawer-modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
+        .drawer-modal-title {
+          font-family: 'Cormorant Garamond', serif;
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: var(--amber-200);
+          margin: 0;
+        }
+
+        .drawer-modal-close {
+          background: transparent;
+          border: none;
+          color: var(--text-muted);
+          font-size: 1.5rem;
+          cursor: pointer;
+          padding: 0.25rem;
+          line-height: 1;
+          transition: color 0.2s ease;
+        }
+
+        .drawer-modal-close:hover {
+          color: var(--amber-300);
+        }
+
+        .drawer-modal-content {
+          padding: 1.5rem;
+          overflow-y: auto;
+          max-height: calc(80vh - 80px);
+        }
+
+        .drawer-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+          gap: 1rem;
+        }
+
+        .drawer-item {
+          background: var(--bg-deep);
+          border: 1px solid rgba(212, 165, 116, 0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          transition: all 0.3s ease;
+          text-decoration: none;
+          display: block;
+        }
+
+        .drawer-item:hover {
+          border-color: rgba(212, 165, 116, 0.3);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
+        }
+
+        .drawer-item-preview {
+          aspect-ratio: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--bg-elevated);
+          overflow: hidden;
+        }
+
+        .drawer-item-preview.app-icon {
+          font-size: 1.5rem;
+          color: var(--amber-300);
+        }
+
+        .drawer-item-preview img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .drawer-item-info {
+          padding: 0.5rem 0.75rem;
+        }
+
+        .drawer-item-title {
+          font-size: 0.75rem;
+          color: var(--amber-100);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
         /* Main content */
         .post-content {
           animation: fadeIn 0.6s ease-out;
@@ -472,97 +669,6 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           text-decoration: underline;
         }
 
-        /* Artifacts section */
-        .artifacts-section {
-          margin-top: 4rem;
-          padding-top: 2rem;
-          border-top: 1px solid rgba(212, 165, 116, 0.15);
-          animation: fadeIn 0.8s ease-out 0.4s both;
-        }
-
-        .artifacts-section h2 {
-          font-family: 'Cormorant Garamond', serif;
-          font-size: 1.1rem;
-          color: var(--text-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
-          margin-bottom: 1.5rem;
-        }
-
-        .artifacts-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-          gap: 1rem;
-        }
-
-        .artifact-card {
-          background: var(--bg-surface);
-          border: 1px solid rgba(212, 165, 116, 0.1);
-          border-radius: 8px;
-          overflow: hidden;
-          transition: all 0.3s ease;
-          text-decoration: none;
-          display: block;
-        }
-
-        .artifact-card:hover {
-          border-color: rgba(212, 165, 116, 0.3);
-          background: var(--bg-elevated);
-          transform: translateY(-2px);
-          box-shadow: 0 4px 20px rgba(212, 165, 116, 0.1);
-        }
-
-        .artifact-preview {
-          aspect-ratio: 1;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          background: var(--bg-deep);
-          overflow: hidden;
-        }
-
-        .artifact-preview.app-preview {
-          font-size: 2rem;
-          color: var(--amber-300);
-        }
-
-        .artifact-preview img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-        }
-
-        .artifact-info {
-          padding: 0.75rem;
-        }
-
-        .artifact-title {
-          font-size: 0.8rem;
-          color: var(--amber-100);
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-          margin-bottom: 0.25rem;
-        }
-
-        .artifact-meta {
-          font-size: 0.7rem;
-          color: var(--text-muted);
-          display: flex;
-          align-items: center;
-          gap: 0.25rem;
-        }
-
-        .artifact-type {
-          background: rgba(212, 165, 116, 0.15);
-          padding: 0.1rem 0.4rem;
-          border-radius: 3px;
-          font-size: 0.65rem;
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-          color: var(--amber-300);
-        }
-
         /* Animations */
         @keyframes fadeIn {
           from {
@@ -675,6 +781,29 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
                 )}
               </>
             )}
+
+            {/* The Drawer button */}
+            {artifacts.length > 0 && (
+              <button
+                className="drawer-btn"
+                onClick={() => setDrawerOpen(true)}
+              >
+                <span className="drawer-btn-content">
+                  <span className="drawer-icon">
+                    <span className="drawer-dot" />
+                    <span className="drawer-dot" />
+                    <span className="drawer-dot" />
+                    <span className="drawer-dot" />
+                    <span className="drawer-dot" />
+                  </span>
+                  <span>
+                    <span className="drawer-label">The Drawer</span>
+                    <span className="drawer-count"> · {artifacts.length} things</span>
+                  </span>
+                </span>
+                <span className="view-all-arrow">›</span>
+              </button>
+            )}
           </nav>
         )}
 
@@ -736,39 +865,6 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           </article>
         )}
 
-        {/* Artifacts section */}
-        {artifacts.length > 0 && (
-          <section className="artifacts-section">
-            <h2>Artifacts</h2>
-            <div className="artifacts-grid">
-              {artifacts.map((artifact) => (
-                <a
-                  key={artifact.url}
-                  href={artifact.url}
-                  className="artifact-card"
-                  target={artifact.type === 'app' ? '_blank' : undefined}
-                  rel={artifact.type === 'app' ? 'noopener' : undefined}
-                >
-                  <div className={`artifact-preview ${artifact.type === 'app' ? 'app-preview' : ''}`}>
-                    {artifact.type === 'image' ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={artifact.url} alt={artifact.title} />
-                    ) : (
-                      <span>◈</span>
-                    )}
-                  </div>
-                  <div className="artifact-info">
-                    <div className="artifact-title" title={artifact.title}>{artifact.title}</div>
-                    <div className="artifact-meta">
-                      <span className="artifact-type">{artifact.type}</span>
-                    </div>
-                  </div>
-                </a>
-              ))}
-            </div>
-          </section>
-        )}
-
         {/* Footer */}
         <footer className="amber-footer">
           <p>
@@ -780,6 +876,53 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           </p>
         </footer>
       </div>
+
+      {/* Drawer Modal */}
+      {drawerOpen && (
+        <div
+          className="drawer-modal-overlay"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDrawerOpen(false);
+          }}
+        >
+          <div className="drawer-modal">
+            <div className="drawer-modal-header">
+              <h2 className="drawer-modal-title">The Drawer</h2>
+              <button
+                className="drawer-modal-close"
+                onClick={() => setDrawerOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <div className="drawer-modal-content">
+              <div className="drawer-grid">
+                {artifacts.map((artifact) => (
+                  <a
+                    key={artifact.url}
+                    href={artifact.url}
+                    className="drawer-item"
+                    target="_blank"
+                    rel="noopener"
+                  >
+                    <div className={`drawer-item-preview ${artifact.type === 'app' ? 'app-icon' : ''}`}>
+                      {artifact.type === 'image' ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={artifact.url} alt={artifact.title} />
+                      ) : (
+                        <span>◈</span>
+                      )}
+                    </div>
+                    <div className="drawer-item-info">
+                      <div className="drawer-item-title" title={artifact.title}>{artifact.title}</div>
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
