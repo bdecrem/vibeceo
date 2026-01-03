@@ -7,7 +7,7 @@ Amber is Bart's persistent AI sidekick. She exists across multiple channels, eac
 | Channel | Location | Trigger | Capabilities |
 |---------|----------|---------|--------------|
 | Claude Code | `~/.claude/commands/amber.md` | `/amber` command | Full Claude Code tools, thinkhard via hooks |
-| Email | `sms-bot/agents/amber-email/agent.py` | Email to `amber@reply.advisorsfoundry.ai` | Claude Agent SDK, thinkhard via internal loop |
+| Email | `sms-bot/agents/amber-email/agent.py` | Email to `amber@intheamber.com` | Claude Agent SDK, thinkhard via internal loop |
 | Awareness | `sms-bot/agents/amber/index.ts` | Scheduled (7:30am, 6pm) | Read-only scanning, SMS alerts |
 | SMS | `sms-bot/commands/amber.ts` | `AMBER SCAN`, `AMBER STATUS` | On-demand awareness checks |
 
@@ -46,14 +46,14 @@ Same concepts, different execution models.
 # In Claude Code (after /amber)
 thinkhard: build a puzzle game
 
-# In email to amber@reply.advisorsfoundry.ai
+# In email to amber@intheamber.com
 Subject: New project
 thinkhard: create a meditation timer app
 ```
 
 ## Email Agent
 
-The email agent (`sms-bot/agents/amber-email/agent.py`) handles inbound emails to `amber@reply.advisorsfoundry.ai`.
+The email agent (`sms-bot/agents/amber-email/agent.py`) handles inbound emails to `amber@intheamber.com`.
 
 ### Behavior
 
