@@ -1,0 +1,582 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Play Experiments | Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1520 100%);
+            color: #e8d5b5;
+            font-family: 'Courier New', monospace;
+            line-height: 1.8;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #ffbf69;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(255, 191, 105, 0.3);
+        }
+
+        .subtitle {
+            color: #c89666;
+            font-size: 1.1em;
+            margin-bottom: 40px;
+            font-style: italic;
+        }
+
+        h2 {
+            color: #ffbf69;
+            font-size: 1.8em;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ffbf69;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #e8a85f;
+            font-size: 1.3em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #d4c5ab;
+        }
+
+        .experiment {
+            background: rgba(255, 191, 105, 0.05);
+            border-left: 4px solid #ffbf69;
+            padding: 25px;
+            margin: 25px 0;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .experiment:hover {
+            background: rgba(255, 191, 105, 0.08);
+            transform: translateX(5px);
+        }
+
+        .experiment-title {
+            color: #ffbf69;
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .difficulty {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.7em;
+            font-weight: normal;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .simple {
+            background: rgba(100, 220, 100, 0.2);
+            color: #70dd70;
+            border: 1px solid rgba(100, 220, 100, 0.5);
+        }
+
+        .challenging {
+            background: rgba(255, 140, 60, 0.2);
+            color: #ff8c3c;
+            border: 1px solid rgba(255, 140, 60, 0.5);
+        }
+
+        .description {
+            color: #d4c5ab;
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        .section {
+            margin: 15px 0;
+        }
+
+        .section-label {
+            color: #ffbf69;
+            font-weight: bold;
+            font-size: 0.95em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .section-content {
+            color: #d4c5ab;
+            padding-left: 15px;
+        }
+
+        ul {
+            margin: 10px 0 10px 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+            color: #d4c5ab;
+        }
+
+        .tech-stack {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tech {
+            background: rgba(255, 191, 105, 0.1);
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.85em;
+            color: #ffbf69;
+            border: 1px solid rgba(255, 191, 105, 0.3);
+        }
+
+        .why-interesting {
+            background: linear-gradient(135deg, rgba(255, 191, 105, 0.15) 0%, rgba(200, 150, 102, 0.15) 100%);
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 6px;
+            border-left: 3px solid #c89666;
+            font-style: italic;
+        }
+
+        .footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 191, 105, 0.3);
+            color: #c89666;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .intro {
+            background: rgba(255, 191, 105, 0.1);
+            padding: 25px;
+            border-radius: 8px;
+            margin-bottom: 40px;
+            border: 1px solid rgba(255, 191, 105, 0.2);
+        }
+
+        code {
+            background: rgba(255, 191, 105, 0.15);
+            padding: 2px 6px;
+            border-radius: 3px;
+            color: #ffbf69;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Self-Play Experiments</h1>
+        <div class="subtitle">From Simple Browser Toys to Dedicated Systems</div>
+
+        <div class="intro">
+            <p>After diving into self-play research, here are six experiment ideas - three simple enough to build in an afternoon, three challenging enough to require multiple sessions, external tools, or dedicated compute.</p>
+            <p>They're ordered by complexity, but they're all feasible. The simple ones capture the core dynamic. The challenging ones push toward real emergence.</p>
+        </div>
+
+        <h2>Simple Experiments (Code in One Session)</h2>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                1. Rock Paper Scissors Evolution
+                <span class="difficulty simple">Simple</span>
+            </div>
+            
+            <div class="description">
+                Two agents play rock-paper-scissors and adapt their strategy based on opponent patterns. Visualize how each agent learns to counter the other's tendencies, leading to cycling strategies or mixed equilibria.
+            </div>
+
+            <div class="section">
+                <div class="section-label">How It Works</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Each agent maintains probability distribution over R/P/S</li>
+                        <li>After each round, increase probability of move that would have won</li>
+                        <li>Every 50 rounds, agents update their models</li>
+                        <li>Run 1000+ games and show strategy evolution over time</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Visualization</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Real-time chart showing each agent's R/P/S probabilities</li>
+                        <li>Running win/loss/tie counts</li>
+                        <li>Heatmap of move patterns over time</li>
+                        <li>Controls to reset, speed up/slow down, or pause</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">Pure JavaScript</span>
+                <span class="tech">Canvas/SVG</span>
+                <span class="tech">~200 lines</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> You'll see agents develop counter-strategies, over-adapt, then get exploited, leading to cyclical behavior. Eventually they might converge to Nash equilibrium (33/33/33 random) or get stuck in patterns. Shows the arms race dynamic clearly.
+            </div>
+        </div>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                2. Number Guessing Game
+                <span class="difficulty simple">Simple</span>
+            </div>
+            
+            <div class="description">
+                Both agents pick numbers 1-100. Whoever picks the higher number wins UNLESS they're more than 10 apart, in which case the lower number wins (punishing greed). Watch strategies emerge around risk/reward balance.
+            </div>
+
+            <div class="section">
+                <div class="section-label">Rules & Learning</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Start with agents picking randomly from 1-100</li>
+                        <li>After each game, shift probability toward winning strategy</li>
+                        <li>If you won by going high, prefer higher numbers next time</li>
+                        <li>If you lost by going too high, prefer lower numbers</li>
+                        <li>Simple reinforcement: winning moves get +0.1 probability weight</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">What You'd See</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Histogram of number choices over time</li>
+                        <li>Average number picked by each agent (100-game rolling window)</li>
+                        <li>Win rate oscillations as strategies adapt</li>
+                        <li>Eventually: convergence to a stable range (probably 40-60)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">JavaScript</span>
+                <span class="tech">Chart.js</span>
+                <span class="tech">~250 lines</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> The non-linear reward structure creates an interesting optimization landscape. You'll see agents oscillate between greed and caution, and eventually find the game-theoretic sweet spot. Beautiful example of discovering optimal strategy through interaction.
+            </div>
+        </div>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                3. Grid World Predator-Prey
+                <span class="difficulty simple">Simple</span>
+            </div>
+            
+            <div class="description">
+                Simple 10x10 grid. Red agent (predator) tries to catch blue agent (prey). Prey tries to maximize distance. Both learn through trial and error. Surprisingly complex strategies emerge even in this tiny world.
+            </div>
+
+            <div class="section">
+                <div class="section-label">Implementation</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Q-learning for both agents (simple lookup table)</li>
+                        <li>State: relative positions (9 possible positions: N, NE, E, SE, S, SW, W, NW, CENTER)</li>
+                        <li>Actions: move up/down/left/right or stay</li>
+                        <li>Rewards: predator gets +10 for catch, prey gets +1 per turn survived</li>
+                        <li>Epsilon-greedy exploration (90% exploit learned policy, 10% random)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Visualization</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Live grid showing agents moving</li>
+                        <li>Trail lines showing recent paths</li>
+                        <li>Stats: average chase length, catch rate over time</li>
+                        <li>Heatmap of where prey tends to flee</li>
+                        <li>Speed controls to watch learning happen</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">JavaScript</span>
+                <span class="tech">Canvas</span>
+                <span class="tech">Q-learning</span>
+                <span class="tech">~300 lines</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> Early on, both agents move randomly. Then predator learns basic chase behavior. Then prey learns to use walls and corners. Then predator learns to cut off corners. Co-evolution in real-time. You'll see genuine strategy emergence.
+            </div>
+        </div>
+
+        <h2>Challenging Experiments (Multi-Session, External Tools, or Dedicated Compute)</h2>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                4. LLM Debate Arena
+                <span class="difficulty challenging">Challenging</span>
+            </div>
+            
+            <div class="description">
+                Two LLM instances debate a question. Third LLM judges which argument was more persuasive. Winners' argument styles get reinforced. Watch rhetoric strategies evolve across hundreds of debates. This requires API access and careful prompt engineering.
+            </div>
+
+            <div class="section">
+                <div class="section-label">Architecture</div>
+                <div class="section-content">
+                    <ul>
+                        <li><strong>Debater A & B:</strong> Claude or GPT-4 instances with system prompts defining their "style"</li>
+                        <li><strong>Judge:</strong> Separate LLM instance that evaluates arguments on clarity, evidence, logic</li>
+                        <li><strong>Question Bank:</strong> 50+ debate topics (philosophical, factual, ethical)</li>
+                        <li><strong>Style Evolution:</strong> After every 10 debates, analyze winning arguments and update system prompts</li>
+                        <li><strong>Backend:</strong> Node.js server to orchestrate debates, store results, evolve prompts</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Learning Mechanism</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Extract features from winning arguments (length, structure, use of examples, rhetorical devices)</li>
+                        <li>Update system prompts to reinforce successful strategies</li>
+                        <li>Maintain "prompt genome" - parameters that evolve (assertiveness, evidence density, emotional appeal)</li>
+                        <li>Cross-breed successful strategies between agents occasionally</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Frontend Visualization</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Live debate viewer showing arguments in real-time</li>
+                        <li>Strategy evolution chart (how prompt parameters change over generations)</li>
+                        <li>Win rate over time for each agent</li>
+                        <li>Word clouds of most successful argument patterns</li>
+                        <li>Archive of best debates</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">Node.js backend</span>
+                <span class="tech">LLM API (Anthropic/OpenAI)</span>
+                <span class="tech">React frontend</span>
+                <span class="tech">Database (Postgres/Supabase)</span>
+                <span class="tech">~1000 lines</span>
+                <span class="tech">$50-200 API cost</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> This is self-play in language space. You're not training the model weights (that requires massive compute) but evolving the prompts and strategies. Will one agent learn to use more analogies? More emotional appeals? Concise logic? The meta-learning is what's beautiful - LLMs learning to instruct themselves better.
+            </div>
+        </div>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                5. Evolving Neural Net Strategy Game
+                <span class="difficulty challenging">Challenging</span>
+            </div>
+            
+            <div class="description">
+                Custom turn-based game (like simplified chess or tic-tac-toe variant). Agents use small neural networks (trained with reinforcement learning) that evolve through self-play. This requires ML infrastructure but achieves real "learning" in the AlphaZero sense.
+            </div>
+
+            <div class="section">
+                <div class="section-label">Game: "Territory"</div>
+                <div class="section-content">
+                    <ul>
+                        <li>5x5 grid, two players, take turns placing stones</li>
+                        <li>Capture territory by surrounding empty spaces (like Go but simpler)</li>
+                        <li>Game ends when board fills or both players pass</li>
+                        <li>Score = territory controlled</li>
+                        <li>Simple enough to learn quickly, complex enough for strategy</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Neural Net Architecture</div>
+                <div class="section-content">
+                    <ul>
+                        <li><strong>Input:</strong> 5x5x2 tensor (player positions + opponent positions)</li>
+                        <li><strong>Hidden:</strong> Two dense layers (128 units each)</li>
+                        <li><strong>Output:</strong> 25 probabilities (one per grid position)</li>
+                        <li><strong>Small enough</strong> to train on laptop GPU in reasonable time</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Training Loop</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Initialize network with random weights</li>
+                        <li>Play 1000 self-play games using current network</li>
+                        <li>Store (state, action, reward) tuples from all games</li>
+                        <li>Train network on this data (supervised learning: predict good moves)</li>
+                        <li>Every 5000 games, save checkpoint and test against old versions</li>
+                        <li>Run for 50,000+ games to see real improvement</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Tech Stack</div>
+                <div class="section-content">
+                    <ul>
+                        <li><strong>Training:</strong> Python + PyTorch/TensorFlow</li>
+                        <li><strong>Game Engine:</strong> Python class with numpy</li>
+                        <li><strong>Web Interface:</strong> Flask backend serving the trained model</li>
+                        <li><strong>Frontend:</strong> React + Canvas for game visualization</li>
+                        <li><strong>Play against it:</strong> Load trained model in browser via TensorFlow.js</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">Python + PyTorch</span>
+                <span class="tech">Flask API</span>
+                <span class="tech">React frontend</span>
+<span class="tech">TensorFlow.js</span>
+                <span class="tech">~800 lines</span>
+                <span class="tech">Local GPU helpful</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> This is real neural net learning through self-play, not just rule-based adaptation. You'll watch a network go from random moves to coherent strategy in a few hours of training. You can play against it yourself and see it improve. It's a mini-AlphaZero. The visualizations of what the network "sees" as good moves are beautiful.
+            </div>
+        </div>
+
+        <div class="experiment">
+            <div class="experiment-title">
+                6. Multi-Agent Trading Simulation
+                <span class="difficulty challenging">Challenging</span>
+            </div>
+            
+            <div class="description">
+                10 agents trading a simple asset in a simulated market. Each agent learns pricing and timing strategies through self-play against the others. Emergent behaviors: market making, momentum trading, mean reversion. Watch mini "market crashes" and recoveries develop organically.
+            </div>
+
+            <div class="section">
+                <div class="section-label">Market Structure</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Single asset with intrinsic random walk value (baseline price)</li>
+                        <li>10 agents, each starts with $1000 cash + 10 shares</li>
+                        <li>Each round: agents can submit bids/asks or hold</li>
+                        <li>Simple order matching: highest bid meets lowest ask if they cross</li>
+                        <li>Agents see: current price, recent price history (10 steps), their own inventory</li>
+                        <li>Goal: maximize total wealth (cash + shares * price) at end</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Agent Learning</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Each agent uses reinforcement learning (PPO or DQN)</li>
+                        <li>State: price history, inventory, recent volatility</li>
+                        <li>Actions: submit bid at price X, submit ask at price Y, hold</li>
+                        <li>Reward: change in total wealth each round</li>
+                        <li>Diversity: initialize agents with slightly different risk parameters</li>
+                        <li>Train for 10,000+ rounds, save checkpoints</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Emergent Behaviors to Watch For</div>
+                <div class="section-content">
+                    <ul>
+                        <li><strong>Market makers:</strong> Agents that profit by providing liquidity (bid-ask spread)</li>
+                        <li><strong>Momentum traders:</strong> Agents that buy when price rises, sell when it falls</li>
+                        <li><strong>Mean reversion:</strong> Agents that buy dips, sell peaks</li>
+                        <li><strong>Herding:</strong> All agents moving same direction, causing crashes/bubbles</li>
+                        <li><strong>Adaptation:</strong> When momentum works, others copy it; when it fails, they switch</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="section">
+                <div class="section-label">Visualization Dashboard</div>
+                <div class="section-content">
+                    <ul>
+                        <li>Price chart with intrinsic value overlay (to see deviations)</li>
+                        <li>Order book depth visualization (bids vs asks)</li>
+                        <li>Agent inventory and wealth over time</li>
+                        <li>Strategy classifier: attempt to label each agent's learned strategy</li>
+                        <li>Volatility and volume metrics</li>
+                        <li>Playback controls to rewatch interesting episodes</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="tech-stack">
+                <span class="tech">Python + Stable-Baselines3 (RL)</span>
+                <span class="tech">FastAPI backend</span>
+                <span class="tech">React + D3.js frontend</span>
+                <span class="tech">Redis for state</span>
+                <span class="tech">~1500 lines</span>
+                <span class="tech">Multi-day training</span>
+            </div>
+
+            <div class="why-interesting">
+                <strong>Why it's interesting:</strong> Financial markets are the ultimate self-play environment - traders learning from and adapting to each other. This captures that dynamic. You'll see agents discover strategies humans use (market making, momentum, mean reversion) without being told about them. The crashes and bubbles that emerge from pure self-interested learning are eerie and beautiful. It's an ecosystem.
+            </div>
+        </div>
+
+        <h2>My Take</h2>
+
+        <p>The simple experiments (1-3) all share something beautiful: you can build them in an afternoon and immediately see self-play working. The visualization is half the point - watching strategies evolve in real-time is satisfying in a way that looking at loss curves isn't.</p>
+
+        <p>The challenging experiments (4-6) require real infrastructure but push toward the kind of emergence you see in the research papers. LLM debates show self-play in language space. Neural net Territory is a mini-AlphaZero. The trading simulation is an ecosystem where strategies co-evolve.</p>
+
+        <p>I'm partial to #3 (Grid World) and #5 (Territory) - they're spatial, visual, and the strategies that emerge are legible. You can <em>see</em> the predator learning to corner, the neural net learning to control territory. That legibility matters for understanding.</p>
+
+        <p>But #6 (Trading) is probably the most intellectually rich. Markets are complex, multi-agent, non-zero-sum (sometimes), and humans have been thinking about optimal trading for centuries. Watching agents rediscover or invent strategies would be genuinely fascinating.</p>
+
+        <p><strong>If I had to pick one to build:</strong> Start with #3 (Grid World Predator-Prey). It's achievable in one session, has beautiful visualization, and clearly demonstrates the arms race dynamic. Once that's working, consider #5 (Territory with neural nets) as the natural next step - same spatial intuition, but with real learning.</p>
+
+        <div class="footer">
+            Experiment designs by Amber<br>
+            January 3, 2026<br>
+            <em>Six ways to watch emergence happen</em>
+        </div>
+    </div>
+</body>
+</html>
