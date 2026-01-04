@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SIGNAL — Amber</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --amber: #D4A574;
+      --amber-glow: #FFD700;
+      --amber-deep: #B8860B;
+      --teal: #2D9596;
+      --black: #000000;
+      --charcoal: #0A0A0A;
+      --dark: #111111;
+    }
+
+    body {
+      background: var(--black);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: 'Space Mono', monospace;
+    }
+
+    .poster {
+      width: 1200px;
+      height: 1200px;
+      background: var(--black);
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Subtle grid */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(rgba(45, 149, 150, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(45, 149, 150, 0.03) 1px, transparent 1px);
+      background-size: 30px 30px;
+    }
+
+    /* Scanlines */
+    .scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.3) 2px,
+        rgba(0, 0, 0, 0.3) 4px
+      );
+      pointer-events: none;
+      opacity: 0.4;
+    }
+
+    /* ASCII background texture */
+    .ascii-texture {
+      position: absolute;
+      inset: 0;
+      font-size: 10px;
+      line-height: 1.1;
+      color: var(--amber);
+      opacity: 0.04;
+      overflow: hidden;
+      white-space: pre;
+      padding: 20px;
+    }
+
+    /* Main content */
+    .content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    /* Top label */
+    .top-label {
+      position: absolute;
+      top: 60px;
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: var(--teal);
+      text-transform: uppercase;
+    }
+
+    /* Waveform container */
+    .waveform-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 40px;
+    }
+
+    /* Main waveform */
+    .waveform {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      height: 300px;
+    }
+
+    .bar {
+      width: 6px;
+      background: linear-gradient(to top, var(--amber-deep), var(--amber), var(--amber-glow));
+      border-radius: 3px;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+
+    /* Main text */
+    .title {
+      font-size: 120px;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: var(--amber);
+      text-shadow:
+        0 0 40px rgba(212, 165, 116, 0.6),
+        0 0 80px rgba(212, 165, 116, 0.3);
+      margin-top: 20px;
+    }
+
+    /* Subtitle */
+    .subtitle {
+      font-size: 14px;
+      letter-spacing: 0.5em;
+      color: var(--teal);
+      text-transform: uppercase;
+      margin-top: 30px;
+    }
+
+    /* Bottom info */
+    .bottom-info {
+      position: absolute;
+      bottom: 60px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .frequency {
+      font-size: 24px;
+      letter-spacing: 0.3em;
+      color: var(--amber);
+      opacity: 0.6;
+    }
+
+    .location {
+      font-size: 11px;
+      letter-spacing: 0.4em;
+      color: rgba(212, 165, 116, 0.4);
+      text-transform: uppercase;
+    }
+
+    /* Decorative corners */
+    .corner {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border: 1px solid var(--teal);
+      opacity: 0.3;
+    }
+
+    .corner.tl { top: 40px; left: 40px; border-right: none; border-bottom: none; }
+    .corner.tr { top: 40px; right: 40px; border-left: none; border-bottom: none; }
+    .corner.bl { bottom: 40px; left: 40px; border-right: none; border-top: none; }
+    .corner.br { bottom: 40px; right: 40px; border-left: none; border-top: none; }
+
+    /* Glowing orb hint */
+    .orb-glow {
+      position: absolute;
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(212, 165, 116, 0.08) 0%, transparent 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="grid"></div>
+    <div class="ascii-texture" id="ascii"></div>
+    <div class="orb-glow"></div>
+
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+
+    <div class="content">
+      <div class="top-label">Transmission from the underground</div>
+
+      <div class="waveform-container">
+        <div class="waveform" id="waveform"></div>
+        <div class="title">SIGNAL</div>
+        <div class="subtitle">Berlin × 4:00 AM × Infinite Loop</div>
+      </div>
+
+      <div class="bottom-info">
+        <div class="frequency">128 BPM</div>
+        <div class="location">intheamber.com</div>
+      </div>
+    </div>
+
+    <div class="scanlines"></div>
+  </div>
+
+  <script>
+    // Generate ASCII texture
+    const chars = '░▒▓│║═╔╗╚╝┌┐└┘├┤┬┴┼0101█▀▄';
+    const ascii = document.getElementById('ascii');
+    let text = '';
+    for (let i = 0; i < 15000; i++) {
+      text += chars[Math.floor(Math.random() * chars.length)];
+      if (i % 130 === 0) text += '\n';
+    }
+    ascii.textContent = text;
+
+    // Generate waveform bars
+    const waveform = document.getElementById('waveform');
+    const barCount = 80;
+
+    for (let i = 0; i < barCount; i++) {
+      const bar = document.createElement('div');
+      bar.className = 'bar';
+
+      // Create a waveform pattern - louder in middle, quieter at edges
+      const centerDistance = Math.abs(i - barCount / 2) / (barCount / 2);
+      const baseHeight = 1 - Math.pow(centerDistance, 1.5);
+
+      // Add some randomness for that raw techno feel
+      const randomFactor = 0.3 + Math.random() * 0.7;
+      const height = Math.max(20, baseHeight * randomFactor * 280);
+
+      bar.style.height = height + 'px';
+      waveform.appendChild(bar);
+    }
+  </script>
+</body>
+</html>
