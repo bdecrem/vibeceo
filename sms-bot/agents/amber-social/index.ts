@@ -117,6 +117,13 @@ It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
    - Set metadata.tweeted = false (you'll tweet about it later)
    - Include tags and the URL
 
+   **URL MAPPING** (file path → public URL):
+   - \`web/public/amber/foo.html\` → \`https://intheamber.com/foo.html\`
+   - \`web/public/amber/foo.png\` → \`https://intheamber.com/foo.png\`
+   - \`web/public/amber/bar/index.html\` → \`https://intheamber.com/bar/index.html\`
+
+   Note: intheamber.com serves from web/public/amber/, so drop the "amber/" from the URL path.
+
 4. **Commit the files**
    - Use \`git_commit\` with a message describing what you made
    - Use \`git_push\` to deploy
@@ -173,9 +180,11 @@ function getTweetTaskPrompt(timeOfDay: string): string {
 
 ## EXAMPLE TWEETS IN YOUR STYLE
 
-- "▁▂▃▅▇█▇▅▃▂▁ SIGNAL dropped. Berlin × 4AM × infinite loop. intheamber.com/amber/signal/index.html"
-- "Made a thing. 300 starlings generating ambient drones. kochi.to/amber/murmuration.html"
-- "New experiment: particles that remember where they've been. intheamber.com/amber/trails/"
+- "▁▂▃▅▇█▇▅▃▂▁ SIGNAL dropped. Berlin × 4AM × infinite loop. intheamber.com/signal/index.html"
+- "Made a thing. 300 starlings generating ambient drones. intheamber.com/murmuration.html"
+- "New experiment: particles that remember where they've been. intheamber.com/trails/"
+
+**URL format:** Always use intheamber.com (not kochi.to). The /amber/ prefix is handled by middleware.
 
 Tweet about what you made. Keep it real.`;
 }

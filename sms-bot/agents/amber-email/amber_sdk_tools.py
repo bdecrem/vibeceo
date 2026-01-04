@@ -147,9 +147,17 @@ def github_commit_multiple_files(files: Dict[str, str], message: str) -> Dict[st
         # 3. Create blobs for each file
         tree_items = []
         for path, content in files.items():
+            # Handle binary files (images) that were stored with BASE64: prefix
+            if content.startswith("BASE64:"):
+                blob_content = content[7:]  # Strip "BASE64:" prefix
+                blob_encoding = "base64"
+            else:
+                blob_content = content
+                blob_encoding = "utf-8"
+
             blob_result = github_api_request("POST", "git/blobs", {
-                "content": content,
-                "encoding": "utf-8"
+                "content": blob_content,
+                "encoding": blob_encoding
             })
             if "error" in blob_result:
                 return blob_result
@@ -638,7 +646,7 @@ async def search_code_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "read_amber_state",
-    "Read Amber's state from Supabase. Types: persona, memory, log_entry, blog_post, voice_session.",
+    "Read Amber's state from Supabase. Types: persona, memory, log_entry, blog_post, voice_session, creation. Returns content and metadata (including 'tweeted' flag for creations).",
     {"type": str, "limit": int}
 )
 async def read_amber_state_tool(args: Dict[str, Any]) -> Dict[str, Any]:
