@@ -1,0 +1,236 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --amber: #D4A574;
+    --amber-light: #F5C87A;
+    --amber-glow: #FFD700;
+    --amber-deep: #B8860B;
+    --teal: #2D9596;
+    --teal-dim: rgba(45, 149, 150, 0.15);
+    --black: #000000;
+    --charcoal: #0A0A0A;
+}
+
+body {
+    background: var(--black);
+    color: var(--amber);
+    font-family: 'Space Mono', monospace;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+/* Grid background */
+.grid-bg {
+    position: fixed;
+    inset: 0;
+    background:
+        linear-gradient(var(--teal-dim) 1px, transparent 1px),
+        linear-gradient(90deg, var(--teal-dim) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+/* Vignette */
+.vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle at center, transparent 0%, var(--black) 70%);
+    pointer-events: none;
+}
+
+/* Main container */
+.signal-container {
+    position: relative;
+    width: 100%;
+    max-width: 800px;
+    padding: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 10;
+}
+
+/* Corner brackets */
+.corner {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    border: 1px solid var(--teal);
+    opacity: 0.4;
+}
+
+.corner.tl { top: 30px; left: 30px; border-right: none; border-bottom: none; }
+.corner.tr { top: 30px; right: 30px; border-left: none; border-bottom: none; }
+.corner.bl { bottom: 30px; left: 30px; border-right: none; border-top: none; }
+.corner.br { bottom: 30px; right: 30px; border-left: none; border-top: none; }
+
+/* Top label */
+.top-label {
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 60px;
+    opacity: 0.8;
+}
+
+/* Waveform visualizer */
+.waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    height: 200px;
+    margin-bottom: 40px;
+}
+
+.waveform-bar {
+    width: 5px;
+    background: linear-gradient(to top, var(--amber-deep), var(--amber), var(--amber-glow));
+    border-radius: 2px;
+    transition: height 0.05s ease-out;
+    box-shadow: 0 0 10px rgba(212, 165, 116, 0.3);
+}
+
+.waveform-bar.active {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+}
+
+/* Title */
+.title {
+    font-size: 72px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+    color: var(--amber);
+    text-shadow:
+        0 0 40px rgba(212, 165, 116, 0.5),
+        0 0 80px rgba(212, 165, 116, 0.3);
+    margin-bottom: 20px;
+}
+
+/* Subtitle */
+.subtitle {
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: var(--teal);
+    text-transform: uppercase;
+    margin-bottom: 60px;
+}
+
+/* BPM display */
+.bpm {
+    font-size: 20px;
+    letter-spacing: 0.3em;
+    color: var(--amber);
+    opacity: 0.5;
+    margin-bottom: 10px;
+}
+
+/* Footer */
+.footer {
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: rgba(212, 165, 116, 0.3);
+    text-transform: uppercase;
+}
+
+/* Start button */
+.start-button {
+    font-family: 'Space Mono', monospace;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    padding: 20px 40px;
+    background: transparent;
+    border: 1px solid var(--amber);
+    color: var(--amber);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.start-button:hover {
+    background: var(--amber);
+    color: var(--black);
+    box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+}
+
+/* Loop indicator */
+.loop-indicator {
+    position: fixed;
+    top: 30px;
+    right: 100px;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--teal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.loop-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--teal);
+    animation: pulse-dot 1s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+    0%, 100% { opacity: 0.3; }
+    50% { opacity: 1; }
+}
+
+/* Controls */
+.controls {
+    position: fixed;
+    bottom: 30px;
+    display: flex;
+    gap: 20px;
+}
+
+.control-btn {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    padding: 10px 20px;
+    background: transparent;
+    border: 1px solid rgba(212, 165, 116, 0.3);
+    color: var(--amber);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.6;
+}
+
+.control-btn:hover {
+    border-color: var(--amber);
+    opacity: 1;
+}
+
+.control-btn.active {
+    border-color: var(--teal);
+    color: var(--teal);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .title {
+        font-size: 36px;
+    }
+
+    .waveform {
+        height: 120px;
+    }
+
+    .waveform-bar {
+        width: 3px;
+    }
+}
