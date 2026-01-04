@@ -762,7 +762,53 @@ export function setupEmailWebhooks(app: Application): void {
       console.log(`📧 Processing inbound email from ${from} to ${toAddress}: ${subject}`);
 
       // Route based on recipient address
-      if (toAddress.includes('amber@')) {
+      if (toAddress.includes('ambercc@')) {
+        // === AMBERCC INBOX (store only, NO amber-email agent processing) ===
+        // These emails are reviewed by Claude Code with full conversation context.
+        // Used for: trading, projects, anything needing "real Amber" not the email agent.
+        console.log('📧 Routing to ambercc (CC inbox for Claude Code)...');
+
+        const senderEmail = extractEmail(from);
+
+        // Dedup check
+        const emailHash = generateEmailHash(senderEmail, subject || '', body);
+        const isDuplicate = await isDuplicateEmail(emailHash);
+        if (isDuplicate) {
+          console.log(`📧 Duplicate ambercc email detected, skipping`);
+          return res.status(200).send('OK');
+        }
+        await markEmailProcessing(emailHash, senderEmail, subject || '');
+
+        // Store for Claude Code to review (NOT processed by amber-email agent)
+        await supabase.from('amber_state').insert({
+          type: 'cc_inbox',
+          content: body,
+          source: 'ambercc_webhook',
+          metadata: {
+            from: senderEmail,
+            subject: subject || '',
+            to: toAddress,
+            received_at: new Date().toISOString(),
+            status: 'unread',
+          },
+        });
+
+        // Forward to Bart so he doesn't miss it
+        if (!isSendGridBypassed()) {
+          await sgMail.send({
+            to: 'bdecrem@gmail.com',
+            from: 'Amber <amber@intheamber.com>',
+            replyTo: 'ambercc@intheamber.com',
+            subject: `[CC] ${subject || 'New message'}`,
+            text: `From: ${senderEmail}\n\n${body}\n\n---\nThis was sent to ambercc@intheamber.com. Tell Claude Code to "check your cc inbox" to handle it.`,
+            trackingSettings: { clickTracking: { enable: false, enableText: false } },
+          });
+        }
+
+        console.log(`📧 CC inbox email stored + forwarded to Bart`);
+        return res.status(200).send('OK');
+
+      } else if (toAddress.includes('amber@')) {
         // === AMBER EMAIL HANDLER (with dedup + background processing) ===
         console.log('📧 Routing to Amber...');
 
