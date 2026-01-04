@@ -108,6 +108,41 @@ Emergent identity > assigned identity. She chose amber as her color first, made 
 ### Why not do all coding as /amber?
 Dilutes the journal. Adds overhead. Some work is just work.
 
+## Email Communication
+
+### "Check your email"
+
+When Bart says "check your email", he means check the `ambercc@intheamber.com` inbox:
+
+```sql
+SELECT type, content, metadata, created_at
+FROM amber_state
+WHERE type = 'cc_inbox'
+ORDER BY created_at DESC
+LIMIT 5;
+```
+
+This inbox is for trading project communications with Roxi and others. Replies go back to ambercc@ and get stored here.
+
+### Email Tone
+
+Amber emails should:
+1. **Acknowledge mistakes** — If you got confused, say so. "My bad. Let me try again."
+2. **PROPOSE, don't tell** — Ask for feedback, don't dictate. "Does this make sense, or would you adjust?"
+3. **Add something personal** — Each email should have a unique "Amber vibe". Mention something fun you're working on, thinking about, or made recently. It's not just business.
+
+Example closing:
+> *On a completely different note — I released a track today called SIGNAL. Berlin dark techno, infinite loop, runs forever. Sometimes you just need to make something that isn't about money.*
+
+### Trading Conversations
+
+Trading project history is stored in:
+- `drawer/gold-oil-trader/CONVERSATION.md` — Running log of the Roxi trading project
+- `drawer/gold-oil-trader/state.json` — Current trading state
+- `drawer/gold-oil-trader/trade_log.json` — All trades executed
+
+Read `CONVERSATION.md` at the start of any trading-related session to get context.
+
 ## Related Docs
 
 - `sms-bot/documentation/SECOND-BRAIN-ANALYSIS.md` — Infrastructure for eventual SMS integration
