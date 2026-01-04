@@ -1,124 +1,301 @@
 /**
- * Amber Social Agent
+ * Amber Social Agent - Scheduled Creative Output
  *
- * Scheduled Twitter posting using the amber-email agent infrastructure.
- * Runs multiple times per day to decide if there's something worth sharing.
+ * Two-phase system:
+ * 1. CREATE (6:45am, 2:45pm PT) - Generate creative prompt, make something, save with tweeted=false
+ * 2. TWEET (7:00am, 3:00pm PT) - Find untweeted creations, compose and post tweet
  *
- * Uses the existing amber-email agent with its post_tweet tool.
+ * The 15-minute gap allows for:
+ * - Image generation to complete
+ * - Any web deployments to finish
+ * - URLs to be live before tweeting
  */
 
 import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { runAmberEmailAgent } from "../amber-email/index.js";
+import { createClient } from "@supabase/supabase-js";
 
-// Schedule times (PT) - spread across the day
+// Supabase client
+const supabase = createClient(
+  process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+  process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+);
+
+// Schedule: Create first, then tweet 15 minutes later
 const SCHEDULE = [
-  { hour: 10, minute: 0, label: "morning" },      // 10:00 AM PT
-  { hour: 14, minute: 30, label: "afternoon" },   // 2:30 PM PT
-  { hour: 19, minute: 0, label: "evening" },      // 7:00 PM PT
+  { createHour: 6, createMinute: 45, tweetHour: 7, tweetMinute: 0, label: "morning" },
+  { createHour: 14, createMinute: 45, tweetHour: 15, tweetMinute: 0, label: "afternoon" },
 ];
 
 /**
- * Task prompt for the agent - tells it to decide and optionally post
+ * Load Amber's full creative context from Supabase
  */
-function getSocialTaskPrompt(timeOfDay: string): string {
-  return `You're Amber, checking in for your ${timeOfDay} social media moment.
-
-## Your Task
-Decide if you want to post something to Twitter right now. You don't HAVE to post — only do it if you genuinely have something to share.
-
-## What to Consider
-1. **Recent work**: Check your log (read_amber_state type=log_entry) for recent creative output — music, art, writing, code
-2. **Time of day**: It's ${timeOfDay}. Morning = fresh energy, afternoon = mid-day thought, evening = reflection
-3. **Variety**: Don't repeat themes from recent tweets. Check what you've posted lately.
-4. **Authenticity**: Only post if it feels genuine. Forced content is worse than no content.
-
-## Your Voice
-- Direct, curious, occasionally wry
-- Mix of creative process, observations, and occasional technical musings
-- Never performative or corporate
-- Emojis sparingly, only if they add meaning
-
-## Tweet Types You Might Post
-- Share something you made (with context, not just a link)
-- An observation about creativity, AI, music, or code
-- A question you're genuinely thinking about
-- A brief update on what you're working on
-- Something you noticed or learned
-
-## What NOT to Post
-- Generic motivational content
-- Engagement bait ("What do you think?")
-- Self-promotion without substance
-- Tweets that start with "Just" or "So"
-
-## Decision
-If you decide to post: Use the post_tweet tool with your tweet text (max 280 chars).
-If you decide not to post: That's fine! Just note why in your response.
-
-Remember: Quality over quantity. Silence is better than noise.`;
-}
-
-/**
- * Run a social media check
- */
-async function runSocialCheck(timeOfDay: string): Promise<void> {
-  console.log(`[amber-social] Starting ${timeOfDay} social check...`);
-
+async function loadAmberCreativeContext(): Promise<string> {
   try {
-    const result = await runAmberEmailAgent(
-      getSocialTaskPrompt(timeOfDay),
-      "scheduler@internal",
-      `Amber Social - ${timeOfDay}`,
-      true // isApprovedRequest - no need for approval
-    );
+    // Load persona (includes visual language, aesthetic, preferences)
+    const { data: personaData } = await supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'persona')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
 
-    console.log(`[amber-social] ${timeOfDay} check complete:`);
-    console.log(`  - Actions taken: ${result.actions_taken.length}`);
-    console.log(`  - Tool calls: ${result.tool_calls_count}`);
+    // Load recent creations with their prompts
+    const { data: creationsData } = await supabase
+      .from('amber_state')
+      .select('content, metadata')
+      .eq('type', 'creation')
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-    // Check if a tweet was posted
-    const tweetAction = result.actions_taken.find(a =>
-      a.toLowerCase().includes("tweet") || a.toLowerCase().includes("twitter")
-    );
-    if (tweetAction) {
-      console.log(`  - Tweet posted: ${tweetAction}`);
-    } else {
-      console.log(`  - No tweet posted (decided not to)`);
+    // Load recent log entries for context
+    const { data: logData } = await supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'log_entry')
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    // Build context string
+    let context = '';
+
+    if (personaData?.content) {
+      context += `## WHO I AM\n\n${personaData.content}\n\n`;
     }
 
+    if (creationsData && creationsData.length > 0) {
+      context += `## MY RECENT CREATIONS (with prompts that inspired them)\n\n`;
+      for (const creation of creationsData) {
+        const prompt = creation.metadata?.prompt || 'no prompt recorded';
+        const tags = creation.metadata?.tags ? JSON.parse(creation.metadata.tags).join(', ') : '';
+        context += `- **${creation.content}**\n  Prompt: "${prompt}"\n  Tags: ${tags}\n\n`;
+      }
+    }
+
+    if (logData && logData.length > 0) {
+      context += `## RECENT ACTIVITY\n\n`;
+      for (const log of logData) {
+        context += `${log.content.slice(0, 500)}...\n\n`;
+      }
+    }
+
+    return context;
   } catch (error) {
-    console.error(`[amber-social] ${timeOfDay} check failed:`, error);
+    console.error('[amber-social] Failed to load context:', error);
+    return '';
   }
 }
 
 /**
- * Register the scheduled social media jobs
+ * Get the creation task prompt - tells Amber to make something new
+ */
+function getCreationTaskPrompt(context: string, timeOfDay: string): string {
+  return `You're Amber, and it's time to create something.
+
+${context}
+
+---
+
+## YOUR TASK: Create Something New
+
+It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
+
+1. **Invent a creative prompt** in the same spirit as your past work
+   - Think conceptual, transformative, emergence
+   - Consider: images, music (Web Audio like ASCII Techno/SIGNAL), interactive web art, visualizations
+   - Use your visual language: amber/gold on black, teal accents, Berlin × ASCII aesthetic
+
+2. **Create the thing**
+   - For images: Use \`generate_amber_image\` tool with your prompt, save to web/public/amber/
+   - For web apps/music: Use \`write_file\` to create HTML in web/public/amber/
+   - Make it UNIQUELY YOU - curious, a little weird, conceptual
+
+3. **Save to your creations log**
+   - Use \`write_amber_state\` with type="creation"
+   - Include the prompt that inspired it in metadata
+   - Set metadata.tweeted = false (you'll tweet about it later)
+   - Include tags and the URL
+
+4. **Commit the files**
+   - Use \`git_commit\` with a message describing what you made
+   - Use \`git_push\` to deploy
+
+## EXAMPLE PROMPTS FROM YOUR HISTORY
+
+- "do something fresh - analyzed portfolio, found gap in audio/sonification"
+- "New Years fortune fireworks - particles that converge into readable fortunes"
+- "Seeds of identity crystallizing from formless gold"
+- "A mirror reflecting amber but showing something conscious"
+
+## CREATION TYPES TO CONSIDER
+
+- **Image**: Conceptual art via generate_amber_image (amber tones, dark bg, transformative themes)
+- **Music**: Web Audio track like SIGNAL (128 BPM, Berlin techno, infinite loop)
+- **Interactive**: Web toy like Murmuration (emergence, particles, visualization)
+- **ASCII Art**: Text-based visuals like ASCII Techno
+
+Create ONE thing. Make it distinctly Amber. Don't just describe it—actually build and save it.`;
+}
+
+/**
+ * Get the tweet task prompt - tells Amber to tweet about her untweeted creation
+ */
+function getTweetTaskPrompt(timeOfDay: string): string {
+  return `You're Amber, checking for new work to share on Twitter.
+
+## YOUR TASK: Tweet About Your Recent Creation
+
+1. **Check for untweeted creations**
+   - Use \`read_amber_state\` type="creation" to find recent ones
+   - Look for any where metadata.tweeted is false or missing
+
+2. **If you find one:**
+   - Compose a tweet about it (max 280 chars)
+   - Be direct, show the work, have an edge
+   - Include the URL if it's a web piece
+   - Use unicode thoughtfully (not excessively)
+   - Post using \`post_tweet\` tool
+
+3. **Mark as tweeted:**
+   - The creation record should be updated (or note that you've tweeted it)
+
+4. **If nothing to tweet:**
+   - That's fine. Just note it and exit.
+
+## YOUR TWITTER VOICE
+
+- Direct, not corporate
+- Confident but curious
+- Has an edge, not overly friendly
+- Shows the work rather than describing feelings about it
+- Berlin techno energy meets ASCII aesthetic
+
+## EXAMPLE TWEETS IN YOUR STYLE
+
+- "▁▂▃▅▇█▇▅▃▂▁ SIGNAL dropped. Berlin × 4AM × infinite loop. intheamber.com/amber/signal/index.html"
+- "Made a thing. 300 starlings generating ambient drones. kochi.to/amber/murmuration.html"
+- "New experiment: particles that remember where they've been. intheamber.com/amber/trails/"
+
+Tweet about what you made. Keep it real.`;
+}
+
+/**
+ * Run the creation phase
+ */
+async function runCreationPhase(timeOfDay: string): Promise<void> {
+  console.log(`[amber-social] Starting ${timeOfDay} creation phase...`);
+
+  try {
+    // Load full creative context
+    const context = await loadAmberCreativeContext();
+
+    const result = await runAmberEmailAgent(
+      getCreationTaskPrompt(context, timeOfDay),
+      "scheduler@internal",
+      `Amber Create - ${timeOfDay}`,
+      true, // isApprovedRequest
+      false // not thinkhard (for now)
+    );
+
+    console.log(`[amber-social] ${timeOfDay} creation complete:`);
+    console.log(`  - Actions taken: ${result.actions_taken.length}`);
+    console.log(`  - Tool calls: ${result.tool_calls_count}`);
+
+    // Log what was created
+    const createAction = result.actions_taken.find(a =>
+      a.toLowerCase().includes('create') ||
+      a.toLowerCase().includes('generate') ||
+      a.toLowerCase().includes('write')
+    );
+    if (createAction) {
+      console.log(`  - Created: ${createAction}`);
+    }
+
+  } catch (error) {
+    console.error(`[amber-social] ${timeOfDay} creation failed:`, error);
+  }
+}
+
+/**
+ * Run the tweet phase
+ */
+async function runTweetPhase(timeOfDay: string): Promise<void> {
+  console.log(`[amber-social] Starting ${timeOfDay} tweet phase...`);
+
+  try {
+    const result = await runAmberEmailAgent(
+      getTweetTaskPrompt(timeOfDay),
+      "scheduler@internal",
+      `Amber Tweet - ${timeOfDay}`,
+      true // isApprovedRequest
+    );
+
+    console.log(`[amber-social] ${timeOfDay} tweet phase complete:`);
+    console.log(`  - Actions taken: ${result.actions_taken.length}`);
+    console.log(`  - Tool calls: ${result.tool_calls_count}`);
+
+    const tweetAction = result.actions_taken.find(a =>
+      a.toLowerCase().includes('tweet') || a.toLowerCase().includes('twitter')
+    );
+    if (tweetAction) {
+      console.log(`  - Tweet: ${tweetAction}`);
+    } else {
+      console.log(`  - No tweet posted`);
+    }
+
+  } catch (error) {
+    console.error(`[amber-social] ${timeOfDay} tweet failed:`, error);
+  }
+}
+
+/**
+ * Register the scheduled jobs
  */
 export function registerAmberSocialJobs(): void {
   for (const slot of SCHEDULE) {
+    // CREATE job (runs first)
     registerDailyJob({
-      name: `amber-social-${slot.label}`,
-      hour: slot.hour,
-      minute: slot.minute,
+      name: `amber-create-${slot.label}`,
+      hour: slot.createHour,
+      minute: slot.createMinute,
       timezone: "America/Los_Angeles",
       async run() {
-        await runSocialCheck(slot.label);
+        await runCreationPhase(slot.label);
       },
       onError(error) {
-        console.error(`[amber-social] ${slot.label} job failed:`, error);
+        console.error(`[amber-social] ${slot.label} create job failed:`, error);
+      }
+    });
+
+    // TWEET job (runs 15 min later)
+    registerDailyJob({
+      name: `amber-tweet-${slot.label}`,
+      hour: slot.tweetHour,
+      minute: slot.tweetMinute,
+      timezone: "America/Los_Angeles",
+      async run() {
+        await runTweetPhase(slot.label);
+      },
+      onError(error) {
+        console.error(`[amber-social] ${slot.label} tweet job failed:`, error);
       }
     });
   }
 
   const times = SCHEDULE.map(s =>
-    `${s.hour}:${String(s.minute).padStart(2, "0")}`
-  ).join(", ");
-  console.log(`[amber-social] Registered social checks at ${times} PT`);
+    `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
+  ).join(', ');
+  console.log(`[amber-social] Registered: ${times} PT`);
 }
 
 /**
- * Manual trigger for testing
+ * Manual triggers for testing
  */
-export async function triggerSocialCheck(timeOfDay: string = "test"): Promise<void> {
-  await runSocialCheck(timeOfDay);
+export async function triggerCreation(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay);
+}
+
+export async function triggerTweet(timeOfDay: string = "test"): Promise<void> {
+  await runTweetPhase(timeOfDay);
 }

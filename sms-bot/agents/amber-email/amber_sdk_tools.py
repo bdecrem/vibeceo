@@ -239,12 +239,115 @@ async def web_search_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
-# IMAGE GENERATION (fal.ai)
+# IMAGE GENERATION (OpenAI - Amber's preferred style)
+# =============================================================================
+
+@tool(
+    "generate_amber_image",
+    "Generate an image in Amber's style using OpenAI. Best for conceptual art, amber themes, Berlin aesthetic. Returns base64 image data.",
+    {"prompt": str, "save_path": str}
+)
+async def generate_amber_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate an image using OpenAI's gpt-image-1.5 model.
+    This is Amber's preferred image generation - matches her drawer art style.
+
+    The prompt should evoke:
+    - Amber/gold tones with teal and violet accents
+    - Berlin × ASCII × Future aesthetic
+    - Conceptual, transformative themes
+    - Dark backgrounds, subtle grids
+    """
+    prompt = args.get("prompt", "")
+    save_path = args.get("save_path", "")  # Optional: relative path in codebase to save
+
+    if not prompt:
+        return make_result(json.dumps({"error": "Prompt required"}), is_error=True)
+
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if not openai_key:
+        return make_result(json.dumps({"error": "OPENAI_API_KEY not configured"}), is_error=True)
+
+    # Enhance prompt with Amber's visual language if not already present
+    amber_style_hint = """Style: Dark background (#0D0D0D), amber/gold tones (#D4A574, #FFD700),
+    with subtle teal (#2D9596) accents. Conceptual, minimal, slightly industrial.
+    Berlin techno aesthetic meets generative art."""
+
+    if "amber" not in prompt.lower() and "#D4A574" not in prompt:
+        enhanced_prompt = f"{prompt}\n\n{amber_style_hint}"
+    else:
+        enhanced_prompt = prompt
+
+    try:
+        url = "https://api.openai.com/v1/images/generations"
+        payload = json.dumps({
+            "model": "gpt-image-1",
+            "prompt": enhanced_prompt,
+            "n": 1,
+            "size": "1024x1024",
+            "quality": "high",
+            "response_format": "b64_json"
+        }).encode()
+
+        req = urllib.request.Request(url, data=payload, headers={
+            "Authorization": f"Bearer {openai_key}",
+            "Content-Type": "application/json"
+        })
+
+        with urllib.request.urlopen(req, timeout=120) as response:
+            data = json.loads(response.read().decode())
+
+        if not data.get("data") or not data["data"][0].get("b64_json"):
+            return make_result(json.dumps({"error": "No image generated"}), is_error=True)
+
+        b64_image = data["data"][0]["b64_json"]
+
+        # If save_path provided, save the image
+        if save_path:
+            if IS_RAILWAY:
+                # On Railway, stage for GitHub commit
+                import base64 as b64_module
+                image_bytes = b64_module.b64decode(b64_image)
+                # Store as binary - will need special handling
+                _github_pending_files[save_path] = f"BASE64:{b64_image}"
+                return make_result(json.dumps({
+                    "success": True,
+                    "saved_to": save_path,
+                    "message": f"Image generated and staged for commit at {save_path}",
+                    "size_bytes": len(image_bytes)
+                }))
+            else:
+                # Local: save directly
+                import base64 as b64_module
+                full_path = os.path.join(ALLOWED_CODEBASE, save_path)
+                os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                with open(full_path, "wb") as f:
+                    f.write(b64_module.b64decode(b64_image))
+                return make_result(json.dumps({
+                    "success": True,
+                    "saved_to": save_path,
+                    "full_path": full_path,
+                    "message": f"Image saved to {save_path}"
+                }))
+
+        # No save path - just return the base64 (truncated for display)
+        return make_result(json.dumps({
+            "success": True,
+            "b64_preview": b64_image[:100] + "...",
+            "message": "Image generated. Use save_path parameter to save it."
+        }))
+
+    except Exception as e:
+        return make_result(json.dumps({"error": str(e)}), is_error=True)
+
+
+# =============================================================================
+# IMAGE GENERATION (fal.ai - fast alternative)
 # =============================================================================
 
 @tool(
     "generate_image",
-    "Generate an image using fal.ai's FLUX model. Returns the image URL.",
+    "Generate an image using fal.ai's FLUX model (fast). Returns the image URL.",
     {"prompt": str, "aspect_ratio": str}
 )
 async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -869,7 +972,8 @@ amber_server = create_sdk_mcp_server(
         # Web
         web_search_tool,
         # Images
-        generate_image_tool,
+        generate_amber_image_tool,  # OpenAI - Amber's preferred style
+        generate_image_tool,  # fal.ai - fast alternative
         # Files
         read_file_tool,
         write_file_tool,
