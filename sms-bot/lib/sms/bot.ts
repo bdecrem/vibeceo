@@ -71,7 +71,7 @@ export async function startSmsBot(): Promise<void> {
     registerRivalAlertDailyJob(); // RIVALALERT - Competitor monitoring at 7am PT (i1/Forge)
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
     // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
-    registerAmberSocialJobs(); // AMBER SOCIAL - Create at 6:45am/2:45pm, tweet at 7am/3pm PT
+    registerAmberSocialJobs(); // AMBER SOCIAL - Create at 6:45am/3:15pm, tweet at 7am/3:30pm PT
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."

@@ -24,7 +24,7 @@ const supabase = createClient(
 // Schedule: Create first, then tweet 15 minutes later
 const SCHEDULE = [
   { createHour: 6, createMinute: 45, tweetHour: 7, tweetMinute: 0, label: "morning" },
-  { createHour: 14, createMinute: 45, tweetHour: 15, tweetMinute: 0, label: "afternoon" },
+  { createHour: 15, createMinute: 15, tweetHour: 15, tweetMinute: 30, label: "afternoon" },
 ];
 
 /**
