@@ -219,6 +219,8 @@ export interface PostTweetOptions {
   mediaIds?: string | string[];
   /** Account to post from (e.g., "intheamber"). Omit for default account. */
   account?: string;
+  /** Tweet ID to reply to */
+  replyTo?: string;
 }
 
 /**
@@ -229,6 +231,7 @@ export interface PostTweetOptions {
 export async function postTweet(text: string, options?: PostTweetOptions): Promise<TweetResult> {
   const account = options?.account;
   const mediaIds = options?.mediaIds;
+  const replyTo = options?.replyTo;
 
   const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
@@ -262,6 +265,9 @@ export async function postTweet(text: string, options?: PostTweetOptions): Promi
         };
       }
       payload.media = { media_ids: ids };
+    }
+    if (replyTo) {
+      payload.reply = { in_reply_to_tweet_id: replyTo };
     }
 
     const response = await fetch(url, {
