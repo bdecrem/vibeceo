@@ -144,13 +144,16 @@ export interface MediaUploadResult {
 /**
  * Upload media (image) to Twitter
  * Returns media_id to attach to tweets
+ * @param imagePath - Path to the image file
+ * @param account - Optional account name (e.g., "intheamber")
  */
-export async function uploadMedia(imagePath: string): Promise<MediaUploadResult> {
-  const creds = getTwitterCredentials();
+export async function uploadMedia(imagePath: string, account?: string): Promise<MediaUploadResult> {
+  const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    const accountMsg = account ? ` for account "${account}"` : '';
     return {
       success: false,
-      error: 'Twitter credentials not configured',
+      error: `Twitter credentials not configured${accountMsg}`,
     };
   }
 
@@ -172,7 +175,7 @@ export async function uploadMedia(imagePath: string): Promise<MediaUploadResult>
 
     // For media upload, we need to include media_data in the signature
     const params = { media_data: base64Image };
-    const authHeader = generateOAuthHeader('POST', url, params);
+    const authHeader = generateOAuthHeader('POST', url, params, account);
 
     // Send as form-urlencoded
     const body = `media_data=${encodeURIComponent(base64Image)}`;
@@ -316,8 +319,8 @@ export function isTwitterConfigured(account?: string): boolean {
  * @param account - Optional account name (e.g., "intheamber")
  */
 export async function postTweetWithImage(text: string, imagePath: string, account?: string): Promise<TweetResult> {
-  // First upload the image (uses default account for upload, which is fine)
-  const uploadResult = await uploadMedia(imagePath);
+  // Upload the image to the same account that will post the tweet
+  const uploadResult = await uploadMedia(imagePath, account);
   if (!uploadResult.success) {
     return {
       success: false,
@@ -346,8 +349,8 @@ export async function postTweetWithImages(text: string, imagePaths: string[], ac
     };
   }
 
-  // Upload all images in parallel
-  const uploadResults = await Promise.all(imagePaths.map(p => uploadMedia(p)));
+  // Upload all images in parallel to the same account
+  const uploadResults = await Promise.all(imagePaths.map(p => uploadMedia(p, account)));
 
   // Check for failures
   const failed = uploadResults.find(r => !r.success);

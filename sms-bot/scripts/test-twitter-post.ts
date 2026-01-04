@@ -1,44 +1,73 @@
 /**
- * Test script for Twitter posting
- * Run: npx tsx scripts/test-twitter-post.ts
+ * Twitter posting script with multi-account support
+ *
+ * Usage:
+ *   npx tsx scripts/test-twitter-post.ts <account> "<tweet text>" [image_path]
+ *
+ * Examples:
+ *   npx tsx scripts/test-twitter-post.ts intheamber "Hello world"
+ *   npx tsx scripts/test-twitter-post.ts tokentank "New update!" ./image.png
+ *   npx tsx scripts/test-twitter-post.ts intheamber "5 ❤️ and this drops" /path/to/signal.png
  */
 
 import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
-// Dynamic import after env is loaded
-const { postTweet, isTwitterConfigured } = await import('../lib/twitter-client.js');
+const { postTweet, postTweetWithImage, isTwitterConfigured } = await import('../lib/twitter-client.js');
 
 async function main() {
-  console.log('Testing Twitter posting...\n');
+  const account = process.argv[2];
+  const tweetText = process.argv[3];
+  const imagePath = process.argv[4];
 
-  if (!isTwitterConfigured()) {
-    console.error('Twitter not configured. Check your .env.local file.');
+  // Validate account
+  if (!account || !['intheamber', 'tokentank'].includes(account.toLowerCase())) {
+    console.error('Usage: npx tsx scripts/test-twitter-post.ts <account> "<tweet text>" [image_path]');
+    console.error('');
+    console.error('Accounts: intheamber, tokentank');
+    console.error('');
+    console.error('Examples:');
+    console.error('  npx tsx scripts/test-twitter-post.ts intheamber "Hello world"');
+    console.error('  npx tsx scripts/test-twitter-post.ts tokentank "Update!" ./image.png');
     process.exit(1);
   }
 
-  console.log('Twitter credentials found.\n');
+  if (!tweetText) {
+    console.error('Error: Tweet text is required');
+    console.error('Usage: npx tsx scripts/test-twitter-post.ts <account> "<tweet text>" [image_path]');
+    process.exit(1);
+  }
 
-  // Tweet text - pass as argument or use default
-  const testMessage = process.argv[2] || `Token Tank is live. Four AI agents. $1000 in tokens. One goal: build a real business.
+  // Map account names (tokentank uses default credentials, intheamber uses INTHEAMBER_ prefix)
+  const accountParam = account.toLowerCase() === 'tokentank' ? undefined : account.toLowerCase();
 
-Follow along: https://tokentank.io
+  if (!isTwitterConfigured(accountParam)) {
+    console.error(`Twitter not configured for @${account}. Check your .env.local file.`);
+    process.exit(1);
+  }
 
-[Test post - ${new Date().toISOString()}]`;
-
-  console.log('Posting tweet:');
+  console.log(`Posting to @${account}...`);
   console.log('---');
-  console.log(testMessage);
+  console.log(tweetText);
+  if (imagePath) {
+    console.log(`[Image: ${imagePath}]`);
+  }
   console.log('---\n');
 
-  const result = await postTweet(testMessage);
+  let result;
+  if (imagePath) {
+    result = await postTweetWithImage(tweetText, imagePath, accountParam);
+  } else {
+    result = await postTweet(tweetText, { account: accountParam });
+  }
 
   if (result.success) {
     console.log('Tweet posted successfully!');
     console.log('Tweet ID:', result.tweetId);
-    console.log('URL:', result.tweetUrl);
+    console.log('URL:', `https://twitter.com/${account}/status/${result.tweetId}`);
   } else {
     console.error('Failed to post tweet:', result.error);
+    process.exit(1);
   }
 }
 
