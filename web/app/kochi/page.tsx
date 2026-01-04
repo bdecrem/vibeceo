@@ -3,10 +3,10 @@
 import { Poppins } from "next/font/google";
 
 // Switch scenes by changing this import:
-import Scene from './scenes/haven';
+// import Scene from './scenes/haven';
 // import Scene from './scenes/izakaya';
 // import Scene from './scenes/tokyo';
-// import Scene from './scenes/snowfantasy';
+import Scene from './scenes/snowfantasy';
 
 const poppins = Poppins({
   subsets: ["latin"],
