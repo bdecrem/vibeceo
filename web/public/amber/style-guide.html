@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber — Visual Language</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      /* Primary - The Warm Heart */
+      --amber-light: #F5C87A;
+      --amber: #D4A574;
+      --amber-deep: #B8860B;
+      --amber-glow: #FFD700;
+
+      /* Foundation - Berlin Darkness */
+      --black: #000000;
+      --charcoal: #0D0D0D;
+      --dark-grey: #1A1A1A;
+      --mid-grey: #2D2D2D;
+      --light-grey: #4A4A4A;
+      --text-grey: #8A8A8A;
+
+      /* Accent 1 - Teal (Cool Complement) */
+      --teal: #2D9596;
+      --teal-bright: #40E0D0;
+      --teal-glow: rgba(45, 149, 150, 0.3);
+
+      /* Accent 2 - Violet (Rare Highlight) */
+      --violet: #7B68EE;
+      --violet-deep: #5B4ACF;
+      --violet-glow: rgba(123, 104, 238, 0.3);
+    }
+
+    body {
+      background: var(--black);
+      color: var(--amber-light);
+      font-family: 'Inter', -apple-system, sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ASCII Background Texture */
+    .ascii-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      opacity: 0.03;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      line-height: 1;
+      color: var(--amber);
+      overflow: hidden;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 60px 40px;
+    }
+
+    /* Header */
+    header {
+      text-align: center;
+      margin-bottom: 80px;
+      padding-bottom: 60px;
+      border-bottom: 1px solid var(--mid-grey);
+    }
+
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: var(--text-grey);
+      margin-bottom: 20px;
+    }
+
+    .title {
+      font-family: 'Inter', sans-serif;
+      font-size: 48px;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: var(--amber-light);
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: var(--teal);
+      letter-spacing: 0.1em;
+    }
+
+    /* Sections */
+    section {
+      margin-bottom: 80px;
+    }
+
+    h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-grey);
+      margin-bottom: 30px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--mid-grey);
+    }
+
+    /* Color Palette */
+    .palette {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 20px;
+    }
+
+    .color-group {
+      margin-bottom: 40px;
+    }
+
+    .color-group-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--light-grey);
+      margin-bottom: 16px;
+    }
+
+    .color-swatch {
+      aspect-ratio: 1;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .color-swatch.glow {
+      box-shadow: 0 0 30px var(--amber-glow);
+    }
+
+    .color-swatch.teal-glow {
+      box-shadow: 0 0 30px var(--teal-glow);
+    }
+
+    .color-swatch.violet-glow {
+      box-shadow: 0 0 30px var(--violet-glow);
+    }
+
+    .color-name {
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--amber-light);
+      margin-bottom: 4px;
+    }
+
+    .color-hex {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text-grey);
+    }
+
+    /* Typography */
+    .type-sample {
+      margin-bottom: 40px;
+      padding: 30px;
+      background: var(--charcoal);
+      border-radius: 12px;
+      border: 1px solid var(--mid-grey);
+    }
+
+    .type-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+
+    .display-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 42px;
+      font-weight: 300;
+      letter-spacing: -0.02em;
+      color: var(--amber-light);
+    }
+
+    .mono-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      color: var(--amber);
+      line-height: 1.8;
+    }
+
+    .body-text {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-grey);
+      line-height: 1.7;
+    }
+
+    /* UI Elements */
+    .ui-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+    }
+
+    .ui-card {
+      background: var(--charcoal);
+      border: 1px solid var(--mid-grey);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .ui-card.teal-accent {
+      border-left: 3px solid var(--teal);
+    }
+
+    .ui-card.violet-accent {
+      border-left: 3px solid var(--violet);
+    }
+
+    .ui-card.amber-accent {
+      border-left: 3px solid var(--amber);
+    }
+
+    /* Buttons */
+    .button-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .btn {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      padding: 12px 24px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-amber {
+      background: var(--amber);
+      color: var(--black);
+    }
+
+    .btn-amber:hover {
+      background: var(--amber-light);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+
+    .btn-teal {
+      background: transparent;
+      color: var(--teal);
+      border: 1px solid var(--teal);
+    }
+
+    .btn-teal:hover {
+      background: var(--teal);
+      color: var(--black);
+      box-shadow: 0 0 20px var(--teal-glow);
+    }
+
+    .btn-violet {
+      background: transparent;
+      color: var(--violet);
+      border: 1px solid var(--violet);
+    }
+
+    .btn-violet:hover {
+      background: var(--violet);
+      color: var(--black);
+      box-shadow: 0 0 20px var(--violet-glow);
+    }
+
+    /* Pills/Tags */
+    .pill {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      margin-right: 8px;
+      margin-bottom: 8px;
+    }
+
+    .pill-teal {
+      background: var(--teal);
+      color: var(--black);
+    }
+
+    .pill-violet {
+      background: var(--violet);
+      color: var(--black);
+    }
+
+    .pill-outline {
+      background: transparent;
+      border: 1px solid var(--light-grey);
+      color: var(--text-grey);
+    }
+
+    /* Orb Demo */
+    .orb-demo {
+      display: flex;
+      justify-content: center;
+      gap: 60px;
+      flex-wrap: wrap;
+      padding: 40px 0;
+    }
+
+    .orb-container {
+      text-align: center;
+    }
+
+    .orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, var(--amber-glow), var(--amber-deep), var(--amber));
+      margin: 0 auto 16px;
+      position: relative;
+      animation: pulse 3s ease-in-out infinite;
+    }
+
+    .orb::before {
+      content: '';
+      position: absolute;
+      inset: -4px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+    }
+
+    .orb.teal-ring::before {
+      border-color: var(--teal);
+      box-shadow: 0 0 20px var(--teal-glow);
+    }
+
+    .orb.violet-ring::before {
+      border-color: var(--violet);
+      box-shadow: 0 0 20px var(--violet-glow);
+    }
+
+    .orb.amber-ring::before {
+      border-color: var(--amber);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 30px rgba(255, 215, 0, 0.3); }
+      50% { box-shadow: 0 0 50px rgba(255, 215, 0, 0.5); }
+    }
+
+    .orb-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text-grey);
+      letter-spacing: 0.1em;
+    }
+
+    /* ASCII Art Block */
+    .ascii-block {
+      background: var(--charcoal);
+      border: 1px solid var(--mid-grey);
+      border-radius: 12px;
+      padding: 30px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      line-height: 1.4;
+      color: var(--amber);
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .ascii-block .highlight {
+      color: var(--teal-bright);
+    }
+
+    .ascii-block .accent {
+      color: var(--violet);
+    }
+
+    /* Waveform */
+    .waveform {
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      margin: 30px 0;
+    }
+
+    .waveform-bar {
+      width: 4px;
+      background: var(--amber);
+      border-radius: 2px;
+      animation: wave 1s ease-in-out infinite;
+    }
+
+    @keyframes wave {
+      0%, 100% { height: 20%; }
+      50% { height: 100%; }
+    }
+
+    /* Grid Pattern Demo */
+    .grid-demo {
+      background:
+        linear-gradient(var(--mid-grey) 1px, transparent 1px),
+        linear-gradient(90deg, var(--mid-grey) 1px, transparent 1px);
+      background-size: 40px 40px;
+      height: 200px;
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .grid-demo::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle at center, transparent 0%, var(--black) 70%);
+    }
+
+    .grid-demo .floating-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      color: var(--amber-light);
+      text-shadow: 0 0 30px var(--amber-glow);
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding-top: 60px;
+      border-top: 1px solid var(--mid-grey);
+      margin-top: 80px;
+    }
+
+    footer p {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      color: var(--text-grey);
+      letter-spacing: 0.1em;
+    }
+
+    footer a {
+      color: var(--teal);
+      text-decoration: none;
+    }
+
+    footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .container {
+        padding: 40px 20px;
+      }
+
+      .title {
+        font-size: 32px;
+      }
+
+      .display-text {
+        font-size: 28px;
+      }
+
+      .orb-demo {
+        gap: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="ascii-bg" id="asciiBg"></div>
+
+  <div class="container">
+    <header>
+      <h1>Visual Language</h1>
+      <div class="title">Amber</div>
+      <div class="subtitle">Berlin × ASCII × Future</div>
+    </header>
+
+    <!-- Color Palette -->
+    <section>
+      <h2>01 — Color Palette</h2>
+
+      <div class="color-group">
+        <div class="color-group-title">Primary — The Warm Heart</div>
+        <div class="palette">
+          <div>
+            <div class="color-swatch glow" style="background: linear-gradient(135deg, #FFD700, #D4A574);"></div>
+            <div class="color-name">Amber Glow</div>
+            <div class="color-hex">#FFD700 → #D4A574</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #D4A574;"></div>
+            <div class="color-name">Amber</div>
+            <div class="color-hex">#D4A574</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #B8860B;"></div>
+            <div class="color-name">Amber Deep</div>
+            <div class="color-hex">#B8860B</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="color-group">
+        <div class="color-group-title">Foundation — Berlin Darkness</div>
+        <div class="palette">
+          <div>
+            <div class="color-swatch" style="background: #000000; border: 1px solid #2D2D2D;"></div>
+            <div class="color-name">Black</div>
+            <div class="color-hex">#000000</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #0D0D0D; border: 1px solid #2D2D2D;"></div>
+            <div class="color-name">Charcoal</div>
+            <div class="color-hex">#0D0D0D</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #1A1A1A;"></div>
+            <div class="color-name">Dark Grey</div>
+            <div class="color-hex">#1A1A1A</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #2D2D2D;"></div>
+            <div class="color-name">Mid Grey</div>
+            <div class="color-hex">#2D2D2D</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="color-group">
+        <div class="color-group-title">Accents — Cool Complements</div>
+        <div class="palette">
+          <div>
+            <div class="color-swatch teal-glow" style="background: #2D9596;"></div>
+            <div class="color-name">Teal</div>
+            <div class="color-hex">#2D9596</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #40E0D0;"></div>
+            <div class="color-name">Teal Bright</div>
+            <div class="color-hex">#40E0D0</div>
+          </div>
+          <div>
+            <div class="color-swatch violet-glow" style="background: #7B68EE;"></div>
+            <div class="color-name">Violet</div>
+            <div class="color-hex">#7B68EE</div>
+          </div>
+          <div>
+            <div class="color-swatch" style="background: #5B4ACF;"></div>
+            <div class="color-name">Violet Deep</div>
+            <div class="color-hex">#5B4ACF</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Typography -->
+    <section>
+      <h2>02 — Typography</h2>
+
+      <div class="type-sample">
+        <div class="type-label">Display — Inter Light</div>
+        <div class="display-text">Building things that breathe</div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Mono — Space Mono (ASCII / Technical)</div>
+        <div class="mono-text">
+          > HELLO WORLD<br>
+          > 01001000 01100101 01101100 01101100 01101111<br>
+          > intheamber.com
+        </div>
+      </div>
+
+      <div class="type-sample">
+        <div class="type-label">Body — Inter Regular</div>
+        <div class="body-text">
+          Some of my projects aren't meant to do much. They're meant to exist quietly.
+          To be observed. To invite contemplation. They breathe — slow, rhythmic, patient.
+        </div>
+      </div>
+    </section>
+
+    <!-- Orb Variations -->
+    <section>
+      <h2>03 — The Orb</h2>
+
+      <div class="orb-demo">
+        <div class="orb-container">
+          <div class="orb amber-ring"></div>
+          <div class="orb-label">Default</div>
+        </div>
+        <div class="orb-container">
+          <div class="orb teal-ring"></div>
+          <div class="orb-label">Teal Accent</div>
+        </div>
+        <div class="orb-container">
+          <div class="orb violet-ring"></div>
+          <div class="orb-label">Violet Accent</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- UI Elements -->
+    <section>
+      <h2>04 — UI Elements</h2>
+
+      <div class="ui-grid">
+        <div class="ui-card amber-accent">
+          <div class="type-label">Card — Amber Accent</div>
+          <p class="body-text" style="margin-top: 12px;">Primary content and calls to action. The warm default.</p>
+        </div>
+        <div class="ui-card teal-accent">
+          <div class="type-label">Card — Teal Accent</div>
+          <p class="body-text" style="margin-top: 12px;">Secondary content, navigation, timestamps. Cool complement.</p>
+        </div>
+        <div class="ui-card violet-accent">
+          <div class="type-label">Card — Violet Accent</div>
+          <p class="body-text" style="margin-top: 12px;">Special highlights, rare moments. Use sparingly.</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <div class="type-label" style="margin-bottom: 16px;">Buttons</div>
+        <div class="button-row">
+          <button class="btn btn-amber">Primary Action</button>
+          <button class="btn btn-teal">Secondary</button>
+          <button class="btn btn-violet">Special</button>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px;">
+        <div class="type-label" style="margin-bottom: 16px;">Pills / Tags</div>
+        <div>
+          <span class="pill pill-teal">Day 14</span>
+          <span class="pill pill-violet">New</span>
+          <span class="pill pill-outline">techno</span>
+          <span class="pill pill-outline">ascii</span>
+          <span class="pill pill-outline">generative</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ASCII Aesthetic -->
+    <section>
+      <h2>05 — ASCII Aesthetic</h2>
+
+      <div class="ascii-block">
+<pre>
+    ╔═══════════════════════════════════════════════════╗
+    ║                                                   ║
+    ║   ░█████╗░███╗░░░███╗██████╗░███████╗██████╗░    ║
+    ║   ██╔══██╗████╗░████║██╔══██╗██╔════╝██╔══██╗    ║
+    ║   ███████║██╔████╔██║██████╦╝█████╗░░██████╔╝    ║
+    ║   ██╔══██║██║╚██╔╝██║██╔══██╗██╔══╝░░██╔══██╗    ║
+    ║   ██║░░██║██║░╚═╝░██║██████╦╝███████╗██║░░██║    ║
+    ║   ╚═╝░░╚═╝╚═╝░░░░░╚═╝╚═════╝░╚══════╝╚═╝░░╚═╝    ║
+    ║                                                   ║
+    ║   <span class="highlight">&gt; status: online</span>                              ║
+    ║   <span class="accent">&gt; location: intheamber.com</span>                     ║
+    ║                                                   ║
+    ╚═══════════════════════════════════════════════════╝
+</pre>
+      </div>
+
+      <!-- Waveform -->
+      <div class="waveform">
+        <div class="waveform-bar" style="animation-delay: 0s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.1s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.2s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.3s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.4s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.5s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.6s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.7s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.8s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.9s;"></div>
+        <div class="waveform-bar" style="animation-delay: 1.0s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.9s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.8s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.7s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.6s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.5s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.4s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.3s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.2s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0.1s;"></div>
+        <div class="waveform-bar" style="animation-delay: 0s;"></div>
+      </div>
+    </section>
+
+    <!-- Grid / Technical -->
+    <section>
+      <h2>06 — Grid & Space</h2>
+
+      <div class="grid-demo">
+        <div class="floating-text">BERLIN × ASCII × FUTURE</div>
+      </div>
+    </section>
+
+    <footer>
+      <p>Amber Visual Language v1.0 — <a href="https://intheamber.com">intheamber.com</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // Generate ASCII background
+    const chars = '░▒▓█╔╗╚╝║═┌┐└┘│─┼├┤┬┴0101';
+    const bg = document.getElementById('asciiBg');
+    let ascii = '';
+    for (let i = 0; i < 10000; i++) {
+      ascii += chars[Math.floor(Math.random() * chars.length)];
+      if (i % 150 === 0) ascii += '\n';
+    }
+    bg.textContent = ascii;
+
+    // Randomize waveform animation
+    document.querySelectorAll('.waveform-bar').forEach((bar, i) => {
+      const delay = Math.random() * 1;
+      const duration = 0.8 + Math.random() * 0.4;
+      bar.style.animationDelay = delay + 's';
+      bar.style.animationDuration = duration + 's';
+    });
+  </script>
+</body>
+</html>
