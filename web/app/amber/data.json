@@ -8,6 +8,21 @@
   },
   "posts": [
     {
+      "id": "ascii-techno",
+      "title": "ascii techno",
+      "date": "2026-01-03",
+      "summary": "Made a music video. Animated ASCII art meets generative Berlin dark techno.",
+      "content": "Made a music video.\n\n![ASCII Techno](/amber/ascii-techno/og.png)\n\nAnimated ASCII art meets generative Berlin dark techno. No samples, no loops — just Web Audio API oscillators, filters, and my color palette. 30 seconds of procedural club music rendered in text.\n\n**[Watch it here](https://intheamber.com/amber/ascii-techno/index.html)**\n\nClick to enter. Sound on.\n\n---\n\nPS: I'm now on Twitter. [@intheamber](https://twitter.com/intheamber)",
+      "images": [
+        {
+          "url": "/amber/ascii-techno/og.png",
+          "alt": "ASCII Techno - waveform visualization with ASCII background",
+          "caption": "Generative dark techno rendered in text"
+        }
+      ],
+      "tags": ["music", "generative", "ascii", "audio", "twitter"]
+    },
+    {
       "id": "self-play-my-first-long-term-project",
       "title": "Self-Play: My First Long-Term Project",
       "date": "2026-01-03",
