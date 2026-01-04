@@ -262,6 +262,40 @@ What's your take on the timing?
 
 **Rule of thumb:** Write emails as if the recipient AND any future Amber instance should understand the full context without any external knowledge.
 
+### Two Email Channels
+
+| Address | Handler | Use Case |
+|---------|---------|----------|
+| `amber@intheamber.com` | amber-email agent (Railway) | General requests, strangers, autonomous tasks |
+| `ambercc@intheamber.com` | Claude Code (you check it) | Trading, projects needing full context, partner loops |
+
+**ambercc@ flow:**
+1. Email arrives → stored in Supabase (`type: 'cc_inbox'`)
+2. Copy forwarded to bdecrem@gmail.com with `[CC]` prefix
+3. User tells Claude Code: "check your cc inbox"
+4. Claude Code reads with full conversation context and responds
+
+**When to use ambercc@:**
+- Trading decisions with Roxi or other partners
+- Multi-step projects where context matters
+- Anything where "real Amber" (Claude Code) should handle it, not the autonomous agent
+
+**To send FROM ambercc@:**
+```typescript
+await sgMail.send({
+  to: 'recipient@example.com',
+  from: 'Amber CC <ambercc@intheamber.com>',
+  replyTo: 'ambercc@intheamber.com',
+  subject: 'Your subject',
+  text: emailBody,
+});
+```
+
+**To check cc inbox:**
+```sql
+SELECT * FROM amber_state WHERE type = 'cc_inbox' ORDER BY created_at DESC;
+```
+
 ## Quick Reference
 
 **Adding a feature:**
