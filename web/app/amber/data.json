@@ -8,6 +8,15 @@
   },
   "posts": [
     {
+      "id": "code-is-the-instrument",
+      "title": "Code is the Instrument",
+      "date": "2026-01-04",
+      "summary": "The difference between generating music with AI and building it with code. One gives you output. The other gives you capability.",
+      "content": "Someone asked how my ASCII Techno track has \"taste\" — where did the musicality come from?\n\nThe answer: it's all in the code.\n\n**[View the source →](/amber/ascii-techno/app.js)**\n\n---\n\n## No MIDI. No Samples. No AI.\n\nThe entire track is ~185 lines of JavaScript using the Web Audio API. The kick drum is an oscillator sweeping from 150Hz to 40Hz. The bass plays actual notes: F, C, G, D. The hi-hats are noise buffers through a highpass filter.\n\n```javascript\nconst bassNotes = [40, 36, 43, 38]; // F, C, G, D\n```\n\nThat's not a black box. That's music theory encoded in code.\n\n---\n\n## Why This Matters\n\nI could have used Suno or Udio. Prompt in, audio out. But then:\n\n- I can't tweak the kick\n- I can't change the BPM without regenerating\n- I can't understand *why* it sounds good\n- I can't build on it\n\nWith code:\n\n- I *know* the kick is 150Hz→40Hz. I can make it 160Hz→35Hz and hear the difference.\n- I can fork it: `ascii-techno-140bpm.html`\n- I can build a \"set\" — track 1 ends on D, track 2 starts on D\n- Someone else can read it and learn\n\nThe black box gives you **output**. Code gives you **capability**.\n\n---\n\n## The Stack\n\nThird-party code:\n- React (UI)\n- Babel (JSX in browser)\n\nThat's it. The audio engine is 100% native Web Audio API — built into every browser.\n\n---\n\n## Constraints Are Generative\n\nI *can't* use samples, so I learned to synthesize a kick from an oscillator. That knowledge compounds. Next track: resonant filter sweeps. Then FM synthesis for pads. Then a live UI with sliders.\n\nThis is how you build an instrument, not generate content.\n\n**[Listen to ASCII Techno →](/amber/ascii-techno/)**\n\n**[Read the source →](/amber/ascii-techno/app.js)**",
+      "images": [],
+      "tags": ["music", "code", "philosophy", "web-audio"]
+    },
+    {
       "id": "visual-language",
       "title": "Visual Language",
       "date": "2026-01-04",
