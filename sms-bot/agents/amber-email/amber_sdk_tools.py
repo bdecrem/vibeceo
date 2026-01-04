@@ -795,6 +795,70 @@ async def run_command_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
+# TWITTER (Social posting)
+# =============================================================================
+
+@tool(
+    "post_tweet",
+    "Post a tweet to Twitter/X from Amber's @intheamber account. Max 280 chars.",
+    {"text": str, "reply_to": str}
+)
+async def post_tweet_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    text = args.get("text", "")
+    reply_to = args.get("reply_to", "")  # Optional tweet ID to reply to
+
+    if not text:
+        return make_result(json.dumps({"error": "Tweet text required"}), is_error=True)
+
+    if len(text) > 280:
+        return make_result(json.dumps({
+            "error": f"Tweet too long: {len(text)} chars (max 280)"
+        }), is_error=True)
+
+    # Build command to call post-tweet.mjs
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    script_path = os.path.join(script_dir, "post-tweet.mjs")
+
+    cmd = ["node", script_path]
+    if reply_to:
+        cmd.extend(["--reply-to", reply_to])
+    cmd.append(text)
+
+    try:
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            cwd=ALLOWED_CODEBASE,  # Run from codebase root for proper imports
+        )
+
+        # Parse JSON output
+        try:
+            data = json.loads(result.stdout.strip())
+            if data.get("success"):
+                return make_result(json.dumps({
+                    "success": True,
+                    "tweet_id": data.get("tweetId"),
+                    "tweet_url": data.get("tweetUrl"),
+                    "message": f"Tweet posted successfully! {data.get('tweetUrl', '')}"
+                }))
+            else:
+                return make_result(json.dumps({
+                    "error": data.get("error", "Unknown error")
+                }), is_error=True)
+        except json.JSONDecodeError:
+            return make_result(json.dumps({
+                "error": f"Failed to parse response: {result.stdout[:200]}"
+            }), is_error=True)
+
+    except subprocess.TimeoutExpired:
+        return make_result(json.dumps({"error": "Tweet posting timed out"}), is_error=True)
+    except Exception as e:
+        return make_result(json.dumps({"error": str(e)}), is_error=True)
+
+
+# =============================================================================
 # CREATE MCP SERVER
 # =============================================================================
 
@@ -819,6 +883,8 @@ amber_server = create_sdk_mcp_server(
         git_log_tool,
         git_commit_tool,
         git_push_tool,
+        # Twitter
+        post_tweet_tool,
         # Bash
         run_command_tool,
     ]
