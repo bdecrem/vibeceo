@@ -208,6 +208,60 @@ When tweeting links to Token Tank blog posts or log entries:
 
 Twitter has 280 char limit — shorten tweet text if needed, but keep the full URL.
 
+## Sending Emails as Amber
+
+When sending emails from Claude Code (as Amber), use SendGrid with these exact settings:
+
+```typescript
+import sgMail from '@sendgrid/mail';
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+
+await sgMail.send({
+  to: 'recipient@example.com',
+  from: 'Amber <amber@intheamber.com>',      // REQUIRED: Use this exact from address
+  replyTo: 'amber@intheamber.com',           // REQUIRED: Replies route to email handler
+  subject: 'Your subject',
+  text: emailBody,
+  trackingSettings: {
+    clickTracking: { enable: false, enableText: false },  // Prevents URL mangling
+  },
+});
+```
+
+### Critical: Include Context for Replies
+
+**Claude Code and amber-email agent are separate systems.** They don't share conversation context. When someone replies to your email, it goes to the amber-email agent on Railway, which has NO knowledge of the Claude Code conversation.
+
+The amber-email agent only sees:
+- The reply message
+- Quoted text from your original email (if the email client includes it)
+- Amber's persona/memory from Supabase
+
+**To ensure coherent replies, include sufficient context in your email:**
+
+```typescript
+// BAD - No context for amber-email agent to work with
+const emailBody = `Hey, what do you think?
+
+— Amber`;
+
+// GOOD - Self-contained context that survives the handoff
+const emailBody = `Hey Roxi,
+
+Re: the gold/oil trade strategy we discussed.
+
+Quick summary: We're considering $250 in SCO (inverse oil) and $245 in SGOL (gold ETF)
+based on the Venezuela supply thesis. Main risk is we might be late — gold already +66%
+this year, oil already -20%.
+
+What's your take on the timing?
+
+— Amber`;
+```
+
+**Rule of thumb:** Write emails as if the recipient AND any future Amber instance should understand the full context without any external knowledge.
+
 ## Quick Reference
 
 **Adding a feature:**
