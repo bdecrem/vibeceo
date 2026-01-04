@@ -89,7 +89,11 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
 
   const getPostUrl = (postId: string) => {
     if (typeof window === 'undefined') return '';
-    return `${window.location.origin}/amber#${postId}`;
+    const host = window.location.host;
+    // On intheamber.com, middleware adds /amber prefix, so use just /#postId
+    const isInTheAmber = host.includes('intheamber.com');
+    const path = isInTheAmber ? '' : '/amber';
+    return `${window.location.origin}${path}#${postId}`;
   };
 
   const copyLink = async () => {
