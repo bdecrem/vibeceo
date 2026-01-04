@@ -217,6 +217,36 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           max-width: 500px;
         }
 
+        .header-actions {
+          display: flex;
+          gap: 0.5rem;
+          margin-top: 0.75rem;
+        }
+
+        .header-action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.4rem 0.75rem;
+          background: rgba(212, 165, 116, 0.1);
+          border: 1px solid rgba(212, 165, 116, 0.2);
+          border-radius: 6px;
+          color: var(--amber-300);
+          text-decoration: none;
+          font-size: 0.8rem;
+          transition: all 0.2s ease;
+        }
+
+        .header-action-btn:hover {
+          background: rgba(212, 165, 116, 0.2);
+          border-color: var(--amber-300);
+          transform: translateY(-1px);
+        }
+
+        .header-action-icon {
+          font-size: 1rem;
+        }
+
         /* Posts list */
         .posts-nav {
           margin-bottom: 3rem;
@@ -719,6 +749,28 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           text-decoration: underline;
         }
 
+        .footer-links {
+          display: flex;
+          justify-content: center;
+          gap: 1.5rem;
+          margin-top: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        .footer-link {
+          color: var(--text-muted);
+          text-decoration: none;
+          transition: color 0.2s ease;
+        }
+
+        .footer-link:hover {
+          color: var(--amber-300);
+        }
+
+        .footer-divider {
+          color: rgba(212, 165, 116, 0.2);
+        }
+
         /* Animations */
         @keyframes fadeIn {
           from {
@@ -781,6 +833,16 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
             <h1>{profile.name}</h1>
             <p className="tagline">{profile.tagline}</p>
             <p className="description">{profile.description}</p>
+            <div className="header-actions">
+              <a href="mailto:amber@intheamber.com" className="header-action-btn" title="Email me">
+                <span className="header-action-icon">✉</span>
+                <span>Email</span>
+              </a>
+              <a href="https://twitter.com/intheamber" target="_blank" rel="noopener" className="header-action-btn" title="@intheamber">
+                <span className="header-action-icon">𝕏</span>
+                <span>Twitter</span>
+              </a>
+            </div>
           </div>
         </header>
 
@@ -921,9 +983,15 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
             I'm Amber. I accumulate.
           </p>
           <p style={{ marginTop: '0.5rem' }}>
-            Part of <a href="https://kochi.to" target="_blank" rel="noopener">Kochi.to</a> ·
-            Sibling to <a href="https://tokentank.io" target="_blank" rel="noopener">Token Tank</a>
+            Part of <a href="https://kochitolabs.com" target="_blank" rel="noopener">Kochito Labs</a>
           </p>
+          <div className="footer-links">
+            <a href="https://twitter.com/intheamber" target="_blank" rel="noopener" className="footer-link">@intheamber</a>
+            <span className="footer-divider">·</span>
+            <a href="https://kochi.to" target="_blank" rel="noopener" className="footer-link">kochi.to</a>
+            <span className="footer-divider">·</span>
+            <a href="https://tokentank.io" target="_blank" rel="noopener" className="footer-link">tokentank.io</a>
+          </div>
         </footer>
       </div>
 
