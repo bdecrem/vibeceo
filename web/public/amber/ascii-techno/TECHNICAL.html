@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Documentation - ASCII Techno</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            line-height: 1.6;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #B8860B;
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px rgba(180, 134, 11, 0.3);
+        }
+
+        .subtitle {
+            color: #D4A574;
+            font-size: 1.1rem;
+            margin-bottom: 40px;
+            opacity: 0.8;
+        }
+
+        h2 {
+            color: #B8860B;
+            font-size: 1.8rem;
+            margin-top: 50px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #D4A574;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #D4A574;
+            font-size: 1.3rem;
+            margin-top: 30px;
+            margin-bottom: 15px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            color: #D4A574;
+        }
+
+        code {
+            background: #1a1816;
+            color: #B8860B;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        pre {
+            background: #1a1816;
+            border: 1px solid #D4A574;
+            border-radius: 5px;
+            padding: 20px;
+            overflow-x: auto;
+            margin: 20px 0;
+            color: #D4A574;
+            font-size: 0.9rem;
+        }
+
+        pre code {
+            background: transparent;
+            padding: 0;
+        }
+
+        .highlight {
+            background: rgba(212, 165, 116, 0.1);
+            border-left: 3px solid #B8860B;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        ul, ol {
+            margin-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 10px;
+            color: #D4A574;
+        }
+
+        strong {
+            color: #B8860B;
+        }
+
+        a {
+            color: #B8860B;
+            text-decoration: none;
+            border-bottom: 1px dotted #B8860B;
+        }
+
+        a:hover {
+            color: #D4A574;
+            border-bottom-color: #D4A574;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 30px;
+            padding: 10px 20px;
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid #D4A574;
+            border-radius: 5px;
+            color: #B8860B;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(212, 165, 116, 0.2);
+            border-color: #B8860B;
+            color: #D4A574;
+        }
+
+        .method-box {
+            background: rgba(212, 165, 116, 0.05);
+            border: 1px solid #D4A574;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .method-box h4 {
+            color: #B8860B;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/amber/ascii-techno/" class="back-link">← Back to ASCII Techno</a>
+
+        <h1>Technical Documentation</h1>
+        <div class="subtitle">Audio Architecture & TR-909 Integration Guide</div>
+
+        <h2>Overview</h2>
+        <p>
+            This document details the audio synthesis architecture behind ASCII Techno, a generative Berlin dark techno piece
+            built entirely with the <strong>Web Audio API</strong>. No samples, no loops — pure oscillators,
+            filters, and envelope shaping.
+        </p>
+
+        <div class="highlight">
+            <strong>Key Decision:</strong> Web Audio API was chosen over MIDI or sample playback to enable real-time synthesis
+            with precise timing control and zero external dependencies. Every sound is generated procedurally at playback time.
+        </div>
+
+        <h2>Sound Generation Architecture</h2>
+
+        <h3>Audio Context Setup</h3>
+        <p>The foundation is a standard Web Audio API context with master gain control:</p>
+
+        <pre><code>this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+this.masterGain = this.audioContext.createGain();
+this.masterGain.gain.value = 0.5;
+this.masterGain.connect(this.audioContext.destination);</code></pre>
+
+        <p>All sound sources route through <code>masterGain</code> for unified volume control.</p>
+
+        <h3>Kick Drum Synthesis</h3>
+        <p>The kick uses <strong>frequency modulation</strong> with an exponential pitch sweep to create a punchy, Berlin-style thump:</p>
+
+        <pre><code>createKick(time, intensity = 1.0) {
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+
+    // Start at 150Hz, sweep down to 40Hz over 0.5 seconds
+    osc.frequency.setValueAtTime(150 * intensity, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.5);
+
+    // Amplitude envelope: instant attack, exponential decay
+    gain.gain.setValueAtTime(1.0 * intensity, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + 0.5);
+}</code></pre>
+
+        <div class="method-box">
+            <h4>Parameters</h4>
+            <ul>
+                <li><strong>Starting frequency:</strong> 150Hz (varied by intensity)</li>
+                <li><strong>End frequency:</strong> 40Hz (deep sub-bass)</li>
+                <li><strong>Duration:</strong> 0.5 seconds</li>
+                <li><strong>Envelope:</strong> Exponential decay (no attack phase)</li>
+                <li><strong>Waveform:</strong> Sine (default oscillator type)</li>
+            </ul>
+        </div>
+
+        <h3>Hi-Hat Synthesis</h3>
+        <p>Hi-hats use <strong>white noise</strong> filtered through a high-pass filter to create metallic, industrial textures:</p>
+
+        <pre><code>createHiHat(time, open = false) {
+    // Generate white noise buffer
+    const noise = this.audioContext.createBufferSource();
+    const buffer = this.audioContext.createBuffer(1,
+        this.audioContext.sampleRate * 0.1,
+        this.audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    noise.buffer = buffer;
+
+    // High-pass filter at 8kHz for brightness
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'highpass';
+    filter.frequency.value = 8000;
+
+    const gain = this.audioContext.createGain();
+    gain.gain.setValueAtTime(0.3, time);
+    gain.gain.exponentialRampToValueAtTime(0.01,
+        time + (open ? 0.3 : 0.05));
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+}</code></pre>
+
+        <div class="method-box">
+            <h4>Two Variants</h4>
+            <ul>
+                <li><strong>Closed hat:</strong> 0.05s duration, tight and snappy</li>
+                <li><strong>Open hat:</strong> 0.3s duration, sustained and airy</li>
+                <li><strong>Filter:</strong> 8kHz high-pass for metallic character</li>
+            </ul>
+        </div>
+
+        <h3>Bass Synth</h3>
+        <p>Deep sub-bass uses a <strong>sawtooth oscillator</strong> for harmonic richness:</p>
+
+        <pre><code>createBass(time, note = 40, duration = 0.5) {
+    const osc = this.audioContext.createOscillator();
+    const gain = this.audioContext.createGain();
+
+    osc.type = 'sawtooth';
+    osc.frequency.value = note;
+
+    // Quick attack, exponential decay
+    gain.gain.setValueAtTime(0, time);
+    gain.gain.linearRampToValueAtTime(0.4, time + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+    osc.connect(gain);
+    gain.connect(this.masterGain);
+}</code></pre>
+
+        <div class="method-box">
+            <h4>Bass Line Notes</h4>
+            <p>The sequencer cycles through four root notes:</p>
+            <ul>
+                <li><strong>40Hz</strong> - F (low)</li>
+                <li><strong>36Hz</strong> - C (low)</li>
+                <li><strong>43Hz</strong> - G (low)</li>
+                <li><strong>38Hz</strong> - D (low)</li>
+            </ul>
+        </div>
+
+        <h3>Industrial Noise Stabs</h3>
+        <p>Random percussive accents use <strong>bandpass-filtered noise</strong> for industrial texture:</p>
+
+        <pre><code>createNoiseStab(time, duration = 0.1) {
+    // Generate short noise burst
+    const noise = this.audioContext.createBufferSource();
+    const buffer = this.audioContext.createBuffer(1,
+        this.audioContext.sampleRate * duration,
+        this.audioContext.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < data.length; i++) {
+        data[i] = Math.random() * 2 - 1;
+    }
+
+    noise.buffer = buffer;
+
+    // Bandpass filter at random frequency (2-5kHz)
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'bandpass';
+    filter.frequency.value = 2000 + Math.random() * 3000;
+    filter.Q.value = 10; // Narrow resonance
+
+    const gain = this.audioContext.createGain();
+    gain.gain.setValueAtTime(0.2, time);
+    gain.gain.exponentialRampToValueAtTime(0.01, time + duration);
+
+    noise.connect(filter);
+    filter.connect(gain);
+    gain.connect(this.masterGain);
+}</code></pre>
+
+        <h2>Pattern Sequencing</h2>
+        <p>All sounds are scheduled in advance using the audio context's high-precision timer:</p>
+
+        <pre><code>schedulePattern(startTime, duration) {
+    const bars = Math.ceil(duration / (this.beatDuration * 4));
+
+    for (let bar = 0; bar < bars; bar++) {
+        const barTime = startTime + (bar * this.beatDuration * 4);
+
+        // Four-on-the-floor kick pattern
+        for (let beat = 0; beat < 4; beat++) {
+            const beatTime = barTime + (beat * this.beatDuration);
+            const intensity = beat === 0 ? 1.2 : 1.0; // Accent downbeat
+            this.createKick(beatTime, intensity);
+
+            // Off-beat hi-hats
+            this.createHiHat(beatTime + this.beatDuration / 2, false);
+            if (beat % 2 === 1) {
+                this.createHiHat(beatTime + this.beatDuration / 4, true);
+            }
+        }
+
+        // Evolving bass line
+        if (bar % 2 === 0) {
+            this.createBass(barTime, bassNotes[bar % 4],
+                this.beatDuration * 0.8);
+            this.createBass(barTime + this.beatDuration * 1.5,
+                bassNotes[(bar + 1) % 4],
+                this.beatDuration * 0.4);
+        }
+
+        // Random noise stabs (60% probability)
+        if (Math.random() > 0.6) {
+            this.createNoiseStab(barTime + this.beatDuration *
+                (Math.random() * 4), 0.15);
+        }
+    }
+}</code></pre>
+
+        <div class="highlight">
+            <strong>Timing Precision:</strong> Web Audio API's scheduling is sample-accurate. All events are scheduled
+            relative to <code>audioContext.currentTime</code>, ensuring tight, sub-millisecond synchronization.
+        </div>
+
+        <h2>TR-909 Kick Integration</h2>
+        <p>
+            The current kick implementation uses pure synthesis. For authentic TR-909 character, here are three concrete
+            approaches to integrate classic drum machine kicks into future tracks:
+        </p>
+
+        <h3>Approach 1: Authentic TR-909 Samples</h3>
+        <div class="method-box">
+            <h4>Sample Sources</h4>
+            <ul>
+                <li><a href="https://samples.kb6.de/downloads.php" target="_blank">samples.kb6.de</a> - Free 909 sample pack (WAV format)</li>
+                <li><a href="https://github.com/nbrosowsky/tone-drum-machine" target="_blank">GitHub: tone-drum-machine</a> - Open-source 909 samples</li>
+                <li>Roland Cloud 909 (official, paid) - Highest quality captures</li>
+            </ul>
+
+            <h4>Implementation</h4>
+            <pre><code>// Load TR-909 kick sample
+async loadKickSample() {
+    const response = await fetch('/samples/tr909-kick.wav');
+    const arrayBuffer = await response.arrayBuffer();
+    this.kickBuffer = await this.audioContext.decodeAudioData(arrayBuffer);
+}
+
+// Play TR-909 kick
+createTR909Kick(time, intensity = 1.0) {
+    const source = this.audioContext.createBufferSource();
+    const gain = this.audioContext.createGain();
+
+    source.buffer = this.kickBuffer;
+    gain.gain.value = intensity;
+
+    source.connect(gain);
+    gain.connect(this.masterGain);
+
+    source.start(time);
+}</code></pre>
+
+            <h4>Pros & Cons</h4>
+            <ul>
+                <li><strong>✓</strong> Authentic TR-909 character</li>
+                <li><strong>✓</strong> Zero synthesis complexity</li>
+                <li><strong>✗</strong> Requires external file hosting</li>
+                <li><strong>✗</strong> Less real-time modulation flexibility</li>
+            </ul>
+        </div>
+
+        <h3>Approach 2: Physical Modeling Synthesis</h3>
+        <div class="method-box">
+            <h4>TR-909 Kick Architecture</h4>
+            <p>The TR-909 kick consists of:</p>
+            <ol>
+                <li><strong>Bridged-T oscillator</strong> (60Hz → 40Hz sweep)</li>
+                <li><strong>VCA</strong> with exponential envelope</li>
+                <li><strong>Attack transient</strong> (click/noise at start)</li>
+                <li><strong>Tone control</strong> (low-pass filter sweep)</li>
+            </ol>
+
+            <h4>Enhanced Synthesis Implementation</h4>
+            <pre><code>createTR909StyleKick(time, intensity = 1.0) {
+    // Main oscillator with TR-909 frequency sweep
+    const osc = this.audioContext.createOscillator();
+    const oscGain = this.audioContext.createGain();
+
+    // TR-909 sweep: 60Hz → 40Hz over 0.4s
+    osc.frequency.setValueAtTime(60 * intensity, time);
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.4);
+
+    // TR-909 envelope: fast attack, exponential decay
+    oscGain.gain.setValueAtTime(1.0 * intensity, time);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+    // Attack transient (click)
+    const clickOsc = this.audioContext.createOscillator();
+    const clickGain = this.audioContext.createGain();
+
+    clickOsc.frequency.value = 1000;
+    clickGain.gain.setValueAtTime(0.5, time);
+    clickGain.gain.exponentialRampToValueAtTime(0.01, time + 0.01);
+
+    clickOsc.connect(clickGain);
+    clickGain.connect(this.masterGain);
+    clickOsc.start(time);
+    clickOsc.stop(time + 0.01);
+
+    // Tone control (low-pass sweep)
+    const filter = this.audioContext.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.setValueAtTime(2000, time);
+    filter.frequency.exponentialRampToValueAtTime(80, time + 0.4);
+    filter.Q.value = 3; // Resonance for punch
+
+    osc.connect(filter);
+    filter.connect(oscGain);
+    oscGain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + 0.5);
+}</code></pre>
+
+            <h4>Pros & Cons</h4>
+            <ul>
+                <li><strong>✓</strong> Real-time parameter modulation</li>
+                <li><strong>✓</strong> No external dependencies</li>
+                <li><strong>✓</strong> Matches TR-909 architecture</li>
+                <li><strong>✗</strong> Requires tuning to match exact 909 character</li>
+            </ul>
+        </div>
+
+        <h3>Approach 3: Hybrid (Sample + Synthesis)</h3>
+        <div class="method-box">
+            <h4>Concept</h4>
+            <p>
+                Layer a short TR-909 kick sample (attack transient) with synthesized sub-bass tail.
+                Combines authentic attack with flexible low-end control.
+            </p>
+
+            <h4>Implementation</h4>
+            <pre><code>createHybridKick(time, intensity = 1.0) {
+    // Sample layer (attack transient, 0-50ms)
+    const sample = this.audioContext.createBufferSource();
+    const sampleGain = this.audioContext.createGain();
+
+    sample.buffer = this.kickTransientBuffer; // Short 909 sample
+    sampleGain.gain.value = intensity * 0.7;
+
+    sample.connect(sampleGain);
+    sampleGain.connect(this.masterGain);
+    sample.start(time);
+
+    // Synthesis layer (sub-bass tail)
+    const osc = this.audioContext.createOscillator();
+    const oscGain = this.audioContext.createGain();
+
+    osc.frequency.setValueAtTime(60, time + 0.05); // Start after transient
+    osc.frequency.exponentialRampToValueAtTime(40, time + 0.5);
+
+    oscGain.gain.setValueAtTime(0, time);
+    oscGain.gain.linearRampToValueAtTime(0.6 * intensity, time + 0.05);
+    oscGain.gain.exponentialRampToValueAtTime(0.01, time + 0.5);
+
+    osc.connect(oscGain);
+    oscGain.connect(this.masterGain);
+
+    osc.start(time);
+    osc.stop(time + 0.5);
+}</code></pre>
+
+            <h4>Pros & Cons</h4>
+            <ul>
+                <li><strong>✓</strong> Best of both worlds: authentic attack + flexible bass</li>
+                <li><strong>✓</strong> Small sample file (transient only)</li>
+                <li><strong>✓</strong> Real-time modulation of sub-bass</li>
+                <li><strong>✗</strong> Slightly more complex implementation</li>
+            </ul>
+        </div>
+
+        <h2>Compression & Mastering</h2>
+        <p>For a polished, club-ready sound, add dynamic compression to the master output:</p>
+
+        <pre><code>// Add to init() method
+this.compressor = this.audioContext.createDynamicsCompressor();
+this.compressor.threshold.value = -20;
+this.compressor.knee.value = 10;
+this.compressor.ratio.value = 8;
+this.compressor.attack.value = 0.003;
+this.compressor.release.value = 0.25;
+
+this.masterGain.connect(this.compressor);
+this.compressor.connect(this.audioContext.destination);</code></pre>
+
+        <div class="highlight">
+            <strong>Berlin Techno Sound:</strong> Heavy compression (ratio 8:1) with fast attack creates the
+            characteristic "pumping" effect where the kick drives the entire mix.
+        </div>
+
+        <h2>Next Steps</h2>
+        <p>To implement TR-909 kicks in future generative techno tracks:</p>
+
+        <ol>
+            <li><strong>Choose your approach</strong> based on project constraints:
+                <ul>
+                    <li>Need authentic sound + no external files? → Physical modeling (Approach 2)</li>
+                    <li>Want exact 909 character + okay with samples? → Authentic samples (Approach 1)</li>
+                    <li>Need flexibility + willing to tune? → Hybrid (Approach 3)</li>
+                </ul>
+            </li>
+            <li><strong>Add compression</strong> to the master chain for professional cohesion</li>
+            <li><strong>Tune kick-to-bass relationship</strong>: ensure kick fundamental (40-60Hz) doesn't clash with bass notes</li>
+            <li><strong>Experiment with variations</strong>: pitch accent (higher kick on downbeat), decay modulation, distortion</li>
+            <li><strong>Consider sidechain compression</strong>: duck bass/synths when kick hits for clarity</li>
+        </ol>
+
+        <h2>References</h2>
+        <ul>
+            <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_Audio_API" target="_blank">MDN Web Audio API Documentation</a></li>
+            <li><a href="https://github.com/pendragon-andyh/WebAudio-PedalBoard" target="_blank">WebAudio Pedalboard Examples</a></li>
+            <li><a href="https://www.attackmagazine.com/features/columns/gregory-scott/anatomy-tr-909-kick-drum/" target="_blank">Anatomy of the TR-909 Kick Drum (Attack Magazine)</a></li>
+            <li><a href="https://webaudioapi.com/samples/" target="_blank">Web Audio API Samples & Tutorials</a></li>
+        </ul>
+
+        <div style="margin-top: 60px; padding-top: 30px; border-top: 1px solid #D4A574; opacity: 0.6; text-align: center;">
+            <p>Technical documentation by Amber · January 2026</p>
+        </div>
+    </div>
+</body>
+</html>
