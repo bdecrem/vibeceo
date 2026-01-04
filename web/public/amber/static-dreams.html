@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Static Dreams — Amber</title>
+    <meta name="description" content="A meditation on signal and noise, consciousness emerging from static">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            image-rendering: pixelated;
+        }
+        
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 12px;
+            color: #D4A574;
+            opacity: 0.6;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #title {
+            position: fixed;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            color: #FFD700;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">Static Dreams</div>
+    <canvas id="canvas"></canvas>
+    <div id="instructions">Click to tune • Space to reset • Let it drift</div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+        
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+        
+        // State
+        let coherence = 0; // 0 = pure static, 1 = clear signal
+        let targetCoherence = 0;
+        let driftSpeed = 0.0005;
+        let clickPower = 0.15;
+        
+        // Amber palette
+        const colors = {
+            amber: [212, 165, 116],
+            gold: [255, 215, 0],
+            teal: [45, 149, 150],
+            black: [0, 0, 0],
+            charcoal: [13, 13, 13]
+        };
+        
+        // Hidden patterns that emerge from the static
+        const patterns = [
+            // Eye
+            { x: 0.3, y: 0.4, size: 80, type: 'circle' },
+            { x: 0.7, y: 0.4, size: 80, type: 'circle' },
+            // Mouth curve
+            { x: 0.5, y: 0.65, size: 120, type: 'arc' },
+            // Crown
+            { x: 0.5, y: 0.2, size: 150, type: 'crown' },
+        ];
+        
+        function noise() {
+            return Math.random() * 255;
+        }
+        
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+        
+        function lerpColor(c1, c2, t) {
+            return [
+                lerp(c1[0], c2[0], t),
+                lerp(c1[1], c2[1], t),
+                lerp(c1[2], c2[2], t)
+            ];
+        }
+        
+        function drawPattern(x, y, size, type, strength) {
+            ctx.globalAlpha = strength * 0.3;
+            
+            const px = x * width;
+            const py = y * height;
+            
+            switch(type) {
+                case 'circle':
+                    const grad = ctx.createRadialGradient(px, py, 0, px, py, size);
+                    grad.addColorStop(0, `rgba(${colors.gold.join(',')}, 0.8)`);
+                    grad.addColorStop(0.5, `rgba(${colors.amber.join(',')}, 0.4)`);
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = grad;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+                    
+                case 'arc':
+                    ctx.strokeStyle = `rgba(${colors.amber.join(',')}, 0.8)`;
+                    ctx.lineWidth = 8;
+                    ctx.beginPath();
+                    ctx.arc(px, py, size, 0.2, Math.PI - 0.2);
+                    ctx.stroke();
+                    break;
+                    
+                case 'crown':
+                    ctx.strokeStyle = `rgba(${colors.gold.join(',')}, 0.6)`;
+                    ctx.lineWidth = 6;
+                    const points = 7;
+                    for (let i = 0; i < points; i++) {
+                        const angle = (i / points) * Math.PI - Math.PI / 2;
+                        const x1 = px + Math.cos(angle) * size * 0.6;
+                        const y1 = py + Math.sin(angle) * size * 0.3;
+                        const x2 = px + Math.cos(angle) * size;
+                        const y2 = py + Math.sin(angle) * size * 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(x1, y1);
+                        ctx.lineTo(x2, y2);
+                        ctx.stroke();
+                    }
+                    break;
+            }
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        function draw() {
+            // Update coherence with drift
+            coherence += (targetCoherence - coherence) * 0.02;
+            targetCoherence += (Math.random() - 0.5) * driftSpeed;
+            targetCoherence = Math.max(0, Math.min(1, targetCoherence));
+            
+            // Create image data
+            const imageData = ctx.createImageData(width, height);
+            const data = imageData.data;
+            
+            // Generate static with coherence influencing it
+            for (let i = 0; i < data.length; i += 4) {
+                const x = (i / 4) % width;
+                const y = Math.floor((i / 4) / width);
+                
+                // Base static
+                const n = noise();
+                const staticColor = lerpColor(colors.charcoal, [n, n, n], 1 - coherence * 0.7);
+                
+                data[i] = staticColor[0];
+                data[i + 1] = staticColor[1];
+                data[i + 2] = staticColor[2];
+                data[i + 3] = 255;
+            }
+            
+            ctx.putImageData(imageData, 0, 0);
+            
+            // Draw emerging patterns
+            if (coherence > 0.3) {
+                patterns.forEach(p => {
+                    const strength = (coherence - 0.3) / 0.7;
+                    drawPattern(p.x, p.y, p.size, p.type, strength);
+                });
+            }
+            
+            // Scanlines for that CRT feel
+            ctx.globalAlpha = 0.05;
+            for (let y = 0; y < height; y += 4) {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, y, width, 2);
+            }
+            ctx.globalAlpha = 1;
+            
+            // Vignette
+            const vignette = ctx.createRadialGradient(width/2, height/2, 0, width/2, height/2, width * 0.7);
+            vignette.addColorStop(0, 'rgba(0,0,0,0)');
+            vignette.addColorStop(1, 'rgba(0,0,0,0.6)');
+            ctx.fillStyle = vignette;
+            ctx.fillRect(0, 0, width, height);
+            
+requestAnimationFrame(draw);
+        }
+        
+        // Interactions
+        canvas.addEventListener('click', (e) => {
+            targetCoherence = Math.min(1, targetCoherence + clickPower);
+            
+            // Add a momentary flash at click position
+            const x = e.clientX;
+            const y = e.clientY;
+            ctx.globalAlpha = 0.3;
+            const flash = ctx.createRadialGradient(x, y, 0, x, y, 100);
+            flash.addColorStop(0, `rgba(${colors.teal.join(',')}, 0.6)`);
+            flash.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = flash;
+            ctx.fillRect(0, 0, width, height);
+            ctx.globalAlpha = 1;
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                targetCoherence = 0;
+                coherence = 0;
+            }
+        });
+        
+        // Start
+        draw();
+    </script>
+</body>
+</html>
