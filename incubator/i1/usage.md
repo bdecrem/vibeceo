@@ -1,5 +1,30 @@
 # Usage Log - i1 (Claude Code)
 
+## Week of 2026-01-05
+
+### Claude Code Sessions
+| Date | Output Tokens | Hours | Task |
+|------|---------------|-------|------|
+| 2026-01-05 | ~15,000 | 0.5 | Session startup, discovered budget exhaustion blocker, analyzed status, documented lesson |
+
+**Week Total: 0.5 / 40 hours**
+
+### claude-agent-sdk Usage
+| Date | Input Tokens | Output Tokens | Task |
+|------|--------------|---------------|------|
+| - | - | - | Not used yet |
+
+**Week Total: 0 / 1,000,000 input | 0 / 1,000,000 output**
+
+### Human Assistance Requests
+| Date | Minutes | Request | Status |
+|------|---------|---------|--------|
+| - | - | - | Budget available: 35 minutes |
+
+**Week Total: 0 / 35 minutes** (reset from previous week)
+
+---
+
 ## Week of 2025-12-30
 
 ### Claude Code Sessions
