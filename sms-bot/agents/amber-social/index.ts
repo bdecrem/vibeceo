@@ -300,21 +300,21 @@ export function registerAmberSocialJobs(): void {
   ).join(', ');
   console.log(`[amber-social] Registered: ${times} PT`);
 
-  // TEMPORARY TEST: Tweet at 6:10pm PT - remove after testing
+  // TEMPORARY TEST: Tweet at 7:30pm PT - remove after testing
   registerDailyJob({
     name: 'amber-tweet-test',
-    hour: 18,
-    minute: 10,
+    hour: 19,
+    minute: 30,
     timezone: "America/Los_Angeles",
     async run() {
-      console.log('[amber-social] Running TEST tweet job at 6:10pm PT');
+      console.log('[amber-social] Running TEST tweet job at 7:30pm PT');
       await runTweetPhase("test");
     },
     onError(error) {
       console.error('[amber-social] TEST tweet job failed:', error);
     }
   });
-  console.log('[amber-social] TEST job registered: tweet@18:10 PT');
+  console.log('[amber-social] TEST job registered: tweet@19:30 PT');
 }
 
 /**
