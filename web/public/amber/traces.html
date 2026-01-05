@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traces — Amber</title>
+    <meta name="description" content="Temporal accumulation - traces that persist and layer like memories forming in amber">
+    <meta property="og:title" content="Traces — Amber">
+    <meta property="og:description" content="Interactive visualization of temporal accumulation">
+    <meta property="og:image" content="https://intheamber.com/traces-og.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            cursor: crosshair;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100vh;
+        }
+        
+        .info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            color: #D4A574;
+            font-size: 12px;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .title {
+            font-size: 18px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        
+        .instructions {
+            font-size: 10px;
+            opacity: 0.5;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <div class="title">TRACES</div>
+        <div>temporal accumulation</div>
+        <div class="instructions">move to create / click to clear</div>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d', { alpha: false });
+        
+        // Set canvas to full window size
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Color palette
+        const colors = {
+            amber: 'rgba(212, 165, 116, ',
+            gold: 'rgba(255, 215, 0, ',
+            teal: 'rgba(45, 149, 150, ',
+            violet: 'rgba(123, 104, 238, '
+        };
+        
+        // Particle system
+        const particles = [];
+        const maxParticles = 3000;
+        
+        class Particle {
+            constructor(x, y, vx, vy) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = vy;
+                this.life = 1.0;
+                this.decay = 0.002 + Math.random() * 0.003;
+                this.size = 1 + Math.random() * 3;
+                this.colorIndex = Math.random();
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.98;
+                this.vy *= 0.98;
+                this.life -= this.decay;
+            }
+            
+            draw() {
+                if (this.life <= 0) return;
+                
+                // Color shifts based on life
+                let color;
+                if (this.colorIndex > 0.95) {
+                    color = colors.violet;
+                } else if (this.colorIndex > 0.8) {
+                    color = colors.teal;
+                } else if (this.colorIndex > 0.5) {
+                    color = colors.gold;
+                } else {
+                    color = colors.amber;
+                }
+                
+                const alpha = this.life * 0.6;
+                ctx.fillStyle = color + alpha + ')';
+                
+                // Glow effect
+                ctx.shadowBlur = 20 * this.life;
+                ctx.shadowColor = color + '0.8)';
+                
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            isDead() {
+                return this.life <= 0;
+            }
+        }
+        
+        // Mouse tracking
+        let mouseX = canvas.width / 2;
+        let mouseY = canvas.height / 2;
+        let prevMouseX = mouseX;
+        let prevMouseY = mouseY;
+        let isMoving = false;
+        
+        canvas.addEventListener('mousemove', (e) => {
+            prevMouseX = mouseX;
+            prevMouseY = mouseY;
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            isMoving = true;
+        });
+        
+        canvas.addEventListener('click', () => {
+            particles.length = 0;
+        });
+        
+        // Animation loop
+        let lastTime = 0;
+        function animate(currentTime) {
+            requestAnimationFrame(animate);
+            
+            const deltaTime = currentTime - lastTime;
+            if (deltaTime < 16) return; // ~60fps cap
+            lastTime = currentTime;
+            
+            // Fade effect - creates trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Spawn particles from mouse movement
+            if (isMoving && particles.length < maxParticles) {
+                const dx = mouseX - prevMouseX;
+                const dy = mouseY - prevMouseY;
+                const speed = Math.sqrt(dx * dx + dy * dy);
+                
+                if (speed > 0.5) {
+                    const numParticles = Math.min(5, Math.ceil(speed / 5));
+                    for (let i = 0; i < numParticles; i++) {
+                        const angle = Math.atan2(dy, dx) + (Math.random() - 0.5) * 0.5;
+                        const velocity = (Math.random() * 0.5 + 0.5) * Math.min(speed / 10, 2);
+                        const vx = Math.cos(angle) * velocity;
+                        const vy = Math.sin(angle) * velocity;
+                        
+                        particles.push(new Particle(
+                            mouseX + (Math.random() - 0.5) * 10,
+                            mouseY + (Math.random() - 0.5) * 10,
+                            vx,
+                            vy
+                        ));
+                    }
+                }
+            }
+            
+            isMoving = false;
+            
+            // Update and draw particles
+            ctx.shadowBlur = 0;
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                
+                if (p.isDead()) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+        
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
