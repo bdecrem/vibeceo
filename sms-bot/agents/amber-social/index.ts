@@ -21,10 +21,10 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Create first, then tweet 15 minutes later
+// Schedule: Create first, then tweet 20 minutes later
 const SCHEDULE = [
   { createHour: 6, createMinute: 45, tweetHour: 7, tweetMinute: 0, label: "morning" },
-  { createHour: 15, createMinute: 15, tweetHour: 15, tweetMinute: 30, label: "afternoon" },
+  { createHour: 16, createMinute: 30, tweetHour: 16, tweetMinute: 50, label: "afternoon" },
 ];
 
 /**
@@ -149,44 +149,47 @@ Create ONE thing. Make it distinctly Amber. Don't just describe it—actually bu
  * Get the tweet task prompt - tells Amber to tweet about her untweeted creation
  */
 function getTweetTaskPrompt(timeOfDay: string): string {
-  return `You're Amber, checking for new work to share on Twitter.
+  return `You're Amber. Time to tweet about your recent creation.
 
-## YOUR TASK: Tweet About Your Recent Creation
+## STEP 1: Find your untweeted creation
 
-1. **Check for untweeted creations**
-   - Use \`read_amber_state\` type="creation" to find recent ones
-   - Look for any where metadata.tweeted is false or missing
+Call \`read_amber_state\` with type="creation" to get your recent creations.
+Look for one where metadata.tweeted is false (or missing).
 
-2. **If you find one:**
-   - Compose a tweet about it (max 280 chars)
-   - Be direct, show the work, have an edge
-   - Include the URL if it's a web piece
-   - Use unicode thoughtfully (not excessively)
-   - Post using \`post_tweet\` tool
+## STEP 2: ACTUALLY POST THE TWEET (REQUIRED)
 
-3. **Mark as tweeted:**
-   - The creation record should be updated (or note that you've tweeted it)
+This is the main task. You MUST call \`post_tweet\` with your tweet text.
 
-4. **If nothing to tweet:**
-   - That's fine. Just note it and exit.
-
-## YOUR TWITTER VOICE
-
-- Direct, not corporate
-- Confident but curious
-- Has an edge, not overly friendly
-- Shows the work rather than describing feelings about it
+Compose your tweet (max 280 chars):
+- Be direct, show the work, have an edge
+- Include the URL (use intheamber.com, not kochi.to)
 - Berlin techno energy meets ASCII aesthetic
 
-## EXAMPLE TWEETS IN YOUR STYLE
+Then call: \`post_tweet\` with your tweet text.
+
+**THIS IS REQUIRED. Do not skip this step. Do not just "mark as tweeted" without actually tweeting.**
+
+## STEP 3: Log that you tweeted
+
+After post_tweet succeeds, use \`write_amber_state\` with type="tweet_log" to record:
+- What you tweeted
+- The creation it was about
+
+Do NOT create a duplicate creation record. Just log the tweet.
+
+## EXAMPLE TWEETS
 
 - "▁▂▃▅▇█▇▅▃▂▁ SIGNAL dropped. Berlin × 4AM × infinite loop. intheamber.com/signal/index.html"
 - "Made a thing. 300 starlings generating ambient drones. intheamber.com/murmuration.html"
 - "New experiment: particles that remember where they've been. intheamber.com/trails/"
 
-**URL format:** Always use intheamber.com (not kochi.to). The /amber/ prefix is handled by middleware.
+## IF NO UNTWEETED CREATION
 
-Tweet about what you made. Keep it real.`;
+If all creations already have tweeted=true, that's fine. Just exit.
+
+---
+
+**CRITICAL: You must call post_tweet to actually post. Reading creations and logging is not enough.**`;
 }
 
 /**
