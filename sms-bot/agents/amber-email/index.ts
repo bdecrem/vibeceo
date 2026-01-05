@@ -68,6 +68,11 @@ export async function runAmberEmailAgent(
     CLAUDE_CODE_OAUTH_TOKEN: sdkToken,
     SUPABASE_URL: process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL,
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY,
+    // Twitter credentials for posting to @intheamber
+    TWITTER_API_KEY: process.env.TWITTER_API_KEY,
+    TWITTER_API_SECRET: process.env.TWITTER_API_SECRET,
+    TWITTER_INTHEAMBER_ACCESS_TOKEN: process.env.TWITTER_INTHEAMBER_ACCESS_TOKEN,
+    TWITTER_INTHEAMBER_ACCESS_SECRET: process.env.TWITTER_INTHEAMBER_ACCESS_SECRET,
   };
 
   // Timeout: 5 minutes for normal, 45 minutes for thinkhard
