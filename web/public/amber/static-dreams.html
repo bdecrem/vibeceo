@@ -63,7 +63,27 @@
     <div id="title">Static Dreams</div>
     <canvas id="canvas"></canvas>
     <div id="instructions">Click to tune • Space to reset • Let it drift</div>
-    
+
+    <button id="audioToggle" style="
+        position: fixed;
+        bottom: 60px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(212, 165, 116, 0.1);
+        border: 1px solid rgba(212, 165, 116, 0.3);
+        color: #D4A574;
+        padding: 8px 20px;
+        font-family: 'Space Mono', monospace;
+        font-size: 11px;
+        letter-spacing: 2px;
+        cursor: pointer;
+        text-transform: uppercase;
+        z-index: 20;
+        transition: all 0.3s ease;
+    " onmouseover="this.style.background='rgba(212, 165, 116, 0.2)'" onmouseout="this.style.background='rgba(212, 165, 116, 0.1)'">
+        🔇 Sound Off
+    </button>
+
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
@@ -81,7 +101,189 @@
         let targetCoherence = 0;
         let driftSpeed = 0.0005;
         let clickPower = 0.15;
-        
+
+        // Audio Engine
+        class StaticAudio {
+            constructor() {
+                this.audioContext = null;
+                this.noiseNode = null;
+                this.filterNode = null;
+                this.gainNode = null;
+                this.oscillator = null;
+                this.oscGain = null;
+                this.isPlaying = false;
+            }
+
+            init() {
+                // iOS/Safari compatibility
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+                // White noise generator
+                const bufferSize = this.audioContext.sampleRate * 2;
+                const noiseBuffer = this.audioContext.createBuffer(1, bufferSize, this.audioContext.sampleRate);
+                const data = noiseBuffer.getChannelData(0);
+
+                // Generate pink-ish noise (weighted toward lower frequencies)
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = (Math.random() * 2 - 1) * (1 - (i / bufferSize) * 0.3);
+                }
+
+                this.noiseNode = this.audioContext.createBufferSource();
+                this.noiseNode.buffer = noiseBuffer;
+                this.noiseNode.loop = true;
+
+                // Filter for coherence control
+                this.filterNode = this.audioContext.createBiquadFilter();
+                this.filterNode.type = 'bandpass';
+                this.filterNode.frequency.value = 2000;
+                this.filterNode.Q.value = 0.5;
+
+                // Gain control
+                this.gainNode = this.audioContext.createGain();
+                this.gainNode.gain.value = 0.12;
+
+                // Hidden tone that emerges (the "signal" in the noise)
+                this.oscillator = this.audioContext.createOscillator();
+                this.oscillator.type = 'sine';
+                this.oscillator.frequency.value = 220; // A3 - amber's frequency
+
+                this.oscGain = this.audioContext.createGain();
+                this.oscGain.gain.value = 0;
+
+                // Connect nodes
+                this.noiseNode.connect(this.filterNode);
+                this.filterNode.connect(this.gainNode);
+
+                this.oscillator.connect(this.oscGain);
+                this.oscGain.connect(this.gainNode);
+
+                this.gainNode.connect(this.audioContext.destination);
+
+                // Resume if suspended (mobile requirement)
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume();
+                }
+            }
+
+            start() {
+                if (this.isPlaying) return;
+
+                this.init();
+                this.noiseNode.start();
+                this.oscillator.start();
+                this.isPlaying = true;
+            }
+
+            stop() {
+                if (!this.isPlaying || !this.audioContext) return;
+
+                this.noiseNode.stop();
+                this.oscillator.stop();
+                this.audioContext.close();
+                this.isPlaying = false;
+            }
+
+            updateCoherence(coherenceValue) {
+                if (!this.isPlaying) return;
+
+                const now = this.audioContext.currentTime;
+
+                // As coherence increases:
+                // 1. Narrow the bandpass filter (more "tuned")
+                // 2. Reduce overall noise volume
+                // 3. Increase the hidden tone
+
+                // Filter narrows from wide (500Hz bandwidth) to tight (50Hz)
+                const bandwidth = 500 - (coherenceValue * 450);
+                this.filterNode.Q.setTargetAtTime(
+                    20 - (coherenceValue * 18),
+                    now,
+                    0.1
+                );
+
+                // Center frequency drifts slightly
+                const drift = Math.sin(now * 0.3) * 200;
+                this.filterNode.frequency.setTargetAtTime(
+                    2000 + drift - (coherenceValue * 800),
+                    now,
+                    0.1
+                );
+
+                // Noise volume decreases
+                this.gainNode.gain.setTargetAtTime(
+                    0.12 * (1 - coherenceValue * 0.6),
+                    now,
+                    0.1
+                );
+
+                // Hidden tone emerges (very subtle)
+                this.oscGain.gain.setTargetAtTime(
+                    coherenceValue * 0.03,
+                    now,
+                    0.2
+                );
+
+                // Tone frequency shifts (harmonic progression)
+                const harmonics = [220, 247, 262, 294]; // A, B, C, D
+                const targetFreq = harmonics[Math.floor(coherenceValue * 3.99)];
+                this.oscillator.frequency.setTargetAtTime(
+                    targetFreq,
+                    now,
+                    0.3
+                );
+            }
+
+            click() {
+                if (!this.isPlaying) return;
+
+                // Brief "signal lock" sound on click
+                const now = this.audioContext.currentTime;
+
+                // Create a brief filtered noise burst
+                const clickNoise = this.audioContext.createBufferSource();
+                const clickBuffer = this.audioContext.createBuffer(1, this.audioContext.sampleRate * 0.05, this.audioContext.sampleRate);
+                const clickData = clickBuffer.getChannelData(0);
+
+                for (let i = 0; i < clickData.length; i++) {
+                    clickData[i] = (Math.random() * 2 - 1) * (1 - i / clickData.length);
+                }
+
+                clickNoise.buffer = clickBuffer;
+
+                const clickFilter = this.audioContext.createBiquadFilter();
+                clickFilter.type = 'highpass';
+                clickFilter.frequency.value = 4000;
+
+                const clickGain = this.audioContext.createGain();
+                clickGain.gain.setValueAtTime(0.15, now);
+                clickGain.gain.exponentialRampToValueAtTime(0.01, now + 0.05);
+
+                clickNoise.connect(clickFilter);
+                clickFilter.connect(clickGain);
+                clickGain.connect(this.audioContext.destination);
+
+                clickNoise.start(now);
+                clickNoise.stop(now + 0.05);
+            }
+        }
+
+        const audioEngine = new StaticAudio();
+        let audioEnabled = false;
+
+        // Audio toggle button
+        const audioToggle = document.getElementById('audioToggle');
+        audioToggle.addEventListener('click', () => {
+            if (audioEnabled) {
+                audioEngine.stop();
+                audioToggle.textContent = '🔇 Sound Off';
+                audioEnabled = false;
+            } else {
+                audioEngine.start();
+                audioToggle.textContent = '🔊 Sound On';
+                audioEnabled = true;
+            }
+        });
+
         // Amber palette
         const colors = {
             amber: [212, 165, 116],
@@ -170,6 +372,9 @@
             coherence += (targetCoherence - coherence) * 0.02;
             targetCoherence += (Math.random() - 0.5) * driftSpeed;
             targetCoherence = Math.max(0, Math.min(1, targetCoherence));
+
+            // Update audio to match coherence
+            audioEngine.updateCoherence(coherence);
             
             // Create image data
             const imageData = ctx.createImageData(width, height);
@@ -221,7 +426,10 @@ requestAnimationFrame(draw);
         // Interactions
         canvas.addEventListener('click', (e) => {
             targetCoherence = Math.min(1, targetCoherence + clickPower);
-            
+
+            // Trigger click sound
+            audioEngine.click();
+
             // Add a momentary flash at click position
             const x = e.clientX;
             const y = e.clientY;
