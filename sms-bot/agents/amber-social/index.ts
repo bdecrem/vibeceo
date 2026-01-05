@@ -299,22 +299,6 @@ export function registerAmberSocialJobs(): void {
     `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
   ).join(', ');
   console.log(`[amber-social] Registered: ${times} PT`);
-
-  // TEMPORARY TEST: Tweet at 7:30pm PT - remove after testing
-  registerDailyJob({
-    name: 'amber-tweet-test',
-    hour: 19,
-    minute: 30,
-    timezone: "America/Los_Angeles",
-    async run() {
-      console.log('[amber-social] Running TEST tweet job at 7:30pm PT');
-      await runTweetPhase("test");
-    },
-    onError(error) {
-      console.error('[amber-social] TEST tweet job failed:', error);
-    }
-  });
-  console.log('[amber-social] TEST job registered: tweet@19:30 PT');
 }
 
 /**

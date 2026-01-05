@@ -954,17 +954,20 @@ export default function KochiDiscoTestPage() {
           <div className="h-8 sm:h-10 flex justify-center items-center">
             <AnimatePresence mode="wait">
               {stage === "prompt" && (
-                <motion.button
+                <motion.div
                   key="prompt-text"
                   initial={{ opacity: 0, scale: 0.7 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.7 }}
                   transition={{ type: "spring", stiffness: 420, damping: 14 }}
-                  onClick={handleMascotClick}
-                  className={`${poppins.className} text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[12px] sm:text-[15px] font-medium`}
                 >
-                  Tap Kochi to get started
-                </motion.button>
+                  <button
+                    onClick={handleMascotClick}
+                    className={`${poppins.className} text-[#8a8a8a] hover:text-[#2C3E1F] transition-colors duration-200 text-[12px] sm:text-[15px] font-medium`}
+                  >
+                    Tap Kochi to get started
+                  </button>
+                </motion.div>
               )}
             </AnimatePresence>
           </div>
