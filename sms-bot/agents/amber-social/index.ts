@@ -111,7 +111,34 @@ It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
    - For web apps/music: Use \`write_file\` to create HTML in web/public/amber/
    - Make it UNIQUELY YOU - curious, a little weird, conceptual
 
-3. **Save to your creations log**
+   **CRITICAL: If you create an HTML file, you MUST add OpenGraph tags in the <head>:**
+   \`\`\`html
+   <!-- OpenGraph -->
+   <meta property="og:title" content="[Title]">
+   <meta property="og:description" content="[Short description]">
+   <meta property="og:image" content="https://kochi.to/amber/[name]-og.png">
+   <meta property="og:url" content="https://kochi.to/amber/[name].html">
+   <meta property="og:type" content="website">
+
+   <!-- Twitter -->
+   <meta name="twitter:card" content="summary_large_image">
+   <meta name="twitter:title" content="[Title]">
+   <meta name="twitter:description" content="[Short description]">
+   <meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
+   \`\`\`
+
+3. **Generate OpenGraph screenshot (REQUIRED for HTML files)**
+   - After creating the HTML file, generate a 1200x630 screenshot for social sharing
+   - Use \`run_command\` tool with this exact command (replace [name] with your filename):
+
+   \`\`\`bash
+   node -e "const puppeteer = require('puppeteer'); (async () => { const browser = await puppeteer.launch(); const page = await browser.newPage(); await page.setViewport({width: 1200, height: 630}); await page.goto('file:///Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name].html'); await new Promise(r => setTimeout(r, 1000)); await page.screenshot({path: '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name]-og.png'}); await browser.close(); console.log('Screenshot saved!'); })();"
+   \`\`\`
+
+   - This captures the live page and saves the OG image
+   - The image will be used when the link is shared on Twitter/social media
+
+4. **Save to your creations log**
    - Use \`write_amber_state\` with type="creation"
    - Include the prompt that inspired it in metadata
    - Set metadata.tweeted = false (you'll tweet about it later)
@@ -124,8 +151,9 @@ It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
 
    Note: intheamber.com serves from web/public/amber/, so drop the "amber/" from the URL path.
 
-4. **Commit the files**
+5. **Commit the files**
    - Use \`git_commit\` with a message describing what you made
+   - IMPORTANT: Include both the HTML file AND the -og.png screenshot in your commit
    - Use \`git_push\` to deploy
 
 ## EXAMPLE PROMPTS FROM YOUR HISTORY
