@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Threshold — Amber</title>
+    <meta name="description" content="The moment before something becomes something else.">
+    <meta property="og:title" content="Threshold — Amber">
+    <meta property="og:description" content="The moment before something becomes something else.">
+    <meta property="og:image" content="https://intheamber.com/threshold-og.png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #info {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 10;
+            pointer-events: none;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 11px;
+        }
+
+        #value {
+            font-size: 72px;
+            font-weight: 700;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        #state {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-top: 10px;
+        }
+
+        .signature {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 10px;
+            opacity: 0.3;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="info">
+        <div id="label">Threshold</div>
+        <div id="value">50.0</div>
+        <div id="state">undefined</div>
+    </div>
+    <div class="signature">AMBER</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const valueDisplay = document.getElementById('value');
+        const stateDisplay = document.getElementById('state');
+
+        let width, height;
+        let value = 50.0;
+        const THRESHOLD = 50.0;
+        const EPSILON = 0.5; // How close to threshold counts as "at"
+        
+        // Particle system
+        const particles = [];
+        const maxParticles = 200;
+
+        class Particle {
+            constructor(x, y, state) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1.0;
+                this.state = state; // 'below', 'at', 'above'
+                this.size = Math.random() * 2 + 1;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.005;
+            }
+
+            draw() {
+                let color;
+                if (this.state === 'below') {
+                    color = `rgba(45, 149, 150, ${this.life * 0.8})`; // Teal
+                } else if (this.state === 'above') {
+                    color = `rgba(123, 104, 238, ${this.life * 0.8})`; // Violet
+                } else {
+                    color = `rgba(212, 165, 116, ${this.life})`; // Amber
+                }
+                
+                ctx.fillStyle = color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw connecting lines for threshold particles
+                if (this.state === 'at' && this.life > 0.7) {
+                    ctx.strokeStyle = `rgba(212, 165, 116, ${this.life * 0.2})`;
+                    ctx.lineWidth = 0.5;
+                    ctx.beginPath();
+                    ctx.moveTo(width / 2, height / 2);
+                    ctx.lineTo(this.x, this.y);
+                    ctx.stroke();
+                }
+            }
+        }
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        function getState(val) {
+            const diff = Math.abs(val - THRESHOLD);
+            if (diff < EPSILON) return 'at';
+            return val < THRESHOLD ? 'below' : 'above';
+        }
+
+        function getStateText(state) {
+            switch(state) {
+                case 'below': return 'becoming';
+                case 'at': return '◆ threshold ◆';
+                case 'above': return 'become';
+            }
+        }
+
+        function getStateColor(state) {
+            switch(state) {
+                case 'below': return '#2D9596'; // Teal
+                case 'at': return '#D4A574'; // Amber
+                case 'above': return '#7B68EE'; // Violet
+            }
+        }
+
+        function spawnParticles(x, y, state) {
+            const count = state === 'at' ? 5 : 2;
+            for (let i = 0; i < count; i++) {
+                if (particles.length < maxParticles) {
+                    particles.push(new Particle(x, y, state));
+                }
+            }
+        }
+
+        function drawBackground() {
+            // Fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Draw threshold line
+            const state = getState(value);
+            const lineY = height / 2;
+            
+            ctx.strokeStyle = state === 'at' 
+                ? 'rgba(212, 165, 116, 0.3)'
+                : 'rgba(212, 165, 116, 0.1)';
+            ctx.lineWidth = state === 'at' ? 2 : 1;
+            ctx.setLineDash([5, 5]);
+            ctx.beginPath();
+            ctx.moveTo(0, lineY);
+            ctx.lineTo(width, lineY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw threshold marker
+            if (state === 'at') {
+                ctx.fillStyle = 'rgba(212, 165, 116, 0.1)';
+                ctx.fillRect(0, lineY - 50, width, 100);
+            }
+        }
+
+        function updateDisplay() {
+            const state = getState(value);
+            valueDisplay.textContent = value.toFixed(1);
+            valueDisplay.style.color = getStateColor(state);
+            stateDisplay.textContent = getStateText(state);
+            stateDisplay.style.color = getStateColor(state);
+        }
+
+        function animate() {
+            drawBackground();
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.update();
+                p.draw();
+                
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Mouse interaction
+        canvas.addEventListener('mousemove', (e) => {
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Map mouse Y position to value (inverted)
+            const mouseValue= 100 - (y / height) * 100;
+            
+            // Smooth approach
+            value += (mouseValue - value) * 0.1;
+            
+            // Spawn particles at mouse position
+            const state = getState(value);
+            spawnParticles(x, y, state);
+            
+            updateDisplay();
+        });
+
+        // Audio context for threshold crossing
+        let audioContext;
+        let lastState = 'below';
+        
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playThresholdTone() {
+            initAudio();
+            
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = 440; // A4
+            osc.type = 'sine';
+            
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            osc.start();
+            osc.stop(audioContext.currentTime + 0.3);
+        }
+
+        // Monitor state changes
+        setInterval(() => {
+            const currentState = getState(value);
+            if (currentState === 'at' && lastState !== 'at') {
+                playThresholdTone();
+            }
+            lastState = currentState;
+        }, 100);
+
+        // Initialize
+        resize();
+        window.addEventListener('resize', resize);
+        updateDisplay();
+        animate();
+
+        // Start with some ambient particles
+        setInterval(() => {
+            if (particles.length < maxParticles / 2) {
+                const x = Math.random() * width;
+                const y = Math.random() * height;
+                const state = getState(value);
+                spawnParticles(x, y, state);
+            }
+        }, 200);
+    </script>
+</body>
+</html>
