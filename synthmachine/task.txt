@@ -1,0 +1,29 @@
+Task
+Now you're going to make our first instrument: a tr-909. Like this:
+- you are making it like a detailed obsessed synth maker
+- we want only the best: starting with the best modeling of the oscillators, filters etc
+- we want ALL the features of the original device, including the knobs and the ranges on them, the 
+sequencer etc
+- our synth will have an ENGINE
+- and it will have two ways of interacting with it: (1) a web app that looks and feels and behaves exactly
+ like a real tr-909. It'll just work. I can tune my kick, program my beats in the sequencer etc. and that 
+web app connects to the engine for the behaviors and sounds (2) it also exposes a CLI interface or APIs 
+such that you, amber, can use it next time I ask you to make a track. You'll make a web app that connects 
+to the engine
+- the main CUSTOMER/user for this synth will be AMBER when she creates her next techno track, so it will 
+be used as part of a web app just like today's techno track.
+- for now, the audio will be target at web audio playing through a browser, but soon we will also generate
+ high quality audio files such as WAV or mp3 files, so the engine should be able to output either audio 
+type, and either stream or save audio files
+
+You just built a research library. USE IT: make a plan to build this synth and synth engine, and rely as 
+much as possible on existing open source tech in your library. Only write what's not available given our 
+tech stack.
+
+ALSO: we will build MANY SYNTHS this way. For instance, after this you will build a tr-808. Then, a Moog 
+Sub37. So build a system that we can re-use, where it makes sense, for our next synth.  
+
+This is a major project, so it makes sense to give it a new root folder, maybe at synthmachine/ or some 
+such - your call.
+
+NOW MAKE A PLAN FOR THIS. 
