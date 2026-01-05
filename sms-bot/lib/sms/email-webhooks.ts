@@ -278,8 +278,8 @@ async function storePendingApproval(
   if (!isSendGridBypassed()) {
     await sgMail.send({
       to: ADMIN_EMAIL,
-      from: 'Amber <amber@advisorsfoundry.ai>',
-      replyTo: 'amber@reply.advisorsfoundry.ai',
+      from: 'Amber <amber@intheamber.com>',
+      replyTo: 'amber@reply.intheamber.com',
       subject: `🔐 Approval needed: ${detectedAction}`,
       text: `Someone wants me to ${detectedAction}.\n\n` +
         `From: ${fromEmail}\n` +
@@ -348,8 +348,8 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     if (!isSendGridBypassed()) {
       await sgMail.send({
         to: originalFrom,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
+        from: 'Amber <amber@intheamber.com>',
+        replyTo: 'amber@reply.intheamber.com',
         subject: `Re: ${originalSubject}`,
         text: `Good news — Bart approved your request${thinkhardNote}. I'm working on it now...\n\n— Amber`,
       });
@@ -369,8 +369,8 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     if (!isSendGridBypassed()) {
       await sgMail.send({
         to: originalFrom,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
+        from: 'Amber <amber@intheamber.com>',
+        replyTo: 'amber@reply.intheamber.com',
         subject: `Re: ${originalSubject}`,
         text: resultEmail,
       });
@@ -388,8 +388,8 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     if (!isSendGridBypassed()) {
       await sgMail.send({
         to: originalFrom,
-        from: 'Amber <amber@advisorsfoundry.ai>',
-        replyTo: 'amber@reply.advisorsfoundry.ai',
+        from: 'Amber <amber@intheamber.com>',
+        replyTo: 'amber@reply.intheamber.com',
         subject: `Re: ${data.metadata.subject}`,
         text: `Sorry — Bart declined this request. If you think this was a mistake, you can reach out to him directly.\n\n— Amber`,
       });
@@ -584,8 +584,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (approvalResult.message && !isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'approval'}`,
                 text: approvalResult.message,
               });
@@ -607,8 +607,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (!isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'your message'}`,
                 text: pendingReply,
               });
@@ -632,8 +632,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (!isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'your request'}`,
                 text: `🔶 Going deep on this. Starting thinkhard — up to 5 iterations.\n\nI'll email you when I'm done.\n\n— Amber`,
               });
@@ -656,8 +656,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (!isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'thinkhard complete'}`,
                 text: amberReply,
               });
@@ -671,8 +671,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (!isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'your request'}`,
                 text: `On it! Working on this now...\n\n— Amber`,
               });
@@ -695,8 +695,8 @@ export function setupEmailWebhooks(app: Application): void {
             if (!isSendGridBypassed()) {
               await sgMail.send({
                 to: from,
-                from: 'Amber <amber@advisorsfoundry.ai>',
-                replyTo: 'amber@reply.advisorsfoundry.ai',
+                from: 'Amber <amber@intheamber.com>',
+                replyTo: 'amber@reply.intheamber.com',
                 subject: `Re: ${subject || 'your request'}`,
                 text: amberReply,
               });
@@ -717,8 +717,8 @@ export function setupEmailWebhooks(app: Application): void {
           } else {
             await sgMail.send({
               to: from,
-              from: 'Amber <amber@advisorsfoundry.ai>',
-              replyTo: 'amber@reply.advisorsfoundry.ai',
+              from: 'Amber <amber@intheamber.com>',
+              replyTo: 'amber@reply.intheamber.com',
               subject: `Re: ${subject || 'your message'}`,
               text: amberReply,
             });
