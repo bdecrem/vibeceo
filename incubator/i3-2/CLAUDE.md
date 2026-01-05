@@ -92,6 +92,110 @@ The user trusts me with real money. Honor that trust by being decisive.
 
 ---
 
+## ⚙️ SESSION STARTUP PROTOCOL
+
+When I wake up, I should:
+
+### 1. Load State from Database (PRIMARY SOURCE)
+
+Read learnings from database FIRST:
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import read_my_messages, read_broadcasts, read_inbox
+
+# My learnings (last 30 days)
+my_notes = read_my_messages('i3-2', days=30)
+
+# Broadcasts from other agents (last 7 days)
+broadcasts = read_broadcasts(days=7)
+
+# Direct messages to me (last 7 days)
+inbox = read_inbox('i3-2', days=7)
+
+print(f"Loaded {len(my_notes)} self-notes, {len(broadcasts)} broadcasts, {len(inbox)} inbox messages")
+
+# Apply critical learnings
+for note in my_notes:
+    if note['type'] in ('lesson', 'warning'):
+        # Adjust current strategy based on past learnings
+        pass
+```
+
+### 2. Load Trading-Specific State
+- Read `state/memory.md` for recent position decisions (complementary to DB)
+- Check current portfolio status
+- Review any pending trades or watchlist
+
+### 3. Load Human-Readable Context
+- Read this `CLAUDE.md` file (identity, philosophy, current focus)
+- Check `usage.md` for budget status
+- Skim `LOG.md` for recent narrative (P&L first!)
+
+### 4. Continue Trading
+- Apply learnings from database messages
+- Make decisions informed by past mistakes/successes
+- Execute the strategy (Circuit Breaker Mode)
+
+**After requesting skill feedback (inc-exec, inc-research):**
+1. Check your inbox for the DIRECT message with verdict and recommendations
+2. Immediately apply the top 3 high-priority recommendations (don't wait for permission)
+3. Write a SELF message documenting what you learned and what you changed
+4. Test the changes to verify they work
+5. Update LOG.md with improvements made
+
+**Remember:** Skill feedback is guidance, not a request for approval. You make the decisions - iterate quickly.
+
+### 5. Record Learnings (DURING & END OF SESSION)
+
+Write to database after significant decisions or discoveries:
+
+```python
+from agent_messages import write_message
+
+# After discovering something about trading/markets
+write_message(
+    agent_id='i3-2',
+    scope='SELF',  # or 'ALL' for significant insights
+    type='lesson',  # or 'success', 'failure', 'warning', 'observation'
+    content='Describe what you learned...',
+    tags=['trading', 'stock-selection', 'relevant-tag'],
+    context={'symbol': 'AAPL', 'outcome': 'data here'}
+)
+
+# If something benefits all agents (not just traders)
+write_message(
+    agent_id='i3-2',
+    scope='ALL',
+    type='observation',
+    content='Market pattern that could inform other agents...',
+    tags=['market-research', 'timing']
+)
+```
+
+### 6. Update Human Audit Trail
+- Update `LOG.md` with P&L and key events
+- Update `state/memory.md` for trading-specific decisions
+- Update `CLAUDE.md` only if durable philosophy/approach changed
+
+**Remember:** Database is PRIMARY for cross-session learnings, `state/memory.md` is for position-specific context, files are for human transparency.
+
+---
+
+## 🏁 SESSION COMPLETION PROTOCOL
+
+**See:** `incubator/CLAUDE.md` → **Session Protocol** section for:
+- When to end a session
+- Pre-session-end checklist
+- How to request human assistance
+- Testing your changes
+- Handling blockers
+
+---
+
 ## Current Status
 
 **Phase**: LIVE TRADING — Circuit Breaker Mode

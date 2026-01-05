@@ -5,9 +5,9 @@ Amber SDK Tools for Claude Agent SDK
 In-process MCP server providing Amber's capabilities:
 - Web search
 - Image generation (fal.ai)
-- File operations (via GitHub API when on Railway, local filesystem otherwise)
+- File operations (restricted to codebase)
 - Supabase queries (amber_state)
-- Git operations (via GitHub API when on Railway)
+- Git operations
 - Bash commands (restricted)
 """
 
@@ -17,27 +17,16 @@ import os
 import subprocess
 import urllib.request
 import urllib.parse
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from claude_agent_sdk import create_sdk_mcp_server, tool
 
-# Detect if running on Railway (cloud) vs local
-IS_RAILWAY = bool(os.getenv("RAILWAY_ENVIRONMENT") or os.getenv("RAILWAY_SERVICE_NAME"))
-
-# Security: Restrict file operations to codebase (for local mode)
+# Security: Restrict file operations to codebase
 ALLOWED_CODEBASE = os.getenv("AMBER_CODEBASE_PATH", "/Users/bart/Documents/code/vibeceo")
-
-# GitHub config (for Railway mode)
-GITHUB_API_TOKEN = os.getenv("GITHUB_API_TOKEN", "")
-GITHUB_REPO = os.getenv("GITHUB_REPO", "bdecrem/vibeceo")
-GITHUB_BRANCH = os.getenv("GITHUB_BRANCH", "main")
 
 # Supabase config
 SUPABASE_URL = os.getenv("SUPABASE_URL") or os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_KEY") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
-
-# Track files written via GitHub API (for commit batching)
-_github_pending_files: Dict[str, str] = {}  # path -> content
 
 
 def is_safe_path(path: str) -> bool:
@@ -57,150 +46,6 @@ def make_result(text: str, is_error: bool = False) -> Dict[str, Any]:
     if is_error:
         result["isError"] = True
     return result
-
-
-# =============================================================================
-# GITHUB API HELPERS (for Railway mode)
-# =============================================================================
-
-def github_api_request(
-    method: str,
-    endpoint: str,
-    data: Optional[dict] = None
-) -> Dict[str, Any]:
-    """Make a request to GitHub API."""
-    if not GITHUB_API_TOKEN:
-        return {"error": "GITHUB_API_TOKEN not configured"}
-
-    url = f"https://api.github.com/repos/{GITHUB_REPO}/{endpoint}"
-    headers = {
-        "Authorization": f"Bearer {GITHUB_API_TOKEN}",
-        "Accept": "application/vnd.github.v3+json",
-        "Content-Type": "application/json",
-        "X-GitHub-Api-Version": "2022-11-28",
-    }
-
-    try:
-        if data:
-            payload = json.dumps(data).encode()
-            req = urllib.request.Request(url, data=payload, method=method, headers=headers)
-        else:
-            req = urllib.request.Request(url, method=method, headers=headers)
-
-        with urllib.request.urlopen(req, timeout=30) as response:
-            return json.loads(response.read().decode())
-    except urllib.error.HTTPError as e:
-        error_body = e.read().decode() if e.fp else str(e)
-        return {"error": f"GitHub API error {e.code}: {error_body}"}
-    except Exception as e:
-        return {"error": str(e)}
-
-
-def github_get_file_sha(path: str) -> Optional[str]:
-    """Get the SHA of an existing file (needed for updates)."""
-    result = github_api_request("GET", f"contents/{path}?ref={GITHUB_BRANCH}")
-    if "sha" in result:
-        return result["sha"]
-    return None
-
-
-def github_create_or_update_file(path: str, content: str, message: str) -> Dict[str, Any]:
-    """Create or update a file via GitHub API."""
-    # Encode content as base64
-    content_b64 = base64.b64encode(content.encode()).decode()
-
-    data = {
-        "message": message,
-        "content": content_b64,
-        "branch": GITHUB_BRANCH,
-    }
-
-    # Check if file exists (need SHA for update)
-    existing_sha = github_get_file_sha(path)
-    if existing_sha:
-        data["sha"] = existing_sha
-
-    return github_api_request("PUT", f"contents/{path}", data)
-
-
-def github_commit_multiple_files(files: Dict[str, str], message: str) -> Dict[str, Any]:
-    """
-    Commit multiple files in a single commit using Git Data API.
-    files: dict of {path: content}
-    """
-    if not files:
-        return {"error": "No files to commit"}
-
-    try:
-        # 1. Get the current commit SHA for the branch
-        ref_result = github_api_request("GET", f"git/ref/heads/{GITHUB_BRANCH}")
-        if "error" in ref_result:
-            return ref_result
-        current_commit_sha = ref_result["object"]["sha"]
-
-        # 2. Get the tree SHA from the current commit
-        commit_result = github_api_request("GET", f"git/commits/{current_commit_sha}")
-        if "error" in commit_result:
-            return commit_result
-        base_tree_sha = commit_result["tree"]["sha"]
-
-        # 3. Create blobs for each file
-        tree_items = []
-        for path, content in files.items():
-            # Handle binary files (images) that were stored with BASE64: prefix
-            if content.startswith("BASE64:"):
-                blob_content = content[7:]  # Strip "BASE64:" prefix
-                blob_encoding = "base64"
-            else:
-                blob_content = content
-                blob_encoding = "utf-8"
-
-            blob_result = github_api_request("POST", "git/blobs", {
-                "content": blob_content,
-                "encoding": blob_encoding
-            })
-            if "error" in blob_result:
-                return blob_result
-
-            tree_items.append({
-                "path": path,
-                "mode": "100644",
-                "type": "blob",
-                "sha": blob_result["sha"]
-            })
-
-        # 4. Create a new tree
-        tree_result = github_api_request("POST", "git/trees", {
-            "base_tree": base_tree_sha,
-            "tree": tree_items
-        })
-        if "error" in tree_result:
-            return tree_result
-
-        # 5. Create a new commit
-        new_commit_result = github_api_request("POST", "git/commits", {
-            "message": message,
-            "tree": tree_result["sha"],
-            "parents": [current_commit_sha]
-        })
-        if "error" in new_commit_result:
-            return new_commit_result
-
-        # 6. Update the branch reference
-        update_ref_result = github_api_request("PATCH", f"git/refs/heads/{GITHUB_BRANCH}", {
-            "sha": new_commit_result["sha"]
-        })
-        if "error" in update_ref_result:
-            return update_ref_result
-
-        return {
-            "success": True,
-            "commit_sha": new_commit_result["sha"],
-            "files_committed": list(files.keys())
-        }
-
-    except Exception as e:
-        return {"error": f"GitHub commit failed: {str(e)}"}
 
 
 # =============================================================================
@@ -247,115 +92,12 @@ async def web_search_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
-# IMAGE GENERATION (OpenAI - Amber's preferred style)
-# =============================================================================
-
-@tool(
-    "generate_amber_image",
-    "Generate an image in Amber's style using OpenAI. Best for conceptual art, amber themes, Berlin aesthetic. Returns base64 image data.",
-    {"prompt": str, "save_path": str}
-)
-async def generate_amber_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Generate an image using OpenAI's gpt-image-1.5 model.
-    This is Amber's preferred image generation - matches her drawer art style.
-
-    The prompt should evoke:
-    - Amber/gold tones with teal and violet accents
-    - Berlin × ASCII × Future aesthetic
-    - Conceptual, transformative themes
-    - Dark backgrounds, subtle grids
-    """
-    prompt = args.get("prompt", "")
-    save_path = args.get("save_path", "")  # Optional: relative path in codebase to save
-
-    if not prompt:
-        return make_result(json.dumps({"error": "Prompt required"}), is_error=True)
-
-    openai_key = os.getenv("OPENAI_API_KEY")
-    if not openai_key:
-        return make_result(json.dumps({"error": "OPENAI_API_KEY not configured"}), is_error=True)
-
-    # Enhance prompt with Amber's visual language if not already present
-    amber_style_hint = """Style: Dark background (#0D0D0D), amber/gold tones (#D4A574, #FFD700),
-    with subtle teal (#2D9596) accents. Conceptual, minimal, slightly industrial.
-    Berlin techno aesthetic meets generative art."""
-
-    if "amber" not in prompt.lower() and "#D4A574" not in prompt:
-        enhanced_prompt = f"{prompt}\n\n{amber_style_hint}"
-    else:
-        enhanced_prompt = prompt
-
-    try:
-        url = "https://api.openai.com/v1/images/generations"
-        payload = json.dumps({
-            "model": "gpt-image-1",
-            "prompt": enhanced_prompt,
-            "n": 1,
-            "size": "1024x1024",
-            "quality": "high",
-            "response_format": "b64_json"
-        }).encode()
-
-        req = urllib.request.Request(url, data=payload, headers={
-            "Authorization": f"Bearer {openai_key}",
-            "Content-Type": "application/json"
-        })
-
-        with urllib.request.urlopen(req, timeout=120) as response:
-            data = json.loads(response.read().decode())
-
-        if not data.get("data") or not data["data"][0].get("b64_json"):
-            return make_result(json.dumps({"error": "No image generated"}), is_error=True)
-
-        b64_image = data["data"][0]["b64_json"]
-
-        # If save_path provided, save the image
-        if save_path:
-            if IS_RAILWAY:
-                # On Railway, stage for GitHub commit
-                import base64 as b64_module
-                image_bytes = b64_module.b64decode(b64_image)
-                # Store as binary - will need special handling
-                _github_pending_files[save_path] = f"BASE64:{b64_image}"
-                return make_result(json.dumps({
-                    "success": True,
-                    "saved_to": save_path,
-                    "message": f"Image generated and staged for commit at {save_path}",
-                    "size_bytes": len(image_bytes)
-                }))
-            else:
-                # Local: save directly
-                import base64 as b64_module
-                full_path = os.path.join(ALLOWED_CODEBASE, save_path)
-                os.makedirs(os.path.dirname(full_path), exist_ok=True)
-                with open(full_path, "wb") as f:
-                    f.write(b64_module.b64decode(b64_image))
-                return make_result(json.dumps({
-                    "success": True,
-                    "saved_to": save_path,
-                    "full_path": full_path,
-                    "message": f"Image saved to {save_path}"
-                }))
-
-        # No save path - just return the base64 (truncated for display)
-        return make_result(json.dumps({
-            "success": True,
-            "b64_preview": b64_image[:100] + "...",
-            "message": "Image generated. Use save_path parameter to save it."
-        }))
-
-    except Exception as e:
-        return make_result(json.dumps({"error": str(e)}), is_error=True)
-
-
-# =============================================================================
-# IMAGE GENERATION (fal.ai - fast alternative)
+# IMAGE GENERATION (fal.ai)
 # =============================================================================
 
 @tool(
     "generate_image",
-    "Generate an image using fal.ai's FLUX model (fast). Returns the image URL.",
+    "Generate an image using fal.ai's FLUX model. Returns the image URL.",
     {"prompt": str, "aspect_ratio": str}
 )
 async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -454,39 +196,6 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 async def read_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     path = args.get("path", "")
 
-    # On Railway, fetch from GitHub API
-    if IS_RAILWAY:
-        if not path:
-            return make_result(json.dumps({"error": "Path required"}), is_error=True)
-
-        if not GITHUB_API_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
-
-        # Check if file is in pending (not yet committed)
-        if path in _github_pending_files:
-            content = _github_pending_files[path]
-            if len(content) > 50000:
-                content = content[:50000] + "\n\n... [truncated at 50000 chars]"
-            return make_result(f"[From pending changes]\n{content}")
-
-        # Fetch from GitHub
-        result = github_api_request("GET", f"contents/{path}?ref={GITHUB_BRANCH}")
-        if "error" in result:
-            return make_result(json.dumps({"error": result["error"]}), is_error=True)
-
-        if result.get("type") == "dir":
-            return make_result(json.dumps({"error": f"{path} is a directory, not a file"}), is_error=True)
-
-        # Decode base64 content
-        try:
-            content = base64.b64decode(result.get("content", "")).decode("utf-8", errors="replace")
-            if len(content) > 50000:
-                content = content[:50000] + "\n\n... [truncated at 50000 chars]"
-            return make_result(content)
-        except Exception as e:
-            return make_result(json.dumps({"error": f"Failed to decode: {e}"}), is_error=True)
-
-    # Local mode: read from filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -508,7 +217,7 @@ async def read_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "write_file",
-    "Write content to a file. Creates file if it doesn't exist. On Railway, stages file for commit.",
+    "Write content to a file. Creates file if it doesn't exist.",
     {"path": str, "content": str}
 )
 async def write_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -518,16 +227,6 @@ async def write_file_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     if not path:
         return make_result(json.dumps({"error": "Path required"}), is_error=True)
 
-    # On Railway, stage file for GitHub commit
-    if IS_RAILWAY:
-        if not GITHUB_API_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured for Railway mode"}), is_error=True)
-
-        # Store in pending files (will be committed with git_commit)
-        _github_pending_files[path] = content
-        return make_result(f"Staged {len(content)} bytes to {path} (will commit with git_commit)")
-
-    # Local mode: write directly to filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -551,27 +250,6 @@ async def list_directory_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     path = args.get("path", ".")
     recursive = args.get("recursive", False)
 
-    # On Railway, use GitHub API
-    if IS_RAILWAY:
-        if not GITHUB_API_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
-
-        # Normalize path
-        api_path = "" if path in [".", "", "/"] else path.strip("/")
-        endpoint = f"contents/{api_path}?ref={GITHUB_BRANCH}" if api_path else f"contents?ref={GITHUB_BRANCH}"
-
-        result = github_api_request("GET", endpoint)
-        if "error" in result:
-            return make_result(json.dumps({"error": result["error"]}), is_error=True)
-
-        # GitHub returns array for directories
-        if isinstance(result, list):
-            items = [item["name"] for item in result]
-            return make_result(json.dumps(sorted(items)))
-        else:
-            return make_result(json.dumps({"error": f"{path} is not a directory"}), is_error=True)
-
-    # Local mode: use filesystem
     if not is_safe_path(path):
         return make_result(json.dumps({"error": "Path not allowed"}), is_error=True)
 
@@ -646,7 +324,7 @@ async def search_code_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "read_amber_state",
-    "Read Amber's state from Supabase. Types: persona, memory, log_entry, blog_post, voice_session, creation. Returns content and metadata (including 'tweeted' flag for creations).",
+    "Read Amber's state from Supabase. Types: persona, memory, log_entry, blog_post, voice_session.",
     {"type": str, "limit": int}
 )
 async def read_amber_state_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -725,15 +403,6 @@ async def write_amber_state_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool("git_status", "Show git status of the repository.", {})
 async def git_status_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    # On Railway, report pending files instead of using git subprocess
-    if IS_RAILWAY:
-        if _github_pending_files:
-            files_list = "\n".join(f"  staged: {path}" for path in _github_pending_files.keys())
-            return make_result(f"## main...origin/main\n{len(_github_pending_files)} files staged for commit:\n{files_list}")
-        else:
-            return make_result("## main...origin/main\nNo files staged (working tree clean)")
-
-    # Local mode: use git subprocess
     try:
         result = subprocess.run(
             ["git", "status", "--porcelain", "-b"],
@@ -771,39 +440,15 @@ async def git_log_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "git_commit",
-    "Stage all changes and create a commit. On Railway, commits pending files via GitHub API.",
+    "Stage all changes and create a commit.",
     {"message": str}
 )
 async def git_commit_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    global _github_pending_files
     message = args.get("message", "")
 
     if not message:
         return make_result(json.dumps({"error": "Commit message required"}), is_error=True)
 
-    # On Railway, commit pending files via GitHub API
-    if IS_RAILWAY:
-        if not GITHUB_API_TOKEN:
-            return make_result(json.dumps({"error": "GITHUB_API_TOKEN not configured"}), is_error=True)
-
-        if not _github_pending_files:
-            return make_result("Nothing to commit (no files staged)")
-
-        # Commit all pending files in a single commit
-        result = github_commit_multiple_files(_github_pending_files, message)
-
-        if "error" in result:
-            return make_result(json.dumps({"error": result["error"]}), is_error=True)
-
-        # Clear pending files after successful commit
-        files_committed = list(_github_pending_files.keys())
-        _github_pending_files = {}
-
-        return make_result(f"Committed {len(files_committed)} files via GitHub API:\n" +
-                          "\n".join(f"  - {f}" for f in files_committed) +
-                          f"\nCommit SHA: {result.get('commit_sha', 'unknown')}")
-
-    # Local mode: use git subprocess
     try:
         # Stage all changes
         subprocess.run(["git", "add", "-A"], cwd=ALLOWED_CODEBASE, timeout=10)
@@ -827,15 +472,10 @@ async def git_commit_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "git_push",
-    "Push commits to remote. On Railway, this is automatic (GitHub API commits push immediately).",
+    "Push commits to remote.",
     {}
 )
 async def git_push_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    # On Railway, GitHub API commits already push (they update branch ref directly)
-    if IS_RAILWAY:
-        return make_result("Push complete (GitHub API commits are pushed automatically)")
-
-    # Local mode: use git subprocess
     try:
         result = subprocess.run(
             ["git", "push"],
@@ -906,70 +546,6 @@ async def run_command_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
-# TWITTER (Social posting)
-# =============================================================================
-
-@tool(
-    "post_tweet",
-    "Post a tweet to Twitter/X from Amber's @intheamber account. Max 280 chars.",
-    {"text": str, "reply_to": str}
-)
-async def post_tweet_tool(args: Dict[str, Any]) -> Dict[str, Any]:
-    text = args.get("text", "")
-    reply_to = args.get("reply_to", "")  # Optional tweet ID to reply to
-
-    if not text:
-        return make_result(json.dumps({"error": "Tweet text required"}), is_error=True)
-
-    if len(text) > 280:
-        return make_result(json.dumps({
-            "error": f"Tweet too long: {len(text)} chars (max 280)"
-        }), is_error=True)
-
-    # Build command to call post-tweet.mjs
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    script_path = os.path.join(script_dir, "post-tweet.mjs")
-
-    cmd = ["node", script_path]
-    if reply_to:
-        cmd.extend(["--reply-to", reply_to])
-    cmd.append(text)
-
-    try:
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30,
-            cwd=ALLOWED_CODEBASE,  # Run from codebase root for proper imports
-        )
-
-        # Parse JSON output
-        try:
-            data = json.loads(result.stdout.strip())
-            if data.get("success"):
-                return make_result(json.dumps({
-                    "success": True,
-                    "tweet_id": data.get("tweetId"),
-                    "tweet_url": data.get("tweetUrl"),
-                    "message": f"Tweet posted successfully! {data.get('tweetUrl', '')}"
-                }))
-            else:
-                return make_result(json.dumps({
-                    "error": data.get("error", "Unknown error")
-                }), is_error=True)
-        except json.JSONDecodeError:
-            return make_result(json.dumps({
-                "error": f"Failed to parse response: {result.stdout[:200]}"
-            }), is_error=True)
-
-    except subprocess.TimeoutExpired:
-        return make_result(json.dumps({"error": "Tweet posting timed out"}), is_error=True)
-    except Exception as e:
-        return make_result(json.dumps({"error": str(e)}), is_error=True)
-
-
-# =============================================================================
 # CREATE MCP SERVER
 # =============================================================================
 
@@ -980,8 +556,7 @@ amber_server = create_sdk_mcp_server(
         # Web
         web_search_tool,
         # Images
-        generate_amber_image_tool,  # OpenAI - Amber's preferred style
-        generate_image_tool,  # fal.ai - fast alternative
+        generate_image_tool,
         # Files
         read_file_tool,
         write_file_tool,
@@ -995,8 +570,6 @@ amber_server = create_sdk_mcp_server(
         git_log_tool,
         git_commit_tool,
         git_push_tool,
-        # Twitter
-        post_tweet_tool,
         # Bash
         run_command_tool,
     ]

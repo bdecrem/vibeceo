@@ -332,6 +332,7 @@ export default function GalleryViewer({ ideas }: { ideas: QuirkyIdea[] }) {
           background: `linear-gradient(135deg, ${palette.bg} 0%, rgba(10,10,15,0.9) 100%)`,
           borderRadius: '40px',
           padding: 'clamp(30px, 5vw, 60px)',
+          paddingBottom: 'clamp(100px, 15vw, 140px)',
           border: '1px solid rgba(255,255,255,0.05)',
           boxShadow: `0 0 80px ${palette.glow}`,
           opacity: isTransitioning ? 0.7 : 1,

@@ -1,0 +1,2 @@
+# Amber Email Agent Dependencies
+claude-agent-sdk==0.1.6

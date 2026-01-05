@@ -21,13 +21,20 @@ Files and changes made outside the `incubator/i1/` folder.
 
 ### web/app/api/rivalalert/trial/route.ts
 - **Created**: 2025-12-18
-- **Purpose**: Trial signup endpoint (creates user + competitors)
+- **Modified**: 2025-12-29 (added confirmation email on signup)
+- **Purpose**: Trial signup endpoint (creates user + competitors, sends welcome email)
 - **To remove**: Delete this file and the `web/app/api/rivalalert/` directory
 
 ### sms-bot/agents/rivalalert/index.ts
 - **Created**: 2025-12-18
-- **Purpose**: Daily scheduler for competitor monitoring + email digests
+- **Modified**: 2025-12-29 (added trial expiry email system)
+- **Purpose**: Daily scheduler for competitor monitoring, email digests, and trial expiry notifications
 - **To remove**: Delete this file and the `sms-bot/agents/rivalalert/` directory
+
+### web/app/api/rivalalert/webhook/route.ts
+- **Created**: 2025-12-29
+- **Purpose**: LemonSqueezy webhook endpoint for subscription events (created, updated, cancelled, resumed)
+- **To remove**: Delete this file
 
 ## Files Modified Outside incubator/i1/
 

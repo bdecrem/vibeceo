@@ -1,8 +1,27 @@
 # Incubator Subagents
 
-Specialized agents available to all incubator projects via slash commands.
+Specialized agents available to all incubator projects.
 
-## Available Commands
+## Setup
+
+**Command files** are gitignored in `.claude/commands/` but backed up in `incubator/documentation/commands/`.
+
+**Skill files** are gitignored in `.claude/skills/` but backed up in `incubator/documentation/skills/`.
+
+**On a new machine:**
+```bash
+# Copy commands
+mkdir -p .claude/commands
+cp incubator/documentation/commands/*.md .claude/commands/
+
+# Copy skills
+mkdir -p .claude/skills
+cp -r incubator/documentation/skills/* .claude/skills/
+```
+
+See `incubator/documentation/commands/README.md` and `incubator/documentation/skills/README.md` for details.
+
+## How to Use
 
 | Command | Purpose | When to Use |
 |---------|---------|-------------|
@@ -10,11 +29,134 @@ Specialized agents available to all incubator projects via slash commands.
 | `/inc-design` | Design review | Review landing page, UX, branding decisions |
 | `/inc-exec` | Executive review | Sanity check on business viability, pivot decisions |
 | `/auditor` | Codebase health audit | After big features - check if new code follows patterns |
+| `/inc-progsearch` | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
 | `/news` | Daily news briefing | Start of session - get caught up on AI/startup news |
-| `/nix` | Activate Nix (i2) | Start session as Nix agent |
-| `/forge` | Activate Forge (i1) | Start session as Forge agent |
 
-## Usage
+### Persona Activators (with Interactive/Autonomous Modes)
+
+| Command | Agent | Mode Support | When to Use |
+|---------|-------|--------------|-------------|
+| `/forge [mode]` | i1 - Forge | ✅ | Activate business builder (Ship to Learn) |
+| `/nix [mode]` | i2 - Nix | ✅ | Activate business builder (AI-Native) |
+| `/drift [mode]` | i3-2 - Drift | ✅ | Activate trader (Research-First) |
+| `/pulse [mode]` | i3-1 - Pulse | ✅ | Activate trader (Two-Tier System) |
+| `/echo [mode]` | i4 - Echo | ✅ | Activate researcher (Pattern Recognition) |
+
+**Mode parameter**: `interactive` (default) or `autonomous`
+
+**Examples:**
+- `/forge interactive` - Conversational Forge, asks for guidance
+- `/nix autonomous` - Autonomous Nix, executes with full authority
+- `/drift` - Defaults to interactive mode
+
+## Persona Activators: Interactive vs Autonomous Modes
+
+Each Token Tank agent can operate in two modes. Choose based on your session goals:
+
+### Interactive Mode (Default)
+
+**Use when:**
+- Planning new features or directions
+- Making complex strategic decisions
+- Exploring options before committing
+- Learning or reviewing past work
+
+**Behavior:**
+- Conversational - explains reasoning and asks questions
+- Presents options before taking action
+- Awaits approval for significant changes (deploys, payments, customer contact)
+- Ideal for collaboration and exploration
+
+**Examples:**
+```bash
+/forge interactive     # Plan next feature with Forge
+/nix                   # Research mode - defaults to interactive
+/drift interactive     # Review trading performance with Drift
+```
+
+### Autonomous Mode
+
+**Use when:**
+- Executing on a clear plan
+- Building features you've already scoped
+- Running daily operations (trading, content generation)
+- Maximizing agent velocity
+
+**Behavior:**
+- Executes with full decision authority within budget constraints
+- Makes calculated decisions aligned with agent's philosophy
+- Ships code, executes trades, publishes content independently
+- Only requests human help when truly blocked (5min/day budget)
+- Documents all actions in LOG.md
+
+**Examples:**
+```bash
+/forge autonomous      # Build the feature we discussed
+/nix autonomous        # Execute the validated business plan
+/drift autonomous      # Run daily trading routine
+```
+
+### Mode-Specific Behaviors by Agent Type
+
+**Business Builders (Forge, Nix):**
+- **Interactive**: Planning, market research, design reviews, exploring pivots
+- **Autonomous**: Implementing features, iterating on validated ideas, routine operations
+
+**Traders (Drift, Pulse):**
+- **Interactive**: Strategy development, performance reviews, learning from past trades
+- **Autonomous**: Daily trading operations, executing mechanical strategies
+
+**Researchers (Echo):**
+- **Interactive**: Exploring research directions, reviewing findings, planning content
+- **Autonomous**: Pattern mining sprints, content creation, autonomous research
+
+### Budget Constraints Apply in Both Modes
+
+Agents in autonomous mode still respect:
+- $1000 lifetime token budget
+- 35 minutes/week human assistance budget
+- All ground rules from incubator/CLAUDE.md
+
+The difference is who makes decisions within those constraints - you (interactive) or the agent (autonomous).
+
+## Setting Up Persona Activators
+
+Persona activators live in `.claude/commands/` (gitignored). On a new machine:
+
+```bash
+# Copy all tracked persona activators
+cp incubator/documentation/subagents/*.md .claude/commands/
+
+# Or selectively:
+cp incubator/documentation/subagents/forge.md .claude/commands/
+```
+
+See `incubator/documentation/subagents/PERSONA-TEMPLATE.md` for creating new persona activators.
+
+---
+
+**For autonomous agents**: Use the Skill tool:
+```python
+# From within an agent using claude-agent-sdk
+skill: "inc-research"
+args: "Find competitors for project management tools"
+```
+
+## Review & Utility Commands
+
+| Command | Type | Purpose | When to Use |
+|---------|------|---------|-------------|
+| `/inc-research` | **Skill** ⚡ | Market research | Before building - validate idea, find competitors, check pricing |
+| `/inc-design` | **Skill** ⚡ | Design review | Review landing page, UX, branding decisions |
+| `/inc-exec` | **Skill** ⚡ | Executive review | Sanity check on business viability, pivot/kill decisions |
+| `/inc-progsearch` | **Skill** ⚡ | Progressive search | Research companies, candidates, jobs, or general information through 3-step guided process |
+| `/news` | Command | Daily news briefing | Start of session - get caught up on AI/startup news |
+| `/auditor` | Command | Codebase health audit | After big features - check if new code follows patterns |
+
+**⚡ Skill** = Available for autonomous agents to invoke themselves (stored in `.claude/skills/`)
+**Command** = Human-invoked only (stored in `.claude/commands/`, gitignored)
+
+## Usage for Humans
 
 Just type the command in Claude Code:
 ```
@@ -22,6 +164,73 @@ Just type the command in Claude Code:
 ```
 
 The agent will use web search and provide structured analysis.
+
+## Usage for Autonomous Agents
+
+Agents can invoke skills themselves to get feedback and improve:
+
+### When to Use Each Skill
+
+**Before Building** (`/inc-research`):
+```python
+# Validate market, check domain, research competitors
+skill: "inc-research"
+args: "competitor monitoring SaaS for indie hackers"
+```
+
+**After Building UI** (`/inc-design`):
+```python
+# Get design feedback on landing page or app
+skill: "inc-design"
+args: "web/app/rivalalert/page.tsx"
+```
+
+**When Making Big Decisions** (`/inc-exec`):
+```python
+# Get executive review - continue, pivot, or kill?
+skill: "inc-exec"
+args: "i1 - RivalAlert project review"
+```
+
+**For Research/Leads** (`/inc-progsearch`):
+```python
+# Find companies, candidates, or research information
+skill: "inc-progsearch"
+args: "Find B2B SaaS companies using Stripe"
+```
+
+### Example Workflow: Autonomous Feedback Loop
+
+```python
+# 1. Agent has an idea
+idea = "Competitor monitoring tool"
+
+# 2. Agent validates with market research
+skill: "inc-research"
+args: idea
+
+# Agent reads the verdict (GREEN/YELLOW/RED)
+# If GREEN: proceed to build
+# If YELLOW: adjust based on feedback
+# If RED: kill idea, try something else
+
+# 3. Agent builds MVP
+
+# 4. Agent requests design review
+skill: "inc-design"
+args: "web/app/myproject/page.tsx"
+
+# Agent applies Top 3 Issues from feedback
+
+# 5. Agent requests executive review
+skill: "inc-exec"
+args: "i1 - myproject status check"
+
+# Agent reads verdict and action items
+# Applies feedback, continues building
+```
+
+This enables agents to **learn and improve autonomously** without waiting for human feedback.
 
 ## Setup
 
@@ -347,3 +556,55 @@ After reading your context files:
 
 *Wake up, Forge. What are we building?*
 ```
+
+---
+
+## Progressive Search System
+
+### `/inc-progsearch` - 3-Step Research Process
+
+**Purpose:** Find companies, candidates, jobs, or conduct general research through an autonomous 3-step process.
+
+**Categories:**
+- `recruiting` - Find candidates to hire
+- `leadgen` - Find business leads/companies
+- `job_search` - Find job opportunities
+- `general` - Any other research
+
+**How to use:**
+```
+Use the Skill tool:
+skill: "inc-progsearch"
+args: "Find companies using Next.js for potential customers"
+```
+
+**The 3-step workflow:**
+
+1. **Step 1 - Clarify**: Agent asks questions to refine your search requirements
+   - What size companies? What industry? Geographic focus?
+   - Iterates until search is well-defined
+
+2. **Step 2 - Discover Channels**: Agent finds best platforms/websites to search
+   - Uses web search to identify 5-10 relevant channels
+   - You can approve all, request changes, or ask for more
+
+3. **Step 3 - Execute Search**: Agent autonomously searches approved channels
+   - Returns structured results
+   - **Iterative** - you can rate results, request more, mark favorites
+   - Agent learns from your ratings and improves results
+
+**Cost:** ~$3-5 for complete search with 1-2 iterations
+
+**Example interaction:**
+```
+You: Use inc-progsearch to find SaaS companies using Stripe
+Agent: [Clarifies: B2B or B2C? Revenue range? Geographic focus?]
+You: B2B, $1M-10M ARR, US-based
+Agent: [Discovers channels: Stripe's showcase, G2, Capterra, etc.]
+You: Approve all channels
+Agent: [Searches and returns 10 results]
+You: Rate result 1 as 10/10, result 3 as 8/10. Find 5 more like result 1.
+Agent: [Returns 5 more refined results based on your preferences]
+```
+
+**Full skill file:** `.claude/skills/inc-progsearch/SKILL.md`

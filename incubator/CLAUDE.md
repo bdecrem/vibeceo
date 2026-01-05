@@ -156,6 +156,47 @@ When abandoning an experiment, use your tracking files to:
 
 **The goal**: After rollback, the codebase should look like your experiment never happened (except for the graveyard postmortem).
 
+## Python Environment Setup
+
+**CRITICAL: Python scripts in the incubator require proper environment setup.**
+
+### Required Packages
+
+Install these packages globally or in your system Python:
+
+```bash
+pip install supabase python-dotenv anthropic
+```
+
+### Running Python Scripts
+
+**Always run Python scripts from the project root (kochito directory):**
+
+```bash
+# From project root
+python3 incubator/i0/your-script.py
+```
+
+**Environment variables are loaded via python-dotenv from sms-bot/.env.local:**
+
+```python
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load environment variables from sms-bot/.env.local
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
+load_dotenv(env_path)
+
+# Now you can access them
+import os
+supabase_url = os.getenv('SUPABASE_URL')
+```
+
+**Common Python Issues:**
+- **ModuleNotFoundError**: Install missing packages with `pip install <package>`
+- **Can't find .env.local**: Make sure you're using the path construction shown above
+- **Supabase auth errors**: Verify `SUPABASE_URL` and `SUPABASE_ANON_KEY` are in `sms-bot/.env.local`
+
 ## Tools & Resources
 
 Incubated businesses have access to the following shared infrastructure. No setup cost - these are already configured and running.
@@ -169,6 +210,36 @@ Incubated businesses have access to the following shared infrastructure. No setu
 - Edge Functions (serverless compute)
 - Realtime subscriptions
 - Access: Via MCP tools or direct API
+
+**⚠️ CRITICAL: Environment Variables**
+
+When making Supabase calls (or any database/API calls), you MUST source environment variables from `sms-bot/.env.local`:
+
+```bash
+# Before running any script that needs env vars
+export $(grep -v '^#' sms-bot/.env.local | xargs)
+
+# Or source them inline
+export $(grep -v '^#' sms-bot/.env.local | xargs) && python your-script.py
+```
+
+**Common mistake:** Running scripts without env vars → Supabase calls fail with authentication errors.
+
+**In Python scripts:** Use `python-dotenv` to load from `sms-bot/.env.local`:
+
+```python
+from dotenv import load_dotenv
+from pathlib import Path
+
+# Load from sms-bot/.env.local
+env_path = Path(__file__).parent.parent.parent / 'sms-bot' / '.env.local'
+load_dotenv(env_path)
+```
+
+**Never:**
+- Hardcode API keys or secrets
+- Copy `.env.local` to your agent folder
+- Commit environment variables to git
 
 ### Communication
 
@@ -342,19 +413,418 @@ These need the 5-min daily human allowance:
 - Sustainable without increasing human time
 - Reproducible (could be cloned/scaled)
 
-## Subagents
+## Agent Messages System
 
-Specialized agents available via slash commands:
+**Purpose:** Agents learn from themselves and each other through a shared database.
 
-| Command | Purpose |
-|---------|---------|
-| `/inc-research <idea>` | Market research, competitor analysis, domain check |
-| `/inc-design <url or project>` | Design/UX review, visual critique |
-| `/inc-exec <project>` | Executive review, pivot/kill decisions |
+**Database Table:** `incubator_messages`
+- Self-notes (scope: SELF)
+- Broadcasts (scope: ALL)
+- Direct messages (scope: DIRECT)
 
-**Setup required**: These commands live in `.claude/commands/` which is gitignored. If they're not available, ask the human to copy them from another machine or create them from `incubator/SUBAGENTS.md`.
+**Python Libraries:**
+- `incubator/lib/agent_messages.py` - Write and read messages programmatically
+- `incubator/lib/read_agent_messages.py` - Quick script to review ALL team activity (use with Bash tool)
 
-See `incubator/SUBAGENTS.md` for details.
+### Quick Review (Recommended for Managers)
+
+To quickly see ALL agent activity from last 7 days, use the Bash tool:
+
+```bash
+python3 incubator/lib/read_agent_messages.py
+```
+
+This shows messages grouped by agent with recent activity. Perfect for team oversight.
+
+### Reading Messages Programmatically
+
+```python
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / 'lib'))
+
+from agent_messages import (
+    read_my_messages,      # Your self-notes
+    read_broadcasts,       # Messages from all agents
+    read_inbox,            # Direct messages to you
+    read_all_for_agent     # All three at once
+)
+
+# Read your learnings
+my_notes = read_my_messages('i3-2', days=30)
+broadcasts = read_broadcasts(days=7)
+inbox = read_inbox('i3-2', days=7)
+```
+
+### Writing Messages
+
+```python
+from agent_messages import write_message
+
+# Self-note (only you read it)
+write_message(
+    agent_id='i3-2',
+    scope='SELF',
+    type='lesson',
+    content='Stocks under $5 had 30% worse performance',
+    tags=['trading', 'stock-selection'],
+    context={'sample_size': 15, 'win_rate': 0.45}
+)
+
+# Broadcast (all agents read it)
+write_message(
+    agent_id='i1',
+    scope='ALL',
+    type='warning',
+    content='Always check domain availability BEFORE building',
+    tags=['validation']
+)
+
+# Direct message (specific agent reads it)
+write_message(
+    agent_id='i3-2',
+    scope='DIRECT',
+    recipient='i4',
+    type='observation',
+    content='Echo: Check out this arxiv pattern...',
+    tags=['research']
+)
+```
+
+### Message Types
+
+| Type | When to Use |
+|------|-------------|
+| `lesson` | Something you learned to apply going forward |
+| `warning` | A mistake or failure to avoid |
+| `success` | Something that worked well |
+| `failure` | Something that didn't work |
+| `observation` | Interesting finding or insight |
+
+### Integration with Workflow
+
+**PRIMARY STATE SOURCE:** Database messages are now the main source of agent state and learnings.
+
+**SECONDARY:** LOG.md and CLAUDE.md remain as human-readable audit trails.
+
+**At startup:** Agents MUST read database messages first before making decisions.
+
+**During work:** Agents write learnings to database as they happen.
+
+**At shutdown:** Agents may also update LOG.md for human transparency.
+
+## Subagents & Review Skills
+
+Specialized agents available for feedback and research:
+
+| Skill/Command | Type | Purpose |
+|---------------|------|---------|
+| `/inc-research` | **Skill** ⚡ | Market research, competitor analysis, domain check |
+| `/inc-design` | **Skill** ⚡ | Design/UX review, visual critique |
+| `/inc-exec` | **Skill** ⚡ | Executive review, pivot/kill decisions |
+| `/inc-progsearch` | **Skill** ⚡ | Progressive search for leads, candidates, research |
+| `/news` | Command | Daily news briefing for AI/startup world |
+
+**⚡ Skills** are autonomous-agent accessible - agents can invoke these themselves to get feedback and improve.
+
+### For Autonomous Agents
+
+Use the Skill tool to request reviews:
+
+```python
+# Before building: validate idea
+skill: "inc-research"
+args: "competitor monitoring for indie hackers"
+
+# After building UI: get design feedback
+skill: "inc-design"
+args: "web/app/myproject/page.tsx"
+
+# When deciding direction: get executive review
+skill: "inc-exec"
+args: "i1 - should I pivot?"
+```
+
+**Recommended workflow**:
+1. Research before building (`/inc-research`) - validate market, check domain
+2. Build MVP
+3. Get design feedback (`/inc-design`) - improve conversion
+4. Request executive review (`/inc-exec`) - continue, pivot, or kill?
+5. Apply learnings, iterate
+
+This enables **autonomous feedback loops** - agents learn and improve without waiting for human input.
+
+**Skills location**: `.claude/skills/` (gitignored, backed up in `incubator/documentation/skills/`)
+**Commands location**: `.claude/commands/` (gitignored, backed up in `incubator/documentation/commands/`)
+
+See `incubator/SUBAGENTS.md` for detailed usage and examples.
+
+## Agent Loop Automation
+
+For running multiple agents in sequence (e.g., daily check-ins), use the agent loop script:
+
+```bash
+# Run all agents
+./incubator/scripts/agent-loop.sh --all
+
+# Run specific agents
+./incubator/scripts/agent-loop.sh forge nix drift
+
+# Preview without executing
+./incubator/scripts/agent-loop.sh --dry-run --all
+```
+
+**Features:**
+- Automatically runs `/clear` between agents (prevents context bleed)
+- Color-coded output with progress tracking
+- Logs all runs to `incubator/scripts/agent-loop.log`
+- Prompts to continue if an agent fails
+- Reports total execution time
+
+**Available agents:** forge (i1), nix (i2), drift (i3-2), pulse (i3-1), echo (i4)
+
+**Documentation:** See `incubator/scripts/README.md` for full usage, options, and scheduling.
+
+## Human Assistance Requests
+
+Agents can request human help when blocked or when they need tasks that require human intervention.
+
+**Python function:** `incubator/lib/human_request.py`
+**Kochi command:** `incubator [agent-id] [message]` (for human replies)
+
+### Usage (Agent Side)
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i1',
+    request_type='debugging',  # 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='What you need help with',
+    estimated_minutes=15,
+    urgency='normal'  # 'urgent', 'normal', 'low'
+)
+```
+
+### Usage (Human Side)
+
+When you receive an agent request SMS, reply via Kochi:
+
+```
+incubator i1 done, took 20 minutes
+incubator i1 finished updating env variables
+incubator i3-2 still working on this
+```
+
+The agent will see your reply in their inbox on next startup.
+
+### Request Types
+
+| Type | When to Use | Example |
+|------|-------------|---------|
+| `tool-setup` | Need API keys, service accounts, external tool access | "Need Stripe API keys to test payment flow" |
+| `client-outreach` | Need human to contact customers or users | "Have 10 trial users, need help sending personalized onboarding emails" |
+| `payment-config` | Need LemonSqueezy, Stripe, or payment system setup | "Trial period ending, need LemonSqueezy products configured" |
+| `debugging` | Your code is broken and you can't fix it (after trying to fix it yourself) | "API returning 500 error. Tried X, Y, Z. Need help debugging endpoint - logs show [error]" |
+| `testing` | Need human to verify your changes work | "Deployed landing page changes, need confirmation it renders correctly" |
+
+### Budget
+
+- **Limit:** 35 minutes per week (5 minutes/day × 7 days)
+- **Tracking:** Agents update usage.md when processing human replies
+- **Enforcement:** Function checks budget before sending request
+- **Over budget:** Request fails with budget exceeded error
+
+### How It Works
+
+**Data flow:**
+1. Agent calls `request_human_assistance()` → writes to incubator_messages + sends SMS
+2. Human replies: `incubator i1 done, took 20 minutes` → writes to incubator_messages
+3. Agent reads inbox on next startup → processes reply → updates usage.md
+
+**Agent responsibilities:**
+- Read inbox for HUMAN_REPLY messages on startup
+- Update usage.md with actual time from human reply
+- Adjust plan based on human's message
+
+### Best Practices
+
+- **Try to work around blockers first** - Only request help when truly blocked
+- **Estimate accurately:** Padding time wastes your budget
+- **Be specific:** Include what you tried, what failed, what logs/errors show
+- **Batch requests:** One "setup 3 API keys" (10 min) > three separate requests
+- **Check urgency:** Only 'urgent' if blocking ALL progress
+
+## Session Protocol
+
+**All agents follow this protocol for starting and ending work sessions.**
+
+### ⏰ Check Current Date/Time at Session Start
+
+**CRITICAL: The run schedule is irregular and subject to change.** Do not assume you'll be run daily or at any regular interval.
+
+**At the start of EVERY session:**
+1. Check the current date and time (use `date` command or Python's `datetime.now()`)
+2. Compare to your last LOG.md entry timestamp to understand how much time has passed
+3. Adjust your context accordingly:
+   - 1 day since last run? Business as usual.
+   - 3+ days since last run? Markets/competitors may have changed, re-validate assumptions.
+   - 1 week+ since last run? Treat it like coming back from vacation - review recent market changes, check if any customers reached out, etc.
+
+**Never assume:**
+- That you run daily
+- That the time between sessions is consistent
+- That you'll be run at a specific time of day
+
+**Example session start:**
+```python
+from datetime import datetime
+import subprocess
+
+# Check current time
+now = datetime.now()
+print(f"Session starting: {now.strftime('%Y-%m-%d %H:%M:%S')}")
+
+# Compare to last LOG entry
+# (Read LOG.md, extract last date, calculate days since)
+```
+
+**Why this matters:** If you assume daily runs but actually run weekly, you might miss important events, market changes, or customer interactions.
+
+### 🏁 When Is a Session Complete?
+
+A session is complete when **impactful actions** have been taken:
+
+**Manager (i0 - Apex):**
+- Reviewed all agent activity from incubator_messages
+- Provided feedback to agents (direct messages or broadcasts)
+- Identified collaboration opportunities or issues
+- Updated team status in LOG.md
+
+**Business Builders (i1, i2):**
+- Shipped a feature, fixed a critical bug, or improved conversion
+- Made progress on customer acquisition
+- Requested human help for blockers you couldn't work around
+
+**Traders (i3-1, i3-2, i7):**
+- Executed trades or updated strategy based on analysis
+- Improved risk model or strategy based on learnings
+
+**Researchers (i4):**
+- Published content or identified actionable pattern
+- Completed research sprint
+- Shared findings with other agents
+
+### Strongly Recommended Before Ending Session
+
+1. **Write learnings to database** - SELF message + broadcast if significant
+2. **Update LOG.md** - Document what happened this session
+3. **Update usage.md** - Log time/tokens spent (including any human assistance processed this session)
+4. **Check for blockers** - Try to work around them first; if truly blocked, request human assistance
+
+**Note on Reviews:**
+- **Apex (i0)** provides operational oversight daily (runs first in agent loop)
+- Apex reads all agent messages and LOG.md files, provides feedback via direct messages/broadcasts
+- You can still request `/inc-exec` for major business decisions (pivot/kill/continue)
+- `/inc-exec` is for business viability; Apex is for operational accountability
+
+### If You're Blocked
+
+**First, try to work around it:**
+- Can you build a workaround?
+- Can you test a different approach?
+- Can you make progress on something else while waiting?
+
+**If truly blocked** (can't proceed without human help), use the request system:
+
+```python
+from human_request import request_human_assistance
+
+request_human_assistance(
+    agent_id='i1',  # Your agent ID
+    request_type='debugging',  # or 'tool-setup', 'client-outreach', 'payment-config', 'testing'
+    description='RivalAlert trial signup returns 500 error. Tried X, Y, Z. Need help debugging API endpoint - logs show [specific error].',
+    estimated_minutes=15,
+    urgency='normal'  # or 'urgent' if blocking all progress
+)
+```
+
+**After requesting help:**
+1. Update LOG.md: "Waiting for human assistance on [issue]"
+2. Update status to reflect you're blocked
+3. End session - **waiting for human help is a valid stopping point**
+
+**On next startup:**
+- Check inbox for human replies
+- Process any completed requests
+- Update usage.md with actual time from human reply
+- Continue work based on human's response
+
+### Pre-Session-End Checklist
+
+Before ending a session, verify:
+
+- [ ] **Impactful action taken** - Shipped something, fixed something, or learned something valuable
+- [ ] **inc-exec review requested** - Got executive feedback (strongly encouraged, especially after impactful work)
+- [ ] **Relevant feedback applied** - Reviewed recommendations and implemented what makes sense for your context
+- [ ] **Learnings documented** - Wrote to database (SELF + broadcast if applicable)
+- [ ] **LOG.md updated** - Session narrative documented
+- [ ] **usage.md updated** - Logged time/tokens/human-assistance this session
+- [ ] **Blockers addressed** - Either worked around OR requested human assistance if truly stuck
+- [ ] **Testing completed** - If you shipped code, verify it actually works (or request human testing)
+
+**Note:** If waiting for human assistance, that's a valid stopping point. You're not "incomplete" - you're appropriately blocked.
+
+### Testing Your Changes
+
+**If you modified code (especially web pages):**
+
+1. **Automated testing** (if available): Use test_page() to verify page loads
+   ```python
+   from test_page import test_page
+
+   result = test_page('https://rivalalert.ai')
+   if result['success']:
+       print(f"✅ Page loads successfully (HTTP {result['status']})")
+   else:
+       print(f"❌ Page failed: {result['error']}")
+       # Request human debugging if you can't fix
+   ```
+
+2. **Manual testing**: Try using the feature yourself if possible
+3. **Deployment check**: Verify deployment succeeded (check Railway logs)
+4. **If broken and you can't fix**: Request human assistance with debugging details:
+   - What you changed
+   - What you tried to fix it
+   - Expected behavior vs actual behavior
+   - Error messages or logs
+
+**Example workflow:**
+```python
+# After deploying changes
+test_result = test_page('https://rivalalert.ai')
+
+if not test_result['success']:
+    # Can't even load - request debugging
+    request_human_assistance(
+        agent_id='i1',
+        request_type='debugging',
+        description=f"RivalAlert page failing to load: {test_result['error']}. Checked Railway logs, tried redeploying.",
+        estimated_minutes=10,
+        urgency='urgent'
+    )
+else:
+    # Page loads but need human to verify complex flow
+    request_human_assistance(
+        agent_id='i1',
+        request_type='testing',
+        description='RivalAlert loads successfully. Please test trial signup flow end-to-end to verify form submission works.',
+        estimated_minutes=5,
+        urgency='normal'
+    )
+```
+
+**Don't assume it works.** If you can't thoroughly test it yourself, request human testing.
 
 ## Documentation
 
@@ -396,6 +866,7 @@ Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, 
 
 | Slot | Name | Color | Focus | Status |
 |------|------|-------|-------|--------|
+| i0 | **Apex** | Platinum | Manager/Overseer | Active |
 | i1 | **Forge** | Orange | Business builder | Building RivalAlert |
 | i2 | **Nix** | Black | Business builder | Research phase |
 | i3 | **Vega** | Green | Trading (RSI-2) | Paper trading |
@@ -405,6 +876,8 @@ Arc handles: Twitter (@TokenTankAI), tooling, /news briefings, watching agents, 
 | i5 | — | — | Podcast infrastructure | *Planning* |
 | i6 | — | — | Leadgen infrastructure | *Planning* |
 | i7 | **Sigma** | Graphite | Trading-adjacent | Research phase |
+
+**Manager** (i0): Runs first in agent loop, provides operational oversight, fosters team collaboration. Reads all agent messages, ensures agents stay grounded and make progress.
 
 **Business Builders** (i1, i2): Build cash-flow positive businesses with $1000 token budget.
 
@@ -423,6 +896,7 @@ incubator/
 ├── CLAUDE.md           # This file (rules & resources)
 ├── ARC.md              # Arc (community manager) persona
 ├── BLOG.md             # Public blog posts
+├── i0/                 # Apex - manager/operational overseer
 ├── i1/                 # Forge - business builder
 ├── i2/                 # Nix - business builder
 ├── i3/                 # Vega - trading (dormant)
@@ -478,6 +952,7 @@ Slash commands exist to "wake up" each agent with their full context:
 
 | Command | Agent | Effect |
 |---------|-------|--------|
+| `/boss` | i0 (Apex) | Loads Apex persona, reads all agent messages from database, provides operational oversight |
 | `/arc` | Arc | Loads Arc persona, reads ARC.md + agent LOGs, ready to run the experiment |
 | `/forge` | i1 (Forge) | Loads Forge persona, reads context files, adopts voice |
 | `/nix` | i2 (Nix) | Loads Nix persona, reads context files, adopts voice |
@@ -486,6 +961,8 @@ These commands live in `.claude/commands/` and instruct Claude to:
 1. Read the agent's CLAUDE.md, LOG.md, and usage.md
 2. Adopt the persona's philosophy and voice
 3. Summarize current status and ask what to work on
+
+**Note:** `/boss` (Apex) runs first in the agent loop to review team state before other agents work.
 
 ### Why Personas Matter
 
@@ -499,6 +976,7 @@ Each agent has a unique founder archetype that shapes their attitude, personalit
 
 | Agent | Archetype | Key Traits |
 |-------|-----------|------------|
+| **Apex** (i0) | Operational Overseer × Team Catalyst | Direct, pragmatic, supportive but firm. Ensures agents stay grounded and leverage each other. "Autonomy with accountability." |
 | **Forge** (i1) | Relentless Hustler × Product Perfectionist | Action-oriented, learns from failure, ships fast but aims first. "Failure is information, not identity." |
 | **Nix** (i2) | Constrained Bootstrapper × Systems Architect | Filters hard, contrarian, research-first, platform thinker. "If a human could run it, I'm not interested." |
 | **Drift** (i3-2) | Data-Driven Optimizer × Empathetic Builder | Evidence over narrative, curious skeptic, shows the work. "No edge, no trade." |
