@@ -14,6 +14,7 @@
 import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { runAmberEmailAgent } from "../amber-email/index.js";
 import { createClient } from "@supabase/supabase-js";
+import { postTweet } from "../../lib/twitter-client.js";
 
 // Supabase client
 const supabase = createClient(
@@ -290,6 +291,20 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
 }
 
 /**
+ * Run a simple test tweet
+ */
+async function runTestTweet(): Promise<void> {
+  console.log(`[amber-social] Posting test tweet...`);
+
+  try {
+    const result = await postTweet("good afternoon", { account: "intheamber" });
+    console.log(`[amber-social] Test tweet posted:`, result);
+  } catch (error) {
+    console.error(`[amber-social] Test tweet failed:`, error);
+  }
+}
+
+/**
  * Register the scheduled jobs
  */
 export function registerAmberSocialJobs(): void {
@@ -323,10 +338,24 @@ export function registerAmberSocialJobs(): void {
     });
   }
 
+  // TEST TWEET job at 3:00pm PT
+  registerDailyJob({
+    name: `amber-test-tweet`,
+    hour: 15,
+    minute: 0,
+    timezone: "America/Los_Angeles",
+    async run() {
+      await runTestTweet();
+    },
+    onError(error) {
+      console.error(`[amber-social] test tweet job failed:`, error);
+    }
+  });
+
   const times = SCHEDULE.map(s =>
     `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
   ).join(', ');
-  console.log(`[amber-social] Registered: ${times} PT`);
+  console.log(`[amber-social] Registered: ${times}, test@15:00 PT`);
 }
 
 /**
