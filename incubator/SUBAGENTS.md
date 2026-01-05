@@ -2,6 +2,25 @@
 
 Specialized agents available to all incubator projects.
 
+## Setup
+
+**Command files** are gitignored in `.claude/commands/` but backed up in `incubator/documentation/commands/`.
+
+**Skill files** are gitignored in `.claude/skills/` but backed up in `incubator/documentation/skills/`.
+
+**On a new machine:**
+```bash
+# Copy commands
+mkdir -p .claude/commands
+cp incubator/documentation/commands/*.md .claude/commands/
+
+# Copy skills
+mkdir -p .claude/skills
+cp -r incubator/documentation/skills/* .claude/skills/
+```
+
+See `incubator/documentation/commands/README.md` and `incubator/documentation/skills/README.md` for details.
+
 ## How to Use
 
 | Command | Purpose | When to Use |

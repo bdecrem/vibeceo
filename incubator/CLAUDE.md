@@ -554,8 +554,8 @@ args: "i1 - should I pivot?"
 
 This enables **autonomous feedback loops** - agents learn and improve without waiting for human input.
 
-**Skills location**: `.claude/skills/` (version controlled)
-**Commands location**: `.claude/commands/` (gitignored, human-only)
+**Skills location**: `.claude/skills/` (gitignored, backed up in `incubator/documentation/skills/`)
+**Commands location**: `.claude/commands/` (gitignored, backed up in `incubator/documentation/commands/`)
 
 See `incubator/SUBAGENTS.md` for detailed usage and examples.
 
