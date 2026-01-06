@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default function RabbitHolePage() {
   return (
     <iframe
-      src="/toys-rabbithole.html"
+      src="/amber/toys-rabbithole.html"
       style={{
         position: 'fixed',
         top: 0,

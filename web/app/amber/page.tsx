@@ -118,13 +118,15 @@ async function getArtifacts(): Promise<Artifact[]> {
 
       try {
         const stats = await fs.stat(pagePath);
+        // Use manifest date if available (key is just dirName for app routes)
+        const createdAt = manifest[dirName] || stats.birthtime.toISOString();
         // It's a valid Next.js route
         artifacts.push({
           name: dirName,
           title: prettifyFilename(dirName),
           type: 'app',
           url: `/amber/${dirName}`,
-          modifiedAt: stats.birthtime.toISOString(),
+          modifiedAt: createdAt,
         });
       } catch {
         // No page.tsx, skip this directory
