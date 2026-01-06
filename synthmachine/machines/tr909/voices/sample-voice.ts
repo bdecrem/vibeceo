@@ -10,6 +10,7 @@ export abstract class SampleVoice extends Voice {
   protected tune = 0;
   protected level = 1;
   private readonly noise = new LFSRNoise(this.context);
+  private _useSample = false; // Default to synthesized
 
   constructor(
     id: VoiceId,
@@ -21,32 +22,43 @@ export abstract class SampleVoice extends Voice {
     super(id, context, options);
   }
 
+  get useSample(): boolean {
+    return this._useSample;
+  }
+
+  setUseSample(value: boolean): void {
+    this._useSample = value;
+  }
+
   override trigger(time: number, velocity: number): void {
-    const buffer = this.sampleLibrary.getBuffer(this.context, this.sampleId);
-    if (buffer) {
-      const source = this.context.createBufferSource();
-      source.buffer = buffer;
-      source.playbackRate.value = this.semitonesToPlaybackRate(this.tune);
+    // Use sample if enabled AND sample is loaded
+    if (this._useSample) {
+      const buffer = this.sampleLibrary.getBuffer(this.context, this.sampleId);
+      if (buffer) {
+        const source = this.context.createBufferSource();
+        source.buffer = buffer;
+        source.playbackRate.value = this.semitonesToPlaybackRate(this.tune);
 
-      const gain = this.context.createGain();
-      gain.gain.value = Math.max(0, Math.min(1, velocity * this.level));
+        const gain = this.context.createGain();
+        gain.gain.value = Math.max(0, Math.min(1, velocity * this.level));
 
-      source.connect(gain);
-      gain.connect(this.output);
-      source.start(time);
-      source.stop(time + buffer.duration / source.playbackRate.value);
-      return;
+        source.connect(gain);
+        gain.connect(this.output);
+        source.start(time);
+        source.stop(time + buffer.duration / source.playbackRate.value);
+        return;
+      }
     }
 
-    // fallback to noise so the UI still provides auditory feedback
+    // Use synthesis (default behavior)
     const fallbackBuffer = this.noise.createBuffer(0.5);
     const fallbackSource = this.context.createBufferSource();
     fallbackSource.buffer = fallbackBuffer;
     fallbackSource.loop = false;
-    this.triggerFallbackNoise(fallbackSource, time, velocity);
+    this.triggerSynthesis(fallbackSource, time, velocity);
   }
 
-  protected abstract triggerFallbackNoise(
+  protected abstract triggerSynthesis(
     source: AudioBufferSourceNode,
     time: number,
     velocity: number

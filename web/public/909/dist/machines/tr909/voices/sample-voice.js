@@ -8,27 +8,37 @@ export class SampleVoice extends Voice {
         this.tune = 0;
         this.level = 1;
         this.noise = new LFSRNoise(this.context);
+        this._useSample = false; // Default to synthesized
+    }
+    get useSample() {
+        return this._useSample;
+    }
+    setUseSample(value) {
+        this._useSample = value;
     }
     trigger(time, velocity) {
-        const buffer = this.sampleLibrary.getBuffer(this.context, this.sampleId);
-        if (buffer) {
-            const source = this.context.createBufferSource();
-            source.buffer = buffer;
-            source.playbackRate.value = this.semitonesToPlaybackRate(this.tune);
-            const gain = this.context.createGain();
-            gain.gain.value = Math.max(0, Math.min(1, velocity * this.level));
-            source.connect(gain);
-            gain.connect(this.output);
-            source.start(time);
-            source.stop(time + buffer.duration / source.playbackRate.value);
-            return;
+        // Use sample if enabled AND sample is loaded
+        if (this._useSample) {
+            const buffer = this.sampleLibrary.getBuffer(this.context, this.sampleId);
+            if (buffer) {
+                const source = this.context.createBufferSource();
+                source.buffer = buffer;
+                source.playbackRate.value = this.semitonesToPlaybackRate(this.tune);
+                const gain = this.context.createGain();
+                gain.gain.value = Math.max(0, Math.min(1, velocity * this.level));
+                source.connect(gain);
+                gain.connect(this.output);
+                source.start(time);
+                source.stop(time + buffer.duration / source.playbackRate.value);
+                return;
+            }
         }
-        // fallback to noise so the UI still provides auditory feedback
+        // Use synthesis (default behavior)
         const fallbackBuffer = this.noise.createBuffer(0.5);
         const fallbackSource = this.context.createBufferSource();
         fallbackSource.buffer = fallbackBuffer;
         fallbackSource.loop = false;
-        this.triggerFallbackNoise(fallbackSource, time, velocity);
+        this.triggerSynthesis(fallbackSource, time, velocity);
     }
     setParameter(paramId, value) {
         if (paramId === 'tune') {

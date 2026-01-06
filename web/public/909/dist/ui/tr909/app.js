@@ -81,10 +81,16 @@ function renderGrid() {
         const row = document.createElement('div');
         row.className = 'voice-row';
         row.dataset.voiceId = voice.id;
+        // Full label (desktop)
         const label = document.createElement('span');
         label.className = 'voice-label';
         label.textContent = voice.label;
         row.appendChild(label);
+        // Short label (mobile)
+        const shortLabel = document.createElement('span');
+        shortLabel.className = 'voice-label-short';
+        shortLabel.textContent = voice.shortLabel;
+        row.appendChild(shortLabel);
         const track = ensureTrack(voice.id);
         for (let i = 0; i < STEPS; i += 1) {
             const button = document.createElement('button');
@@ -196,6 +202,31 @@ function renderVoiceParams() {
         name.textContent = voice.shortLabel;
         header.appendChild(led);
         header.appendChild(name);
+        // Add sample/synth toggle for sample-capable voices
+        if (engine.isSampleCapable(voice.id)) {
+            const toggle = document.createElement('button');
+            toggle.className = 'sample-toggle';
+            toggle.dataset.voiceId = voice.id;
+            toggle.title = 'Toggle Sample/Synth';
+            toggle.innerHTML = '♪'; // Musical note icon
+            toggle.setAttribute('aria-label', 'Toggle between sample and synthesized sound');
+            // Set initial state (synth by default)
+            const useSample = engine.getVoiceUseSample(voice.id);
+            toggle.classList.toggle('sample-active', useSample);
+            toggle.addEventListener('click', async () => {
+                const currentUseSample = engine.getVoiceUseSample(voice.id);
+                const newUseSample = !currentUseSample;
+                // If switching to sample mode, ensure samples are loaded
+                if (newUseSample) {
+                    await engine.loadRealSamples();
+                }
+                engine.setVoiceUseSample(voice.id, newUseSample);
+                toggle.classList.toggle('sample-active', newUseSample);
+                // Preview the sound
+                engine.trigger(voice.id, 0.8);
+            });
+            header.appendChild(toggle);
+        }
         panel.appendChild(header);
         // Knobs container
         const knobsContainer = document.createElement('div');
@@ -294,10 +325,8 @@ function populatePresets() {
     });
 }
 function setupControls() {
-    const startBtn = document.getElementById('start');
-    const stopBtn = document.getElementById('stop');
+    const playToggleBtn = document.getElementById('play-toggle');
     const bpmInput = document.getElementById('bpm');
-    const exportBtn = document.getElementById('export');
     const presetSelect = document.getElementById('preset');
     const swingInput = document.getElementById('swing');
     const swingValue = document.getElementById('swing-value');
@@ -401,13 +430,18 @@ function setupControls() {
             setStatus(`Loaded "${preset.name}" — ${preset.description}`);
         }
     });
-    startBtn?.addEventListener('click', () => {
-        engine.startSequencer();
-        setStatus('Playing pattern');
-    });
-    stopBtn?.addEventListener('click', () => {
-        engine.stopSequencer();
-        setStatus('Stopped');
+    // Play/Stop toggle button
+    playToggleBtn?.addEventListener('click', () => {
+        if (engine.isPlaying()) {
+            engine.stopSequencer();
+            playToggleBtn.textContent = 'Play';
+            setStatus('Stopped');
+        }
+        else {
+            engine.startSequencer();
+            playToggleBtn.textContent = 'Stop';
+            setStatus('Playing pattern');
+        }
     });
     bpmInput?.addEventListener('input', () => {
         const bpm = Number(bpmInput.value);
@@ -418,26 +452,6 @@ function setupControls() {
             if (presetSelect) {
                 presetSelect.value = '';
             }
-        }
-    });
-    exportBtn?.addEventListener('click', async () => {
-        setStatus('Rendering WAV…');
-        try {
-            const buffer = await engine.renderPattern(pattern, {
-                bpm: bpmInput ? Number(bpmInput.value) || 125 : 125,
-                bars: 2,
-            });
-            const blob = await engine.audioBufferToBlob(buffer);
-            const url = URL.createObjectURL(blob);
-            const anchor = document.createElement('a');
-            anchor.href = url;
-            anchor.download = 'tr-909-pattern.wav';
-            anchor.click();
-            setStatus('Exported WAV (download should start automatically).');
-        }
-        catch (error) {
-            console.error(error);
-            setStatus('Failed to export WAV. See console for details.');
         }
     });
 }
@@ -475,6 +489,8 @@ function updateStepIndicator(step) {
             }
         });
     }
+    // Update mobile page indicator
+    updateStepPageIndicator(step);
 }
 function getSavedPatterns() {
     try {
@@ -534,17 +550,23 @@ function setupKeyboardShortcuts() {
             return;
         }
         switch (e.code) {
-            case 'Space':
+            case 'Space': {
                 e.preventDefault();
+                const playBtn = document.getElementById('play-toggle');
                 if (engine.isPlaying()) {
                     engine.stopSequencer();
+                    if (playBtn)
+                        playBtn.textContent = 'Play';
                     setStatus('Stopped');
                 }
                 else {
                     engine.startSequencer();
+                    if (playBtn)
+                        playBtn.textContent = 'Stop';
                     setStatus('Playing pattern');
                 }
                 break;
+            }
             // Number keys 1-9, 0 trigger voices
             case 'Digit1':
                 engine.trigger('kick', 1);
@@ -597,6 +619,37 @@ function setupPatternTabs() {
         });
     });
 }
+// Mobile step page toggle (1-8 / 9-16)
+function setupStepPageToggle() {
+    const buttons = document.querySelectorAll('.step-page-btn');
+    const sequencer = document.getElementById('sequencer');
+    buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            const page = btn.dataset.page;
+            if (!page || !sequencer)
+                return;
+            // Update button states
+            buttons.forEach((b) => b.classList.remove('active'));
+            btn.classList.add('active');
+            // Toggle sequencer page class
+            if (page === '2') {
+                sequencer.classList.add('page-2');
+            }
+            else {
+                sequencer.classList.remove('page-2');
+            }
+        });
+    });
+}
+// Update page toggle buttons to show which has the playing step
+function updateStepPageIndicator(step) {
+    const btn1 = document.querySelector('.step-page-btn[data-page="1"]');
+    const btn2 = document.querySelector('.step-page-btn[data-page="2"]');
+    if (btn1 && btn2) {
+        btn1.classList.toggle('has-playing', step >= 0 && step < 8);
+        btn2.classList.toggle('has-playing', step >= 8 && step < 16);
+    }
+}
 document.addEventListener('DOMContentLoaded', () => {
     initPattern();
     renderGrid();
@@ -604,6 +657,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupControls();
     setupKeyboardShortcuts();
     setupPatternTabs();
+    setupStepPageToggle();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
     setStatus('Ready — tap steps to program, or press SPACE to play. Keys 1-0 trigger sounds.');

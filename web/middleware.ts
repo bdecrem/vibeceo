@@ -265,6 +265,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass TR-909 drum machine
+  if (pathname === '/909' || pathname.startsWith('/909/')) {
+    log(`[Middleware] TR-909 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
     log(`[Middleware] API route bypassed: ${pathname}`)

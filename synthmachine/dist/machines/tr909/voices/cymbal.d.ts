@@ -8,5 +8,5 @@ export declare class Cymbal909 extends SampleVoice {
     constructor(id: VoiceId, context: BaseAudioContext, library: SampleLibrary, type: CymbalType);
     setParameter(id: string, value: number): void;
     get parameterDescriptors(): VoiceParameterDescriptor[];
-    protected triggerFallbackNoise(source: AudioBufferSourceNode, time: number, velocity: number): void;
+    protected triggerSynthesis(source: AudioBufferSourceNode, time: number, velocity: number): void;
 }

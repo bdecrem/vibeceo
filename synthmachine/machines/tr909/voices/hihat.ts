@@ -42,7 +42,7 @@ export class HiHat909 extends SampleVoice {
     ];
   }
 
-  protected triggerFallbackNoise(
+  protected triggerSynthesis(
     source: AudioBufferSourceNode,
     time: number,
     velocity: number

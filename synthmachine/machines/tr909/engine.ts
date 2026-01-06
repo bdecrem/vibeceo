@@ -15,6 +15,7 @@ import { Tom909 } from './voices/tom.js';
 import { Rimshot909 } from './voices/rimshot.js';
 import { HiHat909 } from './voices/hihat.js';
 import { Cymbal909 } from './voices/cymbal.js';
+import { SampleVoice } from './voices/sample-voice.js';
 import {
   SampleLibrary,
   type SampleManifestEntry,
@@ -173,6 +174,37 @@ export class TR909Engine extends SynthEngine {
 
   getFlam(): number {
     return this.flamAmount;
+  }
+
+  /** Voice IDs that support sample/synth toggle */
+  static readonly SAMPLE_CAPABLE_VOICES: TR909VoiceId[] = ['ch', 'oh', 'crash', 'ride'];
+
+  /**
+   * Check if a voice supports sample mode toggle
+   */
+  isSampleCapable(voiceId: TR909VoiceId): boolean {
+    return TR909Engine.SAMPLE_CAPABLE_VOICES.includes(voiceId);
+  }
+
+  /**
+   * Toggle between sample and synthesis mode for a voice
+   */
+  setVoiceUseSample(voiceId: TR909VoiceId, useSample: boolean): void {
+    const voice = this.voices.get(voiceId);
+    if (voice && voice instanceof SampleVoice) {
+      voice.setUseSample(useSample);
+    }
+  }
+
+  /**
+   * Get whether a voice is using samples
+   */
+  getVoiceUseSample(voiceId: TR909VoiceId): boolean {
+    const voice = this.voices.get(voiceId);
+    if (voice && voice instanceof SampleVoice) {
+      return voice.useSample;
+    }
+    return false;
   }
 
   getCurrentStep(): number {

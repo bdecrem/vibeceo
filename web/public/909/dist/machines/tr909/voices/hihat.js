@@ -23,7 +23,7 @@ export class HiHat909 extends SampleVoice {
             ...super.parameterDescriptors,
         ];
     }
-    triggerFallbackNoise(source, time, velocity) {
+    triggerSynthesis(source, time, velocity) {
         const highPass = this.context.createBiquadFilter();
         highPass.type = 'highpass';
         highPass.frequency.value = this.type === 'closed' ? 7000 : 5000;

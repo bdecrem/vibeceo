@@ -266,36 +266,16 @@ h1::before {
   transition: all 0.15s ease;
 }
 
-.controls button#start {
+.controls button#play-toggle {
   background: linear-gradient(135deg, var(--amber-500), var(--amber-700));
   color: #000;
   box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+  min-width: 70px;
 }
 
-.controls button#start:hover {
+.controls button#play-toggle:hover {
   box-shadow: 0 0 30px rgba(245, 158, 11, 0.5);
   transform: translateY(-1px);
-}
-
-.controls button#stop {
-  background: var(--bg-elevated);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-accent);
-}
-
-.controls button#stop:hover {
-  background: #2a2a2a;
-  color: var(--text-primary);
-}
-
-.controls button#export {
-  background: transparent;
-  color: var(--amber-400);
-  border: 1px solid var(--amber-700);
-}
-
-.controls button#export:hover {
-  background: rgba(245, 158, 11, 0.1);
 }
 
 .controls button#save-pattern {
@@ -348,25 +328,26 @@ h1::before {
   border: 1px solid var(--border-subtle);
   background: var(--bg-card);
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: background 0.1s ease, border-color 0.1s ease;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 
-.step:hover {
+.step:hover:not(.step--on) {
   background: var(--bg-elevated);
 }
 
-.step--on {
+.step--on,
+.step--on:hover {
   background: linear-gradient(135deg, var(--amber-600), var(--amber-800));
   border-color: transparent;
 }
 
-.step--accent {
+.step--accent,
+.step--accent:hover {
   background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
   border-color: transparent;
-}
-
-.step:active {
-  transform: scale(0.92);
 }
 
 /* Subtle playhead - just a gentle brightness lift */
@@ -445,6 +426,36 @@ h1::before {
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-primary);
+}
+
+/* Sample/Synth Toggle */
+.sample-toggle {
+  margin-left: auto;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border-accent);
+  border-radius: 4px;
+  background: var(--bg-dark);
+  color: var(--text-muted);
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sample-toggle:hover {
+  border-color: var(--amber-700);
+  color: var(--text-secondary);
+}
+
+.sample-toggle.sample-active {
+  background: var(--amber-700);
+  border-color: var(--amber-600);
+  color: #000;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
 }
 
 /* Knobs Container */
@@ -571,4 +582,255 @@ h1::before {
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-muted);
+}
+
+/* Step Page Toggle (for mobile 8-step view) */
+.step-page-toggle {
+  display: none;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.step-page-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-accent);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.step-page-btn.active {
+  background: var(--amber-700);
+  border-color: var(--amber-600);
+  color: #000;
+}
+
+.step-page-btn.has-playing {
+  box-shadow: 0 0 8px var(--amber-500);
+}
+
+/* Mobile short labels - hidden by default */
+.voice-label-short {
+  display: none;
+}
+
+/* ========== MOBILE STYLES ========== */
+@media (max-width: 768px) {
+  body {
+    padding: 0;
+    margin: 0;
+  }
+
+  .panel {
+    padding: 0.5rem 0;
+    border-radius: 0;
+    max-width: 100%;
+    border: none;
+    box-shadow: none;
+  }
+
+  h1 {
+    font-size: 1rem;
+    margin-bottom: 0.75rem;
+    padding: 0 0.5rem;
+  }
+
+  /* Simplified controls on mobile */
+  .controls {
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin: 0 0.5rem 0.5rem;
+    border-radius: 8px;
+  }
+
+  .controls-divider {
+    display: none;
+  }
+
+  .controls label {
+    font-size: 0.6rem;
+  }
+
+  .controls input[type='number'] {
+    width: 3rem;
+    padding: 0.35rem;
+    font-size: 0.75rem;
+  }
+
+  .controls input[type='range'] {
+    width: 45px;
+  }
+
+  .controls button {
+    padding: 0.4rem 0.6rem;
+    font-size: 0.6rem;
+  }
+
+  .controls select {
+    min-width: 90px;
+    font-size: 0.65rem;
+    padding: 0.35rem 0.4rem;
+  }
+
+  /* Hide pattern tabs save/delete buttons on mobile */
+  .tab-content button#save-pattern,
+  .tab-content button#delete-pattern {
+    display: none;
+  }
+
+  #status {
+    font-size: 0.65rem;
+    margin-bottom: 0.5rem;
+  }
+
+  /* Show step page toggle on mobile */
+  .step-page-toggle {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-page-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+  }
+
+  #status {
+    padding: 0 0.5rem;
+  }
+
+  /* Sequencer: full width edge-to-edge */
+  .sequencer {
+    margin: 0 0 0.75rem 0;
+    padding: 0 4px;
+    width: 100%;
+  }
+
+  /* Sequencer grid: label + 8 equal steps */
+  .voice-row {
+    display: grid;
+    grid-template-columns: 28px repeat(8, 1fr);
+    gap: 3px;
+    margin-bottom: 3px;
+  }
+
+  /* Hide steps 9-16 by default (page 1) */
+  .step[data-index="8"],
+  .step[data-index="9"],
+  .step[data-index="10"],
+  .step[data-index="11"],
+  .step[data-index="12"],
+  .step[data-index="13"],
+  .step[data-index="14"],
+  .step[data-index="15"] {
+    display: none;
+  }
+
+  /* When page 2 is active, hide 1-8 and show 9-16 */
+  .sequencer.page-2 .step[data-index="0"],
+  .sequencer.page-2 .step[data-index="1"],
+  .sequencer.page-2 .step[data-index="2"],
+  .sequencer.page-2 .step[data-index="3"],
+  .sequencer.page-2 .step[data-index="4"],
+  .sequencer.page-2 .step[data-index="5"],
+  .sequencer.page-2 .step[data-index="6"],
+  .sequencer.page-2 .step[data-index="7"] {
+    display: none;
+  }
+
+  .sequencer.page-2 .step[data-index="8"],
+  .sequencer.page-2 .step[data-index="9"],
+  .sequencer.page-2 .step[data-index="10"],
+  .sequencer.page-2 .step[data-index="11"],
+  .sequencer.page-2 .step[data-index="12"],
+  .sequencer.page-2 .step[data-index="13"],
+  .sequencer.page-2 .step[data-index="14"],
+  .sequencer.page-2 .step[data-index="15"] {
+    display: block;
+  }
+
+  /* Short labels on mobile */
+  .voice-label {
+    display: none;
+  }
+
+  .voice-label-short {
+    display: block;
+    font-size: 0.55rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-align: right;
+    padding-right: 2px;
+  }
+
+  /* Larger tap targets for steps - fill grid cell completely */
+  .step {
+    width: 100%;
+    aspect-ratio: 1;
+    min-height: 36px;
+    border-radius: 3px;
+  }
+
+  /* Voice parameters - compact layout for mobile */
+  .voice-controls {
+    margin-top: 1rem;
+    padding: 0.75rem 0.5rem 0;
+  }
+
+  .voice-controls h2 {
+    font-size: 0.7rem;
+    margin-bottom: 0.75rem;
+    padding: 0 0.25rem;
+  }
+
+  .params-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .voice-panel {
+    padding: 0.6rem;
+    border-radius: 8px;
+  }
+
+  .voice-panel-header {
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+  }
+
+  .sample-toggle {
+    width: 18px;
+    height: 18px;
+    font-size: 0.6rem;
+  }
+
+  .knobs-container {
+    gap: 0.5rem;
+  }
+
+  .knob {
+    width: 36px;
+    height: 36px;
+  }
+
+  .knob::before {
+    height: 11px;
+  }
+
+  .knob-label {
+    font-size: 0.5rem;
+  }
+
+  .knob-value {
+    font-size: 0.55rem;
+  }
+
+  /* Hide keyboard hints on mobile */
+  .keyboard-hints {
+    display: none;
+  }
 }

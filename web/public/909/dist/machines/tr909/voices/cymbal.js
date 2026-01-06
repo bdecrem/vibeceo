@@ -23,7 +23,7 @@ export class Cymbal909 extends SampleVoice {
             },
         ];
     }
-    triggerFallbackNoise(source, time, velocity) {
+    triggerSynthesis(source, time, velocity) {
         const bandPass = this.context.createBiquadFilter();
         bandPass.type = 'bandpass';
         bandPass.frequency.value = this.type === 'crash' ? 8000 : 5000;
