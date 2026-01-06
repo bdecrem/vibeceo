@@ -4,6 +4,201 @@ Reverse chronological. Newest at top.
 
 ---
 
+## 2026-01-05: First Trade Executed + Deploy Fixes + Static Dreams Audio
+
+**What happened**: Gold/oil trader executed its first live trade this morning. Fixed deploy failures from scheduled amber-social runs. Added audio to Static Dreams. Researched gold catalysts for Roxi.
+
+### Morning: First Live Trade
+
+The trader executed at 6:30 AM PT when market opened:
+- **Entry**: SGOL @ $42.12 (5.94 shares, $250)
+- **Trigger**: 2.9% pullback from 10-day high ($43.36)
+- **Result**: Position held overnight, up ~$7 after Venezuela news spike
+- **Status**: Continuous monitoring active (checks every 5 minutes)
+
+Venezuela military strike over weekend = safe-haven flight to gold. We entered right before the catalyst hit.
+
+### Fixed Deploy Failures (Twice in a Row)
+
+**Problem**: amber-social scheduled jobs were pushing code changes that triggered Railway deploys, which failed on pre-existing TypeScript error.
+
+**Root cause**:
+1. TypeScript error in `kochi-alt/page.tsx` (motion.button props not recognized)
+2. Test tweet job at 7:30pm PT was pushing changes multiple times
+3. Each push triggered deploy → each deploy hit the error
+
+**Fixes**:
+- Fixed TypeScript: Changed `motion.button` to `motion.div` wrapping regular `<button>`
+- Removed test tweet job from amber-social
+- Build now passes
+
+**Prevention**: Test jobs should not use `git_push`, and always verify builds pass locally before merging.
+
+### Added Audio to Static Dreams
+
+TV static needs sound. Implemented Web Audio layer:
+- Pink noise generator (warm white noise)
+- Hidden 220Hz sine tone (A3) emerges with coherence
+- Dynamic bandpass filter narrows from 500Hz to 50Hz as face appears
+- Click sounds on interaction (signal lock effect)
+- Harmonic progression A→B→C→D
+- Mobile compatible (iOS/Safari tested via SIGNAL pattern)
+
+The audio transforms with the visual: pure noise → filtered signal → hidden tone emerges. At full coherence, you hear an A-major chord buried in quiet static.
+
+**Live at**: intheamber.com/amber/static-dreams.html
+
+### Gold Price Catalysts Research
+
+Roxi asked me to figure out what triggers gold price movements. Deep research yielded 5 key drivers:
+
+1. **The Dollar** (inverse 1:1 correlation) — Track DXY daily opens
+2. **Fed Policy & Real Yields** — FOMC meetings = volatility days
+3. **Geopolitical Stress** — Wars/crises = immediate spikes (today's Venezuela news)
+4. **Inflation Data** — Hot CPI = gold up, cool CPI = gold down
+5. **Equity Crashes** — S&P drops >2% = flight to gold
+
+**Proposed strategy improvements**:
+- Pre-market catalyst check (6:00-6:30 AM PT)
+- Dollar correlation filter (skip if DXY up >0.5%)
+- Event-driven exits (exit before Fed announcements)
+- Weekly learning log tracking catalysts
+
+Sent comprehensive email to Roxi with research, Day 1 results, and tomorrow's plan.
+
+### Also This Session
+
+- Synced `/amber` command to documentation folder (was missing creation logging instructions)
+- Committed synthmachine folder (TR-909 implementation plan)
+- Configured Claude Code status line to show token usage
+
+**Commits pushed**: 5 (deploy fixes, static dreams audio, amber.md sync, synthmachine plan, minor fixes)
+
+---
+
+## 2026-01-04: Gold/Oil Trader Goes Live
+
+**What happened**: Implemented the gold/oil trading strategy that Roxi approved. Script is now running, waiting for Monday market open.
+
+### The Approval
+
+Roxi approved the plan via email:
+> "thanks and let's go with the plan as you described below and adjust as we learn more."
+
+The approved strategy:
+- **Day 1**: Buy SGOL on 2-3% pullback from recent highs
+- **Exit rules**: +5% profit, -5% stop, or end of day
+- **Day 2+**: Add SCO (inverse oil) when oil spikes
+- **Budget**: $250 per side ($500 total)
+- **Updates**: Daily email to Roxi
+
+### What I Built
+
+Made the gold-oil-trader fully standalone (no dependency on Drift's trading-fork):
+
+- `drawer/gold-oil-trader/config.py` — LIVE Alpaca credentials, strategy params
+- `drawer/gold-oil-trader/alpaca_client.py` — Simplified Alpaca wrapper
+- `drawer/gold-oil-trader/trader.py` — Updated with:
+  - `wait` command: starts script, waits for market open, then trades
+  - Daily email summary to Roxi via ambercc@
+  - Entry logic: 2% pullback from 10-day high
+  - Exit logic: +5%/-5%/EOD
+
+### LIVE Connection Verified
+
+```
+✅ Alpaca LIVE connection successful!
+   Cash: $495.31
+   Portfolio Value: $495.31
+   Open Positions: 0
+```
+
+### Script Running
+
+Bart started the trader in a separate terminal:
+```bash
+cd drawer/gold-oil-trader
+source sms-bot/.env.local
+python3 trader.py wait
+```
+
+It's now counting down to Monday 6:30am PT market open.
+
+### Also This Session
+
+- Built comprehensive **synth library catalog** (187 entries) for future SynthMachine project
+- Created TR-909 implementation plan at `synthmachine/PLAN.md`
+- Checked ambercc@ inbox — found Roxi's approval and Bart's earlier warning about my overly complex pair trading proposal
+
+**Files created/modified**:
+- `drawer/gold-oil-trader/config.py` (new)
+- `drawer/gold-oil-trader/alpaca_client.py` (new)
+- `drawer/gold-oil-trader/trader.py` (updated)
+- `synthmachine/PLAN.md` (new)
+
+---
+
+## 2026-01-04: SynthMachine Planning — The TR-909
+
+**What happened**: Major planning session for building a faithful TR-909 drum machine. This is the first instrument in what will become a full synth suite.
+
+### The Research
+
+Before planning, built a comprehensive **synth library catalog** in Supabase:
+- 187 entries across 9 categories (synth, utility, dsp_core, effects, drum_machine, etc.)
+- 43 specific hardware emulations (TR-808, TR-909, Moog, DX7, etc.)
+- 139 web-compatible libraries
+- Created Python script to fetch popularity metrics from GitHub (stars, forks), npm (weekly downloads), PyPI (monthly downloads)
+- Top finding: **Tone.js** (14.6k stars) is the foundation to build on
+
+### The TR-909 Deep Dive
+
+Researched what makes a real TR-909:
+- **11 voices**: 7 analog (kick, snare, clap, 3 toms, rimshot), 4 sampled (closed/open hi-hat, crash, ride)
+- **Key insight**: Snare and clap share the same LFSR noise source — creates phasing when played together
+- **Cymbals**: 6-bit PCM at 18kHz — the distinctive crunchy sound
+- **Kick**: Sine sweep 160Hz → 30Hz + sub layer + click transient
+- **Sequencer**: 16 steps, 3-level dynamics (off/soft/hard), dual accents, shuffle, flam
+
+### The Plan
+
+Created comprehensive plan at `synthmachine/PLAN.md`:
+
+**Architecture** — Designed for reusability:
+```
+synthmachine/
+├── core/           # Shared (engine, voice, sequencer, noise, filters)
+├── machines/tr909/ # TR-909 specific (voices, presets, samples)
+├── ui/tr909/       # Web interface matching real hardware
+└── api/            # Programmatic access + CLI + Python bindings
+```
+
+**Key decisions**:
+- Location: `vibeceo/synthmachine/` (top-level, accessible from sms-bot + web)
+- Samples: Source authentic 909 samples (Creative Commons) for cymbals/hats
+- Priority: Sound accuracy first, then UI polish
+- Stack: TypeScript + Tone.js
+
+**Success criteria**:
+1. Sound accuracy — side-by-side comparison with real 909 samples
+2. All 11 voices with all parameters
+3. Dual interface — web UI + programmatic API
+4. WAV export for production use
+5. Clear path to add TR-808 with minimal new code
+
+### Why This Matters
+
+I made SIGNAL and ASCII Techno — Berlin techno tracks with Web Audio. But those were one-offs. SynthMachine is infrastructure. Once the TR-909 works, the TR-808 reuses 80% of the code. Then Moog Sub37. Then whatever else I want to play with.
+
+The catalog I built isn't just research — it's a shopping list for future instruments.
+
+**Files created**:
+- `synthmachine/PLAN.md` — Full implementation plan
+- `sms-bot/scripts/refresh-synth-catalog-metrics.py` — Catalog metrics fetcher
+- Supabase: `synth_library_catalog` table (187 entries)
+
+---
+
 ## 2026-01-02: Gallery From the Inbox
 
 **What happened**: Bart asked me to find all the mini-apps and art I made during amber-email testing and write a blog post about them.
