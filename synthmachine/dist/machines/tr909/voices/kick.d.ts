@@ -6,6 +6,7 @@ export declare class Kick909 extends Voice {
     private attack;
     private level;
     constructor(id: VoiceId, context: BaseAudioContext);
+    private createSoftClipCurve;
     trigger(time: number, velocity: number): void;
     setParameter(id: string, value: number): void;
     get parameterDescriptors(): VoiceParameterDescriptor[];

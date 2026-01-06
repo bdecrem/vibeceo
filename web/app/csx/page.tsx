@@ -502,9 +502,6 @@ function CSXContent() {
             <span>{statusMessages[statusIndex].text}</span>
           </div>
         </div>
-        <Link href="/csx/mailing-list" className="mailing-link" onClick={(e) => e.stopPropagation()}>
-          join the mailing list →
-        </Link>
       </div>
     </>
   )
