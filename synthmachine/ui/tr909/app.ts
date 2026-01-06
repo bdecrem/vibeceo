@@ -1,4 +1,4 @@
-import type { Pattern, PatternStep } from '../../core/types.js';
+import type { Pattern, PatternStep, VoiceParameterDescriptor } from '../../core/types.js';
 import {
   type TR909VoiceId,
   TR909Engine,
@@ -9,18 +9,24 @@ const pattern: Pattern = {};
 const engine = new TR909Engine();
 const PATTERN_ID = 'web-ui';
 
-const VOICES: { id: TR909VoiceId; label: string }[] = [
-  { id: 'kick', label: 'Bass Drum' },
-  { id: 'snare', label: 'Snare' },
-  { id: 'clap', label: 'Clap' },
-  { id: 'rimshot', label: 'Rim Shot' },
-  { id: 'ltom', label: 'Low Tom' },
-  { id: 'mtom', label: 'Mid Tom' },
-  { id: 'htom', label: 'High Tom' },
-  { id: 'ch', label: 'Closed Hat' },
-  { id: 'oh', label: 'Open Hat' },
-  { id: 'crash', label: 'Crash' },
-  { id: 'ride', label: 'Ride' },
+interface VoiceConfig {
+  id: TR909VoiceId;
+  label: string;
+  shortLabel: string;
+}
+
+const VOICES: VoiceConfig[] = [
+  { id: 'kick', label: 'Bass Drum', shortLabel: 'BD' },
+  { id: 'snare', label: 'Snare', shortLabel: 'SD' },
+  { id: 'clap', label: 'Clap', shortLabel: 'CP' },
+  { id: 'rimshot', label: 'Rim Shot', shortLabel: 'RS' },
+  { id: 'ltom', label: 'Low Tom', shortLabel: 'LT' },
+  { id: 'mtom', label: 'Mid Tom', shortLabel: 'MT' },
+  { id: 'htom', label: 'High Tom', shortLabel: 'HT' },
+  { id: 'ch', label: 'Closed Hat', shortLabel: 'CH' },
+  { id: 'oh', label: 'Open Hat', shortLabel: 'OH' },
+  { id: 'crash', label: 'Crash', shortLabel: 'CC' },
+  { id: 'ride', label: 'Ride', shortLabel: 'RC' },
 ];
 
 const defaultPattern: Record<TR909VoiceId, number[]> = {
@@ -88,6 +94,8 @@ function renderGrid(): void {
   VOICES.forEach((voice) => {
     const row = document.createElement('div');
     row.className = 'voice-row';
+    row.dataset.voiceId = voice.id;
+
     const label = document.createElement('span');
     label.className = 'voice-label';
     label.textContent = voice.label;
@@ -99,6 +107,7 @@ function renderGrid(): void {
       button.type = 'button';
       button.className = 'step';
       button.dataset.index = i.toString();
+      button.dataset.voiceId = voice.id;
       updateStepButton(button, track[i].velocity);
       button.addEventListener('click', () =>
         toggleStep(voice.id, i, button)
@@ -107,6 +116,85 @@ function renderGrid(): void {
     }
 
     container.appendChild(row);
+  });
+}
+
+function formatParamValue(value: number, descriptor: VoiceParameterDescriptor): string {
+  const unit = descriptor.range?.unit ?? '';
+  if (unit === 'cents') {
+    return value > 0 ? `+${value}` : `${value}`;
+  }
+  if (unit === 's' || unit === 'ms') {
+    return value.toFixed(2) + unit;
+  }
+  return value.toFixed(2);
+}
+
+function renderVoiceParams(): void {
+  const container = document.getElementById('voice-params');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const descriptors = engine.getVoiceParameterDescriptors();
+
+  VOICES.forEach((voice) => {
+    const params = descriptors[voice.id];
+    if (!params || params.length === 0) return;
+
+    const panel = document.createElement('div');
+    panel.className = 'voice-panel';
+    panel.dataset.voiceId = voice.id;
+
+    // Header with LED and name
+    const header = document.createElement('div');
+    header.className = 'voice-panel-header';
+
+    const led = document.createElement('div');
+    led.className = 'voice-panel-led';
+    led.dataset.voiceId = voice.id;
+
+    const name = document.createElement('span');
+    name.className = 'voice-panel-name';
+    name.textContent = voice.shortLabel + ' — ' + voice.label;
+
+    header.appendChild(led);
+    header.appendChild(name);
+    panel.appendChild(header);
+
+    // Parameter sliders
+    params.forEach((param) => {
+      const row = document.createElement('div');
+      row.className = 'param-row';
+
+      const label = document.createElement('span');
+      label.className = 'param-label';
+      label.textContent = param.label;
+
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.className = 'param-slider';
+      slider.min = String(param.range?.min ?? 0);
+      slider.max = String(param.range?.max ?? 1);
+      slider.step = String(param.range?.step ?? 0.01);
+      slider.value = String(param.defaultValue);
+
+      const valueDisplay = document.createElement('span');
+      valueDisplay.className = 'param-value';
+      valueDisplay.textContent = formatParamValue(param.defaultValue, param);
+
+      slider.addEventListener('input', () => {
+        const val = parseFloat(slider.value);
+        engine.setVoiceParameter(voice.id, param.id, val);
+        valueDisplay.textContent = formatParamValue(val, param);
+      });
+
+      row.appendChild(label);
+      row.appendChild(slider);
+      row.appendChild(valueDisplay);
+      panel.appendChild(row);
+    });
+
+    container.appendChild(panel);
   });
 }
 
@@ -165,6 +253,7 @@ function setStatus(message: string): void {
 document.addEventListener('DOMContentLoaded', () => {
   initPattern();
   renderGrid();
+  renderVoiceParams();
   setupControls();
   setStatus('Ready — tap steps to program the pattern.');
 });

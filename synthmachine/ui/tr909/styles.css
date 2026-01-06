@@ -103,3 +103,122 @@ h1 {
 .step:active {
   transform: scale(0.95);
 }
+
+/* Voice Parameters Section */
+.voice-controls {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #b6b8c3;
+}
+
+.voice-controls h2 {
+  font-size: 1.1rem;
+  color: #33383f;
+  margin: 0 0 1rem 0;
+}
+
+.params-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.voice-panel {
+  background: linear-gradient(180deg, #d8d9dc, #c2c3c8);
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5), 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.voice-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.voice-panel-led {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #444;
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.voice-panel-led.active {
+  background: #ff5b2d;
+  box-shadow: 0 0 8px rgba(255,91,45,0.6);
+}
+
+.voice-panel-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #20242b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.param-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.param-row:last-child {
+  margin-bottom: 0;
+}
+
+.param-label {
+  font-size: 0.7rem;
+  color: #555;
+  width: 50px;
+  flex-shrink: 0;
+}
+
+.param-slider {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: linear-gradient(to right, #888, #aaa);
+  outline: none;
+}
+
+.param-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f0f0f0, #d0d0d0);
+  border: 1px solid #999;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.param-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #f0f0f0, #d0d0d0);
+  border: 1px solid #999;
+  cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+
+.param-value {
+  font-size: 0.7rem;
+  color: #666;
+  width: 35px;
+  text-align: right;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* Step highlight during playback */
+.step--playing {
+  box-shadow: 0 0 0 2px #ff5b2d, 0 0 12px rgba(255,91,45,0.4);
+}
