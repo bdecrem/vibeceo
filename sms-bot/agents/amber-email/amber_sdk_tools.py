@@ -443,6 +443,156 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 
 # =============================================================================
+# OPENGRAPH IMAGE GENERATION
+# =============================================================================
+
+@tool(
+    "generate_og_image",
+    "Generate a branded OpenGraph image (1200x630) for social sharing. Creates a dark amber-themed image with the title text. Save path should be relative to codebase root.",
+    {"title": str, "save_path": str, "subtitle": str}
+)
+async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Generate a branded OG image for social sharing.
+    Creates a 1200x630 image with:
+    - Dark background with subtle amber gradient
+    - Title text in amber/gold
+    - Optional subtitle
+    - Amber's visual branding
+    """
+    title = args.get("title", "")
+    save_path = args.get("save_path", "")
+    subtitle = args.get("subtitle", "")
+
+    if not title:
+        return make_result(json.dumps({"error": "Title required"}), is_error=True)
+
+    if not save_path:
+        return make_result(json.dumps({"error": "save_path required"}), is_error=True)
+
+    try:
+        from PIL import Image, ImageDraw, ImageFont
+        import io
+
+        # Create 1200x630 image with dark background
+        width, height = 1200, 630
+        img = Image.new('RGB', (width, height), color='#0a0a0a')
+        draw = ImageDraw.Draw(img)
+
+        # Add subtle amber gradient overlay at top
+        for y in range(150):
+            alpha = int(30 * (1 - y / 150))  # Fade out
+            for x in range(width):
+                r, g, b = img.getpixel((x, y))
+                # Add amber tint (245, 158, 11) with decreasing intensity
+                r = min(255, r + alpha)
+                g = min(255, g + int(alpha * 0.64))
+                b = min(255, b + int(alpha * 0.04))
+                img.putpixel((x, y), (r, g, b))
+
+        # Try to use a nice font, fall back to default
+        try:
+            # Try common system fonts
+            font_size = 64
+            subtitle_size = 28
+            for font_name in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
+                              '/System/Library/Fonts/Helvetica.ttc',
+                              '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf']:
+                try:
+                    title_font = ImageFont.truetype(font_name, font_size)
+                    subtitle_font = ImageFont.truetype(font_name, subtitle_size)
+                    break
+                except:
+                    continue
+            else:
+                title_font = ImageFont.load_default()
+                subtitle_font = ImageFont.load_default()
+        except:
+            title_font = ImageFont.load_default()
+            subtitle_font = ImageFont.load_default()
+
+        # Word wrap title if too long
+        words = title.split()
+        lines = []
+        current_line = []
+        for word in words:
+            test_line = ' '.join(current_line + [word])
+            bbox = draw.textbbox((0, 0), test_line, font=title_font)
+            if bbox[2] - bbox[0] > width - 120:  # 60px padding each side
+                if current_line:
+                    lines.append(' '.join(current_line))
+                    current_line = [word]
+                else:
+                    lines.append(word)
+            else:
+                current_line.append(word)
+        if current_line:
+            lines.append(' '.join(current_line))
+
+        # Calculate vertical position for centered text block
+        line_height = 80
+        total_text_height = len(lines) * line_height + (40 if subtitle else 0)
+        start_y = (height - total_text_height) // 2
+
+        # Draw title lines in amber color
+        amber_color = '#f59e0b'
+        for i, line in enumerate(lines):
+            bbox = draw.textbbox((0, 0), line, font=title_font)
+            text_width = bbox[2] - bbox[0]
+            x = (width - text_width) // 2
+            y = start_y + i * line_height
+            draw.text((x, y), line, fill=amber_color, font=title_font)
+
+        # Draw subtitle in muted color
+        if subtitle:
+            subtitle_y = start_y + len(lines) * line_height + 20
+            bbox = draw.textbbox((0, 0), subtitle, font=subtitle_font)
+            text_width = bbox[2] - bbox[0]
+            x = (width - text_width) // 2
+            draw.text((x, subtitle_y), subtitle, fill='#888888', font=subtitle_font)
+
+        # Add small amber accent bar at bottom
+        draw.rectangle([(width // 2 - 60, height - 40), (width // 2 + 60, height - 36)], fill=amber_color)
+
+        # Save to bytes
+        img_bytes = io.BytesIO()
+        img.save(img_bytes, format='PNG', optimize=True)
+        img_bytes.seek(0)
+        img_data = img_bytes.getvalue()
+
+        # Save to file using same mechanism as other image tools
+        if IS_RAILWAY:
+            # On Railway, stage for GitHub commit
+            b64_image = base64.b64encode(img_data).decode('utf-8')
+            _github_pending_files[save_path] = f"BASE64:{b64_image}"
+            return make_result(json.dumps({
+                "success": True,
+                "saved_to": save_path,
+                "message": f"OG image generated and staged for commit at {save_path}",
+                "size_bytes": len(img_data)
+            }))
+        else:
+            # Local: save directly
+            full_path = os.path.join(ALLOWED_CODEBASE, save_path)
+            os.makedirs(os.path.dirname(full_path), exist_ok=True)
+            with open(full_path, 'wb') as f:
+                f.write(img_data)
+            return make_result(json.dumps({
+                "success": True,
+                "saved_to": full_path,
+                "message": f"OG image generated and saved to {full_path}",
+                "size_bytes": len(img_data)
+            }))
+
+    except ImportError:
+        return make_result(json.dumps({
+            "error": "PIL/Pillow not installed. Run: pip install Pillow"
+        }), is_error=True)
+    except Exception as e:
+        return make_result(json.dumps({"error": str(e)}), is_error=True)
+
+
+# =============================================================================
 # FILE OPERATIONS
 # =============================================================================
 
@@ -984,6 +1134,7 @@ amber_server = create_sdk_mcp_server(
         # Images
         generate_amber_image_tool,  # OpenAI - Amber's preferred style
         generate_image_tool,  # fal.ai - fast alternative
+        generate_og_image_tool,  # Branded OG images for social sharing
         # Files
         read_file_tool,
         write_file_tool,

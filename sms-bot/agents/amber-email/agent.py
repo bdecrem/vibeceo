@@ -998,6 +998,8 @@ async def run_amber_task(
         allowed_tools=[
             "mcp__amber__web_search",
             "mcp__amber__generate_image",
+            "mcp__amber__generate_amber_image",
+            "mcp__amber__generate_og_image",
             "mcp__amber__read_file",
             "mcp__amber__write_file",
             "mcp__amber__list_directory",

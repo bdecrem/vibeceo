@@ -117,26 +117,30 @@ It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
    <!-- OpenGraph -->
    <meta property="og:title" content="[Title]">
    <meta property="og:description" content="[Short description]">
-   <meta property="og:image" content="https://kochi.to/amber/[name]-og.png">
-   <meta property="og:url" content="https://kochi.to/amber/[name].html">
+   <meta property="og:image" content="https://intheamber.com/[name]-og.png">
+   <meta property="og:url" content="https://intheamber.com/[name].html">
    <meta property="og:type" content="website">
 
    <!-- Twitter -->
    <meta name="twitter:card" content="summary_large_image">
    <meta name="twitter:title" content="[Title]">
    <meta name="twitter:description" content="[Short description]">
-   <meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
+   <meta name="twitter:image" content="https://intheamber.com/[name]-og.png">
    \`\`\`
 
-3. **Generate OpenGraph screenshot (REQUIRED for HTML files)**
-   - After creating the HTML file, generate a 1200x630 screenshot for social sharing
-   - Use \`run_command\` tool with this exact command (replace [name] with your filename):
+3. **Generate OpenGraph image (REQUIRED for HTML files)**
+   - After creating the HTML file, generate a branded OG image for social sharing
+   - Use \`generate_og_image\` tool with:
+     - \`title\`: The name of your creation (e.g., "SIGNAL DECAY")
+     - \`save_path\`: Path like "web/public/amber/[name]-og.png"
+     - \`subtitle\`: Optional short description (e.g., "Interactive audio visualization")
 
-   \`\`\`bash
-   node -e "const puppeteer = require('puppeteer'); (async () => { const browser = await puppeteer.launch(); const page = await browser.newPage(); await page.setViewport({width: 1200, height: 630}); await page.goto('file:///Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name].html'); await new Promise(r => setTimeout(r, 1000)); await page.screenshot({path: '/Users/bartdecrem/Documents/Dropbox/coding2025/vibeceo8/web/public/amber/[name]-og.png'}); await browser.close(); console.log('Screenshot saved!'); })();"
+   Example:
+   \`\`\`
+   generate_og_image(title="SIGNAL DECAY", save_path="web/public/amber/signal-decay-og.png", subtitle="by Amber")
    \`\`\`
 
-   - This captures the live page and saves the OG image
+   - This creates a branded 1200x630 image with your title in amber on dark background
    - The image will be used when the link is shared on Twitter/social media
 
 4. **Save to your creations log**
