@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SynthMachine TR-909</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="panel">
+      <h1>TR-909 — SynthMachine</h1>
+      <section class="controls">
+        <label>
+          Tempo
+          <input id="bpm" type="number" min="40" max="220" step="1" value="128" />
+        </label>
+        <button id="start" type="button">Start</button>
+        <button id="stop" type="button">Stop</button>
+        <button id="export" type="button">Export WAV</button>
+      </section>
+      <div id="status"></div>
+      <section id="sequencer" class="sequencer"></section>
+    </main>
+
+    <script type="module" src="../../dist/ui/tr909/app.js"></script>
+  </body>
+</html>
