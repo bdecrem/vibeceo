@@ -297,7 +297,7 @@ async function runTestTweet(): Promise<void> {
   console.log(`[amber-social] Posting test tweet...`);
 
   try {
-    const result = await postTweet("good afternoon", { account: "intheamber" });
+    const result = await postTweet("good morning", { account: "intheamber" });
     console.log(`[amber-social] Test tweet posted:`, result);
   } catch (error) {
     console.error(`[amber-social] Test tweet failed:`, error);
@@ -338,11 +338,11 @@ export function registerAmberSocialJobs(): void {
     });
   }
 
-  // TEST TWEET job at 5:45pm PT (temporary)
+  // TEST TWEET job at 6:35am PT (temporary)
   registerDailyJob({
-    name: `amber-test-tweet-v5`,
-    hour: 17,
-    minute: 45,
+    name: `amber-test-tweet-v6`,
+    hour: 6,
+    minute: 35,
     timezone: "America/Los_Angeles",
     async run() {
       await runTestTweet();
@@ -355,7 +355,7 @@ export function registerAmberSocialJobs(): void {
   const times = SCHEDULE.map(s =>
     `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
   ).join(', ');
-  console.log(`[amber-social] Registered: ${times}, test@17:45 PT`);
+  console.log(`[amber-social] Registered: ${times}, test@6:35 PT`);
 }
 
 /**
