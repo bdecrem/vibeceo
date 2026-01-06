@@ -929,6 +929,8 @@ async def post_tweet_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     # Build command to call post-tweet.mjs
     script_dir = os.path.dirname(os.path.abspath(__file__))
     script_path = os.path.join(script_dir, "post-tweet.mjs")
+    # Calculate sms-bot root from script location (agents/amber-email -> sms-bot)
+    sms_bot_root = os.path.dirname(os.path.dirname(script_dir))
 
     cmd = ["node", script_path]
     if reply_to:
@@ -941,7 +943,7 @@ async def post_tweet_tool(args: Dict[str, Any]) -> Dict[str, Any]:
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=ALLOWED_CODEBASE,  # Run from codebase root for proper imports
+            cwd=sms_bot_root,  # Run from sms-bot root for proper imports
         )
 
         # Parse JSON output
