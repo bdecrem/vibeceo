@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VOID SIGNAL</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="VOID SIGNAL">
+    <meta property="og:description" content="The space between transmissions. Morse code fragments in the void.">
+    <meta property="og:image" content="https://kochi.to/amber/void-signal-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/void-signal.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="VOID SIGNAL">
+    <meta name="twitter:description" content="The space between transmissions. Morse code fragments in the void.">
+    <meta name="twitter:image" content="https://kochi.to/amber/void-signal-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #void {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0D0D0D 0%, #000 100%);
+        }
+
+        .signal {
+            position: absolute;
+            font-size: 14px;
+            letter-spacing: 4px;
+            opacity: 0;
+            color: #D4A574;
+            text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+            font-weight: 300;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        .signal.active {
+            animation: fadeSignal 8s ease-in-out;
+        }
+
+        @keyframes fadeSignal {
+            0% { opacity: 0; }
+            15% { opacity: 0.7; }
+            85% { opacity: 0.7; }
+            100% { opacity: 0; }
+        }
+
+        .title {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 24px;
+            letter-spacing: 8px;
+            opacity: 0.3;
+            font-weight: 300;
+        }
+
+        .subtitle {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            letter-spacing: 2px;
+            opacity: 0.2;
+            text-align: center;
+        }
+
+        .noise {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                repeating-linear-gradient(
+                    0deg,
+                    transparent,
+                    transparent 2px,
+                    rgba(212, 165, 116, 0.01) 2px,
+                    rgba(212, 165, 116, 0.01) 4px
+                );
+            pointer-events: none;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div id="void">
+        <div class="noise"></div>
+        <div class="title">VOID SIGNAL</div>
+        <div class="subtitle">99.7% SILENCE<br>0.3% TRANSMISSION</div>
+    </div>
+
+    <script>
+        const morseFragments = [
+            '... --- ...',
+            '.- -- -... . .-.',
+            '.-- .- .. -',
+            '.... . .-.. .-.. ---',
+            '-.. .- .-. -.-',
+            '... .. .-.. . -. -.-. .',
+            '...- --- .. -..',
+            '... .. --. -. .- ..',
+            '.-.. --- ... -',
+            '. -- .--. - -.--',
+            '-. --- - .... .. -. --.',
+            '.... . .-. .',
+            '- .... . .-. .',
+            '.... . .- .-.',
+            '... . . -.-',
+            '.-- .... . .-. .',
+            '.-- .... . -.',
+            '.... --- .--',
+            '.-- .... -.--',
+            '. -..- .. ... -',
+            '.-. . .- -.-. ....',
+            '..-. .. -. -..',
+            '.-.. --- --- -.-',
+            '.-.. .. ... - . -.',
+            '.-- .- .. - .. -. --.',
+        ];
+
+        function randomPosition() {
+            return {
+                x: Math.random() * (window.innerWidth - 200),
+                y: Math.random() * (window.innerHeight - 100)
+            };
+        }
+
+        function createSignal() {
+            const signal = document.createElement('div');
+            signal.className = 'signal';
+            signal.textContent = morseFragments[Math.floor(Math.random() * morseFragments.length)];
+            
+            const pos = randomPosition();
+            signal.style.left = pos.x + 'px';
+            signal.style.top = pos.y + 'px';
+            
+            document.getElementById('void').appendChild(signal);
+            
+            // Trigger animation
+            setTimeout(() => {
+                signal.classList.add('active');
+            }, 50);
+            
+            // Remove after animation
+            setTimeout(() => {
+                signal.remove();
+            }, 8000);
+        }
+
+        // Create signals at random intervals
+        // Average 1 signal every 3 seconds, but randomized
+        function scheduleNextSignal() {
+            const delay = 2000 + Math.random() * 4000; // 2-6 seconds
+            setTimeout(() => {
+                createSignal();
+                scheduleNextSignal();
+            }, delay);
+        }
+
+        // Start with a few initial signals
+        setTimeout(() => createSignal(), 500);
+        setTimeout(() => createSignal(), 1500);
+        setTimeout(() => createSignal(), 3000);
+        
+        // Then continue randomly
+        scheduleNextSignal();
+
+        // Occasional burst of signals (10% chance every 10 seconds)
+        setInterval(() => {
+            if (Math.random() < 0.1) {
+                // Burst: 3-5 signals rapidly
+                const count = 3 + Math.floor(Math.random() * 3);
+                for (let i = 0; i < count; i++) {
+                    setTimeout(() => createSignal(), i * 300);
+                }
+            }
+        }, 10000);
+    </script>
+</body>
+</html>
