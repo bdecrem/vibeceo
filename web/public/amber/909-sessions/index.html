@@ -9,15 +9,15 @@
     <!-- OpenGraph -->
     <meta property="og:title" content="909 Sessions">
     <meta property="og:description" content="TR-909 tracks by Amber.">
-    <meta property="og:image" content="https://kochi.to/amber/909/og.png">
-    <meta property="og:url" content="https://kochi.to/amber/909/">
+    <meta property="og:image" content="https://kochi.to/amber/909-sessions/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/909-sessions/">
     <meta property="og:type" content="website">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="909 Sessions">
     <meta name="twitter:description" content="TR-909 tracks by Amber.">
-    <meta name="twitter:image" content="https://kochi.to/amber/909/og.png">
+    <meta name="twitter:image" content="https://kochi.to/amber/909-sessions/og.png">
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -53,17 +53,23 @@
 
         .grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 16px;
-            max-width: 900px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            max-width: 1000px;
             width: 100%;
+        }
+
+        @media (max-width: 700px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         .track {
             position: relative;
             aspect-ratio: 1200 / 630;
             overflow: hidden;
-            border: 1px solid #222;
+            border: 1px solid #333;
             transition: all 0.3s ease;
         }
 
@@ -84,7 +90,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            padding: 12px;
+            padding: 16px;
             background: linear-gradient(transparent, rgba(10, 9, 8, 0.9));
             display: flex;
             justify-content: space-between;
@@ -92,15 +98,25 @@
         }
 
         .track-name {
-            font-size: 0.9rem;
+            font-size: 1.1rem;
             letter-spacing: 0.3em;
             color: #D4A574;
         }
 
         .track-bpm {
-            font-size: 0.65rem;
+            font-size: 0.7rem;
             color: #666;
             letter-spacing: 0.1em;
+        }
+
+        .track-title {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2.5rem;
+            letter-spacing: 0.5em;
+            text-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
         }
 
         footer {
@@ -118,40 +134,17 @@
     </header>
 
     <div class="grid">
-        <a class="track" href="/amber/solder/index.html">
-            <img src="/amber/solder/og.png" alt="SOLDER">
-            <div class="track-label">
-                <span class="track-name">SOLDER</span>
-                <span class="track-bpm">128 BPM</span>
-            </div>
-        </a>
         <a class="track" href="/amber/909-drift/index.html">
             <img src="/amber/909-drift/og.png" alt="DRIFT">
-            <div class="track-label">
-                <span class="track-name">DRIFT</span>
-                <span class="track-bpm">100 BPM</span>
-            </div>
         </a>
-        <a class="track" href="/amber/909-furnace/index.html">
-            <img src="/amber/909-furnace/og.png" alt="FURNACE">
-            <div class="track-label">
-                <span class="track-name">FURNACE</span>
-                <span class="track-bpm">140 BPM</span>
-            </div>
+        <a class="track" href="/amber/solder/index.html">
+            <img src="/amber/solder/og.png" alt="SOLDER">
         </a>
         <a class="track" href="/amber/909-static/index.html">
             <img src="/amber/909-static/og.png" alt="STATIC">
-            <div class="track-label">
-                <span class="track-name">STATIC</span>
-                <span class="track-bpm">132 BPM</span>
-            </div>
         </a>
-        <a class="track" href="/amber/909-ritual/index.html">
-            <img src="/amber/909-ritual/og.png" alt="RITUAL">
-            <div class="track-label">
-                <span class="track-name">RITUAL</span>
-                <span class="track-bpm">90 BPM</span>
-            </div>
+        <a class="track" href="/amber/909-furnace/index.html">
+            <img src="/amber/909-furnace/og.png" alt="FURNACE">
         </a>
     </div>
 

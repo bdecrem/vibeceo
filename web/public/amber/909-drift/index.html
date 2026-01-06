@@ -34,165 +34,341 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #0A0908; display: flex; flex-direction: column;
             align-items: center; justify-content: center; cursor: pointer; z-index: 100;
-            transition: opacity 0.8s ease;
+            transition: opacity 1.5s ease;
         }
         #start-overlay.hidden { opacity: 0; pointer-events: none; }
         .title { color: #D4A574; font-size: 3rem; letter-spacing: 0.8em; margin-bottom: 2rem;
-            text-shadow: 0 0 40px rgba(212, 165, 116, 0.3); }
-        .subtitle { color: #B8860B; font-size: 0.9rem; letter-spacing: 0.4em; opacity: 0.5; }
+            text-shadow: 0 0 60px rgba(212, 165, 116, 0.4); }
+        .subtitle { color: #666; font-size: 0.8rem; letter-spacing: 0.5em; opacity: 0.6; }
         #info { position: fixed; bottom: 20px; left: 20px; color: #D4A574;
-            font-size: 0.7rem; opacity: 0.3; letter-spacing: 0.1em; z-index: 10; }
-        #bpm { position: fixed; top: 20px; right: 20px; color: #B8860B;
-            font-size: 0.8rem; opacity: 0.4; letter-spacing: 0.2em; z-index: 10; }
+            font-size: 0.7rem; opacity: 0.2; letter-spacing: 0.1em; z-index: 10; }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
     <div id="start-overlay">
         <div class="title">DRIFT</div>
-        <div class="subtitle">click to begin</div>
+        <div class="subtitle">endless</div>
     </div>
     <div id="info">AMBER / 2026</div>
-    <div id="bpm">100 BPM</div>
 
     <script type="module">
         import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
 
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
+        let w, h;
 
         function resize() {
-            canvas.width = window.innerWidth * window.devicePixelRatio;
-            canvas.height = window.innerHeight * window.devicePixelRatio;
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w * window.devicePixelRatio;
+            canvas.height = h * window.devicePixelRatio;
             ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
         }
         resize();
         window.addEventListener('resize', resize);
 
-        // Drifting particles
-        class Drifter {
-            constructor(w, h) {
-                this.reset(w, h, true);
+        // Stars - distant, twinkling
+        class Star {
+            constructor() {
+                this.x = Math.random() * 2000;
+                this.y = Math.random() * 2000;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.twinkleSpeed = Math.random() * 0.02 + 0.005;
+                this.twinkleOffset = Math.random() * Math.PI * 2;
+                this.baseAlpha = Math.random() * 0.3 + 0.1;
             }
-            reset(w, h, initial = false) {
-                this.x = initial ? Math.random() * w : -50;
-                this.y = Math.random() * h;
-                this.size = Math.random() * 4 + 2;
-                this.speed = Math.random() * 0.3 + 0.1;
-                this.wobbleAmp = Math.random() * 30 + 10;
-                this.wobbleFreq = Math.random() * 0.01 + 0.005;
-                this.phase = Math.random() * Math.PI * 2;
-                this.alpha = Math.random() * 0.4 + 0.1;
-                this.hue = Math.random() * 30; // amber range
-            }
-            update(w, h, time, kick) {
-                this.x += this.speed + kick * 2;
-                this.y += Math.sin(time * this.wobbleFreq + this.phase) * 0.5;
-                if (this.x > w + 50) this.reset(w, h);
-            }
-            draw(ctx) {
-                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.size * 2);
-                gradient.addColorStop(0, `rgba(212, ${165 + this.hue}, 116, ${this.alpha})`);
-                gradient.addColorStop(1, 'rgba(10, 9, 8, 0)');
-                ctx.fillStyle = gradient;
+            draw(ctx, time, w, h) {
+                const screenX = this.x % w;
+                const screenY = this.y % h;
+                const twinkle = Math.sin(time * this.twinkleSpeed + this.twinkleOffset) * 0.5 + 0.5;
+                const alpha = this.baseAlpha * twinkle;
+                ctx.fillStyle = `rgba(180, 160, 140, ${alpha})`;
                 ctx.beginPath();
-                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                ctx.arc(screenX, screenY, this.size, 0, Math.PI * 2);
                 ctx.fill();
             }
         }
 
+        // Drifting orbs - multiple depth layers
+        class Drifter {
+            constructor(w, h, depth) {
+                this.depth = depth; // 0 = far, 1 = near
+                this.reset(w, h, true);
+            }
+            reset(w, h, initial = false) {
+                const depthScale = 0.3 + this.depth * 0.7;
+                this.x = initial ? Math.random() * w : -100 * depthScale;
+                this.y = Math.random() * h;
+                this.baseY = this.y;
+                this.size = (Math.random() * 6 + 3) * depthScale;
+                this.speed = (Math.random() * 0.2 + 0.05) * depthScale;
+                this.wobbleAmp = (Math.random() * 50 + 20) * depthScale;
+                this.wobbleFreq = Math.random() * 0.003 + 0.001;
+                this.phase = Math.random() * Math.PI * 2;
+                this.alpha = (Math.random() * 0.3 + 0.1) * (0.5 + this.depth * 0.5);
+                this.hueShift = Math.random() * 40 - 20;
+                this.pulsePhase = Math.random() * Math.PI * 2;
+            }
+            update(w, h, time, kick, breathe) {
+                this.x += this.speed + kick * 3 * this.depth;
+                const wobble = Math.sin(time * this.wobbleFreq + this.phase) * this.wobbleAmp;
+                this.y = this.baseY + wobble + breathe * 10 * this.depth;
+                if (this.x > w + 100) this.reset(w, h);
+            }
+            draw(ctx, time, colorShift) {
+                const pulse = Math.sin(time * 0.5 + this.pulsePhase) * 0.2 + 1;
+                const size = this.size * pulse;
+
+                // Color shifts slowly over time
+                const r = 212 + Math.sin(colorShift + this.hueShift * 0.1) * 20;
+                const g = 165 + Math.sin(colorShift * 0.7 + this.hueShift * 0.1) * 30;
+                const b = 116 + Math.sin(colorShift * 1.3) * 40;
+
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, size * 3);
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${this.alpha})`);
+                gradient.addColorStop(0.4, `rgba(${r * 0.8}, ${g * 0.7}, ${b * 0.6}, ${this.alpha * 0.5})`);
+                gradient.addColorStop(1, 'rgba(10, 9, 8, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        let stars = [];
         let drifters = [];
         let kickHit = 0;
+        let snareHit = 0;
         let time = 0;
-        let mutationCycle = 0;
 
         // Engine setup
         const engine = new TR909Engine();
         engine.setBpm(100);
-        engine.setSwing(0.2);
+        engine.setSwing(0.25);
 
-        // Base pattern - minimal, will mutate
+        // Hypnotic pattern with space and tension
         let pattern = {
-            kick: Array(16).fill(null).map((_, i) => ({ velocity: i === 0 ? 1 : i === 8 ? 0.7 : 0 })),
-            ch: Array(16).fill(null).map((_, i) => ({ velocity: i % 2 === 0 ? 0.4 : 0.2 })),
-            oh: Array(16).fill(null).map((_, i) => ({ velocity: i === 6 || i === 14 ? 0.5 : 0 })),
-            snare: Array(16).fill(null).map((_, i) => ({ velocity: i === 4 || i === 12 ? 0.8 : 0 })),
-            rimshot: Array(16).fill(null).map(() => ({ velocity: 0 })),
+            // Syncopated kick - the heartbeat
+            kick: [
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }
+            ],
+            // Ghost snares with accent
+            snare: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.2 },
+                { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.25 }, { velocity: 0 },
+                { velocity: 0.7 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.15 }
+            ],
+            // Sparse hats - breathe
+            ch: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.2 }, { velocity: 0 }, { velocity: 0.35 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.25 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.2 }, { velocity: 0 }, { velocity: 0.3 }
+            ],
+            // Open hat for air
+            oh: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 }
+            ],
+            // Rimshot - metallic accents
+            rimshot: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.35 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            // Toms - melodic descent
+            ltom: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }
+            ],
+            mtom: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.45 }, { velocity: 0 }
+            ],
             clap: Array(16).fill(null).map(() => ({ velocity: 0 })),
         };
 
-        function mutatePattern() {
-            mutationCycle++;
-            const voices = ['kick', 'snare', 'ch', 'oh', 'rimshot', 'clap'];
-            const voice = voices[Math.floor(Math.random() * voices.length)];
-            const step = Math.floor(Math.random() * 16);
-
-            // 50% chance to add, 50% to remove
-            if (Math.random() > 0.5 && pattern[voice][step].velocity === 0) {
-                pattern[voice][step].velocity = Math.random() * 0.5 + 0.3;
-            } else if (pattern[voice][step].velocity > 0 && Math.random() > 0.7) {
-                pattern[voice][step].velocity = 0;
+        // Pattern variations for mutation
+        const variations = [
+            // Variation 1: add tom melody
+            () => {
+                pattern.htom = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0.35 }, { velocity: 0 }, { velocity: 0 }
+                ];
+            },
+            // Variation 2: double-time hats
+            () => {
+                pattern.ch = Array(16).fill(null).map((_, i) => ({ velocity: i % 2 === 0 ? 0.25 : 0.15 }));
+            },
+            // Variation 3: sparse mode
+            () => {
+                pattern.ch = Array(16).fill(null).map((_, i) => ({ velocity: i === 2 || i === 10 ? 0.3 : 0 }));
+                pattern.rimshot = Array(16).fill(null).map(() => ({ velocity: 0 }));
+            },
+            // Variation 4: add clap layer
+            () => {
+                pattern.clap = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.6 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+                ];
+            },
+            // Variation 5: shift kick pattern
+            () => {
+                pattern.kick = [
+                    { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.7 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }, { velocity: 0 }
+                ];
+            },
+            // Variation 6: return to base
+            () => {
+                pattern.htom = Array(16).fill(null).map(() => ({ velocity: 0 }));
+                pattern.clap = Array(16).fill(null).map(() => ({ velocity: 0 }));
             }
+        ];
 
+        let variationIndex = 0;
+        function mutatePattern() {
+            variations[variationIndex]();
+            variationIndex = (variationIndex + 1) % variations.length;
             engine.setPattern('drift', pattern);
         }
 
         engine.setPattern('drift', pattern);
 
-        // Mutate every 8 bars (128 steps at 16 steps/bar)
         let stepCount = 0;
-        const originalOnStep = engine.onStepChange;
         engine.onStepChange = (step) => {
             stepCount++;
             if (stepCount % 128 === 0) mutatePattern();
         };
 
-        // Track kicks
         const originalTrigger = engine.trigger.bind(engine);
         engine.trigger = (voice, velocity) => {
             originalTrigger(voice, velocity);
             if (voice === 'kick' && velocity > 0) kickHit = velocity;
+            if (voice === 'snare' && velocity > 0) snareHit = velocity;
         };
 
-        // Tune for deep, slow sound
-        engine.setVoiceParameter('kick', 'tune', -5);
-        engine.setVoiceParameter('kick', 'decay', 0.9);
-        engine.setVoiceParameter('snare', 'tone', 0.3);
-        engine.setVoiceParameter('ch', 'decay', 0.15);
+        // Deep, spacious sound
+        engine.setVoiceParameter('kick', 'tune', -7);
+        engine.setVoiceParameter('kick', 'decay', 1.0);
+        engine.setVoiceParameter('snare', 'tone', 0.2);
+        engine.setVoiceParameter('snare', 'snap', 0.3);
+        engine.setVoiceParameter('ch', 'decay', 0.12);
+        engine.setVoiceParameter('oh', 'decay', 0.5);
 
-        function initDrifters() {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-            for (let i = 0; i < 60; i++) {
-                drifters.push(new Drifter(w, h));
+        function init() {
+            // Create stars
+            for (let i = 0; i < 150; i++) {
+                stars.push(new Star());
+            }
+            // Create drifters at different depths
+            for (let i = 0; i < 20; i++) {
+                drifters.push(new Drifter(w, h, 0.2)); // far
+            }
+            for (let i = 0; i < 15; i++) {
+                drifters.push(new Drifter(w, h, 0.5)); // mid
+            }
+            for (let i = 0; i < 10; i++) {
+                drifters.push(new Drifter(w, h, 1.0)); // near
+            }
+        }
+
+        function drawConnections(ctx, drifters, time) {
+            const nearDrifters = drifters.filter(d => d.depth > 0.4);
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.03)';
+            ctx.lineWidth = 1;
+
+            for (let i = 0; i < nearDrifters.length; i++) {
+                for (let j = i + 1; j < nearDrifters.length; j++) {
+                    const d1 = nearDrifters[i];
+                    const d2 = nearDrifters[j];
+                    const dist = Math.hypot(d1.x - d2.x, d1.y - d2.y);
+                    if (dist < 200) {
+                        const alpha = (1 - dist / 200) * 0.06;
+                        ctx.strokeStyle = `rgba(212, 165, 116, ${alpha})`;
+                        ctx.beginPath();
+                        ctx.moveTo(d1.x, d1.y);
+                        ctx.lineTo(d2.x, d2.y);
+                        ctx.stroke();
+                    }
+                }
             }
         }
 
         function animate() {
             time += 0.016;
-            const w = window.innerWidth;
-            const h = window.innerHeight;
 
-            // Slow fade
-            ctx.fillStyle = 'rgba(10, 9, 8, 0.03)';
+            // Breathing effect synced loosely to tempo
+            const breathe = Math.sin(time * 0.4) * kickHit;
+
+            // Color shift over time
+            const colorShift = time * 0.1;
+
+            // Very slow fade - creates long trails
+            ctx.fillStyle = 'rgba(10, 9, 8, 0.015)';
             ctx.fillRect(0, 0, w, h);
 
+            // Subtle vignette pulse on kick
+            if (kickHit > 0.3) {
+                const vignetteGradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, w * 0.8);
+                vignetteGradient.addColorStop(0, 'rgba(10, 9, 8, 0)');
+                vignetteGradient.addColorStop(1, `rgba(30, 20, 15, ${kickHit * 0.1})`);
+                ctx.fillStyle = vignetteGradient;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Draw stars
+            stars.forEach(star => star.draw(ctx, time, w, h));
+
+            // Draw connections between nearby drifters
+            drawConnections(ctx, drifters, time);
+
+            // Update and draw drifters (far to near for proper layering)
+            drifters.sort((a, b) => a.depth - b.depth);
             drifters.forEach(d => {
-                d.update(w, h, time, kickHit);
-                d.draw(ctx);
+                d.update(w, h, time, kickHit, breathe);
+                d.draw(ctx, time, colorShift);
             });
 
-            kickHit *= 0.92;
+            // Decay
+            kickHit *= 0.94;
+            snareHit *= 0.94;
+
             requestAnimationFrame(animate);
         }
 
         const overlay = document.getElementById('start-overlay');
-        overlay.addEventListener('click', () => {
+        function start() {
             overlay.classList.add('hidden');
-            initDrifters();
+            init();
             engine.startSequencer();
             animate();
-        });
+        }
+        overlay.addEventListener('click', start);
+
+        if (new URLSearchParams(window.location.search).get('autoplay') === '1') {
+            start();
+        }
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {

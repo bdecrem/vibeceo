@@ -339,6 +339,97 @@
         engine.setBpm(128);
         engine.setSwing(0.15);
 
+        // Pattern variations for evolution
+        const variations = [
+            // Variation 1: add rimshot accents
+            () => {
+                pattern.rimshot = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 }, { velocity: 0 }
+                ];
+            },
+            // Variation 2: sparse hats - let it breathe
+            () => {
+                pattern.ch = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }
+                ];
+            },
+            // Variation 3: open hat flourishes
+            () => {
+                pattern.oh = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }
+                ];
+            },
+            // Variation 4: snare ghost notes shift
+            () => {
+                pattern.snare = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 }, { velocity: 0 },
+                    { velocity: 1, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.25 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 }, { velocity: 0 },
+                    { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.2 }
+                ];
+            },
+            // Variation 5: double clap energy
+            () => {
+                pattern.clap = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.9, accent: true }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.9 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 }
+                ];
+            },
+            // Variation 6: return to base
+            () => {
+                pattern.ch = [
+                    { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                    { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                    { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                    { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 }
+                ];
+                pattern.oh = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }
+                ];
+                pattern.snare = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 1, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 1 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 }
+                ];
+                pattern.clap = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.9, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+                ];
+                pattern.rimshot = [
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                    { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+                ];
+            }
+        ];
+
+        let variationIndex = 0;
+        let stepCount = 0;
+
+        function mutatePattern() {
+            variations[variationIndex]();
+            variationIndex = (variationIndex + 1) % variations.length;
+            engine.setPattern('ember', pattern);
+        }
+
         // Tune the voices for that deep, warm sound
         engine.setVoiceParameter('kick', 'tune', -3);
         engine.setVoiceParameter('kick', 'decay', 0.7);
@@ -371,6 +462,13 @@
         // Step callback
         engine.onStepChange = (step) => {
             currentStep = step;
+            stepCount++;
+
+            // Mutate every 8 bars (128 steps)
+            if (stepCount % 128 === 0) {
+                mutatePattern();
+            }
+
             stepEls.forEach((el, i) => {
                 el.classList.remove('active', 'beat');
                 if (i === step) {
@@ -413,12 +511,18 @@
 
         // Start
         const overlay = document.getElementById('start-overlay');
-        overlay.addEventListener('click', () => {
+        function start() {
             overlay.classList.add('hidden');
             initEmbers();
             engine.startSequencer();
             animate();
-        });
+        }
+        overlay.addEventListener('click', start);
+
+        // Autoplay support for EMERGENCE
+        if (new URLSearchParams(window.location.search).get('autoplay') === '1') {
+            start();
+        }
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {

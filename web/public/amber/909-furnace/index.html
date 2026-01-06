@@ -190,12 +190,18 @@
         }
 
         const overlay = document.getElementById('start-overlay');
-        overlay.addEventListener('click', () => {
+        function start() {
             overlay.classList.add('hidden');
             initHeatBars();
             engine.startSequencer();
             animate();
-        });
+        }
+        overlay.addEventListener('click', start);
+
+        // Autoplay support for EMERGENCE
+        if (new URLSearchParams(window.location.search).get('autoplay') === '1') {
+            start();
+        }
 
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
