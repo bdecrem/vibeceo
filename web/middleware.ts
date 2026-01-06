@@ -228,6 +228,13 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // If path already starts with /amber/, don't double-prefix - pass through
+    // This handles assets like /amber/amber-avatar.png and direct links
+    if (pathname.startsWith('/amber/') || pathname === '/amber') {
+      log(`[Middleware] intheamber.com pass-through: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Root → /amber
     if (pathname === '/' || pathname === '') {
       const newUrl = new URL('/amber', request.url)
