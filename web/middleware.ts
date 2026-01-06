@@ -58,6 +58,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // TR-909 drum machine at /909
+    if (pathname.startsWith('/909')) {
+      log(`[Middleware] 909 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // /links is the login-wall-free CS page, not /kochi/links
     if (pathname === '/links' || pathname.startsWith('/links/')) {
       log(`[Middleware] Links route bypassed: ${pathname}`)
