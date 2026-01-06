@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>909-FURNACE - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <script type="importmap">
+    {
+        "imports": {
+            "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+        }
+    }
+    </script>
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="909-FURNACE">
+    <meta property="og:description" content="Industrial heat. 140 BPM.">
+    <meta property="og:image" content="https://kochi.to/amber/909-furnace/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/909-furnace/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="909-FURNACE">
+    <meta name="twitter:description" content="Industrial heat. 140 BPM.">
+    <meta name="twitter:image" content="https://kochi.to/amber/909-furnace/og.png">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0A0908; overflow: hidden; font-family: 'Courier New', monospace; }
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0A0908; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 100;
+            transition: opacity 0.3s ease;
+        }
+        #start-overlay.hidden { opacity: 0; pointer-events: none; }
+        .title { color: #FF6B35; font-size: 3.5rem; letter-spacing: 0.5em; margin-bottom: 2rem;
+            text-shadow: 0 0 60px rgba(255, 107, 53, 0.6); animation: pulse 0.5s infinite; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.8; } }
+        .subtitle { color: #B8860B; font-size: 0.9rem; letter-spacing: 0.4em; opacity: 0.6; }
+        #info { position: fixed; bottom: 20px; left: 20px; color: #FF6B35;
+            font-size: 0.7rem; opacity: 0.4; letter-spacing: 0.1em; z-index: 10; }
+        #bpm { position: fixed; top: 20px; right: 20px; color: #FF6B35;
+            font-size: 0.9rem; opacity: 0.6; letter-spacing: 0.2em; z-index: 10; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="start-overlay">
+        <div class="title">FURNACE</div>
+        <div class="subtitle">click to ignite</div>
+    </div>
+    <div id="info">AMBER / 2026</div>
+    <div id="bpm">140 BPM</div>
+
+    <script type="module">
+        import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+        import { getPreset } from '/909/dist/machines/tr909/presets.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth * window.devicePixelRatio;
+            canvas.height = window.innerHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Heat wave bars
+        let heatBars = [];
+        let kickHit = 0;
+        let snareHit = 0;
+        let hatHit = 0;
+        let globalIntensity = 0;
+
+        class HeatBar {
+            constructor(x, w, h) {
+                this.x = x;
+                this.width = w;
+                this.maxHeight = h;
+                this.height = Math.random() * h * 0.3;
+                this.targetHeight = this.height;
+                this.hue = Math.random() * 30;
+            }
+            pulse(amount) {
+                this.targetHeight = Math.min(this.maxHeight, this.targetHeight + amount * this.maxHeight * 0.5);
+            }
+            update() {
+                this.height += (this.targetHeight - this.height) * 0.15;
+                this.targetHeight *= 0.97;
+                this.targetHeight = Math.max(this.maxHeight * 0.05, this.targetHeight);
+            }
+            draw(ctx, canvasH, intensity) {
+                const gradient = ctx.createLinearGradient(this.x, canvasH, this.x, canvasH - this.height);
+                const alpha = 0.4 + intensity * 0.4;
+                gradient.addColorStop(0, `rgba(255, ${60 + this.hue}, 20, ${alpha})`);
+                gradient.addColorStop(0.3, `rgba(255, ${107 + this.hue}, 53, ${alpha * 0.8})`);
+                gradient.addColorStop(0.6, `rgba(212, 165, 116, ${alpha * 0.5})`);
+                gradient.addColorStop(1, 'rgba(10, 9, 8, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(this.x, canvasH - this.height, this.width - 1, this.height);
+            }
+        }
+
+        // Engine setup
+        const engine = new TR909Engine();
+        const preset = getPreset('industrial');
+        engine.setPattern('furnace', preset.pattern);
+        engine.setBpm(140);
+        engine.setSwing(0.05);
+        engine.setFlam(0.1);
+
+        // Tune for aggressive industrial sound
+        engine.setVoiceParameter('kick', 'tune', 2);
+        engine.setVoiceParameter('kick', 'attack', 0.8);
+        engine.setVoiceParameter('kick', 'decay', 0.6);
+        engine.setVoiceParameter('snare', 'snap', 0.9);
+        engine.setVoiceParameter('snare', 'tone', 0.7);
+        engine.setVoiceParameter('ch', 'decay', 0.1);
+
+        // Track hits
+        const originalTrigger = engine.trigger.bind(engine);
+        engine.trigger = (voice, velocity) => {
+            originalTrigger(voice, velocity);
+            if (voice === 'kick' && velocity > 0) kickHit = velocity;
+            if ((voice === 'snare' || voice === 'clap') && velocity > 0) snareHit = velocity;
+            if ((voice === 'ch' || voice === 'oh') && velocity > 0) hatHit = velocity;
+        };
+
+        function initHeatBars() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            const barCount = Math.floor(w / 8);
+            for (let i = 0; i < barCount; i++) {
+                heatBars.push(new HeatBar(i * 8, 8, h * 0.8));
+            }
+        }
+
+        function animate() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            // Dark fade with heat retention
+            ctx.fillStyle = `rgba(10, 9, 8, ${0.15 - globalIntensity * 0.05})`;
+            ctx.fillRect(0, 0, w, h);
+
+            // Update global intensity
+            globalIntensity = Math.max(kickHit, snareHit, hatHit * 0.5);
+
+            // Pulse random bars on hits
+            if (kickHit > 0.5) {
+                const count = Math.floor(kickHit * 10);
+                for (let i = 0; i < count; i++) {
+                    const bar = heatBars[Math.floor(Math.random() * heatBars.length)];
+                    bar.pulse(kickHit);
+                }
+            }
+            if (snareHit > 0.5) {
+                // Snare: wave from center
+                const center = Math.floor(heatBars.length / 2);
+                for (let i = 0; i < heatBars.length; i++) {
+                    const dist = Math.abs(i - center) / center;
+                    heatBars[i].pulse(snareHit * (1 - dist * 0.5));
+                }
+            }
+
+            // Update and draw bars
+            heatBars.forEach(bar => {
+                bar.update();
+                bar.draw(ctx, h, globalIntensity);
+            });
+
+            // Screen flash on big hits
+            if (kickHit > 0.8) {
+                ctx.fillStyle = `rgba(255, 107, 53, ${(kickHit - 0.8) * 0.3})`;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Decay hits
+            kickHit *= 0.85;
+            snareHit *= 0.85;
+            hatHit *= 0.9;
+
+            requestAnimationFrame(animate);
+        }
+
+        const overlay = document.getElementById('start-overlay');
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            initHeatBars();
+            engine.startSequencer();
+            animate();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                engine.isPlaying() ? engine.stopSequencer() : engine.startSequencer();
+            }
+        });
+    </script>
+</body>
+</html>

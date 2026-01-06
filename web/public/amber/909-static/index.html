@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>909-STATIC - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <script type="importmap">
+    {
+        "imports": {
+            "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+        }
+    }
+    </script>
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="909-STATIC">
+    <meta property="og:description" content="Signal in the noise.">
+    <meta property="og:image" content="https://kochi.to/amber/909-static/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/909-static/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="909-STATIC">
+    <meta name="twitter:description" content="Signal in the noise.">
+    <meta name="twitter:image" content="https://kochi.to/amber/909-static/og.png">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0A0908; overflow: hidden; font-family: 'Courier New', monospace; }
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0A0908; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 100;
+            transition: opacity 0.4s ease;
+        }
+        #start-overlay.hidden { opacity: 0; pointer-events: none; }
+        .title { color: #888; font-size: 3rem; letter-spacing: 0.6em; margin-bottom: 2rem;
+            text-shadow: 0 0 20px rgba(136, 136, 136, 0.4);
+            animation: flicker 0.1s infinite; }
+        @keyframes flicker {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.95; }
+            75% { opacity: 0.98; }
+        }
+        .subtitle { color: #666; font-size: 0.9rem; letter-spacing: 0.4em; opacity: 0.5; }
+        #info { position: fixed; bottom: 20px; left: 20px; color: #666;
+            font-size: 0.7rem; opacity: 0.3; letter-spacing: 0.1em; z-index: 10; }
+        #bpm { position: fixed; top: 20px; right: 20px; color: #888;
+            font-size: 0.8rem; opacity: 0.4; letter-spacing: 0.2em; z-index: 10; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="start-overlay">
+        <div class="title">STATIC</div>
+        <div class="subtitle">click to tune in</div>
+    </div>
+    <div id="info">AMBER / 2026</div>
+    <div id="bpm">132 BPM</div>
+
+    <script type="module">
+        import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let w, h;
+        function resize() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w;
+            canvas.height = h;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Static noise buffer
+        let noiseData;
+        function createNoiseBuffer() {
+            noiseData = ctx.createImageData(w, h);
+        }
+
+        // Beat state
+        let kickHit = 0;
+        let snareHit = 0;
+        let hatHit = 0;
+        let currentStep = 0;
+        let signalStrength = 0;
+
+        // Engine setup
+        const engine = new TR909Engine();
+        engine.setBpm(132);
+        engine.setSwing(0.1);
+
+        // Glitchy minimal pattern
+        const pattern = {
+            kick: [
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 },
+                { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }
+            ],
+            snare: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.9 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }
+            ],
+            ch: [
+                { velocity: 0.5 }, { velocity: 0.3 }, { velocity: 0.6 }, { velocity: 0.3 },
+                { velocity: 0.5 }, { velocity: 0.3 }, { velocity: 0.6 }, { velocity: 0.3 },
+                { velocity: 0.5 }, { velocity: 0.3 }, { velocity: 0.6 }, { velocity: 0.3 },
+                { velocity: 0.5 }, { velocity: 0.3 }, { velocity: 0.6 }, { velocity: 0.3 }
+            ],
+            rimshot: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.3 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.2 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            clap: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ]
+        };
+
+        engine.setPattern('static', pattern);
+
+        // Tune for crispy, digital sound
+        engine.setVoiceParameter('kick', 'tune', 0);
+        engine.setVoiceParameter('kick', 'decay', 0.5);
+        engine.setVoiceParameter('snare', 'snap', 0.8);
+        engine.setVoiceParameter('snare', 'tone', 0.6);
+        engine.setVoiceParameter('ch', 'decay', 0.08);
+        engine.setVoiceParameter('rimshot', 'tune', 3);
+
+        // Track hits
+        const originalTrigger = engine.trigger.bind(engine);
+        engine.trigger = (voice, velocity) => {
+            originalTrigger(voice, velocity);
+            if (voice === 'kick' && velocity > 0) kickHit = velocity;
+            if ((voice === 'snare' || voice === 'clap') && velocity > 0) snareHit = velocity;
+            if ((voice === 'ch' || voice === 'rimshot') && velocity > 0) hatHit = velocity;
+        };
+
+        engine.onStepChange = (step) => {
+            currentStep = step;
+            if (step >= 0) signalStrength = Math.min(1, signalStrength + 0.02);
+        };
+
+        function drawStatic(intensity) {
+            const data = noiseData.data;
+            const pixelSkip = 2; // Performance: skip pixels
+            const beatSync = (currentStep % 4 === 0) ? 1.2 : 1;
+
+            for (let i = 0; i < data.length; i += 4 * pixelSkip) {
+                const noise = Math.random();
+                const signal = signalStrength * beatSync;
+
+                // More signal = more amber tint, less pure noise
+                let v;
+                if (noise < intensity * (1 - signal * 0.5)) {
+                    // Pure static
+                    v = Math.floor(Math.random() * 60);
+                    data[i] = v;
+                    data[i + 1] = v;
+                    data[i + 2] = v;
+                } else if (noise < intensity) {
+                    // Amber-tinted static
+                    v = Math.floor(Math.random() * 100 + 50);
+                    data[i] = Math.min(255, v + 80 * signal);     // R
+                    data[i + 1] = Math.min(255, v + 30 * signal); // G
+                    data[i + 2] = v * (1 - signal * 0.5);         // B
+                } else {
+                    // Dark
+                    data[i] = 10;
+                    data[i + 1] = 9;
+                    data[i + 2] = 8;
+                }
+                data[i + 3] = 255;
+            }
+
+            ctx.putImageData(noiseData, 0, 0);
+        }
+
+        function drawScanlines() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            for (let y = 0; y < h; y += 3) {
+                ctx.fillRect(0, y, w, 1);
+            }
+        }
+
+        function drawBeatIndicator() {
+            if (kickHit > 0.5) {
+                // Horizontal glitch lines
+                const lineCount = Math.floor(kickHit * 10);
+                ctx.fillStyle = `rgba(212, 165, 116, ${kickHit * 0.3})`;
+                for (let i = 0; i < lineCount; i++) {
+                    const y = Math.random() * h;
+                    const offset = (Math.random() - 0.5) * 20;
+                    ctx.fillRect(offset, y, w, 2);
+                }
+            }
+
+            if (snareHit > 0.5) {
+                // Vertical tear
+                ctx.fillStyle = `rgba(255, 255, 255, ${snareHit * 0.2})`;
+                const x = w / 2 + (Math.random() - 0.5) * 100;
+                ctx.fillRect(x, 0, 3, h);
+            }
+        }
+
+        function animate() {
+            // Base noise intensity decreases as signal strengthens
+            const noiseIntensity = 0.4 - signalStrength * 0.15 + kickHit * 0.2 + hatHit * 0.1;
+
+            drawStatic(noiseIntensity);
+            drawScanlines();
+            drawBeatIndicator();
+
+            // Signal strength slowly decays when music stops
+            if (!engine.isPlaying()) {
+                signalStrength *= 0.99;
+            }
+
+            // Decay hits
+            kickHit *= 0.8;
+            snareHit *= 0.8;
+            hatHit *= 0.85;
+
+            requestAnimationFrame(animate);
+        }
+
+        const overlay = document.getElementById('start-overlay');
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            createNoiseBuffer();
+            engine.startSequencer();
+            animate();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                engine.isPlaying() ? engine.stopSequencer() : engine.startSequencer();
+            }
+        });
+    </script>
+</body>
+</html>
