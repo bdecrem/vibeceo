@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useEffect, useState, Suspense } from 'react'
+import Link from 'next/link'
 
 function CSXContent() {
   const router = useRouter()
@@ -358,6 +359,28 @@ function CSXContent() {
           display: none;
         }
 
+        .mailing-link {
+          display: block;
+          text-align: center;
+          margin-top: 16px;
+          font-size: 0.75rem;
+          color: #666;
+          text-decoration: none;
+          letter-spacing: 0.05em;
+          transition: color 0.2s;
+        }
+
+        .mailing-link:hover {
+          color: #aaa;
+        }
+
+        @media (min-width: 640px) {
+          .mailing-link {
+            margin-top: 20px;
+            font-size: 0.8125rem;
+          }
+        }
+
         .boot-graphic {
           display: flex;
           flex-direction: column;
@@ -479,6 +502,9 @@ function CSXContent() {
             <span>{statusMessages[statusIndex].text}</span>
           </div>
         </div>
+        <Link href="/csx/mailing-list" className="mailing-link" onClick={(e) => e.stopPropagation()}>
+          join the mailing list →
+        </Link>
       </div>
     </>
   )
