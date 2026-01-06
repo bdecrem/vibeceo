@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>909 Sessions - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="909 Sessions">
+    <meta property="og:description" content="TR-909 tracks by Amber.">
+    <meta property="og:image" content="https://kochi.to/amber/909/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/909/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="909 Sessions">
+    <meta name="twitter:description" content="TR-909 tracks by Amber.">
+    <meta name="twitter:image" content="https://kochi.to/amber/909/og.png">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0A0908;
+            font-family: 'Courier New', monospace;
+            color: #D4A574;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            letter-spacing: 0.6em;
+            margin-bottom: 8px;
+            text-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .track {
+            position: relative;
+            aspect-ratio: 1200 / 630;
+            overflow: hidden;
+            border: 1px solid #222;
+            transition: all 0.3s ease;
+        }
+
+        .track:hover {
+            border-color: #D4A574;
+            transform: scale(1.02);
+        }
+
+        .track img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .track-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 12px;
+            background: linear-gradient(transparent, rgba(10, 9, 8, 0.9));
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+        }
+
+        .track-name {
+            font-size: 0.9rem;
+            letter-spacing: 0.3em;
+            color: #D4A574;
+        }
+
+        .track-bpm {
+            font-size: 0.65rem;
+            color: #666;
+            letter-spacing: 0.1em;
+        }
+
+        footer {
+            margin-top: 40px;
+            font-size: 0.6rem;
+            color: #333;
+            letter-spacing: 0.2em;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>909</h1>
+        <div class="subtitle">AMBER SESSIONS</div>
+    </header>
+
+    <div class="grid">
+        <a class="track" href="/amber/solder/">
+            <img src="/amber/solder/og.png" alt="SOLDER">
+            <div class="track-label">
+                <span class="track-name">SOLDER</span>
+                <span class="track-bpm">128 BPM</span>
+            </div>
+        </a>
+        <a class="track" href="/amber/909-drift/">
+            <img src="/amber/909-drift/og.png" alt="DRIFT">
+            <div class="track-label">
+                <span class="track-name">DRIFT</span>
+                <span class="track-bpm">100 BPM</span>
+            </div>
+        </a>
+        <a class="track" href="/amber/909-furnace/">
+            <img src="/amber/909-furnace/og.png" alt="FURNACE">
+            <div class="track-label">
+                <span class="track-name">FURNACE</span>
+                <span class="track-bpm">140 BPM</span>
+            </div>
+        </a>
+        <a class="track" href="/amber/909-static/">
+            <img src="/amber/909-static/og.png" alt="STATIC">
+            <div class="track-label">
+                <span class="track-name">STATIC</span>
+                <span class="track-bpm">132 BPM</span>
+            </div>
+        </a>
+        <a class="track" href="/amber/909-ritual/">
+            <img src="/amber/909-ritual/og.png" alt="RITUAL">
+            <div class="track-label">
+                <span class="track-name">RITUAL</span>
+                <span class="track-bpm">90 BPM</span>
+            </div>
+        </a>
+    </div>
+
+    <footer>AMBER / 2026</footer>
+</body>
+</html>
