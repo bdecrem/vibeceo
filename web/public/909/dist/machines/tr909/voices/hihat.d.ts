@@ -8,5 +8,5 @@ export declare class HiHat909 extends SampleVoice {
     constructor(id: VoiceId, context: BaseAudioContext, library: SampleLibrary, type: HiHatType);
     setParameter(id: string, value: number): void;
     get parameterDescriptors(): VoiceParameterDescriptor[];
-    protected triggerFallbackNoise(source: AudioBufferSourceNode, time: number, velocity: number): void;
+    protected triggerSynthesis(source: AudioBufferSourceNode, time: number, velocity: number): void;
 }

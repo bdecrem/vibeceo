@@ -39,6 +39,20 @@ export declare class TR909Engine extends SynthEngine {
     getSwing(): number;
     setFlam(amount: number): void;
     getFlam(): number;
+    /** Voice IDs that support sample/synth toggle */
+    static readonly SAMPLE_CAPABLE_VOICES: TR909VoiceId[];
+    /**
+     * Check if a voice supports sample mode toggle
+     */
+    isSampleCapable(voiceId: TR909VoiceId): boolean;
+    /**
+     * Toggle between sample and synthesis mode for a voice
+     */
+    setVoiceUseSample(voiceId: TR909VoiceId, useSample: boolean): void;
+    /**
+     * Get whether a voice is using samples
+     */
+    getVoiceUseSample(voiceId: TR909VoiceId): boolean;
     getCurrentStep(): number;
     isPlaying(): boolean;
     renderPattern(pattern: Pattern, options?: Tr909RenderOptions): Promise<AudioBuffer>;

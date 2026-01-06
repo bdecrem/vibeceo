@@ -5,7 +5,7 @@ import type {
 } from '../../../core/types.js';
 
 export class Kick909 extends Voice {
-  private tune = 0; // cents
+  private tune = 0; // cents (±1200 = ±1 octave)
   private decay = 0.8;
   private attack = 0.5; // click intensity 0-1
   private level = 1;
@@ -14,30 +14,49 @@ export class Kick909 extends Voice {
     super(id, context);
   }
 
+  // Creates a soft-clip curve that shapes sawtooth into rounded pseudo-sine
+  // This mimics the 909's sawtooth→waveshaper→sine circuit
+  private createSoftClipCurve(): Float32Array {
+    const samples = 8192;
+    const curve = new Float32Array(samples);
+    for (let i = 0; i < samples; i++) {
+      const x = (i * 2) / samples - 1; // -1 to 1
+      // Soft saturation: tanh-like curve that rounds harsh edges
+      curve[i] = Math.tanh(x * 1.5) * 0.9;
+    }
+    return curve;
+  }
+
   override trigger(time: number, velocity: number): void {
     const peak = Math.max(0, Math.min(1, velocity * this.level));
     const tuneMultiplier = Math.pow(2, this.tune / 1200);
 
-    // === MAIN BODY: Sine 160Hz → 30Hz ===
+    // === MAIN BODY: Sawtooth → Waveshaper, 165Hz (E3) → 30Hz ===
     const mainOsc = this.context.createOscillator();
-    mainOsc.type = 'sine';
-    const mainStartFreq = 160 * tuneMultiplier;
+    mainOsc.type = 'sawtooth'; // Real 909 uses sawtooth, shaped into sine
+    const mainStartFreq = 165 * tuneMultiplier; // E3 = 164.81Hz, the authentic 909 tuning
     const mainEndFreq = 30 * tuneMultiplier;
     mainOsc.frequency.setValueAtTime(mainStartFreq, time);
     mainOsc.frequency.exponentialRampToValueAtTime(mainEndFreq, time + 0.08);
+
+    // Waveshaper rounds the sawtooth into pseudo-sine
+    const shaper = this.context.createWaveShaper();
+    shaper.curve = this.createSoftClipCurve() as unknown as Float32Array<ArrayBuffer>;
+    shaper.oversample = '2x';
 
     const mainGain = this.context.createGain();
     mainGain.gain.setValueAtTime(peak, time);
     mainGain.gain.setTargetAtTime(0, time + 0.02, this.decay * 0.3);
 
-    mainOsc.connect(mainGain);
+    mainOsc.connect(shaper);
+    shaper.connect(mainGain);
     mainGain.connect(this.output);
     mainOsc.start(time);
     mainOsc.stop(time + this.decay + 0.5);
 
-    // === SUB LAYER: Sine 50Hz → 35Hz for weight ===
+    // === SUB LAYER: Sine 50Hz → 35Hz for sub weight ===
     const subOsc = this.context.createOscillator();
-    subOsc.type = 'sine';
+    subOsc.type = 'sine'; // Sub stays pure sine for clean low end
     const subStartFreq = 50 * tuneMultiplier;
     const subEndFreq = 35 * tuneMultiplier;
     subOsc.frequency.setValueAtTime(subStartFreq, time);
@@ -52,31 +71,51 @@ export class Kick909 extends Voice {
     subOsc.start(time);
     subOsc.stop(time + this.decay + 0.5);
 
-    // === CLICK TRANSIENT: Filtered noise burst ===
+    // === CLICK TRANSIENT: Impulse + LP filtered noise (authentic 909 attack) ===
     if (this.attack > 0.01) {
-      const clickLength = 512;
-      const clickBuffer = this.context.createBuffer(1, clickLength, this.context.sampleRate);
-      const clickData = clickBuffer.getChannelData(0);
-      for (let i = 0; i < clickLength; i++) {
-        clickData[i] = (Math.random() * 2 - 1) * Math.exp(-i / 50);
+      // Part 1: Short impulse (beater contact simulation)
+      const impulseLength = 64; // Very short ~1.5ms at 44.1kHz
+      const impulseBuffer = this.context.createBuffer(1, impulseLength, this.context.sampleRate);
+      const impulseData = impulseBuffer.getChannelData(0);
+      // Sharp impulse with fast decay
+      for (let i = 0; i < impulseLength; i++) {
+        impulseData[i] = Math.exp(-i / 8) * (i < 4 ? 1 : 0.5);
       }
 
-      const clickSource = this.context.createBufferSource();
-      clickSource.buffer = clickBuffer;
+      const impulseSource = this.context.createBufferSource();
+      impulseSource.buffer = impulseBuffer;
 
-      const clickFilter = this.context.createBiquadFilter();
-      clickFilter.type = 'bandpass';
-      clickFilter.frequency.value = 3500;
-      clickFilter.Q.value = 2;
+      const impulseGain = this.context.createGain();
+      impulseGain.gain.setValueAtTime(peak * this.attack * 0.8, time);
 
-      const clickGain = this.context.createGain();
-      clickGain.gain.setValueAtTime(peak * this.attack * 0.6, time);
-      clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.015);
+      impulseSource.connect(impulseGain);
+      impulseGain.connect(this.output);
+      impulseSource.start(time);
 
-      clickSource.connect(clickFilter);
-      clickFilter.connect(clickGain);
-      clickGain.connect(this.output);
-      clickSource.start(time);
+      // Part 2: LP filtered noise (adds texture to the click)
+      const noiseLength = 256;
+      const noiseBuffer = this.context.createBuffer(1, noiseLength, this.context.sampleRate);
+      const noiseData = noiseBuffer.getChannelData(0);
+      for (let i = 0; i < noiseLength; i++) {
+        noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / 30);
+      }
+
+      const noiseSource = this.context.createBufferSource();
+      noiseSource.buffer = noiseBuffer;
+
+      const noiseFilter = this.context.createBiquadFilter();
+      noiseFilter.type = 'lowpass'; // LP filter, not bandpass (more authentic)
+      noiseFilter.frequency.value = 2000;
+      noiseFilter.Q.value = 1;
+
+      const noiseGain = this.context.createGain();
+      noiseGain.gain.setValueAtTime(peak * this.attack * 0.4, time);
+      noiseGain.gain.exponentialRampToValueAtTime(0.001, time + 0.01);
+
+      noiseSource.connect(noiseFilter);
+      noiseFilter.connect(noiseGain);
+      noiseGain.connect(this.output);
+      noiseSource.start(time);
     }
   }
 
@@ -104,7 +143,7 @@ export class Kick909 extends Voice {
       {
         id: 'tune',
         label: 'Tune',
-        range: { min: -50, max: 50, step: 1, unit: 'cents' },
+        range: { min: -1200, max: 1200, step: 10, unit: 'cents' },
         defaultValue: 0,
       },
       {

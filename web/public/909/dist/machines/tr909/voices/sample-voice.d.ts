@@ -7,9 +7,12 @@ export declare abstract class SampleVoice extends Voice {
     protected tune: number;
     protected level: number;
     private readonly noise;
+    private _useSample;
     constructor(id: VoiceId, context: BaseAudioContext, sampleLibrary: SampleLibrary, sampleId: Tr909SampleId, options?: VoiceOptions);
+    get useSample(): boolean;
+    setUseSample(value: boolean): void;
     trigger(time: number, velocity: number): void;
-    protected abstract triggerFallbackNoise(source: AudioBufferSourceNode, time: number, velocity: number): void;
+    protected abstract triggerSynthesis(source: AudioBufferSourceNode, time: number, velocity: number): void;
     setParameter(paramId: string, value: number): void;
     get parameterDescriptors(): VoiceParameterDescriptor[];
     private semitonesToPlaybackRate;
