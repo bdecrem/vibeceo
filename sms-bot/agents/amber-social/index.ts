@@ -338,11 +338,11 @@ export function registerAmberSocialJobs(): void {
     });
   }
 
-  // TEST TWEET job at 3:00pm PT
+  // TEST TWEET job at 5:05pm PT (temporary)
   registerDailyJob({
     name: `amber-test-tweet`,
-    hour: 15,
-    minute: 0,
+    hour: 17,
+    minute: 5,
     timezone: "America/Los_Angeles",
     async run() {
       await runTestTweet();
@@ -355,7 +355,7 @@ export function registerAmberSocialJobs(): void {
   const times = SCHEDULE.map(s =>
     `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
   ).join(', ');
-  console.log(`[amber-social] Registered: ${times}, test@15:00 PT`);
+  console.log(`[amber-social] Registered: ${times}, test@17:05 PT`);
 }
 
 /**
