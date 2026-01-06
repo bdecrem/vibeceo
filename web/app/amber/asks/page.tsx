@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function AmberAsksPage() {
   return (
     <iframe
-      src="/amber-asks.html"
+      src="/amber/amber-asks.html"
       style={{
         position: 'fixed',
         top: 0,

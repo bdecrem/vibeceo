@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 export default function AccretionPage() {
   return (
     <iframe
-      src="/toys-accretion.html"
+      src="/amber/toys-accretion.html"
       style={{
         position: 'fixed',
         top: 0,

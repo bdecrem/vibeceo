@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0A0908;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+    .container {
+      text-align: center;
+    }
+    canvas {
+      border-radius: 50%;
+      background: linear-gradient(135deg, #1a1a18 0%, #0A0908 100%);
+    }
+    .title {
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      margin-top: 20px;
+      letter-spacing: 3px;
+      opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <canvas id="portrait" width="400" height="400"></canvas>
+    <div class="title">AMBER</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('portrait');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    const cx = W / 2;
+    const cy = H / 2 - 20;
+
+    // Colors - warmer amber tones
+    const SKIN = '#E8C49A';
+    const SKIN_DARK = '#D4A574';
+    const SKIN_LIGHT = '#F5DEB3';
+    const HAIR = '#D4A574';
+    const HAIR_DARK = '#A67B5B';
+    const HAIR_LIGHT = '#E8C49A';
+    const TEAL = '#2D9596';
+    const TEAL_LIGHT = '#4DB8B8';
+    const BLACK = '#0A0908';
+    const DARK_GRAY = '#1a1a18';
+    const CHARCOAL = '#2a2a28';
+
+    // Helper function for rounded rectangles
+    function roundRect(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+    }
+
+    // Background circle
+    ctx.beginPath();
+    ctx.arc(cx, cy + 20, 180, 0, Math.PI * 2);
+    ctx.fillStyle = '#111110';
+    ctx.fill();
+
+    // Sparkles - more subtle
+    ctx.fillStyle = HAIR_LIGHT;
+    const sparkles = [
+      [75, 85], [325, 75], [55, 270], [345, 255],
+      [95, 175], [305, 185], [135, 55], [275, 305]
+    ];
+    sparkles.forEach(([x, y]) => {
+      ctx.globalAlpha = 0.3 + Math.random() * 0.3;
+      ctx.font = '12px serif';
+      ctx.fillText('✦', x, y);
+    });
+    ctx.globalAlpha = 1;
+
+    // === HAIR - Back layer ===
+    ctx.fillStyle = HAIR_DARK;
+    roundRect(cx - 85, cy - 70, 170, 130, 20);
+    ctx.fill();
+
+    // === HEADPHONES - Back band ===
+    ctx.strokeStyle = CHARCOAL;
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 35, 80, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
+
+    // === FACE ===
+    ctx.fillStyle = SKIN;
+    roundRect(cx - 60, cy - 50, 120, 100, 16);
+    ctx.fill();
+
+    // Face highlight
+    ctx.fillStyle = SKIN_LIGHT;
+    roundRect(cx - 50, cy - 42, 35, 12, 5);
+    ctx.globalAlpha = 0.4;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // === HAIR - Front pieces ===
+    // Bangs
+    ctx.fillStyle = HAIR;
+    roundRect(cx - 55, cy - 65, 110, 28, 10);
+    ctx.fill();
+
+    // Bangs highlight
+    ctx.fillStyle = HAIR_LIGHT;
+    roundRect(cx - 42, cy - 60, 30, 10, 5);
+    ctx.globalAlpha = 0.5;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Left side hair
+    ctx.fillStyle = HAIR;
+    roundRect(cx - 85, cy - 40, 28, 95, 12);
+    ctx.fill();
+
+    // Right side hair
+    ctx.fillStyle = HAIR;
+    roundRect(cx + 57, cy - 40, 28, 95, 12);
+    ctx.fill();
+
+    // Side highlights
+    ctx.fillStyle = HAIR_LIGHT;
+    ctx.globalAlpha = 0.35;
+    roundRect(cx - 80, cy - 32, 8, 35, 4);
+    ctx.fill();
+    roundRect(cx + 72, cy - 32, 8, 35, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // === HEADPHONES - Ear pieces ===
+    // Left ear cup
+    ctx.fillStyle = CHARCOAL;
+    ctx.beginPath();
+    ctx.ellipse(cx - 78, cy - 5, 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Inner detail
+    ctx.fillStyle = DARK_GRAY;
+    ctx.beginPath();
+    ctx.ellipse(cx - 78, cy - 5, 12, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Teal accent
+    ctx.fillStyle = TEAL;
+    ctx.beginPath();
+    ctx.ellipse(cx - 78, cy - 5, 5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Right ear cup
+    ctx.fillStyle = CHARCOAL;
+    ctx.beginPath();
+    ctx.ellipse(cx + 78, cy - 5, 18, 22, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = DARK_GRAY;
+    ctx.beginPath();
+    ctx.ellipse(cx + 78, cy - 5, 12, 15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = TEAL;
+    ctx.beginPath();
+    ctx.ellipse(cx + 78, cy - 5, 5, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // === EYES - >< style ===
+    ctx.strokeStyle = BLACK;
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+
+    // Left eye >
+    ctx.beginPath();
+    ctx.moveTo(cx - 35, cy - 15);
+    ctx.lineTo(cx - 22, cy);
+    ctx.lineTo(cx - 35, cy + 15);
+    ctx.stroke();
+
+    // Right eye <
+    ctx.beginPath();
+    ctx.moveTo(cx + 35, cy - 15);
+    ctx.lineTo(cx + 22, cy);
+    ctx.lineTo(cx + 35, cy + 15);
+    ctx.stroke();
+
+    // Blush
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#D4847A';
+    ctx.beginPath();
+    ctx.ellipse(cx - 42, cy + 25, 10, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 42, cy + 25, 10, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    // Mouth
+    ctx.strokeStyle = SKIN_DARK;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 32, 12, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    // === NECK ===
+    ctx.fillStyle = SKIN;
+    roundRect(cx - 18, cy + 50, 36, 22, 8);
+    ctx.fill();
+
+    // === BODY - Dark clothing ===
+    ctx.fillStyle = CHARCOAL;
+    roundRect(cx - 55, cy + 68, 110, 75, 12);
+    ctx.fill();
+
+    // Collar/neckline
+    ctx.fillStyle = DARK_GRAY;
+    roundRect(cx - 25, cy + 68, 50, 15, 6);
+    ctx.fill();
+
+    // Chest light
+    ctx.fillStyle = TEAL;
+    ctx.beginPath();
+    ctx.arc(cx, cy + 105, 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = TEAL_LIGHT;
+    ctx.beginPath();
+    ctx.arc(cx - 2, cy + 103, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // === ARMS - Dark ===
+    ctx.fillStyle = CHARCOAL;
+    roundRect(cx - 72, cy + 75, 22, 42, 10);
+    ctx.fill();
+    roundRect(cx + 50, cy + 75, 22, 42, 10);
+    ctx.fill();
+
+    // Subtle arm highlights
+    ctx.fillStyle = '#3a3a38';
+    ctx.globalAlpha = 0.5;
+    roundRect(cx - 68, cy + 80, 8, 20, 4);
+    ctx.fill();
+    roundRect(cx + 60, cy + 80, 8, 20, 4);
+    ctx.fill();
+    ctx.globalAlpha = 1;
+  </script>
+</body>
+</html>

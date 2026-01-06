@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>909-RITUAL - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    <script type="importmap">
+    {
+        "imports": {
+            "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+        }
+    }
+    </script>
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="909-RITUAL">
+    <meta property="og:description" content="Ceremonial. 90 BPM.">
+    <meta property="og:image" content="https://kochi.to/amber/909-ritual/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/909-ritual/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="909-RITUAL">
+    <meta name="twitter:description" content="Ceremonial. 90 BPM.">
+    <meta name="twitter:image" content="https://kochi.to/amber/909-ritual/og.png">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: #0A0908; overflow: hidden; font-family: 'Courier New', monospace; }
+        #canvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; }
+        #start-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0A0908; display: flex; flex-direction: column;
+            align-items: center; justify-content: center; cursor: pointer; z-index: 100;
+            transition: opacity 1.5s ease;
+        }
+        #start-overlay.hidden { opacity: 0; pointer-events: none; }
+        .title { color: #8B4513; font-size: 3rem; letter-spacing: 1em; margin-bottom: 2rem;
+            text-shadow: 0 0 50px rgba(139, 69, 19, 0.4); }
+        .subtitle { color: #654321; font-size: 0.85rem; letter-spacing: 0.5em; opacity: 0.4; }
+        #info { position: fixed; bottom: 20px; left: 20px; color: #654321;
+            font-size: 0.7rem; opacity: 0.25; letter-spacing: 0.1em; z-index: 10; }
+        #bpm { position: fixed; top: 20px; right: 20px; color: #8B4513;
+            font-size: 0.8rem; opacity: 0.35; letter-spacing: 0.2em; z-index: 10; }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="start-overlay">
+        <div class="title">RITUAL</div>
+        <div class="subtitle">click to begin</div>
+    </div>
+    <div id="info">AMBER / 2026</div>
+    <div id="bpm">90 BPM</div>
+
+    <script type="module">
+        import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        let w, h;
+        function resize() {
+            w = window.innerWidth;
+            h = window.innerHeight;
+            canvas.width = w * window.devicePixelRatio;
+            canvas.height = h * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Concentric rings
+        let rings = [];
+        let kickHit = 0;
+        let tomHit = 0;
+        let snareHit = 0;
+        let time = 0;
+        let currentStep = 0;
+
+        class Ring {
+            constructor(centerX, centerY) {
+                this.cx = centerX;
+                this.cy = centerY;
+                this.radius = 10;
+                this.maxRadius = Math.max(w, h);
+                this.alpha = 0.8;
+                this.width = 2;
+                this.hue = Math.random() * 20;
+            }
+            update() {
+                this.radius += 1.5;
+                this.alpha *= 0.985;
+                this.width *= 0.995;
+            }
+            draw(ctx) {
+                if (this.alpha < 0.01) return;
+                ctx.strokeStyle = `rgba(${139 + this.hue}, ${69 + this.hue}, 19, ${this.alpha})`;
+                ctx.lineWidth = this.width;
+                ctx.beginPath();
+                ctx.arc(this.cx, this.cy, this.radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            isDead() {
+                return this.radius > this.maxRadius || this.alpha < 0.01;
+            }
+        }
+
+        // Engine setup
+        const engine = new TR909Engine();
+        engine.setBpm(90);
+        engine.setSwing(0.25);
+        engine.setFlam(0.15);
+
+        // Ceremonial pattern - heavy on toms, sparse kick
+        const pattern = {
+            kick: [
+                { velocity: 1, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.7 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            ltom: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.8 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.9, accent: true },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }
+            ],
+            mtom: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.8 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 }, { velocity: 0.7 }
+            ],
+            htom: [
+                { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.7 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0.6 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.8, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            snare: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.9, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            rimshot: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.5 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.4 }
+            ],
+            crash: [
+                { velocity: 0.6 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ]
+        };
+
+        engine.setPattern('ritual', pattern);
+
+        // Tune for deep, resonant toms
+        engine.setVoiceParameter('kick', 'tune', -8);
+        engine.setVoiceParameter('kick', 'decay', 1);
+        engine.setVoiceParameter('ltom', 'tune', -5);
+        engine.setVoiceParameter('ltom', 'decay', 0.9);
+        engine.setVoiceParameter('mtom', 'tune', -2);
+        engine.setVoiceParameter('mtom', 'decay', 0.85);
+        engine.setVoiceParameter('htom', 'tune', 2);
+        engine.setVoiceParameter('htom', 'decay', 0.8);
+        engine.setVoiceParameter('snare', 'tone', 0.3);
+        engine.setVoiceParameter('snare', 'snap', 0.4);
+        engine.setVoiceParameter('crash', 'decay', 0.9);
+
+        // Track hits
+        const originalTrigger = engine.trigger.bind(engine);
+        engine.trigger = (voice, velocity) => {
+            originalTrigger(voice, velocity);
+            if (voice === 'kick' && velocity > 0) {
+                kickHit = velocity;
+                rings.push(new Ring(w/2, h/2));
+            }
+            if ((voice === 'ltom' || voice === 'mtom' || voice === 'htom') && velocity > 0) {
+                tomHit = Math.max(tomHit, velocity);
+                // Toms create off-center rings
+                const angle = Math.random() * Math.PI * 2;
+                const dist = 50 + Math.random() * 100;
+                rings.push(new Ring(w/2 + Math.cos(angle) * dist, h/2 + Math.sin(angle) * dist));
+            }
+            if ((voice === 'snare' || voice === 'crash') && velocity > 0) {
+                snareHit = velocity;
+                // Big central ring
+                for (let i = 0; i < 3; i++) {
+                    setTimeout(() => rings.push(new Ring(w/2, h/2)), i * 50);
+                }
+            }
+        };
+
+        engine.onStepChange = (step) => {
+            currentStep = step;
+        };
+
+        function animate() {
+            time += 0.016;
+
+            // Very slow fade - trails persist
+            ctx.fillStyle = 'rgba(10, 9, 8, 0.02)';
+            ctx.fillRect(0, 0, w, h);
+
+            // Update and draw rings
+            rings = rings.filter(ring => !ring.isDead());
+            rings.forEach(ring => {
+                ring.update();
+                ring.draw(ctx);
+            });
+
+            // Central glow on beats
+            const glowIntensity = kickHit * 0.5 + tomHit * 0.3;
+            if (glowIntensity > 0.1) {
+                const gradient = ctx.createRadialGradient(w/2, h/2, 0, w/2, h/2, 150 * glowIntensity);
+                gradient.addColorStop(0, `rgba(139, 69, 19, ${glowIntensity * 0.3})`);
+                gradient.addColorStop(0.5, `rgba(101, 67, 33, ${glowIntensity * 0.15})`);
+                gradient.addColorStop(1, 'rgba(10, 9, 8, 0)');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, w, h);
+            }
+
+            // Decay hits
+            kickHit *= 0.9;
+            tomHit *= 0.92;
+            snareHit *= 0.88;
+
+            requestAnimationFrame(animate);
+        }
+
+        const overlay = document.getElementById('start-overlay');
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            engine.startSequencer();
+            animate();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                engine.isPlaying() ? engine.stopSequencer() : engine.startSequencer();
+            }
+        });
+    </script>
+</body>
+</html>
