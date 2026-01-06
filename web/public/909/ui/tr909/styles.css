@@ -487,6 +487,9 @@ h1::before {
     0 4px 8px rgba(0,0,0,0.4),
     inset 0 1px 0 rgba(255,255,255,0.1);
   transition: box-shadow 0.15s;
+  touch-action: none; /* Essential for mobile knob dragging */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .knob:hover {
@@ -815,20 +818,20 @@ h1::before {
   }
 
   .knob {
-    width: 42px;
-    height: 42px;
+    width: 48px;
+    height: 48px;
   }
 
   .knob::before {
-    height: 13px;
+    height: 14px;
   }
 
   .knob-label {
-    font-size: 0.55rem;
+    font-size: 0.5rem;
   }
 
   .knob-value {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   /* Hide keyboard hints on mobile */

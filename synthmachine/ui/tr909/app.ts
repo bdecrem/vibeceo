@@ -168,14 +168,13 @@ let activeKnob: {
   descriptor: VoiceParameterDescriptor;
 } | null = null;
 
-function handleKnobMouseDown(
-  e: MouseEvent,
+function startKnobDrag(
+  clientY: number,
   knobEl: HTMLElement,
   voiceId: TR909VoiceId,
   param: VoiceParameterDescriptor,
   valueDisplay: HTMLElement
 ): void {
-  e.preventDefault();
   const min = param.range?.min ?? 0;
   const max = param.range?.max ?? 1;
   const step = param.range?.step ?? 0.01;
@@ -184,7 +183,7 @@ function handleKnobMouseDown(
 
   activeKnob = {
     element: knobEl,
-    startY: e.clientY,
+    startY: clientY,
     startValue: currentValue,
     min,
     max,
@@ -198,10 +197,34 @@ function handleKnobMouseDown(
   document.body.style.cursor = 'ns-resize';
 }
 
-function handleKnobMouseMove(e: MouseEvent): void {
+function handleKnobMouseDown(
+  e: MouseEvent,
+  knobEl: HTMLElement,
+  voiceId: TR909VoiceId,
+  param: VoiceParameterDescriptor,
+  valueDisplay: HTMLElement
+): void {
+  e.preventDefault();
+  startKnobDrag(e.clientY, knobEl, voiceId, param, valueDisplay);
+}
+
+function handleKnobTouchStart(
+  e: TouchEvent,
+  knobEl: HTMLElement,
+  voiceId: TR909VoiceId,
+  param: VoiceParameterDescriptor,
+  valueDisplay: HTMLElement
+): void {
+  e.preventDefault();
+  if (e.touches.length > 0) {
+    startKnobDrag(e.touches[0].clientY, knobEl, voiceId, param, valueDisplay);
+  }
+}
+
+function updateKnobFromDrag(clientY: number): void {
   if (!activeKnob) return;
 
-  const deltaY = activeKnob.startY - e.clientY;
+  const deltaY = activeKnob.startY - clientY;
   const range = activeKnob.max - activeKnob.min;
   const sensitivity = range / 150; // 150px drag = full range
   let newValue = activeKnob.startValue + deltaY * sensitivity;
@@ -220,16 +243,29 @@ function handleKnobMouseMove(e: MouseEvent): void {
   activeKnob.valueDisplay.textContent = formatParamValue(newValue, activeKnob.descriptor);
 }
 
-function handleKnobMouseUp(): void {
+function handleKnobMouseMove(e: MouseEvent): void {
+  updateKnobFromDrag(e.clientY);
+}
+
+function handleKnobTouchMove(e: TouchEvent): void {
+  if (activeKnob && e.touches.length > 0) {
+    e.preventDefault(); // Prevent scrolling while dragging knob
+    updateKnobFromDrag(e.touches[0].clientY);
+  }
+}
+
+function handleKnobEnd(): void {
   if (activeKnob) {
     activeKnob = null;
     document.body.style.cursor = '';
   }
 }
 
-// Set up global mouse handlers for knob dragging
+// Set up global mouse/touch handlers for knob dragging
 document.addEventListener('mousemove', handleKnobMouseMove);
-document.addEventListener('mouseup', handleKnobMouseUp);
+document.addEventListener('mouseup', handleKnobEnd);
+document.addEventListener('touchmove', handleKnobTouchMove, { passive: false });
+document.addEventListener('touchend', handleKnobEnd);
 
 function renderVoiceParams(): void {
   const container = document.getElementById('voice-params');
@@ -322,12 +358,15 @@ function renderVoiceParams(): void {
       valueDisplay.className = 'knob-value';
       valueDisplay.textContent = formatParamValue(param.defaultValue, param);
 
-      // Knob interaction
+      // Knob interaction - mouse and touch
       knob.addEventListener('mousedown', (e) => {
         handleKnobMouseDown(e, knob, voice.id, param, valueDisplay);
       });
+      knob.addEventListener('touchstart', (e) => {
+        handleKnobTouchStart(e, knob, voice.id, param, valueDisplay);
+      }, { passive: false });
 
-      // Double-click to reset
+      // Double-click/tap to reset
       knob.addEventListener('dblclick', () => {
         const rotation = valueToRotation(
           param.defaultValue,
