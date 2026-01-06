@@ -38,9 +38,21 @@ async function getExclusions(): Promise<Set<string>> {
   }
 }
 
+// Load manifest with git-based creation dates (survives deployments)
+async function getManifest(): Promise<Record<string, string>> {
+  const manifestPath = path.join(process.cwd(), 'public', 'amber', '.drawer-manifest.json');
+  try {
+    const content = await fs.readFile(manifestPath, 'utf-8');
+    return JSON.parse(content);
+  } catch {
+    return {};
+  }
+}
+
 async function getArtifacts(): Promise<Artifact[]> {
   const artifacts: Artifact[] = [];
   const exclusions = await getExclusions();
+  const manifest = await getManifest();
 
   // 1. Scan public/amber/ for static HTML files and images
   const publicAmberPath = path.join(process.cwd(), 'public', 'amber');
@@ -63,6 +75,9 @@ async function getArtifacts(): Promise<Artifact[]> {
       const filePath = path.join(publicAmberPath, name);
       const stats = await fs.stat(filePath);
 
+      // Use manifest date if available, otherwise fall back to file stats
+      const createdAt = manifest[name] || stats.birthtime.toISOString();
+
       if (ext === '.html') {
         // Parse title from HTML
         const content = await fs.readFile(filePath, 'utf-8');
@@ -74,7 +89,7 @@ async function getArtifacts(): Promise<Artifact[]> {
           title,
           type: 'app',
           url: `/amber/${name}`,
-          modifiedAt: stats.birthtime.toISOString(),
+          modifiedAt: createdAt,
         });
       } else if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
         artifacts.push({
@@ -82,7 +97,7 @@ async function getArtifacts(): Promise<Artifact[]> {
           title: prettifyFilename(name),
           type: 'image',
           url: `/amber/${name}`,
-          modifiedAt: stats.birthtime.toISOString(),
+          modifiedAt: createdAt,
         });
       }
     }
