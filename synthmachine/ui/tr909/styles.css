@@ -57,6 +57,24 @@ h1 {
   font-size: 1rem;
 }
 
+.controls select {
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  border: 1px solid #bbb;
+  font-size: 0.9rem;
+  background: #fff;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #444;
+}
+
 #status {
   min-height: 1.5rem;
   color: #4a4d56;

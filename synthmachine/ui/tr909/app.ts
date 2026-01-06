@@ -3,6 +3,7 @@ import {
   type TR909VoiceId,
   TR909Engine,
 } from '../../machines/tr909/engine.js';
+import { TR909_PRESETS, type PresetPattern } from '../../machines/tr909/presets.js';
 
 const STEPS = 16;
 const pattern: Pattern = {};
@@ -198,11 +199,98 @@ function renderVoiceParams(): void {
   });
 }
 
+function loadPreset(preset: PresetPattern): void {
+  // Copy preset pattern into our mutable pattern object
+  VOICES.forEach((voice) => {
+    const presetTrack = preset.pattern[voice.id];
+    const track = ensureTrack(voice.id);
+
+    if (presetTrack && Array.isArray(presetTrack)) {
+      for (let i = 0; i < STEPS; i++) {
+        const step = presetTrack[i];
+        if (step) {
+          track[i] = { ...step };
+        } else {
+          track[i] = { velocity: 0, accent: false };
+        }
+      }
+    } else {
+      // Clear track if not in preset
+      for (let i = 0; i < STEPS; i++) {
+        track[i] = { velocity: 0, accent: false };
+      }
+    }
+  });
+
+  commitPattern();
+}
+
+function refreshGrid(): void {
+  // Update all step buttons to reflect current pattern
+  const container = document.getElementById('sequencer');
+  if (!container) return;
+
+  VOICES.forEach((voice) => {
+    const track = pattern[voice.id];
+    if (!track) return;
+
+    const row = container.querySelector(`[data-voice-id="${voice.id}"]`);
+    if (!row) return;
+
+    const buttons = row.querySelectorAll('.step');
+    buttons.forEach((btn, i) => {
+      const step = track[i];
+      if (step && btn instanceof HTMLButtonElement) {
+        updateStepButton(btn, step.velocity);
+      }
+    });
+  });
+}
+
+function populatePresets(): void {
+  const presetSelect = document.getElementById('preset') as HTMLSelectElement | null;
+  if (!presetSelect) return;
+
+  TR909_PRESETS.forEach((preset) => {
+    const option = document.createElement('option');
+    option.value = preset.id;
+    option.textContent = `${preset.name} (${preset.bpm} BPM)`;
+    presetSelect.appendChild(option);
+  });
+}
+
 function setupControls(): void {
   const startBtn = document.getElementById('start');
   const stopBtn = document.getElementById('stop');
   const bpmInput = document.getElementById('bpm') as HTMLInputElement | null;
   const exportBtn = document.getElementById('export');
+  const presetSelect = document.getElementById('preset') as HTMLSelectElement | null;
+
+  // Populate preset dropdown
+  populatePresets();
+
+  // Handle preset selection
+  presetSelect?.addEventListener('change', () => {
+    const presetId = presetSelect.value;
+    if (!presetId) {
+      setStatus('Custom pattern mode');
+      return;
+    }
+
+    const preset = TR909_PRESETS.find(p => p.id === presetId);
+    if (preset) {
+      loadPreset(preset);
+      refreshGrid();
+
+      // Update BPM to match preset
+      if (bpmInput) {
+        bpmInput.value = String(preset.bpm);
+        engine.setBpm(preset.bpm);
+      }
+
+      setStatus(`Loaded "${preset.name}" — ${preset.description}`);
+    }
+  });
 
   startBtn?.addEventListener('click', () => {
     engine.startSequencer();
@@ -219,6 +307,11 @@ function setupControls(): void {
     if (!Number.isNaN(bpm) && bpm > 0) {
       engine.setBpm(bpm);
       setStatus(`Tempo set to ${bpm} BPM`);
+
+      // Clear preset selection when BPM is manually changed
+      if (presetSelect) {
+        presetSelect.value = '';
+      }
     }
   });
 
