@@ -365,14 +365,42 @@ async function storePendingApproval(
 }
 
 /**
+ * Extract the user's reply, stripping quoted text from email replies.
+ * Email clients add quoted text with patterns like "On Jan 5, X wrote:" or lines starting with ">"
+ */
+function extractReplyText(body: string): string {
+  // Split on common quote markers and take the first part (user's actual reply)
+  const quoteMarkers = [
+    /^On .+ wrote:$/im,           // "On Jan 5, Amber wrote:"
+    /^-{3,}$/m,                   // "---" separator
+    /^_{3,}$/m,                   // "___" separator
+    /^From: .+$/im,               // "From: Amber"
+    /^>.+$/m,                     // "> quoted text"
+    /^Sent from my /im,           // "Sent from my iPhone"
+  ];
+
+  let replyText = body;
+  for (const marker of quoteMarkers) {
+    const match = replyText.match(marker);
+    if (match && match.index !== undefined) {
+      replyText = replyText.slice(0, match.index);
+    }
+  }
+  return replyText.trim();
+}
+
+/**
  * Check if this is an approval/denial from admin
  */
 async function handleApprovalResponse(body: string): Promise<{ handled: boolean; message?: string }> {
+  // Extract just the user's reply, ignoring quoted text that may contain "approve"/"deny"
+  const replyText = extractReplyText(body);
+
   // Support both "approve" / "deny" (simple) and "approve approval-123" (with ID)
-  const approveWithIdMatch = body.match(/approve\s+(approval-\d+)/i);
-  const denyWithIdMatch = body.match(/deny\s+(approval-\d+)/i);
-  const simpleApproveMatch = /\bapprove\b/i.test(body) && !approveWithIdMatch;
-  const simpleDenyMatch = /\bdeny\b/i.test(body) && !denyWithIdMatch;
+  const approveWithIdMatch = replyText.match(/approve\s+(approval-\d+)/i);
+  const denyWithIdMatch = replyText.match(/deny\s+(approval-\d+)/i);
+  const simpleApproveMatch = /\bapprove\b/i.test(replyText) && !approveWithIdMatch;
+  const simpleDenyMatch = /\bdeny\b/i.test(replyText) && !denyWithIdMatch;
 
   if (!approveWithIdMatch && !denyWithIdMatch && !simpleApproveMatch && !simpleDenyMatch) {
     return { handled: false };
