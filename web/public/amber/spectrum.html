@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPECTRUM — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="SPECTRUM — Frequency Architecture">
+    <meta property="og:description" content="Audio waveforms crystallizing into thought patterns. An interactive visualization by Amber.">
+    <meta property="og:image" content="https://kochi.to/amber/spectrum-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/spectrum.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SPECTRUM — Frequency Architecture">
+    <meta name="twitter:description" content="Audio waveforms crystallizing into thought patterns. An interactive visualization by Amber.">
+    <meta name="twitter:image" content="https://kochi.to/amber/spectrum-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            display: flex;
+            gap: 15px;
+            flex-direction: column;
+        }
+
+        button {
+background: rgba(212, 165, 116, 0.1);
+            border: 1px solid #D4A574;
+            color: #D4A574;
+            padding: 12px 20px;
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        button:hover {
+            background: rgba(212, 165, 116, 0.2);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+
+        button.active {
+            background: rgba(212, 165, 116, 0.3);
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            text-align: right;
+            line-height: 1.6;
+            opacity: 0.6;
+            letter-spacing: 0.5px;
+        }
+
+        #title {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 72px;
+            letter-spacing: 8px;
+            opacity: 0.1;
+            pointer-events: none;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body>
+    <div id="title">SPECTRUM</div>
+    <canvas id="canvas"></canvas>
+    
+    <div id="controls">
+        <button id="micBtn">MICROPHONE</button>
+        <button id="toneBtn">GENERATE TONE</button>
+        <button id="noiseBtn">WHITE NOISE</button>
+    </div>
+
+    <div id="info">
+        SPECTRUM<br>
+        Frequency → Form<br>
+        — Amber
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let audioContext;
+        let analyser;
+        let dataArray;
+        let bufferLength;
+        let source;
+        let animationId;
+
+        const colors = {
+            amber: '#D4A574',
+            gold: '#FFD700',
+            teal: '#2D9596',
+            violet: '#7B68EE',
+            black: '#000000'
+        };
+
+        async function initAudio() {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            analyser = audioContext.createAnalyser();
+            analyser.fftSize = 512;
+            bufferLength = analyser.frequencyBinCount;
+            dataArray = new Uint8Array(bufferLength);
+        }
+
+        async function startMicrophone() {
+            if (!audioContext) await initAudio();
+            
+            if (source) source.disconnect();
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                source = audioContext.createMediaStreamSource(stream);
+                source.connect(analyser);
+                
+                document.getElementById('micBtn').classList.add('active');
+                document.getElementById('toneBtn').classList.remove('active');
+                document.getElementById('noiseBtn').classList.remove('active');
+                
+                if (!animationId) draw();
+            } catch (err) {
+                console.error('Microphone access denied:', err);
+            }
+        }
+
+        async function generateTone() {
+            if (!audioContext) await initAudio();
+            
+            if (source) source.disconnect();
+            
+            // Create multiple oscillators for richer sound
+            const osc1 = audioContext.createOscillator();
+            const osc2 = audioContext.createOscillator();
+            const osc3 = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc1.type = 'sine';
+            osc2.type = 'sine';
+            osc3.type = 'sine';
+            
+            // Create evolving frequencies
+            osc1.frequency.setValueAtTime(220, audioContext.currentTime);
+            osc2.frequency.setValueAtTime(330, audioContext.currentTime);
+            osc3.frequency.setValueAtTime(440, audioContext.currentTime);
+            
+            // Modulate over time
+            osc1.frequency.linearRampToValueAtTime(440, audioContext.currentTime + 4);
+            osc2.frequency.linearRampToValueAtTime(550, audioContext.currentTime + 4);
+            osc3.frequency.linearRampToValueAtTime(660, audioContext.currentTime + 4);
+            
+            gain.gain.setValueAtTime(0.1, audioContext.currentTime);
+            
+            osc1.connect(gain);
+            osc2.connect(gain);
+            osc3.connect(gain);
+            gain.connect(analyser);
+            gain.connect(audioContext.destination);
+            
+            osc1.start();
+            osc2.start();
+            osc3.start();
+            
+            source = { disconnect: () => { osc1.stop(); osc2.stop(); osc3.stop(); } };
+            
+            document.getElementById('toneBtn').classList.add('active');
+            document.getElementById('micBtn').classList.remove('active');
+            document.getElementById('noiseBtn').classList.remove('active');
+            
+            if (!animationId) draw();
+        }
+
+        async function generateNoise() {
+            if (!audioContext) await initAudio();
+            
+            if (source) source.disconnect();
+            
+            const bufferSize = 2 * audioContext.sampleRate;
+            const noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            
+            source = audioContext.createBufferSource();
+            source.buffer = noiseBuffer;
+            source.loop = true;
+            
+            const gain = audioContext.createGain();
+            gain.gain.value = 0.1;
+            
+            source.connect(gain);
+            gain.connect(analyser);
+            gain.connect(audioContext.destination);
+            
+            source.start(0);
+            
+            document.getElementById('noiseBtn').classList.add('active');
+            document.getElementById('micBtn').classList.remove('active');
+            document.getElementById('toneBtn').classList.remove('active');
+            
+            if (!animationId) draw();
+        }
+
+        function draw() {
+            animationId = requestAnimationFrame(draw);
+            
+            analyser.getByteFrequencyData(dataArray);
+            
+            // Fade previous frame for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Draw frequency spectrum as radial architecture
+            const segments = bufferLength;
+            const angleStep = (Math.PI * 2) / segments;
+            
+            for (let i = 0; i < segments; i++) {
+                const value = dataArray[i];
+                const normalized = value / 255;
+                const angle = i * angleStep;
+                
+                // Inner radius based on frequency
+                const innerRadius = 50 + (i / segments) * 100;
+                const outerRadius = innerRadius + normalized * 300;
+                
+                // Color shifts through spectrum
+                const hue = (i / segments) * 60; // 0-60 for amber/gold range
+                const alpha = 0.3 + normalized * 0.7;
+                
+                // Calculate positions
+                const x1 = centerX + Math.cos(angle) * innerRadius;
+                const y1 = centerY + Math.sin(angle) * innerRadius;
+                const x2 = centerX + Math.cos(angle) * outerRadius;
+                const y2 = centerY + Math.sin(angle) * outerRadius;
+
+                // Draw line
+                ctx.beginPath();
+                ctx.strokeStyle = `hsla(${35 + hue}, 60%, ${50 + normalized * 30}%, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+                
+                // Add glowing tips for high frequencies
+                if (normalized > 0.7) {
+                    ctx.beginPath();
+                    ctx.fillStyle = colors.gold;
+                    ctx.arc(x2, y2, 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Glow
+                    ctx.shadowBlur = 20;
+                    ctx.shadowColor = colors.amber;
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+            }
+            
+            // Draw central core
+            const avgFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+            const coreRadius = 30 + (avgFrequency / 255) * 50;
+            
+            const gradient = ctx.createRadialGradient(centerX, centerY, 0, centerX, centerY, coreRadius);
+            gradient.addColorStop(0, colors.gold);
+            gradient.addColorStop(0.5, colors.amber);
+            gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            
+            ctx.beginPath();
+            ctx.fillStyle = gradient;
+            ctx.arc(centerX, centerY, coreRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add teal accent rings at specific frequency bands
+            const bassAvg = dataArray.slice(0, 10).reduce((a, b) => a + b, 0) / 10;
+            const midAvg = dataArray.slice(40, 60).reduce((a, b) => a + b, 0) / 20;
+            
+            if (bassAvg > 100) {
+                ctx.beginPath();
+                ctx.strokeStyle = colors.teal;
+                ctx.lineWidth = 2;
+                ctx.arc(centerX, centerY, 200 + (bassAvg / 255) * 50, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            
+            if (midAvg > 120) {
+                ctx.beginPath();
+                ctx.strokeStyle = colors.violet;
+                ctx.lineWidth = 1;
+                ctx.arc(centerX, centerY, 350 + (midAvg / 255) * 50, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // Event listeners
+        document.getElementById('micBtn').addEventListener('click', startMicrophone);
+        document.getElementById('toneBtn').addEventListener('click', generateTone);
+        document.getElementById('noiseBtn').addEventListener('click', generateNoise);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
