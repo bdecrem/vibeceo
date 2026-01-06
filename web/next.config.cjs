@@ -13,17 +13,13 @@ const nextConfig = {
   trailingSlash: true,
   // Rewrites for static HTML apps in public/
   async rewrites() {
-    return [
-      // TR-909 drum machine UI
-      {
-        source: '/909/ui/tr909',
-        destination: '/909/ui/tr909/index.html',
-      },
-      {
-        source: '/909/ui/tr909/',
-        destination: '/909/ui/tr909/index.html',
-      },
-    ]
+    return {
+      beforeFiles: [
+        // TR-909 drum machine UI
+        { source: '/909/ui/tr909', destination: '/909/ui/tr909/index.html' },
+        { source: '/909', destination: '/909/ui/tr909/index.html' },
+      ],
+    }
   },
 }
 

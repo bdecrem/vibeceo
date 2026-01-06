@@ -220,12 +220,10 @@ export function middleware(request: NextRequest) {
 
   // Handle intheamber.com domain (Amber's blog)
   if (isInTheAmberDomain) {
+    // Only bypass Next.js internals - everything else gets /amber prefix
     if (
       pathname.startsWith('/_next/') ||
-      pathname.startsWith('/api/') ||
-      pathname.startsWith('/images/') ||
-      pathname.startsWith('/favicon') ||
-      pathname.includes('.')
+      pathname.startsWith('/api/')
     ) {
       return NextResponse.next()
     }
@@ -237,7 +235,7 @@ export function middleware(request: NextRequest) {
       return NextResponse.rewrite(newUrl)
     }
 
-    // All other paths → /amber/*
+    // All other paths → /amber/* (including static files like .html, .js, .css)
     const newUrl = new URL(`/amber${pathname}`, request.url)
     log(`[Middleware] intheamber.com rewrite ${pathname} -> ${newUrl.pathname}`)
     return NextResponse.rewrite(newUrl)
