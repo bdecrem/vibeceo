@@ -42,13 +42,12 @@ async function loadAmberCreativeContext(): Promise<string> {
       .limit(1)
       .single();
 
-    // Load recent creations with their prompts
+    // Load ALL creations with their prompts (gives Amber full portfolio awareness)
     const { data: creationsData } = await supabase
       .from('amber_state')
       .select('content, metadata')
       .eq('type', 'creation')
-      .order('created_at', { ascending: false })
-      .limit(10);
+      .order('created_at', { ascending: false });
 
     // Load recent log entries for context
     const { data: logData } = await supabase
