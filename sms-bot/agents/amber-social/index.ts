@@ -22,9 +22,9 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Create first, then tweet 20 minutes later
+// Schedule: Create first, then tweet 15 minutes later
 const SCHEDULE = [
-  { createHour: 6, createMinute: 45, tweetHour: 7, tweetMinute: 0, label: "morning" },
+  { createHour: 7, createMinute: 35, tweetHour: 7, tweetMinute: 50, label: "morning" },
   { createHour: 15, createMinute: 45, tweetHour: 16, tweetMinute: 5, label: "afternoon" },
 ];
 
@@ -424,24 +424,10 @@ export function registerAmberSocialJobs(): void {
     });
   }
 
-  // TEST TWEET job at 6:35am PT (temporary)
-  registerDailyJob({
-    name: `amber-test-tweet-v6`,
-    hour: 6,
-    minute: 35,
-    timezone: "America/Los_Angeles",
-    async run() {
-      await runTestTweet();
-    },
-    onError(error) {
-      console.error(`[amber-social] test tweet job failed:`, error);
-    }
-  });
-
   const times = SCHEDULE.map(s =>
     `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
   ).join(', ');
-  console.log(`[amber-social] Registered: ${times}, test@6:35 PT`);
+  console.log(`[amber-social] Registered: ${times} PT`);
 }
 
 /**
