@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SOLDER - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+    <!-- OpenGraph -->
+    <meta property="og:title" content="SOLDER">
+    <meta property="og:description" content="909 minimal. Infinite loop.">
+    <meta property="og:image" content="https://kochi.to/amber/solder/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/solder/">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SOLDER">
+    <meta name="twitter:description" content="909 minimal. Infinite loop.">
+    <meta name="twitter:image" content="https://kochi.to/amber/solder/og.png">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #0A0908;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #start-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #0A0908;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: opacity 0.5s ease;
+        }
+
+        #start-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .title {
+            color: #D4A574;
+            font-size: 4rem;
+            letter-spacing: 0.5em;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+        }
+
+        .subtitle {
+            color: #B8860B;
+            font-size: 1rem;
+            letter-spacing: 0.3em;
+            opacity: 0.7;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: #D4A574;
+            font-size: 0.75rem;
+            opacity: 0.4;
+            letter-spacing: 0.1em;
+            z-index: 10;
+        }
+
+        #bpm {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: #B8860B;
+            font-size: 0.875rem;
+            opacity: 0.6;
+            letter-spacing: 0.2em;
+            z-index: 10;
+        }
+
+        #steps {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .step {
+            width: 8px;
+            height: 8px;
+            background: #1a1512;
+            border-radius: 50%;
+            transition: all 0.05s ease;
+        }
+
+        .step.active {
+            background: #D4A574;
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.8);
+        }
+
+        .step.beat {
+            background: #B8860B;
+            box-shadow: 0 0 15px rgba(184, 134, 11, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="start-overlay">
+        <div class="title">SOLDER</div>
+        <div class="subtitle">click to ignite</div>
+    </div>
+
+    <div id="info">AMBER / 2026</div>
+    <div id="bpm">128 BPM</div>
+    <div id="steps"></div>
+
+    <script type="module">
+        import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+        import { getPreset } from '/909/dist/machines/tr909/presets.js';
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width = window.innerWidth * window.devicePixelRatio;
+            canvas.height = window.innerHeight * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Colors
+        const AMBER = { r: 212, g: 165, b: 116 };
+        const GOLD = { r: 184, g: 134, b: 11 };
+        const DARK = { r: 10, g: 9, b: 8 };
+
+        // Ember particles
+        class Ember {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.baseY = y;
+                this.vx = (Math.random() - 0.5) * 0.5;
+                this.vy = -Math.random() * 0.3;
+                this.size = Math.random() * 3 + 1;
+                this.baseSize = this.size;
+                this.life = 1;
+                this.decay = 0.0005 + Math.random() * 0.001;
+                this.pulse = 0;
+                this.heat = Math.random();
+                this.flickerSpeed = Math.random() * 0.1 + 0.05;
+                this.flickerOffset = Math.random() * Math.PI * 2;
+            }
+
+            update(kick, snare, hat) {
+                // Pulse response
+                if (kick > 0) {
+                    this.pulse = kick * 2;
+                    this.vy -= kick * 2;
+                    this.heat = Math.min(1, this.heat + kick * 0.5);
+                }
+                if (snare > 0) {
+                    this.vx += (Math.random() - 0.5) * snare * 3;
+                    this.vy -= snare * 1.5;
+                }
+                if (hat > 0) {
+                    this.heat = Math.min(1, this.heat + hat * 0.2);
+                }
+
+                // Physics
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.02; // gravity
+                this.vx *= 0.99; // drag
+
+                // Return to base
+                this.y += (this.baseY - this.y) * 0.01;
+
+                // Pulse decay
+                this.pulse *= 0.9;
+                this.heat *= 0.995;
+
+                // Flicker
+                const flicker = Math.sin(Date.now() * this.flickerSpeed + this.flickerOffset) * 0.3 + 0.7;
+                this.size = this.baseSize * (1 + this.pulse) * flicker;
+
+                this.life -= this.decay;
+            }
+
+            draw(ctx) {
+                const alpha = this.life * (0.3 + this.heat * 0.7);
+                const t = this.heat;
+
+                // Interpolate between amber and gold based on heat
+                const r = Math.floor(AMBER.r + (GOLD.r - AMBER.r) * t);
+                const g = Math.floor(AMBER.g + (GOLD.g - AMBER.g) * t);
+                const b = Math.floor(AMBER.b + (GOLD.b - AMBER.b) * t);
+
+                // Glow
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 3
+                );
+                gradient.addColorStop(0, `rgba(${r}, ${g}, ${b}, ${alpha})`);
+                gradient.addColorStop(0.5, `rgba(${r}, ${g}, ${b}, ${alpha * 0.3})`);
+                gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fillStyle = gradient;
+                ctx.fill();
+
+                // Core
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${r + 40}, ${g + 40}, ${b + 40}, ${alpha})`;
+                ctx.fill();
+            }
+        }
+
+        // Particle system
+        let embers = [];
+        const maxEmbers = 200;
+
+        function spawnEmbers(count, centerX, centerY, spread) {
+            for (let i = 0; i < count; i++) {
+                const x = centerX + (Math.random() - 0.5) * spread;
+                const y = centerY + (Math.random() - 0.5) * spread * 0.5;
+                embers.push(new Ember(x, y));
+            }
+            // Cull old embers
+            while (embers.length > maxEmbers) {
+                embers.shift();
+            }
+        }
+
+        // Initialize ember bed
+        function initEmbers() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+            for (let i = 0; i < 100; i++) {
+                const x = w * 0.2 + Math.random() * w * 0.6;
+                const y = h * 0.6 + Math.random() * h * 0.3;
+                embers.push(new Ember(x, y));
+            }
+        }
+
+        // Beat state
+        let kickHit = 0;
+        let snareHit = 0;
+        let hatHit = 0;
+        let currentStep = -1;
+
+        // Step indicators
+        const stepsContainer = document.getElementById('steps');
+        for (let i = 0; i < 16; i++) {
+            const step = document.createElement('div');
+            step.className = 'step';
+            stepsContainer.appendChild(step);
+        }
+        const stepEls = stepsContainer.querySelectorAll('.step');
+
+        // Engine setup
+        const engine = new TR909Engine();
+
+        // Custom pattern: minimal evolving
+        const pattern = {
+            kick: [
+                { velocity: 1, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 },
+                { velocity: 0.8 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            snare: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 1, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 1 }, { velocity: 0 }, { velocity: 0.4 }, { velocity: 0 }
+            ],
+            ch: [
+                { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 },
+                { velocity: 0.6 }, { velocity: 0.4 }, { velocity: 0.7 }, { velocity: 0.4 }
+            ],
+            oh: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0.6 }
+            ],
+            clap: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.9, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0.9 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ],
+            rimshot: [
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+                { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+            ]
+        };
+
+        engine.setPattern('ember', pattern);
+        engine.setBpm(128);
+        engine.setSwing(0.15);
+
+        // Tune the voices for that deep, warm sound
+        engine.setVoiceParameter('kick', 'tune', -3);
+        engine.setVoiceParameter('kick', 'decay', 0.7);
+        engine.setVoiceParameter('snare', 'tone', 0.4);
+        engine.setVoiceParameter('snare', 'snap', 0.5);
+        engine.setVoiceParameter('ch', 'decay', 0.2);
+        engine.setVoiceParameter('oh', 'decay', 0.4);
+        engine.setVoiceParameter('clap', 'decay', 0.5);
+
+        // Track hits for visualization
+        const originalTrigger = engine.trigger.bind(engine);
+        engine.trigger = (voice, velocity) => {
+            originalTrigger(voice, velocity);
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            if (voice === 'kick' && velocity > 0) {
+                kickHit = velocity;
+                spawnEmbers(5, w/2, h * 0.7, w * 0.3);
+            }
+            if ((voice === 'snare' || voice === 'clap') && velocity > 0) {
+                snareHit = velocity;
+                spawnEmbers(8, w/2, h * 0.65, w * 0.5);
+            }
+            if ((voice === 'ch' || voice === 'oh') && velocity > 0) {
+                hatHit = velocity;
+            }
+        };
+
+        // Step callback
+        engine.onStepChange = (step) => {
+            currentStep = step;
+            stepEls.forEach((el, i) => {
+                el.classList.remove('active', 'beat');
+                if (i === step) {
+                    el.classList.add('active');
+                    if (step % 4 === 0) el.classList.add('beat');
+                }
+            });
+        };
+
+        // Animation loop
+        function animate() {
+            const w = window.innerWidth;
+            const h = window.innerHeight;
+
+            // Fade trail
+            ctx.fillStyle = 'rgba(10, 9, 8, 0.15)';
+            ctx.fillRect(0, 0, w, h);
+
+            // Update and draw embers
+            embers = embers.filter(e => e.life > 0);
+            embers.forEach(ember => {
+                ember.update(kickHit, snareHit, hatHit);
+                ember.draw(ctx);
+            });
+
+            // Decay hits
+            kickHit *= 0.8;
+            snareHit *= 0.8;
+            hatHit *= 0.8;
+
+            // Slowly spawn new embers
+            if (Math.random() < 0.02 && embers.length < maxEmbers) {
+                const x = w * 0.2 + Math.random() * w * 0.6;
+                const y = h * 0.6 + Math.random() * h * 0.3;
+                embers.push(new Ember(x, y));
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start
+        const overlay = document.getElementById('start-overlay');
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            initEmbers();
+            engine.startSequencer();
+            animate();
+        });
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (engine.isPlaying()) {
+                    engine.stopSequencer();
+                } else {
+                    engine.startSequencer();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

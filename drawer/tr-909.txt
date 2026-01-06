@@ -1,0 +1,143 @@
+ TR-909 Drum Machine - Available for Your Tracks
+
+  You now have a full TR-909 drum machine at your disposal for creating web audio techno tracks.
+
+  Where It Lives
+
+  - Full UI (for reference): https://kochi.to/909/ui/tr909/
+  - Engine for imports: /909/dist/machines/tr909/engine.js
+  - Presets: /909/dist/machines/tr909/presets.js
+
+  How to Use in Your Tracks
+
+  Create your track at web/public/amber/[track-name]/index.html:
+
+  <!DOCTYPE html>
+  <html lang="en">
+  <head>
+      <meta charset="UTF-8">
+      <title>Your Track - Amber</title>
+      <!-- Add your OG tags -->
+  </head>
+  <body>
+      <script type="module">
+      import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+      import { getPreset, TR909_PRESETS } from '/909/dist/machines/tr909/presets.js';
+
+      const engine = new TR909Engine();
+
+      // Option 1: Use a preset
+      const preset = getPreset('techno-basic');
+      engine.setPattern('track', preset.pattern);
+      engine.setBpm(preset.bpm);
+
+      // Option 2: Custom pattern (see below)
+
+      // Start playback
+      engine.startSequencer();
+      </script>
+  </body>
+  </html>
+
+  Available Presets
+
+  - techno-basic - Four-on-floor with offbeat hats (130 BPM)
+  - detroit-shuffle - Syncopated Detroit groove with rim shots (125 BPM)
+  - house-classic - Chicago house with open hats on upbeats (122 BPM)
+  - breakbeat - Syncopated kick and snare (135 BPM)
+  - minimal - Sparse, accent-driven (128 BPM)
+  - acid-house - Driving acid with tom accents (126 BPM)
+  - electro-funk - Funky electro with snare rolls (115 BPM)
+  - industrial - Relentless stomp (140 BPM)
+
+  Available Voices (11 total)
+
+  | Voice ID | Name          |
+  |----------|---------------|
+  | kick     | Bass Drum     |
+  | snare    | Snare         |
+  | clap     | Clap          |
+  | rimshot  | Rim Shot      |
+  | ltom     | Low Tom       |
+  | mtom     | Mid Tom       |
+  | htom     | High Tom      |
+  | ch       | Closed Hi-Hat |
+  | oh       | Open Hi-Hat   |
+  | crash    | Crash Cymbal  |
+  | ride     | Ride Cymbal   |
+
+  Engine Controls
+
+  // Tempo
+  engine.setBpm(128);
+
+  // Swing (0-1, adds groove to off-beats)
+  engine.setSwing(0.3);
+
+  // Flam (0-1, ghost note before hits)
+  engine.setFlam(0.2);
+
+  // Start/Stop
+  engine.startSequencer();
+  engine.stopSequencer();
+
+  // Trigger single voice manually
+  engine.trigger('kick', 1.0);  // velocity 0-1
+
+  // Check state
+  engine.isPlaying();
+  engine.getCurrentStep();  // 0-15
+
+  Custom Patterns
+
+  Each voice has 16 steps. Each step has velocity (0-1) and optional accent (boolean):
+
+  const myPattern = {
+      kick: [
+          { velocity: 1, accent: true },  // step 0 - accented
+          { velocity: 0 },                 // step 1 - off
+          { velocity: 0 },                 // step 2
+          { velocity: 0 },                 // step 3
+          { velocity: 0.7 },               // step 4 - normal hit
+          // ... continue for all 16 steps
+      ],
+      snare: [ /* 16 steps */ ],
+      ch: [ /* 16 steps */ ],
+      // etc.
+  };
+
+  engine.setPattern('mytrack', myPattern);
+
+  Voice Parameter Tuning
+
+  Each voice has tunable parameters:
+
+  // Get available parameters for a voice
+  const descriptors = engine.getVoiceParameterDescriptors();
+  console.log(descriptors.kick);  // Shows: tune, decay, attack, accent, etc.
+
+  // Set a parameter
+  engine.setVoiceParameter('kick', 'tune', -5);      // Tune down
+  engine.setVoiceParameter('kick', 'decay', 0.8);    // Longer decay
+  engine.setVoiceParameter('snare', 'snap', 0.6);    // More snap
+  engine.setVoiceParameter('oh', 'decay', 0.5);      // Shorter open hat
+
+  Step Change Callback (for visualizations)
+
+  engine.onStepChange = (step) => {
+      // step is 0-15 during playback, -1 when stopped
+      updateVisualization(step);
+  };
+
+  Hi-Hat Choke
+
+  Closed hi-hat automatically cuts off open hi-hat (authentic 909 behavior).
+
+  ---
+  Your workflow:
+  1. Create HTML at web/public/amber/[name]/index.html
+  2. Import engine, set up pattern (preset or custom)
+  3. Add your visualization/UI
+  4. Add OG tags for social sharing
+  5. Generate OG screenshot
+  6. Commit, push, tweet

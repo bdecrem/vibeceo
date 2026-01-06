@@ -8,7 +8,11 @@
 		"downlevelIteration": true,
 		"outDir": "./dist",
 		"strict": false,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"paths": {
+			"@synthmachine/*": ["../synthmachine/*"]
+		},
+		"baseUrl": "."
 	},
 	"include": [
 		"src/**/*",
@@ -18,7 +22,9 @@
 		"engine/**/*",
 		"commands/**/*",
 		"agents/**/*",
-		"test-wtaf-production.ts"
+		"test-wtaf-production.ts",
+		"../synthmachine/core/**/*",
+		"../synthmachine/machines/**/*"
 	],
 	"exclude": ["node_modules", "scripts/archives"]
 }
