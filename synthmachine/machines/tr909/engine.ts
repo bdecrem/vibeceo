@@ -19,6 +19,7 @@ import {
   SampleLibrary,
   type SampleManifestEntry,
   createDefaultTr909SampleLibrary,
+  DEFAULT_909_SAMPLE_MANIFEST,
 } from './samples/library.js';
 
 export type TR909VoiceId =
@@ -122,6 +123,15 @@ export class TR909Engine extends SynthEngine {
       return;
     }
     await this.sampleLibrary.loadFromManifest(this.context, manifest);
+  }
+
+  /**
+   * Load real 909 samples (hi-hats and cymbals) from the default location.
+   * This replaces the synthesized versions with authentic samples from a real TR-909.
+   * Call this before starting playback if you want the real samples.
+   */
+  async loadRealSamples(): Promise<void> {
+    await this.sampleLibrary.loadFromManifest(this.context, DEFAULT_909_SAMPLE_MANIFEST);
   }
 
   setPattern(id: string, pattern: Pattern): void {

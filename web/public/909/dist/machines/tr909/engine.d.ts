@@ -25,6 +25,12 @@ export declare class TR909Engine extends SynthEngine {
     clearOpenHat(): void;
     protected setupVoices(): void;
     loadSamples(manifest?: SampleManifestEntry[]): Promise<void>;
+    /**
+     * Load real 909 samples (hi-hats and cymbals) from the default location.
+     * This replaces the synthesized versions with authentic samples from a real TR-909.
+     * Call this before starting playback if you want the real samples.
+     */
+    loadRealSamples(): Promise<void>;
     setPattern(id: string, pattern: Pattern): void;
     startSequencer(): void;
     stopSequencer(): void;

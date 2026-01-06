@@ -8,7 +8,7 @@ import { Tom909 } from './voices/tom.js';
 import { Rimshot909 } from './voices/rimshot.js';
 import { HiHat909 } from './voices/hihat.js';
 import { Cymbal909 } from './voices/cymbal.js';
-import { createDefaultTr909SampleLibrary, } from './samples/library.js';
+import { createDefaultTr909SampleLibrary, DEFAULT_909_SAMPLE_MANIFEST, } from './samples/library.js';
 export class TR909Engine extends SynthEngine {
     constructor(options = {}) {
         super(options);
@@ -73,6 +73,14 @@ export class TR909Engine extends SynthEngine {
             return;
         }
         await this.sampleLibrary.loadFromManifest(this.context, manifest);
+    }
+    /**
+     * Load real 909 samples (hi-hats and cymbals) from the default location.
+     * This replaces the synthesized versions with authentic samples from a real TR-909.
+     * Call this before starting playback if you want the real samples.
+     */
+    async loadRealSamples() {
+        await this.sampleLibrary.loadFromManifest(this.context, DEFAULT_909_SAMPLE_MANIFEST);
     }
     setPattern(id, pattern) {
         this.sequencer.addPattern(id, pattern);

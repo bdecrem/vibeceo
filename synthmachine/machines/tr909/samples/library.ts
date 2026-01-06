@@ -5,6 +5,18 @@ export interface SampleManifestEntry {
   url: string | URL;
 }
 
+/**
+ * Default manifest for loading real 909 samples.
+ * These are authentic samples from a real TR-909 (Rob Roy Recordings, 1995).
+ * Samples are hosted at /909/samples/ on kochi.to
+ */
+export const DEFAULT_909_SAMPLE_MANIFEST: SampleManifestEntry[] = [
+  { id: 'closed-hat', url: '/909/samples/closed-hat.wav' },
+  { id: 'open-hat', url: '/909/samples/open-hat.wav' },
+  { id: 'crash', url: '/909/samples/crash.wav' },
+  { id: 'ride', url: '/909/samples/ride.wav' },
+];
+
 interface SampleData {
   sampleRate: number;
   channels: Float32Array[];
