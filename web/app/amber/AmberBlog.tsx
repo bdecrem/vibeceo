@@ -46,6 +46,7 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
   const [copied, setCopied] = useState(false);
   const [showAllPosts, setShowAllPosts] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(profile.avatar);
 
   const VISIBLE_POSTS = 2;
   const recentPosts = posts.slice(0, VISIBLE_POSTS);
@@ -70,6 +71,14 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, [posts]);
+
+  // Fix avatar URL for intheamber.com domain (middleware rewrites /foo to /amber/foo)
+  useEffect(() => {
+    const host = window.location.host;
+    if (host.includes('intheamber.com') && profile.avatar.startsWith('/amber/')) {
+      setAvatarUrl(profile.avatar.replace('/amber/', '/'));
+    }
+  }, [profile.avatar]);
 
   // Handle escape key for drawer modal
   useEffect(() => {
@@ -826,7 +835,7 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
             <div className="avatar-glow" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={profile.avatar}
+              src={avatarUrl}
               alt={profile.name}
               width={80}
               height={80}
@@ -1090,11 +1099,15 @@ function formatDate(dateStr: string): string {
 
 function formatShortDate(isoString: string): string {
   const date = new Date(isoString);
-  return date.toLocaleDateString('en-US', {
+  const dateStr = date.toLocaleDateString('en-US', {
     month: 'numeric',
     day: 'numeric',
     year: 'numeric',
   });
+  const hour = date.getHours();
+  const ampm = hour >= 12 ? 'pm' : 'am';
+  const hour12 = hour % 12 || 12;
+  return `${dateStr} - ${hour12}${ampm}`;
 }
 
 function renderContent(content: string): JSX.Element[] {

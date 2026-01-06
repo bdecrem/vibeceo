@@ -74,7 +74,7 @@ async function getArtifacts(): Promise<Artifact[]> {
           title,
           type: 'app',
           url: `/amber/${name}`,
-          modifiedAt: stats.mtime.toISOString(),
+          modifiedAt: stats.birthtime.toISOString(),
         });
       } else if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
         artifacts.push({
@@ -82,7 +82,7 @@ async function getArtifacts(): Promise<Artifact[]> {
           title: prettifyFilename(name),
           type: 'image',
           url: `/amber/${name}`,
-          modifiedAt: stats.mtime.toISOString(),
+          modifiedAt: stats.birthtime.toISOString(),
         });
       }
     }
@@ -109,7 +109,7 @@ async function getArtifacts(): Promise<Artifact[]> {
           title: prettifyFilename(dirName),
           type: 'app',
           url: `/amber/${dirName}`,
-          modifiedAt: stats.mtime.toISOString(),
+          modifiedAt: stats.birthtime.toISOString(),
         });
       } catch {
         // No page.tsx, skip this directory
