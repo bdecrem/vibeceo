@@ -1009,6 +1009,7 @@ async def run_amber_task(
             "mcp__amber__git_commit",
             "mcp__amber__git_push",
             "mcp__amber__run_command",
+            "mcp__amber__post_tweet",
         ],
     )
 
@@ -1042,6 +1043,8 @@ async def run_amber_task(
                                 actions_taken.append("Made git commit")
                             elif "git_push" in tool_name:
                                 actions_taken.append("Pushed to remote")
+                            elif "post_tweet" in tool_name:
+                                actions_taken.append("Posted tweet")
 
                             if debug_enabled:
                                 print(f"[Amber Agent] Tool: {tool_name}", file=sys.stderr)
