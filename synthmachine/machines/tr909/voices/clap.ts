@@ -48,6 +48,8 @@ export class Clap909 extends Voice {
       this.level = Math.max(0, Math.min(1, value));
     } else if (id === 'spread') {
       this.spread = Math.max(0.005, Math.min(0.04, value));
+    } else {
+      super.setParameter(id, value);
     }
   }
 
@@ -65,6 +67,7 @@ export class Clap909 extends Voice {
         range: { min: 0.005, max: 0.04, step: 0.001, unit: 's' },
         defaultValue: 0.015,
       },
+      ...super.parameterDescriptors,
     ];
   }
 }

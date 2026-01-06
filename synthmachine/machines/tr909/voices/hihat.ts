@@ -32,13 +32,13 @@ export class HiHat909 extends SampleVoice {
 
   override get parameterDescriptors(): VoiceParameterDescriptor[] {
     return [
-      ...super.parameterDescriptors,
       {
         id: 'decay',
         label: 'Decay',
         range: { min: 0.05, max: 2, step: 0.01, unit: 's' },
         defaultValue: this.type === 'closed' ? 0.2 : 0.6,
       },
+      ...super.parameterDescriptors,
     ];
   }
 

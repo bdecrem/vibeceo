@@ -8,13 +8,15 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
+    "start": "serve . -l ${PORT:-3909}",
     "lint": "tsc --noEmit -p tsconfig.json",
     "dev": "ts-node --project tsconfig.json machines/tr909/engine.ts",
-    "serve": "npx serve . -l 3909",
+    "serve": "serve . -l 3909",
     "cli": "node dist/api/cli.js"
   },
   "dependencies": {
     "audiobuffer-to-wav": "^1.0.0",
+    "serve": "^14.2.0",
     "tone": "^14.8.48",
     "tunajs": "^1.0.8",
     "web-audio-api": "^0.2.2"

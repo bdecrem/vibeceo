@@ -54,6 +54,8 @@ export class Tom909 extends Voice {
       this.decay = Math.max(0.1, Math.min(2, value));
     } else if (id === 'level') {
       this.level = Math.max(0, Math.min(1, value));
+    } else {
+      super.setParameter(id, value);
     }
   }
 
@@ -77,6 +79,7 @@ export class Tom909 extends Voice {
         range: { min: 0, max: 1, step: 0.01 },
         defaultValue: 1,
       },
+      ...super.parameterDescriptors,
     ];
   }
 }

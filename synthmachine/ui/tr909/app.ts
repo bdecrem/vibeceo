@@ -9,6 +9,10 @@ const STEPS = 16;
 const pattern: Pattern = {};
 const engine = new TR909Engine();
 const PATTERN_ID = 'web-ui';
+const STORAGE_KEY = 'tr909-saved-patterns';
+
+// Track current step for visualization
+let currentStep = -1;
 
 interface VoiceConfig {
   id: TR909VoiceId;
@@ -122,14 +126,105 @@ function renderGrid(): void {
 
 function formatParamValue(value: number, descriptor: VoiceParameterDescriptor): string {
   const unit = descriptor.range?.unit ?? '';
-  if (unit === 'cents') {
-    return value > 0 ? `+${value}` : `${value}`;
+  if (unit === 'cents' || unit === 'semitones') {
+    const rounded = Math.round(value);
+    return rounded > 0 ? `+${rounded}` : `${rounded}`;
   }
-  if (unit === 's' || unit === 'ms') {
-    return value.toFixed(2) + unit;
+  if (unit === 's') {
+    return value.toFixed(2);
   }
-  return value.toFixed(2);
+  if (unit === 'ms') {
+    return value.toFixed(0);
+  }
+  // For 0-1 range, show as percentage
+  if (descriptor.range?.max === 1 && descriptor.range?.min === 0) {
+    return Math.round(value * 100).toString();
+  }
+  return value.toFixed(1);
 }
+
+// Convert value to knob rotation (-135° to 135°)
+function valueToRotation(value: number, min: number, max: number): number {
+  const normalized = (value - min) / (max - min);
+  return -135 + normalized * 270;
+}
+
+// Knob drag state
+let activeKnob: {
+  element: HTMLElement;
+  startY: number;
+  startValue: number;
+  min: number;
+  max: number;
+  step: number;
+  voiceId: TR909VoiceId;
+  paramId: string;
+  valueDisplay: HTMLElement;
+  descriptor: VoiceParameterDescriptor;
+} | null = null;
+
+function handleKnobMouseDown(
+  e: MouseEvent,
+  knobEl: HTMLElement,
+  voiceId: TR909VoiceId,
+  param: VoiceParameterDescriptor,
+  valueDisplay: HTMLElement
+): void {
+  e.preventDefault();
+  const min = param.range?.min ?? 0;
+  const max = param.range?.max ?? 1;
+  const step = param.range?.step ?? 0.01;
+  const currentRotation = parseFloat(knobEl.style.getPropertyValue('--rotation') || '0');
+  const currentValue = min + ((currentRotation + 135) / 270) * (max - min);
+
+  activeKnob = {
+    element: knobEl,
+    startY: e.clientY,
+    startValue: currentValue,
+    min,
+    max,
+    step,
+    voiceId,
+    paramId: param.id,
+    valueDisplay,
+    descriptor: param,
+  };
+
+  document.body.style.cursor = 'ns-resize';
+}
+
+function handleKnobMouseMove(e: MouseEvent): void {
+  if (!activeKnob) return;
+
+  const deltaY = activeKnob.startY - e.clientY;
+  const range = activeKnob.max - activeKnob.min;
+  const sensitivity = range / 150; // 150px drag = full range
+  let newValue = activeKnob.startValue + deltaY * sensitivity;
+
+  // Clamp and quantize
+  newValue = Math.max(activeKnob.min, Math.min(activeKnob.max, newValue));
+  newValue = Math.round(newValue / activeKnob.step) * activeKnob.step;
+
+  // Update knob rotation
+  const rotation = valueToRotation(newValue, activeKnob.min, activeKnob.max);
+  activeKnob.element.style.setProperty('--rotation', `${rotation}`);
+  activeKnob.element.style.transform = `rotate(${rotation}deg)`;
+
+  // Update engine and display
+  engine.setVoiceParameter(activeKnob.voiceId, activeKnob.paramId, newValue);
+  activeKnob.valueDisplay.textContent = formatParamValue(newValue, activeKnob.descriptor);
+}
+
+function handleKnobMouseUp(): void {
+  if (activeKnob) {
+    activeKnob = null;
+    document.body.style.cursor = '';
+  }
+}
+
+// Set up global mouse handlers for knob dragging
+document.addEventListener('mousemove', handleKnobMouseMove);
+document.addEventListener('mouseup', handleKnobMouseUp);
 
 function renderVoiceParams(): void {
   const container = document.getElementById('voice-params');
@@ -156,45 +251,64 @@ function renderVoiceParams(): void {
 
     const name = document.createElement('span');
     name.className = 'voice-panel-name';
-    name.textContent = voice.shortLabel + ' — ' + voice.label;
+    name.textContent = voice.shortLabel;
 
     header.appendChild(led);
     header.appendChild(name);
     panel.appendChild(header);
 
-    // Parameter sliders
+    // Knobs container
+    const knobsContainer = document.createElement('div');
+    knobsContainer.className = 'knobs-container';
+
+    // Create knobs for each parameter
     params.forEach((param) => {
-      const row = document.createElement('div');
-      row.className = 'param-row';
+      const wrapper = document.createElement('div');
+      wrapper.className = 'knob-wrapper';
+
+      const knob = document.createElement('div');
+      knob.className = 'knob';
+      const initialRotation = valueToRotation(
+        param.defaultValue,
+        param.range?.min ?? 0,
+        param.range?.max ?? 1
+      );
+      knob.style.setProperty('--rotation', `${initialRotation}`);
+      knob.style.transform = `rotate(${initialRotation}deg)`;
 
       const label = document.createElement('span');
-      label.className = 'param-label';
+      label.className = 'knob-label';
       label.textContent = param.label;
 
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.className = 'param-slider';
-      slider.min = String(param.range?.min ?? 0);
-      slider.max = String(param.range?.max ?? 1);
-      slider.step = String(param.range?.step ?? 0.01);
-      slider.value = String(param.defaultValue);
-
       const valueDisplay = document.createElement('span');
-      valueDisplay.className = 'param-value';
+      valueDisplay.className = 'knob-value';
       valueDisplay.textContent = formatParamValue(param.defaultValue, param);
 
-      slider.addEventListener('input', () => {
-        const val = parseFloat(slider.value);
-        engine.setVoiceParameter(voice.id, param.id, val);
-        valueDisplay.textContent = formatParamValue(val, param);
+      // Knob interaction
+      knob.addEventListener('mousedown', (e) => {
+        handleKnobMouseDown(e, knob, voice.id, param, valueDisplay);
       });
 
-      row.appendChild(label);
-      row.appendChild(slider);
-      row.appendChild(valueDisplay);
-      panel.appendChild(row);
+      // Double-click to reset
+      knob.addEventListener('dblclick', () => {
+        const rotation = valueToRotation(
+          param.defaultValue,
+          param.range?.min ?? 0,
+          param.range?.max ?? 1
+        );
+        knob.style.setProperty('--rotation', `${rotation}`);
+        knob.style.transform = `rotate(${rotation}deg)`;
+        engine.setVoiceParameter(voice.id, param.id, param.defaultValue);
+        valueDisplay.textContent = formatParamValue(param.defaultValue, param);
+      });
+
+      wrapper.appendChild(knob);
+      wrapper.appendChild(label);
+      wrapper.appendChild(valueDisplay);
+      knobsContainer.appendChild(wrapper);
     });
 
+    panel.appendChild(knobsContainer);
     container.appendChild(panel);
   });
 }
@@ -265,9 +379,100 @@ function setupControls(): void {
   const bpmInput = document.getElementById('bpm') as HTMLInputElement | null;
   const exportBtn = document.getElementById('export');
   const presetSelect = document.getElementById('preset') as HTMLSelectElement | null;
+  const swingInput = document.getElementById('swing') as HTMLInputElement | null;
+  const swingValue = document.getElementById('swing-value');
+  const flamInput = document.getElementById('flam') as HTMLInputElement | null;
+  const flamValue = document.getElementById('flam-value');
+  const savedPatternsSelect = document.getElementById('saved-patterns') as HTMLSelectElement | null;
+  const saveBtn = document.getElementById('save-pattern');
+  const deleteBtn = document.getElementById('delete-pattern');
 
   // Populate preset dropdown
   populatePresets();
+
+  // Populate saved patterns
+  populateSavedPatterns();
+
+  // Swing control
+  swingInput?.addEventListener('input', () => {
+    const swing = Number(swingInput.value) / 100;
+    engine.setSwing(swing);
+    if (swingValue) {
+      swingValue.textContent = `${swingInput.value}%`;
+    }
+  });
+
+  // Flam control
+  flamInput?.addEventListener('input', () => {
+    const flam = Number(flamInput.value) / 100;
+    engine.setFlam(flam);
+    if (flamValue) {
+      flamValue.textContent = `${flamInput.value}%`;
+    }
+  });
+
+  // Save pattern
+  saveBtn?.addEventListener('click', () => {
+    const name = prompt('Enter pattern name:');
+    if (name && name.trim()) {
+      const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
+      savePattern(name.trim(), bpm);
+      populateSavedPatterns();
+      setStatus(`Pattern "${name.trim()}" saved.`);
+    }
+  });
+
+  // Load saved pattern
+  savedPatternsSelect?.addEventListener('change', () => {
+    const name = savedPatternsSelect.value;
+    if (!name) return;
+
+    const saved = loadSavedPattern(name);
+    if (saved) {
+      // Load pattern into our pattern object
+      VOICES.forEach((voice) => {
+        const savedTrack = saved.pattern[voice.id];
+        const track = ensureTrack(voice.id);
+
+        if (savedTrack && Array.isArray(savedTrack)) {
+          for (let i = 0; i < STEPS; i++) {
+            const step = savedTrack[i];
+            track[i] = step ? { ...step } : { velocity: 0, accent: false };
+          }
+        } else {
+          for (let i = 0; i < STEPS; i++) {
+            track[i] = { velocity: 0, accent: false };
+          }
+        }
+      });
+
+      commitPattern();
+      refreshGrid();
+
+      // Update BPM
+      if (bpmInput) {
+        bpmInput.value = String(saved.bpm);
+        engine.setBpm(saved.bpm);
+      }
+
+      // Clear preset selection
+      if (presetSelect) {
+        presetSelect.value = '';
+      }
+
+      setStatus(`Loaded saved pattern "${name}"`);
+    }
+  });
+
+  // Delete saved pattern
+  deleteBtn?.addEventListener('click', () => {
+    const name = savedPatternsSelect?.value;
+    if (name && confirm(`Delete pattern "${name}"?`)) {
+      deleteSavedPattern(name);
+      populateSavedPatterns();
+      setStatus(`Pattern "${name}" deleted.`);
+    }
+  });
 
   // Handle preset selection
   presetSelect?.addEventListener('change', () => {
@@ -343,10 +548,187 @@ function setStatus(message: string): void {
   }
 }
 
+// Step indicator: highlight current step during playback
+function updateStepIndicator(step: number): void {
+  currentStep = step;
+  const container = document.getElementById('sequencer');
+  if (!container) return;
+
+  // Remove previous playing state from all steps
+  container.querySelectorAll('.step--playing').forEach((el) => {
+    el.classList.remove('step--playing');
+  });
+
+  // Add playing state to current step column (all voices)
+  if (step >= 0 && step < STEPS) {
+    container.querySelectorAll(`.step[data-index="${step}"]`).forEach((el) => {
+      el.classList.add('step--playing');
+    });
+
+    // Also light up voice panel LEDs when that voice triggers
+    VOICES.forEach((voice) => {
+      const track = pattern[voice.id];
+      const led = document.querySelector(`.voice-panel-led[data-voice-id="${voice.id}"]`);
+      if (led) {
+        const stepData = track?.[step];
+        if (stepData && stepData.velocity > 0) {
+          led.classList.add('active');
+          setTimeout(() => led.classList.remove('active'), 100);
+        }
+      }
+    });
+  }
+}
+
+// Pattern save/load with localStorage
+interface SavedPattern {
+  name: string;
+  pattern: Pattern;
+  bpm: number;
+}
+
+function getSavedPatterns(): SavedPattern[] {
+  try {
+    const data = localStorage.getItem(STORAGE_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+function savePattern(name: string, bpm: number): void {
+  const saved = getSavedPatterns();
+  // Deep clone pattern
+  const patternCopy: Pattern = {};
+  for (const [voiceId, track] of Object.entries(pattern)) {
+    patternCopy[voiceId] = track.map((step) => ({ ...step }));
+  }
+
+  // Check if pattern with same name exists
+  const existing = saved.findIndex((p) => p.name === name);
+  if (existing >= 0) {
+    saved[existing] = { name, pattern: patternCopy, bpm };
+  } else {
+    saved.push({ name, pattern: patternCopy, bpm });
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+function loadSavedPattern(name: string): SavedPattern | undefined {
+  const saved = getSavedPatterns();
+  return saved.find((p) => p.name === name);
+}
+
+function deleteSavedPattern(name: string): void {
+  const saved = getSavedPatterns().filter((p) => p.name !== name);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+}
+
+function populateSavedPatterns(): void {
+  const savedSelect = document.getElementById('saved-patterns') as HTMLSelectElement | null;
+  if (!savedSelect) return;
+
+  // Clear existing options except first
+  while (savedSelect.options.length > 1) {
+    savedSelect.remove(1);
+  }
+
+  const saved = getSavedPatterns();
+  saved.forEach((p) => {
+    const option = document.createElement('option');
+    option.value = p.name;
+    option.textContent = `${p.name} (${p.bpm} BPM)`;
+    savedSelect.appendChild(option);
+  });
+}
+
+// Keyboard shortcuts
+function setupKeyboardShortcuts(): void {
+  document.addEventListener('keydown', (e) => {
+    // Ignore if typing in an input
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLSelectElement) {
+      return;
+    }
+
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault();
+        if (engine.isPlaying()) {
+          engine.stopSequencer();
+          setStatus('Stopped');
+        } else {
+          engine.startSequencer();
+          setStatus('Playing pattern');
+        }
+        break;
+
+      // Number keys 1-9, 0 trigger voices
+      case 'Digit1':
+        engine.trigger('kick', 1);
+        break;
+      case 'Digit2':
+        engine.trigger('snare', 1);
+        break;
+      case 'Digit3':
+        engine.trigger('clap', 1);
+        break;
+      case 'Digit4':
+        engine.trigger('rimshot', 1);
+        break;
+      case 'Digit5':
+        engine.trigger('ltom', 1);
+        break;
+      case 'Digit6':
+        engine.trigger('mtom', 1);
+        break;
+      case 'Digit7':
+        engine.trigger('htom', 1);
+        break;
+      case 'Digit8':
+        engine.trigger('ch', 1);
+        break;
+      case 'Digit9':
+        engine.trigger('oh', 1);
+        break;
+      case 'Digit0':
+        engine.trigger('crash', 1);
+        break;
+    }
+  });
+}
+
+function setupPatternTabs(): void {
+  const dots = document.querySelectorAll('.tab-dot');
+  const contents = document.querySelectorAll('.tab-content');
+
+  dots.forEach((dot) => {
+    dot.addEventListener('click', () => {
+      const tab = (dot as HTMLElement).dataset.tab;
+      if (!tab) return;
+
+      // Update dots
+      dots.forEach((d) => d.classList.remove('active'));
+      dot.classList.add('active');
+
+      // Update content
+      contents.forEach((c) => {
+        c.classList.toggle('active', (c as HTMLElement).dataset.tab === tab);
+      });
+    });
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initPattern();
   renderGrid();
   renderVoiceParams();
   setupControls();
-  setStatus('Ready — tap steps to program the pattern.');
+  setupKeyboardShortcuts();
+  setupPatternTabs();
+
+  // Connect step change callback for visualization
+  engine.onStepChange = updateStepIndicator;
+
+  setStatus('Ready — tap steps to program, or press SPACE to play. Keys 1-0 trigger sounds.');
 });

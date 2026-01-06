@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SynthMachine TR-909</title>
+    <title>TR-909 — SynthMachine</title>
     <link rel="stylesheet" href="./styles.css" />
     <script type="importmap">
       {
@@ -15,21 +15,50 @@
   </head>
   <body>
     <main class="panel">
-      <h1>TR-909 — SynthMachine</h1>
+      <h1>TR-909</h1>
       <section class="controls">
+        <!-- Pattern tabs -->
+        <div class="pattern-tabs">
+          <div class="tab-content active" data-tab="presets">
+            <select id="preset">
+              <option value="">— Presets —</option>
+            </select>
+          </div>
+          <div class="tab-content" data-tab="saved">
+            <select id="saved-patterns">
+              <option value="">— Saved —</option>
+            </select>
+            <button id="save-pattern" type="button">+</button>
+            <button id="delete-pattern" type="button">−</button>
+          </div>
+          <div class="tab-dots">
+            <button class="tab-dot active" data-tab="presets" title="Presets"></button>
+            <button class="tab-dot" data-tab="saved" title="Saved"></button>
+          </div>
+        </div>
+
+        <div class="controls-divider"></div>
+
         <label>
-          Pattern
-          <select id="preset">
-            <option value="">— Custom —</option>
-          </select>
-        </label>
-        <label>
-          Tempo
+          BPM
           <input id="bpm" type="number" min="40" max="220" step="1" value="128" />
         </label>
+        <label>
+          Swing
+          <input id="swing" type="range" min="0" max="100" step="1" value="0" />
+          <span id="swing-value">0%</span>
+        </label>
+        <label>
+          Flam
+          <input id="flam" type="range" min="0" max="100" step="1" value="0" />
+          <span id="flam-value">0%</span>
+        </label>
+
+        <div class="controls-divider"></div>
+
         <button id="start" type="button">Start</button>
         <button id="stop" type="button">Stop</button>
-        <button id="export" type="button">Export WAV</button>
+        <button id="export" type="button">Export</button>
       </section>
       <div id="status"></div>
       <section id="sequencer" class="sequencer"></section>
@@ -38,6 +67,11 @@
         <h2>Voice Parameters</h2>
         <div id="voice-params" class="params-grid"></div>
       </section>
+
+      <div class="keyboard-hints">
+        <kbd>Space</kbd> Play/Stop &nbsp;|&nbsp;
+        <kbd>1</kbd>-<kbd>0</kbd> Trigger sounds (BD, SD, CP, RS, LT, MT, HT, CH, OH, CC)
+      </div>
     </main>
 
     <script type="module" src="../../dist/ui/tr909/app.js"></script>

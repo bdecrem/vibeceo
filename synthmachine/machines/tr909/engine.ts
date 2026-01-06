@@ -42,23 +42,74 @@ export interface Tr909RenderOptions {
   numberOfChannels?: number;
 }
 
+export type StepChangeCallback = (step: number) => void;
+
 export class TR909Engine extends SynthEngine {
   private readonly sequencer = new StepSequencer({ steps: 16, bpm: 125 });
   private readonly sampleLibrary: SampleLibrary;
   private currentBpm = 125;
   private swingAmount = 0;
+  private flamAmount = 0;
   private static readonly STEPS_PER_BAR = 16;
+
+  // Hi-hat choke: track active open hi-hat for cutoff
+  private activeOpenHat: { source: AudioBufferSourceNode; gain: GainNode } | null = null;
+
+  // Step callback for UI visualization
+  public onStepChange?: StepChangeCallback;
 
   constructor(options: SynthEngineOptions = {}) {
     super(options);
     this.sampleLibrary = createDefaultTr909SampleLibrary();
     this.setupVoices();
-    this.sequencer.onStep = (_, events) => {
+    this.sequencer.onStep = (step, events) => {
+      // Notify UI of step change
+      this.onStepChange?.(step);
+
       events.forEach((event) => {
-        const accent = event.accent ? 1.1 : 1;
-        this.trigger(event.voice, Math.min(1, event.velocity * accent));
+        // Get per-voice accent amount
+        const voice = this.voices.get(event.voice as TR909VoiceId);
+        const accentMultiplier = event.accent && voice ? voice.getAccentAmount() : 1;
+        const velocity = Math.min(1, event.velocity * accentMultiplier);
+
+        // Hi-hat choke: closed hat cuts open hat
+        if (event.voice === 'ch' && this.activeOpenHat) {
+          this.chokeOpenHat();
+        }
+
+        // Apply flam if enabled (slight delay for doubled hit)
+        if (this.flamAmount > 0 && velocity > 0.5) {
+          // Trigger a quiet ghost note slightly before
+          const flamDelay = this.flamAmount * 0.03; // max 30ms flam
+          this.trigger(event.voice, velocity * 0.4);
+          setTimeout(() => {
+            this.trigger(event.voice, velocity);
+          }, flamDelay * 1000);
+        } else {
+          this.trigger(event.voice, velocity);
+        }
       });
     };
+  }
+
+  private chokeOpenHat(): void {
+    if (this.activeOpenHat) {
+      const { gain } = this.activeOpenHat;
+      const now = this.context.currentTime;
+      gain.gain.cancelScheduledValues(now);
+      gain.gain.setValueAtTime(gain.gain.value, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
+      this.activeOpenHat = null;
+    }
+  }
+
+  // Called by HiHat909 to register active open hat for choke
+  registerOpenHat(source: AudioBufferSourceNode, gain: GainNode): void {
+    this.activeOpenHat = { source, gain };
+  }
+
+  clearOpenHat(): void {
+    this.activeOpenHat = null;
   }
 
   protected setupVoices(): void {
@@ -86,6 +137,10 @@ export class TR909Engine extends SynthEngine {
   stopSequencer(): void {
     this.sequencer.stop();
     this.stop();
+    // Clear step indicator
+    this.onStepChange?.(-1);
+    // Clear any active open hat
+    this.activeOpenHat = null;
   }
 
   setBpm(bpm: number): void {
@@ -96,6 +151,26 @@ export class TR909Engine extends SynthEngine {
   setSwing(amount: number): void {
     this.swingAmount = Math.max(0, Math.min(1, amount));
     this.sequencer.setSwing(this.swingAmount);
+  }
+
+  getSwing(): number {
+    return this.swingAmount;
+  }
+
+  setFlam(amount: number): void {
+    this.flamAmount = Math.max(0, Math.min(1, amount));
+  }
+
+  getFlam(): number {
+    return this.flamAmount;
+  }
+
+  getCurrentStep(): number {
+    return this.sequencer.getCurrentStep();
+  }
+
+  isPlaying(): boolean {
+    return this.sequencer.isRunning();
   }
 
   async renderPattern(

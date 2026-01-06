@@ -61,6 +61,7 @@ export abstract class SampleVoice extends Voice {
       this.level = value;
       return;
     }
+    super.setParameter(paramId, value);
   }
 
   override get parameterDescriptors(): VoiceParameterDescriptor[] {
@@ -77,6 +78,7 @@ export abstract class SampleVoice extends Voice {
         range: { min: 0, max: 1, step: 0.01 },
         defaultValue: 1,
       },
+      ...super.parameterDescriptors,
     ];
   }
 

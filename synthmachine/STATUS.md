@@ -35,12 +35,17 @@
 - [x] Start/Stop/Export WAV buttons
 - [x] **Preset selector dropdown** - All 8 patterns with auto-BPM sync
 - [x] **Voice parameter panels** with sliders for each voice:
-  - Tune, Decay, Attack, Level (kick)
-  - Tone, Snappy, Level (snare)
-  - Level, Spread (clap)
-  - etc.
-- [x] Hardware-inspired styling (gray panel, orange LEDs)
+  - Tune, Decay, Attack, Level, Accent (kick)
+  - Tone, Snappy, Level, Accent (snare)
+  - Level, Spread, Accent (clap)
+  - All voices have per-voice Accent control
+- [x] Hardware-inspired styling (gray metal panel, orange LEDs, silk-screen labels)
 - [x] Import map for browser ES modules
+- [x] **Current step indicator** - LEDs highlight during playback
+- [x] **Swing control** - 0-100% swing slider
+- [x] **Flam control** - 0-100% flam timing slider
+- [x] **Pattern save/load** - localStorage persistence with Save/Load/Delete
+- [x] **Keyboard shortcuts** - Space for play/stop, 1-0 for voice triggers
 
 ### CLI Tool
 - [x] `npm run cli -- list-presets` - Show available patterns
@@ -69,18 +74,18 @@
 
 ## Not Implemented / Future Work 🔮
 
-### UI Enhancements
-- [ ] Current step indicator during playback (LEDs lighting up)
-- [ ] Swing control in UI
-- [ ] Pattern save/load in browser (localStorage)
-- [ ] Keyboard shortcuts (space=play, 1-9=trigger)
-- [ ] Photorealistic hardware styling (metal textures, silk-screen labels)
+### UI Enhancements ✅ (Completed Jan 2026)
+- [x] Current step indicator during playback (LEDs lighting up)
+- [x] Swing control in UI
+- [x] Pattern save/load in browser (localStorage)
+- [x] Keyboard shortcuts (space=play, 1-9=trigger)
+- [x] Improved hardware styling (metal textures, silk-screen labels)
 
-### Sound Improvements
-- [ ] Per-voice accent parameters
-- [ ] Flam timing control
-- [ ] Hi-hat choke (open hat cuts when closed plays)
-- [ ] More authentic sample playback (pitch/decay from sample library)
+### Sound Improvements ✅ (Completed Jan 2026)
+- [x] Per-voice accent parameters (each voice has adjustable accent boost 1.0-2.0x)
+- [x] Flam timing control (0-100%, adds ghost note before main hit)
+- [x] Hi-hat choke (open hat cuts when closed plays)
+- [x] Sample playback with pitch/decay controls
 
 ### Sequencer
 - [ ] Pattern chaining (A1→A2→B1 etc.)

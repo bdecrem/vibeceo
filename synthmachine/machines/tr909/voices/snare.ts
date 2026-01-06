@@ -70,6 +70,8 @@ export class Snare909 extends Voice {
       case 'level':
         this.level = Math.max(0, Math.min(1, value));
         break;
+      default:
+        super.setParameter(id, value);
     }
   }
 
@@ -93,6 +95,7 @@ export class Snare909 extends Voice {
         range: { min: 0, max: 1, step: 0.01 },
         defaultValue: 1,
       },
+      ...super.parameterDescriptors,
     ];
   }
 }
