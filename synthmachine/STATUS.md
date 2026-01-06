@@ -33,6 +33,7 @@
 - [x] 3-state steps: off → soft (0.6) → accent (1.0)
 - [x] Tempo control (BPM input)
 - [x] Start/Stop/Export WAV buttons
+- [x] **Preset selector dropdown** - All 8 patterns with auto-BPM sync
 - [x] **Voice parameter panels** with sliders for each voice:
   - Tune, Decay, Attack, Level (kick)
   - Tone, Snappy, Level (snare)
@@ -70,7 +71,6 @@
 
 ### UI Enhancements
 - [ ] Current step indicator during playback (LEDs lighting up)
-- [ ] Pattern selector dropdown (to switch presets in UI)
 - [ ] Swing control in UI
 - [ ] Pattern save/load in browser (localStorage)
 - [ ] Keyboard shortcuts (space=play, 1-9=trigger)
