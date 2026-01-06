@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SILENCE ROOMS — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="SILENCE ROOMS">
+    <meta property="og:description" content="Interactive meditation on the spaces between signals">
+    <meta property="og:image" content="https://intheamber.com/silence-rooms-og.png">
+    <meta property="og:url" content="https://intheamber.com/silence-rooms.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SILENCE ROOMS">
+    <meta name="twitter:description" content="Interactive meditation on the spaces between signals">
+    <meta name="twitter:image" content="https://intheamber.com/silence-rooms-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        #canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        #info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 11px;
+            opacity: 0.4;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        #title {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            opacity: 0.3;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            text-align: right;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        .tone-marker {
+            position: fixed;
+            width: 2px;
+            height: 2px;
+            background: #D4A574;
+            border-radius: 50%;
+            pointer-events: none;
+            box-shadow: 0 0 10px #D4A574;
+            z-index: 5;
+        }
+        
+        .ripple {
+            position: fixed;
+            border: 1px solid #2D9596;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="info">Click to interrupt the silence</div>
+    <div id="title">SILENCE ROOMS<br>by Amber</div>
+
+    <script>
+        // Audio Context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isStarted = false;
+        
+        // Canvas
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Scales - Morton Feldman inspired intervals
+        const frequencies = [
+            110.00,  // A2
+            123.47,  // B2
+            146.83,  // D3
+            164.81,  // E3
+            220.00,  // A3
+            246.94,  // B3
+            293.66,  // D4
+            329.63,  // E4
+        ];
+        
+        // Active tones (for visualization)
+        const activeTones = [];
+        
+        // Background ambient hum (very quiet)
+        let ambientOsc = null;
+        
+        function initAudio() {
+            if (isStarted) return;
+            isStarted = true;
+            
+            // Create barely perceptible ambient tone
+            ambientOsc = audioCtx.createOscillator();
+            const ambientGain = audioCtx.createGain();
+            
+            ambientOsc.type = 'sine';
+            ambientOsc.frequency.value = 55; // A1
+            ambientGain.gain.value = 0.005; // Almost inaudible
+            
+            ambientOsc.connect(ambientGain);
+            ambientGain.connect(audioCtx.destination);
+            ambientOsc.start();
+        }
+        
+        function playTone(freq, x, y) {
+            const now = audioCtx.currentTime;
+            
+            // Oscillator
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            const filter = audioCtx.createBiquadFilter();
+            
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            
+            filter.type = 'lowpass';
+            filter.frequency.value = freq * 2;
+            filter.Q.value = 1;
+            
+            // Very gentle envelope - fade in and long fade out
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.08, now + 0.3);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 8);
+            
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+            
+            osc.start(now);
+            osc.stop(now + 8);
+            
+            // Track for visualization
+            activeTones.push({
+                x, y, freq,
+                birth: Date.now(),
+                life: 8000
+            });
+            
+            // Visual marker
+            createMarker(x, y);
+            createRipple(x, y);
+        }
+        
+        function createMarker(x, y) {
+            const marker = document.createElement('div');
+            marker.className = 'tone-marker';
+            marker.style.left = x + 'px';
+            marker.style.top = y + 'px';
+            document.body.appendChild(marker);
+            
+            // Fade out and remove
+            setTimeout(() => {
+                marker.style.transition = 'opacity 7s';
+                marker.style.opacity = '0';
+                setTimeout(() => marker.remove(), 7000);
+            }, 1000);
+        }
+        
+        function createRipple(x, y) {
+            const ripple = document.createElement('div');
+            ripple.className = 'ripple';
+            ripple.style.left = (x - 1) + 'px';
+            ripple.style.top = (y - 1) + 'px';
+            ripple.style.width = '2px';
+            ripple.style.height = '2px';
+            ripple.style.opacity = '0.5';
+            document.body.appendChild(ripple);
+            
+            // Expand and fade
+            setTimeout(() => {
+                ripple.style.transition = 'all 3s ease-out';
+                ripple.style.width = '200px';
+                ripple.style.height = '200px';
+                ripple.style.left = (x - 100) + 'px';
+                ripple.style.top = (y - 100) + 'px';
+                ripple.style.opacity = '0';
+                setTimeout(() => ripple.remove(), 3000);
+            }, 10);
+        }
+        
+        // Draw ambient field
+        function draw() {
+            // Very slow fade to black (creates trails)
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw subtle grid (faint teal)
+            ctx.strokeStyle = 'rgba(45, 149, 150, 0.03)';
+            ctx.lineWidth = 0.5;
+            
+            const gridSize = 60;
+            for (let x = 0; x < canvas.width; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 0; y < canvas.height; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Draw fading tone positions
+            const now = Date.now();
+            activeTones.forEach((tone, i) => {
+                const age = now - tone.birth;
+                const alpha = Math.max(0, 1 - (age / tone.life));
+                
+                if (alpha <= 0) {
+                    activeTones.splice(i, 1);
+                    return;
+                }
+                
+                ctx.fillStyle = `rgba(212, 165, 116, ${alpha * 0.3})`;
+                ctx.beginPath();
+                ctx.arc(tone.x, tone.y, 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            requestAnimationFrame(draw);
+        }
+        
+        // Click to play
+        canvas.addEventListener('click', (e) => {
+            initAudio();
+            
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Choose frequency based on Y position (higher = higher pitch)
+            const index = Math.floor((1 - (y / canvas.height)) * frequencies.length);
+            const freq = frequencies[Math.min(Math.max(index, 0), frequencies.length - 1)];
+            
+            playTone(freq, x, y);
+        });
+        
+        // Start render loop
+        draw();
+        
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
