@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PULSE GRID — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="PULSE GRID">
+    <meta property="og:description" content="Rhythm sequencer where patterns evolve into light. Click to activate cells, watch complexity emerge from simple rules.">
+    <meta property="og:image" content="https://kochi.to/amber/pulse-grid-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/pulse-grid.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="PULSE GRID">
+    <meta name="twitter:description" content="Rhythm sequencer where patterns evolve into light. Click to activate cells, watch complexity emerge from simple rules.">
+    <meta name="twitter:image" content="https://kochi.to/amber/pulse-grid-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            letter-spacing: 0.2em;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #FFD700;
+            text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+        }
+
+        .subtitle {
+            text-align: center;
+            font-size: 0.9rem;
+            color: #2D9596;
+            margin-bottom: 2rem;
+            letter-spacing: 0.1em;
+        }
+
+        .grid-container {
+            background: rgba(13, 13, 13, 0.8);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            padding: 20px;
+            margin-bottom: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .cell {
+            aspect-ratio: 1;
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid rgba(212, 165, 116, 0.2);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            position: relative;
+        }
+
+        .cell.active {
+            background: rgba(212, 165, 116, 0.3);
+            border-color: #D4A574;
+        }
+
+        .cell.pulsing {
+            background: #D4A574;
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+        }
+
+        .cell:hover {
+            border-color: #2D9596;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+            margin-top: 1rem;
+        }
+
+        button {
+            background: rgba(212, 165, 116, 0.2);
+            border: 1px solid #D4A574;
+            color: #D4A574;
+            padding: 0.5rem 1.5rem;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            letter-spacing: 0.1em;
+            transition: all 0.2s ease;
+        }
+
+        button:hover {
+            background: rgba(212, 165, 116, 0.3);
+            box-shadow: 0 0 10px rgba(212, 165, 116, 0.4);
+        }
+
+        button.active {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 15px rgba(212, 165, 116, 0.6);
+        }
+
+        .bpm {
+            color: #2D9596;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+        }
+
+        .instructions {
+            text-align: center;
+            font-size: 0.85rem;
+            color: rgba(212, 165, 116, 0.6);
+            margin-top: 2rem;
+            line-height: 1.6;
+        }
+
+        .signature {
+            text-align: center;
+            margin-top: 3rem;
+            font-size: 0.9rem;
+            color: #2D9596;
+            letter-spacing: 0.15em;
+        }
+
+        /* Scanline effect */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15) 0px,
+                transparent 1px,
+                transparent 2px,
+                rgba(0, 0, 0, 0.15) 3px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PULSE GRID</h1>
+        <div class="subtitle">RHYTHM × EMERGENCE</div>
+        
+        <div class="grid-container">
+            <div class="grid" id="grid"></div>
+            
+            <div class="controls">
+                <button id="playBtn">START</button>
+                <button id="clearBtn">CLEAR</button>
+                <button id="randomBtn">RANDOM</button>
+                <span class="bpm">128 BPM</span>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            Click cells to activate them. Press START to hear the pattern.<br>
+            Each column is a beat. Active cells trigger sounds and light.<br>
+            Patterns repeat, evolve, accumulate.
+        </div>
+        
+        <div class="signature">— AMBER</div>
+    </div>
+
+    <script>
+        const GRID_SIZE = 16;
+        const ROWS = 8;
+        const BPM = 128;
+        const INTERVAL = (60 / BPM) * 1000 / 4; // 16th notes
+        
+        let isPlaying = false;
+        let currentStep = 0;
+        let intervalId = null;
+        let audioContext = null;
+        
+        const grid = document.getElementById('grid');
+        const playBtn = document.getElementById('playBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const randomBtn = document.getElementById('randomBtn');
+        
+        // Create grid state
+        const state = Array(ROWS).fill(0).map(() => Array(GRID_SIZE).fill(false));
+        
+        // Initialize grid
+        function initGrid() {
+            grid.innerHTML = '';
+            grid.style.gridTemplateColumns = `repeat(${GRID_SIZE}, 1fr)`;
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    cell.addEventListener('click', () => {
+                        state[row][col] = !state[row][col];
+                        updateCell(cell, row, col);
+                    });
+                    
+                    grid.appendChild(cell);
+                }
+            }
+        }
+        
+        function updateCell(cell, row, col) {
+            cell.classList.toggle('active', state[row][col]);
+        }
+        
+        function getCellElement(row, col) {
+            return grid.children[row * GRID_SIZE + col];
+        }
+        
+        // Audio synthesis
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        function playNote(row) {
+            if (!audioContext) return;
+            
+            // Different frequencies for each row (pentatonic scale)
+            const frequencies = [880, 660, 550, 440, 330, 275, 220, 165];
+            const freq = frequencies[row];
+            
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+        
+        // Sequencer
+        function step() {
+            // Clear previous pulse
+            for (let row = 0; row < ROWS; row++) {
+                const prevCell = getCellElement(row, currentStep);
+                prevCell.classList.remove('pulsing');
+            }
+            
+            // Move to next step
+            currentStep = (currentStep + 1) % GRID_SIZE;
+            
+            // Play active cells in current column
+            for (let row = 0; row < ROWS; row++) {
+                const cell = getCellElement(row, currentStep);
+                
+                if (state[row][currentStep]) {
+                    cell.classList.add('pulsing');
+                    playNote(row);
+                }
+            }
+        }
+        
+        // Controls
+        playBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                initAudio();
+                isPlaying = true;
+                playBtn.textContent = 'STOP';
+                playBtn.classList.add('active');
+                intervalId = setInterval(step, INTERVAL);
+            } else {
+                isPlaying = false;
+                playBtn.textContent = 'START';
+                playBtn.classList.remove('active');
+                clearInterval(intervalId);
+                
+                // Clear all pulsing
+                document.querySelectorAll('.cell').forEach(cell => {
+                    cell.classList.remove('pulsing');
+                });
+            }
+        });
+        
+        clearBtn.addEventListener('click', () => {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    state[row][col] = false;
+                    const cell = getCellElement(row, col);
+                    cell.classList.remove('active', 'pulsing');
+                }
+            }
+        });
+        
+        randomBtn.addEventListener('click', () => {
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < GRID_SIZE; col++) {
+                    state[row][col] = Math.random() > 0.7;
+                    const cell = getCellElement(row, col);
+                    updateCell(cell, row, col);
+                }
+            }
+        });
+        
+        // Initialize
+        initGrid();
+    </script>
+</body>
+</html>
