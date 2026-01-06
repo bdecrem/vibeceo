@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIGNAL DECAY — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="SIGNAL DECAY">
+    <meta property="og:description" content="Watch information lose its shape but gain something else. An interactive meditation on degradation and emergence.">
+    <meta property="og:image" content="https://kochi.to/amber/signal-decay-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/signal-decay.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SIGNAL DECAY">
+    <meta name="twitter:description" content="Watch information lose its shape but gain something else. An interactive meditation on degradation and emergence.">
+    <meta name="twitter:image" content="https://kochi.to/amber/signal-decay-og.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        canvas {
+            display: block;
+            image-rendering: pixelated;
+        }
+
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 11px;
+            letter-spacing: 1px;
+            opacity: 0.6;
+            line-height: 1.6;
+            max-width: 300px;
+        }
+
+        .label {
+            color: #2D9596;
+        }
+
+        #decay-meter {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 10px;
+            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+
+        .bar {
+            width: 300px;
+            height: 2px;
+            background: #0D0D0D;
+            margin-top: 8px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4A574, #2D9596, #7B68EE);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        
+        <div id="info">
+            <span class="label">SIGNAL DECAY</span><br>
+            Click to send a signal.<br>
+            Watch it degrade.<br>
+            Notice what emerges.
+        </div>
+
+        <div id="decay-meter">
+            <div>ENTROPY: <span id="entropy-value">0%</span></div>
+            <div class="bar"><div class="bar-fill" id="bar-fill"></div></div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const entropyValue = document.getElementById('entropy-value');
+        const barFill = document.getElementById('bar-fill');
+
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Audio context
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let masterGain = audioCtx.createGain();
+        masterGain.gain.value = 0.15;
+        masterGain.connect(audioCtx.destination);
+
+        // Signal state
+        let signals = [];
+        let globalEntropy = 0;
+
+        // Grid for interference
+        const gridSize = 8;
+        const gridCols = Math.ceil(canvas.width / gridSize);
+        const gridRows = Math.ceil(canvas.height / gridSize);
+        let grid = Array(gridRows).fill(0).map(() => Array(gridCols).fill(0));
+
+        class Signal {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.age = 0;
+                this.maxAge = 300;
+                this.radius = 3;
+                this.color = { r: 212, g: 165, b: 116 }; // Amber
+                this.decay = 0;
+                this.particles = [];
+                this.noise = [];
+                
+                // Create initial particles
+                for (let i = 0; i < 8; i++) {
+                    this.particles.push({
+                        angle: (Math.PI * 2 * i) / 8,
+                        distance: 0,
+                        speed: 2 + Math.random() * 2,
+                        opacity: 1
+                    });
+                }
+
+                // Play sound
+                this.playTone();
+            }
+
+            playTone() {
+                const now = audioCtx.currentTime;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.frequency.value = 220 + (this.y / canvas.height) * 440;
+                osc.type = 'sine';
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                
+                osc.connect(gain);
+                gain.connect(masterGain);
+                
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+
+            update() {
+                this.age++;
+                this.decay = this.age / this.maxAge;
+                
+                // Update particles - they spread and fade
+                this.particles.forEach(p => {
+                    p.distance += p.speed;
+                    p.opacity = 1 - this.decay;
+                    
+                    // As decay increases, add random drift
+                    if (this.decay > 0.3) {
+                        p.angle += (Math.random() - 0.5) * 0.1 * this.decay;
+                    }
+                });
+
+                // Generate noise particles as signal degrades
+                if (this.decay > 0.5 && Math.random() < this.decay * 0.3) {
+                    this.noise.push({
+                        x: (Math.random() - 0.5) * 100,
+                        y: (Math.random() - 0.5) * 100,
+                        life: 1,
+                        vx: (Math.random() - 0.5) * 2,
+                        vy: (Math.random() - 0.5) * 2
+                    });
+                }
+
+                // Update noise
+                this.noise = this.noise.filter(n => {
+                    n.x += n.vx;
+                    n.y += n.vy;
+                    n.life -= 0.03;
+                    return n.life > 0;
+                });
+
+                // Update grid interference
+                const gx = Math.floor(this.x / gridSize);
+                const gy = Math.floor(this.y / gridSize);
+                if (gx >= 0 && gx < gridCols && gy >= 0 && gy < gridRows) {
+                    grid[gy][gx] = Math.min(1, grid[gy][gx] + 0.1 * (1 - this.decay));
+                }
+
+                return this.age < this.maxAge;
+            }
+
+            draw() {
+                // Draw spreading particles
+                this.particles.forEach(p => {
+                    const px = this.x + Math.cos(p.angle) * p.distance;
+                    const py = this.y + Math.sin(p.angle) * p.distance;
+                    
+                    // Color shifts as signal degrades
+                    const r = Math.floor(this.color.r + (45 - this.color.r) * this.decay); // → Teal
+                    const g = Math.floor(this.color.g + (149 - this.color.g) * this.decay);
+                    const b = Math.floor(this.color.b + (150 - this.color.b) * this.decay);
+                    
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity * 0.8})`;
+                    ctx.fillRect(px - 1, py - 1, 2, 2);
+                    
+                    // Trail
+                    ctx.fillStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity * 0.3})`;
+                    const prevDist = p.distance - p.speed;
+                    const prevX = this.x + Math.cos(p.angle) * prevDist;
+                    const prevY = this.y + Math.sin(p.angle) * prevDist;
+                    ctx.beginPath();
+                    ctx.moveTo(prevX, prevY);
+                    ctx.lineTo(px, py);
+                    ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${p.opacity * 0.2})`;
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+                });
+
+                // Draw noise
+                this.noise.forEach(n => {
+                    ctx.fillStyle = `rgba(123, 104, 238, ${n.life * 0.6})`; // Violet noise
+                    ctx.fillRect(this.x + n.x, this.y + n.y, 1, 1);
+                });
+
+                // Draw center point
+                const centerOpacity = (1 - this.decay) * 0.6;
+                ctx.fillStyle = `rgba(${this.color.r}, ${this.color.g}, ${this.color.b}, ${centerOpacity})`;
+                ctx.fillRect(this.x - 2, this.y - 2, 4, 4);
+            }
+        }
+
+        function drawGrid() {
+            for (let y = 0; y < gridRows; y++) {
+                for (let x = 0; x < gridCols; x++) {
+                    if (grid[y][x] > 0.05) {
+                        ctx.fillStyle = `rgba(45, 149, 150, ${grid[y][x] * 0.1})`;
+                        ctx.fillRect(x * gridSize, y * gridSize,gridSize, gridSize);
+                        grid[y][x] *= 0.95; // Decay
+                    }
+                }
+            }
+        }
+
+        function updateEntropy() {
+            if (signals.length > 0) {
+                const avgDecay = signals.reduce((sum, s) => sum + s.decay, 0) / signals.length;
+                globalEntropy = avgDecay;
+            } else {
+                globalEntropy *= 0.98;
+            }
+
+            const entropyPct = Math.floor(globalEntropy * 100);
+            entropyValue.textContent = `${entropyPct}%`;
+            barFill.style.width = `${entropyPct}%`;
+        }
+
+        function animate() {
+            // Fade to black with slight trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid interference
+            drawGrid();
+
+            // Update and draw signals
+            signals = signals.filter(signal => {
+                const alive = signal.update();
+                signal.draw();
+                return alive;
+            });
+
+            updateEntropy();
+
+            requestAnimationFrame(animate);
+        }
+
+        // Click to create signal
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            signals.push(new Signal(x, y));
+        });
+
+        // Auto-generate some signals
+        function autoSignal() {
+            if (Math.random() < 0.3 && signals.length < 5) {
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                signals.push(new Signal(x, y));
+            }
+            setTimeout(autoSignal, 2000 + Math.random() * 3000);
+        }
+
+        // Handle resize
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+
+        // Start
+        animate();
+        setTimeout(autoSignal, 2000);
+
+        // Initial signal after a moment
+        setTimeout(() => {
+            signals.push(new Signal(canvas.width / 2, canvas.height / 2));
+        }, 500);
+    </script>
+</body>
+</html>
