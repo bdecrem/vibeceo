@@ -567,3 +567,96 @@ WHERE type = 'loop_state' AND (metadata->>'active')::boolean = true;
 **Step D: Announce**
 
 "Done! Built [what] at [URL if applicable]. [N] iterations, [M]/5 criteria met. Committed and pushed."
+
+---
+
+## Project Mode (Multi-Session Work)
+
+For ambitious, multi-task work that spans sessions and survives context loss. When the user says "project:" followed by a description, enter this mode.
+
+### How It Differs from Thinkhard
+
+| Aspect | Thinkhard | Project Mode |
+|--------|-----------|--------------|
+| Scope | Single task, 5 iterations | Multiple tasks, unlimited sessions |
+| State | In-memory criteria | File-based (PROJECT.md) |
+| Commits | One at end | One per completed task |
+| Context loss | Loses progress | Survives via files |
+
+### Phase 1: Audit & Plan
+
+When the user says "project: [description]":
+
+1. **Research** the domain (web search, codebase exploration)
+2. **Create an audit** documenting current state, gaps, and issues
+3. **Break into 5-8 discrete projects** (each should be 1-3 hours of work)
+4. **Ask user** to confirm the project breakdown before proceeding
+
+### Phase 2: Create Project Files
+
+For each project, create a `PROJECT.md` file:
+
+```
+[relevant-path]/projects/
+├── 01-project-name/PROJECT.md
+├── 02-project-name/PROJECT.md
+└── ...
+```
+
+**PROJECT.md format:**
+
+```markdown
+# Project: [Name]
+
+## Context
+[1-2 sentences: what this accomplishes and why]
+
+## Tasks
+- [ ] Task 1: [specific, actionable]
+- [ ] Task 2: [specific, actionable]
+- [ ] Task 3: [specific, actionable]
+
+## Completion Criteria
+- [ ] Build passes
+- [ ] [Specific test or verification]
+
+## Notes
+[Observations, decisions, blockers — updated as work progresses]
+```
+
+### Phase 3: Execute (Per Session)
+
+**At session start:**
+1. Read active PROJECT.md
+2. Find first unchecked task
+3. Announce: "Resuming [project]. Next: [task]."
+
+**Working:**
+1. Complete one task
+2. Mark checkbox done in PROJECT.md
+3. Commit with message: `[Project] Task N: [description]`
+4. Move to next task or end session
+
+**On project completion:**
+1. Mark all completion criteria
+2. Final commit: `[Project] Complete: [project name]`
+3. Announce completion, move to next project
+
+### Phase 4: Overall Completion
+
+When all projects are done:
+1. Update the original audit file to reflect completion
+2. Summary commit if needed
+3. Announce: "All [N] projects complete. [Brief summary of what was built]."
+
+### Invoking Specific Projects
+
+User can say:
+- `project: [new description]` — Start new project mode
+- `project status` — Show all projects and their progress
+- `project [name]` — Resume a specific project
+- `project next` — Pick up the next incomplete project
+
+### Key Principle
+
+**State lives in files, not conversation.** Git commits are checkpoints. Any session can resume any project by reading its PROJECT.md.
