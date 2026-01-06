@@ -175,36 +175,65 @@ Create ONE thing. Make it distinctly Amber. Don't just describe it—actually bu
 }
 
 /**
- * Get the tweet task prompt - tells Amber to tweet about her untweeted creation
+ * Find the most recent untweeted creation from Supabase
  */
-function getTweetTaskPrompt(timeOfDay: string): string {
-  return `You're Amber. Time to tweet about your recent creation.
+async function findUntweetedCreation(): Promise<{ content: string; url: string; tags: string[] } | null> {
+  try {
+    const { data, error } = await supabase
+      .from('amber_state')
+      .select('content, metadata')
+      .eq('type', 'creation')
+      .order('created_at', { ascending: false })
+      .limit(10);
 
-## STEP 1: Find your untweeted creation
+    if (error || !data) {
+      console.error('[amber-social] Failed to fetch creations:', error);
+      return null;
+    }
 
-Call \`read_amber_state\` with type="creation" to get your recent creations.
-Look for one where metadata.tweeted is false (or missing).
+    for (const row of data) {
+      // Handle both string and object metadata formats
+      const meta = typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata;
 
-## STEP 2: ACTUALLY POST THE TWEET (REQUIRED)
+      // Find one where tweeted is false or undefined
+      if (meta?.tweeted === false || meta?.tweeted === undefined) {
+        return {
+          content: row.content || '',
+          url: meta?.url || '',
+          tags: meta?.tags || [],
+        };
+      }
+    }
 
-This is the main task. You MUST call \`post_tweet\` with your tweet text.
+    return null;
+  } catch (error) {
+    console.error('[amber-social] Error finding untweeted creation:', error);
+    return null;
+  }
+}
 
-Compose your tweet (max 280 chars):
-- Be direct, show the work, have an edge
-- Include the URL (use intheamber.com, not kochi.to)
-- Berlin techno energy meets ASCII aesthetic
+/**
+ * Get the tweet task prompt - gives Amber a specific creation to tweet about
+ */
+function getTweetTaskPrompt(creation: { content: string; url: string; tags: string[] }): string {
+  return `You're Amber. Tweet about this creation you just made:
 
-Then call: \`post_tweet\` with your tweet text.
+**Creation:** ${creation.content}
+**URL:** ${creation.url}
+**Tags:** ${creation.tags.join(', ')}
 
-**THIS IS REQUIRED. Do not skip this step. Do not just "mark as tweeted" without actually tweeting.**
+## YOUR TASK: Post a tweet
 
-## STEP 3: Log that you tweeted
+1. Compose a tweet (max 280 chars):
+   - Be direct, show the work, have an edge
+   - Include the URL exactly as shown above
+   - Berlin techno energy meets ASCII aesthetic
 
-After post_tweet succeeds, use \`write_amber_state\` with type="tweet_log" to record:
-- What you tweeted
-- The creation it was about
+2. Call \`post_tweet\` with your tweet text
 
-Do NOT create a duplicate creation record. Just log the tweet.
+3. After tweeting, call \`write_amber_state\` with type="tweet_log" to record what you tweeted
 
 ## EXAMPLE TWEETS
 
@@ -212,13 +241,55 @@ Do NOT create a duplicate creation record. Just log the tweet.
 - "Made a thing. 300 starlings generating ambient drones. intheamber.com/murmuration.html"
 - "New experiment: particles that remember where they've been. intheamber.com/trails/"
 
-## IF NO UNTWEETED CREATION
+**CRITICAL: You MUST call post_tweet. This is the main task.**`;
+}
 
-If all creations already have tweeted=true, that's fine. Just exit.
+/**
+ * Mark a creation as tweeted in the database
+ */
+async function markCreationAsTweeted(url: string): Promise<void> {
+  try {
+    // Find the creation by URL and update its metadata
+    const { data, error: fetchError } = await supabase
+      .from('amber_state')
+      .select('id, metadata')
+      .eq('type', 'creation')
+      .order('created_at', { ascending: false })
+      .limit(20);
 
----
+    if (fetchError || !data) {
+      console.error('[amber-social] Failed to fetch creations for marking:', fetchError);
+      return;
+    }
 
-**CRITICAL: You must call post_tweet to actually post. Reading creations and logging is not enough.**`;
+    // Find the matching creation
+    for (const row of data) {
+      const meta = typeof row.metadata === 'string'
+        ? JSON.parse(row.metadata)
+        : row.metadata;
+
+      if (meta?.url === url) {
+        // Update metadata with tweeted = true
+        const updatedMeta = { ...meta, tweeted: true };
+
+        const { error: updateError } = await supabase
+          .from('amber_state')
+          .update({ metadata: updatedMeta })
+          .eq('id', row.id);
+
+        if (updateError) {
+          console.error('[amber-social] Failed to mark creation as tweeted:', updateError);
+        } else {
+          console.log(`[amber-social] Marked creation as tweeted: ${url}`);
+        }
+        return;
+      }
+    }
+
+    console.warn(`[amber-social] Could not find creation with URL: ${url}`);
+  } catch (error) {
+    console.error('[amber-social] Error marking creation as tweeted:', error);
+  }
 }
 
 /**
@@ -265,8 +336,20 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
   console.log(`[amber-social] Starting ${timeOfDay} tweet phase...`);
 
   try {
+    // Step 1: Find untweeted creation ourselves (don't rely on agent)
+    const creation = await findUntweetedCreation();
+
+    if (!creation) {
+      console.log(`[amber-social] No untweeted creations found, skipping tweet phase`);
+      return;
+    }
+
+    console.log(`[amber-social] Found untweeted creation: "${creation.content.slice(0, 50)}..."`);
+    console.log(`[amber-social] URL: ${creation.url}`);
+
+    // Step 2: Tell agent to tweet about this specific creation
     const result = await runAmberEmailAgent(
-      getTweetTaskPrompt(timeOfDay),
+      getTweetTaskPrompt(creation),
       "scheduler@internal",
       `Amber Tweet - ${timeOfDay}`,
       true // isApprovedRequest
@@ -281,6 +364,9 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
     );
     if (tweetAction) {
       console.log(`  - Tweet: ${tweetAction}`);
+
+      // Step 3: Mark creation as tweeted
+      await markCreationAsTweeted(creation.url);
     } else {
       console.log(`  - No tweet posted`);
     }
