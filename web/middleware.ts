@@ -64,6 +64,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // TB-303 bass synth at /303
+    if (pathname.startsWith('/303')) {
+      log(`[Middleware] 303 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // /links is the login-wall-free CS page, not /kochi/links
     if (pathname === '/links' || pathname.startsWith('/links/')) {
       log(`[Middleware] Links route bypassed: ${pathname}`)
@@ -275,6 +281,12 @@ export function middleware(request: NextRequest) {
   // SPECIFIC FIX: Bypass TR-909 drum machine
   if (pathname === '/909' || pathname.startsWith('/909/')) {
     log(`[Middleware] TR-909 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass TB-303 bass synth
+  if (pathname === '/303' || pathname.startsWith('/303/')) {
+    log(`[Middleware] TB-303 bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
