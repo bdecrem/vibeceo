@@ -14,9 +14,15 @@
 import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { runAmberEmailAgent } from "../amber-email/index.js";
 import { createClient } from "@supabase/supabase-js";
-import { postTweet, getMentions, replyToTweet, type Tweet } from "../../lib/twitter-client.js";
+import { postTweet, getMentions, replyToTweet, searchTweets, type Tweet } from "../../lib/twitter-client.js";
+import { getAgentSubscribers, markAgentReportSent } from "../../lib/agent-subscriptions.js";
+import { sendSmsResponse } from "../../lib/sms/handlers.js";
+import { initializeTwilioClient, type TwilioClient } from "../../lib/sms/webhooks.js";
 import Anthropic from "@anthropic-ai/sdk";
 import sgMail from "@sendgrid/mail";
+
+// Agent slug for SMS subscriptions (matches ax.ts command)
+export const AMBER_TWITTER_AGENT_SLUG = "amber-twitter";
 
 // Supabase client
 const supabase = createClient(
@@ -303,6 +309,106 @@ async function markCreationAsTweeted(url: string): Promise<void> {
   } catch (error) {
     console.error('[amber-social] Error marking creation as tweeted:', error);
   }
+}
+
+// =============================================================================
+// SMS NOTIFICATION SYSTEM
+// =============================================================================
+
+/**
+ * Get Amber's latest tweet from Twitter
+ * Uses search API to find the most recent tweet from @intheamber
+ */
+async function getAmberLatestTweet(): Promise<string | null> {
+  try {
+    // Search for tweets from @intheamber (Amber's account)
+    const result = await searchTweets("from:intheamber", 10);
+
+    if (!result.success || !result.tweets || result.tweets.length === 0) {
+      console.warn("[amber-social] Could not fetch Amber's latest tweet");
+      return null;
+    }
+
+    // Return the most recent tweet text
+    return result.tweets[0].text;
+  } catch (error) {
+    console.error("[amber-social] Error fetching Amber's tweet:", error);
+    return null;
+  }
+}
+
+/**
+ * Build SMS message for a tweet notification
+ * Uses Amber's exact tweet text - feels like she's talking directly to you
+ */
+function buildTweetSmsMessage(tweetText: string): string {
+  const MAX_SMS_LENGTH = 670;
+
+  // Just use Amber's words directly, with a simple prefix
+  const prefix = "🐦 ";
+
+  // Truncate if needed (unlikely since tweets are 280 chars)
+  const available = MAX_SMS_LENGTH - prefix.length - 3;
+  let displayText = tweetText.trim();
+  if (displayText.length > available) {
+    displayText = displayText.slice(0, available).trimEnd() + "...";
+  }
+
+  return `${prefix}${displayText}`;
+}
+
+/**
+ * Notify all amber-twitter subscribers about a new tweet
+ * Fetches Amber's actual tweet and sends her exact words
+ */
+async function notifyTweetSubscribers(): Promise<{ sent: number; failed: number }> {
+  const subscribers = await getAgentSubscribers(AMBER_TWITTER_AGENT_SLUG);
+
+  if (subscribers.length === 0) {
+    console.log("[amber-social] No SMS subscribers for tweet notification");
+    return { sent: 0, failed: 0 };
+  }
+
+  console.log(`[amber-social] Notifying ${subscribers.length} SMS subscribers...`);
+
+  // Fetch Amber's actual tweet from Twitter
+  const tweetText = await getAmberLatestTweet();
+  if (!tweetText) {
+    console.error("[amber-social] Could not get Amber's tweet for SMS notification");
+    return { sent: 0, failed: subscribers.length };
+  }
+
+  // Build message using her exact words
+  const message = buildTweetSmsMessage(tweetText);
+  console.log(`[amber-social] SMS message: ${message}`);
+
+  let twilioClient: TwilioClient;
+  try {
+    twilioClient = initializeTwilioClient();
+  } catch (error) {
+    console.error("[amber-social] Failed to get Twilio client:", error);
+    return { sent: 0, failed: subscribers.length };
+  }
+
+  let sent = 0;
+  let failed = 0;
+
+  for (const subscriber of subscribers) {
+    try {
+      await sendSmsResponse(subscriber.phone_number, message, twilioClient);
+      await markAgentReportSent(subscriber.phone_number, AMBER_TWITTER_AGENT_SLUG);
+      sent++;
+
+      // Small delay to avoid rate limiting
+      await new Promise((r) => setTimeout(r, 150));
+    } catch (error) {
+      console.error(`[amber-social] Failed to send to ${subscriber.phone_number}:`, error);
+      failed++;
+    }
+  }
+
+  console.log(`[amber-social] SMS broadcast complete: ${sent} sent, ${failed} failed`);
+  return { sent, failed };
 }
 
 // =============================================================================
@@ -710,6 +816,10 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
 
       // Step 3: Mark creation as tweeted
       await markCreationAsTweeted(creation.url);
+
+      // Step 4: Notify SMS subscribers with Amber's exact tweet
+      const smsResult = await notifyTweetSubscribers();
+      console.log(`  - SMS notifications: ${smsResult.sent} sent, ${smsResult.failed} failed`);
     } else {
       console.log(`  - No tweet posted`);
     }

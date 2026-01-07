@@ -7,6 +7,7 @@ import { aiTwitterCommandHandler } from "./ai-twitter.js";
 import { amberCommandHandler } from "./amber.js";
 import { amberxCommandHandler } from "./amberx.js";
 import { ambervCommandHandler } from "./amberv.js";
+import { axCommandHandler } from "./ax.js";
 import { announcementsCommandHandler } from "./announcements.js";
 import { csCommandHandler } from "./cs.js";
 import { audioTestCommandHandler } from "./audio-test.js";
@@ -34,6 +35,7 @@ export const commandHandlers: CommandHandler[] = [
   amberCommandHandler, // AMBER SCAN/EMAIL/STATUS - agent services (must be before amberx)
   amberxCommandHandler, // AMBERX - explain Twitter/YouTube content
   ambervCommandHandler, // AMBERV - simple voice chat test
+  axCommandHandler, // AX - subscribe to Amber's Twitter feed
   announcementsCommandHandler, // ANNOUNCEMENTS - opt-in to platform updates
   csCommandHandler, // CS - content sharing link feed
   audioTestCommandHandler,
