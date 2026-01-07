@@ -21,16 +21,16 @@ const VOICES = [
     { id: 'ride', label: 'Ride', shortLabel: 'RC' },
 ];
 const defaultPattern = {
-    kick: [0, 4, 8, 12],
-    snare: [4, 12],
+    kick: [],
+    snare: [],
     clap: [],
     rimshot: [],
     ltom: [],
     mtom: [],
     htom: [],
-    ch: [0, 2, 4, 6, 8, 10, 12, 14],
-    oh: [6, 14],
-    crash: [0],
+    ch: [],
+    oh: [],
+    crash: [],
     ride: [],
 };
 function ensureTrack(voiceId) {
@@ -664,6 +664,25 @@ function setupStepPageToggle() {
         });
     });
 }
+function setupEngineToggle() {
+    const btn = document.getElementById('engine-toggle');
+    if (!btn)
+        return;
+    // Set initial state
+    btn.textContent = engine.getEngine();
+    btn.addEventListener('click', () => {
+        const versions = engine.getEngineVersions();
+        const current = engine.getEngine();
+        const currentIndex = versions.indexOf(current);
+        const nextIndex = (currentIndex + 1) % versions.length;
+        const nextVersion = versions[nextIndex];
+        engine.setEngine(nextVersion);
+        btn.textContent = nextVersion;
+        // Preview kick sound after switch
+        engine.trigger('kick', 0.8);
+        setStatus(`Kick engine: ${nextVersion}`);
+    });
+}
 // Update page toggle buttons to show which has the playing step
 function updateStepPageIndicator(step) {
     const btn1 = document.querySelector('.step-page-btn[data-page="1"]');
@@ -681,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboardShortcuts();
     setupPatternTabs();
     setupStepPageToggle();
+    setupEngineToggle();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
     setStatus('Ready — tap steps to program, or press SPACE to play. Keys 1-0 trigger sounds.');

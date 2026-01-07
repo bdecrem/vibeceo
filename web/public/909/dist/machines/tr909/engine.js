@@ -2,6 +2,7 @@ import { SynthEngine } from '../../core/engine.js';
 import { StepSequencer } from '../../core/sequencer.js';
 import { LFSRNoise } from '../../core/noise.js';
 import { Kick909 } from './voices/kick.js';
+import { Kick909E1 } from './voices/kick-e1.js';
 import { Snare909 } from './voices/snare.js';
 import { Clap909 } from './voices/clap.js';
 import { Tom909 } from './voices/tom.js';
@@ -20,6 +21,8 @@ export class TR909Engine extends SynthEngine {
         // Hi-hat choke: track active open hi-hat for cutoff
         this.activeOpenHat = null;
         this.sampleLibrary = createDefaultTr909SampleLibrary();
+        // Engine version: E1 (sine+softclip), E2 (triangle+waveshaper)
+        this.currentEngine = 'E2';
         this.setupVoices();
         this.sequencer.onStep = (step, events) => {
             // Notify UI of step change
@@ -117,6 +120,41 @@ export class TR909Engine extends SynthEngine {
         return this.flamAmount;
     }
     /**
+     * Get the current engine version
+     */
+    getEngine() {
+        return this.currentEngine;
+    }
+    /**
+     * Get available engine versions
+     */
+    getEngineVersions() {
+        return TR909Engine.ENGINE_VERSIONS;
+    }
+    /**
+     * Switch to a different kick engine version
+     * E1: Sine oscillator with soft-clip warmth (original)
+     * E2: Triangle oscillator with diode-style waveshaper (research-based)
+     */
+    setEngine(version) {
+        if (!TR909Engine.ENGINE_VERSIONS.includes(version)) {
+            console.warn(`Unknown engine version: ${version}`);
+            return;
+        }
+        if (version === this.currentEngine) {
+            return;
+        }
+        this.currentEngine = version;
+        // Recreate just the kick voice with the new engine
+        const oldKick = this.voices.get('kick');
+        if (oldKick) {
+            oldKick.disconnect();
+        }
+        const KickClass = version === 'E1' ? Kick909E1 : Kick909;
+        const newKick = new KickClass('kick', this.context);
+        this.registerVoice('kick', newKick);
+    }
+    /**
      * Check if a voice supports sample mode toggle
      */
     isSampleCapable(voiceId) {
@@ -170,8 +208,10 @@ export class TR909Engine extends SynthEngine {
     }
     createVoiceMap(context) {
         const noiseBuffer = new LFSRNoise(context).createBuffer(1);
+        // Select kick class based on current engine
+        const KickClass = this.currentEngine === 'E1' ? Kick909E1 : Kick909;
         return new Map([
-            ['kick', new Kick909('kick', context)],
+            ['kick', new KickClass('kick', context)],
             ['snare', new Snare909('snare', context, noiseBuffer)],
             ['clap', new Clap909('clap', context, noiseBuffer)],
             ['rimshot', new Rimshot909('rimshot', context)],
@@ -244,4 +284,6 @@ export class TR909Engine extends SynthEngine {
 TR909Engine.STEPS_PER_BAR = 16;
 /** Voice IDs that support sample/synth toggle */
 TR909Engine.SAMPLE_CAPABLE_VOICES = ['ch', 'oh', 'crash', 'ride'];
+/** Available engine versions for kick drum */
+TR909Engine.ENGINE_VERSIONS = ['E1', 'E2'];
 //# sourceMappingURL=engine.js.map
