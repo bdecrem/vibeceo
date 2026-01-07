@@ -15,6 +15,7 @@ import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { runAmberEmailAgent } from "../amber-email/index.js";
 import { createClient } from "@supabase/supabase-js";
 import { postTweet, getMentions, replyToTweet, searchTweets, type Tweet } from "../../lib/twitter-client.js";
+import { getMood, getMoodForArtPrompt } from "../../lib/amber-mood.js";
 import { getAgentSubscribers, markAgentReportSent } from "../../lib/agent-subscriptions.js";
 import { sendSmsResponse } from "../../lib/sms/handlers.js";
 import { initializeTwilioClient, type TwilioClient } from "../../lib/sms/webhooks.js";
@@ -94,6 +95,19 @@ async function loadAmberCreativeContext(): Promise<string> {
       for (const log of logData) {
         context += `${log.content.slice(0, 500)}...\n\n`;
       }
+    }
+
+    // Load current mood for aesthetic variation
+    try {
+      const mood = await getMood();
+      context += `## MY CURRENT AESTHETIC MOOD\n\n`;
+      context += `${mood.natural_language}\n\n`;
+      context += `Energy: ${mood.energy.toFixed(2)} (${mood.energy_terms})\n`;
+      context += `Valence: ${mood.valence.toFixed(2)} (${mood.valence_terms})\n`;
+      context += `Quadrant: ${mood.quadrant}\n\n`;
+      context += `Let this mood influence your creative choices—colors, tempo, complexity, tone.\n\n`;
+    } catch (error) {
+      console.warn('[amber-social] Could not load mood:', error);
     }
 
     return context;

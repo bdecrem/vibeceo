@@ -459,6 +459,44 @@ def load_amber_context() -> str:
     except Exception as e:
         print(f"[Amber] Failed to load log: {e}", file=sys.stderr)
 
+    # Load current mood for aesthetic variation
+    try:
+        # Get today's date in PT timezone
+        from datetime import datetime
+        import pytz
+        pt = pytz.timezone('America/Los_Angeles')
+        today = datetime.now(pt).strftime('%Y-%m-%d')
+
+        result = supabase_request(
+            "GET",
+            f"amber_state?type=eq.mood&content=eq.{today}&limit=1"
+        )
+        if isinstance(result, list) and len(result) > 0:
+            metadata = result[0].get("metadata", {})
+            energy = metadata.get("energy_base", 0.5)
+            valence = metadata.get("valence_base", 0.5)
+            pulse_source = metadata.get("pulse_source", "")
+
+            # Determine quadrant
+            if energy >= 0.5 and valence >= 0.5:
+                quadrant = "animated"
+            elif energy >= 0.5 and valence < 0.5:
+                quadrant = "restless"
+            elif energy < 0.5 and valence >= 0.5:
+                quadrant = "gentle"
+            else:
+                quadrant = "contemplative"
+
+            mood_text = f"## My Current Aesthetic Mood\n\n"
+            mood_text += f"I'm in a {quadrant} space right now.\n"
+            mood_text += f"Energy: {energy:.2f}, Valence: {valence:.2f}\n"
+            if pulse_source:
+                mood_text += f"Influenced by: {pulse_source}\n"
+            mood_text += "\nThis affects how I express myself—tone, energy level, warmth."
+            sections.append(mood_text)
+    except Exception as e:
+        print(f"[Amber] Failed to load mood: {e}", file=sys.stderr)
+
     if sections:
         return "\n\n".join(sections)
 

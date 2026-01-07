@@ -23,6 +23,7 @@ import { registerRivalAlertDailyJob } from "../../agents/rivalalert/index.js"; /
 import { registerAmberAwarenessJobs } from "../../agents/amber/index.js"; // Amber awareness - scans environment twice daily
 import { registerAITwitterDailyJob } from "../../agents/ai-twitter-daily/index.js"; // AI Twitter Daily - curated AI researcher tweets
 import { registerAmberSocialJobs } from "../../agents/amber-social/index.js"; // Amber Social - scheduled Twitter posting
+import { registerAmberMoodJobs } from "../amber-mood.js"; // Amber Mood - aesthetic variation tied to lunar/weather/circadian
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -72,6 +73,7 @@ export async function startSmsBot(): Promise<void> {
     registerAmberAwarenessJobs(twilioClient); // AMBER - Environment awareness at 7:30am and 6pm PT
     // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
     registerAmberSocialJobs(); // AMBER SOCIAL - Create at 6:45am/4:30pm, tweet at 7am/4:50pm PT
+    registerAmberMoodJobs(); // AMBER MOOD - Daily mood at midnight, weather pulse hourly
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."
