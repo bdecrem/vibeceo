@@ -1,6 +1,119 @@
 import { TR909Engine, } from '../../machines/tr909/engine.js';
 import { TR909_PRESETS } from '../../machines/tr909/presets.js';
 const STEPS = 16;
+
+// Voice synthesis information for info modal
+const VOICE_INFO = {
+    kick: {
+        e1: 'Sine oscillator with pitch sweep, soft-clipped for warmth.',
+        e2: 'Triangle oscillator through analog waveshaper. Circuit-accurate pitch envelope with 100Hz → 50Hz decay.',
+    },
+    snare: {
+        e1: 'Single triangle oscillator with filtered white noise.',
+        e2: 'Dual sine oscillators (180Hz + 330Hz) with bridged-T resonance. Noise shares buffer with clap for authentic phasing.',
+    },
+    clap: {
+        e1: 'Four-burst envelope on bandpass-filtered noise.',
+        e2: 'Four bursts with randomized timing + reverb tail. Shares noise source with snare.',
+    },
+    rimshot: {
+        e1: 'Single square wave oscillator with rapid decay.',
+        e2: 'Three bridged T-network filters at 220/500/1000 Hz create metallic ring. High-passed noise transient.',
+    },
+    ltom: {
+        e1: 'Single sine oscillator with pitch envelope.',
+        e2: 'Three oscillators at frequency ratios 1:1.5:2.77. Soft saturation for analog warmth.',
+    },
+    mtom: {
+        e1: 'Single sine oscillator with pitch envelope.',
+        e2: 'Three oscillators at frequency ratios 1:1.5:2.77. Soft saturation for analog warmth.',
+    },
+    htom: {
+        e1: 'Single sine oscillator with pitch envelope.',
+        e2: 'Three oscillators at frequency ratios 1:1.5:2.77. Soft saturation for analog warmth.',
+    },
+    ch: {
+        e1: 'White noise through highpass filter with fast decay.',
+        e2: 'Six square oscillators at inharmonic frequencies (205–1204 Hz). Bandpass filtered for shimmer.',
+        sample: 'Real 909 used 6-bit samples. Toggle ♪ for authentic recordings.',
+    },
+    oh: {
+        e1: 'White noise through highpass filter with slow decay.',
+        e2: 'Six square oscillators at inharmonic frequencies. Extended envelope for open ring.',
+        sample: 'Real 909 used 6-bit samples. Toggle ♪ for authentic recordings.',
+    },
+    crash: {
+        e1: 'Bandpass-filtered noise with long decay.',
+        e2: 'Six square oscillators tuned lower (245–1225 Hz) for crash character. Long envelope.',
+        sample: 'Real 909 used 6-bit samples. Toggle ♪ for authentic recordings.',
+    },
+    ride: {
+        e1: 'Bandpass-filtered noise with medium decay.',
+        e2: 'Six square oscillators with tighter ratios (180–1080 Hz) for bell-like quality.',
+        sample: 'Real 909 used 6-bit samples. Toggle ♪ for authentic recordings.',
+    },
+};
+
+// Create and append info modal to body
+let infoModal = null;
+function createInfoModal() {
+    if (infoModal) return infoModal;
+    infoModal = document.createElement('div');
+    infoModal.className = 'voice-info-modal';
+    infoModal.innerHTML = `
+        <div class="voice-info-content">
+            <div class="voice-info-header">
+                <span class="voice-info-title"></span>
+                <button class="voice-info-close" aria-label="Close">&times;</button>
+            </div>
+            <div class="voice-info-body"></div>
+        </div>
+    `;
+    // Close on backdrop click
+    infoModal.addEventListener('click', (e) => {
+        if (e.target === infoModal) hideInfoModal();
+    });
+    // Close button
+    infoModal.querySelector('.voice-info-close').addEventListener('click', hideInfoModal);
+    document.body.appendChild(infoModal);
+    return infoModal;
+}
+
+function hideInfoModal() {
+    if (infoModal) infoModal.classList.remove('active');
+}
+
+function showVoiceInfo(voiceId, voiceLabel) {
+    const modal = createInfoModal();
+    const info = VOICE_INFO[voiceId];
+    if (!info) return;
+
+    modal.querySelector('.voice-info-title').textContent = voiceLabel;
+
+    let bodyHtml = `
+        <div class="voice-info-section">
+            <div class="voice-info-label">E1 — Simple</div>
+            <div class="voice-info-text">${info.e1}</div>
+        </div>
+        <div class="voice-info-section">
+            <div class="voice-info-label e2">E2 — Authentic</div>
+            <div class="voice-info-text">${info.e2}</div>
+        </div>
+    `;
+
+    if (info.sample) {
+        bodyHtml += `<div class="voice-info-note">${info.sample}</div>`;
+    }
+
+    modal.querySelector('.voice-info-body').innerHTML = bodyHtml;
+    modal.classList.add('active');
+}
+
+// Close modal on Escape key
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideInfoModal();
+});
+
 const pattern = {};
 const engine = new TR909Engine();
 const PATTERN_ID = 'web-ui';
@@ -309,6 +422,17 @@ function renderVoiceParams() {
             });
             header.appendChild(engineToggle);
         }
+        // Add info button
+        const infoBtn = document.createElement('button');
+        infoBtn.className = 'voice-info-btn';
+        infoBtn.innerHTML = 'i';
+        infoBtn.title = 'Synthesis info';
+        infoBtn.setAttribute('aria-label', 'Show synthesis information');
+        infoBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showVoiceInfo(voice.id, voice.label);
+        });
+        header.appendChild(infoBtn);
         panel.appendChild(header);
         // Knobs container
         const knobsContainer = document.createElement('div');

@@ -601,6 +601,129 @@ h1::before {
   margin-left: 0.35rem;
 }
 
+/* Voice Info Button */
+.voice-info-btn {
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 0.6rem;
+  font-style: italic;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  opacity: 0.4;
+  margin-left: 0.25rem;
+}
+
+.voice-info-btn:hover {
+  color: var(--amber-400);
+  opacity: 1;
+}
+
+/* Voice Info Modal */
+.voice-info-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.voice-info-modal.active {
+  display: flex;
+}
+
+.voice-info-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 1.25rem;
+  max-width: 320px;
+  width: 100%;
+  max-height: 50vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.voice-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.voice-info-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--amber-400);
+}
+
+.voice-info-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.voice-info-close:hover {
+  color: var(--text-primary);
+}
+
+.voice-info-section {
+  margin-bottom: 0.75rem;
+}
+
+.voice-info-section:last-child {
+  margin-bottom: 0;
+}
+
+.voice-info-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.voice-info-label.e2 {
+  color: var(--amber-600);
+}
+
+.voice-info-text {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: var(--text-secondary);
+}
+
+.voice-info-note {
+  font-size: 0.65rem;
+  font-style: italic;
+  color: var(--text-muted);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--border-subtle);
+}
+
 /* Knobs Container */
 .knobs-container {
   display: flex;
