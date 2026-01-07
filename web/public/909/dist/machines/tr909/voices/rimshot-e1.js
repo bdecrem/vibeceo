@@ -4,14 +4,13 @@ import { Voice } from '../../../core/voice.js';
 export class Rimshot909E1 extends Voice {
     constructor(id, context) {
         super(id, context);
-        this.tune = 0;
         this.level = 1;
     }
 
     trigger(time, velocity) {
         const osc = this.context.createOscillator();
         osc.type = 'square';
-        const base = 400 * Math.pow(2, this.tune / 1200);
+        const base = 400;
         osc.frequency.setValueAtTime(base, time);
 
         const gain = this.context.createGain();
@@ -33,9 +32,7 @@ export class Rimshot909E1 extends Voice {
     }
 
     setParameter(id, value) {
-        if (id === 'tune') {
-            this.tune = value;
-        } else if (id === 'level') {
+        if (id === 'level') {
             this.level = Math.max(0, Math.min(1, value));
         } else {
             super.setParameter(id, value);
@@ -44,12 +41,6 @@ export class Rimshot909E1 extends Voice {
 
     get parameterDescriptors() {
         return [
-            {
-                id: 'tune',
-                label: 'Tune',
-                range: { min: -200, max: 200, step: 1, unit: 'cents' },
-                defaultValue: 0,
-            },
             {
                 id: 'level',
                 label: 'Level',

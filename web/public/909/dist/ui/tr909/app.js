@@ -378,6 +378,30 @@ function setupControls() {
             flamValue.textContent = `${flamInput.value}%`;
         }
     });
+    // Global Accent control
+    const accentInput = document.getElementById('accent');
+    const accentValue = document.getElementById('accent-value');
+    accentInput?.addEventListener('input', () => {
+        const accent = Number(accentInput.value) / 100;
+        engine.setGlobalAccent(accent);
+        if (accentValue) {
+            accentValue.textContent = `${accentInput.value}%`;
+        }
+    });
+    // Pattern Length control
+    const patternLengthSelect = document.getElementById('pattern-length');
+    patternLengthSelect?.addEventListener('change', () => {
+        const length = Number(patternLengthSelect.value);
+        engine.setPatternLength(length);
+        setStatus(`Pattern length: ${length} steps`);
+    });
+    // Scale Mode control
+    const scaleModeSelect = document.getElementById('scale-mode');
+    scaleModeSelect?.addEventListener('change', () => {
+        const scale = scaleModeSelect.value;
+        engine.setScale(scale);
+        setStatus(`Scale: ${scale}`);
+    });
     // Save pattern
     saveBtn?.addEventListener('click', () => {
         const name = prompt('Enter pattern name:');

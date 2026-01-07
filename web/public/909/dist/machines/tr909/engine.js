@@ -34,9 +34,12 @@ export class TR909Engine extends SynthEngine {
             // Notify UI of step change
             this.onStepChange?.(step);
             events.forEach((event) => {
-                // Get per-voice accent amount
+                // Get per-voice accent amount, scaled by global accent
                 const voice = this.voices.get(event.voice);
-                const accentMultiplier = event.accent && voice ? voice.getAccentAmount() : 1;
+                const globalAccentMult = event.globalAccent ?? 1;
+                const accentMultiplier = event.accent && voice
+                    ? 1 + (voice.getAccentAmount() - 1) * globalAccentMult
+                    : 1;
                 const velocity = Math.min(1, event.velocity * accentMultiplier);
                 // Hi-hat choke: closed hat cuts open hat
                 if (event.voice === 'ch' && this.activeOpenHat) {
@@ -124,6 +127,30 @@ export class TR909Engine extends SynthEngine {
     }
     getFlam() {
         return this.flamAmount;
+    }
+    // Pattern length: 1-16 steps
+    setPatternLength(length) {
+        this.sequencer.setPatternLength(length);
+    }
+    getPatternLength() {
+        return this.sequencer.getPatternLength();
+    }
+    // Scale mode: '16th', '8th-triplet', '16th-triplet', '32nd'
+    setScale(scale) {
+        this.sequencer.setScale(scale);
+    }
+    getScale() {
+        return this.sequencer.getScale();
+    }
+    getScaleModes() {
+        return this.sequencer.getScaleModes();
+    }
+    // Global accent: 0-1 multiplier for all accented steps
+    setGlobalAccent(amount) {
+        this.sequencer.setGlobalAccent(amount);
+    }
+    getGlobalAccent() {
+        return this.sequencer.getGlobalAccent();
     }
     /**
      * Get the current engine version

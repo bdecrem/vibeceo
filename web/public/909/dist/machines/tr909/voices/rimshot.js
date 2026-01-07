@@ -6,14 +6,12 @@ import { Voice } from '../../../core/voice.js';
 export class Rimshot909 extends Voice {
     constructor(id, context) {
         super(id, context);
-        this.tune = 0;
         this.level = 1;
         this.tone = 0.5; // Controls noise click amount
     }
 
     trigger(time, velocity) {
         const level = Math.max(0, Math.min(1, velocity * this.level));
-        const tuneMultiplier = Math.pow(2, this.tune / 1200);
 
         // Three resonant frequencies (bridged T-network simulation)
         const frequencies = [220, 500, 1000];
@@ -29,15 +27,14 @@ export class Rimshot909 extends Voice {
             const osc = this.context.createOscillator();
             osc.type = 'sine';
 
-            const baseFreq = freq * tuneMultiplier;
             // Slight pitch drop on attack (characteristic of bridged-T)
-            osc.frequency.setValueAtTime(baseFreq * 1.2, time);
-            osc.frequency.exponentialRampToValueAtTime(baseFreq, time + 0.005);
+            osc.frequency.setValueAtTime(freq * 1.2, time);
+            osc.frequency.exponentialRampToValueAtTime(freq, time + 0.005);
 
             // Bandpass filter to emphasize resonance
             const filter = this.context.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.value = baseFreq;
+            filter.frequency.value = freq;
             filter.Q.value = 15; // High Q for metallic ring
 
             const gain = this.context.createGain();
@@ -82,9 +79,7 @@ export class Rimshot909 extends Voice {
     }
 
     setParameter(id, value) {
-        if (id === 'tune') {
-            this.tune = value;
-        } else if (id === 'level') {
+        if (id === 'level') {
             this.level = Math.max(0, Math.min(1, value));
         } else if (id === 'tone') {
             this.tone = Math.max(0, Math.min(1, value));
@@ -95,12 +90,6 @@ export class Rimshot909 extends Voice {
 
     get parameterDescriptors() {
         return [
-            {
-                id: 'tune',
-                label: 'Tune',
-                range: { min: -200, max: 200, step: 1, unit: 'cents' },
-                defaultValue: 0,
-            },
             {
                 id: 'level',
                 label: 'Level',

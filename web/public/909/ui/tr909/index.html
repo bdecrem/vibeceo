@@ -46,7 +46,7 @@
 
         <label>
           BPM
-          <input id="bpm" type="number" min="40" max="220" step="1" value="128" />
+          <input id="bpm" type="number" min="37" max="290" step="1" value="128" />
         </label>
         <label>
           Swing
@@ -57,6 +57,29 @@
           Flam
           <input id="flam" type="range" min="0" max="100" step="1" value="0" />
           <span id="flam-value">0%</span>
+        </label>
+        <label>
+          Accent
+          <input id="accent" type="range" min="0" max="100" step="1" value="100" />
+          <span id="accent-value">100%</span>
+        </label>
+        <label>
+          Length
+          <select id="pattern-length">
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="12">12</option>
+            <option value="16" selected>16</option>
+          </select>
+        </label>
+        <label>
+          Scale
+          <select id="scale-mode">
+            <option value="16th">16th</option>
+            <option value="8th-triplet">8th Trip</option>
+            <option value="16th-triplet">16th Trip</option>
+            <option value="32nd">32nd</option>
+          </select>
         </label>
 
         <div class="controls-divider"></div>

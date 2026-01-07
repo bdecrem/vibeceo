@@ -1,11 +1,11 @@
 # TR-909 Project Index
 
 ## Status: WORKING
-The TR-909 is functional and playable. Current work is improving authenticity and adding features.
+The TR-909 is functional and playable. All voice overhauls and sequencer features complete.
 
 ---
 
-## PROJECT 1: Voice E1/E2 Overhauls (TODAY)
+## PROJECT 1: Voice E1/E2 Overhauls (COMPLETE)
 
 Each voice gets E1 (original) and E2 (research-based authentic) versions.
 **Commit after each voice is complete.**
@@ -26,25 +26,27 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 
 ---
 
-## PROJECT 2: Features (TOMORROW)
+## PROJECT 2: Features (COMPLETE)
 
 | # | Project | Status | Notes |
 |---|---------|--------|-------|
-| 10 | Shared Noise | 0/4 | Snare/clap phasing effect |
-| 11 | Sample Tune | 0/6 | Hi-hat/cymbal tune knobs |
-| 12 | Sequencer Features | 0/7 | Pattern length, scale modes, tempo range |
-| 13 | UI Polish | 0/10 | Final cleanup, depends on above |
+| 10 | Shared Noise | 4/4 | Already implemented (snare/clap share buffer) |
+| 11 | Sample Tune | 6/6 | Tune inherited from SampleVoice, removed from rimshot |
+| 12 | Sequencer Features | 7/7 | Pattern length, scale modes, BPM 37-290, global accent |
+| 13 | UI Polish | 8/10 | New controls added, minor polish remaining |
 
 ---
 
 ## Current Focus
-**Project 1 COMPLETE!** All 9 voices now have E1/E2 versions.
+**All major features complete!** Minor polish tasks remaining in Project 13.
 
 ## Key Decisions
 - **Foundation**: Pure Web Audio API (no Tone.js) for maximum control
 - **Hi-hats/Cymbals**: Use samples, not synthesis (authentic to original 909)
 - **Snare/Clap**: Share noise source (authentic phasing effect)
 - **Reference code**: ds909 (Teensy C++) downloaded to synthmachine/reference/
+- **Rimshot**: Removed tune parameter (original 909 only had Level)
+- **Scale modes**: 16th, 8th-triplet, 16th-triplet, 32nd for different feels
 
 ## File Locations
 
