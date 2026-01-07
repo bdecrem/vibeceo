@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMBER'S WORLD</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AMBER'S WORLD">
+  <meta property="og:description" content="One Amber. Infinite friends. Each one unique.">
+  <meta property="og:image" content="https://kochi.to/amber/amber-world-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/amber-world.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AMBER'S WORLD">
+  <meta name="twitter:description" content="One Amber. Infinite friends. Each one unique.">
+  <meta name="twitter:image" content="https://kochi.to/amber/amber-world-og.png">
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: #0A0908;
+      overflow: hidden;
+      cursor: pointer;
+      font-family: 'Courier New', monospace;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #info {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 12px;
+      opacity: 0.7;
+      z-index: 100;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    #count {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      color: #2D9596;
+      font-size: 36px;
+      font-weight: bold;
+      z-index: 100;
+      text-shadow: 0 0 20px #2D9596;
+    }
+
+    #title {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 24px;
+      font-weight: bold;
+      z-index: 100;
+      letter-spacing: 4px;
+      text-shadow: 0 0 10px #B8860B;
+    }
+  </style>
+</head>
+<body>
+  <div id="title">AMBER'S WORLD</div>
+  <div id="count">1</div>
+  <div id="info">click to add friends /// each one unique /// they dance</div>
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+
+    let width, height;
+    let characters = [];
+    let amber = null;
+    let audioStarted = false;
+    let audioCtx, gainNode;
+    let beat = 0;
+    let bpm = 140;
+    let lastBeat = 0;
+
+    // Colors
+    const AMBER = '#D4A574';
+    const GOLD = '#B8860B';
+    const TEAL = '#2D9596';
+    const BLACK = '#0A0908';
+    const DARK = '#1a1a18';
+    const VIOLET = '#7B68EE';
+    const CORAL = '#E07A5F';
+    const MINT = '#81B29A';
+    const BLUSH = '#F2CC8F';
+    const LAVENDER = '#C9ADA7';
+    const SKY = '#89C2D9';
+
+    const SKIN_TONES = ['#D4A574', '#E8C4A2', '#C68642', '#8D5524', '#F5DEB3', '#DEB887'];
+    const ACCENT_COLORS = [TEAL, GOLD, VIOLET, CORAL, MINT, SKY];
+    const HAIR_COLORS = ['#1a1a18', '#4A3728', '#8B4513', '#D4A574', '#B8860B', '#2D2D2D', VIOLET, TEAL, CORAL];
+
+    // Character types
+    const TYPES = ['human', 'human', 'human', 'robot', 'robot', 'cat', 'dog', 'bunny'];
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Seeded random for reproducible uniqueness
+    function seededRandom(seed) {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    }
+
+    // Character class
+    class Character {
+      constructor(x, y, isAmber = false, seed = null) {
+        this.x = x;
+        this.y = y;
+        this.isAmber = isAmber;
+        this.seed = seed || Math.random() * 10000;
+
+        // Use seeded random for all properties
+        let s = this.seed;
+        const rand = () => { s++; return seededRandom(s); };
+
+        if (isAmber) {
+          // AMBER - the main character
+          this.type = 'human';
+          this.size = 50;
+          this.skinTone = AMBER;
+          this.accentColor = TEAL;
+          this.hasHeadphones = true;
+          this.headphoneColor = DARK;
+          this.eyeType = 0; // >< happy
+          this.mouthType = 0; // smile
+          this.hasHair = false;
+          this.hairColor = null;
+          this.hairStyle = null;
+          this.hasAntenna = false;
+          this.hasBow = false;
+          this.hasGlasses = false;
+          this.hasHat = false;
+          this.bodyColor = DARK;
+          this.earType = 'none';
+        } else {
+          // Generate unique character
+          this.type = TYPES[Math.floor(rand() * TYPES.length)];
+          this.size = 30 + rand() * 30;
+
+          if (this.type === 'robot') {
+            this.skinTone = rand() > 0.5 ? '#888888' : '#666666';
+            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
+            this.hasHeadphones = rand() > 0.5;
+            this.headphoneColor = DARK;
+            this.eyeType = Math.floor(rand() * 6);
+            this.mouthType = Math.floor(rand() * 5);
+            this.hasAntenna = rand() > 0.3;
+            this.hasHair = false;
+            this.hasBow = false;
+            this.hasGlasses = rand() > 0.7;
+            this.hasHat = false;
+            this.bodyColor = DARK;
+            this.earType = 'none';
+          } else if (this.type === 'cat' || this.type === 'dog' || this.type === 'bunny') {
+            // Pets
+            this.skinTone = rand() > 0.5 ? '#DEB887' : (rand() > 0.5 ? '#8B7355' : '#F5DEB3');
+            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
+            this.hasHeadphones = rand() > 0.7;
+            this.headphoneColor = DARK;
+            this.eyeType = rand() > 0.5 ? 1 : 0; // O O or ><
+            this.mouthType = rand() > 0.5 ? 3 : 0; // w or smile
+            this.hasAntenna = false;
+            this.hasHair = false;
+            this.hasBow = rand() > 0.6;
+            this.hasGlasses = false;
+            this.hasHat = rand() > 0.8;
+            this.bodyColor = this.skinTone;
+            this.earType = this.type;
+            this.size *= 0.7; // Pets are smaller
+          } else {
+            // Humans - most variety
+            this.skinTone = SKIN_TONES[Math.floor(rand() * SKIN_TONES.length)];
+            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
+            this.hasHeadphones = rand() > 0.4;
+            this.headphoneColor = rand() > 0.5 ? DARK : this.accentColor;
+            this.eyeType = Math.floor(rand() * 6);
+            this.mouthType = Math.floor(rand() * 5);
+            this.hasAntenna = false;
+            this.hasHair = rand() > 0.3;
+            this.hairColor = HAIR_COLORS[Math.floor(rand() * HAIR_COLORS.length)];
+            this.hairStyle = Math.floor(rand() * 5);
+            this.hasBow = rand() > 0.7;
+            this.hasGlasses = rand() > 0.75;
+            this.hasHat = rand() > 0.8;
+            this.bodyColor = rand() > 0.5 ? DARK : this.accentColor;
+            this.earType = 'none';
+          }
+        }
+
+        // Animation
+        this.bobPhase = rand() * Math.PI * 2;
+        this.bobSpeed = 0.03 + rand() * 0.02;
+        this.blinking = false;
+        this.blinkTimer = rand() * 100;
+        this.rotation = (rand() - 0.5) * 0.1;
+        this.targetX = x;
+        this.targetY = y;
+        this.scale = 0;
+        this.targetScale = 1;
+      }
+
+      update(beatPulse) {
+        // Smooth movement to target
+        this.x += (this.targetX - this.x) * 0.05;
+        this.y += (this.targetY - this.y) * 0.05;
+
+        // Beat pulse scale
+        this.targetScale = beatPulse ? 1.15 : 1;
+        this.scale += (this.targetScale - this.scale) * 0.3;
+
+        // Bob (faster on beat)
+        this.bobPhase += this.bobSpeed * (beatPulse ? 1.5 : 1);
+
+        // Blinking
+        this.blinkTimer--;
+        if (this.blinkTimer <= 0) {
+          this.blinking = !this.blinking;
+          this.blinkTimer = this.blinking ? 5 : 50 + Math.random() * 100;
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 3);
+        ctx.rotate(this.rotation);
+        ctx.scale(this.scale, this.scale);
+
+        const s = this.size;
+
+        // Draw based on type
+        if (this.earType === 'cat') {
+          this.drawCatEars(s);
+        } else if (this.earType === 'dog') {
+          this.drawDogEars(s);
+        } else if (this.earType === 'bunny') {
+          this.drawBunnyEars(s);
+        }
+
+        // Head
+        ctx.fillStyle = this.skinTone;
+        ctx.fillRect(-s/2, -s/2, s, s * 0.8);
+
+        // Face detail blocks (for humans/robots)
+        if (this.earType === 'none') {
+          ctx.fillStyle = this.type === 'robot' ? '#555555' : this.adjustBrightness(this.skinTone, -20);
+          ctx.fillRect(-s/2 + 3, -s/2 + 3, s/5, s/5);
+          ctx.fillRect(s/2 - 3 - s/5, -s/2 + 3, s/5, s/5);
+        }
+
+        // Hair (before headphones)
+        if (this.hasHair && !this.hasHat) {
+          this.drawHair(s);
+        }
+
+        // Hat
+        if (this.hasHat) {
+          this.drawHat(s);
+        }
+
+        // Headphones
+        if (this.hasHeadphones) {
+          this.drawHeadphones(s);
+        }
+
+        // Antenna (robots)
+        if (this.hasAntenna) {
+          ctx.strokeStyle = DARK;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(0, -s/2);
+          ctx.lineTo(0, -s/2 - 12);
+          ctx.stroke();
+          ctx.fillStyle = this.accentColor;
+          ctx.beginPath();
+          ctx.arc(0, -s/2 - 14, 4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Bow
+        if (this.hasBow && !this.hasHeadphones && !this.hasHat) {
+          this.drawBow(s);
+        }
+
+        // Glasses
+        if (this.hasGlasses) {
+          this.drawGlasses(s);
+        }
+
+        // Eyes
+        if (!this.blinking) {
+          this.drawEyes(s);
+        } else {
+          ctx.strokeStyle = BLACK;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(-s/4 - 4, -s/8);
+          ctx.lineTo(-s/4 + 4, -s/8);
+          ctx.moveTo(s/4 - 4, -s/8);
+          ctx.lineTo(s/4 + 4, -s/8);
+          ctx.stroke();
+        }
+
+        // Nose (for pets)
+        if (this.earType !== 'none') {
+          ctx.fillStyle = '#333';
+          ctx.beginPath();
+          ctx.ellipse(0, s/10, 4, 3, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Mouth
+        this.drawMouth(s);
+
+        // Body
+        ctx.fillStyle = this.bodyColor;
+        ctx.fillRect(-s/3, s * 0.3, s * 0.66, s/3);
+
+        // Body accent
+        ctx.fillStyle = this.accentColor;
+        ctx.beginPath();
+        ctx.arc(0, s * 0.45, 4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Amber glow
+        if (this.isAmber) {
+          ctx.shadowColor = GOLD;
+          ctx.shadowBlur = 20;
+          ctx.strokeStyle = GOLD;
+          ctx.lineWidth = 2;
+          ctx.strokeRect(-s/2 - 4, -s/2 - 4, s + 8, s + 12);
+          ctx.shadowBlur = 0;
+        }
+
+        ctx.restore();
+      }
+
+      drawHeadphones(s) {
+        ctx.fillStyle = this.headphoneColor;
+        ctx.fillRect(-s/2 - 6, -s/4, 10, s/2);
+        ctx.fillRect(s/2 - 4, -s/4, 10, s/2);
+
+        ctx.fillStyle = this.accentColor;
+        ctx.beginPath();
+        ctx.arc(-s/2 - 1, 0, 5, 0, Math.PI * 2);
+        ctx.arc(s/2 + 1, 0, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.strokeStyle = this.headphoneColor;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(0, -s/4, s/2 + 3, Math.PI, 0);
+        ctx.stroke();
+      }
+
+      drawHair(s) {
+        ctx.fillStyle = this.hairColor;
+        switch(this.hairStyle) {
+          case 0: // Short spiky
+            ctx.fillRect(-s/2, -s/2 - 8, s, 12);
+            for (let i = 0; i < 5; i++) {
+              ctx.fillRect(-s/2 + i * s/5 + 2, -s/2 - 12, s/6, 8);
+            }
+            break;
+          case 1: // Long
+            ctx.fillRect(-s/2 - 4, -s/2 - 6, s + 8, s * 0.9);
+            break;
+          case 2: // Pigtails
+            ctx.fillRect(-s/2, -s/2 - 6, s, 10);
+            ctx.fillRect(-s/2 - 8, -s/3, 10, s/2);
+            ctx.fillRect(s/2 - 2, -s/3, 10, s/2);
+            break;
+          case 3: // Mohawk
+            ctx.fillRect(-4, -s/2 - 15, 8, 20);
+            break;
+          case 4: // Curly top
+            for (let i = 0; i < 4; i++) {
+              ctx.beginPath();
+              ctx.arc(-s/3 + i * s/4, -s/2 - 4, 8, 0, Math.PI * 2);
+              ctx.fill();
+            }
+            break;
+        }
+      }
+
+      drawHat(s) {
+        ctx.fillStyle = this.accentColor;
+        ctx.fillRect(-s/2 - 4, -s/2 - 10, s + 8, 14);
+        ctx.fillRect(-s/3, -s/2 - 20, s * 0.66, 14);
+      }
+
+      drawBow(s) {
+        ctx.fillStyle = this.accentColor;
+        ctx.beginPath();
+        ctx.ellipse(-s/3, -s/2 + 5, 8, 5, -0.3, 0, Math.PI * 2);
+        ctx.ellipse(-s/3 + 12, -s/2 + 5, 8, 5, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(-s/3 + 6, -s/2 + 5, 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawGlasses(s) {
+        ctx.strokeStyle = this.accentColor;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(-s/4 - 7, -s/6 - 5, 14, 10);
+        ctx.strokeRect(s/4 - 7, -s/6 - 5, 14, 10);
+        ctx.beginPath();
+        ctx.moveTo(-s/4 + 7, -s/6);
+        ctx.lineTo(s/4 - 7, -s/6);
+        ctx.stroke();
+      }
+
+      drawCatEars(s) {
+        ctx.fillStyle = this.skinTone;
+        ctx.beginPath();
+        ctx.moveTo(-s/2, -s/2);
+        ctx.lineTo(-s/2 - 8, -s/2 - 15);
+        ctx.lineTo(-s/4, -s/2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(s/2, -s/2);
+        ctx.lineTo(s/2 + 8, -s/2 - 15);
+        ctx.lineTo(s/4, -s/2);
+        ctx.fill();
+        // Inner ear
+        ctx.fillStyle = CORAL;
+        ctx.beginPath();
+        ctx.moveTo(-s/2 + 2, -s/2);
+        ctx.lineTo(-s/2 - 4, -s/2 - 10);
+        ctx.lineTo(-s/4 - 2, -s/2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(s/2 - 2, -s/2);
+        ctx.lineTo(s/2 + 4, -s/2 - 10);
+        ctx.lineTo(s/4 + 2, -s/2);
+        ctx.fill();
+      }
+
+      drawDogEars(s) {
+        ctx.fillStyle = this.adjustBrightness(this.skinTone, -30);
+        ctx.beginPath();
+        ctx.ellipse(-s/2 - 5, -s/6, 8, 16, -0.3, 0, Math.PI * 2);
+        ctx.ellipse(s/2 + 5, -s/6, 8, 16, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawBunnyEars(s) {
+        ctx.fillStyle = this.skinTone;
+        ctx.beginPath();
+        ctx.ellipse(-s/4, -s/2 - 20, 6, 20, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(s/4, -s/2 - 20, 6, 20, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+        // Inner ear
+        ctx.fillStyle = CORAL;
+        ctx.beginPath();
+        ctx.ellipse(-s/4, -s/2 - 20, 3, 14, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(s/4, -s/2 - 20, 3, 14, 0.1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      drawEyes(s) {
+        ctx.fillStyle = BLACK;
+
+        switch(this.eyeType) {
+          case 0: // >< happy
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = BLACK;
+            ctx.beginPath();
+            ctx.moveTo(-s/4 - 5, -s/8 - 3);
+            ctx.lineTo(-s/4, -s/8);
+            ctx.lineTo(-s/4 - 5, -s/8 + 3);
+            ctx.moveTo(s/4 + 5, -s/8 - 3);
+            ctx.lineTo(s/4, -s/8);
+            ctx.lineTo(s/4 + 5, -s/8 + 3);
+            ctx.stroke();
+            break;
+          case 1: // O O
+            ctx.beginPath();
+            ctx.arc(-s/4, -s/8, 5, 0, Math.PI * 2);
+            ctx.arc(s/4, -s/8, 5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = this.accentColor;
+            ctx.beginPath();
+            ctx.arc(-s/4 + 1, -s/8 - 1, 2, 0, Math.PI * 2);
+            ctx.arc(s/4 + 1, -s/8 - 1, 2, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 2: // - -
+            ctx.fillRect(-s/4 - 5, -s/8 - 1, 10, 3);
+            ctx.fillRect(s/4 - 5, -s/8 - 1, 10, 3);
+            break;
+          case 3: // ^ ^
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = BLACK;
+            ctx.beginPath();
+            ctx.moveTo(-s/4 - 5, -s/8 + 2);
+            ctx.lineTo(-s/4, -s/8 - 4);
+            ctx.lineTo(-s/4 + 5, -s/8 + 2);
+            ctx.moveTo(s/4 - 5, -s/8 + 2);
+            ctx.lineTo(s/4, -s/8 - 4);
+            ctx.lineTo(s/4 + 5, -s/8 + 2);
+            ctx.stroke();
+            break;
+          case 4: // * *
+            ctx.font = `${s/4}px monospace`;
+            ctx.fillText('*', -s/4 - 4, -s/8 + 4);
+            ctx.fillText('*', s/4 - 4, -s/8 + 4);
+            break;
+          case 5: // heart eyes
+            ctx.fillStyle = CORAL;
+            ctx.font = `${s/4}px serif`;
+            ctx.fillText('♥', -s/4 - 5, -s/8 + 4);
+            ctx.fillText('♥', s/4 - 5, -s/8 + 4);
+            break;
+        }
+      }
+
+      drawMouth(s) {
+        ctx.fillStyle = BLACK;
+        ctx.strokeStyle = BLACK;
+        ctx.lineWidth = 2;
+
+        switch(this.mouthType) {
+          case 0: // smile
+            ctx.beginPath();
+            ctx.arc(0, s/7, 6, 0, Math.PI);
+            ctx.stroke();
+            break;
+          case 1: // o
+            ctx.beginPath();
+            ctx.arc(0, s/7, 4, 0, Math.PI * 2);
+            ctx.fill();
+            break;
+          case 2: // teeth
+            ctx.fillRect(-8, s/7 - 2, 16, 6);
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(-6, s/7 - 1, 4, 4);
+            ctx.fillRect(2, s/7 - 1, 4, 4);
+            break;
+          case 3: // w
+            ctx.beginPath();
+            ctx.moveTo(-6, s/7);
+            ctx.lineTo(-3, s/7 + 4);
+            ctx.lineTo(0, s/7);
+            ctx.lineTo(3, s/7 + 4);
+            ctx.lineTo(6, s/7);
+            ctx.stroke();
+            break;
+          case 4: // :3
+            ctx.beginPath();
+            ctx.arc(-4, s/7, 4, 0, Math.PI);
+            ctx.arc(4, s/7, 4, 0, Math.PI);
+            ctx.stroke();
+            break;
+        }
+      }
+
+      adjustBrightness(hex, amount) {
+        const num = parseInt(hex.replace('#', ''), 16);
+        const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+        const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+        const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+        return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
+      }
+    }
+
+    // Audio setup
+    function initAudio() {
+      if (audioStarted) return;
+      audioStarted = true;
+
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      gainNode = audioCtx.createGain();
+      gainNode.gain.value = 0.3;
+      gainNode.connect(audioCtx.destination);
+
+      scheduleBeat();
+    }
+
+    function scheduleBeat() {
+      const beatInterval = 60000 / bpm;
+
+      setInterval(() => {
+        beat++;
+        lastBeat = Date.now();
+
+        // Kick on 1 and 3
+        if (beat % 4 === 0 || beat % 4 === 2) {
+          playKick();
+        }
+
+        // Hihat on every beat
+        playHihat();
+
+        // Bass on 1
+        if (beat % 4 === 0) {
+          playBass();
+        }
+
+      }, beatInterval);
+    }
+
+    function playKick() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
+
+      gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+
+      osc.connect(gain);
+      gain.connect(gainNode);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playHihat() {
+      const bufferSize = audioCtx.sampleRate * 0.05;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
+      }
+
+      const source = audioCtx.createBufferSource();
+      const gain = audioCtx.createGain();
+      const filter = audioCtx.createBiquadFilter();
+
+      filter.type = 'highpass';
+      filter.frequency.value = 7000;
+
+      source.buffer = buffer;
+      gain.gain.value = 0.15;
+
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+
+      source.start();
+    }
+
+    function playBass() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      const notes = [55, 55, 73.42, 55]; // A1, A1, D2, A1
+      const note = notes[Math.floor(beat / 4) % notes.length];
+
+      osc.type = 'sawtooth';
+      osc.frequency.value = note;
+
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+      const filter = audioCtx.createBiquadFilter();
+      filter.type = 'lowpass';
+      filter.frequency.value = 400;
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(gainNode);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    // Create Amber first, in the center
+    amber = new Character(width / 2, height / 2, true);
+    characters.push(amber);
+
+    function updateCount() {
+      countEl.textContent = characters.length;
+    }
+
+    // Arrange characters in expanding circles around Amber
+    function arrangeCharacters() {
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // Amber stays in center
+      amber.targetX = centerX;
+      amber.targetY = centerY;
+
+      // Others arrange in rings
+      const others = characters.filter(c => !c.isAmber);
+      let ring = 1;
+      let ringIndex = 0;
+      const baseRadius = 100;
+      const ringCapacity = (r) => Math.floor(r * 6);
+
+      others.forEach((char, i) => {
+        const capacity = ringCapacity(ring);
+        const angle = (ringIndex / capacity) * Math.PI * 2 - Math.PI / 2;
+        const radius = baseRadius * ring;
+
+        char.targetX = centerX + Math.cos(angle) * radius;
+        char.targetY = centerY + Math.sin(angle) * radius;
+
+        ringIndex++;
+        if (ringIndex >= capacity) {
+          ring++;
+          ringIndex = 0;
+        }
+      });
+    }
+
+    // Click to add friend
+    canvas.addEventListener('click', (e) => {
+      initAudio();
+      if (characters.length < 50) {
+        const newChar = new Character(e.clientX, e.clientY, false);
+        characters.push(newChar);
+        updateCount();
+        arrangeCharacters();
+      }
+    });
+
+    // Animation loop
+    function animate() {
+      ctx.fillStyle = BLACK;
+      ctx.fillRect(0, 0, width, height);
+
+      // Subtle grid
+      ctx.strokeStyle = 'rgba(45, 149, 150, 0.05)';
+      ctx.lineWidth = 1;
+      for (let x = 0; x < width; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Draw connecting lines from Amber to others
+      ctx.strokeStyle = 'rgba(212, 165, 116, 0.1)';
+      ctx.lineWidth = 1;
+      characters.forEach(char => {
+        if (!char.isAmber) {
+          ctx.beginPath();
+          ctx.moveTo(amber.x, amber.y);
+          ctx.lineTo(char.x, char.y);
+          ctx.stroke();
+        }
+      });
+
+      // Beat pulse detection
+      const timeSinceBeat = Date.now() - lastBeat;
+      const beatPulse = timeSinceBeat < 80;
+
+      // Update and draw characters (Amber last so she's on top)
+      const others = characters.filter(c => !c.isAmber);
+      others.forEach(char => {
+        char.update(beatPulse);
+        char.draw();
+      });
+      amber.update(beatPulse);
+      amber.draw();
+
+      requestAnimationFrame(animate);
+    }
+
+    // Initial arrangement
+    arrangeCharacters();
+    animate();
+
+    // Handle resize
+    window.addEventListener('resize', () => {
+      resize();
+      arrangeCharacters();
+    });
+  </script>
+</body>
+</html>
