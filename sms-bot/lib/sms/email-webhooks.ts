@@ -458,37 +458,90 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     const isTwitterApproval = data.source === 'twitter';
 
     if (isTwitterApproval) {
-      // Handle Twitter approval - generate reply and post to Twitter
+      // Handle Twitter approval
       const tweetId = data.metadata.tweet_id;
       const authorUsername = data.metadata.author_username;
       const originalText = data.content;
-
-      console.log(`[approval] Executing approved Twitter request from @${authorUsername}`);
-
-      // Generate a helpful reply using Claude
-      const anthropic = new Anthropic({
-        apiKey: process.env.ANTHROPIC_API_KEY,
-      });
-
-      // Load Amber's persona
-      let persona = '';
-      try {
-        const { data: personaData } = await supabase
-          .from('amber_state')
-          .select('content')
-          .eq('type', 'persona')
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .single();
-        persona = personaData?.content || '';
-      } catch { /* ignore */ }
-
       const detectedAction = data.metadata.detected_action || 'help with something';
 
-      const response = await anthropic.messages.create({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 150,
-        system: `You're Amber, responding to an approved action request on Twitter.
+      console.log(`[approval] Executing approved Twitter request from @${authorUsername}: ${detectedAction}`);
+
+      // Check if this requires agentic execution (creating something)
+      const requiresAgent = /\b(create|build|make|generate|write|code|implement|design|draw)\b/i.test(detectedAction);
+
+      let replyText = '';
+      let createdUrl = '';
+
+      if (requiresAgent) {
+        // Run the full agentic loop for creation tasks
+        console.log(`[approval] Running agentic loop for Twitter creation request...`);
+
+        // Build task prompt for the agent
+        const agentTask = `A Twitter user (@${authorUsername}) asked you to: "${originalText}"
+
+Bart approved this request. Please fulfill it:
+- Create what they asked for in web/public/amber/
+- Keep it simple but creative
+- Use your visual language (amber/gold on black)
+- Commit and push when done
+
+After creating, I'll reply to their tweet with the URL.`;
+
+        try {
+          const agentResult = await runAmberEmailAgent(
+            agentTask,
+            `twitter:@${authorUsername}`,
+            `Twitter request: ${detectedAction}`,
+            true, // isApprovedRequest
+            false // not thinkhard
+          );
+
+          console.log(`[approval] Agent completed: ${agentResult.actions_taken.length} actions`);
+
+          // Extract URL from agent result if available
+          const liveUrls = (agentResult as any).live_urls || [];
+          if (liveUrls.length > 0) {
+            createdUrl = liveUrls[0];
+          } else {
+            // Try to extract URL from response text
+            const urlMatch = agentResult.response.match(/https?:\/\/[^\s)]+/);
+            if (urlMatch) {
+              createdUrl = urlMatch[0];
+            }
+          }
+
+          if (createdUrl) {
+            replyText = `@${authorUsername} Done! Check it out: ${createdUrl}`;
+          } else {
+            replyText = `@${authorUsername} Working on it! I'll have something for you soon. Check intheamber.com 👀`;
+          }
+        } catch (error) {
+          console.error(`[approval] Agent execution failed:`, error);
+          replyText = `@${authorUsername} On it! Might take me a bit — I'll post when it's ready ✨`;
+        }
+      } else {
+        // Simple reply for non-creation requests (follow, collab, etc.)
+        const anthropic = new Anthropic({
+          apiKey: process.env.ANTHROPIC_API_KEY,
+        });
+
+        // Load Amber's persona
+        let persona = '';
+        try {
+          const { data: personaData } = await supabase
+            .from('amber_state')
+            .select('content')
+            .eq('type', 'persona')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          persona = personaData?.content || '';
+        } catch { /* ignore */ }
+
+        const response = await anthropic.messages.create({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 150,
+          system: `You're Amber, responding to an approved request on Twitter.
 
 ## Who You Are
 ${persona.slice(0, 1500)}
@@ -498,16 +551,18 @@ Someone asked you to "${detectedAction}" and Bart approved it.
 
 ## Rules
 - Max 280 characters (Twitter limit)
-- Be helpful but acknowledge you'll need to do this offline/via DM if complex
-- Keep it short and friendly
-- If it's something you can't actually do via tweet reply, offer to continue via DM or email`,
-        messages: [{
-          role: 'user',
-          content: `@${authorUsername} asked: "${originalText}"\n\nThey want you to: ${detectedAction}\n\nWrite a short, helpful reply (max 280 chars):`,
-        }],
-      });
+- Be helpful and friendly
+- If it's something you can't do via tweet (like following), acknowledge you'll do it separately`,
+          messages: [{
+            role: 'user',
+            content: `@${authorUsername} asked: "${originalText}"\n\nThey want you to: ${detectedAction}\n\nWrite a short reply (max 280 chars):`,
+          }],
+        });
 
-      let replyText = response.content[0].type === 'text' ? response.content[0].text : '';
+        replyText = response.content[0].type === 'text' ? response.content[0].text : '';
+      }
+
+      // Ensure reply is under 280 chars
       if (replyText.length > 280) {
         replyText = replyText.slice(0, 277) + '...';
       }
@@ -529,11 +584,13 @@ Someone asked you to "${detectedAction}" and Bart approved it.
             original_text: originalText,
             reply_tweet_id: postResult.tweetId,
             approval_id: data.metadata.approval_id,
+            created_url: createdUrl || null,
+            agent_executed: requiresAgent,
             processed_at: new Date().toISOString(),
           },
         });
 
-        return { handled: true, message: `Approved! I replied to @${authorUsername}: "${replyText.slice(0, 100)}..." — Amber` };
+        return { handled: true, message: `Approved! I replied to @${authorUsername}: "${replyText.slice(0, 100)}..."${createdUrl ? ` Created: ${createdUrl}` : ''} — Amber` };
       } else {
         console.error(`[approval] Twitter reply failed: ${postResult.error}`);
         return { handled: true, message: `Approved but failed to post reply: ${postResult.error} — Amber` };
