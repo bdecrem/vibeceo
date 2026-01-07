@@ -4,7 +4,9 @@ import { LFSRNoise } from '../../core/noise.js';
 import { Kick909 } from './voices/kick.js';
 import { Kick909E1 } from './voices/kick-e1.js';
 import { Snare909 } from './voices/snare.js';
+import { Snare909E1 } from './voices/snare-e1.js';
 import { Clap909 } from './voices/clap.js';
+import { Clap909E1 } from './voices/clap-e1.js';
 import { Tom909 } from './voices/tom.js';
 import { Rimshot909 } from './voices/rimshot.js';
 import { HiHat909 } from './voices/hihat.js';
@@ -132,9 +134,9 @@ export class TR909Engine extends SynthEngine {
         return TR909Engine.ENGINE_VERSIONS;
     }
     /**
-     * Switch to a different kick engine version
-     * E1: Sine oscillator with soft-clip warmth (original)
-     * E2: Triangle oscillator with diode-style waveshaper (research-based)
+     * Switch engine version for kick, snare, and clap
+     * E1: Original voices (simpler synthesis)
+     * E2: Research-based voices (authentic 909 circuit emulation)
      */
     setEngine(version) {
         if (!TR909Engine.ENGINE_VERSIONS.includes(version)) {
@@ -145,14 +147,27 @@ export class TR909Engine extends SynthEngine {
             return;
         }
         this.currentEngine = version;
-        // Recreate just the kick voice with the new engine
+
+        // Need noise buffer for snare and clap
+        const noiseBuffer = new LFSRNoise(this.context).createBuffer(1);
+
+        // Swap kick
         const oldKick = this.voices.get('kick');
-        if (oldKick) {
-            oldKick.disconnect();
-        }
+        if (oldKick) oldKick.disconnect();
         const KickClass = version === 'E1' ? Kick909E1 : Kick909;
-        const newKick = new KickClass('kick', this.context);
-        this.registerVoice('kick', newKick);
+        this.registerVoice('kick', new KickClass('kick', this.context));
+
+        // Swap snare
+        const oldSnare = this.voices.get('snare');
+        if (oldSnare) oldSnare.disconnect();
+        const SnareClass = version === 'E1' ? Snare909E1 : Snare909;
+        this.registerVoice('snare', new SnareClass('snare', this.context, noiseBuffer));
+
+        // Swap clap
+        const oldClap = this.voices.get('clap');
+        if (oldClap) oldClap.disconnect();
+        const ClapClass = version === 'E1' ? Clap909E1 : Clap909;
+        this.registerVoice('clap', new ClapClass('clap', this.context, noiseBuffer));
     }
     /**
      * Check if a voice supports sample mode toggle
@@ -208,12 +223,14 @@ export class TR909Engine extends SynthEngine {
     }
     createVoiceMap(context) {
         const noiseBuffer = new LFSRNoise(context).createBuffer(1);
-        // Select kick class based on current engine
+        // Select voice classes based on current engine
         const KickClass = this.currentEngine === 'E1' ? Kick909E1 : Kick909;
+        const SnareClass = this.currentEngine === 'E1' ? Snare909E1 : Snare909;
+        const ClapClass = this.currentEngine === 'E1' ? Clap909E1 : Clap909;
         return new Map([
             ['kick', new KickClass('kick', context)],
-            ['snare', new Snare909('snare', context, noiseBuffer)],
-            ['clap', new Clap909('clap', context, noiseBuffer)],
+            ['snare', new SnareClass('snare', context, noiseBuffer)],
+            ['clap', new ClapClass('clap', context, noiseBuffer)],
             ['rimshot', new Rimshot909('rimshot', context)],
             ['ltom', new Tom909('ltom', context, 'low')],
             ['mtom', new Tom909('mtom', context, 'mid')],
