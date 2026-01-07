@@ -186,7 +186,13 @@
             return { hue, sat };
         }
 
+        let frameCount = 0;
         function draw() {
+            frameCount++;
+            if (frameCount % 60 === 0) {
+                console.log('frame:', frameCount, 'time:', time.toFixed(2), 'frozen:', frozen);
+            }
+
             // Clear with fade trail
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, width, height);
@@ -263,10 +269,15 @@
         }
 
         // Toggle freeze state
-        function toggleFreeze() {
-            if (!canToggle) return;
+        function toggleFreeze(source) {
+            console.log('toggleFreeze called from:', source, 'canToggle:', canToggle, 'time:', time);
+            if (!canToggle) {
+                console.log('blocked - canToggle is false');
+                return;
+            }
 
             frozen = !frozen;
+            console.log('frozen is now:', frozen);
 
             if (frozen) {
                 frozenTime = time;
@@ -280,23 +291,28 @@
             }
         }
 
-        // Click to freeze/unfreeze (with debounce protection)
+        // Click to freeze/unfreeze - only real user clicks
         canvas.addEventListener('click', (e) => {
+            console.log('click event - isTrusted:', e.isTrusted);
+            if (!e.isTrusted) return; // Ignore synthetic events
             e.preventDefault();
-            toggleFreeze();
+            toggleFreeze('click');
         });
 
         // Touch support (prevent double-firing)
         canvas.addEventListener('touchend', (e) => {
+            console.log('touchend event - isTrusted:', e.isTrusted);
+            if (!e.isTrusted) return;
             e.preventDefault();
-            toggleFreeze();
+            toggleFreeze('touchend');
         }, { passive: false });
 
         // Spacebar also toggles
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
+                console.log('spacebar pressed');
                 e.preventDefault();
-                toggleFreeze();
+                toggleFreeze('spacebar');
             }
         });
 
