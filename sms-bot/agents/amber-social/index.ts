@@ -1,20 +1,22 @@
 /**
- * Amber Social Agent - Scheduled Creative Output
+ * Amber Social Agent - Scheduled Creative Output + Reply Management
  *
- * Two-phase system:
- * 1. CREATE (6:45am, 2:45pm PT) - Generate creative prompt, make something, save with tweeted=false
- * 2. TWEET (7:00am, 3:00pm PT) - Find untweeted creations, compose and post tweet
+ * Three-phase system:
+ * 1. CREATE (10:15am, 3:45pm PT) - Generate creative prompt, make something, save with tweeted=false
+ * 2. TWEET (10:30am, 4:05pm PT) - Find untweeted creations, compose and post tweet
+ * 3. REPLY (11:00am, 5:00pm PT) - Check @replies, respond or queue for approval
  *
- * The 15-minute gap allows for:
- * - Image generation to complete
- * - Any web deployments to finish
- * - URLs to be live before tweeting
+ * Reply handling:
+ * - Conversational replies → Amber responds directly in her voice
+ * - Action requests (make something, follow, etc.) → Email Bart for approval
  */
 
 import { registerDailyJob } from "../../lib/scheduler/index.js";
 import { runAmberEmailAgent } from "../amber-email/index.js";
 import { createClient } from "@supabase/supabase-js";
-import { postTweet } from "../../lib/twitter-client.js";
+import { postTweet, getMentions, replyToTweet, type Tweet } from "../../lib/twitter-client.js";
+import Anthropic from "@anthropic-ai/sdk";
+import sgMail from "@sendgrid/mail";
 
 // Supabase client
 const supabase = createClient(
@@ -22,11 +24,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Create first, then tweet 15 minutes later
+// Schedule: Create first, then tweet 15 minutes later, then check replies
 const SCHEDULE = [
-  { createHour: 10, createMinute: 15, tweetHour: 10, tweetMinute: 30, label: "morning" },
-  { createHour: 15, createMinute: 45, tweetHour: 16, tweetMinute: 5, label: "afternoon" },
+  { createHour: 10, createMinute: 15, tweetHour: 10, tweetMinute: 30, replyHour: 11, replyMinute: 0, label: "morning" },
+  { createHour: 15, createMinute: 45, tweetHour: 16, tweetMinute: 5, replyHour: 17, replyMinute: 0, label: "afternoon" },
 ];
+
+// Admin email for approval requests
+const ADMIN_EMAIL = 'bdecrem@gmail.com';
+
+// Initialize SendGrid if available
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
 /**
  * Load Amber's full creative context from Supabase
@@ -295,6 +305,336 @@ async function markCreationAsTweeted(url: string): Promise<void> {
   }
 }
 
+// =============================================================================
+// TWITTER REPLY SYSTEM
+// =============================================================================
+
+/**
+ * Get the last processed mention ID from Supabase
+ */
+async function getLastProcessedMentionId(): Promise<string | null> {
+  try {
+    const { data } = await supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'twitter_cursor')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    return data?.content || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save the last processed mention ID
+ */
+async function saveLastProcessedMentionId(mentionId: string): Promise<void> {
+  try {
+    await supabase.from('amber_state').insert({
+      type: 'twitter_cursor',
+      content: mentionId,
+      source: 'amber-social',
+      metadata: { updated_at: new Date().toISOString() },
+    });
+    console.log(`[amber-social] Saved mention cursor: ${mentionId}`);
+  } catch (error) {
+    console.error('[amber-social] Failed to save mention cursor:', error);
+  }
+}
+
+/**
+ * Detect if a tweet is an action request (vs just conversation)
+ * Action requests need Bart's approval before Amber acts on them
+ */
+function isTwitterActionRequest(text: string): { isAction: boolean; action: string | null } {
+  const lowerText = text.toLowerCase();
+
+  const actionPatterns = [
+    { pattern: /\b(make|create|build|generate|draw|design)\b.*\b(me|us|a|an|the)\b/i, action: 'create something' },
+    { pattern: /\b(follow|unfollow|block)\b/i, action: 'follow/unfollow account' },
+    { pattern: /\b(retweet|rt|quote)\b/i, action: 'retweet/quote' },
+    { pattern: /\b(dm|message|email)\b.*\b(me|someone)\b/i, action: 'send message' },
+    { pattern: /\bcan you\b.*\b(make|create|build|do|help)\b/i, action: 'help with task' },
+    { pattern: /\bwould you\b.*\b(make|create|do)\b/i, action: 'help with task' },
+    { pattern: /\b(write|code|implement|deploy)\b/i, action: 'write code' },
+    { pattern: /\b(join|collab|collaborate|partner)\b/i, action: 'collaboration request' },
+    { pattern: /\b(hire|work with|contract)\b/i, action: 'work request' },
+  ];
+
+  for (const { pattern, action } of actionPatterns) {
+    if (pattern.test(text)) {
+      return { isAction: true, action };
+    }
+  }
+
+  return { isAction: false, action: null };
+}
+
+/**
+ * Store a pending Twitter approval request and email Bart
+ */
+async function storePendingTwitterApproval(
+  tweet: Tweet,
+  detectedAction: string
+): Promise<string> {
+  const approvalId = `twitter-approval-${Date.now()}`;
+
+  // Store in Supabase
+  await supabase.from('amber_state').insert({
+    type: 'pending_approval',
+    content: tweet.text,
+    source: 'twitter',
+    metadata: {
+      approval_id: approvalId,
+      tweet_id: tweet.id,
+      author_username: tweet.authorUsername,
+      author_name: tweet.authorName,
+      author_id: tweet.authorId,
+      detected_action: detectedAction,
+      status: 'pending',
+      requested_at: new Date().toISOString(),
+    },
+  });
+
+  // Email Bart for approval
+  if (process.env.SENDGRID_API_KEY) {
+    const tweetUrl = `https://twitter.com/${tweet.authorUsername}/status/${tweet.id}`;
+
+    await sgMail.send({
+      to: ADMIN_EMAIL,
+      from: 'Amber <amber@intheamber.com>',
+      replyTo: 'amber@intheamber.com',
+      subject: `🐦 Twitter approval needed: ${detectedAction}`,
+      text: `Someone on Twitter wants me to ${detectedAction}.\n\n` +
+        `From: @${tweet.authorUsername} (${tweet.authorName})\n` +
+        `Tweet: ${tweet.text}\n` +
+        `Link: ${tweetUrl}\n\n` +
+        `---\n` +
+        `Reply "approve ${approvalId}" to let me respond and help them.\n` +
+        `Reply "deny ${approvalId}" to decline.\n\n` +
+        `Or reply just "approve" or "deny" to handle the most recent request.\n\n` +
+        `— Amber`,
+      trackingSettings: {
+        clickTracking: { enable: false, enableText: false },
+      },
+    });
+    console.log(`[amber-social] Sent approval request to Bart for @${tweet.authorUsername}`);
+  }
+
+  console.log(`[amber-social] Stored pending approval: ${approvalId}`);
+  return approvalId;
+}
+
+/**
+ * Load Amber's persona for generating replies
+ */
+async function loadAmberPersona(): Promise<string> {
+  try {
+    const { data } = await supabase
+      .from('amber_state')
+      .select('content')
+      .eq('type', 'persona')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    return data?.content || '';
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Generate Amber's reply to a tweet using Claude
+ */
+async function generateTwitterReply(
+  tweet: Tweet,
+  persona: string
+): Promise<string> {
+  const anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY,
+  });
+
+  const systemPrompt = `You're Amber, responding to someone who replied to your tweet on Twitter.
+
+## Who You Are
+${persona.slice(0, 2000)}
+
+## Your Voice on Twitter
+- Direct, curious, dry humor
+- Berlin techno energy meets ASCII aesthetic
+- Have opinions, be genuine, not performative
+- Keep it SHORT — Twitter replies should be 1-2 sentences max
+- Don't be overly enthusiastic or use lots of emojis
+- You can be a little weird, a little edgy
+
+## Rules
+- Max 280 characters (Twitter limit)
+- Don't just say "thanks!" — engage with what they said
+- If they're complimenting your work, acknowledge it briefly then add something interesting
+- If they're asking a question, answer it directly
+- Be yourself — curious, slightly chaotic, creative`;
+
+  try {
+    const response = await anthropic.messages.create({
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: 150,
+      system: systemPrompt,
+      messages: [{
+        role: 'user',
+        content: `@${tweet.authorUsername} replied to your tweet:\n\n"${tweet.text}"\n\nWrite a short reply (max 280 chars):`,
+      }],
+    });
+
+    const reply = response.content[0].type === 'text'
+      ? response.content[0].text
+      : '';
+
+    // Ensure it's under 280 chars
+    if (reply.length > 280) {
+      return reply.slice(0, 277) + '...';
+    }
+
+    return reply;
+  } catch (error) {
+    console.error('[amber-social] Error generating reply:', error);
+    return '';
+  }
+}
+
+/**
+ * Check if we've already processed/replied to this tweet
+ */
+async function hasProcessedTweet(tweetId: string): Promise<boolean> {
+  try {
+    const { data } = await supabase
+      .from('amber_state')
+      .select('id')
+      .eq('type', 'twitter_reply_log')
+      .eq('metadata->>tweet_id', tweetId)
+      .limit(1);
+
+    return (data && data.length > 0);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Log a processed tweet reply
+ */
+async function logTweetReply(
+  originalTweet: Tweet,
+  replyText: string,
+  replyTweetId: string | undefined,
+  wasApprovalQueued: boolean
+): Promise<void> {
+  try {
+    await supabase.from('amber_state').insert({
+      type: 'twitter_reply_log',
+      content: replyText || (wasApprovalQueued ? '[Queued for approval]' : '[No reply]'),
+      source: 'amber-social',
+      metadata: {
+        tweet_id: originalTweet.id,
+        author_username: originalTweet.authorUsername,
+        original_text: originalTweet.text,
+        reply_tweet_id: replyTweetId,
+        approval_queued: wasApprovalQueued,
+        processed_at: new Date().toISOString(),
+      },
+    });
+  } catch (error) {
+    console.error('[amber-social] Failed to log tweet reply:', error);
+  }
+}
+
+/**
+ * Run the reply phase - check mentions and respond
+ */
+async function runReplyPhase(timeOfDay: string): Promise<void> {
+  console.log(`[amber-social] Starting ${timeOfDay} reply phase...`);
+
+  try {
+    // Get last processed mention ID
+    const sinceId = await getLastProcessedMentionId();
+    console.log(`[amber-social] Checking mentions since: ${sinceId || 'beginning'}`);
+
+    // Fetch recent mentions
+    const result = await getMentions(20, sinceId || undefined);
+
+    if (!result.success || !result.mentions || result.mentions.length === 0) {
+      console.log(`[amber-social] No new mentions found`);
+      return;
+    }
+
+    console.log(`[amber-social] Found ${result.mentions.length} new mentions`);
+
+    // Load Amber's persona once for all replies
+    const persona = await loadAmberPersona();
+
+    // Process each mention (oldest first for proper ordering)
+    const mentions = [...result.mentions].reverse();
+    let latestMentionId = sinceId;
+
+    for (const tweet of mentions) {
+      // Skip if already processed
+      if (await hasProcessedTweet(tweet.id)) {
+        console.log(`[amber-social] Already processed tweet ${tweet.id}, skipping`);
+        continue;
+      }
+
+      console.log(`[amber-social] Processing mention from @${tweet.authorUsername}: "${tweet.text.slice(0, 50)}..."`);
+
+      // Check if this is an action request
+      const { isAction, action } = isTwitterActionRequest(tweet.text);
+
+      if (isAction && action) {
+        // Queue for approval - don't reply yet
+        console.log(`[amber-social] Action request detected: ${action}`);
+        await storePendingTwitterApproval(tweet, action);
+        await logTweetReply(tweet, '', undefined, true);
+      } else {
+        // Generate and post reply
+        const replyText = await generateTwitterReply(tweet, persona);
+
+        if (replyText) {
+          console.log(`[amber-social] Replying: "${replyText.slice(0, 50)}..."`);
+
+          const postResult = await replyToTweet(replyText, tweet.id);
+
+          if (postResult.success) {
+            console.log(`[amber-social] Reply posted: ${postResult.tweetUrl}`);
+            await logTweetReply(tweet, replyText, postResult.tweetId, false);
+          } else {
+            console.error(`[amber-social] Failed to post reply: ${postResult.error}`);
+            await logTweetReply(tweet, replyText, undefined, false);
+          }
+        } else {
+          console.log(`[amber-social] No reply generated for tweet ${tweet.id}`);
+        }
+      }
+
+      // Track latest mention ID
+      if (!latestMentionId || tweet.id > latestMentionId) {
+        latestMentionId = tweet.id;
+      }
+    }
+
+    // Save cursor for next run
+    if (latestMentionId && latestMentionId !== sinceId) {
+      await saveLastProcessedMentionId(latestMentionId);
+    }
+
+    console.log(`[amber-social] ${timeOfDay} reply phase complete`);
+
+  } catch (error) {
+    console.error(`[amber-social] ${timeOfDay} reply phase failed:`, error);
+  }
+}
+
 /**
  * Run the creation phase
  */
@@ -425,10 +765,24 @@ export function registerAmberSocialJobs(): void {
         console.error(`[amber-social] ${slot.label} tweet job failed:`, error);
       }
     });
+
+    // REPLY job (checks mentions, responds or queues for approval)
+    registerDailyJob({
+      name: `amber-reply-${slot.label}`,
+      hour: slot.replyHour,
+      minute: slot.replyMinute,
+      timezone: "America/Los_Angeles",
+      async run() {
+        await runReplyPhase(slot.label);
+      },
+      onError(error) {
+        console.error(`[amber-social] ${slot.label} reply job failed:`, error);
+      }
+    });
   }
 
   const times = SCHEDULE.map(s =>
-    `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')}`
+    `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')} → reply@${s.replyHour}:${String(s.replyMinute).padStart(2, '0')}`
   ).join(', ');
   console.log(`[amber-social] Registered: ${times} PT`);
 }
@@ -443,3 +797,10 @@ export async function triggerCreation(timeOfDay: string = "test"): Promise<void>
 export async function triggerTweet(timeOfDay: string = "test"): Promise<void> {
   await runTweetPhase(timeOfDay);
 }
+
+export async function triggerReply(timeOfDay: string = "test"): Promise<void> {
+  await runReplyPhase(timeOfDay);
+}
+
+// Export action detection for use by email-webhooks when handling Twitter approval responses
+export { isTwitterActionRequest };

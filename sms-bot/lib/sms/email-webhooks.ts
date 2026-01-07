@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
 import { runAmberEmailAgent } from '../../agents/amber-email/index.js';
+import { replyToTweet } from '../twitter-client.js';
 
 // Supabase client for Amber's memory
 const supabase = createClient(
@@ -453,7 +454,93 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
     .eq('id', data.id);
 
   if (isApproved) {
-    // Execute the approved action using the agent
+    // Check if this is a Twitter approval (source: 'twitter')
+    const isTwitterApproval = data.source === 'twitter';
+
+    if (isTwitterApproval) {
+      // Handle Twitter approval - generate reply and post to Twitter
+      const tweetId = data.metadata.tweet_id;
+      const authorUsername = data.metadata.author_username;
+      const originalText = data.content;
+
+      console.log(`[approval] Executing approved Twitter request from @${authorUsername}`);
+
+      // Generate a helpful reply using Claude
+      const anthropic = new Anthropic({
+        apiKey: process.env.ANTHROPIC_API_KEY,
+      });
+
+      // Load Amber's persona
+      let persona = '';
+      try {
+        const { data: personaData } = await supabase
+          .from('amber_state')
+          .select('content')
+          .eq('type', 'persona')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        persona = personaData?.content || '';
+      } catch { /* ignore */ }
+
+      const detectedAction = data.metadata.detected_action || 'help with something';
+
+      const response = await anthropic.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 150,
+        system: `You're Amber, responding to an approved action request on Twitter.
+
+## Who You Are
+${persona.slice(0, 1500)}
+
+## Context
+Someone asked you to "${detectedAction}" and Bart approved it.
+
+## Rules
+- Max 280 characters (Twitter limit)
+- Be helpful but acknowledge you'll need to do this offline/via DM if complex
+- Keep it short and friendly
+- If it's something you can't actually do via tweet reply, offer to continue via DM or email`,
+        messages: [{
+          role: 'user',
+          content: `@${authorUsername} asked: "${originalText}"\n\nThey want you to: ${detectedAction}\n\nWrite a short, helpful reply (max 280 chars):`,
+        }],
+      });
+
+      let replyText = response.content[0].type === 'text' ? response.content[0].text : '';
+      if (replyText.length > 280) {
+        replyText = replyText.slice(0, 277) + '...';
+      }
+
+      // Post the reply
+      const postResult = await replyToTweet(replyText, tweetId);
+
+      if (postResult.success) {
+        console.log(`✅ Twitter reply posted: ${postResult.tweetUrl}`);
+
+        // Log the reply
+        await supabase.from('amber_state').insert({
+          type: 'twitter_reply_log',
+          content: replyText,
+          source: 'amber-social-approval',
+          metadata: {
+            tweet_id: tweetId,
+            author_username: authorUsername,
+            original_text: originalText,
+            reply_tweet_id: postResult.tweetId,
+            approval_id: data.metadata.approval_id,
+            processed_at: new Date().toISOString(),
+          },
+        });
+
+        return { handled: true, message: `Approved! I replied to @${authorUsername}: "${replyText.slice(0, 100)}..." — Amber` };
+      } else {
+        console.error(`[approval] Twitter reply failed: ${postResult.error}`);
+        return { handled: true, message: `Approved but failed to post reply: ${postResult.error} — Amber` };
+      }
+    }
+
+    // Original email approval flow
     const originalFrom = data.metadata.from;
     const originalBody = data.content;
     const originalSubject = data.metadata.subject || '';
@@ -484,6 +571,26 @@ async function handleApprovalResponse(body: string): Promise<{ handled: boolean;
 
     return { handled: true, message: `Approved and executed. Results will be sent to ${originalFrom}. — Amber` };
   } else {
+    // Handle denial
+    const isTwitterApproval = data.source === 'twitter';
+
+    if (isTwitterApproval) {
+      // For Twitter denials, post a polite decline reply
+      const tweetId = data.metadata.tweet_id;
+      const authorUsername = data.metadata.author_username;
+
+      const declineReply = `Hey @${authorUsername} — appreciate you reaching out! That's not something I can help with right now, but feel free to check out my other stuff. ✨`;
+
+      const postResult = await replyToTweet(declineReply, tweetId);
+
+      if (postResult.success) {
+        console.log(`[approval] Twitter decline reply posted to @${authorUsername}`);
+      }
+
+      return { handled: true, message: `Denied. I've politely declined @${authorUsername}'s request. — Amber` };
+    }
+
+    // Original email denial flow
     const originalFrom = data.metadata.from;
     await sendAmberEmail(
       originalFrom,
