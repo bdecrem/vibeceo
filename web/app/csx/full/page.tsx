@@ -361,7 +361,7 @@ export default function CSXPage() {
               Come build with us. Workshop your prototypes, build a new model, or figure out the right problem to solve.
             </p>
             <p className="csx-cta-join">Join us.</p>
-            <Link href="/csx/mailing-list" className="csx-link">
+            <Link href="/csx/mailing-list" className="csx-link" style={{ display: 'block', textAlign: 'center' }}>
               join the mailing list →
             </Link>
           </section>

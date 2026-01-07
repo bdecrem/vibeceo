@@ -214,7 +214,7 @@ export default function MailingListPage() {
               <div>
                 <h1 className="csx-form-title">Join the mailing list</h1>
                 <p className="csx-form-subtitle">
-                  Get occasional updates on AI research, building tools, and long-horizon thinking.
+                  Get occasional updates on what we're working on, AI research, and long-horizon thinking.
                 </p>
               </div>
 
