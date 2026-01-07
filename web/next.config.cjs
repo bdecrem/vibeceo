@@ -18,6 +18,9 @@ const nextConfig = {
         // TR-909 drum machine UI
         { source: '/909/ui/tr909', destination: '/909/ui/tr909/index.html' },
         { source: '/909', destination: '/909/ui/tr909/index.html' },
+        // TB-303 bass synth UI
+        { source: '/303/ui/tb303', destination: '/303/ui/tb303/index.html' },
+        { source: '/303', destination: '/303/ui/tb303/index.html' },
       ],
     }
   },
