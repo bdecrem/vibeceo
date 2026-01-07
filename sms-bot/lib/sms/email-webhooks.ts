@@ -511,9 +511,9 @@ After creating, I'll reply to their tweet with the URL.`;
           }
 
           if (createdUrl) {
-            replyText = `@${authorUsername} Done! Check it out: ${createdUrl}`;
+            replyText = `@${authorUsername} Done! ${createdUrl} (give it ~5 min to deploy)`;
           } else {
-            replyText = `@${authorUsername} Working on it! I'll have something for you soon. Check intheamber.com 👀`;
+            replyText = `@${authorUsername} Working on it! Check intheamber.com in a few 👀`;
           }
         } catch (error) {
           console.error(`[approval] Agent execution failed:`, error);
