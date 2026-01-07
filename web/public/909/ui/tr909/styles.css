@@ -564,10 +564,10 @@ h1::before {
   width: 18px;
   height: 18px;
   padding: 0;
-  border: 1px solid var(--border-accent);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 9px;
-  background: var(--bg-dark);
-  color: var(--text-muted);
+  background: #4a4a4a;
+  color: rgba(255, 255, 255, 0.85);
   font-family: 'JetBrains Mono', monospace;
   font-size: 0.6rem;
   font-weight: 600;
@@ -580,20 +580,20 @@ h1::before {
 }
 
 .engine-toggle-mini:hover {
-  border-color: var(--amber-700);
-  color: var(--text-secondary);
+  background: #555;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 .engine-toggle-mini.engine-e2 {
-  background: var(--amber-600);
-  border-color: var(--amber-500);
-  color: #000;
-  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+  background: #8b6914;
+  border-color: rgba(180, 140, 60, 0.5);
+  color: rgba(255, 255, 255, 0.9);
+  box-shadow: none;
 }
 
 .engine-toggle-mini.engine-e2:hover {
-  background: var(--amber-500);
-  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+  background: #9a7518;
+  border-color: rgba(200, 160, 70, 0.6);
 }
 
 /* When both sample toggle and engine toggle exist */
