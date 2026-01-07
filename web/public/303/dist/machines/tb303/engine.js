@@ -7,7 +7,7 @@
  * - 16-step pitched sequencer with accent/slide
  */
 
-import { SynthEngine } from '../../../../909/dist/core/engine.js';
+import { SynthEngine } from '../../core/engine.js';
 import { TB303Sequencer, midiToFreq, noteToMidi } from './sequencer.js';
 import { Bass303E1 } from './voices/bass-e1.js';
 import { Bass303 } from './voices/bass.js';

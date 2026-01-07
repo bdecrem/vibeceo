@@ -20,7 +20,9 @@ const nextConfig = {
         { source: '/909', destination: '/909/ui/tr909/index.html' },
         // TB-303 bass synth UI
         { source: '/303/ui/tb303', destination: '/303/ui/tb303/index.html' },
+        { source: '/303/ui/tb303/', destination: '/303/ui/tb303/index.html' },
         { source: '/303', destination: '/303/ui/tb303/index.html' },
+        { source: '/303/', destination: '/303/ui/tb303/index.html' },
       ],
     }
   },

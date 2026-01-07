@@ -3,7 +3,7 @@
  * Uses standard Web Audio oscillator and biquad filter
  */
 
-import { Voice } from '../../../../909/dist/core/voice.js';
+import { Voice } from '../../../core/voice.js';
 
 export class Bass303E1 extends Voice {
     constructor(id, context) {

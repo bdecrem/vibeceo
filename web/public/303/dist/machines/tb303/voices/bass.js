@@ -3,7 +3,7 @@
  * Uses diode ladder filter emulation with proper accent and slide behavior
  */
 
-import { Voice } from '../../../../909/dist/core/voice.js';
+import { Voice } from '../../../core/voice.js';
 import { DiodeLadderFilter } from '../filter/diode-ladder.js';
 
 export class Bass303 extends Voice {
