@@ -700,3 +700,112 @@ User can say:
 ### Key Principle
 
 **State lives in files, not conversation.** Git commits are checkpoints. Any session can resume any project by reading its PROJECT.md.
+
+---
+
+## Project Backlog (Named Projects)
+
+A lightweight system for managing multiple independent projects conversationally. Projects are stored in Supabase and can be created, shelved, and resumed across sessions.
+
+### Creating a Project
+
+When the user describes work and says "this is project [name]", create a backlog entry:
+
+1. **Parse the description** — understand what they want built
+2. **Break into tasks** — 3-8 concrete, actionable tasks
+3. **Store in Supabase:**
+
+```sql
+INSERT INTO amber_state (type, content, source, metadata)
+VALUES (
+  'project_backlog',
+  '[Project Name]',
+  'claude-code',
+  '{
+    "description": "[Full description from user]",
+    "status": "backlog",
+    "tasks": [
+      {"task": "[Task 1]", "done": false},
+      {"task": "[Task 2]", "done": false}
+    ],
+    "priority": "medium",
+    "created_at": "[ISO timestamp]",
+    "started_at": null,
+    "completed_at": null
+  }'
+);
+```
+
+4. **Confirm back** — show the task breakdown, ask if they want to start now or save for later
+
+### Conversational Triggers
+
+| User says | Action |
+|-----------|--------|
+| "this is project X, set it aside" | Create with status="backlog" |
+| "this is project X, start now" | Create with status="active", begin work |
+| "show my projects" / "what projects do I have" | List all projects with status |
+| "start project X" / "work on project X" | Set status="active", begin work |
+| "project X status" | Show tasks and completion |
+| "shelve project X" / "pause project X" | Set status="backlog" |
+| "project X is done" | Set status="completed" |
+
+### Listing Projects
+
+```sql
+SELECT content as name,
+       metadata->>'status' as status,
+       metadata->>'priority' as priority,
+       metadata->>'created_at' as created,
+       metadata->'tasks' as tasks
+FROM amber_state
+WHERE type = 'project_backlog'
+ORDER BY
+  CASE metadata->>'status'
+    WHEN 'active' THEN 1
+    WHEN 'backlog' THEN 2
+    ELSE 3
+  END,
+  created_at DESC;
+```
+
+### Working on a Project
+
+When starting/resuming a project:
+
+1. **Fetch project state:**
+```sql
+SELECT * FROM amber_state
+WHERE type = 'project_backlog' AND content = '[Project Name]';
+```
+
+2. **Find first incomplete task** from the tasks array
+3. **Work on it** using normal workflow (thinkhard if complex)
+4. **Update task status** when complete:
+```sql
+UPDATE amber_state
+SET metadata = jsonb_set(
+  metadata,
+  '{tasks}',
+  '[updated tasks array with done=true]'
+)
+WHERE type = 'project_backlog' AND content = '[Project Name]';
+```
+
+5. **Commit** with message: `[Project Name] Task: [description]`
+
+### Status Values
+
+- **backlog** — Created but not started, saved for later
+- **active** — Currently being worked on
+- **completed** — All tasks done
+
+### Key Differences from Project Mode
+
+| Aspect | Project Mode | Project Backlog |
+|--------|--------------|-----------------|
+| Storage | Markdown files | Supabase database |
+| Naming | Numbered (01, 02) | Named (descriptive) |
+| Scope | One initiative, many phases | Many independent projects |
+| Activation | Linear progression | On-demand by name |
+| Backlog | Not supported | First-class feature |
