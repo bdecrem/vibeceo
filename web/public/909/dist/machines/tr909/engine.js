@@ -14,6 +14,7 @@ import { Rimshot909E1 } from './voices/rimshot-e1.js';
 import { HiHat909 } from './voices/hihat.js';
 import { HiHat909E1 } from './voices/hihat-e1.js';
 import { Cymbal909 } from './voices/cymbal.js';
+import { Cymbal909E1 } from './voices/cymbal-e1.js';
 import { SampleVoice } from './voices/sample-voice.js';
 import { createDefaultTr909SampleLibrary, DEFAULT_909_SAMPLE_MANIFEST, } from './samples/library.js';
 export class TR909Engine extends SynthEngine {
@@ -196,6 +197,16 @@ export class TR909Engine extends SynthEngine {
         const oldOH = this.voices.get('oh');
         if (oldOH) oldOH.disconnect();
         this.registerVoice('oh', new HiHatClass('oh', this.context, this.sampleLibrary, 'open'));
+
+        // Swap cymbals (crash and ride)
+        const CymbalClass = version === 'E1' ? Cymbal909E1 : Cymbal909;
+        const oldCrash = this.voices.get('crash');
+        if (oldCrash) oldCrash.disconnect();
+        this.registerVoice('crash', new CymbalClass('crash', this.context, this.sampleLibrary, 'crash'));
+
+        const oldRide = this.voices.get('ride');
+        if (oldRide) oldRide.disconnect();
+        this.registerVoice('ride', new CymbalClass('ride', this.context, this.sampleLibrary, 'ride'));
     }
     /**
      * Check if a voice supports sample mode toggle
@@ -258,6 +269,7 @@ export class TR909Engine extends SynthEngine {
         const RimshotClass = this.currentEngine === 'E1' ? Rimshot909E1 : Rimshot909;
         const TomClass = this.currentEngine === 'E1' ? Tom909E1 : Tom909;
         const HiHatClass = this.currentEngine === 'E1' ? HiHat909E1 : HiHat909;
+        const CymbalClass = this.currentEngine === 'E1' ? Cymbal909E1 : Cymbal909;
         return new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
@@ -268,8 +280,8 @@ export class TR909Engine extends SynthEngine {
             ['htom', new TomClass('htom', context, 'high')],
             ['ch', new HiHatClass('ch', context, this.sampleLibrary, 'closed')],
             ['oh', new HiHatClass('oh', context, this.sampleLibrary, 'open')],
-            ['crash', new Cymbal909('crash', context, this.sampleLibrary, 'crash')],
-            ['ride', new Cymbal909('ride', context, this.sampleLibrary, 'ride')],
+            ['crash', new CymbalClass('crash', context, this.sampleLibrary, 'crash')],
+            ['ride', new CymbalClass('ride', context, this.sampleLibrary, 'ride')],
         ]);
     }
     schedulePatternInContext({ context, pattern, bpm, bars, stepsPerBar, swing, }) {

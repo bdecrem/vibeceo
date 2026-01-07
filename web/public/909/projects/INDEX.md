@@ -19,10 +19,10 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 | 05 | Toms (L/M/H) | DONE | E1: single sine, E2: 3 osc ratios (1:1.5:2.77) |
 | 06 | Closed Hat | DONE | E1: noise+highpass, E2: 6 square oscillators |
 | 07 | Open Hat | DONE | E1: noise+highpass, E2: 6 square oscillators |
-| 08 | Crash | TODO | Research needed |
-| 09 | Ride | TODO | Research needed |
+| 08 | Crash | DONE | E1: noise+bandpass, E2: 6 square oscillators |
+| 09 | Ride | DONE | E1: noise+bandpass, E2: 6 square oscillators |
 
-**Current:** 08-Crash
+**Current:** COMPLETE
 
 ---
 
@@ -38,7 +38,7 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 ---
 
 ## Current Focus
-**Project 1, Voice 08: Crash E2** - research and implement.
+**Project 1 COMPLETE!** All 9 voices now have E1/E2 versions.
 
 ## Key Decisions
 - **Foundation**: Pure Web Audio API (no Tone.js) for maximum control
