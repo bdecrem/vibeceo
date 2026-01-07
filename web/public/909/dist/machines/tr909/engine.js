@@ -9,6 +9,7 @@ import { Clap909 } from './voices/clap.js';
 import { Clap909E1 } from './voices/clap-e1.js';
 import { Tom909 } from './voices/tom.js';
 import { Rimshot909 } from './voices/rimshot.js';
+import { Rimshot909E1 } from './voices/rimshot-e1.js';
 import { HiHat909 } from './voices/hihat.js';
 import { Cymbal909 } from './voices/cymbal.js';
 import { SampleVoice } from './voices/sample-voice.js';
@@ -168,6 +169,12 @@ export class TR909Engine extends SynthEngine {
         if (oldClap) oldClap.disconnect();
         const ClapClass = version === 'E1' ? Clap909E1 : Clap909;
         this.registerVoice('clap', new ClapClass('clap', this.context, noiseBuffer));
+
+        // Swap rimshot
+        const oldRimshot = this.voices.get('rimshot');
+        if (oldRimshot) oldRimshot.disconnect();
+        const RimshotClass = version === 'E1' ? Rimshot909E1 : Rimshot909;
+        this.registerVoice('rimshot', new RimshotClass('rimshot', this.context));
     }
     /**
      * Check if a voice supports sample mode toggle
@@ -227,11 +234,12 @@ export class TR909Engine extends SynthEngine {
         const KickClass = this.currentEngine === 'E1' ? Kick909E1 : Kick909;
         const SnareClass = this.currentEngine === 'E1' ? Snare909E1 : Snare909;
         const ClapClass = this.currentEngine === 'E1' ? Clap909E1 : Clap909;
+        const RimshotClass = this.currentEngine === 'E1' ? Rimshot909E1 : Rimshot909;
         return new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
             ['clap', new ClapClass('clap', context, noiseBuffer)],
-            ['rimshot', new Rimshot909('rimshot', context)],
+            ['rimshot', new RimshotClass('rimshot', context)],
             ['ltom', new Tom909('ltom', context, 'low')],
             ['mtom', new Tom909('mtom', context, 'mid')],
             ['htom', new Tom909('htom', context, 'high')],

@@ -3,18 +3,42 @@
 ## Status: WORKING
 The TR-909 is functional and playable. Current work is improving authenticity and adding features.
 
-## Project Progress
+---
+
+## PROJECT 1: Voice E1/E2 Overhauls (TODAY)
+
+Each voice gets E1 (original) and E2 (research-based authentic) versions.
+**Commit after each voice is complete.**
+
+| # | Voice | Status | Notes |
+|---|-------|--------|-------|
+| 01 | Kick | DONE | E1: sine+softclip, E2: triangle+waveshaper |
+| 02 | Snare | DONE | E1: single tri, E2: dual sine (180+330Hz) |
+| 03 | Clap | DONE | E1: simple 4-burst, E2: 4-burst + reverb tail |
+| 04 | Rimshot | DONE | E1: single square, E2: 3 bridged-T filters + noise |
+| 05 | Toms (L/M/H) | TODO | Research needed |
+| 06 | Closed Hat | TODO | Research needed |
+| 07 | Open Hat | TODO | Research needed |
+| 08 | Crash | TODO | Research needed |
+| 09 | Ride | TODO | Research needed |
+
+**Current:** 05-Toms
+
+---
+
+## PROJECT 2: Features (TOMORROW)
+
 | # | Project | Status | Notes |
 |---|---------|--------|-------|
-| 01 | Kick Overhaul | 5/5 | COMPLETE - E1/E2 engines |
-| 02 | Snare Overhaul | 0/6 | Not started |
-| 03 | Shared Noise | 0/4 | Not started |
-| 04 | Sample Tune | 0/6 | Not started |
-| 05 | Sequencer Features | 0/7 | Not started |
-| 06 | UI Polish | 0/10 | Depends on 01-05 |
+| 10 | Shared Noise | 0/4 | Snare/clap phasing effect |
+| 11 | Sample Tune | 0/6 | Hi-hat/cymbal tune knobs |
+| 12 | Sequencer Features | 0/7 | Pattern length, scale modes, tempo range |
+| 13 | UI Polish | 0/10 | Final cleanup, depends on above |
+
+---
 
 ## Current Focus
-Project 02: Snare Overhaul - next up.
+**Project 1, Voice 05: Toms E2** - research and implement.
 
 ## Key Decisions
 - **Foundation**: Pure Web Audio API (no Tone.js) for maximum control
