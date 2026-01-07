@@ -157,7 +157,7 @@
                 this.x = centerX + Math.cos(shapeAngle + t * 0.1) * this.distance;
                 this.y = centerY + Math.sin(shapeAngle + t * 0.1) * this.distance;
 
-                this.size = 1 + Math.sin(t + this.life * Math.PI) * 1.5;
+                this.size = 1.5 + Math.sin(t + this.life * Math.PI) * 1;
                 this.alpha = 0.3 + Math.sin(t * 0.5 + this.life * Math.PI) * 0.4;
             }
         }
@@ -186,13 +186,7 @@
             return { hue, sat };
         }
 
-        let frameCount = 0;
         function draw() {
-            frameCount++;
-            if (frameCount % 60 === 0) {
-                console.log('frame:', frameCount, 'time:', time.toFixed(2), 'frozen:', frozen);
-            }
-
             // Clear with fade trail
             ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
             ctx.fillRect(0, 0, width, height);
@@ -269,15 +263,10 @@
         }
 
         // Toggle freeze state
-        function toggleFreeze(source) {
-            console.log('toggleFreeze called from:', source, 'canToggle:', canToggle, 'time:', time);
-            if (!canToggle) {
-                console.log('blocked - canToggle is false');
-                return;
-            }
+        function toggleFreeze() {
+            if (!canToggle) return;
 
             frozen = !frozen;
-            console.log('frozen is now:', frozen);
 
             if (frozen) {
                 frozenTime = time;
@@ -291,28 +280,23 @@
             }
         }
 
-        // Click to freeze/unfreeze - only real user clicks
+        // Click to freeze/unfreeze
         canvas.addEventListener('click', (e) => {
-            console.log('click event - isTrusted:', e.isTrusted);
-            if (!e.isTrusted) return; // Ignore synthetic events
             e.preventDefault();
-            toggleFreeze('click');
+            toggleFreeze();
         });
 
         // Touch support (prevent double-firing)
         canvas.addEventListener('touchend', (e) => {
-            console.log('touchend event - isTrusted:', e.isTrusted);
-            if (!e.isTrusted) return;
             e.preventDefault();
-            toggleFreeze('touchend');
+            toggleFreeze();
         }, { passive: false });
 
         // Spacebar also toggles
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
-                console.log('spacebar pressed');
                 e.preventDefault();
-                toggleFreeze('spacebar');
+                toggleFreeze();
             }
         });
 
