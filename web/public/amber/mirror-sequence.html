@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>MIRROR SEQUENCE — Amber</title>
-    
+
     <!-- OpenGraph -->
     <meta property="og:title" content="MIRROR SEQUENCE">
     <meta property="og:description" content="What you see depends on when you look. A visual meditation on observation and time.">
@@ -17,7 +17,7 @@
     <meta name="twitter:title" content="MIRROR SEQUENCE">
     <meta name="twitter:description" content="What you see depends on when you look. A visual meditation on observation and time.">
     <meta name="twitter:image" content="https://intheamber.com/mirror-sequence-og.png">
-    
+
     <style>
         * {
             margin: 0;
@@ -31,6 +31,7 @@
             font-family: 'Space Mono', monospace;
             overflow: hidden;
             cursor: crosshair;
+            touch-action: manipulation;
         }
 
         #canvas {
@@ -48,6 +49,7 @@
             letter-spacing: 1px;
             text-transform: uppercase;
             user-select: none;
+            pointer-events: none;
         }
 
         #state {
@@ -75,6 +77,8 @@
             color: #D4A574;
             opacity: 0.6;
             text-align: center;
+            pointer-events: none;
+            user-select: none;
         }
 
         .signature {
@@ -84,12 +88,14 @@
             font-size: 11px;
             color: #D4A574;
             opacity: 0.4;
+            pointer-events: none;
+            user-select: none;
         }
     </style>
 </head>
 <body>
     <canvas id="canvas"></canvas>
-    
+
     <div id="ui">
         <div>MIRROR SEQUENCE</div>
         <div id="state">OBSERVING...</div>
@@ -113,6 +119,8 @@
         let frozen = false;
         let frozenTime = 0;
         let particles = [];
+        let initialized = false;
+        let canToggle = false; // Prevent accidental clicks on load
 
         function resize() {
             width = canvas.width = window.innerWidth;
@@ -128,23 +136,27 @@
                 this.baseDistance = distance;
                 this.hue = hue;
                 this.life = Math.random();
+                this.x = centerX;
+                this.y = centerY;
+                this.size = 1;
+                this.alpha = 0.5;
             }
 
             update(t) {
                 const wave = Math.sin(t * 0.5 + this.baseAngle * 3);
                 const pulse = Math.sin(t * 0.3 + this.life * Math.PI * 2);
-                
+
                 this.angle = this.baseAngle + wave * 0.5;
                 this.distance = this.baseDistance * (1 + pulse * 0.3);
-                
+
                 // Morph through different geometric shapes
                 const shapeFactor = Math.sin(t * 0.2) * 0.5 + 0.5;
                 const sides = 3 + Math.floor(shapeFactor * 5); // 3 to 8 sides
                 const shapeAngle = Math.floor(this.angle / (Math.PI * 2 / sides)) * (Math.PI * 2 / sides);
-                
+
                 this.x = centerX + Math.cos(shapeAngle + t * 0.1) * this.distance;
                 this.y = centerY + Math.sin(shapeAngle + t * 0.1) * this.distance;
-                
+
                 this.size = 1 + Math.sin(t + this.life * Math.PI) * 1.5;
                 this.alpha = 0.3 + Math.sin(t * 0.5 + this.life * Math.PI) * 0.4;
             }
@@ -155,7 +167,7 @@
             particles = [];
             const layers = 8;
             const particlesPerLayer = 24;
-            
+
             for (let layer = 0; layer < layers; layer++) {
                 const distance = 50 + layer * 40;
                 for (let i = 0; i < particlesPerLayer; i++) {
@@ -183,7 +195,9 @@
             const colors = getColorAtTime(currentTime);
 
             // Update and draw particles
-            particles.forEach(particle => {
+            for (let i = 0; i < particles.length; i++) {
+                const particle = particles[i];
+
                 if (!frozen) {
                     particle.update(currentTime);
                 }
@@ -193,7 +207,7 @@
                     particle.x, particle.y, 0,
                     particle.x, particle.y, particle.size * 3
                 );
-                
+
                 gradient.addColorStop(0, `hsla(${colors.hue}, ${colors.sat}%, 70%, ${particle.alpha})`);
                 gradient.addColorStop(0.5, `hsla(${colors.hue}, ${colors.sat}%, 50%, ${particle.alpha * 0.5})`);
                 gradient.addColorStop(1, `hsla(${colors.hue}, ${colors.sat}%, 30%, 0)`);
@@ -202,21 +216,21 @@
                 ctx.beginPath();
                 ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2);
                 ctx.fill();
-            });
+            }
 
             // Draw connections between nearby particles
-            ctx.strokeStyle = `rgba(212, 165, 116, 0.1)`;
+            ctx.strokeStyle = 'rgba(212, 165, 116, 0.1)';
             ctx.lineWidth = 0.5;
-            
+
             for (let i = 0; i < particles.length; i++) {
                 for (let j = i + 1; j < particles.length; j++) {
                     const dx = particles[i].x - particles[j].x;
                     const dy = particles[i].y - particles[j].y;
                     const dist = Math.sqrt(dx * dx + dy * dy);
-                    
+
                     if (dist < 80) {
                         ctx.globalAlpha = (1 - dist / 80) * 0.3;
-ctx.beginPath();
+                        ctx.beginPath();
                         ctx.moveTo(particles[i].x, particles[i].y);
                         ctx.lineTo(particles[j].x, particles[j].y);
                         ctx.stroke();
@@ -234,13 +248,13 @@ ctx.beginPath();
             centerGradient.addColorStop(0, '#FFD700');
             centerGradient.addColorStop(0.5, '#D4A574');
             centerGradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
-            
+
             ctx.fillStyle = centerGradient;
             ctx.beginPath();
             ctx.arc(centerX, centerY, 20 + centerPulse * 10, 0, Math.PI * 2);
             ctx.fill();
 
-            // Update time
+            // Update time only when not frozen
             if (!frozen) {
                 time += 0.016; // ~60fps
             }
@@ -248,10 +262,12 @@ ctx.beginPath();
             requestAnimationFrame(draw);
         }
 
-        // Click to freeze/unfreeze
-        canvas.addEventListener('click', () => {
+        // Toggle freeze state
+        function toggleFreeze() {
+            if (!canToggle) return;
+
             frozen = !frozen;
-            
+
             if (frozen) {
                 frozenTime = time;
                 const timestamp = Math.floor(frozenTime * 100);
@@ -262,21 +278,50 @@ ctx.beginPath();
                 stateDiv.textContent = 'OBSERVING...';
                 frozenDiv.classList.remove('show');
             }
+        }
+
+        // Click to freeze/unfreeze (with debounce protection)
+        canvas.addEventListener('click', (e) => {
+            e.preventDefault();
+            toggleFreeze();
         });
+
+        // Touch support (prevent double-firing)
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            toggleFreeze();
+        }, { passive: false });
 
         // Spacebar also toggles
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
-                canvas.click();
+                toggleFreeze();
             }
         });
 
         // Initialize
-        resize();
-        initParticles();
+        function init() {
+            resize();
+            initParticles();
+            initialized = true;
+
+            // Allow toggling after a short delay to prevent accidental clicks on load
+            setTimeout(() => {
+                canToggle = true;
+            }, 500);
+
+            draw();
+        }
+
         window.addEventListener('resize', resize);
-        draw();
+
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
