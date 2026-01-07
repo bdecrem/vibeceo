@@ -33,12 +33,12 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 | 10 | Shared Noise | 4/4 | Already implemented (snare/clap share buffer) |
 | 11 | Sample Tune | 6/6 | Tune inherited from SampleVoice, removed from rimshot |
 | 12 | Sequencer Features | 7/7 | Pattern length, scale modes, BPM 37-290, global accent |
-| 13 | UI Polish | 8/10 | New controls added, minor polish remaining |
+| 13 | UI Polish | 13/13 | Info icons, per-voice defaults, engine toggle colors |
 
 ---
 
 ## Current Focus
-**All major features complete!** Minor polish tasks remaining in Project 13.
+**All projects complete!** TR-909 is fully functional with E1/E2 engines, sample support, and polished UI.
 
 ## Key Decisions
 - **Foundation**: Pure Web Audio API (no Tone.js) for maximum control
