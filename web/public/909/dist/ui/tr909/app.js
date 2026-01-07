@@ -81,15 +81,26 @@ function renderGrid() {
         const row = document.createElement('div');
         row.className = 'voice-row';
         row.dataset.voiceId = voice.id;
-        // Full label (desktop)
-        const label = document.createElement('span');
+        // Full label (desktop) - clickable for mute/solo
+        const label = document.createElement('button');
         label.className = 'voice-label';
         label.textContent = voice.label;
+        label.dataset.voiceId = voice.id;
+        label.title = 'Click: mute, Click again: solo';
+        label.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleVoiceLabelClick(voice.id);
+        });
         row.appendChild(label);
-        // Short label (mobile)
-        const shortLabel = document.createElement('span');
+        // Short label (mobile) - also clickable
+        const shortLabel = document.createElement('button');
         shortLabel.className = 'voice-label-short';
         shortLabel.textContent = voice.shortLabel;
+        shortLabel.dataset.voiceId = voice.id;
+        shortLabel.addEventListener('click', (e) => {
+            e.preventDefault();
+            handleVoiceLabelClick(voice.id);
+        });
         row.appendChild(shortLabel);
         const track = ensureTrack(voice.id);
         for (let i = 0; i < STEPS; i += 1) {
@@ -104,6 +115,35 @@ function renderGrid() {
         }
         container.appendChild(row);
     });
+}
+function handleVoiceLabelClick(voiceId) {
+    const newState = engine.cycleVoiceState(voiceId);
+    updateVoiceLabelState(voiceId, newState);
+    // Update all labels when going to/from solo (affects other tracks visually)
+    const hasSolo = VOICES.some(v => engine.getVoiceState(v.id) === 'solo');
+    if (hasSolo || newState === 'normal') {
+        VOICES.forEach(v => {
+            const state = engine.getVoiceState(v.id);
+            updateVoiceLabelState(v.id, state);
+        });
+    }
+}
+function updateVoiceLabelState(voiceId, state) {
+    const labels = document.querySelectorAll(`.voice-label[data-voice-id="${voiceId}"], .voice-label-short[data-voice-id="${voiceId}"]`);
+    const row = document.querySelector(`.voice-row[data-voice-id="${voiceId}"]`);
+    labels.forEach(label => {
+        label.classList.remove('muted', 'solo', 'dimmed');
+        if (state === 'muted') {
+            label.classList.add('muted');
+        } else if (state === 'solo') {
+            label.classList.add('solo');
+        }
+    });
+    // Dim tracks that won't play (muted, or not solo when something is solo'd)
+    if (row) {
+        const shouldPlay = engine.shouldVoicePlay(voiceId);
+        row.classList.toggle('voice-row--dimmed', !shouldPlay);
+    }
 }
 function formatParamValue(value, descriptor) {
     const unit = descriptor.range?.unit ?? '';

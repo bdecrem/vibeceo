@@ -34,11 +34,17 @@ export class TR909Engine extends SynthEngine {
         TR909Engine.ENGINE_CAPABLE_VOICES.forEach(id => {
             this.voiceEngines.set(id, this.currentEngine);
         });
+        // Mute/solo state: 'normal', 'muted', 'solo'
+        this.voiceStates = new Map();
         this.setupVoices();
         this.sequencer.onStep = (step, events) => {
             // Notify UI of step change
             this.onStepChange?.(step);
             events.forEach((event) => {
+                // Check mute/solo state
+                if (!this.shouldVoicePlay(event.voice)) {
+                    return;
+                }
                 // Get per-voice accent amount, scaled by global accent
                 const voice = this.voices.get(event.voice);
                 const globalAccentMult = event.globalAccent ?? 1;
@@ -115,6 +121,57 @@ export class TR909Engine extends SynthEngine {
         this.onStepChange?.(-1);
         // Clear any active open hat
         this.activeOpenHat = null;
+    }
+    /**
+     * Get voice state: 'normal', 'muted', or 'solo'
+     */
+    getVoiceState(voiceId) {
+        return this.voiceStates.get(voiceId) ?? 'normal';
+    }
+    /**
+     * Cycle voice state: normal → muted → solo → normal
+     * Returns the new state
+     */
+    cycleVoiceState(voiceId) {
+        const current = this.getVoiceState(voiceId);
+        let next;
+        if (current === 'normal') {
+            next = 'muted';
+        } else if (current === 'muted') {
+            // Going to solo: clear any other solos first
+            this.voiceStates.forEach((_, id) => {
+                if (this.voiceStates.get(id) === 'solo') {
+                    this.voiceStates.set(id, 'normal');
+                }
+            });
+            next = 'solo';
+        } else {
+            // From solo back to normal
+            next = 'normal';
+        }
+        this.voiceStates.set(voiceId, next);
+        this.onVoiceStateChange?.(voiceId, next);
+        return next;
+    }
+    /**
+     * Check if a voice should play based on mute/solo state
+     */
+    shouldVoicePlay(voiceId) {
+        const state = this.getVoiceState(voiceId);
+        // If this voice is muted, don't play
+        if (state === 'muted') return false;
+        // If any voice is solo'd, only that voice plays
+        const hasSolo = [...this.voiceStates.values()].includes('solo');
+        if (hasSolo) {
+            return state === 'solo';
+        }
+        return true;
+    }
+    /**
+     * Clear all mute/solo states
+     */
+    clearVoiceStates() {
+        this.voiceStates.clear();
     }
     setBpm(bpm) {
         this.currentBpm = bpm;

@@ -355,12 +355,48 @@ h1::before {
   align-items: center;
 }
 
-.voice-label {
+.voice-label,
+.voice-label-short {
   font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-secondary);
+  background: none;
+  border: none;
+  padding: 0.25rem 0.35rem;
+  margin: -0.25rem;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.voice-label:hover,
+.voice-label-short:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+/* Muted state: strikethrough + dimmed */
+.voice-label.muted,
+.voice-label-short.muted {
+  color: var(--text-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--amber-800);
+}
+
+/* Solo state: amber highlight */
+.voice-label.solo,
+.voice-label-short.solo {
+  color: var(--amber-400);
+  background: rgba(245, 158, 11, 0.1);
+  box-shadow: 0 0 0 1px var(--amber-700);
+}
+
+/* Dimmed row (won't play) */
+.voice-row--dimmed .step {
+  opacity: 0.3;
 }
 
 /* Step Buttons */
@@ -874,7 +910,21 @@ h1::before {
     font-weight: 700;
     color: var(--text-secondary);
     text-align: right;
-    padding-right: 2px;
+    padding: 0.2rem 2px;
+    margin: 0;
+  }
+
+  .voice-label-short:hover {
+    background: transparent;
+  }
+
+  .voice-label-short.muted {
+    text-decoration-thickness: 1px;
+  }
+
+  .voice-label-short.solo {
+    box-shadow: none;
+    background: transparent;
   }
 
   /* Larger tap targets for steps - fill grid cell completely */

@@ -34,7 +34,7 @@ export class HiHat909E1 extends SampleVoice {
         highPass.frequency.value = this.type === 'closed' ? 7000 : 5000;
 
         const gain = this.context.createGain();
-        const level = Math.max(0, Math.min(1, velocity));
+        const level = Math.max(0, Math.min(1, velocity * this.level));
         gain.gain.setValueAtTime(level, time);
         gain.gain.exponentialRampToValueAtTime(0.0001, time + this.decay);
 

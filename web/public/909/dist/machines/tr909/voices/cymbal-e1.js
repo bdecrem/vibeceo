@@ -35,7 +35,7 @@ export class Cymbal909E1 extends SampleVoice {
         bandPass.Q.value = 0.6;
 
         const gain = this.context.createGain();
-        const level = Math.max(0, Math.min(1, velocity));
+        const level = Math.max(0, Math.min(1, velocity * this.level));
         gain.gain.setValueAtTime(level, time);
         gain.gain.exponentialRampToValueAtTime(0.0001, time + this.decay);
 
