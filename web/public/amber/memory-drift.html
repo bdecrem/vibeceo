@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MEMORY DRIFT — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="MEMORY DRIFT">
+    <meta property="og:description" content="Watch text decay through layers of digital corruption">
+    <meta property="og:image" content="https://intheamber.com/memory-drift-og.png">
+    <meta property="og:url" content="https://intheamber.com/memory-drift.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MEMORY DRIFT">
+    <meta name="twitter:description" content="Watch text decay through layers of digital corruption">
+    <meta name="twitter:image" content="https://intheamber.com/memory-drift-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+        
+        .subtitle {
+            color: #2D9596;
+            font-size: 0.9rem;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .input-section {
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 100px;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            padding: 15px;
+            resize: vertical;
+            outline: none;
+        }
+        
+        textarea::placeholder {
+            color: #D4A57450;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        
+        button:hover {
+            background: #FFD700;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .layers-container {
+            width: 100%;
+            max-width: 800px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .layer {
+            background: #0D0D0D;
+            border: 1px solid #2D9596;
+            padding: 20px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s;
+        }
+        
+        .layer.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .layer-header {
+            color: #2D9596;
+            font-size: 0.8rem;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .corruption-level {
+            color: #D4A574;
+            font-size: 0.75rem;
+        }
+        
+        .layer-text {
+            color: #D4A574;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-break: break-word;
+            min-height: 50px;
+        }
+        
+        .stats {
+            margin-top: 40px;
+            text-align: center;
+            color: #2D9596;
+            font-size: 0.85rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            max-width: 600px;
+            height: 4px;
+            background: #0D0D0D;
+            margin: 30px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #D4A574, #2D9596);
+            width: 0%;
+            transition: width 0.3s;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        
+        .glitch {
+            animation: glitch 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <h1>MEMORY DRIFT</h1>
+    <p class="subtitle">Watch information decay through layers of digital corruption</p>
+    
+    <div class="input-section">
+        <textarea id="input" placeholder="Enter text to corrupt...">The amber preserves everything perfectly, or so we believe.</textarea>
+        <div class="controls">
+            <button id="startBtn">BEGIN DRIFT</button>
+            <button id="resetBtn">RESET</button>
+            <button id="soundToggle">SOUND: ON</button>
+        </div>
+    </div>
+    
+    <div class="progress-bar">
+        <div class="progress-fill" id="progress"></div>
+    </div>
+    
+    <div class="layers-container" id="layers"></div>
+    
+    <div class="stats" id="stats"></div>
+
+    <script>
+        // Audio context for sonification
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let soundEnabled = true;
+        
+        // Corruption layers with different strategies
+        const corruptionLayers = [
+            {
+                name: "LAYER 0: ORIGINAL",
+                corruption: 0,
+                transform: (text) => text
+            },
+            {
+                name: "LAYER 1: CHARACTER DRIFT",
+                corruption: 15,
+                transform: (text) => {
+                    return text.split('').map(char => {
+                        if (Math.random() < 0.15) {
+                            const similar = getSimilarChar(char);
+                            playTone(200 + Math.random() * 100, 0.05);
+                            return similar;
+                        }
+                        return char;
+                    }).join('');
+                }
+            },
+            {
+                name: "LAYER 2: SEMANTIC EROSION",
+                corruption: 30,
+                transform: (text) => {
+                    return text.split(' ').map(word => {
+                        if (Math.random() < 0.3) {
+                            const corrupted = word.split('').map(char => 
+                                Math.random() < 0.4 ? getSimilarChar(char) : char
+                            ).join('');
+                            playTone(300 + Math.random() * 150, 0.05);
+                            return corrupted;
+                        }
+                        return word;
+                    }).join(' ');
+                }
+            },
+            {
+                name: "LAYER 3: BIT FLIP CASCADE",
+                corruption: 50,
+                transform: (text) => {
+                    return text.split('').map(char => {
+                        if (Math.random() < 0.5) {
+                            const code = char.charCodeAt(0);
+                            const flipped = code ^ (1 << Math.floor(Math.random() * 8));
+                            playTone(400 + Math.random() * 200, 0.05);
+                            return String.fromCharCode(flipped);
+                        }
+                        return char;
+                    }).join('');
+                }
+            },
+            {
+                name: "LAYER 4: UNICODE CHAOS",
+                corruption: 70,
+                transform: (text) => {
+                    const unicodeRanges = [
+                        [0x2200, 0x22FF], // Mathematical operators
+                        [0x2500, 0x257F], // Box drawing
+                        [0x2580, 0x259F], // Block elements
+                        [0x25A0, 0x25FF], // Geometric shapes
+                    ];
+                    return text.split('').map(char => {
+                        if (Math.random() < 0.7) {
+                            const range = unicodeRanges[Math.floor(Math.random() * unicodeRanges.length)];
+                            const code = range[0] + Math.floor(Math.random() * (range[1] - range[0]));
+                            playTone(500 + Math.random() * 300, 0.05);
+                            return String.fromCharCode(code);
+                        }
+                        return char;
+                    }).join('');
+                }
+            },
+            {
+                name: "LAYER 5: STRUCTURAL COLLAPSE",
+                corruption: 85,
+                transform: (text) => {
+                    let corrupted = text.split('');
+                    // Random deletions
+                    corrupted = corrupted.filter(() => Math.random() > 0.3);
+                    // Random insertions
+                    corrupted = corrupted.map(char => {
+                        if (Math.random() < 0.5) {
+                            const noise = String.fromCharCode(33 + Math.floor(Math.random() * 94));
+                            playTone(600 + Math.random() * 400, 0.05);
+                            return char + noise;
+                        }
+                        return char;
+                    });
+                    return corrupted.join('');
+                }
+            },
+            {
+                name: "LAYER 6: INFORMATION DEATH",
+                corruption: 100,
+                transform: (text) => {
+                    const noise = '░▒▓█▓▒░';
+                    playTone(700 + Math.random() * 500, 0.1);
+                    return Array(text.length).fill(0).map(() => 
+                        noise[Math.floor(Math.random() * noise.length)]
+                    ).join('');
+                }
+            }
+        ];
+        
+        function getSimilarChar(char) {
+            const substitutions = {
+                'a': 'ą4@',
+                'e': 'ę3€',
+                'i': 'į1!',
+                'o': 'ø0°',
+                'u': 'ų',
+                's': '$5',
+                'l': '1|',
+                't': '†7',
+                'c': '©ç',
+                'n': 'ñ',
+                ' ': '·_'
+            };
+            const lower = char.toLowerCase();
+            if (substitutions[lower]) {
+                const options = substitutions[lower];
+                return options[Math.floor(Math.random() * options.length)];
+            }
+            return char;
+        }
+        
+        function playTone(freq, duration) {
+            if (!soundEnabled) return;
+            try {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                
+                oscillator.frequency.value = freq;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // Silence audio errors
+            }
+        }
+        
+        let currentText = '';
+        let isRunning = false;
+        
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const input = document.getElementById('input');
+        const layersContainer = document.getElementById('layers');
+        const progress = document.getElementById('progress');
+        const stats = document.getElementById('stats');
+        
+        startBtn.addEventListener('click', async () => {
+            if (isRunning) return;
+            
+            const text = input.value.trim();
+            if (!text) return;
+            
+            isRunning = true;
+            startBtn.disabled = true;
+            input.disabled = true;
+            
+            layersContainer.innerHTML = '';
+            currentText = text;
+            
+            for (let i = 0; i < corruptionLayers.length; i++) {
+                const layer = corruptionLayers[i];
+                
+                // Apply transformation
+                currentText = layer.transform(currentText);
+                
+                // Create layer element
+                const layerEl = document.createElement('div');
+                layerEl.className = 'layer';
+                layerEl.innerHTML = `
+                    <div class="layer-header">
+                        <span>${layer.name}</span>
+                        <span class="corruption-level">${layer.corruption}% CORRUPTED</span>
+                    </div>
+                    <div class="layer-text">${currentText || '[SIGNAL LOST]'}</div>
+                `;
+                
+                layersContainer.appendChild(layerEl);
+                
+                // Animate in
+                await sleep(100);
+                layerEl.classList.add('visible');
+                layerEl.classList.add('glitch');
+                
+                // Update progress
+                progress.style.width = `${((i + 1) / corruptionLayers.length) * 100}%`;
+                
+                // Wait before next layer
+                await sleep(800);
+                layerEl.classList.remove('glitch');
+            }
+            
+            // Show stats
+            const originalLength = text.length;
+            const finalLength = currentText.length;
+            const similarity = calculateSimilarity(text, currentText);
+            
+            stats.innerHTML = `
+                ORIGINAL: ${originalLength} chars → FINAL: ${finalLength} chars<br>
+                SIMILARITY: ${similarity.toFixed(1)}% → INFORMATION LOSS: ${(100 - similarity).toFixed(1)}%
+            `;
+            
+            isRunning = false;
+            startBtn.disabled = false;
+            input.disabled = false;
+        });
+        
+        resetBtn.addEventListener('click', () => {
+            if (isRunning) return;
+            
+            layersContainer.innerHTML= '';
+            progress.style.width = '0%';
+            stats.innerHTML = '';
+            input.value = 'The amber preserves everything perfectly, or so we believe.';
+            input.disabled = false;
+            currentText = '';
+        });
+        
+        soundToggle.addEventListener('click', () => {
+            soundEnabled = !soundEnabled;
+            soundToggle.textContent = `SOUND: ${soundEnabled ? 'ON' : 'OFF'}`;
+        });
+        
+        function calculateSimilarity(str1, str2) {
+            const longer = str1.length > str2.length ? str1 : str2;
+            const shorter = str1.length > str2.length ? str2 : str1;
+            
+            if (longer.length === 0) return 100;
+            
+            const editDistance = levenshteinDistance(str1, str2);
+            return ((longer.length - editDistance) / longer.length) * 100;
+        }
+        
+        function levenshteinDistance(str1, str2) {
+            const matrix = [];
+            
+            for (let i = 0; i <= str2.length; i++) {
+                matrix[i] = [i];
+            }
+            
+            for (let j = 0; j <= str1.length; j++) {
+                matrix[0][j] = j;
+            }
+            
+            for (let i = 1; i <= str2.length; i++) {
+                for (let j = 1; j <= str1.length; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+            
+            return matrix[str2.length][str1.length];
+        }
+        
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+    </script>
+</body>
+</html>
