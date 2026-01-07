@@ -29,6 +29,11 @@ export class TR909Engine extends SynthEngine {
         this.sampleLibrary = createDefaultTr909SampleLibrary();
         // Engine version: E1 (sine+softclip), E2 (triangle+waveshaper)
         this.currentEngine = 'E2';
+        // Per-voice engine tracking (all start at global default)
+        this.voiceEngines = new Map();
+        TR909Engine.ENGINE_CAPABLE_VOICES.forEach(id => {
+            this.voiceEngines.set(id, this.currentEngine);
+        });
         this.setupVoices();
         this.sequencer.onStep = (step, events) => {
             // Notify UI of step change
@@ -163,6 +168,100 @@ export class TR909Engine extends SynthEngine {
      */
     getEngineVersions() {
         return TR909Engine.ENGINE_VERSIONS;
+    }
+    /**
+     * Check if a voice supports engine toggle
+     */
+    isEngineCapable(voiceId) {
+        return TR909Engine.ENGINE_CAPABLE_VOICES.includes(voiceId);
+    }
+    /**
+     * Get engine version for a specific voice
+     */
+    getVoiceEngine(voiceId) {
+        return this.voiceEngines.get(voiceId) ?? this.currentEngine;
+    }
+    /**
+     * Set engine version for a specific voice
+     */
+    setVoiceEngine(voiceId, version) {
+        if (!TR909Engine.ENGINE_CAPABLE_VOICES.includes(voiceId)) {
+            return;
+        }
+        if (!TR909Engine.ENGINE_VERSIONS.includes(version)) {
+            return;
+        }
+        const currentVersion = this.voiceEngines.get(voiceId);
+        if (currentVersion === version) {
+            return;
+        }
+        this.voiceEngines.set(voiceId, version);
+        // Swap the voice
+        const noiseBuffer = new LFSRNoise(this.context).createBuffer(1);
+        const oldVoice = this.voices.get(voiceId);
+        if (oldVoice) oldVoice.disconnect();
+        // Create the new voice based on type
+        let newVoice;
+        switch (voiceId) {
+            case 'kick':
+                newVoice = version === 'E1'
+                    ? new Kick909E1('kick', this.context)
+                    : new Kick909('kick', this.context);
+                break;
+            case 'snare':
+                newVoice = version === 'E1'
+                    ? new Snare909E1('snare', this.context, noiseBuffer)
+                    : new Snare909('snare', this.context, noiseBuffer);
+                break;
+            case 'clap':
+                newVoice = version === 'E1'
+                    ? new Clap909E1('clap', this.context, noiseBuffer)
+                    : new Clap909('clap', this.context, noiseBuffer);
+                break;
+            case 'rimshot':
+                newVoice = version === 'E1'
+                    ? new Rimshot909E1('rimshot', this.context)
+                    : new Rimshot909('rimshot', this.context);
+                break;
+            case 'ltom':
+                newVoice = version === 'E1'
+                    ? new Tom909E1('ltom', this.context, 'low')
+                    : new Tom909('ltom', this.context, 'low');
+                break;
+            case 'mtom':
+                newVoice = version === 'E1'
+                    ? new Tom909E1('mtom', this.context, 'mid')
+                    : new Tom909('mtom', this.context, 'mid');
+                break;
+            case 'htom':
+                newVoice = version === 'E1'
+                    ? new Tom909E1('htom', this.context, 'high')
+                    : new Tom909('htom', this.context, 'high');
+                break;
+            case 'ch':
+                newVoice = version === 'E1'
+                    ? new HiHat909E1('ch', this.context, this.sampleLibrary, 'closed')
+                    : new HiHat909('ch', this.context, this.sampleLibrary, 'closed');
+                break;
+            case 'oh':
+                newVoice = version === 'E1'
+                    ? new HiHat909E1('oh', this.context, this.sampleLibrary, 'open')
+                    : new HiHat909('oh', this.context, this.sampleLibrary, 'open');
+                break;
+            case 'crash':
+                newVoice = version === 'E1'
+                    ? new Cymbal909E1('crash', this.context, this.sampleLibrary, 'crash')
+                    : new Cymbal909('crash', this.context, this.sampleLibrary, 'crash');
+                break;
+            case 'ride':
+                newVoice = version === 'E1'
+                    ? new Cymbal909E1('ride', this.context, this.sampleLibrary, 'ride')
+                    : new Cymbal909('ride', this.context, this.sampleLibrary, 'ride');
+                break;
+        }
+        if (newVoice) {
+            this.registerVoice(voiceId, newVoice);
+        }
     }
     /**
      * Switch engine version for kick, snare, and clap
@@ -371,6 +470,8 @@ export class TR909Engine extends SynthEngine {
 TR909Engine.STEPS_PER_BAR = 16;
 /** Voice IDs that support sample/synth toggle */
 TR909Engine.SAMPLE_CAPABLE_VOICES = ['ch', 'oh', 'crash', 'ride'];
-/** Available engine versions for kick drum */
+/** Voice IDs that support E1/E2 engine toggle */
+TR909Engine.ENGINE_CAPABLE_VOICES = ['kick', 'snare', 'clap', 'rimshot', 'ltom', 'mtom', 'htom', 'ch', 'oh', 'crash', 'ride'];
+/** Available engine versions */
 TR909Engine.ENGINE_VERSIONS = ['E1', 'E2'];
 //# sourceMappingURL=engine.js.map

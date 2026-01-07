@@ -233,7 +233,8 @@ function renderVoiceParams() {
             // Set initial state (synth by default)
             const useSample = engine.getVoiceUseSample(voice.id);
             toggle.classList.toggle('sample-active', useSample);
-            toggle.addEventListener('click', async () => {
+            toggle.addEventListener('click', async (e) => {
+                e.stopPropagation();
                 const currentUseSample = engine.getVoiceUseSample(voice.id);
                 const newUseSample = !currentUseSample;
                 // If switching to sample mode, ensure samples are loaded
@@ -246,6 +247,27 @@ function renderVoiceParams() {
                 engine.trigger(voice.id, 0.8);
             });
             header.appendChild(toggle);
+        }
+        // Add E1/E2 engine toggle for all voices
+        if (engine.isEngineCapable(voice.id)) {
+            const engineToggle = document.createElement('button');
+            engineToggle.className = 'engine-toggle-mini';
+            engineToggle.dataset.voiceId = voice.id;
+            engineToggle.title = 'Toggle E1/E2 engine';
+            const currentEngine = engine.getVoiceEngine(voice.id);
+            engineToggle.textContent = currentEngine === 'E1' ? '1' : '2';
+            engineToggle.classList.toggle('engine-e2', currentEngine === 'E2');
+            engineToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const current = engine.getVoiceEngine(voice.id);
+                const next = current === 'E1' ? 'E2' : 'E1';
+                engine.setVoiceEngine(voice.id, next);
+                engineToggle.textContent = next === 'E1' ? '1' : '2';
+                engineToggle.classList.toggle('engine-e2', next === 'E2');
+                // Preview the sound
+                engine.trigger(voice.id, 0.8);
+            });
+            header.appendChild(engineToggle);
         }
         panel.appendChild(header);
         // Knobs container
@@ -688,25 +710,6 @@ function setupStepPageToggle() {
         });
     });
 }
-function setupEngineToggle() {
-    const btn = document.getElementById('engine-toggle');
-    if (!btn)
-        return;
-    // Set initial state
-    btn.textContent = engine.getEngine();
-    btn.addEventListener('click', () => {
-        const versions = engine.getEngineVersions();
-        const current = engine.getEngine();
-        const currentIndex = versions.indexOf(current);
-        const nextIndex = (currentIndex + 1) % versions.length;
-        const nextVersion = versions[nextIndex];
-        engine.setEngine(nextVersion);
-        btn.textContent = nextVersion;
-        // Preview kick sound after switch
-        engine.trigger('kick', 0.8);
-        setStatus(`Kick engine: ${nextVersion}`);
-    });
-}
 // Update page toggle buttons to show which has the playing step
 function updateStepPageIndicator(step) {
     const btn1 = document.querySelector('.step-page-btn[data-page="1"]');
@@ -724,7 +727,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboardShortcuts();
     setupPatternTabs();
     setupStepPageToggle();
-    setupEngineToggle();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
     setStatus('Ready — tap steps to program, or press SPACE to play. Keys 1-0 trigger sounds.');

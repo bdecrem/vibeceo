@@ -522,6 +522,49 @@ h1::before {
   box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
 }
 
+/* Per-voice Engine Toggle (E1/E2) */
+.engine-toggle-mini {
+  margin-left: auto;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border-accent);
+  border-radius: 9px;
+  background: var(--bg-dark);
+  color: var(--text-muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.engine-toggle-mini:hover {
+  border-color: var(--amber-700);
+  color: var(--text-secondary);
+}
+
+.engine-toggle-mini.engine-e2 {
+  background: var(--amber-600);
+  border-color: var(--amber-500);
+  color: #000;
+  box-shadow: 0 0 6px rgba(245, 158, 11, 0.4);
+}
+
+.engine-toggle-mini.engine-e2:hover {
+  background: var(--amber-500);
+  box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+/* When both sample toggle and engine toggle exist */
+.sample-toggle + .engine-toggle-mini {
+  margin-left: 0.35rem;
+}
+
 /* Knobs Container */
 .knobs-container {
   display: flex;
@@ -873,6 +916,16 @@ h1::before {
     width: 18px;
     height: 18px;
     font-size: 0.6rem;
+  }
+
+  .engine-toggle-mini {
+    width: 16px;
+    height: 16px;
+    font-size: 0.55rem;
+  }
+
+  .sample-toggle + .engine-toggle-mini {
+    margin-left: 0.25rem;
   }
 
   .knobs-container {
