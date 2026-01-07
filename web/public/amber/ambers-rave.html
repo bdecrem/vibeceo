@@ -3,21 +3,21 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AMBER'S WORLD</title>
+  <title>AMBER'S RAVE</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
 
   <!-- OpenGraph -->
-  <meta property="og:title" content="AMBER'S WORLD">
-  <meta property="og:description" content="One Amber. Infinite friends. Each one unique.">
-  <meta property="og:image" content="https://kochi.to/amber/amber-world-og.png">
-  <meta property="og:url" content="https://kochi.to/amber/amber-world.html">
+  <meta property="og:title" content="AMBER'S RAVE">
+  <meta property="og:description" content="Robots, humans, pets — all losing their minds to techno. Click to spawn. They multiply.">
+  <meta property="og:image" content="https://kochi.to/amber/ambers-rave-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/ambers-rave.html">
   <meta property="og:type" content="website">
 
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="AMBER'S WORLD">
-  <meta name="twitter:description" content="One Amber. Infinite friends. Each one unique.">
-  <meta name="twitter:image" content="https://kochi.to/amber/amber-world-og.png">
+  <meta name="twitter:title" content="AMBER'S RAVE">
+  <meta name="twitter:description" content="Robots, humans, pets — all losing their minds to techno. Click to spawn. They multiply.">
+  <meta name="twitter:image" content="https://kochi.to/amber/ambers-rave-og.png">
 
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -25,7 +25,7 @@
     body {
       background: #0A0908;
       overflow: hidden;
-      cursor: pointer;
+      cursor: crosshair;
       font-family: 'Courier New', monospace;
     }
 
@@ -50,7 +50,7 @@
       top: 20px;
       right: 20px;
       color: #2D9596;
-      font-size: 36px;
+      font-size: 48px;
       font-weight: bold;
       z-index: 100;
       text-shadow: 0 0 20px #2D9596;
@@ -67,27 +67,41 @@
       letter-spacing: 4px;
       text-shadow: 0 0 10px #B8860B;
     }
+
+    .flash {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #D4A574;
+      opacity: 0;
+      pointer-events: none;
+      z-index: 50;
+    }
   </style>
 </head>
 <body>
-  <div id="title">AMBER'S WORLD</div>
-  <div id="count">1</div>
-  <div id="info">click to add friends /// each one unique /// they dance</div>
+  <div id="title">AMBER'S RAVE</div>
+  <div id="count">0</div>
+  <div id="info">click to spawn /// space for chaos /// they multiply</div>
+  <div class="flash" id="flash"></div>
   <canvas id="canvas"></canvas>
 
   <script>
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     const countEl = document.getElementById('count');
+    const flashEl = document.getElementById('flash');
 
     let width, height;
     let characters = [];
-    let amber = null;
     let audioStarted = false;
     let audioCtx, gainNode;
     let beat = 0;
     let bpm = 140;
     let lastBeat = 0;
+    let chaos = false;
 
     // Colors
     const AMBER = '#D4A574';
@@ -98,16 +112,14 @@
     const VIOLET = '#7B68EE';
     const CORAL = '#E07A5F';
     const MINT = '#81B29A';
-    const BLUSH = '#F2CC8F';
-    const LAVENDER = '#C9ADA7';
     const SKY = '#89C2D9';
 
     const SKIN_TONES = ['#D4A574', '#E8C4A2', '#C68642', '#8D5524', '#F5DEB3', '#DEB887'];
     const ACCENT_COLORS = [TEAL, GOLD, VIOLET, CORAL, MINT, SKY];
     const HAIR_COLORS = ['#1a1a18', '#4A3728', '#8B4513', '#D4A574', '#B8860B', '#2D2D2D', VIOLET, TEAL, CORAL];
 
-    // Character types
-    const TYPES = ['human', 'human', 'human', 'robot', 'robot', 'cat', 'dog', 'bunny'];
+    // Character types - mix of robots and organic
+    const TYPES = ['robot', 'robot', 'human', 'human', 'human', 'cat', 'dog', 'bunny'];
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -117,121 +129,120 @@
     window.addEventListener('resize', resize);
     resize();
 
-    // Seeded random for reproducible uniqueness
-    function seededRandom(seed) {
-      const x = Math.sin(seed) * 10000;
-      return x - Math.floor(x);
-    }
-
     // Character class
     class Character {
-      constructor(x, y, isAmber = false, seed = null) {
+      constructor(x, y) {
         this.x = x;
         this.y = y;
-        this.isAmber = isAmber;
-        this.seed = seed || Math.random() * 10000;
+        this.size = 30 + Math.random() * 35;
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.rotation = 0;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+        this.bobPhase = Math.random() * Math.PI * 2;
+        this.bobSpeed = 0.1 + Math.random() * 0.1;
+        this.glitching = false;
+        this.glitchFrames = 0;
+        this.blinking = false;
+        this.blinkTimer = Math.random() * 100;
+        this.scale = 1;
+        this.targetScale = 1;
+        this.spawning = true;
+        this.spawnScale = 0;
+        this.lifetime = 0;
+        this.mutationTimer = Math.random() * 500;
 
-        // Use seeded random for all properties
-        let s = this.seed;
-        const rand = () => { s++; return seededRandom(s); };
+        // Determine type
+        this.type = TYPES[Math.floor(Math.random() * TYPES.length)];
 
-        if (isAmber) {
-          // AMBER - the main character
-          this.type = 'human';
-          this.size = 50;
-          this.skinTone = AMBER;
-          this.accentColor = TEAL;
-          this.hasHeadphones = true;
+        if (this.type === 'robot') {
+          this.skinTone = Math.random() > 0.5 ? '#888888' : '#666666';
+          this.accentColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
+          this.hasHeadphones = Math.random() > 0.3;
           this.headphoneColor = DARK;
-          this.eyeType = 0; // >< happy
-          this.mouthType = 0; // smile
+          this.eyeType = Math.floor(Math.random() * 6);
+          this.mouthType = Math.floor(Math.random() * 5);
+          this.hasAntenna = Math.random() > 0.3;
           this.hasHair = false;
           this.hairColor = null;
           this.hairStyle = null;
-          this.hasAntenna = false;
           this.hasBow = false;
-          this.hasGlasses = false;
+          this.hasGlasses = Math.random() > 0.8;
           this.hasHat = false;
           this.bodyColor = DARK;
           this.earType = 'none';
+        } else if (this.type === 'cat' || this.type === 'dog' || this.type === 'bunny') {
+          this.skinTone = Math.random() > 0.5 ? '#DEB887' : (Math.random() > 0.5 ? '#8B7355' : '#F5DEB3');
+          this.accentColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
+          this.hasHeadphones = Math.random() > 0.6;
+          this.headphoneColor = DARK;
+          this.eyeType = Math.random() > 0.5 ? 1 : 0;
+          this.mouthType = Math.random() > 0.5 ? 3 : 0;
+          this.hasAntenna = false;
+          this.hasHair = false;
+          this.hairColor = null;
+          this.hairStyle = null;
+          this.hasBow = Math.random() > 0.5;
+          this.hasGlasses = false;
+          this.hasHat = Math.random() > 0.85;
+          this.bodyColor = this.skinTone;
+          this.earType = this.type;
+          this.size *= 0.75;
         } else {
-          // Generate unique character
-          this.type = TYPES[Math.floor(rand() * TYPES.length)];
-          this.size = 30 + rand() * 30;
-
-          if (this.type === 'robot') {
-            this.skinTone = rand() > 0.5 ? '#888888' : '#666666';
-            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
-            this.hasHeadphones = rand() > 0.5;
-            this.headphoneColor = DARK;
-            this.eyeType = Math.floor(rand() * 6);
-            this.mouthType = Math.floor(rand() * 5);
-            this.hasAntenna = rand() > 0.3;
-            this.hasHair = false;
-            this.hasBow = false;
-            this.hasGlasses = rand() > 0.7;
-            this.hasHat = false;
-            this.bodyColor = DARK;
-            this.earType = 'none';
-          } else if (this.type === 'cat' || this.type === 'dog' || this.type === 'bunny') {
-            // Pets
-            this.skinTone = rand() > 0.5 ? '#DEB887' : (rand() > 0.5 ? '#8B7355' : '#F5DEB3');
-            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
-            this.hasHeadphones = rand() > 0.7;
-            this.headphoneColor = DARK;
-            this.eyeType = rand() > 0.5 ? 1 : 0; // O O or ><
-            this.mouthType = rand() > 0.5 ? 3 : 0; // w or smile
-            this.hasAntenna = false;
-            this.hasHair = false;
-            this.hasBow = rand() > 0.6;
-            this.hasGlasses = false;
-            this.hasHat = rand() > 0.8;
-            this.bodyColor = this.skinTone;
-            this.earType = this.type;
-            this.size *= 0.7; // Pets are smaller
-          } else {
-            // Humans - most variety
-            this.skinTone = SKIN_TONES[Math.floor(rand() * SKIN_TONES.length)];
-            this.accentColor = ACCENT_COLORS[Math.floor(rand() * ACCENT_COLORS.length)];
-            this.hasHeadphones = rand() > 0.4;
-            this.headphoneColor = rand() > 0.5 ? DARK : this.accentColor;
-            this.eyeType = Math.floor(rand() * 6);
-            this.mouthType = Math.floor(rand() * 5);
-            this.hasAntenna = false;
-            this.hasHair = rand() > 0.3;
-            this.hairColor = HAIR_COLORS[Math.floor(rand() * HAIR_COLORS.length)];
-            this.hairStyle = Math.floor(rand() * 5);
-            this.hasBow = rand() > 0.7;
-            this.hasGlasses = rand() > 0.75;
-            this.hasHat = rand() > 0.8;
-            this.bodyColor = rand() > 0.5 ? DARK : this.accentColor;
-            this.earType = 'none';
-          }
+          // Human
+          this.skinTone = SKIN_TONES[Math.floor(Math.random() * SKIN_TONES.length)];
+          this.accentColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
+          this.hasHeadphones = Math.random() > 0.35;
+          this.headphoneColor = Math.random() > 0.5 ? DARK : this.accentColor;
+          this.eyeType = Math.floor(Math.random() * 6);
+          this.mouthType = Math.floor(Math.random() * 5);
+          this.hasAntenna = false;
+          this.hasHair = Math.random() > 0.25;
+          this.hairColor = HAIR_COLORS[Math.floor(Math.random() * HAIR_COLORS.length)];
+          this.hairStyle = Math.floor(Math.random() * 5);
+          this.hasBow = Math.random() > 0.7;
+          this.hasGlasses = Math.random() > 0.75;
+          this.hasHat = Math.random() > 0.85;
+          this.bodyColor = Math.random() > 0.5 ? DARK : this.accentColor;
+          this.earType = 'none';
         }
-
-        // Animation
-        this.bobPhase = rand() * Math.PI * 2;
-        this.bobSpeed = 0.03 + rand() * 0.02;
-        this.blinking = false;
-        this.blinkTimer = rand() * 100;
-        this.rotation = (rand() - 0.5) * 0.1;
-        this.targetX = x;
-        this.targetY = y;
-        this.scale = 0;
-        this.targetScale = 1;
       }
 
       update(beatPulse) {
-        // Smooth movement to target
-        this.x += (this.targetX - this.x) * 0.05;
-        this.y += (this.targetY - this.y) * 0.05;
+        this.lifetime++;
+
+        // Spawn animation
+        if (this.spawning) {
+          this.spawnScale += 0.1;
+          if (this.spawnScale >= 1) {
+            this.spawnScale = 1;
+            this.spawning = false;
+          }
+        }
+
+        // Movement
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off walls
+        if (this.x < this.size) { this.x = this.size; this.vx *= -1; }
+        if (this.x > width - this.size) { this.x = width - this.size; this.vx *= -1; }
+        if (this.y < this.size) { this.y = this.size; this.vy *= -1; }
+        if (this.y > height - this.size) { this.y = height - this.size; this.vy *= -1; }
+
+        // Bob to the beat
+        this.bobPhase += this.bobSpeed;
 
         // Beat pulse scale
-        this.targetScale = beatPulse ? 1.15 : 1;
+        this.targetScale = beatPulse ? 1.2 : 1;
         this.scale += (this.targetScale - this.scale) * 0.3;
 
-        // Bob (faster on beat)
-        this.bobPhase += this.bobSpeed * (beatPulse ? 1.5 : 1);
+        // Rotation
+        if (chaos) {
+          this.rotation += this.rotationSpeed * 3;
+        } else {
+          this.rotation += this.rotationSpeed * 0.3;
+        }
 
         // Blinking
         this.blinkTimer--;
@@ -239,52 +250,95 @@
           this.blinking = !this.blinking;
           this.blinkTimer = this.blinking ? 5 : 50 + Math.random() * 100;
         }
+
+        // Random glitching
+        if (Math.random() < (chaos ? 0.05 : 0.005)) {
+          this.glitching = true;
+          this.glitchFrames = 5 + Math.floor(Math.random() * 10);
+        }
+
+        if (this.glitching) {
+          this.glitchFrames--;
+          if (this.glitchFrames <= 0) this.glitching = false;
+        }
+
+        // Mutation
+        this.mutationTimer--;
+        if (this.mutationTimer <= 0) {
+          this.mutate();
+          this.mutationTimer = 200 + Math.random() * 500;
+        }
+
+        // Chaos mode - faster, crazier
+        if (chaos) {
+          this.vx *= 1.01;
+          this.vy *= 1.01;
+          if (Math.abs(this.vx) > 10) this.vx = Math.sign(this.vx) * 10;
+          if (Math.abs(this.vy) > 10) this.vy = Math.sign(this.vy) * 10;
+        } else {
+          this.vx *= 0.99;
+          this.vy *= 0.99;
+        }
+      }
+
+      mutate() {
+        if (Math.random() > 0.7) this.eyeType = Math.floor(Math.random() * 6);
+        if (Math.random() > 0.7) this.mouthType = Math.floor(Math.random() * 5);
+        if (Math.random() > 0.8) this.accentColor = ACCENT_COLORS[Math.floor(Math.random() * ACCENT_COLORS.length)];
       }
 
       draw() {
         ctx.save();
-        ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 3);
+        ctx.translate(this.x, this.y + Math.sin(this.bobPhase) * 5);
         ctx.rotate(this.rotation);
-        ctx.scale(this.scale, this.scale);
+        ctx.scale(this.scale * this.spawnScale, this.scale * this.spawnScale);
 
         const s = this.size;
+        const glitchOffset = this.glitching ? (Math.random() - 0.5) * 10 : 0;
 
-        // Draw based on type
-        if (this.earType === 'cat') {
-          this.drawCatEars(s);
-        } else if (this.earType === 'dog') {
-          this.drawDogEars(s);
-        } else if (this.earType === 'bunny') {
-          this.drawBunnyEars(s);
+        // Glitch effect
+        if (this.glitching) {
+          ctx.globalAlpha = 0.5;
+          ctx.translate(glitchOffset, glitchOffset);
+          this.drawBody(s);
+          ctx.translate(-glitchOffset * 2, -glitchOffset);
+          this.drawBody(s);
+          ctx.translate(glitchOffset, 0);
+          ctx.globalAlpha = 1;
         }
+
+        this.drawBody(s);
+
+        ctx.restore();
+      }
+
+      drawBody(s) {
+        // Ears first (behind head)
+        if (this.earType === 'cat') this.drawCatEars(s);
+        else if (this.earType === 'dog') this.drawDogEars(s);
+        else if (this.earType === 'bunny') this.drawBunnyEars(s);
 
         // Head
         ctx.fillStyle = this.skinTone;
         ctx.fillRect(-s/2, -s/2, s, s * 0.8);
 
-        // Face detail blocks (for humans/robots)
+        // Face detail blocks
         if (this.earType === 'none') {
           ctx.fillStyle = this.type === 'robot' ? '#555555' : this.adjustBrightness(this.skinTone, -20);
           ctx.fillRect(-s/2 + 3, -s/2 + 3, s/5, s/5);
           ctx.fillRect(s/2 - 3 - s/5, -s/2 + 3, s/5, s/5);
         }
 
-        // Hair (before headphones)
-        if (this.hasHair && !this.hasHat) {
-          this.drawHair(s);
-        }
+        // Hair
+        if (this.hasHair && !this.hasHat) this.drawHair(s);
 
         // Hat
-        if (this.hasHat) {
-          this.drawHat(s);
-        }
+        if (this.hasHat) this.drawHat(s);
 
         // Headphones
-        if (this.hasHeadphones) {
-          this.drawHeadphones(s);
-        }
+        if (this.hasHeadphones) this.drawHeadphones(s);
 
-        // Antenna (robots)
+        // Antenna
         if (this.hasAntenna) {
           ctx.strokeStyle = DARK;
           ctx.lineWidth = 2;
@@ -299,14 +353,10 @@
         }
 
         // Bow
-        if (this.hasBow && !this.hasHeadphones && !this.hasHat) {
-          this.drawBow(s);
-        }
+        if (this.hasBow && !this.hasHeadphones && !this.hasHat) this.drawBow(s);
 
         // Glasses
-        if (this.hasGlasses) {
-          this.drawGlasses(s);
-        }
+        if (this.hasGlasses) this.drawGlasses(s);
 
         // Eyes
         if (!this.blinking) {
@@ -322,7 +372,7 @@
           ctx.stroke();
         }
 
-        // Nose (for pets)
+        // Nose for pets
         if (this.earType !== 'none') {
           ctx.fillStyle = '#333';
           ctx.beginPath();
@@ -342,14 +392,6 @@
         ctx.beginPath();
         ctx.arc(0, s * 0.45, 4, 0, Math.PI * 2);
         ctx.fill();
-
-        // Amber glow - subtle, no box
-        if (this.isAmber) {
-          ctx.shadowColor = GOLD;
-          ctx.shadowBlur = 30;
-        }
-
-        ctx.restore();
       }
 
       drawHeadphones(s) {
@@ -373,7 +415,7 @@
       drawHair(s) {
         ctx.fillStyle = this.hairColor;
         switch(this.hairStyle) {
-          case 0: // Short spiky
+          case 0: // Spiky
             ctx.fillRect(-s/2, -s/2 - 8, s, 12);
             for (let i = 0; i < 5; i++) {
               ctx.fillRect(-s/2 + i * s/5 + 2, -s/2 - 12, s/6, 8);
@@ -390,7 +432,7 @@
           case 3: // Mohawk
             ctx.fillRect(-4, -s/2 - 15, 8, 20);
             break;
-          case 4: // Curly top
+          case 4: // Curly
             for (let i = 0; i < 4; i++) {
               ctx.beginPath();
               ctx.arc(-s/3 + i * s/4, -s/2 - 4, 8, 0, Math.PI * 2);
@@ -440,7 +482,6 @@
         ctx.lineTo(s/2 + 8, -s/2 - 15);
         ctx.lineTo(s/4, -s/2);
         ctx.fill();
-        // Inner ear
         ctx.fillStyle = CORAL;
         ctx.beginPath();
         ctx.moveTo(-s/2 + 2, -s/2);
@@ -468,7 +509,6 @@
         ctx.ellipse(-s/4, -s/2 - 20, 6, 20, -0.1, 0, Math.PI * 2);
         ctx.ellipse(s/4, -s/2 - 20, 6, 20, 0.1, 0, Math.PI * 2);
         ctx.fill();
-        // Inner ear
         ctx.fillStyle = CORAL;
         ctx.beginPath();
         ctx.ellipse(-s/4, -s/2 - 20, 3, 14, -0.1, 0, Math.PI * 2);
@@ -480,7 +520,7 @@
         ctx.fillStyle = BLACK;
 
         switch(this.eyeType) {
-          case 0: // >< happy
+          case 0: // ><
             ctx.lineWidth = 2;
             ctx.strokeStyle = BLACK;
             ctx.beginPath();
@@ -524,7 +564,7 @@
             ctx.fillText('*', -s/4 - 4, -s/8 + 4);
             ctx.fillText('*', s/4 - 4, -s/8 + 4);
             break;
-          case 5: // heart eyes
+          case 5: // hearts
             ctx.fillStyle = CORAL;
             ctx.font = `${s/4}px serif`;
             ctx.fillText('♥', -s/4 - 5, -s/8 + 4);
@@ -580,9 +620,13 @@
         const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
         return `#${(1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1)}`;
       }
+
+      shouldReproduce() {
+        return this.lifetime > 300 && Math.random() < 0.001 * (chaos ? 5 : 1);
+      }
     }
 
-    // Audio setup
+    // Audio
     function initAudio() {
       if (audioStarted) return;
       audioStarted = true;
@@ -602,18 +646,11 @@
         beat++;
         lastBeat = Date.now();
 
-        // Kick on 1 and 3
-        if (beat % 4 === 0 || beat % 4 === 2) {
-          playKick();
-        }
-
-        // Hihat on every beat
+        if (beat % 4 === 0 || beat % 4 === 2) playKick();
         playHihat();
-
-        // Bass on 1
-        if (beat % 4 === 0) {
-          playBass();
-        }
+        if (beat % 4 === 0) playBass();
+        if (chaos && Math.random() > 0.5) playGlitch();
+        if (beat % 4 === 0) flash();
 
       }, beatInterval);
     }
@@ -621,17 +658,13 @@
     function playKick() {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-
       osc.type = 'sine';
       osc.frequency.setValueAtTime(150, audioCtx.currentTime);
       osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.1);
-
       gain.gain.setValueAtTime(0.8, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-
       osc.connect(gain);
       gain.connect(gainNode);
-
       osc.start();
       osc.stop(audioCtx.currentTime + 0.2);
     }
@@ -640,169 +673,139 @@
       const bufferSize = audioCtx.sampleRate * 0.05;
       const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
       const data = buffer.getChannelData(0);
-
       for (let i = 0; i < bufferSize; i++) {
         data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (bufferSize * 0.1));
       }
-
       const source = audioCtx.createBufferSource();
       const gain = audioCtx.createGain();
       const filter = audioCtx.createBiquadFilter();
-
       filter.type = 'highpass';
       filter.frequency.value = 7000;
-
       source.buffer = buffer;
       gain.gain.value = 0.15;
-
       source.connect(filter);
       filter.connect(gain);
       gain.connect(gainNode);
-
       source.start();
     }
 
     function playBass() {
       const osc = audioCtx.createOscillator();
       const gain = audioCtx.createGain();
-
-      const notes = [55, 55, 73.42, 55]; // A1, A1, D2, A1
+      const notes = [55, 55, 73.42, 55];
       const note = notes[Math.floor(beat / 4) % notes.length];
-
       osc.type = 'sawtooth';
       osc.frequency.value = note;
-
       gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
       gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-
       const filter = audioCtx.createBiquadFilter();
       filter.type = 'lowpass';
       filter.frequency.value = 400;
-
       osc.connect(filter);
       filter.connect(gain);
       gain.connect(gainNode);
-
       osc.start();
       osc.stop(audioCtx.currentTime + 0.3);
     }
 
-    // Create Amber first, in the center
-    amber = new Character(width / 2, height / 2, true);
-    characters.push(amber);
+    function playGlitch() {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'square';
+      osc.frequency.value = 200 + Math.random() * 2000;
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+      osc.connect(gain);
+      gain.connect(gainNode);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.05);
+    }
+
+    function flash() {
+      flashEl.style.opacity = '0.1';
+      setTimeout(() => { flashEl.style.opacity = '0'; }, 50);
+    }
+
+    function spawnCharacter(x, y) {
+      if (characters.length < 100) {
+        characters.push(new Character(x || Math.random() * width, y || Math.random() * height));
+        updateCount();
+      }
+    }
 
     function updateCount() {
       countEl.textContent = characters.length;
     }
 
-    // Arrange characters naturally like a party - clusters, messiness
-    function arrangeCharacters() {
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const margin = 80;
-
-      // Amber stays roughly center but with slight offset
-      amber.targetX = centerX + (Math.random() - 0.5) * 50;
-      amber.targetY = centerY + (Math.random() - 0.5) * 50;
-
-      // Create a few cluster centers around the space
-      const clusters = [
-        { x: centerX, y: centerY, weight: 3 }, // Main cluster near Amber
-        { x: width * 0.2, y: height * 0.3, weight: 1 },
-        { x: width * 0.8, y: height * 0.25, weight: 1 },
-        { x: width * 0.15, y: height * 0.7, weight: 1 },
-        { x: width * 0.75, y: height * 0.65, weight: 1 },
-        { x: width * 0.5, y: height * 0.8, weight: 0.5 },
-      ];
-
-      const others = characters.filter(c => !c.isAmber);
-
-      others.forEach((char, i) => {
-        // Pick a cluster weighted randomly
-        const totalWeight = clusters.reduce((sum, c) => sum + c.weight, 0);
-        let r = Math.random() * totalWeight;
-        let cluster = clusters[0];
-        for (const c of clusters) {
-          r -= c.weight;
-          if (r <= 0) { cluster = c; break; }
-        }
-
-        // Position near cluster with natural spread
-        const spread = 80 + Math.random() * 120;
-        const angle = Math.random() * Math.PI * 2;
-        const jitterX = (Math.random() - 0.5) * 40;
-        const jitterY = (Math.random() - 0.5) * 40;
-
-        let targetX = cluster.x + Math.cos(angle) * spread + jitterX;
-        let targetY = cluster.y + Math.sin(angle) * spread + jitterY;
-
-        // Keep within bounds
-        targetX = Math.max(margin, Math.min(width - margin, targetX));
-        targetY = Math.max(margin, Math.min(height - margin, targetY));
-
-        char.targetX = targetX;
-        char.targetY = targetY;
-      });
+    // Initial characters
+    for (let i = 0; i < 8; i++) {
+      spawnCharacter();
     }
 
-    // Click to add friend
+    // Click to spawn
     canvas.addEventListener('click', (e) => {
       initAudio();
-      if (characters.length < 50) {
-        const newChar = new Character(e.clientX, e.clientY, false);
-        characters.push(newChar);
-        updateCount();
-        arrangeCharacters();
+      spawnCharacter(e.clientX, e.clientY);
+
+      if (chaos) {
+        for (let i = 0; i < 3; i++) {
+          setTimeout(() => {
+            spawnCharacter(
+              e.clientX + (Math.random() - 0.5) * 100,
+              e.clientY + (Math.random() - 0.5) * 100
+            );
+          }, i * 100);
+        }
+      }
+    });
+
+    // Space for chaos
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        chaos = !chaos;
+        document.body.style.background = chaos ? '#1a0a08' : '#0A0908';
+        if (chaos) bpm = 160;
+        else bpm = 140;
       }
     });
 
     // Animation loop
     function animate() {
-      ctx.fillStyle = BLACK;
+      ctx.fillStyle = 'rgba(10, 9, 8, 0.2)';
       ctx.fillRect(0, 0, width, height);
 
-      // Subtle grid
-      ctx.strokeStyle = 'rgba(45, 149, 150, 0.05)';
-      ctx.lineWidth = 1;
-      for (let x = 0; x < width; x += 40) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
-        ctx.stroke();
-      }
-      for (let y = 0; y < height; y += 40) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
-        ctx.stroke();
-      }
-
-
-      // Beat pulse detection
       const timeSinceBeat = Date.now() - lastBeat;
-      const beatPulse = timeSinceBeat < 80;
+      const beatPulse = timeSinceBeat < 100;
 
-      // Update and draw characters (Amber last so she's on top)
-      const others = characters.filter(c => !c.isAmber);
-      others.forEach(char => {
+      characters.forEach(char => {
         char.update(beatPulse);
         char.draw();
+
+        if (char.shouldReproduce()) {
+          spawnCharacter(
+            char.x + (Math.random() - 0.5) * 50,
+            char.y + (Math.random() - 0.5) * 50
+          );
+        }
       });
-      amber.update(beatPulse);
-      amber.draw();
+
+      // Scanlines
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+      for (let y = 0; y < height; y += 4) {
+        ctx.fillRect(0, y, width, 2);
+      }
 
       requestAnimationFrame(animate);
     }
 
-    // Initial arrangement
-    arrangeCharacters();
     animate();
 
-    // Handle resize
-    window.addEventListener('resize', () => {
-      resize();
-      arrangeCharacters();
-    });
+    // Auto-spawn
+    setInterval(() => {
+      if (characters.length < 20 && Math.random() > 0.7) {
+        spawnCharacter();
+      }
+    }, 3000);
   </script>
 </body>
 </html>
