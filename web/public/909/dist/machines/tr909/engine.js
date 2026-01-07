@@ -29,10 +29,10 @@ export class TR909Engine extends SynthEngine {
         this.sampleLibrary = createDefaultTr909SampleLibrary();
         // Engine version: E1 (sine+softclip), E2 (triangle+waveshaper)
         this.currentEngine = 'E2';
-        // Per-voice engine tracking (all start at global default)
+        // Per-voice engine tracking (each voice starts at its own default)
         this.voiceEngines = new Map();
         TR909Engine.ENGINE_CAPABLE_VOICES.forEach(id => {
-            this.voiceEngines.set(id, this.currentEngine);
+            this.voiceEngines.set(id, TR909Engine.VOICE_DEFAULTS[id] ?? this.currentEngine);
         });
         // Mute/solo state: 'normal', 'muted', 'solo'
         this.voiceStates = new Map();
@@ -236,7 +236,28 @@ export class TR909Engine extends SynthEngine {
      * Get engine version for a specific voice
      */
     getVoiceEngine(voiceId) {
-        return this.voiceEngines.get(voiceId) ?? this.currentEngine;
+        return this.voiceEngines.get(voiceId) ?? TR909Engine.VOICE_DEFAULTS[voiceId] ?? this.currentEngine;
+    }
+    /**
+     * Get the default engine for a voice (used when presets don't specify)
+     */
+    getVoiceDefaultEngine(voiceId) {
+        return TR909Engine.VOICE_DEFAULTS[voiceId] ?? 'E2';
+    }
+    /**
+     * Reset a voice to its default engine
+     */
+    resetVoiceEngine(voiceId) {
+        const defaultEngine = this.getVoiceDefaultEngine(voiceId);
+        this.setVoiceEngine(voiceId, defaultEngine);
+    }
+    /**
+     * Reset all voices to their default engines
+     */
+    resetAllVoiceEngines() {
+        TR909Engine.ENGINE_CAPABLE_VOICES.forEach(id => {
+            this.resetVoiceEngine(id);
+        });
     }
     /**
      * Set engine version for a specific voice
@@ -445,26 +466,32 @@ export class TR909Engine extends SynthEngine {
     }
     createVoiceMap(context) {
         const noiseBuffer = new LFSRNoise(context).createBuffer(1);
-        // Select voice classes based on current engine
-        const KickClass = this.currentEngine === 'E1' ? Kick909E1 : Kick909;
-        const SnareClass = this.currentEngine === 'E1' ? Snare909E1 : Snare909;
-        const ClapClass = this.currentEngine === 'E1' ? Clap909E1 : Clap909;
-        const RimshotClass = this.currentEngine === 'E1' ? Rimshot909E1 : Rimshot909;
-        const TomClass = this.currentEngine === 'E1' ? Tom909E1 : Tom909;
-        const HiHatClass = this.currentEngine === 'E1' ? HiHat909E1 : HiHat909;
-        const CymbalClass = this.currentEngine === 'E1' ? Cymbal909E1 : Cymbal909;
+        // Helper to get engine for a voice (from voiceEngines map or defaults)
+        const getEngine = (id) => this.voiceEngines.get(id) ?? TR909Engine.VOICE_DEFAULTS[id] ?? 'E2';
+        // Select voice classes based on per-voice engine settings
+        const KickClass = getEngine('kick') === 'E1' ? Kick909E1 : Kick909;
+        const SnareClass = getEngine('snare') === 'E1' ? Snare909E1 : Snare909;
+        const ClapClass = getEngine('clap') === 'E1' ? Clap909E1 : Clap909;
+        const RimshotClass = getEngine('rimshot') === 'E1' ? Rimshot909E1 : Rimshot909;
+        const LTomClass = getEngine('ltom') === 'E1' ? Tom909E1 : Tom909;
+        const MTomClass = getEngine('mtom') === 'E1' ? Tom909E1 : Tom909;
+        const HTomClass = getEngine('htom') === 'E1' ? Tom909E1 : Tom909;
+        const CHClass = getEngine('ch') === 'E1' ? HiHat909E1 : HiHat909;
+        const OHClass = getEngine('oh') === 'E1' ? HiHat909E1 : HiHat909;
+        const CrashClass = getEngine('crash') === 'E1' ? Cymbal909E1 : Cymbal909;
+        const RideClass = getEngine('ride') === 'E1' ? Cymbal909E1 : Cymbal909;
         return new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
             ['clap', new ClapClass('clap', context, noiseBuffer)],
             ['rimshot', new RimshotClass('rimshot', context)],
-            ['ltom', new TomClass('ltom', context, 'low')],
-            ['mtom', new TomClass('mtom', context, 'mid')],
-            ['htom', new TomClass('htom', context, 'high')],
-            ['ch', new HiHatClass('ch', context, this.sampleLibrary, 'closed')],
-            ['oh', new HiHatClass('oh', context, this.sampleLibrary, 'open')],
-            ['crash', new CymbalClass('crash', context, this.sampleLibrary, 'crash')],
-            ['ride', new CymbalClass('ride', context, this.sampleLibrary, 'ride')],
+            ['ltom', new LTomClass('ltom', context, 'low')],
+            ['mtom', new MTomClass('mtom', context, 'mid')],
+            ['htom', new HTomClass('htom', context, 'high')],
+            ['ch', new CHClass('ch', context, this.sampleLibrary, 'closed')],
+            ['oh', new OHClass('oh', context, this.sampleLibrary, 'open')],
+            ['crash', new CrashClass('crash', context, this.sampleLibrary, 'crash')],
+            ['ride', new RideClass('ride', context, this.sampleLibrary, 'ride')],
         ]);
     }
     schedulePatternInContext({ context, pattern, bpm, bars, stepsPerBar, swing, }) {
@@ -531,4 +558,18 @@ TR909Engine.SAMPLE_CAPABLE_VOICES = ['ch', 'oh', 'crash', 'ride'];
 TR909Engine.ENGINE_CAPABLE_VOICES = ['kick', 'snare', 'clap', 'rimshot', 'ltom', 'mtom', 'htom', 'ch', 'oh', 'crash', 'ride'];
 /** Available engine versions */
 TR909Engine.ENGINE_VERSIONS = ['E1', 'E2'];
+/** Default engine per voice - used on init and when presets don't specify */
+TR909Engine.VOICE_DEFAULTS = {
+    kick: 'E1',
+    snare: 'E2',
+    clap: 'E1',
+    rimshot: 'E2',
+    ltom: 'E2',
+    mtom: 'E2',
+    htom: 'E2',
+    ch: 'E1',
+    oh: 'E1',
+    crash: 'E2',
+    ride: 'E2',
+};
 //# sourceMappingURL=engine.js.map
