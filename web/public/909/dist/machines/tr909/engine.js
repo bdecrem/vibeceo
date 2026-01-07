@@ -12,6 +12,7 @@ import { Tom909E1 } from './voices/tom-e1.js';
 import { Rimshot909 } from './voices/rimshot.js';
 import { Rimshot909E1 } from './voices/rimshot-e1.js';
 import { HiHat909 } from './voices/hihat.js';
+import { HiHat909E1 } from './voices/hihat-e1.js';
 import { Cymbal909 } from './voices/cymbal.js';
 import { SampleVoice } from './voices/sample-voice.js';
 import { createDefaultTr909SampleLibrary, DEFAULT_909_SAMPLE_MANIFEST, } from './samples/library.js';
@@ -185,6 +186,16 @@ export class TR909Engine extends SynthEngine {
             if (oldTom) oldTom.disconnect();
             this.registerVoice(tomId, new TomClass(tomId, this.context, types[i]));
         });
+
+        // Swap hi-hats (closed and open)
+        const HiHatClass = version === 'E1' ? HiHat909E1 : HiHat909;
+        const oldCH = this.voices.get('ch');
+        if (oldCH) oldCH.disconnect();
+        this.registerVoice('ch', new HiHatClass('ch', this.context, this.sampleLibrary, 'closed'));
+
+        const oldOH = this.voices.get('oh');
+        if (oldOH) oldOH.disconnect();
+        this.registerVoice('oh', new HiHatClass('oh', this.context, this.sampleLibrary, 'open'));
     }
     /**
      * Check if a voice supports sample mode toggle
@@ -246,6 +257,7 @@ export class TR909Engine extends SynthEngine {
         const ClapClass = this.currentEngine === 'E1' ? Clap909E1 : Clap909;
         const RimshotClass = this.currentEngine === 'E1' ? Rimshot909E1 : Rimshot909;
         const TomClass = this.currentEngine === 'E1' ? Tom909E1 : Tom909;
+        const HiHatClass = this.currentEngine === 'E1' ? HiHat909E1 : HiHat909;
         return new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
@@ -254,8 +266,8 @@ export class TR909Engine extends SynthEngine {
             ['ltom', new TomClass('ltom', context, 'low')],
             ['mtom', new TomClass('mtom', context, 'mid')],
             ['htom', new TomClass('htom', context, 'high')],
-            ['ch', new HiHat909('ch', context, this.sampleLibrary, 'closed')],
-            ['oh', new HiHat909('oh', context, this.sampleLibrary, 'open')],
+            ['ch', new HiHatClass('ch', context, this.sampleLibrary, 'closed')],
+            ['oh', new HiHatClass('oh', context, this.sampleLibrary, 'open')],
             ['crash', new Cymbal909('crash', context, this.sampleLibrary, 'crash')],
             ['ride', new Cymbal909('ride', context, this.sampleLibrary, 'ride')],
         ]);
