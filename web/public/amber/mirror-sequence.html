@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MIRROR SEQUENCE — Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="MIRROR SEQUENCE">
+    <meta property="og:description" content="What you see depends on when you look. A visual meditation on observation and time.">
+    <meta property="og:image" content="https://intheamber.com/mirror-sequence-og.png">
+    <meta property="og:url" content="https://intheamber.com/mirror-sequence.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="MIRROR SEQUENCE">
+    <meta name="twitter:description" content="What you see depends on when you look. A visual meditation on observation and time.">
+    <meta name="twitter:image" content="https://intheamber.com/mirror-sequence-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            font-size: 12px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        #state {
+            color: #2D9596;
+            margin-top: 5px;
+        }
+
+        #frozen {
+            color: #FFD700;
+            margin-top: 10px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        #frozen.show {
+            opacity: 1;
+        }
+
+        #instructions {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 11px;
+            color: #D4A574;
+            opacity: 0.6;
+            text-align: center;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #D4A574;
+            opacity: 0.4;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+        <div>MIRROR SEQUENCE</div>
+        <div id="state">OBSERVING...</div>
+        <div id="frozen"></div>
+    </div>
+
+    <div id="instructions">
+        CLICK TO FREEZE TIME / OBSERVE THE MOMENT
+    </div>
+
+    <div class="signature">— AMBER</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const stateDiv = document.getElementById('state');
+        const frozenDiv = document.getElementById('frozen');
+
+        let width, height, centerX, centerY;
+        let time = 0;
+        let frozen = false;
+        let frozenTime = 0;
+        let particles = [];
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            centerX = width / 2;
+            centerY = height / 2;
+        }
+
+        // Particle system for the transformation
+        class Particle {
+            constructor(angle, distance, hue) {
+                this.baseAngle = angle;
+                this.baseDistance = distance;
+                this.hue = hue;
+                this.life = Math.random();
+            }
+
+            update(t) {
+                const wave = Math.sin(t * 0.5 + this.baseAngle * 3);
+                const pulse = Math.sin(t * 0.3 + this.life * Math.PI * 2);
+                
+                this.angle = this.baseAngle + wave * 0.5;
+                this.distance = this.baseDistance * (1 + pulse * 0.3);
+                
+                // Morph through different geometric shapes
+                const shapeFactor = Math.sin(t * 0.2) * 0.5 + 0.5;
+                const sides = 3 + Math.floor(shapeFactor * 5); // 3 to 8 sides
+                const shapeAngle = Math.floor(this.angle / (Math.PI * 2 / sides)) * (Math.PI * 2 / sides);
+                
+                this.x = centerX + Math.cos(shapeAngle + t * 0.1) * this.distance;
+                this.y = centerY + Math.sin(shapeAngle + t * 0.1) * this.distance;
+                
+                this.size = 1 + Math.sin(t + this.life * Math.PI) * 1.5;
+                this.alpha = 0.3 + Math.sin(t * 0.5 + this.life * Math.PI) * 0.4;
+            }
+        }
+
+        // Initialize particles
+        function initParticles() {
+            particles = [];
+            const layers = 8;
+            const particlesPerLayer = 24;
+            
+            for (let layer = 0; layer < layers; layer++) {
+                const distance = 50 + layer * 40;
+                for (let i = 0; i < particlesPerLayer; i++) {
+                    const angle = (i / particlesPerLayer) * Math.PI * 2;
+                    const hue = (layer / layers) * 60 + 20; // Amber range
+                    particles.push(new Particle(angle, distance, hue));
+                }
+            }
+        }
+
+        function getColorAtTime(t) {
+            // Cycle through amber spectrum based on time
+            const cycle = Math.sin(t * 0.15) * 0.5 + 0.5;
+            const hue = 30 + cycle * 30; // 30-60 degrees (amber to gold)
+            const sat = 60 + cycle * 20;
+            return { hue, sat };
+        }
+
+        function draw() {
+            // Clear with fade trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, width, height);
+
+            const currentTime = frozen ? frozenTime : time;
+            const colors = getColorAtTime(currentTime);
+
+            // Update and draw particles
+            particles.forEach(particle => {
+                if (!frozen) {
+                    particle.update(currentTime);
+                }
+
+                // Draw particle with glow
+                const gradient = ctx.createRadialGradient(
+                    particle.x, particle.y, 0,
+                    particle.x, particle.y, particle.size * 3
+                );
+                
+                gradient.addColorStop(0, `hsla(${colors.hue}, ${colors.sat}%, 70%, ${particle.alpha})`);
+                gradient.addColorStop(0.5, `hsla(${colors.hue}, ${colors.sat}%, 50%, ${particle.alpha * 0.5})`);
+                gradient.addColorStop(1, `hsla(${colors.hue}, ${colors.sat}%, 30%, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Draw connections between nearby particles
+            ctx.strokeStyle = `rgba(212, 165, 116, 0.1)`;
+            ctx.lineWidth = 0.5;
+            
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 80) {
+                        ctx.globalAlpha = (1 - dist / 80) * 0.3;
+ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            ctx.globalAlpha = 1;
+
+            // Draw center point
+            const centerPulse = Math.sin(currentTime * 0.5) * 0.5 + 0.5;
+            const centerGradient = ctx.createRadialGradient(
+                centerX, centerY, 0,
+                centerX, centerY, 20 + centerPulse * 10
+            );
+            centerGradient.addColorStop(0, '#FFD700');
+            centerGradient.addColorStop(0.5, '#D4A574');
+            centerGradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+            
+            ctx.fillStyle = centerGradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 20 + centerPulse * 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Update time
+            if (!frozen) {
+                time += 0.016; // ~60fps
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        // Click to freeze/unfreeze
+        canvas.addEventListener('click', () => {
+            frozen = !frozen;
+            
+            if (frozen) {
+                frozenTime = time;
+                const timestamp = Math.floor(frozenTime * 100);
+                stateDiv.textContent = 'FROZEN';
+                frozenDiv.textContent = `MOMENT: ${timestamp}`;
+                frozenDiv.classList.add('show');
+            } else {
+                stateDiv.textContent = 'OBSERVING...';
+                frozenDiv.classList.remove('show');
+            }
+        });
+
+        // Spacebar also toggles
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                canvas.click();
+            }
+        });
+
+        // Initialize
+        resize();
+        initParticles();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>
