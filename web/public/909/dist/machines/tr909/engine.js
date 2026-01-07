@@ -8,6 +8,7 @@ import { Snare909E1 } from './voices/snare-e1.js';
 import { Clap909 } from './voices/clap.js';
 import { Clap909E1 } from './voices/clap-e1.js';
 import { Tom909 } from './voices/tom.js';
+import { Tom909E1 } from './voices/tom-e1.js';
 import { Rimshot909 } from './voices/rimshot.js';
 import { Rimshot909E1 } from './voices/rimshot-e1.js';
 import { HiHat909 } from './voices/hihat.js';
@@ -175,6 +176,15 @@ export class TR909Engine extends SynthEngine {
         if (oldRimshot) oldRimshot.disconnect();
         const RimshotClass = version === 'E1' ? Rimshot909E1 : Rimshot909;
         this.registerVoice('rimshot', new RimshotClass('rimshot', this.context));
+
+        // Swap toms (low, mid, high)
+        const TomClass = version === 'E1' ? Tom909E1 : Tom909;
+        ['ltom', 'mtom', 'htom'].forEach((tomId, i) => {
+            const types = ['low', 'mid', 'high'];
+            const oldTom = this.voices.get(tomId);
+            if (oldTom) oldTom.disconnect();
+            this.registerVoice(tomId, new TomClass(tomId, this.context, types[i]));
+        });
     }
     /**
      * Check if a voice supports sample mode toggle
@@ -235,14 +245,15 @@ export class TR909Engine extends SynthEngine {
         const SnareClass = this.currentEngine === 'E1' ? Snare909E1 : Snare909;
         const ClapClass = this.currentEngine === 'E1' ? Clap909E1 : Clap909;
         const RimshotClass = this.currentEngine === 'E1' ? Rimshot909E1 : Rimshot909;
+        const TomClass = this.currentEngine === 'E1' ? Tom909E1 : Tom909;
         return new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
             ['clap', new ClapClass('clap', context, noiseBuffer)],
             ['rimshot', new RimshotClass('rimshot', context)],
-            ['ltom', new Tom909('ltom', context, 'low')],
-            ['mtom', new Tom909('mtom', context, 'mid')],
-            ['htom', new Tom909('htom', context, 'high')],
+            ['ltom', new TomClass('ltom', context, 'low')],
+            ['mtom', new TomClass('mtom', context, 'mid')],
+            ['htom', new TomClass('htom', context, 'high')],
             ['ch', new HiHat909('ch', context, this.sampleLibrary, 'closed')],
             ['oh', new HiHat909('oh', context, this.sampleLibrary, 'open')],
             ['crash', new Cymbal909('crash', context, this.sampleLibrary, 'crash')],

@@ -16,13 +16,13 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 | 02 | Snare | DONE | E1: single tri, E2: dual sine (180+330Hz) |
 | 03 | Clap | DONE | E1: simple 4-burst, E2: 4-burst + reverb tail |
 | 04 | Rimshot | DONE | E1: single square, E2: 3 bridged-T filters + noise |
-| 05 | Toms (L/M/H) | TODO | Research needed |
+| 05 | Toms (L/M/H) | DONE | E1: single sine, E2: 3 osc ratios (1:1.5:2.77) |
 | 06 | Closed Hat | TODO | Research needed |
 | 07 | Open Hat | TODO | Research needed |
 | 08 | Crash | TODO | Research needed |
 | 09 | Ride | TODO | Research needed |
 
-**Current:** 05-Toms
+**Current:** 06-Closed Hat
 
 ---
 
@@ -38,7 +38,7 @@ Each voice gets E1 (original) and E2 (research-based authentic) versions.
 ---
 
 ## Current Focus
-**Project 1, Voice 05: Toms E2** - research and implement.
+**Project 1, Voice 06: Closed Hat E2** - research and implement.
 
 ## Key Decisions
 - **Foundation**: Pure Web Audio API (no Tone.js) for maximum control
