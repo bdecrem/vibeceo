@@ -594,13 +594,48 @@ When the user says "project: [description]":
 
 ### Phase 2: Create Project Files
 
-For each project, create a `PROJECT.md` file:
+Create an `INDEX.md` at the project root, plus individual `PROJECT.md` files:
 
 ```
 [relevant-path]/projects/
+├── INDEX.md                    # Master tracker (REQUIRED)
 ├── 01-project-name/PROJECT.md
 ├── 02-project-name/PROJECT.md
 └── ...
+```
+
+**INDEX.md format (REQUIRED for all projects):**
+
+```markdown
+# [Project Name] Index
+
+## Status: [WORKING/IN PROGRESS/NOT STARTED]
+[One sentence: current state of the project]
+
+## Project Progress
+| # | Project | Status | Notes |
+|---|---------|--------|-------|
+| 01 | [name] | 0/N | [brief note] |
+| 02 | [name] | 0/N | [brief note] |
+
+## Current Focus
+Project [N]: [What to do next]
+
+## Key Decisions
+- [Decision 1 and why]
+- [Decision 2 and why]
+
+## File Locations
+[Map of key files/folders so new sessions know where things are]
+
+## Knowledge Base
+[Any Supabase tables, external references, downloaded repos]
+
+## Quick Start for New Session
+1. Read this file
+2. Check "Current Focus" above
+3. Read that project's PROJECT.md
+4. Continue from first unchecked task
 ```
 
 **PROJECT.md format:**
@@ -627,20 +662,23 @@ For each project, create a `PROJECT.md` file:
 ### Phase 3: Execute (Per Session)
 
 **At session start:**
-1. Read active PROJECT.md
-2. Find first unchecked task
-3. Announce: "Resuming [project]. Next: [task]."
+1. Read INDEX.md first (get overall status, current focus, key decisions)
+2. Read the active PROJECT.md for current focus
+3. Find first unchecked task
+4. Announce: "Resuming [project]. Next: [task]."
 
 **Working:**
 1. Complete one task
 2. Mark checkbox done in PROJECT.md
-3. Commit with message: `[Project] Task N: [description]`
-4. Move to next task or end session
+3. Update INDEX.md: increment status count (e.g., `2/6` → `3/6`)
+4. Commit with message: `[Project] Task N: [description]`
+5. Move to next task or end session
 
 **On project completion:**
-1. Mark all completion criteria
-2. Final commit: `[Project] Complete: [project name]`
-3. Announce completion, move to next project
+1. Mark all completion criteria in PROJECT.md
+2. Update INDEX.md: update "Current Focus" to next project
+3. Final commit: `[Project] Complete: [project name]`
+4. Announce completion, move to next project
 
 ### Phase 4: Overall Completion
 
@@ -656,6 +694,8 @@ User can say:
 - `project status` — Show all projects and their progress
 - `project [name]` — Resume a specific project
 - `project next` — Pick up the next incomplete project
+
+**Finding open projects:** Search for all PROJECT.md files with `find . -name "PROJECT.md"`, then read their INDEX.md files to see status.
 
 ### Key Principle
 
