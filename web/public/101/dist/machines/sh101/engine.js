@@ -316,17 +316,21 @@ export class SH101Engine extends SynthEngine {
      */
     noteOff(time) {
         const when = time ?? this.context.currentTime;
-        const r = this.params.release;
+        const r = Math.max(0.01, this.params.release); // Ensure minimum release time
 
         // Release envelopes
         this.ampEnvelope.release(when);
         this.filterEnvelope.release(when);
 
         // Apply release to VCA
+        // Use sustain level as starting point (more reliable than reading gain.value)
+        const startLevel = this.currentNote !== null ? this.params.sustain : 0;
         this.vca.amplifier.gain.cancelScheduledValues(when);
-        const currentGain = this.vca.amplifier.gain.value;
-        this.vca.amplifier.gain.setValueAtTime(currentGain, when);
+        this.vca.amplifier.gain.setValueAtTime(startLevel, when);
         this.vca.amplifier.gain.linearRampToValueAtTime(0, when + r);
+
+        // Also set a hard cutoff after release time to ensure silence
+        this.vca.amplifier.gain.setValueAtTime(0, when + r + 0.001);
 
         // Release filter
         this.filter.rampCutoff(this.params.cutoff, r, when);
