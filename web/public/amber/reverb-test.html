@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>303 + Reverb Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #d4a574;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    h1 { margin: 0; }
+    button {
+      background: #1a1a1a;
+      border: 2px solid #d4a574;
+      color: #d4a574;
+      padding: 15px 40px;
+      font-size: 18px;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #d4a574;
+      color: #0a0a0a;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    input[type="range"] {
+      width: 200px;
+      accent-color: #d4a574;
+    }
+    #status {
+      color: #2d9596;
+    }
+  </style>
+</head>
+<body>
+  <h1>303 + Reverb Test</h1>
+  <p id="status">Click PLAY to start</p>
+
+  <div class="controls">
+    <button id="play">PLAY</button>
+    <button id="stop" disabled>STOP</button>
+  </div>
+
+  <div class="slider-group">
+    <label>Reverb Mix: <span id="mixVal">20%</span></label>
+    <input type="range" id="mix" min="0" max="100" value="20">
+  </div>
+
+  <div class="slider-group">
+    <label>Cutoff: <span id="cutoffVal">30%</span></label>
+    <input type="range" id="cutoff" min="0" max="100" value="30">
+  </div>
+
+  <script type="module">
+    import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+    import { Reverb } from '/mixer/dist/effects/reverb.js';
+
+    let audioContext = null;
+    let bass = null;
+    let reverb = null;
+    let isPlaying = false;
+
+    const playBtn = document.getElementById('play');
+    const stopBtn = document.getElementById('stop');
+    const mixSlider = document.getElementById('mix');
+    const cutoffSlider = document.getElementById('cutoff');
+    const mixVal = document.getElementById('mixVal');
+    const cutoffVal = document.getElementById('cutoffVal');
+    const status = document.getElementById('status');
+
+    // Acid pattern
+    const pattern = [
+      { note: 'C2', gate: true, accent: true, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'C2', gate: true, accent: false, slide: false },
+      { note: 'E2', gate: true, accent: false, slide: true },
+      { note: 'G2', gate: true, accent: true, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'A#2', gate: true, accent: false, slide: true },
+      { note: 'C3', gate: true, accent: true, slide: false },
+      { note: 'C2', gate: true, accent: false, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'D#2', gate: true, accent: true, slide: false },
+      { note: 'D#2', gate: true, accent: false, slide: true },
+      { note: 'G2', gate: true, accent: false, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'A#2', gate: true, accent: true, slide: true },
+      { note: 'C3', gate: true, accent: false, slide: false },
+    ];
+
+    async function init() {
+      if (audioContext) return;
+
+      status.textContent = 'Initializing...';
+
+      // Create audio context
+      audioContext = new AudioContext();
+
+      // Create 303
+      bass = new TB303Engine({ context: audioContext });
+      bass.setBpm(128);
+      bass.setPattern(pattern);
+      bass.setParameter('cutoff', 0.3);
+      bass.setParameter('resonance', 0.7);
+      bass.setParameter('envMod', 0.8);
+
+      // Create reverb
+      reverb = new Reverb(audioContext);
+      await reverb.init();
+      reverb.setPreset('plate');
+      reverb.setParameter('mix', 0.2);
+
+      // Route: 303 -> reverb -> speakers
+      bass.connectOutput(reverb.input);
+      reverb.output.connect(audioContext.destination);
+
+      status.textContent = '303 → Reverb → Ready';
+    }
+
+    playBtn.addEventListener('click', async () => {
+      await init();
+      await audioContext.resume();
+
+      bass.startSequencer();
+      isPlaying = true;
+
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+      status.textContent = 'Playing... 303 → Reverb (plate)';
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (bass) {
+        bass.stopSequencer();
+        isPlaying = false;
+
+        playBtn.disabled = false;
+        stopBtn.disabled = true;
+        status.textContent = 'Stopped';
+      }
+    });
+
+    mixSlider.addEventListener('input', () => {
+      const val = mixSlider.value / 100;
+      mixVal.textContent = `${mixSlider.value}%`;
+      if (reverb) {
+        reverb.setParameter('mix', val);
+      }
+    });
+
+    cutoffSlider.addEventListener('input', () => {
+      const val = cutoffSlider.value / 100;
+      cutoffVal.textContent = `${cutoffSlider.value}%`;
+      if (bass) {
+        bass.setParameter('cutoff', val);
+      }
+    });
+  </script>
+</body>
+</html>
