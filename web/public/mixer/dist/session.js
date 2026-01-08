@@ -425,12 +425,13 @@ export class Session {
 
   /**
    * Render all channels to a single WAV
-   * @param {Object} options - { bars, sampleRate }
-   * @returns {Promise<{buffer: AudioBuffer, wav: ArrayBuffer}>}
+   * @param {Object} options - { bars, sampleRate, title }
+   * @returns {Promise<{buffer: AudioBuffer, wav: ArrayBuffer, manifest: Object}>}
    */
   async render(options = {}) {
     const bars = options.bars ?? 1;
     const sampleRate = options.sampleRate ?? 44100;
+    const title = options.title ?? `track-${Date.now()}`;
 
     // Calculate duration based on BPM
     // 4 beats per bar, duration = (bars * 4 * 60) / bpm
@@ -465,7 +466,128 @@ export class Session {
     // Convert to WAV
     const wav = this._audioBufferToWav(mixedBuffer);
 
-    return { buffer: mixedBuffer, wav };
+    // Build manifest
+    const manifest = this._buildManifest(title, bars, channelBuffers);
+
+    return { buffer: mixedBuffer, wav, manifest };
+  }
+
+  /**
+   * Build a track manifest with all the recipe information
+   * @private
+   */
+  _buildManifest(title, bars, channelBuffers) {
+    const manifest = {
+      format: 'synthmachine-track',
+      version: 1,
+      title,
+      createdAt: new Date().toISOString(),
+      bpm: this._bpm,
+      bars,
+      duration: (bars * 4 * 60) / this._bpm,
+      instruments: {},
+      effects: {},
+      master: {
+        volume: this.master.volume,
+        effects: this.master.effects.map(e => this._serializeEffect(e))
+      },
+      files: {
+        mix: `${title}.wav`
+      }
+    };
+
+    // Serialize each channel
+    for (const [name, channel] of this._channels) {
+      const engine = channel.engine;
+
+      // Determine instrument type
+      let type = 'unknown';
+      if (engine.constructor.name.includes('909') || engine.constructor.name === 'TR909Engine') {
+        type = '909';
+      } else if (engine.constructor.name.includes('303') || engine.constructor.name === 'TB303Engine') {
+        type = '303';
+      } else if (engine.constructor.name.includes('101') || engine.constructor.name === 'SH101Engine') {
+        type = '101';
+      }
+
+      manifest.instruments[name] = {
+        type,
+        volume: channel.volume,
+        pattern: this._getEnginePattern(engine, type),
+        parameters: this._getEngineParameters(engine, type)
+      };
+
+      // Serialize channel effects
+      if (channel.effects.length > 0) {
+        manifest.effects[name] = channel.effects.map(e => this._serializeEffect(e));
+      }
+    }
+
+    return manifest;
+  }
+
+  /**
+   * Get pattern from engine based on type
+   * @private
+   */
+  _getEnginePattern(engine, type) {
+    try {
+      if (type === '909' && engine.getPattern) {
+        // TR909 stores patterns differently
+        const patternId = 'web-ui';
+        return engine.patterns?.get(patternId) ?? null;
+      } else if (engine.getPattern) {
+        return engine.getPattern();
+      }
+    } catch (err) {
+      console.warn('Failed to get engine pattern:', err);
+    }
+    return null;
+  }
+
+  /**
+   * Get parameters from engine based on type
+   * @private
+   */
+  _getEngineParameters(engine, type) {
+    try {
+      if (type === '303' && engine.getParameters) {
+        return {
+          ...engine.getParameters(),
+          waveform: engine.getWaveform?.() ?? 'sawtooth',
+          engineType: engine.getEngine?.() ?? 'E1'
+        };
+      } else if (engine.getParameters) {
+        return engine.getParameters();
+      }
+    } catch (err) {
+      console.warn('Failed to get engine parameters:', err);
+    }
+    return {};
+  }
+
+  /**
+   * Serialize an effect for the manifest
+   * @private
+   */
+  _serializeEffect(effect) {
+    const serialized = {
+      type: effect.constructor.name.toLowerCase().replace('effect', '')
+    };
+
+    // Add effect-specific parameters
+    if (effect.getParameters) {
+      serialized.parameters = effect.getParameters();
+    } else if (effect._parameters) {
+      serialized.parameters = { ...effect._parameters };
+    }
+
+    // Add preset if available
+    if (effect._preset) {
+      serialized.preset = effect._preset;
+    }
+
+    return serialized;
   }
 
   /**

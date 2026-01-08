@@ -30,6 +30,13 @@
                     <button id="engine-e1" class="engine-btn active">E1</button>
                     <button id="engine-e2" class="engine-btn">E2</button>
                 </div>
+                <button id="share-btn" class="header-icon-btn" title="Export / Import">
+                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                        <polyline points="7 10 12 15 17 10"/>
+                        <line x1="12" y1="15" x2="12" y2="3"/>
+                    </svg>
+                </button>
                 <button id="info-btn" class="info-btn" title="Info">?</button>
             </div>
         </header>
@@ -210,7 +217,6 @@
         <!-- Footer -->
         <footer class="synth-footer">
             <span>Web Audio SH-101 Emulation</span>
-            <button id="export-btn" class="export-btn">Export WAV</button>
         </footer>
     </div>
 
@@ -252,6 +258,40 @@
             <p class="credits">Built with Web Audio API. Part of the Kochi.to synth collection.</p>
         </div>
     </div>
+
+    <!-- Export/Import Modal -->
+    <div id="share-modal" class="share-modal">
+        <div class="share-modal-content">
+            <div class="share-modal-header">
+                <span class="share-modal-title">Export / Import</span>
+                <button class="share-modal-close">&times;</button>
+            </div>
+            <div class="share-modal-body">
+                <button id="export-btn" class="share-option">
+                    <span class="share-option-icon">♫</span>
+                    <span class="share-option-text">
+                        <strong>Export WAV</strong>
+                        <small>Download audio file</small>
+                    </span>
+                </button>
+                <button id="export-json" class="share-option">
+                    <span class="share-option-icon">{ }</span>
+                    <span class="share-option-text">
+                        <strong>Export Pattern</strong>
+                        <small>Save as JSON file</small>
+                    </span>
+                </button>
+                <button id="import-json" class="share-option">
+                    <span class="share-option-icon">↑</span>
+                    <span class="share-option-text">
+                        <strong>Load Pattern</strong>
+                        <small>Import from JSON</small>
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display: none" />
 
     <script type="module" src="app.js"></script>
 </body>

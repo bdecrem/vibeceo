@@ -31,14 +31,17 @@ async function init() {
     initKeyboard();
     initModal();
     initExport();
+    initExportImport();
 
     // Set up callbacks
     synth.onStepChange((step) => {
         updateStepHighlight(step);
     });
 
-    // Load default preset
-    loadPreset('empty');
+    // Check URL params or load default preset
+    if (!checkURLParams()) {
+        loadPreset('empty');
+    }
 
     console.log('SH-101 initialized');
 }
@@ -583,9 +586,12 @@ function initModal() {
 
 function initExport() {
     const exportBtn = document.getElementById('export-btn');
+    const shareModal = document.getElementById('share-modal');
 
-    exportBtn.addEventListener('click', async () => {
-        exportBtn.textContent = 'Rendering...';
+    exportBtn?.addEventListener('click', async () => {
+        const originalText = exportBtn.querySelector('strong')?.textContent || 'Export WAV';
+        const strongEl = exportBtn.querySelector('strong');
+        if (strongEl) strongEl.textContent = 'Rendering...';
         exportBtn.disabled = true;
 
         try {
@@ -599,12 +605,193 @@ function initExport() {
             a.download = 'sh101-pattern.wav';
             a.click();
             URL.revokeObjectURL(url);
+
+            // Close modal after export
+            shareModal?.classList.remove('open');
         } catch (err) {
             console.error('Export failed:', err);
             alert('Export failed: ' + err.message);
         }
 
-        exportBtn.textContent = 'Export WAV';
+        if (strongEl) strongEl.textContent = originalText;
         exportBtn.disabled = false;
     });
+}
+
+// --- Pattern Export/Import (JSON) ---
+
+const PATTERN_FORMAT_VERSION = 1;
+
+function exportPatternJSON() {
+    const bpmInput = document.getElementById('bpm-input');
+
+    const exportData = {
+        format: 'synthmachine-101',
+        version: PATTERN_FORMAT_VERSION,
+        exportedAt: new Date().toISOString(),
+        bpm: bpmInput ? parseInt(bpmInput.value) : 120,
+        pattern: synth.getPattern(),
+        parameters: synth.getParameters ? synth.getParameters() : {},
+        preset: document.getElementById('preset-select')?.value || null
+    };
+
+    // Download
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sh101-pattern-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    console.log('Pattern exported to JSON');
+}
+
+function importPatternJSON(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            // Validate format
+            if (data.format !== 'synthmachine-101') {
+                throw new Error('Invalid format: expected synthmachine-101');
+            }
+
+            // Load pattern
+            if (data.pattern && Array.isArray(data.pattern)) {
+                data.pattern.forEach((stepData, index) => {
+                    synth.setStep(index, stepData);
+                });
+                updateStepGrid();
+            }
+
+            // Load parameters
+            if (data.parameters) {
+                Object.entries(data.parameters).forEach(([param, value]) => {
+                    synth.setParameter(param, value);
+                    updateKnobVisual(param, value);
+                    updateSliderVisual(param, value);
+                });
+
+                // Update sub mode if present
+                if (data.parameters.subMode !== undefined) {
+                    updateSubModeButtons(data.parameters.subMode);
+                }
+
+                // Update LFO waveform if present
+                if (data.parameters.lfoWaveform) {
+                    updateLfoWaveformButtons(data.parameters.lfoWaveform);
+                }
+            }
+
+            // Load BPM
+            if (data.bpm) {
+                synth.setBpm(data.bpm);
+                const bpmInput = document.getElementById('bpm-input');
+                if (bpmInput) bpmInput.value = data.bpm;
+            }
+
+            // Clear preset selection
+            const presetSelect = document.getElementById('preset-select');
+            if (presetSelect) presetSelect.value = '';
+
+            console.log(`Pattern imported: ${file.name}`);
+        } catch (err) {
+            console.error('Import failed:', err);
+            alert('Import failed: ' + err.message);
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function loadPatternFromURL(url) {
+    try {
+        console.log('Loading pattern...');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        // Create a fake file object for the import function
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const file = new File([blob], 'remote-pattern.json', { type: 'application/json' });
+        importPatternJSON(file);
+    } catch (err) {
+        console.error('Failed to load pattern from URL:', err);
+        alert('Failed to load pattern: ' + err.message);
+    }
+}
+
+function initExportImport() {
+    const shareBtn = document.getElementById('share-btn');
+    const shareModal = document.getElementById('share-modal');
+    const shareModalClose = shareModal?.querySelector('.share-modal-close');
+    const exportJsonBtn = document.getElementById('export-json');
+    const importBtn = document.getElementById('import-json');
+    const importFile = document.getElementById('import-file');
+
+    // Open modal
+    shareBtn?.addEventListener('click', () => {
+        shareModal?.classList.add('open');
+    });
+
+    // Close modal
+    shareModalClose?.addEventListener('click', () => {
+        shareModal?.classList.remove('open');
+    });
+
+    // Close on backdrop click
+    shareModal?.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+            shareModal.classList.remove('open');
+        }
+    });
+
+    // Close on Escape key
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && shareModal?.classList.contains('open')) {
+            shareModal.classList.remove('open');
+        }
+    });
+
+    // Export JSON
+    exportJsonBtn?.addEventListener('click', () => {
+        exportPatternJSON();
+        shareModal?.classList.remove('open');
+    });
+
+    // Import JSON
+    importBtn?.addEventListener('click', () => {
+        importFile?.click();
+    });
+
+    importFile?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            importPatternJSON(file);
+            shareModal?.classList.remove('open');
+            e.target.value = ''; // Reset for re-import
+        }
+    });
+}
+
+function checkURLParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    // Load pattern from URL: ?load=<url-to-json>
+    const loadUrl = params.get('load');
+    if (loadUrl) {
+        loadPatternFromURL(loadUrl);
+        return true;
+    }
+
+    // Load preset: ?preset=<preset-id>
+    const presetId = params.get('preset');
+    if (presetId) {
+        loadPreset(presetId);
+        return true;
+    }
+
+    return false;
 }

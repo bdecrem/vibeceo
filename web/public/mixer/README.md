@@ -36,8 +36,11 @@ await session.master.reverb({ preset: 'plate', mix: 0.15 });
 // Play
 await session.play();
 
-// Or render to WAV
-const { wav } = await session.render({ bars: 8 });
+// Or render to WAV with manifest
+const { buffer, wav, manifest } = await session.render({
+  bars: 8,
+  title: 'acid-techno-jam'
+});
 ```
 
 ## Session API
@@ -61,7 +64,7 @@ new Session({ bpm?: number, context?: AudioContext })
 - `getChannels()` — List all channel names
 - `play()` — Start all sequencers
 - `stop()` — Stop all sequencers
-- `render({ bars })` — Render to WAV
+- `render({ bars, title })` — Render to WAV with manifest (see below)
 - `dispose()` — Clean up
 
 ## Channel API
@@ -137,6 +140,83 @@ await channel.reverb({
 **Presets:**
 - `plate` — Bright, tight, EMT-style (mix: 0.15)
 - `room` — Natural small space (mix: 0.2)
+
+## Render & Manifest
+
+The `render()` method returns three things:
+
+```javascript
+const { buffer, wav, manifest } = await session.render({
+  bars: 4,
+  title: 'my-track'
+});
+```
+
+- `buffer` — AudioBuffer for playback
+- `wav` — ArrayBuffer of WAV file data
+- `manifest` — JSON object with full track recipe
+
+### Manifest Format
+
+The manifest contains everything needed to recreate or remix the track:
+
+```json
+{
+  "format": "synthmachine-track",
+  "version": 1,
+  "title": "acid-techno-jam",
+  "createdAt": "2026-01-08T12:34:56.789Z",
+  "bpm": 128,
+  "bars": 4,
+  "duration": 7.5,
+  "instruments": {
+    "drums": {
+      "type": "909",
+      "volume": 0.8,
+      "pattern": { "kick": [...], "snare": [...] },
+      "parameters": {}
+    },
+    "bass": {
+      "type": "303",
+      "volume": 0.6,
+      "pattern": [
+        { "note": "C2", "accent": true, "slide": false },
+        { "note": "rest" }
+      ],
+      "parameters": {
+        "cutoff": 0.4,
+        "resonance": 0.7,
+        "envMod": 0.6,
+        "decay": 0.3,
+        "waveform": "sawtooth",
+        "engineType": "E2"
+      }
+    }
+  },
+  "effects": {
+    "bass": [
+      { "type": "ducker", "amount": 0.6, "attack": 5, "release": 150 },
+      { "type": "eq", "preset": "acidBass" }
+    ]
+  },
+  "master": {
+    "volume": 1.0,
+    "effects": [
+      { "type": "reverb", "preset": "plate", "mix": 0.15 }
+    ]
+  },
+  "files": {
+    "mix": "acid-techno-jam.wav"
+  }
+}
+```
+
+### Use Cases
+
+1. **Remix Links** — Save manifest as JSON, share URL with `?load=` param
+2. **Track Metadata** — Embed in blog posts, tweets, or player UIs
+3. **Reproducibility** — Recreate exact track from manifest data
+4. **Stem Export** — Use `instruments` to identify which stems to render
 
 ## File Structure
 

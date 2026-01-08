@@ -133,6 +133,29 @@ h1::before {
   background: #9a7518;
 }
 
+/* Header Icon Buttons */
+.header-icon-btn {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.5;
+}
+
+.header-icon-btn:hover {
+  color: var(--amber-400);
+  opacity: 1;
+  background: rgba(245, 158, 11, 0.1);
+}
+
 /* Info Button */
 .voice-info-btn {
   width: 16px;
@@ -156,6 +179,122 @@ h1::before {
 .voice-info-btn:hover {
   color: var(--amber-400);
   opacity: 1;
+}
+
+/* Share Modal */
+.share-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.share-modal.active {
+  display: flex;
+}
+
+.share-modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 1rem;
+  width: 280px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.share-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.share-modal-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--amber-400);
+}
+
+.share-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.share-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.share-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.share-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.share-option:hover {
+  background: var(--bg-elevated);
+  border-color: var(--amber-700);
+}
+
+.share-option:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+.share-option-icon {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-dark);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--amber-400);
+  flex-shrink: 0;
+}
+
+.share-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.share-option-text strong {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.share-option-text small {
+  font-size: 0.6rem;
+  color: var(--text-muted);
 }
 
 /* Controls Bar */
@@ -446,12 +585,6 @@ h1::before {
   padding-top: 0.25rem;
 }
 
-/* Bar dividers for step numbers */
-.seq-step-nums span:nth-child(5),
-.seq-step-nums span:nth-child(9),
-.seq-step-nums span:nth-child(13) {
-  margin-left: 8px;
-}
 
 .seq-step.playing {
   background: var(--bg-elevated);
@@ -470,12 +603,6 @@ h1::before {
   gap: 3px;
 }
 
-/* Bar dividers - extra space before steps 5, 9, 13 */
-.seq-step:nth-child(5),
-.seq-step:nth-child(9),
-.seq-step:nth-child(13) {
-  margin-left: 8px;
-}
 
 .seq-note {
   background: var(--bg-dark);
@@ -674,9 +801,43 @@ h1::before {
 }
 
 /* Mobile Responsive */
+/* Step Page Toggle (mobile only) */
+.step-page-toggle {
+  display: none;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.step-page-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-accent);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.step-page-btn.active {
+  background: var(--amber-700);
+  border-color: var(--amber-600);
+  color: #000;
+}
+
+.step-page-btn.has-playing {
+  box-shadow: 0 0 8px var(--amber-500);
+}
+
 @media (max-width: 768px) {
   body {
     padding: 0;
+  }
+
+  .step-page-toggle {
+    display: flex;
   }
 
   .panel {

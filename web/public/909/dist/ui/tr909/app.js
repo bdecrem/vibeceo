@@ -1,5 +1,6 @@
 import { TR909Engine, } from '../../machines/tr909/engine.js';
 import { TR909_PRESETS } from '../../machines/tr909/presets.js';
+import audioBufferToWav from 'audiobuffer-to-wav';
 const STEPS = 16;
 
 // Voice synthesis information for info modal
@@ -883,6 +884,259 @@ function updateStepPageIndicator(step) {
         btn2.classList.toggle('has-playing', step >= 8 && step < 16);
     }
 }
+// ========================================
+// Pattern Export/Import (JSON)
+// ========================================
+
+const PATTERN_FORMAT_VERSION = 1;
+
+function exportPatternJSON() {
+    const bpmInput = document.getElementById('bpm');
+    const swingInput = document.getElementById('swing');
+    const flamInput = document.getElementById('flam');
+    const accentInput = document.getElementById('accent');
+
+    const exportData = {
+        format: 'synthmachine-909',
+        version: PATTERN_FORMAT_VERSION,
+        exportedAt: new Date().toISOString(),
+        bpm: bpmInput ? Number(bpmInput.value) : 128,
+        swing: swingInput ? Number(swingInput.value) : 0,
+        flam: flamInput ? Number(flamInput.value) : 0,
+        accent: accentInput ? Number(accentInput.value) : 100,
+        pattern: {}
+    };
+
+    // Export pattern in simple format (easier to read/edit)
+    VOICES.forEach((voice) => {
+        const track = pattern[voice.id];
+        if (track) {
+            exportData.pattern[voice.id] = track.map(step => ({
+                velocity: step.velocity,
+                accent: step.accent || false
+            }));
+        }
+    });
+
+    // Download
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tr909-pattern-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    setStatus('Pattern exported to JSON');
+}
+
+function importPatternJSON(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            // Validate format
+            if (data.format !== 'synthmachine-909') {
+                throw new Error('Invalid format: expected synthmachine-909');
+            }
+
+            // Load pattern
+            if (data.pattern) {
+                VOICES.forEach((voice) => {
+                    const importedTrack = data.pattern[voice.id];
+                    const track = ensureTrack(voice.id);
+                    if (importedTrack && Array.isArray(importedTrack)) {
+                        for (let i = 0; i < STEPS; i++) {
+                            const step = importedTrack[i];
+                            if (step) {
+                                track[i] = {
+                                    velocity: step.velocity ?? 0,
+                                    accent: step.accent ?? false
+                                };
+                            } else {
+                                track[i] = { velocity: 0, accent: false };
+                            }
+                        }
+                    }
+                });
+                commitPattern();
+                refreshGrid();
+            }
+
+            // Load settings
+            const bpmInput = document.getElementById('bpm');
+            const swingInput = document.getElementById('swing');
+            const swingValue = document.getElementById('swing-value');
+            const flamInput = document.getElementById('flam');
+            const flamValue = document.getElementById('flam-value');
+            const accentInput = document.getElementById('accent');
+            const accentValue = document.getElementById('accent-value');
+
+            if (data.bpm && bpmInput) {
+                bpmInput.value = data.bpm;
+                engine.setBpm(data.bpm);
+            }
+            if (data.swing !== undefined && swingInput) {
+                swingInput.value = data.swing;
+                engine.setSwing(data.swing / 100);
+                if (swingValue) swingValue.textContent = `${data.swing}%`;
+            }
+            if (data.flam !== undefined && flamInput) {
+                flamInput.value = data.flam;
+                engine.setFlam(data.flam / 100);
+                if (flamValue) flamValue.textContent = `${data.flam}%`;
+            }
+            if (data.accent !== undefined && accentInput) {
+                accentInput.value = data.accent;
+                engine.setGlobalAccent(data.accent / 100);
+                if (accentValue) accentValue.textContent = `${data.accent}%`;
+            }
+
+            // Clear preset selection
+            const presetSelect = document.getElementById('preset');
+            if (presetSelect) presetSelect.value = '';
+
+            setStatus(`Pattern imported: ${file.name}`);
+        } catch (err) {
+            console.error('Import failed:', err);
+            setStatus(`Import failed: ${err.message}`);
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function loadPatternFromURL(url) {
+    try {
+        setStatus('Loading pattern...');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        // Create a fake file object for the import function
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const file = new File([blob], 'remote-pattern.json', { type: 'application/json' });
+        importPatternJSON(file);
+    } catch (err) {
+        console.error('Failed to load pattern from URL:', err);
+        setStatus(`Failed to load pattern: ${err.message}`);
+    }
+}
+
+function setupExportImport() {
+    const shareBtn = document.getElementById('share-btn');
+    const shareModal = document.getElementById('share-modal');
+    const shareClose = shareModal?.querySelector('.share-modal-close');
+    const exportWavBtn = document.getElementById('export-wav');
+    const exportJsonBtn = document.getElementById('export-json');
+    const importBtn = document.getElementById('import-json');
+    const importFile = document.getElementById('import-file');
+
+    // Open modal
+    shareBtn?.addEventListener('click', () => {
+        shareModal?.classList.add('active');
+    });
+
+    // Close modal
+    shareClose?.addEventListener('click', () => {
+        shareModal?.classList.remove('active');
+    });
+
+    // Close on backdrop click
+    shareModal?.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+            shareModal.classList.remove('active');
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && shareModal?.classList.contains('active')) {
+            shareModal.classList.remove('active');
+        }
+    });
+
+    // Export WAV
+    exportWavBtn?.addEventListener('click', async () => {
+        const strongEl = exportWavBtn.querySelector('strong');
+        const originalText = strongEl?.textContent || 'Export WAV';
+        if (strongEl) strongEl.textContent = 'Rendering...';
+        exportWavBtn.disabled = true;
+
+        try {
+            const bpmInput = document.getElementById('bpm');
+            const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
+            const buffer = await engine.renderToBuffer({
+                bars: 2,
+                bpm: bpm
+            });
+            const wavData = audioBufferToWav(buffer);
+            const blob = new Blob([wavData], { type: 'audio/wav' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `tr909-pattern-${Date.now()}.wav`;
+            a.click();
+            URL.revokeObjectURL(url);
+
+            shareModal?.classList.remove('active');
+        } catch (err) {
+            console.error('WAV export failed:', err);
+            alert('Export failed: ' + err.message);
+        }
+
+        if (strongEl) strongEl.textContent = originalText;
+        exportWavBtn.disabled = false;
+    });
+
+    // Export JSON
+    exportJsonBtn?.addEventListener('click', () => {
+        exportPatternJSON();
+        shareModal?.classList.remove('active');
+    });
+
+    importBtn?.addEventListener('click', () => {
+        importFile?.click();
+    });
+
+    importFile?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            importPatternJSON(file);
+            shareModal?.classList.remove('active');
+            e.target.value = ''; // Reset for re-import
+        }
+    });
+}
+
+function checkURLParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    // Load pattern from URL: ?load=<url-to-json>
+    const loadUrl = params.get('load');
+    if (loadUrl) {
+        loadPatternFromURL(loadUrl);
+        return;
+    }
+
+    // Load preset: ?preset=<preset-id>
+    const presetId = params.get('preset');
+    if (presetId) {
+        const preset = TR909_PRESETS.find(p => p.id === presetId);
+        if (preset) {
+            loadPreset(preset);
+            refreshGrid();
+            const bpmInput = document.getElementById('bpm');
+            if (bpmInput) {
+                bpmInput.value = String(preset.bpm);
+                engine.setBpm(preset.bpm);
+            }
+            setStatus(`Loaded preset: ${preset.name}`);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initPattern();
     renderGrid();
@@ -891,8 +1145,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setupKeyboardShortcuts();
     setupPatternTabs();
     setupStepPageToggle();
+    setupExportImport();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
+
+    // Check URL params for ?load= or ?preset=
+    checkURLParams();
+
     setStatus('Ready — tap steps to program, or press SPACE to play. Keys 1-0 trigger sounds.');
 });
 //# sourceMappingURL=app.js.map

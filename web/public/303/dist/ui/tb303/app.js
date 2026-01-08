@@ -505,22 +505,28 @@ function setupTransport() {
     });
 
     // WAV Export
-    exportBtn?.addEventListener('click', async () => {
-        exportBtn.disabled = true;
-        exportBtn.textContent = '...';
+    const wavExportBtn = document.getElementById('export-btn');
+    const shareModal = document.getElementById('share-modal');
+
+    wavExportBtn?.addEventListener('click', async () => {
+        wavExportBtn.disabled = true;
+        const iconEl = wavExportBtn.querySelector('.share-option-icon');
+        const origIcon = iconEl?.textContent;
+        if (iconEl) iconEl.textContent = '...';
         setStatus('Rendering audio...');
 
         try {
             const buffer = await engine.renderPattern({ bars: 1 });
-            const blob = engine.audioBufferToBlob(buffer);
+            const blob = await engine.audioBufferToBlob(buffer);
             downloadBlob(blob, `tb303-${Date.now()}.wav`);
             setStatus('WAV exported successfully');
+            shareModal?.classList.remove('active');
         } catch (err) {
             console.error('Export failed:', err);
             setStatus('Export failed: ' + err.message);
         } finally {
-            exportBtn.disabled = false;
-            exportBtn.textContent = 'WAV';
+            wavExportBtn.disabled = false;
+            if (iconEl) iconEl.textContent = origIcon;
         }
     });
 }
@@ -651,14 +657,189 @@ function saveCurrentPattern(name) {
 }
 
 // ========================================
+// Pattern Export/Import (JSON)
+// ========================================
+
+const PATTERN_FORMAT_VERSION = 1;
+
+function exportPatternJSON() {
+    const exportData = {
+        format: 'synthmachine-303',
+        version: PATTERN_FORMAT_VERSION,
+        exportedAt: new Date().toISOString(),
+        bpm: engine.getBpm(),
+        waveform: engine.getWaveform(),
+        engineType: engine.getEngine(),
+        parameters: engine.getParameters(),
+        pattern: engine.getPattern()
+    };
+
+    // Download
+    const json = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tb303-pattern-${Date.now()}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    setStatus('Pattern exported to JSON');
+}
+
+function importPatternJSON(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+
+            // Validate format
+            if (data.format !== 'synthmachine-303') {
+                throw new Error('Invalid format: expected synthmachine-303');
+            }
+
+            // Load pattern
+            if (data.pattern) {
+                engine.setPattern(data.pattern);
+                refreshSequencer();
+            }
+
+            // Load parameters
+            if (data.parameters) {
+                updateKnobsFromPreset(data.parameters);
+            }
+
+            // Load waveform
+            if (data.waveform) {
+                engine.setWaveform(data.waveform);
+                updateWaveformUI(data.waveform);
+            }
+
+            // Load engine type
+            if (data.engineType) {
+                engine.setEngine(data.engineType);
+                const btn = document.getElementById('engine-toggle');
+                if (btn) {
+                    btn.textContent = data.engineType === 'E1' ? '1' : '2';
+                    btn.classList.toggle('engine-e2', data.engineType === 'E2');
+                }
+            }
+
+            // Load BPM
+            if (data.bpm) {
+                engine.setBpm(data.bpm);
+                const bpmInput = document.getElementById('bpm');
+                if (bpmInput) bpmInput.value = data.bpm.toString();
+            }
+
+            // Clear preset selection
+            const presetSelect = document.getElementById('preset');
+            if (presetSelect) presetSelect.value = '';
+
+            setStatus(`Pattern imported: ${file.name}`);
+        } catch (err) {
+            console.error('Import failed:', err);
+            setStatus(`Import failed: ${err.message}`);
+        }
+    };
+    reader.readAsText(file);
+}
+
+async function loadPatternFromURL(url) {
+    try {
+        setStatus('Loading pattern...');
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+
+        // Create a fake file object for the import function
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
+        const file = new File([blob], 'remote-pattern.json', { type: 'application/json' });
+        importPatternJSON(file);
+    } catch (err) {
+        console.error('Failed to load pattern from URL:', err);
+        setStatus(`Failed to load pattern: ${err.message}`);
+    }
+}
+
+function setupExportImport() {
+    const shareBtn = document.getElementById('share-btn');
+    const shareModal = document.getElementById('share-modal');
+    const shareClose = shareModal?.querySelector('.share-modal-close');
+    const exportBtn = document.getElementById('export-json');
+    const importBtn = document.getElementById('import-json');
+    const importFile = document.getElementById('import-file');
+
+    // Open modal
+    shareBtn?.addEventListener('click', () => {
+        shareModal?.classList.add('active');
+    });
+
+    // Close modal
+    shareClose?.addEventListener('click', () => {
+        shareModal?.classList.remove('active');
+    });
+
+    // Close on backdrop click
+    shareModal?.addEventListener('click', (e) => {
+        if (e.target === shareModal) {
+            shareModal.classList.remove('active');
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && shareModal?.classList.contains('active')) {
+            shareModal.classList.remove('active');
+        }
+    });
+
+    exportBtn?.addEventListener('click', () => {
+        exportPatternJSON();
+        shareModal?.classList.remove('active');
+    });
+
+    importBtn?.addEventListener('click', () => {
+        importFile?.click();
+    });
+
+    importFile?.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            importPatternJSON(file);
+            shareModal?.classList.remove('active');
+            e.target.value = ''; // Reset for re-import
+        }
+    });
+}
+
+function checkURLParams() {
+    const params = new URLSearchParams(window.location.search);
+
+    // Load pattern from URL: ?load=<url-to-json>
+    const loadUrl = params.get('load');
+    if (loadUrl) {
+        loadPatternFromURL(loadUrl);
+        return true;
+    }
+
+    // Load preset: ?preset=<preset-id>
+    const presetId = params.get('preset');
+    if (presetId && TB303_PRESETS[presetId]) {
+        loadPreset(presetId);
+        setStatus(`Loaded preset: ${TB303_PRESETS[presetId].name}`);
+        return true;
+    }
+
+    return false;
+}
+
+// ========================================
 // Initialize
 // ========================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Load default preset
-    loadPreset('acidLine1');
-
-    // Setup UI
+    // Setup UI first
     renderSequencer();
     initKnobs();
     setupWaveformToggle();
@@ -668,9 +849,15 @@ document.addEventListener('DOMContentLoaded', () => {
     setupTransport();
     setupKeyboard();
     setupStepPageToggle();
+    setupExportImport();
 
     // Connect step callback
     engine.onStepChange = updateStepIndicator;
+
+    // Check URL params or load default preset
+    if (!checkURLParams()) {
+        loadPreset('acidLine1');
+    }
 
     // Initial status
     setStatus('Ready — Space to play, A-K for notes');

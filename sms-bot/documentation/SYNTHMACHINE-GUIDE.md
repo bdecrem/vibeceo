@@ -235,8 +235,12 @@ session.channel('bass').volume = 0.75;
 // Play live
 await session.play();
 
-// Or render to single WAV
-const { wav } = await session.render({ bars: 8 });
+// Or render to single WAV with manifest
+const { buffer, wav, manifest } = await session.render({
+  bars: 8,
+  title: 'my-acid-track'
+});
+// manifest contains full recipe for remixing
 ```
 
 ### Available Effects
@@ -290,6 +294,88 @@ await session.master.reverb({ preset: 'plate', mix: 0.15 });
 |--------|-----------|
 | `plate` | Bright, tight, sits behind mix |
 | `room` | Natural small space |
+
+---
+
+## Remix & Sharing Features
+
+### Track Manifest
+
+When rendering with `Session.render()`, you get a manifest with the full track recipe:
+
+```javascript
+const { buffer, wav, manifest } = await session.render({
+  bars: 4,
+  title: 'acid-techno-jam'
+});
+```
+
+**Manifest structure:**
+```json
+{
+  "format": "synthmachine-track",
+  "version": 1,
+  "title": "acid-techno-jam",
+  "createdAt": "2026-01-08T12:34:56.789Z",
+  "bpm": 128,
+  "bars": 4,
+  "duration": 7.5,
+  "instruments": {
+    "drums": {
+      "type": "909",
+      "volume": 0.8,
+      "pattern": { "kick": [...], "snare": [...] },
+      "parameters": {}
+    },
+    "bass": {
+      "type": "303",
+      "volume": 0.6,
+      "pattern": [{ "note": "C2", "accent": true, "slide": false }, ...],
+      "parameters": { "cutoff": 0.4, "resonance": 0.7, "waveform": "sawtooth" }
+    }
+  },
+  "effects": {
+    "bass": [{ "type": "ducker", "amount": 0.6 }]
+  },
+  "master": { "volume": 1.0, "effects": [] },
+  "files": { "mix": "acid-techno-jam.wav" }
+}
+```
+
+### Pattern Export/Import (Individual Synths)
+
+Each synth UI can export/import patterns as JSON files:
+
+- **Export Pattern** — Saves current pattern + parameters to `.json`
+- **Load Pattern** — Import a previously saved pattern
+
+Pattern formats:
+- `synthmachine-909` — TR-909 drum patterns
+- `synthmachine-303` — TB-303 bass patterns
+- `synthmachine-101` — SH-101 synth patterns
+
+### Remix Links (URL Parameters)
+
+Each synth UI supports URL parameters for direct pattern loading:
+
+```
+kochi.to/909/?load=https://example.com/my-drums.json
+kochi.to/303/?load=https://example.com/acid-line.json
+kochi.to/101/?load=https://example.com/lead-patch.json
+```
+
+**Supported URL params:**
+
+| Param | Description | Example |
+|-------|-------------|---------|
+| `load` | URL to pattern JSON file | `?load=https://kochi.to/patterns/acid.json` |
+| `preset` | Built-in preset ID | `?preset=phuture` |
+
+**Example workflow:**
+1. Amber creates a track with `session.render()`
+2. Save individual instrument patterns as JSON files
+3. Tweet: "Check out this acid line! kochi.to/303/?load=..."
+4. Users load directly into synth UI and can tweak/remix
 
 ---
 
