@@ -1,0 +1,299 @@
+/**
+ * SH-101 Presets
+ *
+ * Classic SH-101 sounds and patterns.
+ */
+
+export const presets = {
+    // Classic PWM lead - shimmering synth lead
+    classicLead: {
+        id: 'classicLead',
+        name: 'Classic Lead',
+        description: 'Shimmering PWM lead sound',
+        parameters: {
+            vcoSaw: 0.3,
+            vcoPulse: 0.8,
+            pulseWidth: 0.35,
+            subLevel: 0.2,
+            subMode: 1,
+            cutoff: 0.6,
+            resonance: 0.25,
+            envMod: 0.4,
+            attack: 0.02,
+            decay: 0.3,
+            sustain: 0.7,
+            release: 0.3,
+            lfoRate: 0.2,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0.1,
+            lfoToFilter: 0,
+            lfoToPW: 0.3,
+            volume: 0.8,
+        },
+        bpm: 120,
+    },
+
+    // Fat bass - thick and heavy
+    fatBass: {
+        id: 'fatBass',
+        name: 'Fat Bass',
+        description: 'Thick, heavy bass with sub',
+        parameters: {
+            vcoSaw: 0.7,
+            vcoPulse: 0.4,
+            pulseWidth: 0.5,
+            subLevel: 0.6,
+            subMode: 1, // -1 octave
+            cutoff: 0.25,
+            resonance: 0.4,
+            envMod: 0.5,
+            attack: 0.005,
+            decay: 0.4,
+            sustain: 0.4,
+            release: 0.2,
+            lfoRate: 0,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0,
+            lfoToFilter: 0,
+            lfoToPW: 0,
+            volume: 0.8,
+        },
+        bpm: 110,
+        pattern: [
+            { note: 'C2', gate: true, accent: true, slide: false },
+            { note: 'C2', gate: false, accent: false, slide: false },
+            { note: 'C2', gate: true, accent: false, slide: false },
+            { note: 'C2', gate: false, accent: false, slide: false },
+            { note: 'E2', gate: true, accent: false, slide: true },
+            { note: 'G2', gate: true, accent: true, slide: false },
+            { note: 'G2', gate: false, accent: false, slide: false },
+            { note: 'G2', gate: true, accent: false, slide: false },
+            { note: 'C2', gate: true, accent: true, slide: false },
+            { note: 'C2', gate: false, accent: false, slide: false },
+            { note: 'C2', gate: true, accent: false, slide: false },
+            { note: 'D2', gate: true, accent: false, slide: true },
+            { note: 'E2', gate: true, accent: false, slide: false },
+            { note: 'E2', gate: false, accent: false, slide: false },
+            { note: 'G2', gate: true, accent: true, slide: true },
+            { note: 'C3', gate: true, accent: true, slide: false },
+        ],
+    },
+
+    // Acid line - squelchy 303-style
+    acidLine: {
+        id: 'acidLine',
+        name: 'Acid Line',
+        description: 'Squelchy resonant bassline',
+        parameters: {
+            vcoSaw: 1.0,
+            vcoPulse: 0,
+            pulseWidth: 0.5,
+            subLevel: 0,
+            subMode: 0,
+            cutoff: 0.2,
+            resonance: 0.75,
+            envMod: 0.8,
+            attack: 0.001,
+            decay: 0.15,
+            sustain: 0.1,
+            release: 0.1,
+            lfoRate: 0,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0,
+            lfoToFilter: 0,
+            lfoToPW: 0,
+            volume: 0.8,
+        },
+        bpm: 130,
+        pattern: [
+            { note: 'C2', gate: true, accent: true, slide: false },
+            { note: 'C2', gate: false, accent: false, slide: false },
+            { note: 'C3', gate: true, accent: false, slide: true },
+            { note: 'C2', gate: true, accent: false, slide: false },
+            { note: 'D#2', gate: true, accent: true, slide: false },
+            { note: 'D#2', gate: false, accent: false, slide: false },
+            { note: 'G2', gate: true, accent: false, slide: true },
+            { note: 'C2', gate: true, accent: true, slide: false },
+            { note: 'C2', gate: true, accent: false, slide: false },
+            { note: 'C2', gate: false, accent: false, slide: false },
+            { note: 'A#1', gate: true, accent: true, slide: false },
+            { note: 'C2', gate: true, accent: false, slide: true },
+            { note: 'D#2', gate: true, accent: false, slide: false },
+            { note: 'G2', gate: true, accent: true, slide: true },
+            { note: 'C3', gate: true, accent: false, slide: false },
+            { note: 'C2', gate: true, accent: true, slide: false },
+        ],
+    },
+
+    // Synth brass - punchy with fast attack
+    synthBrass: {
+        id: 'synthBrass',
+        name: 'Synth Brass',
+        description: 'Punchy brass stab',
+        parameters: {
+            vcoSaw: 0.7,
+            vcoPulse: 0.6,
+            pulseWidth: 0.45,
+            subLevel: 0.1,
+            subMode: 1,
+            cutoff: 0.55,
+            resonance: 0.2,
+            envMod: 0.35,
+            attack: 0.02,
+            decay: 0.2,
+            sustain: 0.8,
+            release: 0.15,
+            lfoRate: 0.15,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0.05,
+            lfoToFilter: 0,
+            lfoToPW: 0.1,
+            volume: 0.75,
+        },
+        bpm: 115,
+    },
+
+    // Arp pad - gentle arpeggiated pad
+    arpPad: {
+        id: 'arpPad',
+        name: 'Arp Pad',
+        description: 'Soft arpeggiated pad',
+        parameters: {
+            vcoSaw: 0.5,
+            vcoPulse: 0.5,
+            pulseWidth: 0.4,
+            subLevel: 0.3,
+            subMode: 2, // -2 octaves
+            cutoff: 0.45,
+            resonance: 0.3,
+            envMod: 0.2,
+            attack: 0.1,
+            decay: 0.5,
+            sustain: 0.6,
+            release: 0.5,
+            lfoRate: 0.1,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0,
+            lfoToFilter: 0.2,
+            lfoToPW: 0.15,
+            volume: 0.7,
+        },
+        arp: {
+            mode: 'updown',
+            octaves: 2,
+            hold: true,
+        },
+        bpm: 90,
+    },
+
+    // Zap bass - sci-fi bass with fast sweep
+    zapBass: {
+        id: 'zapBass',
+        name: 'Zap Bass',
+        description: 'Sci-fi bass with filter zap',
+        parameters: {
+            vcoSaw: 0.8,
+            vcoPulse: 0.3,
+            pulseWidth: 0.5,
+            subLevel: 0.4,
+            subMode: 1,
+            cutoff: 0.1,
+            resonance: 0.6,
+            envMod: 0.9,
+            attack: 0.001,
+            decay: 0.08,
+            sustain: 0.05,
+            release: 0.1,
+            lfoRate: 0,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0,
+            lfoToFilter: 0,
+            lfoToPW: 0,
+            volume: 0.8,
+        },
+        bpm: 128,
+    },
+
+    // S&H sequence - random filter modulation
+    shSequence: {
+        id: 'shSequence',
+        name: 'S&H Sequence',
+        description: 'Random sample & hold filter',
+        parameters: {
+            vcoSaw: 0.6,
+            vcoPulse: 0.4,
+            pulseWidth: 0.5,
+            subLevel: 0.2,
+            subMode: 1,
+            cutoff: 0.4,
+            resonance: 0.5,
+            envMod: 0.3,
+            attack: 0.01,
+            decay: 0.2,
+            sustain: 0.5,
+            release: 0.2,
+            lfoRate: 0.4,
+            lfoWaveform: 'sh',
+            lfoToPitch: 0,
+            lfoToFilter: 0.4,
+            lfoToPW: 0,
+            volume: 0.75,
+        },
+        bpm: 125,
+    },
+
+    // Empty - blank starting point
+    empty: {
+        id: 'empty',
+        name: 'Empty',
+        description: 'Blank starting point',
+        parameters: {
+            vcoSaw: 0.5,
+            vcoPulse: 0.5,
+            pulseWidth: 0.5,
+            subLevel: 0,
+            subMode: 0,
+            cutoff: 0.5,
+            resonance: 0.3,
+            envMod: 0.5,
+            attack: 0.01,
+            decay: 0.3,
+            sustain: 0.7,
+            release: 0.3,
+            lfoRate: 0.3,
+            lfoWaveform: 'triangle',
+            lfoToPitch: 0,
+            lfoToFilter: 0,
+            lfoToPW: 0,
+            volume: 0.8,
+        },
+        bpm: 120,
+    },
+};
+
+/**
+ * Get preset by ID
+ */
+export function getPreset(id) {
+    return presets[id] || null;
+}
+
+/**
+ * Get all preset names
+ */
+export function getPresetNames() {
+    return Object.values(presets).map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+    }));
+}
+
+/**
+ * Get all presets
+ */
+export function getAllPresets() {
+    return { ...presets };
+}
+
+export default presets;

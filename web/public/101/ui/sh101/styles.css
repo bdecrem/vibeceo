@@ -1,0 +1,862 @@
+/* SH-101 Synthesizer Styles */
+
+:root {
+    --sh101-body: #c8c8c8;
+    --sh101-body-dark: #a0a0a0;
+    --sh101-panel: #e0e0e0;
+    --sh101-text: #1a1a1a;
+    --sh101-accent-red: #c94444;
+    --sh101-accent-blue: #4477aa;
+    --sh101-accent-green: #44aa77;
+    --sh101-knob: #2a2a2a;
+    --sh101-knob-indicator: #ffffff;
+    --sh101-led-on: #ff4444;
+    --sh101-led-off: #441111;
+    --sh101-key-white: #f8f8f8;
+    --sh101-key-black: #1a1a1a;
+    --sh101-key-pressed: #ddd;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overscroll-behavior: none;
+}
+
+.synth-container {
+    background: linear-gradient(180deg, var(--sh101-body) 0%, var(--sh101-body-dark) 100%);
+    border-radius: 16px;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    max-width: 900px;
+    width: 100%;
+    overflow: hidden;
+}
+
+/* Header */
+.synth-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(180deg, #d8d8d8 0%, #c0c0c0 100%);
+    border-bottom: 2px solid #999;
+}
+
+.logo {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo .brand {
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    color: var(--sh101-text);
+}
+
+.logo .model {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--sh101-text);
+    letter-spacing: 1px;
+}
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.preset-selector {
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #999;
+    background: white;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.engine-toggle {
+    display: flex;
+    gap: 4px;
+}
+
+.engine-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background: #666;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.engine-btn.active {
+    background: var(--sh101-accent-blue);
+}
+
+.engine-btn:hover {
+    background: #555;
+}
+
+.engine-btn.active:hover {
+    background: #3366aa;
+}
+
+.info-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid #666;
+    background: transparent;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #666;
+    transition: all 0.2s;
+}
+
+.info-btn:hover {
+    background: #666;
+    color: white;
+}
+
+/* Control Panel */
+.control-panel {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 10px;
+    padding: 20px;
+    background: var(--sh101-panel);
+}
+
+.section {
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.section h3 {
+    font-size: 11px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--sh101-text);
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+.controls-row {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+}
+
+.control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.control label {
+    font-size: 9px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--sh101-text);
+}
+
+/* Knobs */
+.knob {
+    width: 45px;
+    height: 45px;
+    background: radial-gradient(circle at 30% 30%, #444, var(--sh101-knob));
+    border-radius: 50%;
+    position: relative;
+    cursor: pointer;
+    box-shadow:
+        0 3px 6px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    touch-action: none;
+}
+
+.knob::after {
+    content: '';
+    position: absolute;
+    width: 3px;
+    height: 15px;
+    background: var(--sh101-knob-indicator);
+    top: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2px;
+    transform-origin: center 17px;
+}
+
+.knob.small {
+    width: 30px;
+    height: 30px;
+}
+
+.knob.small::after {
+    width: 2px;
+    height: 10px;
+    top: 3px;
+    transform-origin: center 12px;
+}
+
+.control.small {
+    gap: 3px;
+}
+
+.control.small label {
+    font-size: 8px;
+}
+
+/* Sliders */
+.slider {
+    width: 20px;
+    height: 70px;
+    background: #333;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    touch-action: none;
+}
+
+.slider::after {
+    content: '';
+    position: absolute;
+    width: 24px;
+    height: 12px;
+    background: linear-gradient(180deg, #666, #444);
+    border-radius: 3px;
+    left: -2px;
+    bottom: 50%;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Range/Mode Switches */
+.range-switch, .sub-mode-switch {
+    margin-top: 10px;
+}
+
+.range-label, .mode-label {
+    font-size: 8px;
+    font-weight: bold;
+    display: block;
+    margin-bottom: 5px;
+    color: var(--sh101-text);
+}
+
+.range-buttons, .mode-buttons {
+    display: flex;
+    gap: 3px;
+    justify-content: center;
+}
+
+.range-btn, .mode-btn {
+    padding: 4px 6px;
+    font-size: 9px;
+    font-weight: bold;
+    border: 1px solid #999;
+    border-radius: 3px;
+    background: #ddd;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.range-btn.active, .mode-btn.active {
+    background: var(--sh101-accent-blue);
+    color: white;
+    border-color: var(--sh101-accent-blue);
+}
+
+/* LFO Waveform */
+.lfo-waveform {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    margin: 8px 0;
+}
+
+.wave-btn {
+    width: 28px;
+    height: 24px;
+    border: 1px solid #999;
+    border-radius: 3px;
+    background: #ddd;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.wave-btn.active {
+    background: var(--sh101-accent-green);
+    color: white;
+    border-color: var(--sh101-accent-green);
+}
+
+.lfo-destinations {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 8px;
+}
+
+/* Sequencer Section */
+.sequencer-section {
+    background: #333;
+    padding: 15px 20px;
+}
+
+.transport {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.transport-btn {
+    padding: 10px 20px;
+    font-weight: bold;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-size: 12px;
+}
+
+.transport-btn.rec {
+    background: var(--sh101-led-off);
+    color: #ccc;
+}
+
+.transport-btn.rec.active {
+    background: var(--sh101-led-on);
+    color: white;
+    animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.transport-btn.play {
+    background: var(--sh101-accent-green);
+    color: white;
+}
+
+.transport-btn.stop {
+    background: #666;
+    color: white;
+}
+
+.transport-btn:hover {
+    opacity: 0.9;
+}
+
+@keyframes pulse {
+    from { opacity: 0.8; }
+    to { opacity: 1; }
+}
+
+.bpm-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+}
+
+.bpm-control label {
+    color: #999;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.bpm-control input {
+    width: 60px;
+    padding: 6px;
+    border: none;
+    border-radius: 4px;
+    background: #222;
+    color: var(--sh101-accent-green);
+    font-family: monospace;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Arp Controls */
+.arp-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.arp-label {
+    color: #999;
+    font-size: 11px;
+    font-weight: bold;
+}
+
+.arp-btn {
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background: #444;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.arp-btn.active {
+    background: var(--sh101-accent-blue);
+    color: white;
+    border-color: var(--sh101-accent-blue);
+}
+
+.hold-btn {
+    padding: 6px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background: #444;
+    color: #ccc;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+.hold-btn.active {
+    background: var(--sh101-accent-red);
+    color: white;
+    border-color: var(--sh101-accent-red);
+}
+
+.octave-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-left: 10px;
+}
+
+.octave-control label {
+    color: #999;
+    font-size: 10px;
+}
+
+.oct-btn {
+    width: 24px;
+    height: 24px;
+    border: 1px solid #666;
+    border-radius: 3px;
+    background: #444;
+    color: #ccc;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.oct-btn.active {
+    background: var(--sh101-accent-blue);
+    color: white;
+}
+
+/* Step Grid */
+.step-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    gap: 4px;
+}
+
+.step {
+    background: #222;
+    border-radius: 4px;
+    padding: 6px 2px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.1s;
+}
+
+.step.active {
+    background: var(--sh101-accent-green);
+    box-shadow: 0 0 10px var(--sh101-accent-green);
+}
+
+.step.has-note {
+    background: #444;
+}
+
+.step-num {
+    font-size: 8px;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.step-note {
+    font-size: 10px;
+    color: #aaa;
+    font-family: monospace;
+}
+
+.step-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 2px;
+    margin-top: 4px;
+}
+
+.step-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #333;
+}
+
+.step-dot.gate { background: #555; }
+.step-dot.gate.on { background: var(--sh101-accent-green); }
+.step-dot.accent { background: #553333; }
+.step-dot.accent.on { background: var(--sh101-accent-red); }
+.step-dot.slide { background: #335555; }
+.step-dot.slide.on { background: var(--sh101-accent-blue); }
+
+/* Keyboard Section */
+.keyboard-section {
+    padding: 20px;
+    background: linear-gradient(180deg, #bbb 0%, #999 100%);
+}
+
+.keyboard {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    height: 120px;
+}
+
+.key {
+    position: relative;
+    cursor: pointer;
+    transition: all 0.05s;
+    user-select: none;
+}
+
+.key.white {
+    width: 40px;
+    height: 120px;
+    background: linear-gradient(180deg, var(--sh101-key-white) 0%, #e8e8e8 100%);
+    border: 1px solid #999;
+    border-radius: 0 0 4px 4px;
+    z-index: 1;
+}
+
+.key.white:active, .key.white.pressed {
+    background: linear-gradient(180deg, var(--sh101-key-pressed) 0%, #ccc 100%);
+}
+
+.key.black {
+    width: 28px;
+    height: 75px;
+    background: linear-gradient(180deg, #333 0%, var(--sh101-key-black) 100%);
+    border-radius: 0 0 3px 3px;
+    margin-left: -14px;
+    margin-right: -14px;
+    z-index: 2;
+}
+
+.key.black:active, .key.black.pressed {
+    background: linear-gradient(180deg, #444 0%, #222 100%);
+}
+
+.key-label {
+    position: absolute;
+    bottom: 8px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #666;
+    pointer-events: none;
+}
+
+.key.black .key-label {
+    color: #999;
+    bottom: 5px;
+}
+
+/* Footer */
+.synth-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #333;
+    color: #666;
+    font-size: 11px;
+}
+
+.export-btn {
+    padding: 8px 16px;
+    background: var(--sh101-accent-blue);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.export-btn:hover {
+    background: #3366aa;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.modal-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: #eee;
+    border-radius: 50%;
+    font-size: 20px;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.modal-content h2 {
+    margin-bottom: 15px;
+    color: #333;
+}
+
+.modal-content h3 {
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #555;
+    font-size: 14px;
+}
+
+.modal-content p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+    color: #666;
+    font-size: 14px;
+}
+
+.modal-content table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0;
+}
+
+.modal-content td {
+    padding: 5px 10px;
+    border-bottom: 1px solid #eee;
+    font-size: 13px;
+}
+
+.modal-content td:first-child {
+    font-family: monospace;
+    font-weight: bold;
+    width: 80px;
+}
+
+.modal-content ul {
+    padding-left: 20px;
+    margin: 10px 0;
+}
+
+.modal-content li {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #666;
+}
+
+.credits {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #eee;
+    font-style: italic;
+    font-size: 12px !important;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+
+    .synth-container {
+        border-radius: 12px;
+    }
+
+    .synth-header {
+        flex-direction: column;
+        gap: 10px;
+        padding: 12px 15px;
+    }
+
+    .header-controls {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .preset-selector {
+        flex: 1;
+        max-width: 150px;
+    }
+
+    .control-panel {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        padding: 15px;
+    }
+
+    .section {
+        padding: 10px 8px;
+    }
+
+    .section h3 {
+        font-size: 10px;
+    }
+
+    .knob {
+        width: 38px;
+        height: 38px;
+    }
+
+    .knob::after {
+        height: 12px;
+        top: 4px;
+        transform-origin: center 14px;
+    }
+
+    .slider {
+        height: 55px;
+    }
+
+    .sequencer-section {
+        padding: 12px 15px;
+    }
+
+    .transport {
+        flex-wrap: wrap;
+    }
+
+    .transport-btn {
+        padding: 8px 14px;
+        font-size: 11px;
+    }
+
+    .bpm-control {
+        margin-left: 0;
+        margin-top: 10px;
+        width: 100%;
+    }
+
+    .arp-controls {
+        font-size: 10px;
+    }
+
+    .step-grid {
+        gap: 2px;
+    }
+
+    .step {
+        padding: 4px 1px;
+    }
+
+    .step-num {
+        font-size: 7px;
+    }
+
+    .step-note {
+        font-size: 8px;
+    }
+
+    .step-dot {
+        width: 4px;
+        height: 4px;
+    }
+
+    .keyboard-section {
+        padding: 15px;
+    }
+
+    .keyboard {
+        height: 90px;
+    }
+
+    .key.white {
+        width: 30px;
+        height: 90px;
+    }
+
+    .key.black {
+        width: 22px;
+        height: 55px;
+        margin-left: -11px;
+        margin-right: -11px;
+    }
+
+    .key-label {
+        font-size: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .control-panel {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .key.white {
+        width: 24px;
+    }
+
+    .key.black {
+        width: 18px;
+        margin-left: -9px;
+        margin-right: -9px;
+    }
+}
