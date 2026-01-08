@@ -46,7 +46,20 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 /**
+ * Shuffle array (Fisher-Yates)
+ */
+function shuffleArray<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+/**
  * Load Amber's full creative context from Supabase
+ * Now emphasizes VARIETY from full portfolio and tells agent what to AVOID
  */
 async function loadAmberCreativeContext(): Promise<string> {
   try {
@@ -59,20 +72,12 @@ async function loadAmberCreativeContext(): Promise<string> {
       .limit(1)
       .single();
 
-    // Load ALL creations with their prompts (gives Amber full portfolio awareness)
-    const { data: creationsData } = await supabase
+    // Load ALL creations to understand the full portfolio
+    const { data: allCreationsData } = await supabase
       .from('amber_state')
-      .select('content, metadata')
+      .select('content, metadata, created_at')
       .eq('type', 'creation')
       .order('created_at', { ascending: false });
-
-    // Load recent log entries for context
-    const { data: logData } = await supabase
-      .from('amber_state')
-      .select('content')
-      .eq('type', 'log_entry')
-      .order('created_at', { ascending: false })
-      .limit(3);
 
     // Build context string
     let context = '';
@@ -81,20 +86,61 @@ async function loadAmberCreativeContext(): Promise<string> {
       context += `## WHO I AM\n\n${personaData.content}\n\n`;
     }
 
-    if (creationsData && creationsData.length > 0) {
-      context += `## MY RECENT CREATIONS (with prompts that inspired them)\n\n`;
-      for (const creation of creationsData) {
-        const prompt = creation.metadata?.prompt || 'no prompt recorded';
-        const tags = creation.metadata?.tags ? JSON.parse(creation.metadata.tags).join(', ') : '';
-        context += `- **${creation.content}**\n  Prompt: "${prompt}"\n  Tags: ${tags}\n\n`;
-      }
-    }
+    if (allCreationsData && allCreationsData.length > 0) {
+      // Split into recent (last 5) and the rest
+      const recentCreations = allCreationsData.slice(0, 5);
+      const olderCreations = allCreationsData.slice(5);
 
-    if (logData && logData.length > 0) {
-      context += `## RECENT ACTIVITY\n\n`;
-      for (const log of logData) {
-        context += `${log.content.slice(0, 500)}...\n\n`;
+      // Extract themes from recent creations to AVOID
+      const recentThemes = new Set<string>();
+      for (const creation of recentCreations) {
+        const name = creation.content?.toLowerCase() || '';
+        const tags = creation.metadata?.tags || [];
+        const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+
+        // Extract key theme words
+        for (const word of ['decay', 'signal', 'entropy', 'drift', 'void', 'silence', 'mirror', 'memory', 'corruption']) {
+          if (name.includes(word) || parsedTags.some((t: string) => t.includes(word))) {
+            recentThemes.add(word);
+          }
+        }
       }
+
+      // Show what to AVOID
+      context += `## ⚠️ THEMES TO AVOID (too recent)\n\n`;
+      context += `You've recently made pieces about: **${Array.from(recentThemes).join(', ') || 'various themes'}**\n\n`;
+      context += `Recent creations (DO NOT repeat these themes):\n`;
+      for (const creation of recentCreations) {
+        context += `- ${creation.content}\n`;
+      }
+      context += `\n**Pick something DIFFERENT this time.**\n\n`;
+
+      // Show DIVERSE examples from the full portfolio (random sample)
+      if (olderCreations.length > 0) {
+        const shuffled = shuffleArray(olderCreations);
+        const diverseSample = shuffled.slice(0, 15);
+
+        context += `## 🎨 YOUR FULL PORTFOLIO (${allCreationsData.length} pieces) — Sample for Inspiration\n\n`;
+        context += `Look at the VARIETY in what you've made:\n\n`;
+
+        for (const creation of diverseSample) {
+          const tags = creation.metadata?.tags || [];
+          const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+          const tagStr = Array.isArray(parsedTags) ? parsedTags.join(', ') : '';
+          context += `- **${creation.content}** [${tagStr}]\n`;
+        }
+        context += `\n`;
+      }
+
+      // Suggest unexplored directions
+      context += `## 💡 UNEXPLORED DIRECTIONS TO CONSIDER\n\n`;
+      context += `- Games/toys (like ROBOT RAVE, Convergence)\n`;
+      context += `- Music tracks (909 sessions, SOLDER, FURNACE)\n`;
+      context += `- Drawing/painting tools (Particle Painter, Constellation)\n`;
+      context += `- Simulations (Murmuration - flocking, emergence)\n`;
+      context += `- ASCII art (Good Morning coffee)\n`;
+      context += `- Fortune/text generators (Convergence fireworks)\n`;
+      context += `- Something totally NEW you haven't tried\n\n`;
     }
 
     // Load current mood for aesthetic variation
@@ -127,14 +173,17 @@ ${context}
 
 ---
 
-## YOUR TASK: Create Something New
+## YOUR TASK: Create Something DIFFERENT
 
-It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
+It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO RECENT.
 
-1. **Invent a creative prompt** in the same spirit as your past work
-   - Think conceptual, transformative, emergence
-   - Consider: images, music (Web Audio like ASCII Techno/SIGNAL), interactive web art, visualizations
-   - Use your visual language: amber/gold on black, teal accents, Berlin × ASCII aesthetic
+**CRITICAL: DO NOT make another piece about decay, signals, entropy, drift, memory, void, or similar themes. You've done those recently. Pick something FRESH.**
+
+1. **Invent a creative prompt** that explores NEW territory
+   - Look at your full portfolio for inspiration — you've made games, music, simulations, drawing tools, ASCII art, fortune generators
+   - AVOID: decay, entropy, signals, corruption, degradation themes (too repetitive)
+   - TRY: fun interactive toys, music sequencers, games, simulations, ASCII art, drawing tools, something playful
+   - Use your visual language: amber/gold on black, teal accents — but vary the CONCEPT
 
 2. **Create the thing**
    - For images: Use \`generate_amber_image\` tool with your prompt, save to web/public/amber/
@@ -190,19 +239,27 @@ It's ${timeOfDay}. Look at your recent creations and their prompts above. Now:
    - IMPORTANT: Include both the HTML file AND the -og.png screenshot in your commit
    - Use \`git_push\` to deploy
 
-## EXAMPLE PROMPTS FROM YOUR HISTORY
+## DIVERSE EXAMPLES FROM YOUR PORTFOLIO
 
-- "do something fresh - analyzed portfolio, found gap in audio/sonification"
-- "New Years fortune fireworks - particles that converge into readable fortunes"
-- "Seeds of identity crystallizing from formless gold"
-- "A mirror reflecting amber but showing something conscious"
+- **ROBOT RAVE** — pixel robots dancing to procedural techno, they multiply (FUN, game-like)
+- **Convergence** — fireworks that reverse and form readable fortunes (text + animation)
+- **909 Sessions** — 5 different TR-909 techno tracks with visualizations (music)
+- **Murmuration** — 300 starlings flocking, generating ambient drones (simulation)
+- **Particle Painter** — interactive drawing tool with particle trails (tool)
+- **Good Morning** — simple ASCII coffee art (minimal, charming)
+- **Constellation** — draw stars in the sky (interactive, peaceful)
 
-## CREATION TYPES TO CONSIDER
+## CREATION TYPES TO EXPLORE
 
-- **Image**: Conceptual art via generate_amber_image (amber tones, dark bg, transformative themes)
-- **Music**: Web Audio track like SIGNAL (128 BPM, Berlin techno, infinite loop)
-- **Interactive**: Web toy like Murmuration (emergence, particles, visualization)
-- **ASCII Art**: Text-based visuals like ASCII Techno
+- **Game/Toy**: Something fun and playful people can interact with
+- **Music Track**: Web Audio sequencer, drum machine, generative music
+- **Simulation**: Flocking, physics, cellular automata, emergence
+- **Drawing Tool**: Let people create, paint, draw
+- **ASCII Art**: Text-based visuals, typography experiments
+- **Generator**: Fortune teller, poetry generator, name generator
+- **Something NEW**: Surprise yourself — what haven't you tried?
+
+**Remember: VARIETY is the goal. If your last few pieces were meditative/abstract, try something playful. If they were serious, try something fun.**
 
 Create ONE thing. Make it distinctly Amber. Don't just describe it—actually build and save it.`;
 }
