@@ -377,12 +377,13 @@ export async function postTweetWithImages(text: string, imagePaths: string[], ac
 /**
  * Get the authenticated user's ID
  * Required for fetching mentions
+ * @param account - Optional account name (e.g., "intheamber")
  */
-async function getAuthenticatedUserId(): Promise<string | null> {
+async function getAuthenticatedUserId(account?: string): Promise<string | null> {
   const url = 'https://api.twitter.com/2/users/me';
 
   try {
-    const authHeader = generateOAuthHeader('GET', url);
+    const authHeader = generateOAuthHeader('GET', url, {}, account);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -409,19 +410,21 @@ async function getAuthenticatedUserId(): Promise<string | null> {
  * Get recent mentions of the authenticated user
  * @param maxResults - Number of mentions to fetch (default 10, max 100)
  * @param sinceId - Only return mentions newer than this tweet ID
+ * @param account - Optional account name (e.g., "intheamber")
  */
-export async function getMentions(maxResults: number = 10, sinceId?: string): Promise<MentionsResult> {
-  const creds = getTwitterCredentials();
+export async function getMentions(maxResults: number = 10, sinceId?: string, account?: string): Promise<MentionsResult> {
+  const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    const accountMsg = account ? ` for account "${account}"` : '';
     return {
       success: false,
-      error: 'Twitter credentials not configured',
+      error: `Twitter credentials not configured${accountMsg}`,
     };
   }
 
   try {
     // First get our user ID
-    const userId = await getAuthenticatedUserId();
+    const userId = await getAuthenticatedUserId(account);
     if (!userId) {
       return {
         success: false,
@@ -445,7 +448,7 @@ export async function getMentions(maxResults: number = 10, sinceId?: string): Pr
     const fullUrl = `${baseUrl}?${urlParams.toString()}`;
 
     // OAuth signature must include query params for GET requests
-    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams);
+    const authHeader = generateOAuthHeader('GET', baseUrl, queryParams, account);
 
     const response = await fetch(fullUrl, {
       method: 'GET',
@@ -767,13 +770,15 @@ export async function getAllListMembers(listId: string): Promise<ListMembersResu
  * Reply to a specific tweet
  * @param text - Reply text
  * @param inReplyToTweetId - ID of the tweet to reply to
+ * @param account - Optional account name (e.g., "intheamber")
  */
-export async function replyToTweet(text: string, inReplyToTweetId: string): Promise<TweetResult> {
-  const creds = getTwitterCredentials();
+export async function replyToTweet(text: string, inReplyToTweetId: string, account?: string): Promise<TweetResult> {
+  const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
+    const accountMsg = account ? ` for account "${account}"` : '';
     return {
       success: false,
-      error: 'Twitter credentials not configured',
+      error: `Twitter credentials not configured${accountMsg}`,
     };
   }
 
@@ -787,7 +792,7 @@ export async function replyToTweet(text: string, inReplyToTweetId: string): Prom
   const url = 'https://api.twitter.com/2/tweets';
 
   try {
-    const authHeader = generateOAuthHeader('POST', url);
+    const authHeader = generateOAuthHeader('POST', url, {}, account);
 
     const payload = {
       text,

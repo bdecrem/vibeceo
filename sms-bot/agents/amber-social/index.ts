@@ -739,8 +739,8 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
     const sinceId = await getLastProcessedMentionId();
     console.log(`[amber-social] Checking mentions since: ${sinceId || 'beginning'}`);
 
-    // Fetch recent mentions
-    const result = await getMentions(20, sinceId || undefined);
+    // Fetch recent mentions for @intheamber account
+    const result = await getMentions(20, sinceId || undefined, 'intheamber');
 
     if (!result.success || !result.mentions || result.mentions.length === 0) {
       console.log(`[amber-social] No new mentions found`);
@@ -780,7 +780,7 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
         if (replyText) {
           console.log(`[amber-social] Replying: "${replyText.slice(0, 50)}..."`);
 
-          const postResult = await replyToTweet(replyText, tweet.id);
+          const postResult = await replyToTweet(replyText, tweet.id, 'intheamber');
 
           if (postResult.success) {
             console.log(`[amber-social] Reply posted: ${postResult.tweetUrl}`);
