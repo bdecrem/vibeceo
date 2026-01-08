@@ -68,6 +68,7 @@ Read these before making changes:
 | `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
 | `sms-bot/documentation/ZAD-API-REFERENCE.md` | ZAD (CRUD) apps |
 | `sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
+| `sms-bot/documentation/STATIC-HTML-URL-ROUTING.md` | Adding static HTML apps with middleware bypass + app routes |
 | `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
 
 ## Critical Rules

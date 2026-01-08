@@ -44,7 +44,8 @@ See [Mixer & Effects](#mixer--effects) section below for full documentation.
 
 | Instrument | Type | Location | Detailed Docs |
 |------------|------|----------|---------------|
-| **TR-909** | Drum machine | `/909/` | `/909/dist/api/index.js` |
+| **TR-909** | Drum machine (synth) | `/909/` | `/909/dist/api/index.js` |
+| **R9-DS** | Drum machine (sampler) | `/90s/` | [README.md](/90s/README.md) |
 | **TB-303** | Bass synthesizer | `/303/` | [TB303-LIBRARY.md](/303/TB303-LIBRARY.md) |
 | **SH-101** | Lead synthesizer | `/101/` | [SH101-LIBRARY.md](/101/SH101-LIBRARY.md) |
 | **Mixer** | Session + Effects | `/mixer/` | [README.md](/mixer/README.md) |
@@ -96,6 +97,68 @@ const { wav } = await drums.exportCurrentPatternToWav({ bars: 2 });
 | Open Hat | `oh` | NOT hihatOpen |
 | Crash | `crash` | |
 | Ride | `ride` | |
+
+### R9-DS Sample Drum Machine
+
+A sample-based drum machine with loadable kits. Unlike TR-909 (which synthesizes sounds), R9-DS plays WAV samples.
+
+```javascript
+import { R9DSController } from '/90s/dist/api/index.js';
+
+const sampler = new R9DSController();
+
+// Load a kit (808, acoustic, lofi, or custom)
+await sampler.loadKit('808');
+
+// Set voice parameters
+sampler.setVoiceParameter('s1', 'filter', 0.5);  // darken the kick
+sampler.setVoiceParameter('s1', 'tune', -2);     // pitch down 2 semitones
+
+// Load pattern and play
+sampler.setPattern(pattern);
+sampler.setBpm(120);
+sampler.play();
+
+// Render to WAV
+const { wav } = await sampler.exportCurrentPatternToWav({ bars: 2 });
+```
+
+**R9-DS Pattern Structure:**
+```javascript
+{
+  s1: [{ velocity: 0.8 }, { velocity: 0 }, ...],   // 16 steps (kick)
+  s2: [{ velocity: 0 }, { velocity: 1.0 }, ...],   // snare
+  s3: [...],  // clap
+  // voices: s1-s10 (Kick, Snare, Clap, CH, OH, TL, TM, Crash, Ride, Cowbell)
+}
+```
+
+**R9-DS Voice IDs:**
+| Slot | ID | Default (808 Kit) |
+|------|-----|-------------------|
+| 1 | `s1` | Kick |
+| 2 | `s2` | Snare |
+| 3 | `s3` | Clap |
+| 4 | `s4` | Closed Hat |
+| 5 | `s5` | Open Hat |
+| 6 | `s6` | Tom Low |
+| 7 | `s7` | Tom Mid |
+| 8 | `s8` | Crash |
+| 9 | `s9` | Ride |
+| 10 | `s10` | Cowbell |
+
+**R9-DS Voice Parameters (per slot):**
+| Parameter | Range | Description |
+|-----------|-------|-------------|
+| `level` | 0-1 | Volume |
+| `tune` | -12 to +12 | Pitch (semitones) |
+| `attack` | 0-1 | Fade-in time |
+| `decay` | 0-1 | Sample length |
+| `filter` | 0-1 | Lowpass cutoff |
+| `pan` | -1 to +1 | Stereo position |
+
+**Adding Custom Kits:**
+See [/90s/README.md](/90s/README.md) for how to create and add custom sample kits.
 
 ### TB-303 Bass Synthesizer
 
@@ -435,8 +498,10 @@ drums.setVoiceParameter('snare', 'tone', 0.6);
 
 ## Live Demos
 
-- **TR-909**: [/909/](/909/)
-- **TB-303**: [/303/](/303/)
+- **TR-909**: [/909/](/909/) — Synthesized drum machine
+- **R9-DS**: [/90s/](/90s/) — Sample-based drum machine (Crimson Edition)
+- **TB-303**: [/303/](/303/) — Acid bass synthesizer
+- **SH-101**: [/101/](/101/) — Lead synthesizer
 
 ---
 
@@ -451,6 +516,21 @@ web/public/
 │   │       ├── engine.js         # TR909Engine
 │   │       └── presets.js        # Preset patterns
 │   └── ui/tr909/index.html       # Interactive UI
+│
+├── 90s/
+│   ├── dist/
+│   │   ├── api/index.js          # R9DSController, renderR9DSPatternToWav
+│   │   └── sampler/
+│   │       ├── engine.js         # R9DSEngine
+│   │       ├── sample-voice.js   # SampleVoice class
+│   │       └── kit-loader.js     # Kit loading system
+│   ├── kits/
+│   │   ├── index.json            # Kit manifest (add new kits here)
+│   │   ├── 808/                  # 808 sample kit
+│   │   ├── acoustic/             # Acoustic kit
+│   │   └── lofi/                 # Lo-Fi kit
+│   ├── ui/r9ds/index.html        # Interactive UI (Crimson Edition)
+│   └── README.md                 # Full documentation + kit creation guide
 │
 ├── 303/
 │   ├── dist/

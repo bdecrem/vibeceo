@@ -21,6 +21,9 @@ const nextConfig = {
         // TB-303 bass synth UI
         { source: '/303/ui/tb303', destination: '/303/ui/tb303/index.html' },
         { source: '/303', destination: '/303/ui/tb303/index.html' },
+        // R9-DS sampler UI
+        { source: '/90s/ui/r9ds', destination: '/90s/ui/r9ds/index.html' },
+        { source: '/90s', destination: '/90s/ui/r9ds/index.html' },
       ],
     }
   },

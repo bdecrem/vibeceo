@@ -344,9 +344,9 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // SPECIFIC FIX: Bypass 90s synth library
+  // SPECIFIC FIX: Bypass R9-DS sampler
   if (pathname === '/90s' || pathname.startsWith('/90s/')) {
-    log(`[Middleware] 90s bypassed: ${pathname}`)
+    log(`[Middleware] R9-DS bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
