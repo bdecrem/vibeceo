@@ -89,6 +89,21 @@
       margin-top: 0.75rem;
     }
 
+    .remix-link {
+      display: inline-block;
+      margin-top: 1rem;
+      color: #D4A574;
+      opacity: 0.5;
+      font-size: 0.7rem;
+      text-decoration: none;
+      letter-spacing: 0.2em;
+      transition: opacity 0.3s;
+    }
+
+    .remix-link:hover {
+      opacity: 1;
+    }
+
     .fossil-count {
       position: fixed;
       top: 1rem;
@@ -111,6 +126,7 @@
     <div class="subtitle">FOSSILIZATION · 118 BPM</div>
     <button id="play" onclick="start()">BEGIN</button>
     <div id="status">sounds preserved in time</div>
+    <a href="/90s/ui/r9ds/?load=/90s/patterns/amber-fossil.json" class="remix-link">REMIX THIS →</a>
   </div>
 
   <script type="module">

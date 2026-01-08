@@ -1,0 +1,54 @@
+{
+  "name": "Amber Fossil",
+  "kit": "amber",
+  "bpm": 118,
+  "pattern": {
+    "s1": [
+      {"velocity": 1.0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.9}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 1.0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.9}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "s2": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 1.0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 1.0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "s3": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.25}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.35}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0}
+    ],
+    "s4": [
+      {"velocity": 0.5}, {"velocity": 0}, {"velocity": 0.4}, {"velocity": 0},
+      {"velocity": 0.5}, {"velocity": 0}, {"velocity": 0.4}, {"velocity": 0},
+      {"velocity": 0.5}, {"velocity": 0}, {"velocity": 0.4}, {"velocity": 0},
+      {"velocity": 0.5}, {"velocity": 0}, {"velocity": 0.4}, {"velocity": 0}
+    ],
+    "s6": [
+      {"velocity": 0.6}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "s8": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "s9": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.5}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ]
+  },
+  "parameters": {
+    "s1": {"filter": 0.6},
+    "s3": {"filter": 0.4},
+    "s4": {"filter": 0.3}
+  }
+}
