@@ -1,6 +1,8 @@
-# Mixer
+# SynthMachine Mixer
 
-Session + Effects for multi-track mixing with sidechain, EQ, and reverb.
+Multi-track mixer with sidechain, EQ, and reverb. Combine R9-D9, R3-D3, and R1-D1 into one mixed output.
+
+**Part of [SynthMachine](https://kochi.to/909)**
 
 ## Quick Start
 
@@ -158,3 +160,11 @@ mixer/
 - Reverb uses synthetic impulse responses — no file loading required
 - Effects can be chained on both channels and master
 - Render produces 16-bit 44.1kHz stereo WAV
+
+## License
+
+MIT - Do whatever you want.
+
+---
+
+*Built by [Kochi.to](https://kochi.to). This is a code dump, not a maintained project. Use it, fork it, learn from it.*
