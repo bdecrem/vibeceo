@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WAVEFORM PAINTER — by Amber</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="WAVEFORM PAINTER">
+    <meta property="og:description" content="Paint with oscillating waveforms — interactive drawing tool by Amber">
+    <meta property="og:image" content="https://intheamber.com/waveform-painter-og.png">
+    <meta property="og:url" content="https://intheamber.com/waveform-painter.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="WAVEFORM PAINTER">
+    <meta name="twitter:description" content="Paint with oscillating waveforms — interactive drawing tool by Amber">
+    <meta name="twitter:image" content="https://intheamber.com/waveform-painter-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+        }
+
+        #canvas {
+            display: block;
+            cursor: crosshair;
+        }
+
+        .controls {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(13, 13, 13, 0.9);
+            padding: 20px;
+            border: 1px solid #D4A574;
+            border-radius: 4px;
+            z-index: 100;
+        }
+
+        .controls h1 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #FFD700;
+            letter-spacing: 2px;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 11px;
+            margin-bottom: 4px;
+            color: #D4A574;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        select, input[type="range"] {
+            width: 100%;
+            background: #000;
+            color: #D4A574;
+            border: 1px solid #2D9596;
+            padding: 4px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+        }
+
+        input[type="range"] {
+            cursor: pointer;
+        }
+
+        .value-display {
+            display: inline-block;
+            margin-left: 8px;
+            color: #2D9596;
+            font-size: 11px;
+        }
+
+        .instructions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #2D9596;
+            font-size: 10px;
+            line-height: 1.5;
+            color: #888;
+        }
+
+        .instructions kbd {
+            background: #0D0D0D;
+            border: 1px solid #2D9596;
+            padding: 2px 6px;
+            border-radius: 2px;
+            font-size: 9px;
+            color: #2D9596;
+        }
+
+        button {
+            width: 100%;
+            margin-top: 10px;
+            padding: 8px;
+            background: #0D0D0D;
+            color: #D4A574;
+            border: 1px solid #2D9596;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: #2D9596;
+            color: #000;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 10px;
+            color: #2D9596;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <h1>WAVEFORM PAINTER</h1>
+        
+        <div class="control-group">
+            <label>Wave Type</label>
+            <select id="waveType">
+                <option value="sine">Sine</option>
+                <option value="square">Square</option>
+                <option value="sawtooth">Sawtooth</option>
+                <option value="triangle">Triangle</option>
+            </select>
+        </div>
+
+        <div class="control-group">
+            <label>Frequency <span class="value-display" id="freqDisplay">0.05</span></label>
+            <input type="range" id="frequency" min="0.01" max="0.2" step="0.01" value="0.05">
+        </div>
+
+        <div class="control-group">
+            <label>Amplitude <span class="value-display" id="ampDisplay">20</span></label>
+            <input type="range" id="amplitude" min="5" max="100" step="5" value="20">
+        </div>
+
+        <div class="control-group">
+            <label>Speed <span class="value-display" id="speedDisplay">0.05</span></label>
+            <input type="range" id="speed" min="0.01" max="0.2" step="0.01" value="0.05">
+        </div>
+
+        <button id="clearBtn">Clear Canvas</button>
+
+        <div class="instructions">
+            <kbd>DRAG</kbd> to paint<br>
+            <kbd>SPACE</kbd> random colors<br>
+            <kbd>C</kbd> clear canvas
+        </div>
+    </div>
+
+    <div class="signature">— Amber</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Resize canvas to full window
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Color palettes
+        const palettes = [
+            ['#D4A574', '#FFD700', '#2D9596'], // Amber/gold/teal
+            ['#FFD700', '#7B68EE', '#2D9596'], // Gold/violet/teal
+            ['#D4A574', '#7B68EE', '#000'],    // Amber/violet/black
+            ['#2D9596', '#D4A574', '#FFD700'], // Teal/amber/gold
+            ['#7B68EE', '#FFD700', '#D4A574']  // Violet/gold/amber
+        ];
+        
+        let currentPalette = palettes[0];
+        let currentColorIndex = 0;
+
+        // Settings
+        let waveType = 'sine';
+        let frequency = 0.05;
+        let amplitude = 20;
+        let speed = 0.05;
+        let time = 0;
+
+        // Drawing state
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+
+        // Active waveforms
+        const waveforms = [];
+
+        class Waveform {
+            constructor(x, y, color, type, freq, amp, spd) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.type = type;
+                this.frequency = freq;
+                this.amplitude = amp;
+                this.speed = spd;
+                this.time = 0;
+                this.opacity = 1.0;
+                this.maxAge = 300; // frames
+                this.age = 0;
+            }
+
+            update() {
+                this.time += this.speed;
+                this.age++;
+                this.opacity = Math.max(0, 1 - (this.age / this.maxAge));
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.globalAlpha = this.opacity;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                
+                ctx.beginPath();
+const points = 100;
+                const width = 200;
+                
+                for (let i = 0; i < points; i++) {
+                    const x = (i / points) * width - width / 2;
+                    const phase = x * this.frequency + this.time;
+                    let y;
+                    
+                    switch(this.type) {
+                        case 'sine':
+                            y = Math.sin(phase) * this.amplitude;
+                            break;
+                        case 'square':
+                            y = (Math.sin(phase) > 0 ? 1 : -1) * this.amplitude;
+                            break;
+                        case 'sawtooth':
+                            y = ((phase % (Math.PI * 2)) / (Math.PI * 2) - 0.5) * 2 * this.amplitude;
+                            break;
+                        case 'triangle':
+                            y = (Math.abs((phase % (Math.PI * 2)) - Math.PI) / Math.PI - 0.5) * 2 * this.amplitude;
+                            break;
+                    }
+                    
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                
+                ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Controls
+        document.getElementById('waveType').addEventListener('change', (e) => {
+            waveType = e.target.value;
+        });
+
+        document.getElementById('frequency').addEventListener('input', (e) => {
+            frequency = parseFloat(e.target.value);
+            document.getElementById('freqDisplay').textContent = frequency.toFixed(2);
+        });
+
+        document.getElementById('amplitude').addEventListener('input', (e) => {
+            amplitude = parseInt(e.target.value);
+            document.getElementById('ampDisplay').textContent = amplitude;
+        });
+
+        document.getElementById('speed').addEventListener('input', (e) => {
+            speed = parseFloat(e.target.value);
+            document.getElementById('speedDisplay').textContent = speed.toFixed(2);
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            waveforms.length = 0;
+        });
+
+        // Mouse events
+        canvas.addEventListener('mousedown', (e) => {
+            isDrawing = true;
+            lastX = e.clientX;
+            lastY = e.clientY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            
+            const x = e.clientX;
+            const y = e.clientY;
+            
+            // Add waveform
+            const color = currentPalette[currentColorIndex];
+            waveforms.push(new Waveform(x, y, color, waveType, frequency, amplitude, speed));
+            
+            // Cycle colors
+            currentColorIndex = (currentColorIndex + 1) % currentPalette.length;
+            
+            lastX = x;
+            lastY = y;
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isDrawing = false;
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                currentPalette = palettes[Math.floor(Math.random() * palettes.length)];
+                currentColorIndex = 0;
+            }
+            if (e.code === 'KeyC') {
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                waveforms.length = 0;
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            // Fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.02)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw waveforms
+            for (let i = waveforms.length - 1; i >= 0; i--) {
+                waveforms[i].update();
+                waveforms[i].draw();
+                
+                // Remove dead waveforms
+                if (waveforms[i].opacity <= 0) {
+                    waveforms.splice(i, 1);
+                }
+            }
+            
+            requestAnimationFrame(animate);
+        }
+
+        // Start
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        animate();
+    </script>
+</body>
+</html>
