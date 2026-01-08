@@ -76,6 +76,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // 90s synth library at /90s
+    if (pathname.startsWith('/90s')) {
+      log(`[Middleware] 90s route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Mixer module at /mixer
     if (pathname.startsWith('/mixer')) {
       log(`[Middleware] mixer route bypassed: ${pathname}`)
@@ -264,6 +270,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // 90s synth library at /90s
+    if (pathname.startsWith('/90s')) {
+      log(`[Middleware] intheamber.com 90s route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // Mixer module at /mixer
     if (pathname.startsWith('/mixer')) {
       log(`[Middleware] intheamber.com mixer route bypassed: ${pathname}`)
@@ -329,6 +341,12 @@ export function middleware(request: NextRequest) {
   // SPECIFIC FIX: Bypass SH-101 synth
   if (pathname === '/101' || pathname.startsWith('/101/')) {
     log(`[Middleware] SH-101 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass 90s synth library
+  if (pathname === '/90s' || pathname.startsWith('/90s/')) {
+    log(`[Middleware] 90s bypassed: ${pathname}`)
     return NextResponse.next()
   }
 

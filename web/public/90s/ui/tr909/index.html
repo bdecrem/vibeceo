@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>R9-D9 — SynthMachine</title>
+    <meta name="description" content="Web Audio drum machine inspired by the TR-909">
+    <meta property="og:title" content="R9-D9 Drum Machine">
+    <meta property="og:description" content="Web Audio drum machine inspired by the TR-909">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="https://kochi.to/909/og.png">
+    <meta property="og:url" content="https://kochi.to/909/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:image" content="https://kochi.to/909/og.png">
+    <link rel="stylesheet" href="./styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="panel">
+      <div class="header-row">
+        <h1>R9-D9</h1>
+      </div>
+      <section class="controls">
+        <!-- Pattern tabs -->
+        <div class="pattern-tabs">
+          <div class="tab-content active" data-tab="presets">
+            <select id="preset">
+              <option value="">— Presets —</option>
+            </select>
+          </div>
+          <div class="tab-content" data-tab="saved">
+            <select id="saved-patterns">
+              <option value="">— Saved —</option>
+            </select>
+            <button id="save-pattern" type="button">+</button>
+            <button id="delete-pattern" type="button">−</button>
+          </div>
+          <div class="tab-dots">
+            <button class="tab-dot active" data-tab="presets" title="Presets"></button>
+            <button class="tab-dot" data-tab="saved" title="Saved"></button>
+          </div>
+        </div>
+
+        <div class="controls-divider"></div>
+
+        <label>
+          BPM
+          <input id="bpm" type="number" min="37" max="290" step="1" value="128" />
+        </label>
+        <label>
+          Swing
+          <input id="swing" type="range" min="0" max="100" step="1" value="0" />
+          <span id="swing-value">0%</span>
+        </label>
+        <label>
+          Flam
+          <input id="flam" type="range" min="0" max="100" step="1" value="0" />
+          <span id="flam-value">0%</span>
+        </label>
+        <label>
+          Accent
+          <input id="accent" type="range" min="0" max="100" step="1" value="100" />
+          <span id="accent-value">100%</span>
+        </label>
+        <label>
+          Length
+          <select id="pattern-length">
+            <option value="4">4</option>
+            <option value="8">8</option>
+            <option value="12">12</option>
+            <option value="16" selected>16</option>
+          </select>
+        </label>
+        <label>
+          Scale
+          <select id="scale-mode">
+            <option value="16th">16th</option>
+            <option value="8th-triplet">8th Trip</option>
+            <option value="16th-triplet">16th Trip</option>
+            <option value="32nd">32nd</option>
+          </select>
+        </label>
+
+        <div class="controls-divider"></div>
+
+        <button id="play-toggle" type="button">Play</button>
+      </section>
+      <div id="status"></div>
+      <div class="step-page-toggle">
+        <button class="step-page-btn active" data-page="1">1-8</button>
+        <button class="step-page-btn" data-page="2">9-16</button>
+      </div>
+      <section id="sequencer" class="sequencer"></section>
+
+      <section class="voice-controls">
+        <h2>Voice Parameters</h2>
+        <div id="voice-params" class="params-grid"></div>
+      </section>
+
+      <div class="keyboard-hints">
+        <kbd>Space</kbd> Play/Stop &nbsp;|&nbsp;
+        <kbd>1</kbd>-<kbd>0</kbd> Trigger sounds (BD, SD, CP, RS, LT, MT, HT, CH, OH, CC)
+      </div>
+    </main>
+
+    <script type="module" src="../../dist/ui/tr909/app.js"></script>
+  </body>
+</html>
