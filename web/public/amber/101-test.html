@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SH-101 Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #d4a574;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    h1 { margin: 0; }
+    button {
+      background: #1a1a1a;
+      border: 2px solid #d4a574;
+      color: #d4a574;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button:hover {
+      background: #d4a574;
+      color: #0a0a0a;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    button.active {
+      background: #d4a574;
+      color: #0a0a0a;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .presets {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 600px;
+    }
+    .presets button {
+      padding: 8px 16px;
+      font-size: 12px;
+    }
+    .slider-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+    }
+    input[type="range"] {
+      width: 200px;
+      accent-color: #d4a574;
+    }
+    #status {
+      color: #2d9596;
+    }
+    .section {
+      text-align: center;
+    }
+    .section h3 {
+      color: #888;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>SH-101 Test</h1>
+  <p id="status">Click a preset to load, then PLAY</p>
+
+  <div class="section">
+    <h3>PRESETS</h3>
+    <div class="presets">
+      <button data-preset="classicLead">Classic Lead</button>
+      <button data-preset="fatBass">Fat Bass</button>
+      <button data-preset="acidLine">Acid Line</button>
+      <button data-preset="synthBrass">Synth Brass</button>
+      <button data-preset="arpPad">Arp Pad</button>
+      <button data-preset="zapBass">Zap Bass</button>
+      <button data-preset="shSequence">S&H Sequence</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button id="play" disabled>PLAY</button>
+    <button id="stop" disabled>STOP</button>
+  </div>
+
+  <div class="slider-group">
+    <label>Cutoff: <span id="cutoffVal">50%</span></label>
+    <input type="range" id="cutoff" min="0" max="100" value="50">
+  </div>
+
+  <div class="slider-group">
+    <label>Resonance: <span id="resVal">30%</span></label>
+    <input type="range" id="resonance" min="0" max="100" value="30">
+  </div>
+
+  <div class="slider-group">
+    <label>Env Mod: <span id="envVal">50%</span></label>
+    <input type="range" id="envMod" min="0" max="100" value="50">
+  </div>
+
+  <script type="module">
+    import { SH101Engine } from '/101/dist/machines/sh101/engine.js';
+    import { presets } from '/101/dist/machines/sh101/presets.js';
+
+    let synth = null;
+    let isPlaying = false;
+    let currentPreset = null;
+
+    const playBtn = document.getElementById('play');
+    const stopBtn = document.getElementById('stop');
+    const cutoffSlider = document.getElementById('cutoff');
+    const resSlider = document.getElementById('resonance');
+    const envSlider = document.getElementById('envMod');
+    const cutoffVal = document.getElementById('cutoffVal');
+    const resVal = document.getElementById('resVal');
+    const envVal = document.getElementById('envVal');
+    const status = document.getElementById('status');
+    const presetBtns = document.querySelectorAll('[data-preset]');
+
+    function init() {
+      if (!synth) {
+        synth = new SH101Engine();
+      }
+    }
+
+    function loadPreset(presetId) {
+      init();
+
+      const preset = presets[presetId];
+      if (!preset) return;
+
+      currentPreset = preset;
+
+      // Apply parameters
+      Object.entries(preset.parameters).forEach(([key, value]) => {
+        synth.setParameter(key, value);
+      });
+
+      // Set BPM
+      synth.setBpm(preset.bpm);
+
+      // Set pattern
+      synth.setPattern(preset.pattern);
+
+      // Update sliders to match preset
+      cutoffSlider.value = preset.parameters.cutoff * 100;
+      cutoffVal.textContent = `${Math.round(preset.parameters.cutoff * 100)}%`;
+
+      resSlider.value = preset.parameters.resonance * 100;
+      resVal.textContent = `${Math.round(preset.parameters.resonance * 100)}%`;
+
+      envSlider.value = preset.parameters.envMod * 100;
+      envVal.textContent = `${Math.round(preset.parameters.envMod * 100)}%`;
+
+      // Update button states
+      presetBtns.forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.preset === presetId);
+      });
+
+      playBtn.disabled = false;
+      status.textContent = `Loaded: ${preset.name} (${preset.bpm} BPM)`;
+    }
+
+    // Preset buttons
+    presetBtns.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const wasPlaying = isPlaying;
+        if (wasPlaying) {
+          synth.stopSequencer();
+        }
+        loadPreset(btn.dataset.preset);
+        if (wasPlaying) {
+          synth.startSequencer();
+        }
+      });
+    });
+
+    playBtn.addEventListener('click', async () => {
+      if (!synth || !currentPreset) return;
+
+      await synth.context.resume();
+      synth.startSequencer();
+      isPlaying = true;
+
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+      status.textContent = `Playing: ${currentPreset.name}`;
+    });
+
+    stopBtn.addEventListener('click', () => {
+      if (synth) {
+        synth.stopSequencer();
+        isPlaying = false;
+
+        playBtn.disabled = false;
+        stopBtn.disabled = true;
+        status.textContent = `Stopped: ${currentPreset?.name || ''}`;
+      }
+    });
+
+    cutoffSlider.addEventListener('input', () => {
+      const val = cutoffSlider.value / 100;
+      cutoffVal.textContent = `${cutoffSlider.value}%`;
+      if (synth) synth.setParameter('cutoff', val);
+    });
+
+    resSlider.addEventListener('input', () => {
+      const val = resSlider.value / 100;
+      resVal.textContent = `${resSlider.value}%`;
+      if (synth) synth.setParameter('resonance', val);
+    });
+
+    envSlider.addEventListener('input', () => {
+      const val = envSlider.value / 100;
+      envVal.textContent = `${envSlider.value}%`;
+      if (synth) synth.setParameter('envMod', val);
+    });
+  </script>
+</body>
+</html>
