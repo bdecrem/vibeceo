@@ -234,6 +234,18 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // TR-909 drum machine at /909
+    if (pathname.startsWith('/909')) {
+      log(`[Middleware] intheamber.com 909 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
+    // TB-303 bass synth at /303
+    if (pathname.startsWith('/303')) {
+      log(`[Middleware] intheamber.com 303 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // If path already starts with /amber/, don't double-prefix - pass through
     // This handles assets like /amber/amber-avatar.png and direct links
     if (pathname.startsWith('/amber/') || pathname === '/amber') {
