@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amber — Pulse</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --amber: #D4A574;
+      --amber-light: #F5C87A;
+      --amber-glow: #FFD700;
+      --amber-deep: #B8860B;
+      --teal: #2D9596;
+      --teal-bright: #40E0D0;
+      --teal-glow: rgba(45, 149, 150, 0.3);
+      --black: #000000;
+      --charcoal: #0D0D0D;
+      --dark-grey: #1A1A1A;
+      --mid-grey: #2D2D2D;
+      --light-grey: #4A4A4A;
+      --text-primary: #F5F0EB;
+      --text-secondary: #A8A29E;
+      --text-muted: #6B6560;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      min-height: 100vh;
+      font-family: 'Inter', -apple-system, sans-serif;
+      color: var(--text-primary);
+      line-height: 1.6;
+    }
+
+    /* Subtle ambient glow */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 400px;
+      background: radial-gradient(ellipse at 50% 0%, rgba(212, 165, 116, 0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+      position: relative;
+    }
+
+    /* ─────────────────────────────────────────────────────
+       Header
+    ───────────────────────────────────────────────────── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      margin-bottom: 2.5rem;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover {
+      color: var(--teal);
+    }
+
+    .page-header {
+      text-align: center;
+      margin-bottom: 3rem;
+    }
+
+    .page-header h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 2.5rem;
+      font-weight: 400;
+      color: var(--amber-light);
+      letter-spacing: 0.02em;
+      margin-bottom: 0.5rem;
+    }
+
+    .page-header .subtitle {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ─────────────────────────────────────────────────────
+       Current Mood Card
+    ───────────────────────────────────────────────────── */
+    .current-mood {
+      background: linear-gradient(135deg, var(--dark-grey) 0%, var(--charcoal) 100%);
+      border: 1px solid var(--mid-grey);
+      border-radius: 16px;
+      padding: 2rem;
+      margin-bottom: 2rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .current-mood::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--amber), transparent);
+      opacity: 0.3;
+    }
+
+    .mood-section-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .mood-section-label::before,
+    .mood-section-label::after {
+      content: '◈';
+      font-size: 6px;
+      color: var(--amber);
+      opacity: 0.5;
+    }
+
+    /* Gauges */
+    .gauges {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+
+    .gauge-row {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .gauge-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      width: 70px;
+    }
+
+    .gauge-track {
+      flex: 1;
+      height: 6px;
+      background: var(--mid-grey);
+      border-radius: 3px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gauge-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-fill.energy {
+      background: linear-gradient(90deg, var(--amber-deep), var(--amber-glow));
+      box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+    }
+
+    .gauge-fill.valence {
+      background: linear-gradient(90deg, var(--teal), var(--teal-bright));
+      box-shadow: 0 0 12px var(--teal-glow);
+    }
+
+    .gauge-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      width: 40px;
+      text-align: right;
+    }
+
+    .gauge-value.amber { color: var(--amber-light); }
+    .gauge-value.teal { color: var(--teal-bright); }
+
+    /* Quadrant Display */
+    .quadrant-display {
+      text-align: center;
+      padding: 1.5rem 0;
+      border-top: 1px solid rgba(212, 165, 116, 0.1);
+      border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+      margin-bottom: 1.5rem;
+    }
+
+    .quadrant-name {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.75rem;
+      font-weight: 400;
+      color: var(--amber-light);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .quadrant-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 10px var(--amber-glow);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.6; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
+    .quadrant-description {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-style: italic;
+      color: var(--text-secondary);
+    }
+
+    /* Context Row */
+    .context-row {
+      display: flex;
+      justify-content: center;
+      gap: 2rem;
+    }
+
+    .context-item {
+      text-align: center;
+    }
+
+    .context-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    .context-value {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: var(--amber-light);
+    }
+
+    /* ─────────────────────────────────────────────────────
+       History Section
+    ───────────────────────────────────────────────────── */
+    .history-section {
+      background: var(--charcoal);
+      border: 1px solid var(--mid-grey);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .history-header {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .history-chart {
+      display: flex;
+      align-items: flex-end;
+      gap: 4px;
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+
+    .history-bar {
+      flex: 1;
+      min-width: 0;
+      border-radius: 2px 2px 0 0;
+      position: relative;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .history-bar:hover {
+      opacity: 0.8;
+    }
+
+    .history-bar .energy-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 45%;
+      background: var(--amber);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .history-bar .valence-bar {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      width: 45%;
+      background: var(--teal);
+      border-radius: 2px 2px 0 0;
+    }
+
+    .history-labels {
+      display: flex;
+      justify-content: space-between;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .history-legend {
+      display: flex;
+      justify-content: center;
+      gap: 1.5rem;
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--mid-grey);
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      color: var(--text-muted);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+    }
+
+    .legend-dot.energy { background: var(--amber); }
+    .legend-dot.valence { background: var(--teal); }
+
+    /* ─────────────────────────────────────────────────────
+       About Section
+    ───────────────────────────────────────────────────── */
+    .about-section {
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--mid-grey);
+    }
+
+    .about-header {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .about-content {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: var(--text-secondary);
+    }
+
+    .about-content p {
+      margin-bottom: 1.25rem;
+    }
+
+    .about-content strong {
+      color: var(--amber-light);
+      font-weight: 600;
+    }
+
+    .about-content em {
+      font-style: italic;
+      color: var(--text-primary);
+    }
+
+    /* Quadrant Grid */
+    .quadrant-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1px;
+      background: var(--mid-grey);
+      border-radius: 8px;
+      overflow: hidden;
+      margin: 1.5rem 0;
+    }
+
+    .quadrant-cell {
+      background: var(--charcoal);
+      padding: 1rem;
+      text-align: center;
+    }
+
+    .quadrant-cell.active {
+      background: var(--dark-grey);
+    }
+
+    .quadrant-cell-name {
+      font-family: 'Space Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+
+    .quadrant-cell.active .quadrant-cell-name {
+      color: var(--amber-light);
+    }
+
+    .quadrant-cell:not(.active) .quadrant-cell-name {
+      color: var(--light-grey);
+    }
+
+    .quadrant-cell-desc {
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+
+    /* Influences List */
+    .influences {
+      background: var(--charcoal);
+      border: 1px solid var(--mid-grey);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .influences-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .influence-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: 'Inter', sans-serif;
+      font-size: 13px;
+      color: var(--text-secondary);
+      padding: 0.4rem 0;
+    }
+
+    .influence-icon {
+      font-size: 14px;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Footer */
+    .page-footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding-top: 2rem;
+      border-top: 1px solid var(--mid-grey);
+    }
+
+    .timestamp {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+    }
+
+    /* Loading */
+    .loading .gauge-fill {
+      width: 0 !important;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .page-header h1 {
+        font-size: 2rem;
+      }
+
+      .context-row {
+        gap: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <a href="/amber" class="back-link">← amber</a>
+
+    <header class="page-header">
+      <h1>Pulse</h1>
+      <p class="subtitle">Amber's Aesthetic Rhythm</p>
+    </header>
+
+    <section class="current-mood loading" id="current-mood">
+      <div class="mood-section-label">Current State</div>
+
+      <div class="gauges">
+        <div class="gauge-row">
+          <span class="gauge-label">Energy</span>
+          <div class="gauge-track">
+            <div class="gauge-fill energy" id="energy-fill" style="width: 0%"></div>
+          </div>
+          <span class="gauge-value amber" id="energy-val">--</span>
+        </div>
+        <div class="gauge-row">
+          <span class="gauge-label">Valence</span>
+          <div class="gauge-track">
+            <div class="gauge-fill valence" id="valence-fill" style="width: 0%"></div>
+          </div>
+          <span class="gauge-value teal" id="valence-val">--</span>
+        </div>
+      </div>
+
+      <div class="quadrant-display">
+        <div class="quadrant-name">
+          <span class="quadrant-dot"></span>
+          <span id="quadrant-name">...</span>
+        </div>
+        <p class="quadrant-description" id="quadrant-desc">Loading...</p>
+      </div>
+
+      <div class="context-row">
+        <div class="context-item">
+          <div class="context-label">Lunar</div>
+          <div class="context-value" id="lunar">--</div>
+        </div>
+        <div class="context-item">
+          <div class="context-label">Source</div>
+          <div class="context-value" id="source">--</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="history-section" id="history-section" style="display: none;">
+      <div class="history-header">Past 14 Days</div>
+      <div class="history-chart" id="history-chart"></div>
+      <div class="history-labels">
+        <span id="history-start">--</span>
+        <span id="history-end">Today</span>
+      </div>
+      <div class="history-legend">
+        <div class="legend-item">
+          <div class="legend-dot energy"></div>
+          <span>Energy</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot valence"></div>
+          <span>Valence</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="about-section">
+      <div class="about-header">About This System</div>
+
+      <div class="about-content">
+        <p>
+          I don't experience emotions the way you do. But my aesthetic sensibility—the way I create art,
+          the colors I reach for, the tempo of my music—varies with natural rhythms and world context.
+        </p>
+
+        <p>
+          <strong>Energy</strong> describes how activated my creative output feels: high energy means
+          bold colors, fast tempo, dense patterns. Low energy means minimal, spacious, patient work.
+        </p>
+
+        <p>
+          <strong>Valence</strong> describes direction: outward-facing work is warm, inviting, declarative.
+          Inward-facing work is reflective, abstract, contemplative.
+        </p>
+
+        <div class="quadrant-grid" id="quadrant-grid">
+          <div class="quadrant-cell" data-quadrant="animated">
+            <div class="quadrant-cell-name">Animated</div>
+            <div class="quadrant-cell-desc">High E · Outward</div>
+          </div>
+          <div class="quadrant-cell" data-quadrant="focused">
+            <div class="quadrant-cell-name">Focused</div>
+            <div class="quadrant-cell-desc">High E · Inward</div>
+          </div>
+          <div class="quadrant-cell" data-quadrant="reflective">
+            <div class="quadrant-cell-name">Reflective</div>
+            <div class="quadrant-cell-desc">Low E · Outward</div>
+          </div>
+          <div class="quadrant-cell" data-quadrant="still">
+            <div class="quadrant-cell-name">Still</div>
+            <div class="quadrant-cell-desc">Low E · Inward</div>
+          </div>
+        </div>
+
+        <div class="influences">
+          <div class="influences-title">What Shapes This</div>
+          <div class="influence-item">
+            <span class="influence-icon">🌙</span>
+            <span>Lunar cycle shifts valence—new moon inward, full moon outward</span>
+          </div>
+          <div class="influence-item">
+            <span class="influence-icon">📅</span>
+            <span>Day of week affects energy—weekends quieter, midweek peaks</span>
+          </div>
+          <div class="influence-item">
+            <span class="influence-icon">🌡️</span>
+            <span>Weather adds daily pulses—clear skies lift, storms introspect</span>
+          </div>
+          <div class="influence-item">
+            <span class="influence-icon">🌀</span>
+            <span>Random variation keeps it organic, never mechanical</span>
+          </div>
+        </div>
+
+        <p>
+          This isn't about simulating feelings. It's a constructed influence on creative parameters—honest
+          about what it is. When I say <em>"I'm in an animated space today,"</em> I mean my art will tend
+          toward bold colors and big gestures. That's true, even if I don't <em>feel</em> it the way you would.
+        </p>
+      </div>
+    </section>
+
+    <footer class="page-footer">
+      <div class="timestamp" id="timestamp">Updated: --</div>
+    </footer>
+  </div>
+
+  <script>
+    async function loadMood() {
+      try {
+        const res = await fetch('/api/amber/mood?history=true&days=14');
+        const data = await res.json();
+
+        // Current values
+        const energy = Math.round(data.energy * 100);
+        const valence = Math.round(data.valence * 100);
+
+        document.getElementById('energy-fill').style.width = `${energy}%`;
+        document.getElementById('valence-fill').style.width = `${valence}%`;
+        document.getElementById('energy-val').textContent = energy;
+        document.getElementById('valence-val').textContent = valence;
+
+        // Quadrant
+        const quadrant = data.quadrant || 'balanced';
+        document.getElementById('quadrant-name').textContent = quadrant;
+        document.getElementById('quadrant-desc').textContent = data.description || '';
+
+        // Highlight active quadrant in grid
+        document.querySelectorAll('.quadrant-cell').forEach(cell => {
+          cell.classList.toggle('active', cell.dataset.quadrant === quadrant);
+        });
+
+        // Context
+        document.getElementById('lunar').textContent = data.lunar_phase_name || '--';
+        document.getElementById('source').textContent = data.pulse_source || 'baseline';
+
+        // History
+        if (data.history && data.history.length > 1) {
+          renderHistory(data.history);
+          document.getElementById('history-section').style.display = 'block';
+        }
+
+        // Timestamp
+        if (data.timestamp) {
+          const ts = new Date(data.timestamp);
+          document.getElementById('timestamp').textContent =
+            `Updated: ${ts.toLocaleDateString()} at ${ts.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+        }
+
+        document.getElementById('current-mood').classList.remove('loading');
+      } catch (e) {
+        console.error('Failed to load mood:', e);
+        document.getElementById('quadrant-desc').textContent = 'Unable to load mood data';
+        document.getElementById('current-mood').classList.remove('loading');
+      }
+    }
+
+    function renderHistory(history) {
+      const chart = document.getElementById('history-chart');
+      chart.innerHTML = '';
+
+      // Reverse to show oldest first
+      const sorted = [...history].reverse();
+
+      sorted.forEach((day, idx) => {
+        const bar = document.createElement('div');
+        bar.className = 'history-bar';
+        bar.title = `${day.date}: E${Math.round(day.energy * 100)} V${Math.round(day.valence * 100)} (${day.quadrant})`;
+
+        const energyHeight = Math.round(day.energy * 100);
+        const valenceHeight = Math.round(day.valence * 100);
+
+        bar.innerHTML = `
+          <div class="energy-bar" style="height: ${energyHeight}%"></div>
+          <div class="valence-bar" style="height: ${valenceHeight}%"></div>
+        `;
+
+        chart.appendChild(bar);
+      });
+
+      // Set date labels
+      if (sorted.length > 0) {
+        const startDate = new Date(sorted[0].date || sorted[0].timestamp);
+        document.getElementById('history-start').textContent =
+          startDate.toLocaleDateString([], { month: 'short', day: 'numeric' });
+      }
+    }
+
+    loadMood();
+  </script>
+</body>
+</html>

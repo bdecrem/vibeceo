@@ -40,6 +40,69 @@ interface Artifact {
   modifiedAt: string;
 }
 
+// Mood Widget Component
+function MoodWidget() {
+  const [mood, setMood] = useState<{
+    energy: number;
+    valence: number;
+    quadrant: string;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/amber/mood')
+      .then(res => res.json())
+      .then(data => {
+        setMood({
+          energy: Math.round(data.energy * 100),
+          valence: Math.round(data.valence * 100),
+          quadrant: data.quadrant || 'steady',
+        });
+      })
+      .catch(() => {
+        // Fallback
+        setMood({ energy: 65, valence: 95, quadrant: 'animated' });
+      });
+  }, []);
+
+  return (
+    <a href="/amber/mood/" className="mood-widget" title="Amber's current mood">
+      <div className="mood-header">
+        <span className="mood-deco">◈</span>
+        <span className="mood-title">PULSE</span>
+        <span className="mood-deco">◈</span>
+      </div>
+      <div className="mood-gauges">
+        <div className="mood-gauge-row">
+          <span className="mood-gauge-label">E</span>
+          <div className="mood-gauge-track">
+            <div
+              className="mood-gauge-fill energy"
+              style={{ width: mood ? `${mood.energy}%` : '0%' }}
+            />
+          </div>
+          <span className="mood-gauge-value">{mood?.energy ?? '--'}</span>
+        </div>
+        <div className="mood-gauge-row">
+          <span className="mood-gauge-label">V</span>
+          <div className="mood-gauge-track">
+            <div
+              className="mood-gauge-fill valence"
+              style={{ width: mood ? `${mood.valence}%` : '0%' }}
+            />
+          </div>
+          <span className="mood-gauge-value teal">{mood?.valence ?? '--'}</span>
+        </div>
+      </div>
+      <div className="mood-quadrant">
+        <span className="mood-quadrant-bracket">‹</span>
+        <div className="mood-quadrant-dot" />
+        <span className="mood-quadrant-text">{mood?.quadrant ?? '...'}</span>
+        <span className="mood-quadrant-bracket">›</span>
+      </div>
+    </a>
+  );
+}
+
 export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; artifacts?: Artifact[] }) {
   const { profile, posts } = data;
   const [selectedPost, setSelectedPost] = useState<Post | null>(null);
@@ -807,8 +870,193 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           }
         }
 
+        /* Mood Widget - Fixed top right */
+        .mood-widget {
+          position: fixed;
+          top: 6rem;
+          right: 1.5rem;
+          z-index: 100;
+          width: 140px;
+          padding: 10px 14px 12px;
+          background: linear-gradient(135deg, rgba(20, 18, 16, 0.97), rgba(10, 9, 8, 0.98));
+          border: 1px solid rgba(212, 165, 116, 0.15);
+          border-radius: 8px;
+          text-decoration: none;
+          font-family: 'Space Mono', 'SF Mono', monospace;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        }
+
+        .mood-widget::before {
+          content: '';
+          position: absolute;
+          inset: -1px;
+          border-radius: 9px;
+          background: radial-gradient(
+            ellipse at 50% 0%,
+            rgba(212, 165, 116, 0.1) 0%,
+            transparent 70%
+          );
+          opacity: 1;
+          pointer-events: none;
+        }
+
+        .mood-widget:hover {
+          transform: translateY(-2px);
+          border-color: rgba(212, 165, 116, 0.35);
+          box-shadow: 0 8px 32px rgba(212, 165, 116, 0.12);
+        }
+
+        .mood-header {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          margin-bottom: 10px;
+          padding-bottom: 8px;
+          border-bottom: 1px solid rgba(212, 165, 116, 0.1);
+        }
+
+        .mood-deco {
+          font-size: 8px;
+          color: rgba(212, 165, 116, 0.4);
+        }
+
+        .mood-title {
+          font-size: 9px;
+          letter-spacing: 0.2em;
+          color: rgba(212, 165, 116, 0.6);
+          text-transform: uppercase;
+        }
+
+        .mood-gauges {
+          margin-bottom: 10px;
+        }
+
+        .mood-gauge-row {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 6px;
+        }
+
+        .mood-gauge-row:last-child {
+          margin-bottom: 0;
+        }
+
+        .mood-gauge-label {
+          font-size: 8px;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          color: #6B6560;
+          width: 10px;
+          flex-shrink: 0;
+        }
+
+        .mood-gauge-track {
+          flex: 1;
+          height: 3px;
+          background: rgba(45, 45, 45, 0.6);
+          border-radius: 2px;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .mood-gauge-fill {
+          position: absolute;
+          left: 0;
+          top: 0;
+          height: 100%;
+          border-radius: 2px;
+          transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .mood-gauge-fill.energy {
+          background: linear-gradient(90deg, #B8860B, #FFD700);
+          box-shadow: 0 0 8px rgba(255, 215, 0, 0.35);
+        }
+
+        .mood-gauge-fill.valence {
+          background: linear-gradient(90deg, #2D9596, #40E0D0);
+          box-shadow: 0 0 8px rgba(64, 224, 208, 0.35);
+        }
+
+        .mood-gauge-value {
+          font-size: 9px;
+          font-weight: 700;
+          color: #F5C87A;
+          width: 20px;
+          text-align: right;
+          flex-shrink: 0;
+        }
+
+        .mood-gauge-value.teal {
+          color: #40E0D0;
+        }
+
+        .mood-quadrant {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+        }
+
+        .mood-quadrant-bracket {
+          font-size: 10px;
+          color: rgba(212, 165, 116, 0.3);
+        }
+
+        .mood-quadrant-dot {
+          width: 5px;
+          height: 5px;
+          border-radius: 50%;
+          background: #D4A574;
+          box-shadow: 0 0 6px #FFD700;
+          animation: moodBreathe 3s ease-in-out infinite;
+        }
+
+        @keyframes moodBreathe {
+          0%, 100% { opacity: 0.6; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.15); }
+        }
+
+        .mood-quadrant-text {
+          font-size: 9px;
+          letter-spacing: 0.06em;
+          text-transform: lowercase;
+          color: #DDB892;
+        }
+
         /* Responsive */
         @media (max-width: 640px) {
+          .mood-widget {
+            top: 0.75rem;
+            right: 0.75rem;
+            width: 120px;
+            padding: 8px 10px 10px;
+          }
+
+          .mood-header {
+            margin-bottom: 8px;
+            padding-bottom: 6px;
+          }
+
+          .mood-title {
+            font-size: 8px;
+          }
+
+          .mood-deco {
+            font-size: 7px;
+          }
+
+          .mood-gauge-value {
+            font-size: 8px;
+          }
+
+          .mood-quadrant-text {
+            font-size: 8px;
+          }
+
           .amber-header {
             flex-direction: column;
             text-align: center;
@@ -827,6 +1075,9 @@ export default function AmberBlog({ data, artifacts = [] }: { data: BlogData; ar
           }
         }
       `}</style>
+
+      {/* Mood Widget - Fixed top right */}
+      <MoodWidget />
 
       <div className="amber-container">
         {/* Header */}
