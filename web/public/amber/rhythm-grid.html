@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RHYTHM GRID</title>
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="RHYTHM GRID">
+    <meta property="og:description" content="Paint beats, make rhythms">
+    <meta property="og:image" content="https://intheamber.com/rhythm-grid-og.png">
+    <meta property="og:url" content="https://intheamber.com/rhythm-grid.html">
+    <meta property="og:type" content="website">
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="RHYTHM GRID">
+    <meta name="twitter:description" content="Paint beats, make rhythms">
+    <meta name="twitter:image" content="https://intheamber.com/rhythm-grid-og.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            letter-spacing: 4px;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #2D9596;
+            margin-bottom: 40px;
+            letter-spacing: 2px;
+        }
+
+        #gridContainer {
+            display: grid;
+            grid-template-columns: repeat(16, 1fr);
+            gap: 6px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(13, 13, 13, 0.8);
+            border: 2px solid #D4A574;
+            box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: rgba(45, 149, 150, 0.1);
+            border: 1px solid rgba(45, 149, 150, 0.3);
+            cursor: pointer;
+            transition: all 0.1s;
+        }
+
+        .cell:hover {
+            background: rgba(45, 149, 150, 0.3);
+            border-color: #2D9596;
+        }
+
+        .cell.active {
+            background: #D4A574;
+            border-color: #FFD700;
+            box-shadow: 0 0 15px rgba(212, 165, 116, 0.6);
+        }
+
+        .cell.playing {
+            background: #FFD700;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+            transform: scale(1.15);
+        }
+
+        .cell.active.playing {
+            background: #FFD700;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 1);
+        }
+
+        .controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        button {
+            background: rgba(212, 165, 116, 0.2);
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            font-family: 'Space Mono', monospace;
+            font-size: 1rem;
+            padding: 12px 30px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(212, 165, 116, 0.4);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+        }
+
+        button.active {
+            background: #D4A574;
+            color: #000;
+            box-shadow: 0 0 25px rgba(212, 165, 116, 0.6);
+        }
+
+        .clear-btn {
+            border-color: #7B68EE;
+            color: #7B68EE;
+        }
+
+        .clear-btn:hover {
+            background: rgba(123, 104, 238, 0.4);
+            box-shadow: 0 0 20px rgba(123, 104, 238, 0.4);
+        }
+
+        .info {
+            margin-top: 30px;
+            font-size: 0.85rem;
+            color: #2D9596;
+            text-align: center;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .cell {
+                width: 30px;
+                height: 30px;
+            }
+            
+            #gridContainer {
+                gap: 4px;
+                padding: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>RHYTHM GRID</h1>
+    <div class="subtitle">PAINT BEATS, MAKE RHYTHMS</div>
+    
+    <div id="gridContainer"></div>
+    
+    <div class="controls">
+        <button id="playBtn">PLAY</button>
+        <button id="clearBtn" class="clear-btn">CLEAR</button>
+    </div>
+    
+    <div class="info">
+        Click cells to toggle beats. Top rows = high tones, bottom rows = low tones.<br>
+        Each column is a step in time. Press PLAY and listen.
+    </div>
+
+    <script>
+        const ROWS = 8;
+        const COLS = 16;
+        const TEMPO = 120; // BPM
+        const STEP_INTERVAL = (60 / TEMPO) * 1000 / 4; // 16th notes
+        
+        let audioContext;
+        let isPlaying = false;
+        let currentStep = 0;
+        let intervalId = null;
+        let grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+        
+        // Frequency mapping (pentatonic-ish scale)
+        const frequencies = [
+            880,  // A5
+            660,  // E5
+            550,  // C#5
+            440,  // A4
+            330,  // E4
+            275,  // C#4
+            220,  // A3
+            165   // E3
+        ];
+
+        // Initialize grid
+        const container = document.getElementById('gridContainer');
+        const cells = [];
+
+        for (let row = 0; row < ROWS; row++) {
+            cells[row] = [];
+            for (let col = 0; col < COLS; col++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.row = row;
+                cell.dataset.col = col;
+                
+                cell.addEventListener('click', () => {
+                    grid[row][col] = !grid[row][col];
+                    updateCellDisplay(row, col);
+                });
+                
+                container.appendChild(cell);
+                cells[row][col] = cell;
+            }
+        }
+
+        function updateCellDisplay(row, col) {
+            if (grid[row][col]) {
+                cells[row][col].classList.add('active');
+            } else {
+                cells[row][col].classList.remove('active');
+            }
+        }
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playTone(frequency, duration = 0.1) {
+            if (!audioContext) return;
+            
+            const now = audioContext.currentTime;
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+            
+            osc.frequency.value = frequency;
+            osc.type = 'square';
+            
+            gain.gain.setValueAtTime(0.15, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+            
+            osc.start(now);
+            osc.stop(now + duration);
+        }
+
+        function step() {
+            // Clear previous step highlighting
+            for (let row = 0; row < ROWS; row++) {
+                cells[row][currentStep].classList.remove('playing');
+            }
+            
+            // Advance step
+            currentStep = (currentStep + 1) % COLS;
+            
+            // Highlight current column and play active cells
+            for (let row = 0; row < ROWS; row++) {
+                cells[row][currentStep].classList.add('playing');
+                
+                if (grid[row][currentStep]) {
+                    playTone(frequencies[row]);
+                }
+            }
+        }
+
+        document.getElementById('playBtn').addEventListener('click', () => {
+            initAudio();
+            
+            if (isPlaying) {
+                // Stop
+                clearInterval(intervalId);
+                isPlaying = false;
+                document.getElementById('playBtn').classList.remove('active');
+                document.getElementById('playBtn').textContent = 'PLAY';
+                
+                // Clear playback highlighting
+                for (let row = 0; row < ROWS; row++) {
+                    for (let col = 0; col < COLS; col++) {
+                        cells[row][col].classList.remove('playing');
+                    }
+                }
+            } else {
+                // Play
+                currentStep = -1; // Will increment to 0 on first step
+                isPlaying = true;
+                document.getElementById('playBtn').classList.add('active');
+                document.getElementById('playBtn').textContent = 'STOP';
+                
+                step(); // Play first step immediately
+                intervalId = setInterval(step, STEP_INTERVAL);
+            }
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+            
+            for (let row = 0; row < ROWS; row++) {
+                for (let col = 0; col < COLS; col++) {
+                    cells[row][col].classList.remove('active');
+                }
+            }
+        });
+
+        // Add some seed pattern to start
+        const seedPattern = [
+            [0, 0], [0, 4], [0, 8], [0, 12],
+            [2, 2], [2, 6], [2, 10], [2, 14],
+            [4, 0], [4, 8],
+            [6, 4], [6, 12]
+        ];
+
+        seedPattern.forEach(([row, col]) => {
+            grid[row][col] = true;
+            updateCellDisplay(row, col);
+        });
+    </script>
+</body>
+</html>
