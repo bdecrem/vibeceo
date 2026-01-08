@@ -70,6 +70,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // SH-101 synth at /101
+    if (pathname.startsWith('/101')) {
+      log(`[Middleware] 101 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // /links is the login-wall-free CS page, not /kochi/links
     if (pathname === '/links' || pathname.startsWith('/links/')) {
       log(`[Middleware] Links route bypassed: ${pathname}`)
@@ -246,6 +252,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // SH-101 synth at /101
+    if (pathname.startsWith('/101')) {
+      log(`[Middleware] intheamber.com 101 route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // If path already starts with /amber/, don't double-prefix - pass through
     // This handles assets like /amber/amber-avatar.png and direct links
     if (pathname.startsWith('/amber/') || pathname === '/amber') {
@@ -299,6 +311,12 @@ export function middleware(request: NextRequest) {
   // SPECIFIC FIX: Bypass TB-303 bass synth
   if (pathname === '/303' || pathname.startsWith('/303/')) {
     log(`[Middleware] TB-303 bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
+  // SPECIFIC FIX: Bypass SH-101 synth
+  if (pathname === '/101' || pathname.startsWith('/101/')) {
+    log(`[Middleware] SH-101 bypassed: ${pathname}`)
     return NextResponse.next()
   }
 
