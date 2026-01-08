@@ -8,6 +8,8 @@ Web Audio synthesizer libraries for creating electronic music programmatically.
 |------------|------|----------|---------------|
 | **TR-909** | Drum machine | `/909/` | `/909/dist/api/index.js` |
 | **TB-303** | Bass synthesizer | `/303/` | [TB303-LIBRARY.md](/303/TB303-LIBRARY.md) |
+| **SH-101** | Lead synthesizer | `/101/` | [SH101-LIBRARY.md](/101/SH101-LIBRARY.md) |
+| **Mixer** | Session + Effects | `/mixer/` | [README.md](/mixer/README.md) |
 
 ## Quick Start
 
@@ -142,6 +144,102 @@ function stop() {
 
 ---
 
+## Mixer & Effects
+
+For multi-track mixing with sidechain, EQ, reverb, and combined rendering to WAV.
+
+### Quick Start with Session
+
+```javascript
+import { Session } from '/mixer/dist/session.js';
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+// Session manages shared context, BPM, and routing
+const session = new Session({ bpm: 128 });
+
+// Add instruments
+const drums = new TR909Engine({ context: session.context });
+const bass = new TB303Engine({ context: session.context });
+
+session.add('drums', drums);
+session.add('bass', bass);
+
+// Sidechain: bass ducks when kick hits
+const kickOutput = session.channel('drums').getVoiceOutput('kick');
+session.channel('bass').duck({ trigger: kickOutput, amount: 0.6 });
+
+// EQ on bass
+session.channel('bass').eq({ preset: 'acidBass' });
+
+// Master reverb
+await session.master.reverb({ preset: 'plate', mix: 0.15 });
+
+// Volume control
+session.channel('drums').volume = 0.9;
+session.channel('bass').volume = 0.75;
+
+// Play live
+await session.play();
+
+// Or render to single WAV
+const { wav } = await session.render({ bars: 8 });
+```
+
+### Available Effects
+
+| Effect | Description | Presets |
+|--------|-------------|---------|
+| **Ducker** | Sidechain gain ducking | `tight`, `pump` |
+| **EQ** | 4-band parametric | `acidBass`, `crispHats`, `warmPad`, `master` |
+| **Reverb** | Convolution reverb | `plate`, `room` |
+
+### Effect Examples
+
+**Sidechain Ducking:**
+```javascript
+session.channel('bass').duck({
+  trigger: session.channel('drums').getVoiceOutput('kick'),
+  amount: 0.6,    // Duck 60%
+  release: 150,   // 150ms release
+});
+```
+
+**EQ with Preset:**
+```javascript
+session.channel('bass').eq({ preset: 'acidBass' });
+// Or custom: eq({ highpass: 60, midGain: 3, midFreq: 800 })
+```
+
+**Reverb:**
+```javascript
+await session.master.reverb({ preset: 'plate', mix: 0.15 });
+```
+
+### Effect Presets Reference
+
+**EQ Presets:**
+| Preset | Description |
+|--------|-------------|
+| `acidBass` | Cuts <60Hz mud, +3dB at 800Hz bite, -2dB harsh highs |
+| `crispHats` | Highpass 200Hz, +2dB presence at 5kHz |
+| `warmPad` | Low-end warmth, smooth highs |
+| `master` | Gentle 30Hz lowcut, +1dB air at 12kHz |
+
+**Ducker Presets:**
+| Preset | Character |
+|--------|-----------|
+| `tight` | Fast attack/release, transparent |
+| `pump` | Slower release, audible pumping |
+
+**Reverb Presets:**
+| Preset | Character |
+|--------|-----------|
+| `plate` | Bright, tight, sits behind mix |
+| `room` | Natural small space |
+
+---
+
 ## Available Presets
 
 ### TR-909 Presets
@@ -215,12 +313,31 @@ web/public/
 │   │       └── presets.js        # Preset patterns
 │   └── ui/tr909/index.html       # Interactive UI
 │
-└── 303/
+├── 303/
+│   ├── dist/
+│   │   ├── api/index.js          # TB303Controller, renderPresetToWav
+│   │   └── machines/tb303/
+│   │       ├── engine.js         # TB303Engine
+│   │       └── presets.js        # Preset patterns
+│   ├── ui/tb303/index.html       # Interactive UI
+│   └── TB303-LIBRARY.md          # Detailed documentation
+│
+├── 101/
+│   ├── dist/
+│   │   ├── api/index.js          # SH101Controller
+│   │   └── machines/sh101/
+│   │       ├── engine.js         # SH101Engine
+│   │       └── presets.js        # Preset sounds
+│   ├── ui/sh101/index.html       # Interactive UI
+│   └── SH101-LIBRARY.md          # Detailed documentation
+│
+└── mixer/
     ├── dist/
-    │   ├── api/index.js          # TB303Controller, renderPresetToWav
-    │   └── machines/tb303/
-    │       ├── engine.js         # TB303Engine
-    │       └── presets.js        # Preset patterns
-    ├── ui/tb303/index.html       # Interactive UI
-    └── TB303-LIBRARY.md          # Detailed documentation
+    │   ├── session.js            # Session class
+    │   └── effects/
+    │       ├── base.js           # Effect base class
+    │       ├── ducker.js         # Sidechain ducking
+    │       ├── eq.js             # 4-band EQ
+    │       └── reverb.js         # Convolution reverb
+    └── README.md                 # Mixer documentation
 ```

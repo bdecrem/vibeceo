@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mixer Test</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #fff;
+    }
+    h1 { color: #0af; }
+    .test {
+      background: #2a2a2a;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 8px;
+    }
+    .pass { border-left: 4px solid #0f0; }
+    .fail { border-left: 4px solid #f00; }
+    button {
+      background: #0af;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover { background: #0cf; }
+    #results { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Mixer Test Harness</h1>
+  <p>Testing Effect base class and module imports.</p>
+
+  <button onclick="runTests()">Run Tests</button>
+  <button onclick="testAudio()">Test Audio</button>
+
+  <div id="results"></div>
+
+  <script type="module">
+    import { Effect } from './dist/effects/base.js';
+
+    const results = document.getElementById('results');
+
+    function log(name, passed, detail = '') {
+      const div = document.createElement('div');
+      div.className = `test ${passed ? 'pass' : 'fail'}`;
+      div.innerHTML = `<strong>${passed ? '✓' : '✗'} ${name}</strong>${detail ? `<br><small>${detail}</small>` : ''}`;
+      results.appendChild(div);
+    }
+
+    window.runTests = async function() {
+      results.innerHTML = '';
+
+      // Test 1: Effect class exists
+      log('Effect class imports', typeof Effect === 'function');
+
+      // Test 2: Can instantiate with AudioContext
+      let effect;
+      try {
+        const ctx = new AudioContext();
+        effect = new Effect(ctx);
+        log('Effect instantiation', true);
+      } catch (e) {
+        log('Effect instantiation', false, e.message);
+      }
+
+      // Test 3: Has input/output nodes
+      const hasIO = effect &&
+        effect.input instanceof AudioNode &&
+        effect.output instanceof AudioNode;
+      log('Input/output nodes', hasIO);
+
+      // Test 4: setParameter exists
+      log('setParameter method', typeof effect?.setParameter === 'function');
+
+      // Test 5: getParameters exists
+      log('getParameters method', typeof effect?.getParameters === 'function');
+
+      // Test 6: setPreset exists
+      log('setPreset method', typeof effect?.setPreset === 'function');
+
+      // Test 7: dispose exists
+      log('dispose method', typeof effect?.dispose === 'function');
+
+      // Test 8: bypass property
+      log('bypass property', 'bypass' in (effect || {}));
+    };
+
+    window.testAudio = async function() {
+      results.innerHTML = '';
+
+      try {
+        const ctx = new AudioContext();
+        await ctx.resume();
+
+        // Create oscillator -> effect -> destination
+        const osc = ctx.createOscillator();
+        const effect = new Effect(ctx);
+
+        osc.connect(effect.input);
+        effect.input.connect(effect.output); // Base class passthrough
+        effect.output.connect(ctx.destination);
+
+        osc.frequency.value = 440;
+        osc.start();
+
+        log('Audio routing', true, 'Playing 440Hz tone for 0.5s');
+
+        setTimeout(() => {
+          osc.stop();
+          effect.dispose();
+          log('Audio cleanup', true);
+        }, 500);
+
+      } catch (e) {
+        log('Audio test', false, e.message);
+      }
+    };
+  </script>
+</body>
+</html>
