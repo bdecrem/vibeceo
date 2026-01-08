@@ -13,7 +13,7 @@ export class Bass303 extends Voice {
         // Parameters
         this.waveform = 'sawtooth';
         this.cutoff = 0.5;
-        this.resonance = 0.5;
+        this.resonance = 0.25; // Lower default - E2's diode ladder is aggressive
         this.envMod = 0.5;
         this.decay = 0.5;
         this.accent = 0.8;
