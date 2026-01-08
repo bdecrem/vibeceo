@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Amber Mood</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --amber: #D4A574;
+      --amber-light: #F5C87A;
+      --amber-glow: #FFD700;
+      --amber-deep: #B8860B;
+      --teal: #2D9596;
+      --teal-bright: #40E0D0;
+      --black: #000000;
+      --charcoal: #0D0D0D;
+      --dark-grey: #1A1A1A;
+      --mid-grey: #2D2D2D;
+      --text-grey: #8A8A8A;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--black);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ─────────────────────────────────────────────────────
+       The Widget
+       A compact instrument from a future control panel
+    ───────────────────────────────────────────────────── */
+    .mood-widget {
+      position: relative;
+      width: 140px;
+      padding: 14px 16px;
+      background: linear-gradient(135deg, rgba(26, 26, 26, 0.95), rgba(13, 13, 13, 0.98));
+      border: 1px solid var(--mid-grey);
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      text-decoration: none;
+      display: block;
+    }
+
+    /* Ambient glow - shifts based on mood */
+    .mood-widget::before {
+      content: '';
+      position: absolute;
+      inset: -1px;
+      border-radius: 11px;
+      background: radial-gradient(
+        ellipse at 50% 0%,
+        rgba(212, 165, 116, 0.15) 0%,
+        transparent 60%
+      );
+      opacity: 0.8;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+
+    .mood-widget:hover {
+      transform: translateY(-2px);
+      border-color: var(--amber-deep);
+    }
+
+    .mood-widget:hover::before {
+      opacity: 1;
+      background: radial-gradient(
+        ellipse at 50% 0%,
+        rgba(212, 165, 116, 0.25) 0%,
+        transparent 60%
+      );
+    }
+
+    /* ─────────────────────────────────────────────────────
+       Gauges - minimal horizontal bars
+    ───────────────────────────────────────────────────── */
+    .gauge-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .gauge-row:last-of-type {
+      margin-bottom: 12px;
+    }
+
+    .gauge-label {
+      font-size: 8px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-grey);
+      width: 24px;
+      flex-shrink: 0;
+    }
+
+    .gauge-track {
+      flex: 1;
+      height: 3px;
+      background: var(--mid-grey);
+      border-radius: 2px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .gauge-fill {
+      position: absolute;
+      left: 0;
+      top: 0;
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .gauge-fill.energy {
+      background: linear-gradient(90deg, var(--amber-deep), var(--amber-glow));
+      box-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+    }
+
+    .gauge-fill.valence {
+      background: linear-gradient(90deg, var(--teal), var(--teal-bright));
+      box-shadow: 0 0 8px rgba(45, 149, 150, 0.4);
+    }
+
+    .gauge-value {
+      font-size: 9px;
+      font-weight: 700;
+      color: var(--amber-light);
+      width: 22px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .gauge-value.teal {
+      color: var(--teal-bright);
+    }
+
+    /* ─────────────────────────────────────────────────────
+       Quadrant badge - the current state
+    ───────────────────────────────────────────────────── */
+    .quadrant {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .quadrant-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--amber);
+      box-shadow: 0 0 6px var(--amber-glow);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.7; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.1); }
+    }
+
+    .quadrant-text {
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      color: var(--amber-light);
+    }
+
+    /* ─────────────────────────────────────────────────────
+       Loading state
+    ───────────────────────────────────────────────────── */
+    .mood-widget.loading .gauge-fill {
+      width: 0 !important;
+      animation: pulse-load 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-load {
+      0%, 100% { opacity: 0.3; }
+      50% { opacity: 0.7; }
+    }
+
+    .mood-widget.loading .quadrant-dot {
+      animation: none;
+      opacity: 0.3;
+    }
+  </style>
+</head>
+<body>
+  <a href="/amber/mood/" class="mood-widget loading" id="widget">
+    <div class="gauge-row">
+      <span class="gauge-label">E</span>
+      <div class="gauge-track">
+        <div class="gauge-fill energy" id="energy-fill" style="width: 0%"></div>
+      </div>
+      <span class="gauge-value" id="energy-val">--</span>
+    </div>
+    <div class="gauge-row">
+      <span class="gauge-label">V</span>
+      <div class="gauge-track">
+        <div class="gauge-fill valence" id="valence-fill" style="width: 0%"></div>
+      </div>
+      <span class="gauge-value teal" id="valence-val">--</span>
+    </div>
+    <div class="quadrant">
+      <div class="quadrant-dot"></div>
+      <span class="quadrant-text" id="quadrant">...</span>
+    </div>
+  </a>
+
+  <script>
+    async function loadMood() {
+      try {
+        const res = await fetch('/api/amber/mood');
+        const data = await res.json();
+
+        const energy = Math.round(data.energy * 100);
+        const valence = Math.round(data.valence * 100);
+
+        document.getElementById('energy-fill').style.width = `${energy}%`;
+        document.getElementById('valence-fill').style.width = `${valence}%`;
+        document.getElementById('energy-val').textContent = energy;
+        document.getElementById('valence-val').textContent = valence;
+        document.getElementById('quadrant').textContent = data.quadrant || 'steady';
+        document.getElementById('widget').classList.remove('loading');
+      } catch (e) {
+        // Fallback demo
+        document.getElementById('energy-fill').style.width = '65%';
+        document.getElementById('valence-fill').style.width = '95%';
+        document.getElementById('energy-val').textContent = '65';
+        document.getElementById('valence-val').textContent = '95';
+        document.getElementById('quadrant').textContent = 'animated';
+        document.getElementById('widget').classList.remove('loading');
+      }
+    }
+
+    loadMood();
+  </script>
+</body>
+</html>
