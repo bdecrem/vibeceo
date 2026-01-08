@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MACHINE CODE — 909 + 303</title>
+    <script type="importmap">
+        {
+            "imports": {
+                "audiobuffer-to-wav": "https://esm.sh/audiobuffer-to-wav@1.0.0"
+            }
+        }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #0a0a0f;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: #00FFFF;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #00FFFF;
+        }
+
+        #title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #bpm {
+            opacity: 0.7;
+            font-size: 12px;
+        }
+
+        /* Drum grid */
+        #drums {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: grid;
+            grid-template-columns: repeat(4, 50px);
+            grid-template-rows: repeat(3, 50px);
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .drum-pad {
+            width: 50px;
+            height: 50px;
+            background: rgba(0, 255, 255, 0.1);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 9px;
+            color: #00FFFF;
+            opacity: 0.5;
+            transition: all 0.05s;
+        }
+
+        .drum-pad.active {
+            background: #00FFFF;
+            color: #0a0a0f;
+            opacity: 1;
+            box-shadow: 0 0 20px #00FFFF, 0 0 40px #00FFFF;
+        }
+
+        .drum-pad.kick.active { background: #FF00FF; box-shadow: 0 0 30px #FF00FF; }
+        .drum-pad.snare.active { background: #FFFF00; box-shadow: 0 0 25px #FFFF00; }
+        .drum-pad.clap.active { background: #FF6600; box-shadow: 0 0 25px #FF6600; }
+
+        /* Bass steps */
+        #bass-steps {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 4px;
+            z-index: 10;
+        }
+
+        .bass-step {
+            width: 16px;
+            height: 30px;
+            background: rgba(255, 0, 255, 0.1);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            transition: all 0.05s;
+        }
+
+        .bass-step.active {
+            background: #FF00FF;
+            box-shadow: 0 0 15px #FF00FF;
+        }
+
+        .bass-step.accent {
+            border-color: #00FFFF;
+        }
+
+        #start {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #00FFFF;
+            color: #0a0a0f;
+            border: none;
+            padding: 30px 60px;
+            font-size: 32px;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            z-index: 100;
+        }
+
+        #start:hover {
+            background: #00FFAA;
+            box-shadow: 0 0 30px #00FFFF;
+        }
+
+        #start.hidden {
+            display: none;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #00FFFF;
+            opacity: 0.3;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="ui">
+        <div id="title">MACHINE CODE</div>
+        <div id="bpm">135 BPM</div>
+    </div>
+
+    <div id="drums"></div>
+    <div id="bass-steps"></div>
+
+    <button id="start">EXECUTE</button>
+
+    <div class="signature">909 + 303</div>
+
+    <script type="module">
+        import { TR909Controller } from '/909/dist/api/index.js';
+        import { TB303Controller } from '/303/dist/api/index.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const drumsContainer = document.getElementById('drums');
+        const bassContainer = document.getElementById('bass-steps');
+        const startBtn = document.getElementById('start');
+
+        let width, height;
+        let drums = null;
+        let bass = null;
+        let currentDrumStep = -1;
+        let currentBassStep = -1;
+        let bassPattern = [];
+        let particles = [];
+        let time = 0;
+        let kickIntensity = 0;
+        let snareIntensity = 0;
+        let bassIntensity = 0;
+        let playing = false;
+
+        // Cyberpunk palette
+        const CYAN = '#00FFFF';
+        const MAGENTA = '#FF00FF';
+        const YELLOW = '#FFFF00';
+        const WHITE = '#FFFFFF';
+
+        const BPM = 135;
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        // Create drum pad display
+        function createDrumPads() {
+            const voices = ['kick', 'snare', 'clap', 'rimshot', 'ch', 'oh', 'ltom', 'mtom', 'htom', 'crash', 'ride', 'xxx'];
+            voices.forEach(v => {
+                const pad = document.createElement('div');
+                pad.className = `drum-pad ${v}`;
+                pad.dataset.voice = v;
+                pad.textContent = v === 'xxx' ? '' : v.toUpperCase();
+                drumsContainer.appendChild(pad);
+            });
+        }
+
+        // Create bass step indicators
+        function createBassSteps() {
+            for (let i = 0; i < 16; i++) {
+                const step = document.createElement('div');
+                step.className = 'bass-step';
+                step.dataset.index = i;
+                bassContainer.appendChild(step);
+            }
+        }
+
+        // Update drum pad display
+        function updateDrumPads(activeVoices) {
+            const pads = drumsContainer.querySelectorAll('.drum-pad');
+            pads.forEach(pad => {
+                pad.classList.remove('active');
+                if (activeVoices.includes(pad.dataset.voice)) {
+                    pad.classList.add('active');
+                }
+            });
+        }
+
+        // Update bass steps
+        function updateBassSteps(activeStep) {
+            const steps = bassContainer.querySelectorAll('.bass-step');
+            steps.forEach((step, i) => {
+                step.classList.remove('active');
+                if (i === activeStep) {
+                    step.classList.add('active');
+                }
+                if (bassPattern[i]?.accent) {
+                    step.classList.add('accent');
+                }
+            });
+        }
+
+        // Particle class
+        class Particle {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.type = type;
+                const angle = Math.random() * Math.PI * 2;
+                const speed = type === 'kick' ? 8 + Math.random() * 12 : 5 + Math.random() * 8;
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                this.life = 1;
+                this.decay = 0.015 + Math.random() * 0.02;
+                this.size = type === 'kick' ? 6 + Math.random() * 6 : 3 + Math.random() * 4;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vx *= 0.96;
+                this.vy *= 0.96;
+                this.life -= this.decay;
+            }
+
+            draw(ctx) {
+                if (this.life <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.life;
+
+                let color;
+                switch(this.type) {
+                    case 'kick': color = MAGENTA; break;
+                    case 'snare': color = YELLOW; break;
+                    case 'bass': color = CYAN; break;
+                    default: color = WHITE;
+                }
+
+                // Glow
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 2
+                );
+                gradient.addColorStop(0, color);
+                gradient.addColorStop(1, 'transparent');
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Spawn particles
+        function spawnParticles(type, x, y, count) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, type));
+            }
+        }
+
+        // Draw grid background
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(0, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+
+            const gridSize = 40;
+            const offsetX = (time * 0.5) % gridSize;
+            const offsetY = (time * 0.3) % gridSize;
+
+            for (let x = -gridSize + offsetX; x < width + gridSize; x += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, height);
+                ctx.stroke();
+            }
+
+            for (let y = -gridSize + offsetY; y < height + gridSize; y += gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.stroke();
+            }
+        }
+
+        // Draw central waveform
+        function drawWaveform() {
+            const centerY = height / 2;
+            const amplitude = 50 + bassIntensity * 100 + kickIntensity * 80;
+
+            ctx.beginPath();
+            ctx.moveTo(0, centerY);
+
+            for (let x = 0; x < width; x += 3) {
+                const wave1 = Math.sin(x * 0.02 + time * 0.1) * amplitude * 0.5;
+                const wave2 = Math.sin(x * 0.03 - time * 0.15) * amplitude * 0.3;
+                const wave3 = Math.sin(x * 0.01 + time * 0.05) * amplitude * 0.2;
+                const y = centerY + wave1 + wave2 + wave3;
+                ctx.lineTo(x, y);
+            }
+
+            const gradient = ctx.createLinearGradient(0, centerY - amplitude, 0, centerY + amplitude);
+            gradient.addColorStop(0, CYAN);
+            gradient.addColorStop(0.5, MAGENTA);
+            gradient.addColorStop(1, CYAN);
+
+            ctx.strokeStyle = gradient;
+            ctx.lineWidth = 2 + bassIntensity * 3;
+            ctx.globalAlpha = 0.4 + bassIntensity * 0.4;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw kick impact ring
+        function drawKickRing() {
+            if (kickIntensity < 0.1) return;
+
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const radius = 50 + (1 - kickIntensity) * 300;
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = MAGENTA;
+            ctx.lineWidth = 3 + kickIntensity * 10;
+            ctx.globalAlpha = kickIntensity * 0.8;
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw snare flash
+        function drawSnareFlash() {
+            if (snareIntensity < 0.1) return;
+
+            // Horizontal lines
+            const count = 8;
+            for (let i = 0; i < count; i++) {
+                const y = (height / count) * i + height / (count * 2);
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.strokeStyle = YELLOW;
+                ctx.lineWidth = 1 + snareIntensity * 2;
+                ctx.globalAlpha = snareIntensity * 0.3;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw scanlines
+        function drawScanlines() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+            for (let y = 0; y < height; y += 3) {
+                ctx.fillRect(0, y, width, 1);
+            }
+        }
+
+        // Main draw loop
+        function draw() {
+            // Fade trail
+            ctx.fillStyle = 'rgba(10, 10, 15, 0.2)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Background pulse on kick
+            if (kickIntensity > 0.3) {
+                ctx.fillStyle = `rgba(255, 0, 255, ${(kickIntensity - 0.3) * 0.1})`;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            drawGrid();
+            drawWaveform();
+            drawKickRing();
+            drawSnareFlash();
+
+            // Update and draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+
+            // Draw position line
+            if (playing && currentDrumStep >= 0) {
+                const lineX = (currentDrumStep / 16) * width;
+                ctx.strokeStyle = CYAN;
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.3;
+                ctx.beginPath();
+                ctx.moveTo(lineX, 0);
+                ctx.lineTo(lineX, height);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            drawScanlines();
+
+            // Decay intensities
+            kickIntensity *= 0.9;
+            snareIntensity *= 0.85;
+            bassIntensity *= 0.92;
+            time++;
+
+            requestAnimationFrame(draw);
+        }
+
+        // 909 drum pattern - funky groove
+        const drumPattern = {
+            kick: [
+                { velocity: 1, accent: true },   // 1 - downbeat
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0.6 },               // 4 - pickup
+                { velocity: 1, accent: false },  // 5
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 1, accent: true },   // 9
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0.6 },               // 12 - pickup
+                { velocity: 1, accent: false },  // 13
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+            ],
+            ltom: [
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0.5 },               // 8 - before downbeat
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0 },
+                { velocity: 0.5 },               // 16 - turnaround
+            ],
+        };
+
+        // 303 bass pattern - funky, locks with kick
+        const bass303Pattern = [
+            { note: 'C2', gate: true, accent: true, slide: false },   // 1 - with kick
+            { note: 'C2', gate: false, accent: false, slide: false }, // 2 - rest
+            { note: 'C2', gate: true, accent: false, slide: false },  // 3 - push
+            { note: 'C2', gate: false, accent: false, slide: false }, // 4 - rest (kick pickup)
+            { note: 'C2', gate: true, accent: true, slide: false },   // 5 - with kick
+            { note: 'C2', gate: false, accent: false, slide: false }, // 6 - rest
+            { note: 'D#2', gate: true, accent: false, slide: true },  // 7 - color
+            { note: 'G2', gate: true, accent: false, slide: false },  // 8 - with tom
+            { note: 'C2', gate: true, accent: true, slide: false },   // 9 - with kick
+            { note: 'C2', gate: false, accent: false, slide: false }, // 10 - rest
+            { note: 'C2', gate: true, accent: false, slide: false },  // 11 - push
+            { note: 'C2', gate: false, accent: false, slide: false }, // 12 - rest (kick pickup)
+            { note: 'C2', gate: true, accent: true, slide: false },   // 13 - with kick
+            { note: 'D#2', gate: true, accent: false, slide: true },  // 14 - movement
+            { note: 'F2', gate: true, accent: false, slide: true },   // 15 - slide up
+            { note: 'G2', gate: true, accent: false, slide: false },  // 16 - with tom, resolve
+        ];
+
+        // Initialize
+        async function initMachines() {
+            // Create controllers
+            drums = new TR909Controller(drumPattern);
+            bass = new TB303Controller({ engine: 'E2' });
+
+            // Set up 909
+            drums.setBpm(BPM);
+            // Tighter, clickier kick - boosted to punch through
+            drums.engine.setVoiceParameter('kick', 'attack', 0.7);  // More click
+            drums.engine.setVoiceParameter('kick', 'decay', 0.3);   // Tighter
+            drums.engine.setVoiceParameter('kick', 'level', 1.4);   // Boost kick +3dB
+            // Lower tom level
+            drums.engine.setVoiceParameter('ltom', 'level', 0.3);
+
+            // Set up 303 - lower volume so kick punches through
+            bass.setPattern(bass303Pattern);
+            bass.setBpm(BPM);
+            bass.setWaveform('sawtooth');
+            bass.setParameter('cutoff', 0.12);
+            bass.setParameter('resonance', 0.8);
+            bass.setParameter('envMod', 0.75);
+            bass.setParameter('decay', 0.4);
+            bass.setParameter('accent', 0.85);
+            bass.engine.masterGain.gain.value = 0.35;  // Lower 303 volume
+
+            bassPattern = bass303Pattern;
+
+            // 909 step callback (access via engine)
+            drums.engine.onStepChange = (step) => {
+                currentDrumStep = step;
+
+                // Find active voices on this step
+                const activeVoices = [];
+                for (const [voice, track] of Object.entries(drumPattern)) {
+                    if (track[step]?.velocity > 0) {
+                        activeVoices.push(voice);
+
+                        // Visual effects
+                        if (voice === 'kick') {
+                            kickIntensity = 1;
+                            spawnParticles('kick', width / 2, height / 2, 25);
+                        }
+                        if (voice === 'snare' || voice === 'clap') {
+                            snareIntensity = 1;
+                            spawnParticles('snare', Math.random() * width, Math.random() * height, 15);
+                        }
+                    }
+                }
+                updateDrumPads(activeVoices);
+
+                // Clear after brief flash
+                setTimeout(() => updateDrumPads([]), 80);
+            };
+
+            // 303 step callback (access via engine)
+            bass.engine.onStepChange = (step) => {
+                currentBassStep = step;
+                updateBassSteps(step);
+
+                const stepData = bassPattern[step];
+                if (stepData?.gate) {
+                    bassIntensity = stepData.accent ? 1 : 0.6;
+                    const x = (step / 16) * width + width / 32;
+                    spawnParticles('bass', x, height * 0.5, stepData.accent ? 12 : 6);
+                }
+            };
+
+            // Mark accents in UI
+            updateBassSteps(-1);
+        }
+
+        // Start
+        startBtn.addEventListener('click', async () => {
+            if (!drums || !bass) {
+                await initMachines();
+            }
+
+            drums.play();
+            bass.play();
+            playing = true;
+            startBtn.classList.add('hidden');
+        });
+
+        // Init
+        resize();
+        createDrumPads();
+        createBassSteps();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>
