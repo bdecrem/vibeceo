@@ -202,6 +202,9 @@ function updateStepIndicator(step) {
             stepEl.classList.add('playing');
         }
     }
+
+    // Update mobile page indicator
+    updateStepPageIndicator(step);
 }
 
 // ========================================
@@ -583,7 +586,7 @@ function setupStepPageToggle() {
             buttons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            // Update sequencer page class
+            // Toggle sequencer class
             if (page === '2') {
                 sequencer?.classList.add('page-2');
             } else {
@@ -598,8 +601,8 @@ function updateStepPageIndicator(step) {
     const buttons = document.querySelectorAll('.step-page-btn');
     buttons.forEach(btn => {
         const page = btn.dataset.page;
-        const hasPlaying = (page === '1' && step < 8) || (page === '2' && step >= 8);
-        btn.classList.toggle('has-playing', hasPlaying);
+        const isPlaying = (page === '1' && step < 8) || (page === '2' && step >= 8);
+        btn.classList.toggle('has-playing', isPlaying);
     });
 }
 
@@ -667,10 +670,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupStepPageToggle();
 
     // Connect step callback
-    engine.onStepChange = (step) => {
-        updateStepIndicator(step);
-        updateStepPageIndicator(step);
-    };
+    engine.onStepChange = updateStepIndicator;
 
     // Initial status
     setStatus('Ready — Space to play, A-K for notes');
