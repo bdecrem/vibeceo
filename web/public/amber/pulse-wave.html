@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pulse Wave — Amber</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 12px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+
+    .quadrant {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: #2D9596;
+      font-size: 32px;
+      letter-spacing: 0.05em;
+      z-index: 10;
+      text-shadow: 0 0 20px rgba(45, 149, 150, 0.8);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    @keyframes breathe {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    }
+
+    .values {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      text-align: right;
+      font-size: 11px;
+      color: #6B6560;
+      line-height: 1.8;
+      z-index: 10;
+    }
+
+    .values .label {
+      color: #A8A29E;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .values .energy { color: #FFD700; }
+    .values .valence { color: #40E0D0; }
+  </style>
+</head>
+<body>
+  <div class="info">Pulse State 08.01.26</div>
+  
+  <div class="values">
+    <div><span class="label">Energy:</span> <span class="energy" id="e-val">--</span></div>
+    <div><span class="label">Valence:</span> <span class="valence" id="v-val">--</span></div>
+  </div>
+
+  <div class="quadrant" id="quadrant">ANIMATED</div>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let energy = 0.51;
+    let valence = 0.95;
+    let t = 0;
+
+    // Fetch current mood
+    fetch('/api/amber/mood')
+      .then(r => r.json())
+      .then(data => {
+        energy = data.energy || 0.51;
+        valence = data.valence || 0.95;
+        document.getElementById('e-val').textContent = Math.round(energy * 100);
+        document.getElementById('v-val').textContent = Math.round(valence * 100);
+        document.getElementById('quadrant').textContent = (data.quadrant || 'animated').toUpperCase();
+      })
+      .catch(() => {
+        document.getElementById('e-val').textContent = '51';
+        document.getElementById('v-val').textContent = '95';
+      });
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Convert energy/valence to visual parameters
+    function draw() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const cx = w / 2;
+      const cy = h / 2;
+
+      // Clear with fade (creates trails)
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, w, h);
+
+      // Energy controls: amplitude, speed, complexity
+      const amplitude = energy * 150 + 50;
+      const speed = energy * 0.03 + 0.01;
+      const layers = Math.floor(energy * 8) + 3;
+
+      // Valence controls: color warmth, outward vs inward
+      const warmth = valence; // 0 = cool, 1 = warm
+      const expansion = valence * 100 + 50; // radius expansion
+
+      t += speed;
+
+      // Draw multiple wave layers
+      for (let layer = 0; layer < layers; layer++) {
+        const phase = (layer / layers) * Math.PI * 2;
+        const radius = expansion + layer * 30;
+
+        ctx.beginPath();
+        for (let i = 0; i <= 360; i += 2) {
+          const angle = (i * Math.PI / 180) + phase;
+          
+          // Multiple oscillators for complexity
+          const wave1 = Math.sin(angle * 3 + t) * amplitude * 0.4;
+          const wave2 = Math.sin(angle * 5 - t * 1.3) * amplitude * 0.3;
+          const wave3 = Math.sin(angle * 7 + t * 0.7) * amplitude * 0.3;
+          
+          const r = radius + wave1 + wave2 + wave3;
+          
+          const x = cx + Math.cos(angle) * r;
+          const y = cy + Math.sin(angle) * r;
+          
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+
+        // Color: blend amber (warm) and teal (cool) based on valence
+        const amber = { r: 212, g: 165, b: 116 };
+        const teal = { r: 45, g: 149, b: 150 };
+        
+        const r = Math.round(teal.r + (amber.r - teal.r) * warmth);
+        const g = Math.round(teal.g + (amber.g - teal.g) * warmth);
+        const b = Math.round(teal.b + (amber.b - teal.b) * warmth);
+        
+        const alpha = 0.15 + (layer / layers) * 0.1;
+        
+        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Glow effect for high energy
+        if (energy > 0.6) {
+          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
+          ctx.shadowBlur = 20;
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      // Center pulse dot
+      const pulseSize = 3 + Math.sin(t * 3) * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, pulseSize, 0, Math.PI * 2);
+      ctx.fillStyle = valence > 0.5 ? '#FFD700' : '#2D9596';
+      ctx.shadowColor = valence > 0.5 ? '#FFD700' : '#2D9596';
+      ctx.shadowBlur = 20;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  </script>
+</body>
+</html>
