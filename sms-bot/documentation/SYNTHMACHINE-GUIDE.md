@@ -76,11 +76,26 @@ const { wav } = await drums.exportCurrentPatternToWav({ bars: 2 });
   kick: [{ velocity: 1 }, { velocity: 0 }, ...],   // 16 steps
   snare: [{ velocity: 0 }, { velocity: 0 }, ...],
   clap: [...],
-  hihatClosed: [...],
-  hihatOpen: [...],
-  // ... other voices: tom1, tom2, tom3, rimshot, crash, ride
+  ch: [...],      // closed hihat (NOT hihatClosed)
+  oh: [...],      // open hihat (NOT hihatOpen)
+  // other voices: rimshot, ltom, mtom, htom, crash, ride
 }
 ```
+
+**TR-909 Voice IDs (use these exact names in patterns):**
+| Voice | ID | Notes |
+|-------|-----|-------|
+| Kick | `kick` | |
+| Snare | `snare` | |
+| Clap | `clap` | |
+| Rimshot | `rimshot` | |
+| Low Tom | `ltom` | |
+| Mid Tom | `mtom` | |
+| High Tom | `htom` | |
+| Closed Hat | `ch` | NOT hihatClosed |
+| Open Hat | `oh` | NOT hihatOpen |
+| Crash | `crash` | |
+| Ride | `ride` | |
 
 ### TB-303 Bass Synthesizer
 

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep House Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #d4a574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+    }
+    h1 { margin: 0; font-size: 24px; letter-spacing: 4px; }
+    .subtitle { color: #2d9596; font-size: 11px; }
+    button {
+      background: #1a1a1a;
+      border: 2px solid #d4a574;
+      color: #d4a574;
+      padding: 15px 50px;
+      font-size: 16px;
+      font-family: monospace;
+      cursor: pointer;
+      letter-spacing: 3px;
+    }
+    button:hover { background: #d4a574; color: #0a0a0a; }
+    .info { color: #666; font-size: 11px; text-align: center; line-height: 1.8; }
+    #status { color: #2d9596; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>DEEP TEST</h1>
+  <p class="subtitle">909 KICK + 101 ARP + SIDECHAIN + REVERB</p>
+  <button id="toggle">PLAY</button>
+  <div id="status"></div>
+  <div class="info">
+    Tech test: Mixer chain<br>
+    Sidechain compression on arp<br>
+    Plate reverb on master
+  </div>
+
+  <script type="module">
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { SH101Engine } from '/101/dist/machines/sh101/engine.js';
+    import { Ducker } from '/mixer/dist/effects/ducker.js';
+    import { Reverb } from '/mixer/dist/effects/reverb.js';
+
+    const status = document.getElementById('status');
+    const log = (msg) => { console.log(msg); status.textContent = msg; };
+
+    let audioContext = null;
+    let drums = null;
+    let synth = null;
+    let ducker = null;
+    let reverb = null;
+    let isPlaying = false;
+    let isInitialized = false;
+
+    const BPM = 122;
+
+    // 909 pattern - four on the floor
+    const drumPattern = {
+      kick: [
+        { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+      ],
+      ch: [
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.5 }, { velocity: 0 },
+      ],
+    };
+
+    // 101 arp - Cm7
+    const arpPattern = [
+      { note: 'C3', gate: true, accent: false, slide: false },
+      { note: 'G3', gate: true, accent: false, slide: false },
+      { note: 'Eb3', gate: true, accent: false, slide: false },
+      { note: 'Bb3', gate: true, accent: true, slide: false },
+      { note: 'C4', gate: true, accent: false, slide: true },
+      { note: 'G3', gate: true, accent: false, slide: false },
+      { note: 'Eb3', gate: true, accent: false, slide: false },
+      { note: 'Bb2', gate: true, accent: false, slide: false },
+      { note: 'C3', gate: true, accent: true, slide: false },
+      { note: 'G3', gate: true, accent: false, slide: false },
+      { note: 'Eb3', gate: true, accent: false, slide: true },
+      { note: 'Bb3', gate: true, accent: false, slide: false },
+      { note: 'C4', gate: true, accent: false, slide: false },
+      { note: 'Bb3', gate: true, accent: true, slide: true },
+      { note: 'G3', gate: true, accent: false, slide: false },
+      { note: 'Eb3', gate: true, accent: false, slide: false },
+    ];
+
+    // 101 patch
+    const synthPatch = {
+      vcoSaw: 0.4,
+      vcoPulse: 0.6,
+      pulseWidth: 0.4,
+      subLevel: 0.15,
+      subMode: 1,
+      cutoff: 0.35,
+      resonance: 0.3,
+      envMod: 0.25,
+      attack: 0.05,
+      decay: 0.3,
+      sustain: 0.5,
+      release: 0.4,
+      lfoRate: 0.12,
+      lfoWaveform: 'triangle',
+      lfoToPitch: 0,
+      lfoToFilter: 0.1,
+      lfoToPW: 0.15,
+      volume: 0.7,
+    };
+
+    async function init() {
+      if (isInitialized) return true;
+
+      try {
+        log('Creating audio context...');
+        audioContext = new AudioContext();
+
+        // Create instruments
+        log('Creating 909...');
+        drums = new TR909Engine({ context: audioContext });
+        drums.setBpm(BPM);
+        drums.setPattern('main', drumPattern);
+
+        log('Creating 101...');
+        synth = new SH101Engine({ context: audioContext });
+        synth.setBpm(BPM);
+        synth.setPattern(arpPattern);
+        Object.entries(synthPatch).forEach(([k, v]) => synth.setParameter(k, v));
+
+        // Create effects
+        log('Creating reverb...');
+        reverb = new Reverb(audioContext);
+        await reverb.init();
+        reverb.setPreset('plate');
+        reverb.setParameter('mix', 0.18);
+
+        log('Creating ducker...');
+        ducker = new Ducker(audioContext);
+        ducker.setPreset('pump');
+        ducker.setParameter('amount', 0.45);
+        ducker.setParameter('release', 200);
+
+        // Get kick voice for sidechain trigger
+        const kickVoice = drums.voices.get('kick');
+        if (kickVoice && kickVoice.output) {
+          log('Connecting sidechain to kick...');
+          ducker.setTrigger(kickVoice.output);
+        } else {
+          log('Warning: Could not find kick output, using compressor');
+          ducker.setTrigger(drums.compressor);
+        }
+
+        // === ROUTING ===
+        // Disconnect defaults
+        drums.masterGain.disconnect();
+        synth.masterGain.disconnect();
+
+        // Create a mixer node
+        const mixer = audioContext.createGain();
+        mixer.gain.value = 0.8;
+
+        // Drums -> mixer (no sidechain on drums)
+        drums.masterGain.connect(mixer);
+
+        // Synth -> ducker -> mixer
+        synth.masterGain.connect(ducker.input);
+        ducker.output.connect(mixer);
+
+        // Mixer -> reverb -> output
+        mixer.connect(reverb.input);
+        reverb.output.connect(audioContext.destination);
+
+        isInitialized = true;
+        log('Ready! Press PLAY');
+        return true;
+
+      } catch (err) {
+        log('Error: ' + err.message);
+        console.error(err);
+        return false;
+      }
+    }
+
+    const btn = document.getElementById('toggle');
+
+    btn.addEventListener('click', async () => {
+      const ok = await init();
+      if (!ok) return;
+
+      await audioContext.resume();
+
+      if (isPlaying) {
+        drums.stopSequencer();
+        synth.stopSequencer();
+        btn.textContent = 'PLAY';
+        log('Stopped');
+      } else {
+        drums.startSequencer();
+        synth.startSequencer();
+        btn.textContent = 'STOP';
+        log('Playing...');
+      }
+      isPlaying = !isPlaying;
+    });
+  </script>
+</body>
+</html>
