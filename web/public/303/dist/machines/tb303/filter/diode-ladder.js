@@ -115,17 +115,17 @@ export class DiodeLadderFilter {
 
     setResonance(value) {
         // Value 0-1, maps to filter Q and feedback
-        // Normalized so full range is usable (75% ≈ old 24%)
+        // Normalized so 100% = previous 85% (never screeches)
         this._resonance = Math.max(0, Math.min(1, value));
 
-        // Q increases with resonance (reduced from *15 to *5)
-        const q = 0.5 + this._resonance * 5;
+        // Q increases with resonance (scaled to cap at previous 85%)
+        const q = 0.5 + this._resonance * 4.25;
         this.filters.forEach(filter => {
             filter.Q.value = q;
         });
 
-        // Feedback for self-oscillation (reduced from *0.85 to *0.27)
-        const feedback = this._resonance * 0.27;
+        // Feedback for self-oscillation (scaled to cap at previous 85%)
+        const feedback = this._resonance * 0.23;
         this.feedbackGain.gain.value = feedback;
 
         // Adjust output gain to compensate for resonance boost
