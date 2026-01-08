@@ -568,6 +568,42 @@ function setupKeyboard() {
 }
 
 // ========================================
+// Step Page Toggle (Mobile)
+// ========================================
+
+function setupStepPageToggle() {
+    const buttons = document.querySelectorAll('.step-page-btn');
+    const sequencer = document.getElementById('sequencer');
+
+    buttons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const page = btn.dataset.page;
+
+            // Update button states
+            buttons.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            // Update sequencer page class
+            if (page === '2') {
+                sequencer?.classList.add('page-2');
+            } else {
+                sequencer?.classList.remove('page-2');
+            }
+        });
+    });
+}
+
+function updateStepPageIndicator(step) {
+    // Highlight which page contains the playing step
+    const buttons = document.querySelectorAll('.step-page-btn');
+    buttons.forEach(btn => {
+        const page = btn.dataset.page;
+        const hasPlaying = (page === '1' && step < 8) || (page === '2' && step >= 8);
+        btn.classList.toggle('has-playing', hasPlaying);
+    });
+}
+
+// ========================================
 // Status
 // ========================================
 
@@ -628,9 +664,13 @@ document.addEventListener('DOMContentLoaded', () => {
     populatePresets();
     setupTransport();
     setupKeyboard();
+    setupStepPageToggle();
 
     // Connect step callback
-    engine.onStepChange = updateStepIndicator;
+    engine.onStepChange = (step) => {
+        updateStepIndicator(step);
+        updateStepPageIndicator(step);
+    };
 
     // Initial status
     setStatus('Ready — Space to play, A-K for notes');

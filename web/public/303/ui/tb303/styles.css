@@ -446,6 +446,64 @@ h1::before {
   padding-top: 0.25rem;
 }
 
+/* Bar lines - subtle dividers every 4 steps */
+.seq-step[data-step="4"],
+.seq-step[data-step="8"],
+.seq-step[data-step="12"] {
+  margin-left: 6px;
+  position: relative;
+}
+
+.seq-step[data-step="4"]::before,
+.seq-step[data-step="8"]::before,
+.seq-step[data-step="12"]::before {
+  content: '';
+  position: absolute;
+  left: -4px;
+  top: 10%;
+  height: 80%;
+  width: 1px;
+  background: var(--border-accent);
+  opacity: 0.5;
+}
+
+/* Step number padding to match */
+.seq-step-nums span:nth-child(5),
+.seq-step-nums span:nth-child(9),
+.seq-step-nums span:nth-child(13) {
+  margin-left: 6px;
+}
+
+/* Step Page Toggle (for mobile 8-step view) */
+.step-page-toggle {
+  display: none;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.step-page-btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--border-accent);
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.step-page-btn.active {
+  background: var(--amber-700);
+  border-color: var(--amber-600);
+  color: #000;
+}
+
+.step-page-btn.has-playing {
+  box-shadow: 0 0 8px var(--amber-500);
+}
+
 .seq-step.playing {
   background: var(--bg-elevated);
   border-radius: 4px;
@@ -696,8 +754,94 @@ h1::before {
     height: 48px;
   }
 
+  /* Show step page toggle on mobile */
+  .step-page-toggle {
+    display: flex;
+    margin-bottom: 0.5rem;
+  }
+
+  .step-page-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.7rem;
+  }
+
   .sequencer {
     padding: 0.75rem;
+  }
+
+  /* Sequencer grid: 8 columns on mobile */
+  .seq-grid {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  .seq-step-nums {
+    grid-template-columns: repeat(8, 1fr);
+  }
+
+  /* Hide steps 9-16 by default (page 1) */
+  .seq-step[data-step="8"],
+  .seq-step[data-step="9"],
+  .seq-step[data-step="10"],
+  .seq-step[data-step="11"],
+  .seq-step[data-step="12"],
+  .seq-step[data-step="13"],
+  .seq-step[data-step="14"],
+  .seq-step[data-step="15"] {
+    display: none;
+  }
+
+  .seq-step-nums span:nth-child(n+9) {
+    display: none;
+  }
+
+  /* When page 2 is active, hide 1-8 and show 9-16 */
+  .sequencer.page-2 .seq-step[data-step="0"],
+  .sequencer.page-2 .seq-step[data-step="1"],
+  .sequencer.page-2 .seq-step[data-step="2"],
+  .sequencer.page-2 .seq-step[data-step="3"],
+  .sequencer.page-2 .seq-step[data-step="4"],
+  .sequencer.page-2 .seq-step[data-step="5"],
+  .sequencer.page-2 .seq-step[data-step="6"],
+  .sequencer.page-2 .seq-step[data-step="7"] {
+    display: none;
+  }
+
+  .sequencer.page-2 .seq-step[data-step="8"],
+  .sequencer.page-2 .seq-step[data-step="9"],
+  .sequencer.page-2 .seq-step[data-step="10"],
+  .sequencer.page-2 .seq-step[data-step="11"],
+  .sequencer.page-2 .seq-step[data-step="12"],
+  .sequencer.page-2 .seq-step[data-step="13"],
+  .sequencer.page-2 .seq-step[data-step="14"],
+  .sequencer.page-2 .seq-step[data-step="15"] {
+    display: flex;
+  }
+
+  .sequencer.page-2 .seq-step-nums span:nth-child(-n+8) {
+    display: none;
+  }
+
+  .sequencer.page-2 .seq-step-nums span:nth-child(n+9) {
+    display: block;
+  }
+
+  /* Remove bar line margins on mobile (simpler layout) */
+  .seq-step[data-step="4"],
+  .seq-step[data-step="8"],
+  .seq-step[data-step="12"] {
+    margin-left: 0;
+  }
+
+  .seq-step[data-step="4"]::before,
+  .seq-step[data-step="8"]::before,
+  .seq-step[data-step="12"]::before {
+    display: none;
+  }
+
+  .seq-step-nums span:nth-child(5),
+  .seq-step-nums span:nth-child(9),
+  .seq-step-nums span:nth-child(13) {
+    margin-left: 0;
   }
 
   .seq-note {
