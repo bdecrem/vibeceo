@@ -316,24 +316,34 @@ export class SH101Engine extends SynthEngine {
      */
     noteOff(time) {
         const when = time ?? this.context.currentTime;
-        const r = Math.max(0.01, this.params.release); // Ensure minimum release time
+        const r = Math.max(0.05, this.params.release); // Ensure minimum release time
 
         // Release envelopes
-        this.ampEnvelope.release(when);
-        this.filterEnvelope.release(when);
+        try {
+            this.ampEnvelope.release(when);
+            this.filterEnvelope.release(when);
+        } catch (e) {
+            console.error('Envelope release error:', e);
+        }
 
-        // Apply release to VCA
-        // Use sustain level as starting point (more reliable than reading gain.value)
-        const startLevel = this.currentNote !== null ? this.params.sustain : 0;
-        this.vca.amplifier.gain.cancelScheduledValues(when);
-        this.vca.amplifier.gain.setValueAtTime(startLevel, when);
-        this.vca.amplifier.gain.linearRampToValueAtTime(0, when + r);
-
-        // Also set a hard cutoff after release time to ensure silence
-        this.vca.amplifier.gain.setValueAtTime(0, when + r + 0.001);
+        // Apply release to VCA - always ramp to 0
+        try {
+            this.vca.amplifier.gain.cancelScheduledValues(when);
+            this.vca.amplifier.gain.setValueAtTime(this.vca.amplifier.gain.value || 0.5, when);
+            this.vca.amplifier.gain.exponentialRampToValueAtTime(0.0001, when + r);
+            this.vca.amplifier.gain.setValueAtTime(0, when + r + 0.01);
+        } catch (e) {
+            console.error('VCA release error:', e);
+            // Fallback: just set to 0
+            this.vca.amplifier.gain.value = 0;
+        }
 
         // Release filter
-        this.filter.rampCutoff(this.params.cutoff, r, when);
+        try {
+            this.filter.rampCutoff(this.params.cutoff, r, when);
+        } catch (e) {
+            console.error('Filter release error:', e);
+        }
 
         this.currentNote = null;
     }
@@ -421,15 +431,28 @@ export class SH101Engine extends SynthEngine {
     startSequencer() {
         if (this.playing) return;
 
+        // Ensure audio context is running
+        if (this.context.state === 'suspended') {
+            this.context.resume();
+        }
+
         this.playing = true;
         this.currentStep = 0;
 
         const stepDuration = (60 / this.bpm) / 4; // 16th notes
         const stepMs = stepDuration * 1000;
 
+        // Trigger first step immediately
+        this.triggerStep(this.currentStep);
+        this.currentStep = (this.currentStep + 1) % 16;
+
         this.sequencerInterval = setInterval(() => {
-            this.triggerStep(this.currentStep);
-            this.currentStep = (this.currentStep + 1) % 16;
+            try {
+                this.triggerStep(this.currentStep);
+                this.currentStep = (this.currentStep + 1) % 16;
+            } catch (e) {
+                console.error('Sequencer step error:', e);
+            }
         }, stepMs);
     }
 
@@ -458,6 +481,12 @@ export class SH101Engine extends SynthEngine {
      * Trigger a sequencer step
      */
     triggerStep(stepIndex) {
+        // Defensive: check pattern exists
+        if (!this.pattern || !this.pattern[stepIndex]) {
+            console.error('Invalid pattern or step:', stepIndex);
+            return;
+        }
+
         const step = this.pattern[stepIndex];
         const time = this.context.currentTime;
 
@@ -468,8 +497,8 @@ export class SH101Engine extends SynthEngine {
         if (step.gate) {
             const velocity = step.accent ? 1.0 : 0.7;
 
-            // Check for slide
-            if (step.slide && stepIndex > 0) {
+            // Check for slide (glide from previous note)
+            if (step.slide && this.currentNote !== null) {
                 // Glide to this note
                 const midiNote = this.noteNameToMidi(step.note);
                 const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
@@ -483,10 +512,10 @@ export class SH101Engine extends SynthEngine {
             if (this.onNote) {
                 this.onNote(stepIndex, step);
             }
-        } else {
-            // Rest - release if not sliding
+        } else if (this.currentNote !== null) {
+            // Rest step - only release if a note is currently playing
             const nextStep = this.pattern[(stepIndex + 1) % 16];
-            if (!nextStep.slide) {
+            if (!nextStep || !nextStep.slide) {
                 this.noteOff(time);
             }
         }
