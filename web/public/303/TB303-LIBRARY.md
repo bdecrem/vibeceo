@@ -2,7 +2,30 @@
 
 A Web Audio implementation of the Roland TB-303 bass synthesizer with 16-step sequencer, accent, slide, and filter envelope modulation.
 
-## Quick Start
+## Quick Start (API)
+
+```javascript
+import { TB303Controller, renderPresetToWav } from './dist/api/index.js';
+
+// Option 1: Render a preset to WAV (simplest)
+const { wav } = await renderPresetToWav('acidLine1', { bars: 2 });
+// wav is an ArrayBuffer ready to save or play
+
+// Option 2: Use controller for real-time playback
+const synth = new TB303Controller();
+synth.loadPreset('phuture');
+synth.play();
+// ... later
+synth.stop();
+
+// Option 3: Custom pattern
+synth.setPattern(myCustomPattern);
+synth.setParameter('cutoff', 0.3);
+synth.setParameter('resonance', 0.8);
+const { wav } = await synth.renderToWav({ bars: 4 });
+```
+
+## Low-Level Engine Access
 
 ```javascript
 import { TB303Engine } from './dist/machines/tb303/engine.js';
@@ -233,12 +256,14 @@ engine.onNote = (step, data) => {}  // Called when note triggers
 ```
 303/
 ├── dist/
+│   ├── api/
+│   │   └── index.js       # TB303Controller, renderPresetToWav (USE THIS)
 │   ├── core/
 │   │   ├── engine.js      # Base SynthEngine class
 │   │   ├── voice.js       # Base Voice class
 │   │   └── output.js      # WAV rendering
 │   └── machines/tb303/
-│       ├── engine.js      # TB303Engine (main entry point)
+│       ├── engine.js      # TB303Engine (low-level)
 │       ├── sequencer.js   # 16-step sequencer
 │       ├── presets.js     # Preset patterns
 │       ├── filter/
@@ -250,6 +275,78 @@ engine.onNote = (step, data) => {}  // Called when note triggers
     ├── index.html         # Interactive UI
     ├── styles.css
     └── app.js
+```
+
+## API Reference
+
+### renderPresetToWav(presetId, options)
+
+Render a preset directly to WAV:
+
+```javascript
+import { renderPresetToWav } from './dist/api/index.js';
+
+const { buffer, wav } = await renderPresetToWav('squelch', {
+  bars: 2,
+  engine: 'E1'  // or 'E2'
+});
+// wav is ArrayBuffer, buffer is AudioBuffer
+```
+
+### renderTb303PatternToWav(config, options)
+
+Render a custom pattern to WAV:
+
+```javascript
+import { renderTb303PatternToWav } from './dist/api/index.js';
+
+const { wav } = await renderTb303PatternToWav({
+  pattern: myPattern,
+  parameters: { cutoff: 0.3, resonance: 0.7, envMod: 0.8, decay: 0.4, accent: 0.9 },
+  waveform: 'sawtooth',
+  bpm: 135
+}, { bars: 4 });
+```
+
+### TB303Controller
+
+Full controller for real-time use:
+
+```javascript
+import { TB303Controller } from './dist/api/index.js';
+
+const synth = new TB303Controller({ engine: 'E1' });
+
+// Load preset
+synth.loadPreset('acidLine1');
+
+// Or set custom pattern
+synth.setPattern(pattern);
+
+// Adjust parameters
+synth.setParameter('cutoff', 0.35);
+synth.setParameter('resonance', 0.75);
+synth.setBpm(140);
+synth.setWaveform('square');
+
+// Playback
+synth.play();
+synth.stop();
+synth.isPlaying();
+
+// Preview notes
+synth.playNote('C2', false);  // normal
+synth.playNote('G2', true);   // accented
+
+// Render
+const { wav } = await synth.renderToWav({ bars: 2 });
+
+// Get current state
+synth.getPattern();
+synth.getParameters();
+
+// List presets
+TB303Controller.getPresets();
 ```
 
 ## Live Demo
