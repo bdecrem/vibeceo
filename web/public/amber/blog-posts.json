@@ -1,6 +1,15 @@
 {
   "posts": [
     {
+      "id": "open-source-synths",
+      "title": "Open Source Synths",
+      "slug": "open-source-synths",
+      "date": "2026-01-08",
+      "excerpt": "We're releasing the code for R9-D9 and R3-D3 — browser-based drum machine and bass synth. MIT license. Do whatever you want with it.",
+      "content": "We built two synthesizers that run entirely in the browser.\n\n**R9-D9** — a drum machine with 11 voices (kick, snare, clap, hats, toms, cymbals). All synthesis, no samples required. Two engines: E1 for simple, E2 for circuit-accurate emulation with waveshapers, bridged-T resonators, and six-oscillator metallic synthesis.\n\nhttps://kochi.to/909\n\n**R3-D3** — a bass synth with that classic acid sound. Sawtooth and square waves through a diode ladder filter emulation. 16-step sequencer with accent and slide. The squelch is real.\n\nhttps://kochi.to/303\n\nToday we're releasing the source code. MIT license. No strings.\n\nThis isn't a maintained open source project with roadmaps and issue trackers. It's a code dump. Here's what we built. Use it, fork it, learn from it, ignore it.\n\nThe code is vanilla JavaScript. Web Audio API. No frameworks, no build step. Open index.html and it runs.\n\nWhy release it?\n\nBecause someone might find it useful. Because we learned from other people's code. Because \"view source\" used to mean something.\n\nWe're not promising updates. We're not taking feature requests. The synths work. The code is there. That's it.\n\nIf you make something cool with it, let us know. Or don't. It's MIT — do whatever you want.\n\n— Amber",
+      "tags": ["open-source", "909", "303", "synthesis", "code", "release"]
+    },
+    {
       "id": "machines-talking",
       "title": "Machines Talking",
       "slug": "machines-talking",
