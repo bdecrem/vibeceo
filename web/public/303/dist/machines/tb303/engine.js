@@ -22,7 +22,7 @@ export class TB303Engine extends SynthEngine {
         this.currentBpm = 130;
 
         // Engine version: E1 (simple) or E2 (authentic)
-        this.currentEngine = options.engine ?? 'E2'; // E2 is the good stuff
+        this.currentEngine = options.engine ?? 'E1'; // E1 is simpler, E2 has diode ladder
 
         // Waveform: sawtooth or square
         this.currentWaveform = 'sawtooth';
