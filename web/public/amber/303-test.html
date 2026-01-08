@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>303 Test</title>
+    <style>
+        body {
+            background: #0a0a0a;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        button {
+            background: #D4A574;
+            color: #0a0a0a;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        button:hover {
+            background: #FFD700;
+        }
+        #status {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 14px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <button id="play">▶ ACID</button>
+    <div id="status">click to test 303</div>
+
+    <script type="module">
+        import { TB303Controller } from '/303/dist/api/index.js';
+
+        const btn = document.getElementById('play');
+        const status = document.getElementById('status');
+        let synth = null;
+        let playing = false;
+
+        btn.addEventListener('click', async () => {
+            if (!synth) {
+                status.textContent = 'initializing...';
+                synth = new TB303Controller({ engine: 'E2' });
+                synth.loadPreset('squelch');
+            }
+
+            if (playing) {
+                synth.stop();
+                btn.textContent = '▶ ACID';
+                status.textContent = 'stopped';
+                playing = false;
+            } else {
+                synth.play();
+                btn.textContent = '■ STOP';
+                status.textContent = 'playing squelch @ 140 BPM';
+                playing = true;
+
+                // Auto-stop after 3 seconds
+                setTimeout(() => {
+                    if (playing) {
+                        synth.stop();
+                        btn.textContent = '▶ ACID';
+                        status.textContent = '3 seconds done — click to play again';
+                        playing = false;
+                    }
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>

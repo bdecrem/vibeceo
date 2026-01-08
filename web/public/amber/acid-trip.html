@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ACID TRIP — 303</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Courier New', monospace;
+        }
+
+        canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: #FFE000;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 10px #FFE000;
+        }
+
+        #title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        #bpm {
+            opacity: 0.7;
+            font-size: 12px;
+        }
+
+        #steps {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .step {
+            width: 20px;
+            height: 40px;
+            background: #1a1a00;
+            border: 1px solid #333300;
+            transition: all 0.05s;
+        }
+
+        .step.active {
+            background: #FFE000;
+            box-shadow: 0 0 20px #FFE000, 0 0 40px #FFE000;
+        }
+
+        .step.accent {
+            border-color: #FF6600;
+        }
+
+        #start {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #FFE000;
+            color: #000;
+            border: none;
+            padding: 30px 60px;
+            font-size: 32px;
+            font-family: inherit;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            z-index: 100;
+        }
+
+        #start:hover {
+            background: #FFFF00;
+            box-shadow: 0 0 30px #FFE000;
+        }
+
+        #start.hidden {
+            display: none;
+        }
+
+        .signature {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: #FFE000;
+            opacity: 0.3;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <div id="ui">
+        <div id="title">ACID TRIP</div>
+        <div id="bpm">140 BPM</div>
+    </div>
+
+    <div id="steps"></div>
+
+    <button id="start">▶ DROP</button>
+
+    <div class="signature">— 303</div>
+
+    <script type="module">
+        import { TB303Controller } from '/303/dist/api/index.js';
+
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const stepsContainer = document.getElementById('steps');
+        const startBtn = document.getElementById('start');
+
+        let width, height;
+        let synth = null;
+        let currentStep = 0;
+        let pattern = [];
+        let particles = [];
+        let time = 0;
+        let intensity = 0;
+        let playing = false;
+
+        // Acid yellow palette
+        const YELLOW = '#FFE000';
+        const YELLOW_BRIGHT = '#FFFF00';
+        const ORANGE = '#FF6600';
+        const GREEN = '#00FF00';
+        const BLACK = '#000000';
+
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+
+        // Create step indicators
+        function createStepIndicators() {
+            for (let i = 0; i < 16; i++) {
+                const step = document.createElement('div');
+                step.className = 'step';
+                step.dataset.index = i;
+                stepsContainer.appendChild(step);
+            }
+        }
+
+        // Update step indicator
+        function updateSteps(activeStep) {
+            const steps = stepsContainer.querySelectorAll('.step');
+            steps.forEach((step, i) => {
+                step.classList.remove('active');
+                if (i === activeStep) {
+                    step.classList.add('active');
+                }
+                // Mark accents
+                if (pattern[i]?.accent) {
+                    step.classList.add('accent');
+                }
+            });
+        }
+
+        // Particle class
+        class Particle {
+            constructor(x, y, accent) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 15;
+                this.vy = (Math.random() - 0.5) * 15 - 5;
+                this.life = 1;
+                this.decay = 0.02 + Math.random() * 0.02;
+                this.size = accent ? 8 + Math.random() * 8 : 4 + Math.random() * 4;
+                this.accent = accent;
+                this.hue = accent ? 60 : 50 + Math.random() * 20; // Yellow range
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.3; // gravity
+                this.life -= this.decay;
+                this.size *= 0.98;
+            }
+
+            draw(ctx) {
+                if (this.life <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.life;
+
+                // Glow
+                const gradient = ctx.createRadialGradient(
+                    this.x, this.y, 0,
+                    this.x, this.y, this.size * 3
+                );
+                gradient.addColorStop(0, `hsla(${this.hue}, 100%, 60%, 1)`);
+                gradient.addColorStop(0.5, `hsla(${this.hue}, 100%, 50%, 0.5)`);
+                gradient.addColorStop(1, `hsla(${this.hue}, 100%, 40%, 0)`);
+
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core
+                ctx.fillStyle = this.accent ? YELLOW_BRIGHT : YELLOW;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        // Spawn particles on note
+        function spawnParticles(step, accent) {
+            const x = (step / 16) * width + width / 32;
+            const y = height * 0.6;
+            const count = accent ? 30 : 15;
+
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, accent));
+            }
+
+            // Big center burst on accent
+            if (accent) {
+                for (let i = 0; i < 20; i++) {
+                    particles.push(new Particle(width / 2, height / 2, true));
+                }
+            }
+        }
+
+        // Draw waveform bars
+        function drawWaveform() {
+            const barCount = 32;
+            const barWidth = width / barCount - 2;
+
+            for (let i = 0; i < barCount; i++) {
+                const barHeight = (Math.sin(time * 0.1 + i * 0.3) * 0.5 + 0.5) * intensity * 150;
+                const x = i * (barWidth + 2);
+                const y = height / 2;
+
+                // Gradient bar
+                const gradient = ctx.createLinearGradient(x, y - barHeight, x, y + barHeight);
+                gradient.addColorStop(0, YELLOW);
+                gradient.addColorStop(0.5, ORANGE);
+                gradient.addColorStop(1, YELLOW);
+
+                ctx.fillStyle = gradient;
+                ctx.globalAlpha = 0.3 + intensity * 0.4;
+                ctx.fillRect(x, y - barHeight / 2, barWidth, barHeight);
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        // Draw scanlines
+        function drawScanlines() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
+            for (let y = 0; y < height; y += 3) {
+                ctx.fillRect(0, y, width, 1);
+            }
+        }
+
+        // Draw center ring
+        function drawRing() {
+            const centerX = width / 2;
+            const centerY = height / 2;
+            const baseRadius = 100 + intensity * 100;
+
+            ctx.strokeStyle = YELLOW;
+            ctx.lineWidth = 2 + intensity * 3;
+            ctx.globalAlpha = 0.3 + intensity * 0.5;
+
+            // Pulsing rings
+            for (let i = 0; i < 3; i++) {
+                const radius = baseRadius + i * 40 + Math.sin(time * 0.2 + i) * 20;
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+
+            ctx.globalAlpha = 1;
+        }
+
+        // Main draw loop
+        function draw() {
+            // Fade trail
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.fillRect(0, 0, width, height);
+
+            // Background pulse on beat
+            if (intensity > 0.5) {
+                ctx.fillStyle = `rgba(255, 224, 0, ${(intensity - 0.5) * 0.1})`;
+                ctx.fillRect(0, 0, width, height);
+            }
+
+            // Draw elements
+            drawWaveform();
+            drawRing();
+
+            // Update and draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+
+            // Draw step position line
+            if (playing) {
+                const lineX = (currentStep / 16) * width + width / 32;
+                ctx.strokeStyle = YELLOW;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(lineX, 0);
+                ctx.lineTo(lineX, height);
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+
+            drawScanlines();
+
+            // Decay intensity
+            intensity *= 0.95;
+            time++;
+
+            requestAnimationFrame(draw);
+        }
+
+        // Initialize synth
+        async function initSynth() {
+            synth = new TB303Controller({ engine: 'E2' });
+
+            // Create a custom aggressive acid pattern
+            const customPattern = [
+                { note: 'C2', gate: true, accent: true, slide: false },
+                { note: 'C2', gate: false, accent: false, slide: false },
+                { note: 'C2', gate: true, accent: false, slide: false },
+                { note: 'C2', gate: true, accent: false, slide: true },
+                { note: 'D#2', gate: true, accent: true, slide: false },
+                { note: 'D#2', gate: false, accent: false, slide: false },
+                { note: 'C2', gate: true, accent: false, slide: false },
+                { note: 'G2', gate: true, accent: false, slide: true },
+                { note: 'C3', gate: true, accent: true, slide: false },
+                { note: 'C3', gate: false, accent: false, slide: false },
+                { note: 'G2', gate: true, accent: false, slide: true },
+                { note: 'D#2', gate: true, accent: false, slide: false },
+                { note: 'C2', gate: true, accent: true, slide: false },
+                { note: 'C2', gate: true, accent: false, slide: false },
+                { note: 'D#2', gate: true, accent: false, slide: true },
+                { note: 'G2', gate: true, accent: false, slide: false },
+            ];
+
+            synth.setPattern(customPattern);
+            pattern = customPattern;
+
+            // Squelchy settings
+            synth.setParameter('cutoff', 0.25);
+            synth.setParameter('resonance', 0.85);
+            synth.setParameter('envMod', 0.8);
+            synth.setParameter('decay', 0.35);
+            synth.setParameter('accent', 0.9);
+            synth.setBpm(140);
+            synth.setWaveform('sawtooth');
+
+            // Hook into step changes
+            synth.engine.onStepChange = (step) => {
+                currentStep = step;
+                updateSteps(step);
+
+                const stepData = pattern[step];
+                if (stepData?.gate) {
+                    intensity = stepData.accent ? 1 : 0.6;
+                    spawnParticles(step, stepData.accent);
+                }
+            };
+
+            // Mark accents in UI
+            updateSteps(-1);
+        }
+
+        // Start
+        startBtn.addEventListener('click', async () => {
+            if (!synth) {
+                await initSynth();
+            }
+
+            synth.play();
+            playing = true;
+            startBtn.classList.add('hidden');
+        });
+
+        // Init
+        resize();
+        createStepIndicators();
+        window.addEventListener('resize', resize);
+        draw();
+    </script>
+</body>
+</html>
