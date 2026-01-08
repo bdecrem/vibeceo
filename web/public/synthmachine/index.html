@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthMachine — Open Source Browser Synths</title>
+    <meta name="description" content="Web Audio synthesizers. Drum machine, bass synth, mono lead, and mixer. MIT license.">
+    <meta property="og:title" content="SynthMachine">
+    <meta property="og:description" content="Open source browser synths. R9-D9, R3-D3, R1-D1, and Mixer. MIT license.">
+    <meta property="og:type" content="website">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        header {
+            margin-bottom: 50px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 400;
+            color: #fff;
+            margin-bottom: 10px;
+        }
+
+        .tagline {
+            color: #888;
+            font-size: 1.1rem;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #1a1a1a;
+            border: 1px solid #333;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #4ade80;
+            margin-top: 15px;
+        }
+
+        .synths {
+            display: grid;
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .synth {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 8px;
+            padding: 25px;
+        }
+
+        .synth-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .synth-name {
+            font-size: 1.4rem;
+            color: #fff;
+        }
+
+        .synth-name span {
+            color: #666;
+            font-weight: 300;
+        }
+
+        .synth-links {
+            display: flex;
+            gap: 10px;
+        }
+
+        .synth-links a {
+            padding: 6px 14px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+        }
+
+        .demo-link {
+            background: #d4a574;
+            color: #000;
+        }
+
+        .demo-link:hover {
+            background: #e0b584;
+        }
+
+        .source-link {
+            background: #222;
+            color: #e0e0e0;
+            border: 1px solid #333;
+        }
+
+        .source-link:hover {
+            background: #333;
+        }
+
+        .synth-desc {
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        .file-tree {
+            background: #0a0a0a;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 15px;
+            font-size: 0.85rem;
+            overflow-x: auto;
+        }
+
+        .file-tree summary {
+            cursor: pointer;
+            color: #888;
+            margin-bottom: 10px;
+        }
+
+        .file-tree summary:hover {
+            color: #aaa;
+        }
+
+        .file-tree ul {
+            list-style: none;
+            padding-left: 20px;
+        }
+
+        .file-tree li {
+            padding: 2px 0;
+        }
+
+        .file-tree a {
+            color: #6bb3ff;
+            text-decoration: none;
+        }
+
+        .file-tree a:hover {
+            text-decoration: underline;
+        }
+
+        .folder {
+            color: #d4a574;
+        }
+
+        section {
+            margin-bottom: 50px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            font-weight: 400;
+            color: #fff;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #222;
+        }
+
+        .usage pre {
+            background: #111;
+            border: 1px solid #222;
+            border-radius: 4px;
+            padding: 20px;
+            overflow-x: auto;
+            font-size: 0.85rem;
+        }
+
+        .usage code {
+            color: #e0e0e0;
+        }
+
+        .comment { color: #666; }
+        .keyword { color: #c792ea; }
+        .string { color: #c3e88d; }
+        .function { color: #82aaff; }
+
+        footer {
+            color: #666;
+            font-size: 0.9rem;
+            padding-top: 30px;
+            border-top: 1px solid #222;
+        }
+
+        footer a {
+            color: #888;
+        }
+
+        footer a:hover {
+            color: #d4a574;
+        }
+
+        @media (max-width: 600px) {
+            h1 { font-size: 1.8rem; }
+            .synth-header { flex-direction: column; }
+            .synth-links { width: 100%; }
+            .synth-links a { flex: 1; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>SynthMachine</h1>
+            <p class="tagline">Open source browser synths. Web Audio API. No dependencies.</p>
+            <span class="badge">MIT License</span>
+        </header>
+
+        <div class="synths">
+            <!-- R9-D9 -->
+            <div class="synth">
+                <div class="synth-header">
+                    <div class="synth-name">R9-D9 <span>drum machine</span></div>
+                    <div class="synth-links">
+                        <a href="/909/" class="demo-link">Play Demo</a>
+                        <a href="/909/README.md" class="source-link">README</a>
+                    </div>
+                </div>
+                <p class="synth-desc">11 synthesized voices (kick, snare, clap, hats, toms, cymbals). Circuit-accurate E2 engine with waveshapers and bridged-T resonators. 16-step sequencer with swing and flam.</p>
+                <details class="file-tree">
+                    <summary>View source files</summary>
+                    <ul>
+                        <li><span class="folder">dist/</span>
+                            <ul>
+                                <li><span class="folder">core/</span>
+                                    <ul>
+                                        <li><a href="/909/dist/core/engine.js">engine.js</a></li>
+                                        <li><a href="/909/dist/core/sequencer.js">sequencer.js</a></li>
+                                        <li><a href="/909/dist/core/voice.js">voice.js</a></li>
+                                        <li><a href="/909/dist/core/output.js">output.js</a></li>
+                                    </ul>
+                                </li>
+                                <li><span class="folder">machines/tr909/</span>
+                                    <ul>
+                                        <li><a href="/909/dist/machines/tr909/engine.js">engine.js</a></li>
+                                        <li><a href="/909/dist/machines/tr909/presets.js">presets.js</a></li>
+                                        <li><span class="folder">voices/</span> — <a href="/909/dist/machines/tr909/voices/kick.js">kick</a>, <a href="/909/dist/machines/tr909/voices/snare.js">snare</a>, <a href="/909/dist/machines/tr909/voices/clap.js">clap</a>, <a href="/909/dist/machines/tr909/voices/hihat.js">hihat</a>, <a href="/909/dist/machines/tr909/voices/tom.js">tom</a>, <a href="/909/dist/machines/tr909/voices/cymbal.js">cymbal</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><a href="/909/LICENSE">LICENSE</a></li>
+                        <li><a href="/909/README.md">README.md</a></li>
+                    </ul>
+                </details>
+            </div>
+
+            <!-- R3-D3 -->
+            <div class="synth">
+                <div class="synth-header">
+                    <div class="synth-name">R3-D3 <span>bass synth</span></div>
+                    <div class="synth-links">
+                        <a href="/303/" class="demo-link">Play Demo</a>
+                        <a href="/303/README.md" class="source-link">README</a>
+                    </div>
+                </div>
+                <p class="synth-desc">Diode ladder filter emulation with self-oscillation. Sawtooth and square waves. 16-step sequencer with accent and slide. The squelch is real.</p>
+                <details class="file-tree">
+                    <summary>View source files</summary>
+                    <ul>
+                        <li><span class="folder">dist/</span>
+                            <ul>
+                                <li><span class="folder">core/</span>
+                                    <ul>
+                                        <li><a href="/303/dist/core/engine.js">engine.js</a></li>
+                                        <li><a href="/303/dist/core/output.js">output.js</a></li>
+                                        <li><a href="/303/dist/core/voice.js">voice.js</a></li>
+                                    </ul>
+                                </li>
+                                <li><span class="folder">machines/tb303/</span>
+                                    <ul>
+                                        <li><a href="/303/dist/machines/tb303/engine.js">engine.js</a></li>
+                                        <li><a href="/303/dist/machines/tb303/sequencer.js">sequencer.js</a></li>
+                                        <li><a href="/303/dist/machines/tb303/presets.js">presets.js</a></li>
+                                        <li><a href="/303/dist/machines/tb303/filter/diode-ladder.js">filter/diode-ladder.js</a></li>
+                                        <li><a href="/303/dist/machines/tb303/voices/bass.js">voices/bass.js</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><a href="/303/LICENSE">LICENSE</a></li>
+                        <li><a href="/303/README.md">README.md</a></li>
+                    </ul>
+                </details>
+            </div>
+
+            <!-- R1-D1 -->
+            <div class="synth">
+                <div class="synth-header">
+                    <div class="synth-name">R1-D1 <span>mono synth</span></div>
+                    <div class="synth-links">
+                        <a href="/101/" class="demo-link">Play Demo</a>
+                        <a href="/101/README.md" class="source-link">README</a>
+                    </div>
+                </div>
+                <p class="synth-desc">VCO with saw/pulse, sub-oscillator, IR3109 filter, full ADSR, LFO with routing to pitch/filter/PWM. Arpeggiator and 16-step sequencer.</p>
+                <details class="file-tree">
+                    <summary>View source files</summary>
+                    <ul>
+                        <li><span class="folder">dist/</span>
+                            <ul>
+                                <li><span class="folder">core/</span>
+                                    <ul>
+                                        <li><a href="/101/dist/core/engine.js">engine.js</a></li>
+                                        <li><a href="/101/dist/core/output.js">output.js</a></li>
+                                        <li><a href="/101/dist/core/voice.js">voice.js</a></li>
+                                    </ul>
+                                </li>
+                                <li><span class="folder">machines/sh101/</span>
+                                    <ul>
+                                        <li><a href="/101/dist/machines/sh101/engine.js">engine.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/oscillator.js">oscillator.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/sub-oscillator.js">sub-oscillator.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/envelope.js">envelope.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/lfo.js">lfo.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/vca.js">vca.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/sequencer.js">sequencer.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/presets.js">presets.js</a></li>
+                                        <li><a href="/101/dist/machines/sh101/filter/ir3109.js">filter/ir3109.js</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><a href="/101/LICENSE">LICENSE</a></li>
+                        <li><a href="/101/README.md">README.md</a></li>
+                    </ul>
+                </details>
+            </div>
+
+            <!-- Mixer -->
+            <div class="synth">
+                <div class="synth-header">
+                    <div class="synth-name">Mixer <span>effects + session</span></div>
+                    <div class="synth-links">
+                        <a href="/mixer/README.md" class="source-link">README</a>
+                    </div>
+                </div>
+                <p class="synth-desc">Multi-track session with sidechain ducking, 4-band EQ, and convolution reverb. Combine all the synths into one mixed output. Render to WAV.</p>
+                <details class="file-tree">
+                    <summary>View source files</summary>
+                    <ul>
+                        <li><span class="folder">dist/</span>
+                            <ul>
+                                <li><a href="/mixer/dist/session.js">session.js</a></li>
+                                <li><span class="folder">effects/</span>
+                                    <ul>
+                                        <li><a href="/mixer/dist/effects/base.js">base.js</a></li>
+                                        <li><a href="/mixer/dist/effects/ducker.js">ducker.js</a></li>
+                                        <li><a href="/mixer/dist/effects/eq.js">eq.js</a></li>
+                                        <li><a href="/mixer/dist/effects/reverb.js">reverb.js</a></li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </li>
+                        <li><a href="/mixer/LICENSE">LICENSE</a></li>
+                        <li><a href="/mixer/README.md">README.md</a></li>
+                    </ul>
+                </details>
+            </div>
+        </div>
+
+        <section class="usage">
+            <h2>Quick Start</h2>
+            <pre><code><span class="comment">// Import a synth</span>
+<span class="keyword">import</span> { TR909Engine } <span class="keyword">from</span> <span class="string">'/909/dist/machines/tr909/engine.js'</span>;
+<span class="keyword">import</span> { TB303Engine } <span class="keyword">from</span> <span class="string">'/303/dist/machines/tb303/engine.js'</span>;
+<span class="keyword">import</span> { SH101Engine } <span class="keyword">from</span> <span class="string">'/101/dist/machines/sh101/engine.js'</span>;
+
+<span class="comment">// Create and play</span>
+<span class="keyword">const</span> drums = <span class="keyword">new</span> <span class="function">TR909Engine</span>();
+drums.<span class="function">setBpm</span>(<span class="string">128</span>);
+drums.<span class="function">startSequencer</span>();
+
+<span class="comment">// Combine with mixer</span>
+<span class="keyword">import</span> { Session } <span class="keyword">from</span> <span class="string">'/mixer/dist/session.js'</span>;
+
+<span class="keyword">const</span> session = <span class="keyword">new</span> <span class="function">Session</span>({ bpm: <span class="string">128</span> });
+session.<span class="function">add</span>(<span class="string">'drums'</span>, drums);
+session.<span class="function">add</span>(<span class="string">'bass'</span>, <span class="keyword">new</span> <span class="function">TB303Engine</span>({ context: session.context }));
+
+<span class="comment">// Sidechain the bass to the kick</span>
+session.<span class="function">channel</span>(<span class="string">'bass'</span>).<span class="function">duck</span>({
+  trigger: session.<span class="function">channel</span>(<span class="string">'drums'</span>).<span class="function">getVoiceOutput</span>(<span class="string">'kick'</span>),
+  amount: <span class="string">0.6</span>
+});
+
+<span class="comment">// Render to WAV</span>
+<span class="keyword">const</span> { wav } = <span class="keyword">await</span> session.<span class="function">render</span>({ bars: <span class="string">8</span> });</code></pre>
+        </section>
+
+        <footer>
+            <p>Built by <a href="https://kochi.to">Kochi.to</a>. Code dump, not a maintained project. Use it, fork it, learn from it.</p>
+        </footer>
+    </div>
+</body>
+</html>
