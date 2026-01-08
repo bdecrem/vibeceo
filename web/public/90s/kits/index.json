@@ -1,0 +1,6 @@
+{
+  "kits": [
+    { "id": "amber", "name": "Amber Kit", "path": "/90s/kits/amber" },
+    { "id": "808", "name": "808 Kit", "path": "/90s/kits/808" }
+  ]
+}

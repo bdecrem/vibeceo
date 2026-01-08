@@ -1,0 +1,15 @@
+{
+  "name": "Lo-Fi Kit",
+  "slots": [
+    { "id": "s1", "name": "Dusty Kick", "short": "KK" },
+    { "id": "s2", "name": "Vinyl Snare", "short": "SN" },
+    { "id": "s3", "name": "Snap", "short": "SP" },
+    { "id": "s4", "name": "Shaker", "short": "SH" },
+    { "id": "s5", "name": "Hat", "short": "HT" },
+    { "id": "s6", "name": "Perc 1", "short": "P1" },
+    { "id": "s7", "name": "Perc 2", "short": "P2" },
+    { "id": "s8", "name": "FX Hit", "short": "FX" },
+    { "id": "s9", "name": "Texture", "short": "TX" },
+    { "id": "s10", "name": "Noise", "short": "NS" }
+  ]
+}

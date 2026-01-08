@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMBER - Fossilization</title>
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AMBER - Fossilization">
+  <meta property="og:description" content="Dark analog drum machine. Sounds preserved in time. Moog, Spacedrum, Vermona, Synare.">
+  <meta property="og:image" content="https://kochi.to/90s/amber-fossil-og.png">
+  <meta property="og:url" content="https://kochi.to/90s/amber-fossil.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AMBER - Fossilization">
+  <meta name="twitter:description" content="Dark analog drum machine. Sounds preserved in time.">
+  <meta name="twitter:image" content="https://kochi.to/90s/amber-fossil-og.png">
+
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    #ui {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 100;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 1.5rem;
+      letter-spacing: 0.5em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      color: #D4A574;
+      opacity: 0.5;
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 1rem;
+    }
+
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    #status {
+      color: #D4A574;
+      opacity: 0.6;
+      font-size: 0.75rem;
+      margin-top: 0.75rem;
+    }
+
+    .fossil-count {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      color: #D4A574;
+      opacity: 0.4;
+      font-size: 0.7rem;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="fossil-count">
+    <span id="count">0</span> suspended
+  </div>
+
+  <div id="ui">
+    <h1>AMBER</h1>
+    <div class="subtitle">FOSSILIZATION · 118 BPM</div>
+    <button id="play" onclick="start()">BEGIN</button>
+    <div id="status">sounds preserved in time</div>
+  </div>
+
+  <script type="module">
+    import { R9DSController } from '/90s/dist/api/index.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Fossils - things drifting and catching
+    const fossils = [];
+    const frozenFossils = [];
+
+    // Shape types for different sounds
+    const shapes = {
+      kick: (x, y, size, alpha) => {
+        ctx.beginPath();
+        ctx.arc(x, y, size, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(184, 134, 11, ${alpha})`;
+        ctx.fill();
+      },
+      snare: (x, y, size, alpha, rotation) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.fillStyle = `rgba(212, 165, 116, ${alpha})`;
+        ctx.fillRect(-size * 1.5, -size * 0.3, size * 3, size * 0.6);
+        ctx.restore();
+      },
+      perc: (x, y, size, alpha, rotation) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.866, size * 0.5);
+        ctx.lineTo(-size * 0.866, size * 0.5);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(180, 140, 80, ${alpha})`;
+        ctx.fill();
+        ctx.restore();
+      },
+      hat: (x, y, size, alpha) => {
+        ctx.fillStyle = `rgba(200, 160, 100, ${alpha})`;
+        ctx.fillRect(x - size * 0.15, y - size * 0.15, size * 0.3, size * 0.3);
+      },
+      tom: (x, y, size, alpha, rotation) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, size * 1.2, size * 0.6, 0, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(160, 120, 60, ${alpha})`;
+        ctx.fill();
+        ctx.restore();
+      },
+      wash: (x, y, size, alpha) => {
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+          const angle = (i / 6) * Math.PI * 2;
+          const r = size * (0.8 + Math.random() * 0.4);
+          const px = x + Math.cos(angle) * r;
+          const py = y + Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.closePath();
+        ctx.fillStyle = `rgba(190, 150, 90, ${alpha})`;
+        ctx.fill();
+      },
+      accent: (x, y, size, alpha, rotation) => {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        // Diamond
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.6, 0);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size * 0.6, 0);
+        ctx.closePath();
+        ctx.fillStyle = `rgba(220, 180, 100, ${alpha})`;
+        ctx.fill();
+        ctx.restore();
+      }
+    };
+
+    // Spawn a new fossil
+    function spawnFossil(type, intensity = 1) {
+      const fossil = {
+        x: Math.random() * W * 0.8 + W * 0.1,
+        y: -50,
+        vx: (Math.random() - 0.5) * 0.5,
+        vy: 0.3 + Math.random() * 0.5,
+        rotation: Math.random() * Math.PI * 2,
+        rotationSpeed: (Math.random() - 0.5) * 0.02,
+        size: 8 + Math.random() * 20 * intensity,
+        alpha: 0.7 + Math.random() * 0.3,
+        type: type,
+        frozen: false,
+        freezeY: H * 0.3 + Math.random() * H * 0.5, // Where it catches
+        age: 0
+      };
+      fossils.push(fossil);
+    }
+
+    // Update and draw
+    function update() {
+      // Amber background with subtle gradient
+      const gradient = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, Math.max(W, H) * 0.7);
+      gradient.addColorStop(0, 'rgba(30, 20, 10, 1)');
+      gradient.addColorStop(1, 'rgba(10, 9, 8, 1)');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, W, H);
+
+      // Draw frozen fossils (the amber layer)
+      frozenFossils.forEach(f => {
+        const drawFn = shapes[f.type];
+        if (drawFn) {
+          drawFn(f.x, f.y, f.size, f.alpha * 0.6, f.rotation);
+        }
+      });
+
+      // Subtle amber glow over frozen ones
+      if (frozenFossils.length > 0) {
+        ctx.fillStyle = 'rgba(184, 134, 11, 0.02)';
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Update and draw active fossils
+      for (let i = fossils.length - 1; i >= 0; i--) {
+        const f = fossils[i];
+
+        if (!f.frozen) {
+          f.x += f.vx;
+          f.y += f.vy;
+          f.rotation += f.rotationSpeed;
+          f.age++;
+
+          // Slow down as approaching freeze point
+          if (f.y > f.freezeY - 100) {
+            f.vy *= 0.98;
+            f.vx *= 0.98;
+            f.rotationSpeed *= 0.98;
+          }
+
+          // Freeze when slow enough and past freeze point
+          if (f.y >= f.freezeY && f.vy < 0.1) {
+            f.frozen = true;
+            f.vy = 0;
+            f.vx = 0;
+            f.rotationSpeed = 0;
+            frozenFossils.push(f);
+            fossils.splice(i, 1);
+            document.getElementById('count').textContent = frozenFossils.length;
+            continue;
+          }
+
+          // Remove if off screen
+          if (f.y > H + 100) {
+            fossils.splice(i, 1);
+            continue;
+          }
+        }
+
+        // Draw
+        const drawFn = shapes[f.type];
+        if (drawFn) {
+          // Glow for active fossils
+          ctx.shadowColor = 'rgba(212, 165, 116, 0.5)';
+          ctx.shadowBlur = 20;
+          drawFn(f.x, f.y, f.size, f.alpha, f.rotation);
+          ctx.shadowBlur = 0;
+        }
+      }
+
+      requestAnimationFrame(update);
+    }
+
+    // Start animation loop
+    update();
+
+    // Audio and pattern
+    let sampler = null;
+    let audioContext = null;
+    let isPlaying = false;
+
+    window.start = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      if (isPlaying) return;
+
+      btn.disabled = true;
+      status.textContent = 'loading amber kit...';
+
+      try {
+        if (!sampler) {
+          sampler = new R9DSController();
+          await sampler.loadKit('amber');
+        }
+
+        status.textContent = 'preparing...';
+
+        // The pattern - same as amber-track but we'll trigger visuals
+        const pattern = {
+          s1: [
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          s2: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          s3: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0.3}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.25}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.35}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.3}, {velocity: 0}
+          ],
+          s4: [
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0}
+          ],
+          s6: [
+            {velocity: 0.6}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          s8: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.4}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          s9: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ]
+        };
+
+        sampler.setPattern(pattern);
+        sampler.setVoiceParameter('s1', 'filter', 0.6);
+        sampler.setVoiceParameter('s3', 'filter', 0.4);
+        sampler.setVoiceParameter('s4', 'filter', 0.3);
+
+        status.textContent = 'rendering...';
+        const { wav } = await sampler.exportCurrentPatternToWav({ bpm: 118, bars: 8 });
+
+        if (!audioContext) {
+          audioContext = new AudioContext();
+        }
+
+        const audioBuffer = await audioContext.decodeAudioData(wav);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+
+        isPlaying = true;
+        source.start();
+
+        // Hide UI
+        document.getElementById('ui').style.opacity = '0';
+        document.getElementById('ui').style.transition = 'opacity 1s';
+
+        status.textContent = '';
+        btn.style.display = 'none';
+
+        // Trigger fossils in sync with pattern
+        const bpm = 118;
+        const stepDuration = (60 / bpm) / 4 * 1000;
+        let step = 0;
+        const bars = 8;
+        const totalSteps = 16 * bars;
+
+        const triggerInterval = setInterval(() => {
+          const patternStep = step % 16;
+
+          // Spawn based on pattern
+          if (pattern.s1[patternStep].velocity > 0) spawnFossil('kick', pattern.s1[patternStep].velocity);
+          if (pattern.s2[patternStep].velocity > 0) spawnFossil('snare', pattern.s2[patternStep].velocity);
+          if (pattern.s3[patternStep].velocity > 0) spawnFossil('perc', pattern.s3[patternStep].velocity);
+          if (pattern.s4[patternStep].velocity > 0) spawnFossil('hat', pattern.s4[patternStep].velocity * 0.5);
+          if (pattern.s6[patternStep].velocity > 0) spawnFossil('tom', pattern.s6[patternStep].velocity);
+          if (pattern.s8[patternStep].velocity > 0) spawnFossil('wash', pattern.s8[patternStep].velocity);
+          if (pattern.s9[patternStep].velocity > 0) spawnFossil('accent', pattern.s9[patternStep].velocity);
+
+          step++;
+          if (step >= totalSteps) {
+            clearInterval(triggerInterval);
+          }
+        }, stepDuration);
+
+        source.onended = () => {
+          isPlaying = false;
+          setTimeout(() => {
+            document.getElementById('ui').style.opacity = '1';
+            btn.style.display = 'block';
+            btn.disabled = false;
+            btn.textContent = 'AGAIN';
+            status.textContent = frozenFossils.length + ' moments preserved';
+          }, 2000);
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

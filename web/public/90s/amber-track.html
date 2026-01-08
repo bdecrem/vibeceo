@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMBER - Dark Analog</title>
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AMBER - Dark Analog">
+  <meta property="og:description" content="118 BPM minimal techno. Moog Modular 55, Spacedrum, Vermona DRM1, Synare-3.">
+  <meta property="og:image" content="https://kochi.to/90s/amber-track-og.png">
+  <meta property="og:url" content="https://kochi.to/90s/amber-track.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AMBER - Dark Analog">
+  <meta name="twitter:description" content="118 BPM minimal techno. Vintage analog drum machines.">
+  <meta name="twitter:image" content="https://kochi.to/90s/amber-track-og.png">
+
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5em;
+      text-shadow: 0 0 30px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      color: #D4A574;
+      opacity: 0.6;
+      font-size: 0.9rem;
+      margin-bottom: 2rem;
+      letter-spacing: 0.2em;
+    }
+
+    .sources {
+      font-size: 0.7rem;
+      opacity: 0.4;
+      margin-bottom: 2rem;
+      text-align: center;
+      line-height: 1.6;
+    }
+
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1.5rem 4rem;
+      font-size: 1.2rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.5s ease;
+    }
+
+    button:hover::before {
+      left: 100%;
+    }
+
+    button:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+      transform: none;
+    }
+
+    #status {
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      opacity: 0.7;
+      letter-spacing: 0.1em;
+    }
+
+    .pattern-display {
+      margin-top: 2rem;
+      display: grid;
+      grid-template-columns: repeat(16, 1fr);
+      gap: 4px;
+      max-width: 600px;
+    }
+
+    .step {
+      width: 100%;
+      aspect-ratio: 1;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      transition: all 0.1s ease;
+    }
+
+    .step.active {
+      background: rgba(184, 134, 11, 0.8);
+      box-shadow: 0 0 10px rgba(184, 134, 11, 0.5);
+    }
+
+    .step.playing {
+      background: #D4A574;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <h1>AMBER</h1>
+  <div class="subtitle">DARK ANALOG · 118 BPM</div>
+  <div class="sources">
+    Moog Modular 55 · Electro-Harmonix Spacedrum · Vermona DRM1 · Star Synare-3
+  </div>
+
+  <button id="play" onclick="playTrack()">PLAY</button>
+  <div id="status">Click to load and play</div>
+
+  <div class="pattern-display" id="pattern">
+    <!-- 16 steps visualized -->
+  </div>
+
+  <script type="module">
+    import { R9DSController } from '/90s/dist/api/index.js';
+
+    let sampler = null;
+    let audioContext = null;
+    let isPlaying = false;
+
+    // Initialize pattern display
+    const patternDiv = document.getElementById('pattern');
+    for (let i = 0; i < 16; i++) {
+      const step = document.createElement('div');
+      step.className = 'step';
+      step.id = `step-${i}`;
+      patternDiv.appendChild(step);
+    }
+
+    // Mark active steps based on pattern
+    const activeSteps = [0, 4, 8, 12, // kick
+                        4, 12,        // snare
+                        2, 6, 10, 14, // space perc
+                        0, 2, 4, 6, 8, 10, 12, 14]; // hats
+    const uniqueActive = [...new Set(activeSteps)];
+    uniqueActive.forEach(i => {
+      document.getElementById(`step-${i}`).classList.add('active');
+    });
+
+    window.playTrack = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      if (isPlaying) {
+        status.textContent = 'Finishing...';
+        return;
+      }
+
+      btn.disabled = true;
+      status.textContent = 'Loading Amber kit...';
+
+      try {
+        if (!sampler) {
+          sampler = new R9DSController();
+          await sampler.loadKit('amber');
+        }
+
+        status.textContent = 'Building pattern...';
+
+        // Dark, minimal pattern at 118 BPM
+        // Moog kick on 1, 5, 9, 13
+        // Moog snare on 5, 13
+        // Space perc on offbeats (3, 7, 11, 15) - ghosted
+        // Moog CH on 8ths
+        // Synare low tom accent on 1
+        // Space wash on 9 (subtle)
+        // Vermona accent on 13
+
+        const pattern = {
+          // s1 - Moog Kick: heavy 4/4
+          s1: [
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          // s2 - Moog Snare: 2 and 4
+          s2: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 1.0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          // s3 - Space Perc: ghosted offbeats
+          s3: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0.3}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.25}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.35}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0.3}, {velocity: 0}
+          ],
+          // s4 - Moog CH: steady 8ths
+          s4: [
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0.4}, {velocity: 0}
+          ],
+          // s6 - Synare Low: accent on 1
+          s6: [
+            {velocity: 0.6}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          // s8 - Space Wash: texture on 9
+          s8: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.4}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ],
+          // s9 - Vermona: accent on 13
+          s9: [
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+            {velocity: 0.5}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+          ]
+        };
+
+        sampler.setPattern(pattern);
+
+        // Darken sounds
+        sampler.setVoiceParameter('s1', 'filter', 0.6);
+        sampler.setVoiceParameter('s3', 'filter', 0.4);
+        sampler.setVoiceParameter('s4', 'filter', 0.3);
+
+        status.textContent = 'Rendering 4 bars...';
+
+        const { wav } = await sampler.exportCurrentPatternToWav({ bpm: 118, bars: 4 });
+
+        if (!audioContext) {
+          audioContext = new AudioContext();
+        }
+
+        const audioBuffer = await audioContext.decodeAudioData(wav);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+
+        isPlaying = true;
+        source.start();
+        status.textContent = 'Playing...';
+        btn.textContent = 'PLAYING';
+
+        // Animate steps
+        const stepDuration = (60 / 118) / 4 * 1000; // ms per 16th note
+        let currentStep = 0;
+        const animate = setInterval(() => {
+          document.querySelectorAll('.step').forEach(s => s.classList.remove('playing'));
+          document.getElementById(`step-${currentStep}`).classList.add('playing');
+          currentStep = (currentStep + 1) % 16;
+        }, stepDuration);
+
+        source.onended = () => {
+          clearInterval(animate);
+          document.querySelectorAll('.step').forEach(s => s.classList.remove('playing'));
+          status.textContent = 'Click to play again';
+          btn.disabled = false;
+          btn.textContent = 'PLAY';
+          isPlaying = false;
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Error: ' + err.message;
+        btn.disabled = false;
+        btn.textContent = 'PLAY';
+        isPlaying = false;
+      }
+    };
+  </script>
+</body>
+</html>

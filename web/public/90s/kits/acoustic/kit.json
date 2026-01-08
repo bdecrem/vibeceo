@@ -1,0 +1,15 @@
+{
+  "name": "Acoustic Kit",
+  "slots": [
+    { "id": "s1", "name": "Kick", "short": "KK" },
+    { "id": "s2", "name": "Snare", "short": "SN" },
+    { "id": "s3", "name": "Clap", "short": "CP" },
+    { "id": "s4", "name": "Hi-Hat Closed", "short": "CH" },
+    { "id": "s5", "name": "Hi-Hat Open", "short": "OH" },
+    { "id": "s6", "name": "Floor Tom", "short": "FT" },
+    { "id": "s7", "name": "Rack Tom", "short": "RT" },
+    { "id": "s8", "name": "Crash", "short": "CR" },
+    { "id": "s9", "name": "Ride", "short": "RD" },
+    { "id": "s10", "name": "Tambourine", "short": "TB" }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "Amber Kit",
+  "description": "Dark analog warmth. Moog Modular 55, Electro-Harmonix Spacedrum, Vermona DRM1, Star Synare-3.",
+  "slots": [
+    { "id": "s1", "name": "Moog Kick", "short": "MK" },
+    { "id": "s2", "name": "Moog Snare", "short": "MS" },
+    { "id": "s3", "name": "Space Perc", "short": "SP" },
+    { "id": "s4", "name": "Moog CH", "short": "CH" },
+    { "id": "s5", "name": "Moog OH", "short": "OH" },
+    { "id": "s6", "name": "Synare Low", "short": "SL" },
+    { "id": "s7", "name": "Synare Mid", "short": "SM" },
+    { "id": "s8", "name": "Space Wash", "short": "SW" },
+    { "id": "s9", "name": "Vermona", "short": "VM" },
+    { "id": "s10", "name": "Space Hit", "short": "SH" }
+  ]
+}

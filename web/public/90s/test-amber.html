@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Amber Test Beat</title>
+  <style>
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: #B8860B;
+      margin-bottom: 2rem;
+    }
+    button {
+      background: #D4A574;
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1.5rem;
+      font-family: inherit;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover {
+      background: #B8860B;
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+    #status {
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <h1>AMBER TEST BEAT</h1>
+  <button id="play" onclick="playBeat()">PLAY</button>
+  <div id="status">808 kit, 120 BPM, 2 bars</div>
+
+  <script type="module">
+    import { R9DSController } from '/90s/dist/api/index.js';
+
+    let sampler = null;
+    let audioContext = null;
+
+    window.playBeat = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      btn.disabled = true;
+      status.textContent = 'Loading...';
+
+      try {
+        // Create sampler if needed
+        if (!sampler) {
+          sampler = new R9DSController();
+          await sampler.loadKit('808');
+        }
+
+        // Simple pattern: kick on 1, 5, 9, 13 | snare on 5, 13 | hats on every step
+        const pattern = {
+          s1: Array(16).fill(null).map((_, i) => ({ velocity: [0,4,8,12].includes(i) ? 0.9 : 0 })),
+          s2: Array(16).fill(null).map((_, i) => ({ velocity: [4,12].includes(i) ? 1.0 : 0 })),
+          s4: Array(16).fill(null).map((_, i) => ({ velocity: i % 2 === 0 ? 0.5 : 0.3 }))
+        };
+
+        sampler.setPattern(pattern);
+        status.textContent = 'Rendering...';
+
+        // Render to WAV
+        const { wav } = await sampler.exportCurrentPatternToWav({ bpm: 120, bars: 2 });
+
+        // Play it
+        if (!audioContext) {
+          audioContext = new AudioContext();
+        }
+
+        const audioBuffer = await audioContext.decodeAudioData(wav);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+        source.start();
+
+        status.textContent = 'Playing...';
+        source.onended = () => {
+          status.textContent = '808 kit, 120 BPM, 2 bars';
+          btn.disabled = false;
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'Error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
