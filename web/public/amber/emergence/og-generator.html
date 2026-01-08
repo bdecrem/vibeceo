@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            width: 1200px;
+            height: 630px;
+            background: #0A0908;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Gradient sweep across all 4 colors */
+        .gradient-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(
+                135deg,
+                rgba(58, 90, 124, 0.3) 0%,
+                rgba(212, 165, 116, 0.3) 33%,
+                rgba(136, 136, 136, 0.3) 66%,
+                rgba(204, 68, 34, 0.3) 100%
+            );
+        }
+
+        .title {
+            font-size: 120px;
+            letter-spacing: 0.5em;
+            color: #D4A574;
+            text-shadow: 0 0 80px rgba(212, 165, 116, 0.5);
+            z-index: 1;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            letter-spacing: 0.6em;
+            color: #666;
+            margin-top: 20px;
+            z-index: 1;
+        }
+
+        .bpm {
+            font-size: 18px;
+            letter-spacing: 0.4em;
+            color: #444;
+            margin-top: 40px;
+            z-index: 1;
+        }
+
+        /* State indicators */
+        .states {
+            display: flex;
+            gap: 40px;
+            margin-top: 50px;
+            z-index: 1;
+        }
+
+        .state {
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            padding: 8px 16px;
+            border: 1px solid;
+        }
+
+        .state.drift { color: #3a5a7c; border-color: #3a5a7c; }
+        .state.solder { color: #D4A574; border-color: #D4A574; }
+        .state.static { color: #888; border-color: #888; }
+        .state.furnace { color: #cc4422; border-color: #cc4422; }
+
+        .author {
+            position: absolute;
+            bottom: 40px;
+            font-size: 14px;
+            letter-spacing: 0.4em;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="gradient-bg"></div>
+    <div class="title">EMERGENCE</div>
+    <div class="subtitle">FOUR STATES / ONE ASCENT</div>
+    <div class="states">
+        <div class="state drift">DRIFT</div>
+        <div class="state solder">SOLDER</div>
+        <div class="state static">STATIC</div>
+        <div class="state furnace">FURNACE</div>
+    </div>
+    <div class="bpm">100 - 140 BPM</div>
+    <div class="author">AMBER / 2026</div>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GHOST SIGNAL</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #0a0a0a;
+      color: #d4a574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 30px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 32px;
+      letter-spacing: 8px;
+    }
+    .subtitle {
+      color: #2d9596;
+      font-size: 12px;
+      letter-spacing: 4px;
+    }
+    button {
+      background: #1a1a1a;
+      border: 2px solid #d4a574;
+      color: #d4a574;
+      padding: 20px 60px;
+      font-size: 18px;
+      font-family: monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 4px;
+    }
+    button:hover {
+      background: #d4a574;
+      color: #0a0a0a;
+    }
+    #step {
+      font-size: 14px;
+      color: #666;
+      height: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>GHOST SIGNAL</h1>
+  <p class="subtitle">SH-101 SOLO</p>
+  <button id="toggle">PLAY</button>
+  <div id="step"></div>
+
+  <script type="module">
+    import { SH101Engine } from '/101/dist/machines/sh101/engine.js';
+
+    const synth = new SH101Engine();
+    let isPlaying = false;
+
+    // My custom patch - haunting lead with slow LFO
+    const patch = {
+      vcoSaw: 0.6,
+      vcoPulse: 0.5,
+      pulseWidth: 0.35,
+      subLevel: 0.25,
+      subMode: 1,
+      cutoff: 0.28,
+      resonance: 0.65,
+      envMod: 0.55,
+      attack: 0.08,
+      decay: 0.4,
+      sustain: 0.3,
+      release: 0.5,
+      lfoRate: 0.08,
+      lfoWaveform: 'triangle',
+      lfoToPitch: 0.03,
+      lfoToFilter: 0.15,
+      lfoToPW: 0.2,
+      volume: 0.8,
+    };
+
+    // Melodic pattern - minor key, spacious
+    const pattern = [
+      { note: 'A2', gate: true, accent: true, slide: false },
+      { note: 'A2', gate: false, accent: false, slide: false },
+      { note: 'E3', gate: true, accent: false, slide: true },
+      { note: 'G3', gate: true, accent: false, slide: false },
+      { note: 'A3', gate: true, accent: true, slide: false },
+      { note: 'A3', gate: false, accent: false, slide: false },
+      { note: 'G3', gate: true, accent: false, slide: true },
+      { note: 'E3', gate: true, accent: false, slide: false },
+      { note: 'D3', gate: true, accent: true, slide: false },
+      { note: 'D3', gate: false, accent: false, slide: false },
+      { note: 'E3', gate: true, accent: false, slide: false },
+      { note: 'G3', gate: true, accent: false, slide: true },
+      { note: 'A3', gate: true, accent: false, slide: false },
+      { note: 'E3', gate: true, accent: true, slide: true },
+      { note: 'D3', gate: true, accent: false, slide: false },
+      { note: 'A2', gate: true, accent: false, slide: false },
+    ];
+
+    // Apply patch
+    Object.entries(patch).forEach(([key, value]) => {
+      synth.setParameter(key, value);
+    });
+
+    synth.setBpm(95);
+    synth.setPattern(pattern);
+
+    // Step indicator
+    const stepEl = document.getElementById('step');
+    synth.onStepChange = (step) => {
+      stepEl.textContent = '○'.repeat(step) + '●' + '○'.repeat(15 - step);
+    };
+
+    const btn = document.getElementById('toggle');
+
+    btn.addEventListener('click', async () => {
+      await synth.context.resume();
+
+      if (isPlaying) {
+        synth.stopSequencer();
+        btn.textContent = 'PLAY';
+        stepEl.textContent = '';
+      } else {
+        synth.startSequencer();
+        btn.textContent = 'STOP';
+      }
+      isPlaying = !isPlaying;
+    });
+  </script>
+</body>
+</html>

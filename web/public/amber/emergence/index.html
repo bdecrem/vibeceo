@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMERGENCE - Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+    <meta property="og:title" content="EMERGENCE">
+    <meta property="og:description" content="A 909 mix by Amber. Four states. One ascent.">
+    <meta property="og:image" content="https://kochi.to/amber/emergence/og.png">
+    <meta property="og:url" content="https://kochi.to/amber/emergence/">
+    <meta property="og:type" content="website">
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #0A0908;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        #track-frame {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        #start-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #0A0908;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 100;
+            transition: opacity 0.8s ease;
+        }
+
+        #start-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .title {
+            color: #D4A574;
+            font-size: 3rem;
+            letter-spacing: 0.8em;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 0.7rem;
+            letter-spacing: 0.4em;
+        }
+
+        #hud {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 50;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        #section-label {
+            font-size: 1rem;
+            letter-spacing: 0.5em;
+            color: #D4A574;
+            margin-bottom: 10px;
+            opacity: 0;
+            transition: opacity 0.3s, color 0.3s;
+        }
+
+        #progress {
+            width: 200px;
+            height: 2px;
+            background: #222;
+        }
+
+        #progress-bar {
+            height: 100%;
+            background: #D4A574;
+            width: 0%;
+            transition: width 0.5s linear;
+        }
+
+        #info {
+            position: fixed;
+            bottom: 30px;
+            left: 20px;
+            color: #333;
+            font-size: 0.6rem;
+            letter-spacing: 0.1em;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body>
+    <iframe id="track-frame" allow="autoplay"></iframe>
+
+    <div id="start-overlay">
+        <div class="title">EMERGENCE</div>
+        <div class="subtitle">FOUR STATES / ONE ASCENT</div>
+    </div>
+
+    <div id="hud">
+        <div id="section-label"></div>
+        <div id="progress"><div id="progress-bar"></div></div>
+    </div>
+
+    <div id="info">AMBER / 2026</div>
+
+    <script>
+        const SECTIONS = [
+            { name: 'DRIFT', url: '/amber/909-drift/index.html?autoplay=1', bpm: 100, bars: 8, color: '#D4A574' },
+            { name: 'SOLDER', url: '/amber/solder/index.html?autoplay=1', bpm: 128, bars: 8, color: '#D4A574' },
+            { name: 'STATIC', url: '/amber/909-static/index.html?autoplay=1', bpm: 132, bars: 8, color: '#888888' },
+            { name: 'FURNACE', url: '/amber/909-furnace/index.html?autoplay=1', bpm: 140, bars: 32, color: '#cc4422' }
+        ];
+
+        // Calculate duration: bars * 4 beats * (60 / bpm) seconds
+        SECTIONS.forEach(s => {
+            s.duration = s.bars * 4 * (60 / s.bpm) * 1000; // in ms
+        });
+
+        const totalDuration = SECTIONS.reduce((sum, s) => sum + s.duration, 0);
+
+        let currentSection = 0;
+        let startTime = 0;
+        let isPlaying = false;
+
+        const frame = document.getElementById('track-frame');
+        const overlay = document.getElementById('start-overlay');
+        const label = document.getElementById('section-label');
+        const progressBar = document.getElementById('progress-bar');
+
+        function loadSection(index) {
+            if (index >= SECTIONS.length) {
+                endShow();
+                return;
+            }
+
+            const section = SECTIONS[index];
+            frame.src = section.url;
+            label.textContent = section.name;
+            label.style.color = section.color;
+            label.style.opacity = '1';
+
+            // Schedule next section
+            setTimeout(() => {
+                currentSection++;
+                loadSection(currentSection);
+            }, section.duration);
+        }
+
+        function updateProgress() {
+            if (!isPlaying) return;
+
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(100, (elapsed / totalDuration) * 100);
+            progressBar.style.width = progress + '%';
+
+            if (progress < 100) {
+                requestAnimationFrame(updateProgress);
+            }
+        }
+
+        function endShow() {
+            isPlaying = false;
+            label.style.opacity = '0';
+            progressBar.style.width = '100%';
+
+            setTimeout(() => {
+                frame.src = 'about:blank';
+                overlay.querySelector('.subtitle').textContent = 'AMBER / 2026';
+                overlay.classList.remove('hidden');
+            }, 1000);
+        }
+
+        overlay.addEventListener('click', () => {
+            overlay.classList.add('hidden');
+            isPlaying = true;
+            currentSection = 0;
+            startTime = Date.now();
+            loadSection(0);
+            updateProgress();
+        });
+    </script>
+</body>
+</html>

@@ -17,10 +17,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import pytz
 
-# Add parent paths for imports
-sys.path.insert(0, str(Path(__file__).parent.parent / "trading-fork"))
-
-from trading.alpaca_client import AlpacaClient, is_market_open, get_market_status
+# Use local alpaca_client (not trading-fork)
+from alpaca_client import AlpacaClient, is_market_open, get_market_status
 
 # Timezone
 ET = pytz.timezone('America/New_York')
@@ -308,6 +306,41 @@ def advance_day():
     print(f"Advanced to Day {state['day']}")
 
 
+def monitor(interval_minutes=15):
+    """Run continuously, checking every N minutes during market hours."""
+    import time
+
+    print(f"\n{'='*60}")
+    print("GOLD/OIL TRADER - MONITOR MODE")
+    print(f"Checking every {interval_minutes} minutes during market hours")
+    print(f"Press Ctrl+C to stop")
+    print(f"{'='*60}\n")
+
+    while True:
+        try:
+            market = get_market_status()
+            now_pt = datetime.now(PT)
+
+            if market["is_open"]:
+                print(f"\n[{now_pt.strftime('%H:%M:%S')}] Market OPEN - running check...")
+                run_check()
+            else:
+                next_open = market.get("next_open", "unknown")
+                print(f"[{now_pt.strftime('%H:%M:%S')}] Market closed. Next open: {next_open}")
+
+            # Sleep until next check
+            print(f"Sleeping {interval_minutes} minutes...")
+            time.sleep(interval_minutes * 60)
+
+        except KeyboardInterrupt:
+            print("\n\nMonitor stopped.")
+            break
+        except Exception as e:
+            print(f"Error: {e}")
+            print(f"Retrying in {interval_minutes} minutes...")
+            time.sleep(interval_minutes * 60)
+
+
 # =============================================================================
 # MAIN
 # =============================================================================
@@ -316,9 +349,11 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description="Gold/Oil Trader")
-    parser.add_argument("command", choices=["run", "status", "advance"],
+    parser.add_argument("command", choices=["run", "status", "advance", "monitor"],
                         default="run", nargs="?",
                         help="Command to execute")
+    parser.add_argument("--interval", type=int, default=15,
+                        help="Monitor interval in minutes (default: 15)")
 
     args = parser.parse_args()
 
@@ -328,3 +363,5 @@ if __name__ == "__main__":
         show_status()
     elif args.command == "advance":
         advance_day()
+    elif args.command == "monitor":
+        monitor(args.interval)
