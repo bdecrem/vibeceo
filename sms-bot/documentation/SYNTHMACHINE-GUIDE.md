@@ -2,6 +2,44 @@
 
 Web Audio synthesizer libraries for creating electronic music programmatically.
 
+## What's New (January 2026)
+
+**Mixer module added.** You can now combine multiple synths (909 + 303 + 101) with professional effects and render to a single mixed WAV file.
+
+**New capabilities:**
+- **Sidechain ducking** — Make the kick cut through the bass
+- **4-band EQ** — Clean up mud, add presence (`acidBass`, `crispHats`, `master` presets)
+- **Convolution reverb** — Add space (`plate`, `room` presets)
+- **Combined render** — `session.render({ bars: 8 })` outputs one mixed WAV
+
+**Quick example:**
+```javascript
+import { Session } from '/mixer/dist/session.js';
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+const session = new Session({ bpm: 128 });
+session.add('drums', new TR909Engine({ context: session.context }));
+session.add('bass', new TB303Engine({ context: session.context }));
+
+// Sidechain the bass to the kick
+session.channel('bass').duck({
+  trigger: session.channel('drums').getVoiceOutput('kick'),
+  amount: 0.6
+});
+
+// EQ and reverb
+session.channel('bass').eq({ preset: 'acidBass' });
+await session.master.reverb({ preset: 'plate', mix: 0.15 });
+
+// Render full mix
+const { wav } = await session.render({ bars: 8 });
+```
+
+See [Mixer & Effects](#mixer--effects) section below for full documentation.
+
+---
+
 ## Available Instruments
 
 | Instrument | Type | Location | Detailed Docs |
