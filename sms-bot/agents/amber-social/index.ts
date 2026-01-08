@@ -40,6 +40,85 @@ const SCHEDULE = [
 // Admin email for approval requests
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
 
+// =============================================================================
+// REPLY FILTERING CONFIG
+// =============================================================================
+
+// Maximum replies per session (to avoid spamming)
+const MAX_REPLIES_PER_SESSION = 2;
+
+// Whitelist of accounts Amber is allowed to reply to (lowercase usernames, no @)
+// Everyone else gets ignored for now during tuning phase
+const REPLY_WHITELIST: Set<string> = new Set([
+  'aikimethod',      // Aydrian
+  'bartdecrem',      // Bart
+  'dontedelphi',     // dontedelphi
+  'jonrog1',         // Jon Rogers
+]);
+
+// Patterns that indicate spam/crypto accounts to ALWAYS ignore
+const SPAM_PATTERNS = [
+  /crypto/i,
+  /bitcoin/i,
+  /\bbtc\b/i,
+  /\beth\b/i,
+  /blockchain/i,
+  /nft/i,
+  /web3/i,
+  /defi/i,
+  /token/i,
+  /airdrop/i,
+  /giveaway/i,
+  /follow.*back/i,
+  /dm.*me/i,
+  /check.*bio/i,
+  /link.*bio/i,
+  /earn.*\$/i,
+  /free.*money/i,
+  /100x/i,
+  /1000x/i,
+  /pump/i,
+  /moon/i,
+  /lambo/i,
+  /wagmi/i,
+  /ngmi/i,
+];
+
+/**
+ * Check if a username is in the reply whitelist
+ */
+function isWhitelistedUser(username: string | undefined): boolean {
+  if (!username) return false;
+  return REPLY_WHITELIST.has(username.toLowerCase());
+}
+
+/**
+ * Check if tweet text looks like spam/crypto content
+ */
+function isSpamContent(text: string): boolean {
+  return SPAM_PATTERNS.some(pattern => pattern.test(text));
+}
+
+/**
+ * Determine if we should reply to this mention
+ * Returns { shouldReply: boolean, reason: string }
+ */
+function shouldReplyToMention(tweet: Tweet): { shouldReply: boolean; reason: string } {
+  const username = tweet.authorUsername?.toLowerCase();
+
+  // Check whitelist first (during tuning phase, only reply to known accounts)
+  if (!isWhitelistedUser(username)) {
+    return { shouldReply: false, reason: `not in whitelist: @${username}` };
+  }
+
+  // Check for spam content even from whitelisted users (just in case)
+  if (isSpamContent(tweet.text)) {
+    return { shouldReply: false, reason: 'spam content detected' };
+  }
+
+  return { shouldReply: true, reason: 'whitelisted user' };
+}
+
 // Initialize SendGrid if available
 if (process.env.SENDGRID_API_KEY) {
   sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -747,9 +826,11 @@ async function logTweetReply(
 
 /**
  * Run the reply phase - check mentions and respond
+ * Filters: whitelist only, spam detection, max replies per session
  */
 async function runReplyPhase(timeOfDay: string): Promise<void> {
   console.log(`[amber-social] Starting ${timeOfDay} reply phase...`);
+  console.log(`[amber-social] Config: max ${MAX_REPLIES_PER_SESSION} replies, whitelist: ${Array.from(REPLY_WHITELIST).join(', ')}`);
 
   try {
     // Get last processed mention ID
@@ -772,21 +853,47 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
     // Process each mention (oldest first for proper ordering)
     const mentions = [...result.mentions].reverse();
     let latestMentionId = sinceId;
+    let repliesSentThisSession = 0;
 
     for (const tweet of mentions) {
       // Skip if already processed
       if (await hasProcessedTweet(tweet.id)) {
         console.log(`[amber-social] Already processed tweet ${tweet.id}, skipping`);
+        // Still update cursor
+        if (!latestMentionId || tweet.id > latestMentionId) {
+          latestMentionId = tweet.id;
+        }
         continue;
       }
 
       console.log(`[amber-social] Processing mention from @${tweet.authorUsername}: "${tweet.text.slice(0, 50)}..."`);
 
+      // Check if we should reply to this mention (whitelist + spam filter)
+      const { shouldReply, reason } = shouldReplyToMention(tweet);
+
+      if (!shouldReply) {
+        console.log(`[amber-social] SKIPPING @${tweet.authorUsername}: ${reason}`);
+        // Log as processed so we don't keep re-checking
+        await logTweetReply(tweet, `[Skipped: ${reason}]`, undefined, false);
+        // Update cursor
+        if (!latestMentionId || tweet.id > latestMentionId) {
+          latestMentionId = tweet.id;
+        }
+        continue;
+      }
+
+      // Check reply limit
+      if (repliesSentThisSession >= MAX_REPLIES_PER_SESSION) {
+        console.log(`[amber-social] Hit reply limit (${MAX_REPLIES_PER_SESSION}), stopping for this session`);
+        // Don't update cursor past this point - we'll process remaining next time
+        break;
+      }
+
       // Check if this is an action request
       const { isAction, action } = isTwitterActionRequest(tweet.text);
 
       if (isAction && action) {
-        // Queue for approval - don't reply yet
+        // Queue for approval - don't reply yet (doesn't count toward limit)
         console.log(`[amber-social] Action request detected: ${action}`);
         await storePendingTwitterApproval(tweet, action);
         await logTweetReply(tweet, '', undefined, true);
@@ -795,13 +902,15 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
         const replyText = await generateTwitterReply(tweet, persona);
 
         if (replyText) {
-          console.log(`[amber-social] Replying: "${replyText.slice(0, 50)}..."`);
+          console.log(`[amber-social] Replying to @${tweet.authorUsername}: "${replyText.slice(0, 50)}..."`);
 
           const postResult = await replyToTweet(replyText, tweet.id, 'intheamber');
 
           if (postResult.success) {
             console.log(`[amber-social] Reply posted: ${postResult.tweetUrl}`);
             await logTweetReply(tweet, replyText, postResult.tweetId, false);
+            repliesSentThisSession++;
+            console.log(`[amber-social] Replies sent this session: ${repliesSentThisSession}/${MAX_REPLIES_PER_SESSION}`);
           } else {
             console.error(`[amber-social] Failed to post reply: ${postResult.error}`);
             await logTweetReply(tweet, replyText, undefined, false);
@@ -822,7 +931,7 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
       await saveLastProcessedMentionId(latestMentionId);
     }
 
-    console.log(`[amber-social] ${timeOfDay} reply phase complete`);
+    console.log(`[amber-social] ${timeOfDay} reply phase complete. Sent ${repliesSentThisSession} replies.`);
 
   } catch (error) {
     console.error(`[amber-social] ${timeOfDay} reply phase failed:`, error);
