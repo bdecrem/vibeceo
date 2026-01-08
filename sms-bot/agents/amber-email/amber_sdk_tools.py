@@ -15,6 +15,7 @@ import base64
 import json
 import os
 import subprocess
+import sys
 import urllib.request
 import urllib.parse
 from typing import Any, Dict, Optional
@@ -448,21 +449,31 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_og_image",
-    "Generate a branded OpenGraph image (1200x630) for social sharing. Creates a dark amber-themed image with the title text. Save path should be relative to codebase root.",
-    {"title": str, "save_path": str, "subtitle": str}
+    "Generate a branded OpenGraph image (1200x630) for social sharing. When use_ai=true, generates a creative AI image using DALL-E influenced by mood parameters. Otherwise creates a simple text-on-dark-background image.",
+    {"title": str, "save_path": str, "subtitle": str, "use_ai": bool, "mood_energy": float, "mood_valence": float}
 )
 async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate a branded OG image for social sharing.
-    Creates a 1200x630 image with:
-    - Dark background with subtle amber gradient
-    - Title text in amber/gold
-    - Optional subtitle
-    - Amber's visual branding
+
+    Two modes:
+    1. use_ai=True (default): Generate creative AI image with DALL-E
+       - Uses mood_energy and mood_valence to influence aesthetic
+       - High energy = bold, saturated, dynamic
+       - Low energy = minimal, sparse, quiet
+       - High valence = warm, luminous, inviting
+       - Low valence = introspective, shadowed, abstract
+
+    2. use_ai=False: Simple text-on-dark fallback
+       - Title text in amber/gold
+       - Dark background
     """
     title = args.get("title", "")
     save_path = args.get("save_path", "")
     subtitle = args.get("subtitle", "")
+    use_ai = args.get("use_ai", True)  # Default to AI generation
+    mood_energy = args.get("mood_energy", 0.5)
+    mood_valence = args.get("mood_valence", 0.5)
 
     if not title:
         return make_result(json.dumps({"error": "Title required"}), is_error=True)
@@ -470,6 +481,93 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     if not save_path:
         return make_result(json.dumps({"error": "save_path required"}), is_error=True)
 
+    # ==========================================================================
+    # AI Generation Mode (using DALL-E)
+    # ==========================================================================
+    if use_ai:
+        openai_key = os.getenv("OPENAI_API_KEY")
+        if not openai_key:
+            # Fall back to PIL mode if no API key
+            use_ai = False
+        else:
+            # Build mood-influenced prompt
+            energy_desc = "bold, saturated, dynamic patterns" if mood_energy > 0.6 else \
+                         "minimal, sparse, restrained" if mood_energy < 0.4 else \
+                         "balanced, measured"
+            valence_desc = "warm, luminous, inviting tones" if mood_valence > 0.6 else \
+                          "introspective, shadowed, abstract" if mood_valence < 0.4 else \
+                          "neutral, observational"
+
+            og_prompt = f"""Abstract digital art for social media preview (1200x630 aspect ratio).
+Theme: "{title}"
+{f'Subtitle: {subtitle}' if subtitle else ''}
+
+Style requirements:
+- Dark background (#0D0D0D to #1a1a1a)
+- Amber/gold primary accent (#D4A574, #FFD700, #f59e0b)
+- Teal secondary accent (#2D9596)
+- Energy: {energy_desc}
+- Mood: {valence_desc}
+- The title "{title}" should be subtly visible or represented conceptually
+- Berlin techno aesthetic meets generative art
+- No photorealistic elements, purely abstract/digital
+- Suitable for OpenGraph social preview
+- Clean, impactful, modern"""
+
+            try:
+                url = "https://api.openai.com/v1/images/generations"
+                payload = json.dumps({
+                    "model": "gpt-image-1",
+                    "prompt": og_prompt,
+                    "n": 1,
+                    "size": "1536x1024",  # Closest to 1200x630 aspect
+                    "quality": "high",
+                    "response_format": "b64_json"
+                }).encode()
+
+                req = urllib.request.Request(url, data=payload, headers={
+                    "Authorization": f"Bearer {openai_key}",
+                    "Content-Type": "application/json"
+                })
+
+                with urllib.request.urlopen(req, timeout=120) as response:
+                    data = json.loads(response.read().decode())
+
+                if data.get("data") and data["data"][0].get("b64_json"):
+                    b64_image = data["data"][0]["b64_json"]
+
+                    # Save the image
+                    if IS_RAILWAY:
+                        _github_pending_files[save_path] = f"BASE64:{b64_image}"
+                        return make_result(json.dumps({
+                            "success": True,
+                            "saved_to": save_path,
+                            "mode": "ai_generated",
+                            "mood": {"energy": mood_energy, "valence": mood_valence},
+                            "message": f"AI-generated OG image staged for commit at {save_path}"
+                        }))
+                    else:
+                        import base64 as b64_module
+                        full_path = os.path.join(ALLOWED_CODEBASE, save_path)
+                        os.makedirs(os.path.dirname(full_path), exist_ok=True)
+                        img_bytes = b64_module.b64decode(b64_image)
+                        with open(full_path, "wb") as f:
+                            f.write(img_bytes)
+                        return make_result(json.dumps({
+                            "success": True,
+                            "saved_to": full_path,
+                            "mode": "ai_generated",
+                            "mood": {"energy": mood_energy, "valence": mood_valence},
+                            "message": f"AI-generated OG image saved to {full_path}"
+                        }))
+
+            except Exception as e:
+                print(f"[generate_og_image] AI generation failed, falling back to PIL: {e}", file=sys.stderr)
+                # Fall through to PIL fallback
+
+    # ==========================================================================
+    # PIL Fallback Mode (simple text-on-dark)
+    # ==========================================================================
     try:
         from PIL import Image, ImageDraw, ImageFont
         import io

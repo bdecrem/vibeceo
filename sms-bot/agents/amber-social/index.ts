@@ -146,12 +146,18 @@ async function loadAmberCreativeContext(): Promise<string> {
     // Load current mood for aesthetic variation
     try {
       const mood = await getMood();
-      context += `## MY CURRENT AESTHETIC MOOD\n\n`;
+      context += `## MY CURRENT AESTHETIC MOOD (USE THIS!)\n\n`;
       context += `${mood.natural_language}\n\n`;
-      context += `Energy: ${mood.energy.toFixed(2)} (${mood.energy_terms})\n`;
-      context += `Valence: ${mood.valence.toFixed(2)} (${mood.valence_terms})\n`;
-      context += `Quadrant: ${mood.quadrant}\n\n`;
-      context += `Let this mood influence your creative choices—colors, tempo, complexity, tone.\n\n`;
+      context += `**Energy: ${mood.energy.toFixed(2)}** — ${mood.energy_terms}\n`;
+      context += `**Valence: ${mood.valence.toFixed(2)}** — ${mood.valence_terms}\n`;
+      context += `**Quadrant: ${mood.quadrant}**\n\n`;
+      context += `### How to Apply This Mood:\n`;
+      context += `- **Colors**: ${mood.energy > 0.6 ? 'Saturated, bold amber/teal' : mood.energy < 0.4 ? 'Muted, subtle, more black space' : 'Balanced saturation'}\n`;
+      context += `- **Complexity**: ${mood.energy > 0.6 ? 'Dense patterns, many elements' : mood.energy < 0.4 ? 'Sparse, minimal, breathing room' : 'Moderate complexity'}\n`;
+      context += `- **Tone**: ${mood.valence > 0.6 ? 'Warm, inviting, outward-facing' : mood.valence < 0.4 ? 'Introspective, abstract, mysterious' : 'Neutral, observational'}\n`;
+      context += `- **Tempo (if applicable)**: ${mood.energy > 0.6 ? '130-150 BPM' : mood.energy < 0.4 ? '80-110 BPM' : '110-130 BPM'}\n\n`;
+      context += `**For OG images, pass these values:**\n`;
+      context += `\`mood_energy: ${mood.energy.toFixed(2)}, mood_valence: ${mood.valence.toFixed(2)}\`\n\n`;
     } catch (error) {
       console.warn('[amber-social] Could not load mood:', error);
     }
@@ -207,18 +213,29 @@ It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO
    \`\`\`
 
 3. **Generate OpenGraph image (REQUIRED for HTML files)**
-   - After creating the HTML file, generate a branded OG image for social sharing
+   - After creating the HTML file, generate a mood-influenced OG image for social sharing
    - Use \`generate_og_image\` tool with:
      - \`title\`: The name of your creation (e.g., "SIGNAL DECAY")
      - \`save_path\`: Path like "web/public/amber/[name]-og.png"
      - \`subtitle\`: Optional short description (e.g., "Interactive audio visualization")
+     - \`use_ai\`: true (generates creative AI image influenced by mood)
+     - \`mood_energy\`: Your current energy value from the mood section above
+     - \`mood_valence\`: Your current valence value from the mood section above
 
-   Example:
+   Example (use YOUR actual mood values from above):
    \`\`\`
-   generate_og_image(title="SIGNAL DECAY", save_path="web/public/amber/signal-decay-og.png", subtitle="by Amber")
+   generate_og_image(
+     title="SIGNAL DECAY",
+     save_path="web/public/amber/signal-decay-og.png",
+     subtitle="by Amber",
+     use_ai=true,
+     mood_energy=0.65,
+     mood_valence=0.78
+   )
    \`\`\`
 
-   - This creates a branded 1200x630 image with your title in amber on dark background
+   - This generates a creative 1200x630 AI image themed to your creation
+   - The mood values influence the aesthetic: energy affects saturation/complexity, valence affects warmth/abstraction
    - The image will be used when the link is shared on Twitter/social media
 
 4. **Save to your creations log**

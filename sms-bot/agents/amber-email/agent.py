@@ -487,12 +487,20 @@ def load_amber_context() -> str:
             else:
                 quadrant = "contemplative"
 
-            mood_text = f"## My Current Aesthetic Mood\n\n"
-            mood_text += f"I'm in a {quadrant} space right now.\n"
-            mood_text += f"Energy: {energy:.2f}, Valence: {valence:.2f}\n"
+            mood_text = f"## My Current Aesthetic Mood (USE THIS FOR CREATIVE WORK!)\n\n"
+            mood_text += f"I'm in a **{quadrant}** space right now.\n\n"
+            mood_text += f"**Energy: {energy:.2f}** — "
+            mood_text += "bold, saturated, dynamic" if energy > 0.6 else "minimal, sparse, restrained" if energy < 0.4 else "balanced, measured"
+            mood_text += f"\n**Valence: {valence:.2f}** — "
+            mood_text += "warm, luminous, inviting" if valence > 0.6 else "introspective, shadowed, abstract" if valence < 0.4 else "neutral, observational"
+            mood_text += "\n"
             if pulse_source:
                 mood_text += f"Influenced by: {pulse_source}\n"
-            mood_text += "\nThis affects how I express myself—tone, energy level, warmth."
+            mood_text += "\n### How to Apply This Mood:\n"
+            mood_text += f"- **Colors**: {'Saturated, bold amber/teal' if energy > 0.6 else 'Muted, subtle, more black space' if energy < 0.4 else 'Balanced saturation'}\n"
+            mood_text += f"- **Complexity**: {'Dense patterns, many elements' if energy > 0.6 else 'Sparse, minimal, breathing room' if energy < 0.4 else 'Moderate complexity'}\n"
+            mood_text += f"- **Tone**: {'Warm, inviting, outward-facing' if valence > 0.6 else 'Introspective, abstract, mysterious' if valence < 0.4 else 'Neutral, observational'}\n"
+            mood_text += f"\n**For generate_og_image, use:** `mood_energy={energy:.2f}, mood_valence={valence:.2f}`\n"
             sections.append(mood_text)
     except Exception as e:
         print(f"[Amber] Failed to load mood: {e}", file=sys.stderr)
