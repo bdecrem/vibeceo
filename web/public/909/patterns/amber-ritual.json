@@ -1,0 +1,74 @@
+{
+  "id": "amber-ritual",
+  "name": "Amber Ritual",
+  "description": "Dark minimal techno. Sparse kicks, heavy toms, hypnotic.",
+  "bpm": 96,
+  "pattern": {
+    "kick": [
+      {"velocity": 1.0, "accent": true}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.8}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.6}, {"velocity": 0}
+    ],
+    "snare": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "clap": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.9}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0.9}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "rimshot": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.5}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0.4}
+    ],
+    "ltom": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.7}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0.6}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "mtom": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0.5},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "htom": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "ch": [
+      {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0},
+      {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0},
+      {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0},
+      {"velocity": 0.4}, {"velocity": 0}, {"velocity": 0.3}, {"velocity": 0}
+    ],
+    "oh": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "crash": [
+      {"velocity": 0.3}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ],
+    "ride": [
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0},
+      {"velocity": 0}, {"velocity": 0}, {"velocity": 0}, {"velocity": 0}
+    ]
+  }
+}

@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AMBER RITUAL - 909</title>
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AMBER RITUAL - 909">
+  <meta property="og:description" content="Dark minimal techno at 96 BPM. Sparse kicks, heavy toms, hypnotic.">
+  <meta property="og:image" content="https://kochi.to/909/amber-ritual-og.png">
+  <meta property="og:url" content="https://kochi.to/909/amber-ritual.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AMBER RITUAL - 909">
+  <meta name="twitter:description" content="Dark minimal techno. TR-909.">
+  <meta name="twitter:image" content="https://kochi.to/909/amber-ritual-og.png">
+
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 2.5rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      opacity: 0.5;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 2rem;
+    }
+
+    .rings {
+      position: relative;
+      width: 300px;
+      height: 300px;
+      margin-bottom: 2rem;
+    }
+
+    .ring {
+      position: absolute;
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      border-radius: 50%;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      transition: all 0.1s ease;
+    }
+
+    .ring.pulse {
+      border-color: rgba(184, 134, 11, 0.8);
+      box-shadow: 0 0 20px rgba(184, 134, 11, 0.4);
+    }
+
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    #status {
+      margin-top: 1rem;
+      opacity: 0.6;
+      font-size: 0.75rem;
+    }
+
+    .remix-link {
+      display: inline-block;
+      margin-top: 1.5rem;
+      color: #D4A574;
+      opacity: 0.5;
+      font-size: 0.75rem;
+      text-decoration: none;
+      letter-spacing: 0.2em;
+      transition: opacity 0.3s;
+    }
+
+    .remix-link:hover {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <h1>RITUAL</h1>
+  <div class="subtitle">TR-909 · 96 BPM · DARK MINIMAL</div>
+
+  <div class="rings" id="rings"></div>
+
+  <button id="play" onclick="playRitual()">INVOKE</button>
+  <div id="status">ceremonial techno</div>
+  <a href="/909/ui/tr909/?load=/909/patterns/amber-ritual.json" class="remix-link">REMIX THIS →</a>
+
+  <script type="module">
+    import { TR909 } from '/909/dist/api/index.js';
+
+    // Create concentric rings
+    const ringsContainer = document.getElementById('rings');
+    const ringCount = 8;
+    const rings = [];
+
+    for (let i = 0; i < ringCount; i++) {
+      const ring = document.createElement('div');
+      ring.className = 'ring';
+      const size = 40 + i * 35;
+      ring.style.width = size + 'px';
+      ring.style.height = size + 'px';
+      ringsContainer.appendChild(ring);
+      rings.push(ring);
+    }
+
+    let session = null;
+    let isPlaying = false;
+
+    window.playRitual = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      if (isPlaying) return;
+
+      btn.disabled = true;
+      status.textContent = 'summoning...';
+
+      try {
+        if (!session) {
+          session = new TR909();
+          await session.init();
+        }
+
+        // Dark ritual pattern at 96 BPM
+        session.setBpm(96);
+
+        // Sparse, heavy pattern
+        session.setPattern('kick', [
+          {velocity: 1.0, accent: true}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0.8}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0.6}, {velocity: 0}
+        ]);
+
+        session.setPattern('clap', [
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0.9}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+        ]);
+
+        session.setPattern('rimshot', [
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0.5}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0.4}
+        ]);
+
+        session.setPattern('ltom', [
+          {velocity: 0}, {velocity: 0}, {velocity: 0.7}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0.6}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+        ]);
+
+        session.setPattern('mtom', [
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0.5},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+        ]);
+
+        session.setPattern('htom', [
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0.4}, {velocity: 0}, {velocity: 0}
+        ]);
+
+        session.setPattern('ch', [
+          {velocity: 0.4}, {velocity: 0}, {velocity: 0.3}, {velocity: 0},
+          {velocity: 0.4}, {velocity: 0}, {velocity: 0.3}, {velocity: 0},
+          {velocity: 0.4}, {velocity: 0}, {velocity: 0.3}, {velocity: 0},
+          {velocity: 0.4}, {velocity: 0}, {velocity: 0.3}, {velocity: 0}
+        ]);
+
+        session.setPattern('crash', [
+          {velocity: 0.3}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0},
+          {velocity: 0}, {velocity: 0}, {velocity: 0}, {velocity: 0}
+        ]);
+
+        status.textContent = 'rendering...';
+
+        const { wav } = await session.render({ bars: 8 });
+
+        const audioContext = new AudioContext();
+        const audioBuffer = await audioContext.decodeAudioData(wav);
+        const source = audioContext.createBufferSource();
+        source.buffer = audioBuffer;
+        source.connect(audioContext.destination);
+
+        isPlaying = true;
+        source.start();
+        status.textContent = '';
+        btn.textContent = 'PLAYING';
+
+        // Animate rings with the beat
+        const stepDuration = (60 / 96) / 4 * 1000;
+        let step = 0;
+        const totalSteps = 16 * 8;
+
+        const animate = setInterval(() => {
+          const patternStep = step % 16;
+
+          // Pulse rings based on hits
+          rings.forEach(r => r.classList.remove('pulse'));
+
+          if (patternStep === 0 || patternStep === 8 || patternStep === 14) {
+            rings[0].classList.add('pulse'); // kick
+            rings[1].classList.add('pulse');
+          }
+          if (patternStep === 4 || patternStep === 12) {
+            rings[3].classList.add('pulse'); // clap
+            rings[4].classList.add('pulse');
+          }
+          if (patternStep === 2 || patternStep === 10) {
+            rings[5].classList.add('pulse'); // low tom
+          }
+          if (patternStep === 7) {
+            rings[6].classList.add('pulse'); // mid tom
+          }
+          if (patternStep === 13) {
+            rings[7].classList.add('pulse'); // hi tom
+          }
+
+          step++;
+          if (step >= totalSteps) {
+            clearInterval(animate);
+          }
+        }, stepDuration);
+
+        source.onended = () => {
+          clearInterval(animate);
+          rings.forEach(r => r.classList.remove('pulse'));
+          isPlaying = false;
+          btn.disabled = false;
+          btn.textContent = 'INVOKE';
+          status.textContent = 'ceremonial techno';
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
