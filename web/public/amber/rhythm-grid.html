@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RHYTHM GRID</title>
+    <title>RHYTHM GRID — by Amber</title>
     
     <!-- OpenGraph -->
     <meta property="og:title" content="RHYTHM GRID">
-    <meta property="og:description" content="Paint beats, make rhythms">
+    <meta property="og:description" content="Paint beats onto a grid — by Amber">
     <meta property="og:image" content="https://intheamber.com/rhythm-grid-og.png">
     <meta property="og:url" content="https://intheamber.com/rhythm-grid.html">
     <meta property="og:type" content="website">
@@ -15,17 +15,20 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="RHYTHM GRID">
-    <meta name="twitter:description" content="Paint beats, make rhythms">
+    <meta name="twitter:description" content="Paint beats onto a grid — by Amber">
     <meta name="twitter:image" content="https://intheamber.com/rhythm-grid-og.png">
     
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
             background: #000;
             color: #D4A574;
@@ -38,174 +41,190 @@
             padding: 20px;
             overflow: hidden;
         }
-
+        
         h1 {
-            font-size: 2.5rem;
+            font-size: 2em;
             margin-bottom: 10px;
             letter-spacing: 4px;
             text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
         }
-
+        
         .subtitle {
-            font-size: 0.9rem;
             color: #2D9596;
-            margin-bottom: 40px;
+            font-size: 0.9em;
+            margin-bottom: 30px;
             letter-spacing: 2px;
         }
-
-        #gridContainer {
+        
+        .grid-container {
             display: grid;
-            grid-template-columns: repeat(16, 1fr);
-            gap: 6px;
+            grid-template-columns: repeat(16, 40px);
+            grid-template-rows: repeat(8, 40px);
+            gap: 2px;
             margin-bottom: 30px;
-            padding: 20px;
-            background: rgba(13, 13, 13, 0.8);
-            border: 2px solid #D4A574;
-            box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);
+            border: 2px solid #2D9596;
+            padding: 10px;
+            background: rgba(45, 149, 150, 0.05);
         }
-
+        
         .cell {
             width: 40px;
             height: 40px;
-            background: rgba(45, 149, 150, 0.1);
-            border: 1px solid rgba(45, 149, 150, 0.3);
+            background: rgba(212, 165, 116, 0.1);
+            border: 1px solid rgba(212, 165, 116, 0.3);
             cursor: pointer;
             transition: all 0.1s;
         }
-
-        .cell:hover {
-            background: rgba(45, 149, 150, 0.3);
-            border-color: #2D9596;
-        }
-
+        
         .cell.active {
             background: #D4A574;
-            border-color: #FFD700;
-            box-shadow: 0 0 15px rgba(212, 165, 116, 0.6);
+            box-shadow: 0 0 15px rgba(212, 165, 116, 0.8);
         }
-
+        
         .cell.playing {
             background: #FFD700;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
-            transform: scale(1.15);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 1);
+            transform: scale(1.1);
         }
-
-        .cell.active.playing {
-            background: #FFD700;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 1);
-        }
-
+        
         .controls {
             display: flex;
             gap: 20px;
             align-items: center;
+            margin-bottom: 20px;
         }
-
+        
         button {
             background: rgba(212, 165, 116, 0.2);
             border: 2px solid #D4A574;
             color: #D4A574;
+            padding: 12px 24px;
             font-family: 'Space Mono', monospace;
-            font-size: 1rem;
-            padding: 12px 30px;
+            font-size: 1em;
             cursor: pointer;
             letter-spacing: 2px;
             transition: all 0.2s;
         }
-
+        
         button:hover {
             background: rgba(212, 165, 116, 0.4);
-            box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
         }
-
-        button.active {
+        
+        button.playing {
             background: #D4A574;
             color: #000;
-            box-shadow: 0 0 25px rgba(212, 165, 116, 0.6);
         }
-
-        .clear-btn {
-            border-color: #7B68EE;
-            color: #7B68EE;
-        }
-
-        .clear-btn:hover {
-            background: rgba(123, 104, 238, 0.4);
-            box-shadow: 0 0 20px rgba(123, 104, 238, 0.4);
-        }
-
-        .info {
-            margin-top: 30px;
-            font-size: 0.85rem;
+        
+        .bpm {
             color: #2D9596;
+            font-size: 1.2em;
+        }
+        
+        .instructions {
+            color: rgba(212, 165, 116, 0.6);
+            font-size: 0.85em;
             text-align: center;
             max-width: 600px;
             line-height: 1.6;
         }
-
-        @media (max-width: 768px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .cell {
-                width: 30px;
-                height: 30px;
-            }
-            
-            #gridContainer {
-                gap: 4px;
-                padding: 15px;
-            }
+        
+        .track-labels {
+            position: absolute;
+            left: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            margin-left: -60px;
+            margin-top: 10px;
+        }
+        
+        .track-label {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            color: #2D9596;
+            font-size: 0.7em;
+            letter-spacing: 1px;
+        }
+        
+        .grid-wrapper {
+            position: relative;
+            display: inline-block;
         }
     </style>
 </head>
 <body>
     <h1>RHYTHM GRID</h1>
-    <div class="subtitle">PAINT BEATS, MAKE RHYTHMS</div>
-    
-    <div id="gridContainer"></div>
+    <p class="subtitle">PAINT BEATS</p>
     
     <div class="controls">
-        <button id="playBtn">PLAY</button>
-        <button id="clearBtn" class="clear-btn">CLEAR</button>
+        <button id="playBtn">▶ PLAY</button>
+        <button id="clearBtn">CLEAR</button>
+        <div class="bpm">128 BPM</div>
     </div>
     
-    <div class="info">
-        Click cells to toggle beats. Top rows = high tones, bottom rows = low tones.<br>
-        Each column is a step in time. Press PLAY and listen.
+    <div class="grid-wrapper">
+        <div class="track-labels">
+            <div class="track-label">KICK</div>
+            <div class="track-label">SNARE</div>
+            <div class="track-label">CLAP</div>
+            <div class="track-label">HAT-CL</div>
+            <div class="track-label">HAT-OP</div>
+            <div class="track-label">TOM</div>
+            <div class="track-label">PERC</div>
+            <div class="track-label">RIDE</div>
+        </div>
+        <div class="grid-container" id="grid"></div>
     </div>
+    
+    <p class="instructions">
+        Click cells to paint beats. Each row is a different drum sound.<br>
+        16 steps loop. 128 BPM Berlin time.
+    </p>
 
     <script>
         const ROWS = 8;
         const COLS = 16;
-        const TEMPO = 120; // BPM
-        const STEP_INTERVAL = (60 / TEMPO) * 1000 / 4; // 16th notes
+        const BPM = 128;
+        const STEP_DURATION = (60 / BPM) / 4 * 1000; // 16th notes
         
-        let audioContext;
+        let grid = Array(ROWS).fill().map(() => Array(COLS).fill(false));
         let isPlaying = false;
         let currentStep = 0;
         let intervalId = null;
-        let grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
+        let audioContext = null;
         
-        // Frequency mapping (pentatonic-ish scale)
+        // Frequency map for each row (simple synth drums)
         const frequencies = [
-            880,  // A5
-            660,  // E5
-            550,  // C#5
-            440,  // A4
-            330,  // E4
-            275,  // C#4
-            220,  // A3
-            165   // E3
+            60,   // Kick - low boom
+            200,  // Snare - mid crack
+            800,  // Clap - high crack
+            3000, // Closed hat - high tick
+            2000, // Open hat - high sizzle
+            150,  // Tom - low thud
+            400,  // Perc - mid bleep
+            1500  // Ride - high ting
         ];
-
-        // Initialize grid
-        const container = document.getElementById('gridContainer');
-        const cells = [];
-
+        
+        // Duration and envelope for each sound
+        const envelopes = [
+            { attack: 0.001, decay: 0.15, sustain: 0, type: 'sine' },    // Kick
+            { attack: 0.001, decay: 0.08, sustain: 0, type: 'triangle' }, // Snare
+            { attack: 0.001, decay: 0.06, sustain: 0, type: 'square' },   // Clap
+            { attack: 0.001, decay: 0.03, sustain: 0, type: 'square' },   // Hat closed
+            { attack: 0.001, decay: 0.12, sustain: 0, type: 'square' },   // Hat open
+            { attack: 0.001, decay: 0.12, sustain: 0, type: 'sine' },     // Tom
+            { attack: 0.001, decay: 0.08, sustain: 0, type: 'triangle' }, // Perc
+            { attack: 0.001, decay: 0.15, sustain: 0, type: 'sine' }      // Ride
+        ];
+        
+        // Create grid cells
+        const gridEl = document.getElementById('grid');
+        const playBtn = document.getElementById('playBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        
         for (let row = 0; row < ROWS; row++) {
-            cells[row] = [];
             for (let col = 0; col < COLS; col++) {
                 const cell = document.createElement('div');
                 cell.className = 'cell';
@@ -214,116 +233,98 @@
                 
                 cell.addEventListener('click', () => {
                     grid[row][col] = !grid[row][col];
-                    updateCellDisplay(row, col);
+                    cell.classList.toggle('active', grid[row][col]);
                 });
                 
-                container.appendChild(cell);
-                cells[row][col] = cell;
+                gridEl.appendChild(cell);
             }
         }
-
-        function updateCellDisplay(row, col) {
-            if (grid[row][col]) {
-                cells[row][col].classList.add('active');
-            } else {
-                cells[row][col].classList.remove('active');
-            }
-        }
-
+        
         function initAudio() {
             if (!audioContext) {
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
             }
         }
-
-        function playTone(frequency, duration = 0.1) {
+        
+        function playSound(row) {
             if (!audioContext) return;
             
             const now = audioContext.currentTime;
+            const freq = frequencies[row];
+            const env = envelopes[row];
+            
             const osc = audioContext.createOscillator();
             const gain = audioContext.createGain();
+            
+            osc.type = env.type;
+            osc.frequency.setValueAtTime(freq, now);
+            
+            // Pitch sweep for kick and snare
+            if (row === 0) {
+                osc.frequency.exponentialRampToValueAtTime(freq * 0.5, now + env.decay);
+            }
+            if (row === 1) {
+                osc.frequency.linearRampToValueAtTime(freq * 0.7, now + env.decay);
+            }
+            
+            // Envelope
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.3, now + env.attack);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + env.decay);
             
             osc.connect(gain);
             gain.connect(audioContext.destination);
             
-            osc.frequency.value = frequency;
-            osc.type = 'square';
-            
-            gain.gain.setValueAtTime(0.15, now);
-            gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
-            
             osc.start(now);
-            osc.stop(now + duration);
+            osc.stop(now + env.decay);
         }
-
+        
         function step() {
-            // Clear previous step highlighting
-            for (let row = 0; row < ROWS; row++) {
-                cells[row][currentStep].classList.remove('playing');
-            }
+            // Remove playing class from previous step
+            document.querySelectorAll('.cell.playing').forEach(cell => {
+                cell.classList.remove('playing');
+            });
             
-            // Advance step
-            currentStep = (currentStep + 1) % COLS;
-            
-            // Highlight current column and play active cells
+            // Play sounds and highlight cells for current step
             for (let row = 0; row < ROWS; row++) {
-                cells[row][currentStep].classList.add('playing');
-                
                 if (grid[row][currentStep]) {
-                    playTone(frequencies[row]);
+                    playSound(row);
+                    const cell = document.querySelector(`[data-row="${row}"][data-col="${currentStep}"]`);
+                    cell.classList.add('playing');
+                    setTimeout(() => cell.classList.remove('playing'), 100);
                 }
             }
+            
+            currentStep = (currentStep + 1) % COLS;
         }
-
-        document.getElementById('playBtn').addEventListener('click', () => {
+        
+        playBtn.addEventListener('click', () => {
             initAudio();
             
             if (isPlaying) {
-                // Stop
                 clearInterval(intervalId);
                 isPlaying = false;
-                document.getElementById('playBtn').classList.remove('active');
-                document.getElementById('playBtn').textContent = 'PLAY';
-                
-                // Clear playback highlighting
-                for (let row = 0; row < ROWS; row++) {
-                    for (let col = 0; col < COLS; col++) {
-                        cells[row][col].classList.remove('playing');
-                    }
-                }
+                playBtn.textContent = '▶ PLAY';
+                playBtn.classList.remove('playing');
+                currentStep = 0;
+                document.querySelectorAll('.cell.playing').forEach(cell => {
+                    cell.classList.remove('playing');
+                });
             } else {
-                // Play
-                currentStep = -1; // Will increment to 0 on first step
                 isPlaying = true;
-                document.getElementById('playBtn').classList.add('active');
-                document.getElementById('playBtn').textContent = 'STOP';
-                
-                step(); // Play first step immediately
-                intervalId = setInterval(step, STEP_INTERVAL);
+                playBtn.textContent = '⏸ PAUSE';
+                playBtn.classList.add('playing');
+                currentStep = 0;
+                step();
+                intervalId = setInterval(step, STEP_DURATION);
             }
         });
-
-        document.getElementById('clearBtn').addEventListener('click', () => {
-            grid = Array(ROWS).fill(null).map(() => Array(COLS).fill(false));
-            
-            for (let row = 0; row < ROWS; row++) {
-                for (let col = 0; col < COLS; col++) {
-                    cells[row][col].classList.remove('active');
-                }
-            }
-        });
-
-        // Add some seed pattern to start
-        const seedPattern = [
-            [0, 0], [0, 4], [0, 8], [0, 12],
-            [2, 2], [2, 6], [2, 10], [2, 14],
-            [4, 0], [4, 8],
-            [6, 4], [6, 12]
-        ];
-
-        seedPattern.forEach(([row, col]) => {
-            grid[row][col] = true;
-            updateCellDisplay(row, col);
+        
+        clearBtn.addEventListener('click', () => {
+            grid = Array(ROWS).fill().map(() => Array(COLS).fill(false));
+            document.querySelectorAll('.cell').forEach(cell => {
+                cell.classList.remove('active', 'playing');
+            });
         });
     </script>
 </body>
