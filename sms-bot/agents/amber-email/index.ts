@@ -26,6 +26,12 @@ export interface AmberEmailResult {
   iterations?: number;
 }
 
+export interface EmailAttachment {
+  name: string;
+  url: string;
+  size: number;
+}
+
 /**
  * Run the Amber email agent to execute a task.
  *
@@ -34,6 +40,7 @@ export interface AmberEmailResult {
  * @param subject Email subject for context
  * @param isApprovedRequest If true, this was approved by Bart
  * @param thinkhard If true, run multi-iteration deep work
+ * @param attachments Audio files attached to the email (uploaded to Supabase)
  * @returns Result with response, actions taken, etc.
  */
 export async function runAmberEmailAgent(
@@ -41,7 +48,8 @@ export async function runAmberEmailAgent(
   senderEmail: string,
   subject: string,
   isApprovedRequest: boolean = false,
-  thinkhard: boolean = false
+  thinkhard: boolean = false,
+  attachments: EmailAttachment[] = []
 ): Promise<AmberEmailResult> {
   console.log(`[Amber Email Agent] Starting for task from ${senderEmail}`);
 
@@ -56,7 +64,12 @@ export async function runAmberEmailAgent(
     is_approved_request: isApprovedRequest,
     thinkhard,
     skip_deploy_wait: true, // Email responses don't need to wait for deploy
+    attachments, // Audio files uploaded to Supabase Storage
   };
+
+  if (attachments.length > 0) {
+    console.log(`[Amber Email Agent] Received ${attachments.length} attachment(s): ${attachments.map(a => a.name).join(', ')}`);
+  }
 
   // Environment setup - same pattern as kg-query
   const { CLAUDE_CODE_OAUTH_TOKEN: _ignoredToken, ...cleanEnv } = process.env;

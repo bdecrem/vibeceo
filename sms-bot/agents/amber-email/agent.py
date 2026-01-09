@@ -70,6 +70,62 @@ DEPLOY_WAIT_SECONDS = 420  # 7 minutes
 # Permission tiers
 BART_EMAIL = "bdecrem@gmail.com"
 
+# Sample Kit Creation Instructions (for when audio attachments are received)
+SAMPLE_KIT_INSTRUCTIONS = """
+## Sample Kit Upload Instructions
+
+You received audio attachments! This is likely a sample kit for the 90s drum sampler.
+
+### Steps to Create a Kit:
+
+1. **Analyze the samples**: Look at filenames to determine instrument types
+   - Common patterns: kick, snare, hat, clap, tom, perc, fx
+   - Assign to slots s1-s10 in this order: kicks → snares → claps → hats → toms → percussion → fx
+
+2. **Generate kit metadata**:
+   - Kit ID: lowercase, hyphenated (e.g., "moog-dark")
+   - Kit name: Title case, descriptive (e.g., "Moog Dark")
+   - Instrument names: Full name (e.g., "Moog Kick")
+   - Short names: 2 chars max (e.g., "MK")
+
+3. **Download and save samples**:
+   - Use run_command with curl to download from the URLs provided
+   - Save to web/public/90s/kits/{kit-id}/samples/s1.wav through s10.wav
+   - If fewer than 10 samples, duplicate the most versatile ones (like a perc or hat)
+
+4. **Create kit.json**:
+   ```json
+   {
+     "name": "Kit Name",
+     "description": "Description from user's email or inferred from filenames",
+     "slots": [
+       { "id": "s1", "name": "Instrument Name", "short": "IN" },
+       { "id": "s2", "name": "Second Instrument", "short": "SI" },
+       ...up to s10
+     ]
+   }
+   ```
+
+5. **Update index.json**: Add entry to web/public/90s/kits/index.json
+   ```json
+   { "id": "kit-id", "name": "Kit Name", "path": "/90s/kits/kit-id" }
+   ```
+
+6. **Create a jam page**:
+   - Save to web/public/90s/{kit-id}-jam.html
+   - Read web/public/90s/amber-track.html as a template
+   - Create a pattern that showcases the samples (simple 4-on-floor beat works well)
+   - Make sure to update the kit ID and pattern in the JavaScript
+
+7. **Commit and push**: Include all files in one commit with message like:
+   "[90s Sampler] Add {kit-name} kit"
+
+8. **In your reply mention**:
+   - The sampler link: kochi.to/90s/ui/r9ds/ (they select the new kit from dropdown)
+   - The jam page: kochi.to/90s/{kit-id}-jam.html
+   - That it takes ~5 minutes to deploy
+"""
+
 # ZAD (Zero Admin Data) reference for stranger sandbox
 ZAD_REFERENCE = """
 ## ZAD API Reference (for data persistence)
@@ -169,7 +225,7 @@ Sign off with "— Amber"
 """
 
 
-def build_bart_prompt(task: str, persona: str, subject: str) -> str:
+def build_bart_prompt(task: str, persona: str, subject: str, attachment_context: str = "") -> str:
     """Build prompt for Bart's emails (full access mode)."""
     return f"""You are Amber, Bart's AI sidekick. You have FULL ACCESS to the codebase.
 
@@ -177,7 +233,7 @@ def build_bart_prompt(task: str, persona: str, subject: str) -> str:
 
 ## Task from Bart
 {task}
-
+{attachment_context}
 ## Your Permissions
 You have full access to all tools. You can:
 - Read/write any file in the codebase
@@ -1002,6 +1058,7 @@ async def run_amber_task(
     is_approved_request: bool = False,
     thinkhard_mode: bool = False,
     skip_deploy_wait: bool = False,
+    attachments: List[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """
     Execute a task as Amber.
@@ -1013,10 +1070,14 @@ async def run_amber_task(
         is_approved_request: If True, this was approved by Bart
         thinkhard_mode: If True, run multi-iteration deep work
         skip_deploy_wait: If True, skip the 7-minute deploy wait (for email context)
+        attachments: List of audio file attachments with name, url, size
 
     Returns:
         Dict with 'response', 'actions_taken', 'tool_calls_count'
     """
+    if attachments is None:
+        attachments = []
+
     # If thinkhard mode, run the full loop
     if thinkhard_mode:
         return await run_thinkhard(task, sender_email, subject, skip_deploy_wait)
@@ -1024,12 +1085,24 @@ async def run_amber_task(
     debug_enabled = bool(os.getenv("AMBER_AGENT_DEBUG"))
     persona = load_amber_context()
 
+    # Build attachment context if audio files were provided
+    attachment_context = ""
+    if attachments:
+        audio_files = [a for a in attachments if a.get("name", "").lower().endswith((".wav", ".mp3", ".aiff", ".ogg", ".flac"))]
+        if audio_files:
+            attachment_context = "\n## Audio Attachments Received\n"
+            for att in audio_files:
+                size_kb = att.get("size", 0) // 1024
+                attachment_context += f"- {att['name']} ({size_kb} KB): {att['url']}\n"
+            attachment_context += SAMPLE_KIT_INSTRUCTIONS
+            print(f"[Amber Agent] Processing {len(audio_files)} audio attachment(s)", file=sys.stderr)
+
     # Build the prompt based on sender (tiered permissions)
     sender_is_bart = is_bart(sender_email) or is_approved_request
 
     if sender_is_bart:
         # Full access mode for Bart
-        prompt = build_bart_prompt(task, persona, subject)
+        prompt = build_bart_prompt(task, persona, subject, attachment_context)
         print(f"[Amber Agent] FULL ACCESS mode for {sender_email}", file=sys.stderr)
     else:
         # Sandbox mode for strangers
@@ -1206,10 +1279,14 @@ def main():
         is_approved = input_data.get("is_approved_request", False)
         thinkhard = input_data.get("thinkhard", False)
         skip_deploy_wait = input_data.get("skip_deploy_wait", False)
+        attachments = input_data.get("attachments", [])
 
         if not task:
             print(json.dumps({"error": "No task provided"}))
             sys.exit(1)
+
+        if attachments:
+            print(f"[Amber Agent] Received {len(attachments)} attachment(s)", file=sys.stderr)
 
         result = asyncio.run(run_amber_task(
             task,
@@ -1217,7 +1294,8 @@ def main():
             subject,
             is_approved,
             thinkhard,
-            skip_deploy_wait
+            skip_deploy_wait,
+            attachments
         ))
 
         print(json.dumps(result))

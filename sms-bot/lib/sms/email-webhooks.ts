@@ -16,6 +16,13 @@ const supabase = createClient(
 // Admin email - full access
 const ADMIN_EMAIL = 'bdecrem@gmail.com';
 
+// Email attachment type
+export interface EmailAttachment {
+  name: string;
+  url: string;
+  size: number;
+}
+
 // =============================================================================
 // DEDUPLICATION HELPERS - Prevent SendGrid retry storms
 // =============================================================================
@@ -330,7 +337,8 @@ async function storePendingApproval(
   fromEmail: string,
   subject: string,
   body: string,
-  detectedAction: string
+  detectedAction: string,
+  attachments: EmailAttachment[] = []
 ): Promise<string> {
   const approvalId = `approval-${Date.now()}`;
 
@@ -344,16 +352,20 @@ async function storePendingApproval(
       detected_action: detectedAction,
       status: 'pending',
       requested_at: new Date().toISOString(),
+      attachments, // Store attachments for when approval is granted
     },
   });
 
   // Email Bart for approval
+  const attachmentNote = attachments.length > 0
+    ? `\n📎 Attachments: ${attachments.map(a => a.name).join(', ')}\n`
+    : '';
   await sendAmberEmail(
     ADMIN_EMAIL,
     `🔐 Approval needed: ${detectedAction}`,
     `Someone wants me to ${detectedAction}.\n\n` +
       `From: ${fromEmail}\n` +
-      `Subject: ${subject}\n\n` +
+      `Subject: ${subject}\n${attachmentNote}\n` +
       `Their message:\n${body}\n\n` +
       `---\n` +
       `Reply "approve" to let me proceed.\n` +
@@ -601,6 +613,7 @@ Someone asked you to "${detectedAction}" and Bart approved it.
     const originalFrom = data.metadata.from;
     const originalBody = data.content;
     const originalSubject = data.metadata.subject || '';
+    const storedAttachments: EmailAttachment[] = data.metadata.attachments || [];
 
     // Check if it's a thinkhard request - either from original message OR from approval message
     // Admin can force thinkhard by replying "approve thinkhard"
@@ -608,7 +621,7 @@ Someone asked you to "${detectedAction}" and Bart approved it.
     const { isThinkhard: originalThinkhard, task } = detectThinkhard(originalBody);
     const isThinkhard = forceThinkhard || originalThinkhard;
 
-    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard})`);
+    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard}, attachments: ${storedAttachments.length})`);
 
     // Run the agent with the approved request
     const agentResult = await runAmberEmailAgent(
@@ -616,7 +629,8 @@ Someone asked you to "${detectedAction}" and Bart approved it.
       originalFrom,
       originalSubject,
       true, // isApprovedRequest
-      isThinkhard
+      isThinkhard,
+      storedAttachments
     );
 
     // Send immediately - the agent already takes several minutes to run,
@@ -832,7 +846,8 @@ async function processAmberEmailAsync(
   from: string,
   senderEmail: string,
   subject: string,
-  body: string
+  body: string,
+  attachments: EmailAttachment[] = []
 ): Promise<void> {
   const isAdmin = senderEmail === ADMIN_EMAIL;
 
@@ -859,7 +874,8 @@ async function processAmberEmailAsync(
           senderEmail,
           subject || '',
           true, // isApprovedRequest
-          isThinkhard
+          isThinkhard,
+          attachments
         );
 
         // Send the agent's response
@@ -879,7 +895,7 @@ async function processAmberEmailAsync(
 
       if (needsApproval) {
         console.log(`📧 Action request from non-admin detected: ${actionDescription}`);
-        await storePendingApproval(senderEmail, subject || '', body, actionDescription);
+        await storePendingApproval(senderEmail, subject || '', body, actionDescription, attachments);
 
         // Do NOT reply to the third party — wait for Bart's approval/rejection
         // The response will come via handleApprovalResponse when Bart decides
@@ -941,6 +957,41 @@ export function setupEmailWebhooks(app: Application): void {
       console.log('🔍 DEBUG: Full SendGrid payload:', JSON.stringify(req.body, null, 2));
 
       const { from, to, subject, text } = req.body;
+
+      // Extract audio attachments from email
+      const files = (req.files as Express.Multer.File[]) || [];
+      const audioFiles = files.filter((f: Express.Multer.File) =>
+        f.mimetype?.startsWith('audio/') ||
+        /\.(wav|mp3|aiff|ogg|flac)$/i.test(f.originalname)
+      );
+
+      // Upload audio files to Supabase Storage
+      const attachments: EmailAttachment[] = [];
+      if (audioFiles.length > 0) {
+        console.log(`📎 Found ${audioFiles.length} audio attachment(s), uploading to Supabase...`);
+        for (const file of audioFiles) {
+          try {
+            const path = `email-uploads/${Date.now()}-${file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
+            const { error } = await supabase.storage
+              .from('90s-kits')
+              .upload(path, file.buffer, { contentType: file.mimetype });
+
+            if (!error) {
+              const { data } = supabase.storage.from('90s-kits').getPublicUrl(path);
+              attachments.push({
+                name: file.originalname,
+                url: data.publicUrl,
+                size: file.size
+              });
+              console.log(`📎 Uploaded: ${file.originalname} → ${data.publicUrl}`);
+            } else {
+              console.error(`📎 Failed to upload ${file.originalname}:`, error);
+            }
+          } catch (uploadError) {
+            console.error(`📎 Error uploading ${file.originalname}:`, uploadError);
+          }
+        }
+      }
 
       if (!from) {
         console.error('Invalid email webhook payload - missing from:', req.body);
@@ -1027,7 +1078,7 @@ export function setupEmailWebhooks(app: Application): void {
 
         // STEP 5: Process email in background (no await!)
         // This runs after the HTTP response is sent
-        processAmberEmailAsync(from, senderEmail, subject || '', body).catch((err) => {
+        processAmberEmailAsync(from, senderEmail, subject || '', body, attachments).catch((err) => {
           console.error('📧 Background processing error:', err);
         });
 
