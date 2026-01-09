@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOUNCE CHORUS — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="BOUNCE CHORUS — Amber">
+    <meta property="og:description" content="Colorful balls bounce and create music. Each collision is a note. Click to add chaos.">
+    <meta property="og:image" content="https://kochi.to/amber/bounce-chorus-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/bounce-chorus.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="BOUNCE CHORUS — Amber">
+    <meta name="twitter:description" content="Colorful balls bounce and create music. Each collision is a note. Click to add chaos.">
+    <meta name="twitter:image" content="https://kochi.to/amber/bounce-chorus-og.png">
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Space Mono', monospace;
+            background: #000;
+            color: #D4A574;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        #canvas {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        
+        .info {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            font-size: 14px;
+            z-index: 10;
+            pointer-events: none;
+            line-height: 1.6;
+        }
+        
+        .title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFD700;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+        
+        .subtitle {
+            color: #2D9596;
+            margin-bottom: 20px;
+        }
+        
+        .stats {
+            color: #D4A574;
+            opacity: 0.7;
+        }
+        
+        .legend {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            font-size: 12px;
+            color: #D4A574;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .legend-item {
+            margin: 4px 0;
+        }
+        
+        .color-dot {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="info">
+        <div class="title">BOUNCE CHORUS</div>
+        <div class="subtitle">Click to add balls • Let them sing</div>
+        <div class="stats">
+            <div>Balls: <span id="ballCount">5</span></div>
+            <div>Collisions: <span id="collisionCount">0</span></div>
+        </div>
+    </div>
+    
+    <div class="legend">
+        <div class="legend-item"><span class="color-dot" style="background: #FFD700;"></span>Kick drum</div>
+        <div class="legend-item"><span class="color-dot" style="background: #D4A574;"></span>Snare</div>
+        <div class="legend-item"><span class="color-dot" style="background: #2D9596;"></span>Hi-hat</div>
+        <div class="legend-item"><span class="color-dot" style="background: #7B68EE;"></span>Tom</div>
+        <div class="legend-item"><span class="color-dot" style="background: #FF6B6B;"></span>Clap</div>
+    </div>
+    
+    <canvas id="canvas"></canvas>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Audio setup
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isAudioStarted = false;
+        
+        // Instrument configs
+        const instruments = [
+            { color: '#FFD700', name: 'kick', freq: 60, decay: 0.5 },
+            { color: '#D4A574', name: 'snare', freq: 200, decay: 0.15 },
+            { color: '#2D9596', name: 'hat', freq: 8000, decay: 0.05 },
+            { color: '#7B68EE', name: 'tom', freq: 120, decay: 0.3 },
+            { color: '#FF6B6B', name: 'clap', freq: 1000, decay: 0.08 }
+        ];
+        
+        function playSound(instrument) {
+            if (!isAudioStarted) return;
+            
+            const now = audioCtx.currentTime;
+            
+            // Oscillator
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            
+            if (instrument.name === 'kick') {
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(instrument.freq, now + 0.05);
+                gain.gain.setValueAtTime(0.8, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + instrument.decay);
+            } else if (instrument.name === 'snare') {
+                // Noise burst
+                const bufferSize = audioCtx.sampleRate * instrument.decay;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.3, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + instrument.decay);
+                noise.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+                return;
+            } else if (instrument.name === 'hat') {
+                osc.type = 'square';
+                osc.frequency.value = instrument.freq;
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + instrument.decay);
+            } else if (instrument.name === 'tom') {
+                osc.frequency.setValueAtTime(200, now);
+                osc.frequency.exponentialRampToValueAtTime(instrument.freq, now + 0.05);
+                gain.gain.setValueAtTime(0.6, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + instrument.decay);
+            } else if (instrument.name === 'clap') {
+                // Short noise burst
+                const bufferSize = audioCtx.sampleRate * instrument.decay;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.4, now);
+                noiseGain.gain.exponentialRampToValueAtTime(0.01, now + instrument.decay);
+                noise.connect(noiseGain);
+noiseGain.connect(audioCtx.destination);
+                noise.start(now);
+                return;
+            }
+            
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now);
+            osc.stop(now + instrument.decay);
+        }
+        
+        class Ball {
+            constructor(x, y, instrument) {
+                this.x = x;
+                this.y = y;
+                this.radius = 15 + Math.random() * 15;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.instrument = instrument;
+                this.glow = 0;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Wall collisions
+                if (this.x - this.radius <= 0 || this.x + this.radius >= canvas.width) {
+                    this.vx *= -0.98;
+                    this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                    this.collide();
+                }
+                
+                if (this.y - this.radius <= 0 || this.y + this.radius >= canvas.height) {
+                    this.vy *= -0.98;
+                    this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                    this.collide();
+                }
+                
+                // Gravity
+                this.vy += 0.2;
+                
+                // Friction
+                this.vx *= 0.999;
+                this.vy *= 0.999;
+                
+                // Decay glow
+                this.glow *= 0.9;
+            }
+            
+            collide() {
+                playSound(this.instrument);
+                this.glow = 1;
+                collisionCount++;
+                document.getElementById('collisionCount').textContent = collisionCount;
+            }
+            
+            draw() {
+                // Glow effect
+                if (this.glow > 0.1) {
+                    ctx.shadowBlur = 30 * this.glow;
+                    ctx.shadowColor = this.instrument.color;
+                } else {
+                    ctx.shadowBlur = 0;
+                }
+                
+                ctx.fillStyle = this.instrument.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner highlight
+                const gradient = ctx.createRadialGradient(
+                    this.x - this.radius * 0.3,
+                    this.y - this.radius * 0.3,
+                    0,
+                    this.x,
+                    this.y,
+                    this.radius
+                );
+                gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+                gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            checkCollision(other) {
+                const dx = other.x - this.x;
+                const dy = other.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < this.radius + other.radius) {
+                    // Collision response
+                    const angle = Math.atan2(dy, dx);
+                    const sin = Math.sin(angle);
+                    const cos = Math.cos(angle);
+                    
+                    // Rotate velocities
+                    const vx1 = this.vx * cos + this.vy * sin;
+                    const vy1 = this.vy * cos - this.vx * sin;
+                    const vx2 = other.vx * cos + other.vy * sin;
+                    const vy2 = other.vy * cos - other.vx * sin;
+                    
+                    // Swap velocities
+                    const temp = vx1;
+                    this.vx = (vx2 * cos - vy1 * sin) * 0.98;
+                    this.vy = (vy1 * cos + vx2 * sin) * 0.98;
+                    other.vx = (temp * cos - vy2 * sin) * 0.98;
+                    other.vy = (vy2 * cos + temp * sin) * 0.98;
+                    
+                    // Separate balls
+                    const overlap = this.radius + other.radius - distance;
+                    const moveX = overlap * cos / 2;
+                    const moveY = overlap * sin / 2;
+                    this.x -= moveX;
+                    this.y -= moveY;
+                    other.x += moveX;
+                    other.y += moveY;
+                    
+                    this.collide();
+                    other.collide();
+                }
+            }
+        }
+        
+        let balls = [];
+        let collisionCount = 0;
+        
+        // Initialize with 5 random balls
+        for (let i = 0; i < 5; i++) {
+            const instrument = instruments[Math.floor(Math.random() * instruments.length)];
+            balls.push(new Ball(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height,
+                instrument
+            ));
+        }
+        
+        function animate() {
+            // Fade trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update and draw balls
+            balls.forEach(ball => ball.update());
+            
+            // Check collisions
+            for (let i = 0; i < balls.length; i++) {
+                for (let j = i + 1; j < balls.length; j++) {
+                    balls[i].checkCollision(balls[j]);
+                }
+            }
+            
+            balls.forEach(ball => ball.draw());
+            
+            requestAnimationFrame(animate);
+        }
+        
+        canvas.addEventListener('click', (e) => {
+            // Start audio on first interaction
+            if (!isAudioStarted) {
+                audioCtx.resume();
+                isAudioStarted = true;
+            }
+            
+            const instrument = instruments[Math.floor(Math.random() * instruments.length)];
+            balls.push(new Ball(e.clientX, e.clientY, instrument));
+            document.getElementById('ballCount').textContent = balls.length;
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        animate();
+    </script>
+</body>
+</html>
