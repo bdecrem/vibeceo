@@ -356,6 +356,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass synthmachine landing page
+  if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
+    log(`[Middleware] SynthMachine bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
     log(`[Middleware] API route bypassed: ${pathname}`)
