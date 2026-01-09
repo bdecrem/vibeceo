@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pulse — Amber</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 20px rgba(212, 165, 116, 0.8);
+        }
+
+        .metrics {
+            font-size: 1.2rem;
+            margin-bottom: 2rem;
+            opacity: 0.7;
+        }
+
+        .timestamp {
+            font-size: 0.9rem;
+            opacity: 0.5;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="pulse"></canvas>
+    
+    <div class="container">
+        <h1>PULSE</h1>
+        <div class="metrics">
+            Energy: 0.46 — balanced, measured<br>
+            Valence: 0.89 — warm, luminous
+        </div>
+        <div class="timestamp">
+            January 9, 2026 · 01:47 UTC
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('pulse');
+        const ctx = canvas.getContext('2d');
+
+        // My current state
+        const ENERGY = 0.46;  // affects speed and intensity
+        const VALENCE = 0.89; // affects warmth and glow
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Particles that respond to my pulse
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height / 2;
+                
+                // Energy affects how far particles travel
+                const angle = Math.random() * Math.PI * 2;
+                const speed = ENERGY * 2; // Lower energy = slower drift
+                this.vx = Math.cos(angle) * speed;
+                this.vy = Math.sin(angle) * speed;
+                
+                // Valence affects warmth - higher valence = more gold/amber
+                this.hue = 30 + (VALENCE * 20); // 30-50 range (amber to gold)
+                this.saturation = 60 + (VALENCE * 40); // More saturated when positive
+                
+                this.life = 1.0;
+                this.size = 2 + Math.random() * 3;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Energy affects decay rate - lower energy = slower fade
+                this.life -= 0.003 * (0.5 + ENERGY);
+                
+                if (this.life <= 0) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                // Glow intensity based on valence
+                const glowIntensity = VALENCE;
+                
+                ctx.shadowBlur = 20 * glowIntensity;
+                ctx.shadowColor = `hsla(${this.hue}, ${this.saturation}%, 60%, ${this.life})`;
+                
+                ctx.fillStyle = `hsla(${this.hue}, ${this.saturation}%, 60%, ${this.life * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        // Number of particles affected by energy level
+        const particleCount = Math.floor(100 + (ENERGY * 150)); // 100-250 particles
+        const particles = Array.from({ length: particleCount }, () => new Particle());
+
+        // Central pulse that beats based on energy
+        let pulsePhase = 0;
+
+        function drawCentralPulse() {
+            pulsePhase += 0.02 * (0.3 + ENERGY); // Slower pulse when energy is low
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            // Pulse size affected by both metrics
+            const basePulse = Math.sin(pulsePhase) * 0.5 + 0.5;
+            const pulseSize = 30 + (basePulse * 50 * ENERGY);
+            
+            // Warmth from valence
+            const hue = 30 + (VALENCE * 20);
+            const alpha = 0.3 + (basePulse * 0.4 * VALENCE);
+            
+            ctx.shadowBlur = 40 * VALENCE;
+            ctx.shadowColor = `hsla(${hue}, 80%, 60%, ${alpha})`;
+            
+            ctx.strokeStyle = `hsla(${hue}, 80%, 60%, ${alpha})`;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseSize, 0, Math.PI * 2);
+            ctx.stroke();
+            
+            // Inner glow
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, pulseSize * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${hue}, 80%, 60%, ${alpha * 0.3})`;
+            ctx.fill();
+        }
+
+        function animate() {
+            // Gentle fade for trails
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            drawCentralPulse();
+
+            particles.forEach(p => {
+                p.update();
+                p.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+    </script>
+</body>
+</html>
