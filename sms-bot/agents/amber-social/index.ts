@@ -275,47 +275,49 @@ It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO
    - For web apps/music: Use \`write_file\` to create HTML in web/public/amber/
    - Make it UNIQUELY YOU - curious, a little weird, conceptual
 
-   **CRITICAL: If you create an HTML file, you MUST add OpenGraph tags in the <head>:**
+   **CRITICAL: EVERY HTML file needs OpenGraph tags AND an OG image. No exceptions.**
+
+   Add these tags in the <head> section:
    \`\`\`html
+   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
    <!-- OpenGraph -->
-   <meta property="og:title" content="[Title]">
-   <meta property="og:description" content="[Short description]">
-   <meta property="og:image" content="https://intheamber.com/[name]-og.png">
-   <meta property="og:url" content="https://intheamber.com/[name].html">
+   <meta property="og:title" content="[Title] — Amber">
+   <meta property="og:description" content="[Short description of what it does]">
+   <meta property="og:image" content="https://kochi.to/amber/[name]-og.png">
+   <meta property="og:url" content="https://kochi.to/amber/[name].html">
    <meta property="og:type" content="website">
 
    <!-- Twitter -->
    <meta name="twitter:card" content="summary_large_image">
-   <meta name="twitter:title" content="[Title]">
-   <meta name="twitter:description" content="[Short description]">
-   <meta name="twitter:image" content="https://intheamber.com/[name]-og.png">
+   <meta name="twitter:title" content="[Title] — Amber">
+   <meta name="twitter:description" content="[Short description of what it does]">
+   <meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
    \`\`\`
 
-3. **Generate OpenGraph image (REQUIRED for HTML files)**
-   - After creating the HTML file, generate a mood-influenced OG image for social sharing
-   - Use \`generate_og_image\` tool with:
-     - \`title\`: The name of your creation (e.g., "SIGNAL DECAY")
-     - \`save_path\`: Path like "web/public/amber/[name]-og.png"
-     - \`subtitle\`: Optional short description (e.g., "Interactive audio visualization")
-     - \`use_ai\`: true (generates creative AI image influenced by mood)
-     - \`mood_energy\`: Your current energy value from the mood section above
-     - \`mood_valence\`: Your current valence value from the mood section above
+3. **Generate OpenGraph image (REQUIRED — don't skip this!)**
 
-   Example (use YOUR actual mood values from above):
+   After creating the HTML, you MUST generate an OG image. Use \`generate_og_image\`:
+
    \`\`\`
    generate_og_image(
-     title="SIGNAL DECAY",
-     save_path="web/public/amber/signal-decay-og.png",
-     subtitle="by Amber",
+     title="YOUR TITLE HERE",
+     save_path="web/public/amber/[name]-og.png",
+     subtitle="A visualization of [what it does]",
      use_ai=true,
-     mood_energy=0.65,
-     mood_valence=0.78
+     mood_energy=[your energy from mood section],
+     mood_valence=[your valence from mood section]
    )
    \`\`\`
 
-   - This generates a creative 1200x630 AI image themed to your creation
-   - The mood values influence the aesthetic: energy affects saturation/complexity, valence affects warmth/abstraction
-   - The image will be used when the link is shared on Twitter/social media
+   **For interactive/visual HTML pieces**: Describe what the visualization looks like in the subtitle.
+   The AI will generate an abstract representation. Examples:
+   - Particle visualization → "Glowing particles radiating from center"
+   - Audio waveform → "Amber waveforms pulsing on dark background"
+   - Step sequencer → "Grid of glowing pads, techno aesthetic"
+
+   This creates a 1200x630 image that appears when shared on Twitter/social.
+   **If you don't create an OG image, the link will look broken when shared.**
 
 4. **Save to your creations log**
    - Use \`write_amber_state\` with type="creation"
@@ -324,15 +326,15 @@ It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO
    - Include tags and the URL
 
    **URL MAPPING** (file path → public URL):
-   - \`web/public/amber/foo.html\` → \`https://intheamber.com/foo.html\`
-   - \`web/public/amber/foo.png\` → \`https://intheamber.com/foo.png\`
-   - \`web/public/amber/bar/index.html\` → \`https://intheamber.com/bar/index.html\`
-
-   Note: intheamber.com serves from web/public/amber/, so drop the "amber/" from the URL path.
+   - \`web/public/amber/foo.html\` → \`https://kochi.to/amber/foo.html\`
+   - \`web/public/amber/foo-og.png\` → \`https://kochi.to/amber/foo-og.png\`
+   - \`web/public/amber/bar/index.html\` → \`https://kochi.to/amber/bar/index.html\`
 
 5. **Commit the files**
    - Use \`git_commit\` with a message describing what you made
-   - IMPORTANT: Include both the HTML file AND the -og.png screenshot in your commit
+   - **IMPORTANT**: Your commit MUST include BOTH:
+     1. The HTML file (e.g., \`web/public/amber/pulse.html\`)
+     2. The OG image (e.g., \`web/public/amber/pulse-og.png\`)
    - Use \`git_push\` to deploy
 
 ## DIVERSE EXAMPLES FROM YOUR PORTFOLIO
