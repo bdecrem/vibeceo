@@ -523,7 +523,18 @@ After creating, I'll reply to their tweet with the URL.`;
           }
 
           if (createdUrl) {
-            replyText = `@${authorUsername} Done! ${createdUrl} (give it ~5 min to deploy)`;
+            // Build reply with URL, using shorter message if needed to fit 280 chars
+            const fullReply = `@${authorUsername} Done! ${createdUrl} (give it ~5 min to deploy)`;
+            const shortReply = `@${authorUsername} Done! ${createdUrl} (~5 min to deploy)`;
+            const minReply = `@${authorUsername} ${createdUrl}`;
+
+            if (fullReply.length <= 280) {
+              replyText = fullReply;
+            } else if (shortReply.length <= 280) {
+              replyText = shortReply;
+            } else {
+              replyText = minReply; // URL + mention only
+            }
           } else {
             replyText = `@${authorUsername} Working on it! Check intheamber.com in a few 👀`;
           }
@@ -574,13 +585,36 @@ Someone asked you to "${detectedAction}" and Bart approved it.
         replyText = response.content[0].type === 'text' ? response.content[0].text : '';
       }
 
-      // Ensure reply is under 280 chars
+      // Ensure reply is under 280 chars (URL-aware truncation)
       if (replyText.length > 280) {
-        replyText = replyText.slice(0, 277) + '...';
+        // Check if there's a URL we need to preserve
+        const urlMatch = replyText.match(/https?:\/\/[^\s)]+/);
+        if (urlMatch) {
+          // Preserve the URL, truncate surrounding text
+          const url = urlMatch[0];
+          const beforeUrl = replyText.slice(0, urlMatch.index).trim();
+          const afterUrl = replyText.slice(urlMatch.index! + url.length).trim();
+
+          // Calculate how much space we have for text around the URL
+          const availableChars = 280 - url.length - 1; // -1 for space before URL
+
+          if (availableChars > 0) {
+            // Prioritize keeping the @mention at the start
+            const mentionMatch = beforeUrl.match(/^@\w+/);
+            const mention = mentionMatch ? mentionMatch[0] + ' ' : '';
+            replyText = `${mention}${url}`.slice(0, 280);
+          } else {
+            // URL alone is too long, just use it
+            replyText = url.slice(0, 280);
+          }
+        } else {
+          // No URL, safe to truncate normally
+          replyText = replyText.slice(0, 277) + '...';
+        }
       }
 
-      // Post the reply
-      const postResult = await replyToTweet(replyText, tweetId);
+      // Post the reply as @intheamber (not default account)
+      const postResult = await replyToTweet(replyText, tweetId, 'intheamber');
 
       if (postResult.success) {
         console.log(`✅ Twitter reply posted: ${postResult.tweetUrl}`);
@@ -658,7 +692,7 @@ Someone asked you to "${detectedAction}" and Bart approved it.
 
       const declineReply = `Hey @${authorUsername} — appreciate you reaching out! That's not something I can help with right now, but feel free to check out my other stuff. ✨`;
 
-      const postResult = await replyToTweet(declineReply, tweetId);
+      const postResult = await replyToTweet(declineReply, tweetId, 'intheamber');
 
       if (postResult.success) {
         console.log(`[approval] Twitter decline reply posted to @${authorUsername}`);
