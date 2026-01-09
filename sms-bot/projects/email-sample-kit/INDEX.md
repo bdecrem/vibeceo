@@ -1,6 +1,6 @@
 # Email Sample Kit to Amber
 
-## Status: IN PROGRESS
+## Status: DEPLOYED
 Users can email audio samples to Amber, who creates a sample kit for the 90s sampler, generates a jam page, and replies with links.
 
 ## Project Progress
@@ -10,7 +10,7 @@ Users can email audio samples to Amber, who creates a sample kit for the 90s sam
 | 02 | Webhook Attachment Handling | 5/5 | Complete |
 | 03 | Agent Interface | 3/3 | Complete |
 | 04 | Agent Prompt | 3/3 | Complete |
-| 05 | Testing & Verification | 0/3 | Unit, integration, end-to-end |
+| 05 | Testing & Verification | 1/3 | Build passed, needs live test |
 
 ## Current Focus
 Project 05: Build, verify, and test

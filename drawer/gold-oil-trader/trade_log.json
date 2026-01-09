@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-01-05T06:30:02.908789-08:00",
+    "type": "BUY",
+    "symbol": "SGOL",
+    "notional": 250.0,
+    "price": 42.105000000000004,
+    "recent_high": 43.3603,
+    "pullback_pct": -2.8950445453560016,
+    "reason": "pullback_entry"
+  },
+  {
+    "timestamp": "2026-01-07T12:47:34.865788-08:00",
+    "type": "SELL",
+    "symbol": "SGOL",
+    "qty": 5.935523697,
+    "entry_price": 42.1178,
+    "exit_price": 42.495,
+    "pnl_pct": 0.89558352454006,
+    "reason": "end_of_day"
+  },
+  {
+    "timestamp": "2026-01-08T06:32:36.418862-08:00",
+    "type": "BUY",
+    "symbol": "SGOL",
+    "notional": 250.0,
+    "price": 42.165,
+    "recent_high": 43.3603,
+    "pullback_pct": -2.75666911898673,
+    "reason": "pullback_entry"
+  },
+  {
+    "timestamp": "2026-01-08T12:54:46.781338-08:00",
+    "type": "SELL",
+    "symbol": "SGOL",
+    "qty": 5.926747099,
+    "entry_price": 42.1799,
+    "exit_price": 42.63,
+    "pnl_pct": 1.0670959911932298,
+    "reason": "end_of_day"
+  }
+]

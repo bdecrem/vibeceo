@@ -617,11 +617,15 @@ Someone asked you to "${detectedAction}" and Bart approved it.
 
     // Check if it's a thinkhard request - either from original message OR from approval message
     // Admin can force thinkhard by replying "approve thinkhard"
+    // Auto-enable thinkhard for audio attachments (kit creation needs time)
     const forceThinkhard = /\bapprove\s+thinkhard\b/i.test(body);
     const { isThinkhard: originalThinkhard, task } = detectThinkhard(originalBody);
-    const isThinkhard = forceThinkhard || originalThinkhard;
+    const hasAudioAttachments = storedAttachments.some(a =>
+      /\.(wav|mp3|aiff|ogg|flac)$/i.test(a.name)
+    );
+    const isThinkhard = forceThinkhard || originalThinkhard || hasAudioAttachments;
 
-    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard}, attachments: ${storedAttachments.length})`);
+    console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard}, audioAttachments: ${hasAudioAttachments}, attachments: ${storedAttachments.length})`);
 
     // Run the agent with the approved request
     const agentResult = await runAmberEmailAgent(
@@ -865,8 +869,14 @@ async function processAmberEmailAsync(
 
       // Check for thinkhard or action requests from admin
       const { isThinkhard, task } = detectThinkhard(body);
-      if (isThinkhard || isActionRequest(body)) {
-        console.log(`📧 Admin action request detected (thinkhard: ${isThinkhard})`);
+      // Auto-enable thinkhard for audio attachments (kit creation needs time)
+      const hasAudioAttachments = attachments.some(a =>
+        /\.(wav|mp3|aiff|ogg|flac)$/i.test(a.name)
+      );
+      const useThinkhard = isThinkhard || hasAudioAttachments;
+
+      if (useThinkhard || isActionRequest(body)) {
+        console.log(`📧 Admin action request detected (thinkhard: ${useThinkhard}, audioAttachments: ${hasAudioAttachments})`);
 
         // Run the agent (this can take up to 45 minutes!)
         const agentResult = await runAmberEmailAgent(
@@ -874,7 +884,7 @@ async function processAmberEmailAsync(
           senderEmail,
           subject || '',
           true, // isApprovedRequest
-          isThinkhard,
+          useThinkhard,
           attachments
         );
 

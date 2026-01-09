@@ -1,0 +1,35 @@
+{
+  "gold_position": null,
+  "oil_position": null,
+  "day": 1,
+  "last_check": "2026-01-09T06:45:50.655583-08:00",
+  "last_trigger_scan": {
+    "triggers": [
+      [
+        "Dollar (UUP)",
+        true,
+        "$27.16 vs 20MA $27.48 (-1.2%)"
+      ],
+      [
+        "Gold trend (GLD)",
+        true,
+        "$414.63 vs 20MA $400.96 (+3.4%)"
+      ],
+      [
+        "Risk (VIXY)",
+        false,
+        "$34.46 vs 20MA $39.00 (-11.6%)"
+      ],
+      [
+        "SGOL momentum",
+        true,
+        "$42.32 vs 20MA $41.56 (+1.8%)"
+      ]
+    ],
+    "bullish_count": 3,
+    "bearish_count": 1,
+    "net_score": 2,
+    "recommendation": "ENTER",
+    "timestamp": "2026-01-07T06:30:02.414362-08:00"
+  }
+}
