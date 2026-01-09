@@ -472,7 +472,7 @@ function CSXContent() {
                   we back the weird, the rigorous, the not-next-quarter.
                 </div>
                 <div className={`terminal-line terminal-dim ${visibleLines < 2 ? 'line-hidden' : ''} ${typingLine === 2 ? 'line-typing' : ''}`}>
-                  founders, researchers & students building AI that matters.
+                  building AI that tackles real problems and expands what people can create and become.
                 </div>
 
                 <div className="terminal-programs">

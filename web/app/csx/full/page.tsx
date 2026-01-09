@@ -294,10 +294,10 @@ export default function CSXPage() {
             <h2 className="csx-section-label">MISSION</h2>
             <div>
               <p className="csx-text">
-                CTRL SHIFT Lab is a community of AI builders, researchers, and investors pursuing a simple but challenging proposition:
+                CTRL SHIFT Lab is a community of AI builders, researchers, and investors with a shared mission:
               </p>
               <p className="csx-text-emphasis">
-                Build an AI future that puts people at the center.
+                We build and back AI that tackles real problems and expands what people can create and become.
               </p>
               <p className="csx-text" style={{ marginTop: '16px' }}>
                 We focus on ambitious, longer-horizon projects that traditional venture ignores: founders, researchers and students building for impact that won't show up in next quarter's metrics.
