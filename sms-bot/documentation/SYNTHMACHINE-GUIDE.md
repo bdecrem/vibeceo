@@ -44,7 +44,7 @@ See [Mixer & Effects](#mixer--effects) section below for full documentation.
 
 | Instrument | Type | Location | Detailed Docs |
 |------------|------|----------|---------------|
-| **TR-909** | Drum machine (synth) | `/909/` | `/909/dist/api/index.js` |
+| **TR-909** | Drum machine (synth) | `/909/` | [TR909-LIBRARY.md](/909/TR909-LIBRARY.md) |
 | **R9-DS** | Drum machine (sampler) | `/90s/` | [README.md](/90s/README.md) |
 | **TB-303** | Bass synthesizer | `/303/` | [TB303-LIBRARY.md](/303/TB303-LIBRARY.md) |
 | **SH-101** | Lead synthesizer | `/101/` | [SH101-LIBRARY.md](/101/SH101-LIBRARY.md) |

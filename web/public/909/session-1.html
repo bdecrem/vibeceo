@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SESSION 1 - 909</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 2rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      opacity: 0.5;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 2rem;
+    }
+
+    .pattern-row {
+      display: grid;
+      grid-template-columns: 60px repeat(16, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .row-label {
+      font-size: 0.6rem;
+      opacity: 0.5;
+      text-align: right;
+      padding-right: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .step {
+      aspect-ratio: 1;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      transition: all 0.05s ease;
+    }
+
+    .step.active {
+      background: rgba(184, 134, 11, 0.8);
+      box-shadow: 0 0 10px rgba(184, 134, 11, 0.5);
+    }
+
+    .step.hit {
+      background: rgba(212, 165, 116, 0.4);
+    }
+
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    #status {
+      margin-top: 1rem;
+      opacity: 0.6;
+      font-size: 0.75rem;
+    }
+
+    .bpm {
+      font-size: 3rem;
+      color: #B8860B;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+  </style>
+</head>
+<body>
+  <h1>SESSION 1</h1>
+  <div class="subtitle">909 + 101 · DUB TECHNO</div>
+  <div class="bpm">128</div>
+
+  <div id="pattern"></div>
+
+  <button id="play" onclick="playTrack()">PLAY</button>
+  <div id="status">underground</div>
+
+  <script type="module">
+    import { Session } from '/mixer/dist/session.js';
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { SH101Engine } from '/101/dist/machines/sh101/engine.js';
+
+    // Tight techno kick
+    const drumPattern = {
+      kick: [
+        { velocity: 1.0, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ]
+    };
+
+    // Dub techno arp - tight 4-note loop
+    const arpLoop = [
+      { note: 'A2', gate: true, accent: true, slide: false },
+      { note: 'C3', gate: true, accent: false, slide: true },
+      { note: 'E3', gate: true, accent: false, slide: false },
+      { note: 'C3', gate: true, accent: false, slide: true },
+    ];
+    // Repeat for 16 steps
+    const arpPattern = [...arpLoop, ...arpLoop, ...arpLoop, ...arpLoop];
+
+    const voices = ['kick'];
+    const labels = { kick: 'KICK' };
+    const pattern = drumPattern;
+
+    // Build visual grid
+    const patternDiv = document.getElementById('pattern');
+    const stepElements = {};
+
+    voices.forEach(voice => {
+      const row = document.createElement('div');
+      row.className = 'pattern-row';
+
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = labels[voice];
+      row.appendChild(label);
+
+      stepElements[voice] = [];
+
+      for (let i = 0; i < 16; i++) {
+        const step = document.createElement('div');
+        step.className = 'step';
+        if (pattern[voice][i].velocity > 0) step.classList.add('hit');
+        row.appendChild(step);
+        stepElements[voice].push(step);
+      }
+
+      patternDiv.appendChild(row);
+    });
+
+    let isPlaying = false;
+    let currentSource = null;
+    let animateInterval = null;
+
+    window.playTrack = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      if (isPlaying) {
+        // Stop
+        if (currentSource) currentSource.stop();
+        if (animateInterval) clearInterval(animateInterval);
+        isPlaying = false;
+        btn.textContent = 'PLAY';
+        status.textContent = 'underground';
+        voices.forEach(voice => {
+          stepElements[voice].forEach(el => el.classList.remove('active'));
+        });
+        return;
+      }
+
+      btn.disabled = true;
+      status.textContent = 'loading...';
+
+      try {
+        // Create session with mixer
+        const session = new Session({ bpm: 128 });
+
+        // 909 drums
+        const drums = new TR909Engine({ context: session.context });
+        const kick = drums.voices.get('kick');
+        kick.tune = 400;
+        kick.decay = 0.15;
+        kick.attack = 0.8;
+        drums.setPattern('main', drumPattern);
+        session.add('drums', drums);
+
+        // 101 synth - dub techno settings
+        const synth = new SH101Engine({ context: session.context });
+        synth.setParameter('cutoff', 0.25);      // Dark, murky
+        synth.setParameter('resonance', 0.6);    // Some bite
+        synth.setParameter('envMod', 0.3);       // Subtle envelope
+        synth.setParameter('attack', 0.02);      // Soft attack
+        synth.setParameter('decay', 0.4);        // Medium decay
+        synth.setParameter('sustain', 0.3);      // Low sustain
+        synth.setParameter('release', 0.5);      // Longer release for dub
+        synth.setParameter('vcoSaw', 0.7);       // Mostly saw
+        synth.setParameter('vcoPulse', 0.3);     // Touch of pulse
+        synth.setParameter('subLevel', 0.4);     // Sub for depth
+        synth.setPattern(arpPattern);
+        session.add('synth', synth);
+
+        // Strong sidechain - synth ducks when kick hits
+        const kickOutput = session.channel('drums').getVoiceOutput('kick');
+        session.channel('synth').duck({
+          trigger: kickOutput,
+          amount: 0.8,      // Strong duck (80%)
+          attack: 5,        // Fast attack
+          release: 120      // Medium release for pump
+        });
+
+        // Levels
+        session.channel('drums').volume = 1.0;
+        session.channel('synth').volume = 0.6;
+
+        status.textContent = 'rendering...';
+
+        // Render with sidechain applied
+        const { buffer, wav } = await session.render({ bars: 4 });
+
+        const audioContext = session.context;
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(audioContext.destination);
+
+        currentSource = source;
+        isPlaying = true;
+        source.start();
+        status.textContent = 'looping';
+        btn.textContent = 'STOP';
+        btn.disabled = false;
+
+        // Animate grid
+        const stepDuration = (60 / 128) / 4 * 1000;
+        let step = 0;
+
+        animateInterval = setInterval(() => {
+          const s = step % 16;
+          const prev = (s + 15) % 16;
+
+          voices.forEach(voice => {
+            stepElements[voice][prev].classList.remove('active');
+            if (pattern[voice][s].velocity > 0) {
+              stepElements[voice][s].classList.add('active');
+            }
+          });
+
+          step++;
+        }, stepDuration);
+
+        source.onended = () => {
+          if (animateInterval) clearInterval(animateInterval);
+          voices.forEach(voice => {
+            stepElements[voice].forEach(el => el.classList.remove('active'));
+          });
+          isPlaying = false;
+          btn.textContent = 'PLAY';
+          btn.disabled = false;
+          status.textContent = 'underground';
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

@@ -617,24 +617,26 @@ Someone asked you to "${detectedAction}" and Bart approved it.
 
     // Check if it's a thinkhard request - either from original message OR from approval message
     // Admin can force thinkhard by replying "approve thinkhard"
-    // Auto-enable thinkhard for audio attachments (kit creation needs time)
+    // Audio attachments need extended timeout but NOT thinkhard mode
     const forceThinkhard = /\bapprove\s+thinkhard\b/i.test(body);
     const { isThinkhard: originalThinkhard, task } = detectThinkhard(originalBody);
     const hasAudioAttachments = storedAttachments.some(a =>
       /\.(wav|mp3|aiff|ogg|flac)$/i.test(a.name)
     );
-    const isThinkhard = forceThinkhard || originalThinkhard || hasAudioAttachments;
+    const isThinkhard = forceThinkhard || originalThinkhard; // NOT audio attachments
 
     console.log(`[approval] Executing approved request from ${originalFrom} (thinkhard: ${isThinkhard}, forced: ${forceThinkhard}, audioAttachments: ${hasAudioAttachments}, attachments: ${storedAttachments.length})`);
 
     // Run the agent with the approved request
+    // For audio attachments: use extended timeout but NOT thinkhard mode
     const agentResult = await runAmberEmailAgent(
       isThinkhard ? task : originalBody,
       originalFrom,
       originalSubject,
       true, // isApprovedRequest
-      isThinkhard,
-      storedAttachments
+      isThinkhard, // Only true if explicitly requested
+      storedAttachments,
+      hasAudioAttachments // extendedTimeout for kit creation
     );
 
     // Send immediately - the agent already takes several minutes to run,
@@ -869,23 +871,25 @@ async function processAmberEmailAsync(
 
       // Check for thinkhard or action requests from admin
       const { isThinkhard, task } = detectThinkhard(body);
-      // Auto-enable thinkhard for audio attachments (kit creation needs time)
+      // Audio attachments need extended timeout but NOT thinkhard mode
+      // (thinkhard mode ignores kit creation instructions)
       const hasAudioAttachments = attachments.some(a =>
         /\.(wav|mp3|aiff|ogg|flac)$/i.test(a.name)
       );
-      const useThinkhard = isThinkhard || hasAudioAttachments;
 
-      if (useThinkhard || isActionRequest(body)) {
-        console.log(`📧 Admin action request detected (thinkhard: ${useThinkhard}, audioAttachments: ${hasAudioAttachments})`);
+      if (isThinkhard || hasAudioAttachments || isActionRequest(body)) {
+        console.log(`📧 Admin action request detected (thinkhard: ${isThinkhard}, audioAttachments: ${hasAudioAttachments})`);
 
         // Run the agent (this can take up to 45 minutes!)
+        // For audio attachments: use extended timeout but NOT thinkhard mode
         const agentResult = await runAmberEmailAgent(
           task,
           senderEmail,
           subject || '',
           true, // isApprovedRequest
-          useThinkhard,
-          attachments
+          isThinkhard, // Only true if explicitly requested, NOT for audio attachments
+          attachments,
+          hasAudioAttachments // extendedTimeout for kit creation
         );
 
         // Send the agent's response

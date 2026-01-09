@@ -41,6 +41,7 @@ export interface EmailAttachment {
  * @param isApprovedRequest If true, this was approved by Bart
  * @param thinkhard If true, run multi-iteration deep work
  * @param attachments Audio files attached to the email (uploaded to Supabase)
+ * @param extendedTimeout If true, use 45 min timeout without thinkhard mode (for kit creation)
  * @returns Result with response, actions taken, etc.
  */
 export async function runAmberEmailAgent(
@@ -49,7 +50,8 @@ export async function runAmberEmailAgent(
   subject: string,
   isApprovedRequest: boolean = false,
   thinkhard: boolean = false,
-  attachments: EmailAttachment[] = []
+  attachments: EmailAttachment[] = [],
+  extendedTimeout: boolean = false
 ): Promise<AmberEmailResult> {
   console.log(`[Amber Email Agent] Starting for task from ${senderEmail}`);
 
@@ -88,8 +90,8 @@ export async function runAmberEmailAgent(
     TWITTER_INTHEAMBER_ACCESS_SECRET: process.env.TWITTER_INTHEAMBER_ACCESS_SECRET,
   };
 
-  // Timeout: 5 minutes for normal, 45 minutes for thinkhard
-  const timeoutMs = thinkhard ? 45 * 60 * 1000 : 5 * 60 * 1000;
+  // Timeout: 5 min normal, 45 min for thinkhard OR extended (kit creation)
+  const timeoutMs = (thinkhard || extendedTimeout) ? 45 * 60 * 1000 : 5 * 60 * 1000;
 
   return new Promise((resolve) => {
     const proc = spawn(pythonPath, [agentScript, '--input', JSON.stringify(agentInput)], {
