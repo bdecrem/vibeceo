@@ -215,12 +215,43 @@ export class TR909Engine extends SynthEngine {
     return this.sequencer.isRunning();
   }
 
+  /**
+   * Render a pattern to an AudioBuffer.
+   * Supports two signatures for Session API compatibility:
+   *   renderPattern({ bars, bpm })           - uses stored pattern
+   *   renderPattern(pattern, { bars, bpm })  - explicit pattern
+   */
   async renderPattern(
-    pattern: Pattern,
+    patternOrOptions: Pattern | Tr909RenderOptions = {},
     options: Tr909RenderOptions = {}
   ): Promise<AudioBuffer> {
-    const bpm = options.bpm ?? this.currentBpm;
-    const bars = options.bars ?? 1;
+    // Detect which signature was used
+    let pattern: Pattern;
+    let opts: Tr909RenderOptions;
+
+    if (
+      patternOrOptions &&
+      ('bars' in patternOrOptions ||
+        'bpm' in patternOrOptions ||
+        Object.keys(patternOrOptions).length === 0)
+    ) {
+      // Called as renderPattern({ bars, bpm }) - use stored pattern
+      const storedPattern = this.sequencer.getCurrentPattern();
+      if (!storedPattern) {
+        throw new Error(
+          'No pattern available. Call setPattern() first or pass pattern as argument.'
+        );
+      }
+      pattern = storedPattern;
+      opts = patternOrOptions as Tr909RenderOptions;
+    } else {
+      // Called as renderPattern(pattern, options) - explicit pattern
+      pattern = patternOrOptions as Pattern;
+      opts = options;
+    }
+
+    const bpm = opts.bpm ?? this.currentBpm;
+    const bars = opts.bars ?? 1;
     const stepsPerBar = TR909Engine.STEPS_PER_BAR;
     const totalSteps = stepsPerBar * bars;
     const baseStepDuration = 60 / bpm / 4;
@@ -235,12 +266,12 @@ export class TR909Engine extends SynthEngine {
           bpm,
           bars,
           stepsPerBar,
-          swing: options.swing ?? this.swingAmount,
+          swing: opts.swing ?? this.swingAmount,
         });
       },
       {
-        sampleRate: options.sampleRate,
-        numberOfChannels: options.numberOfChannels,
+        sampleRate: opts.sampleRate,
+        numberOfChannels: opts.numberOfChannels,
       }
     );
   }

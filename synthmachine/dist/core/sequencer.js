@@ -73,6 +73,9 @@ export class StepSequencer {
     getCurrentPatternId() {
         return this.currentPatternId;
     }
+    getCurrentPattern() {
+        return this.currentPattern;
+    }
     chain(patternIds) {
         patternIds.forEach((id) => {
             if (!this.patterns.has(id)) {

@@ -227,13 +227,12 @@
         synth.setPattern(arpPattern);
         session.add('synth', synth);
 
-        // Strong sidechain - synth ducks when kick hits
-        const kickOutput = session.channel('drums').getVoiceOutput('kick');
+        // Aggressive sidechain - synth ducks hard when kick hits
         session.channel('synth').duck({
-          trigger: kickOutput,
-          amount: 0.8,      // Strong duck (80%)
-          attack: 5,        // Fast attack
-          release: 120      // Medium release for pump
+          trigger: session.channel('drums').output,
+          amount: 0.95,     // Near-total duck (95%)
+          attack: 1,        // Instant attack
+          release: 200      // Long release for obvious pump
         });
 
         // Levels

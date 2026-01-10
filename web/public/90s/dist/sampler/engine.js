@@ -271,12 +271,30 @@ export class R9DSEngine {
 
   /**
    * Render a pattern to an AudioBuffer (for WAV export)
+   * Supports both signatures for Session API compatibility:
+   *   renderPattern({ bars, bpm })           - uses stored pattern
+   *   renderPattern(pattern, { bars, bpm })  - explicit pattern
    */
-  async renderPattern(pattern, options = {}) {
-    const bpm = options.bpm ?? this.currentBpm ?? 120;
-    const bars = options.bars ?? 1;
-    const steps = options.steps ?? 16;
-    const swing = options.swing ?? this.swingAmount ?? 0;
+  async renderPattern(patternOrOptions = {}, options = {}) {
+    // Detect which signature was used
+    let pattern, opts;
+    if (patternOrOptions && (patternOrOptions.bars !== undefined || patternOrOptions.bpm !== undefined || patternOrOptions.steps !== undefined || Object.keys(patternOrOptions).length === 0)) {
+      // Called as renderPattern({ bars, bpm }) - use stored pattern
+      pattern = this.sequencer.getCurrentPattern();
+      opts = patternOrOptions;
+      if (!pattern) {
+        throw new Error('No pattern available. Call setPattern() first or pass pattern as argument.');
+      }
+    } else {
+      // Called as renderPattern(pattern, options) - explicit pattern
+      pattern = patternOrOptions;
+      opts = options;
+    }
+
+    const bpm = opts.bpm ?? this.currentBpm ?? 120;
+    const bars = opts.bars ?? 1;
+    const steps = opts.steps ?? 16;
+    const swing = opts.swing ?? this.swingAmount ?? 0;
 
     // Calculate duration
     const secondsPerBeat = 60 / bpm;

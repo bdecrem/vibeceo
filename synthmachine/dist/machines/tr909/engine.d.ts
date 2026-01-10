@@ -55,7 +55,13 @@ export declare class TR909Engine extends SynthEngine {
     getVoiceUseSample(voiceId: TR909VoiceId): boolean;
     getCurrentStep(): number;
     isPlaying(): boolean;
-    renderPattern(pattern: Pattern, options?: Tr909RenderOptions): Promise<AudioBuffer>;
+    /**
+     * Render a pattern to an AudioBuffer.
+     * Supports two signatures for Session API compatibility:
+     *   renderPattern({ bars, bpm })           - uses stored pattern
+     *   renderPattern(pattern, { bars, bpm })  - explicit pattern
+     */
+    renderPattern(patternOrOptions?: Pattern | Tr909RenderOptions, options?: Tr909RenderOptions): Promise<AudioBuffer>;
     private createVoiceMap;
     private schedulePatternInContext;
     private collectEventsForStep;

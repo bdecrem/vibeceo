@@ -29,6 +29,7 @@ export declare class StepSequencer {
     isRunning(): boolean;
     getCurrentStep(): number;
     getCurrentPatternId(): string | undefined;
+    getCurrentPattern(): Pattern | undefined;
     chain(patternIds: string[]): void;
     private restart;
     private scheduleNextStep;

@@ -59,6 +59,7 @@ export class Ducker extends Effect {
       this._analyser.disconnect();
     }
     sourceNode.connect(this._analyser);
+    this._triggerSource = sourceNode;  // Store for offline rendering
     this._triggerConnected = true;
 
     // Start monitoring

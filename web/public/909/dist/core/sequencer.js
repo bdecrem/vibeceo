@@ -3,43 +3,20 @@
  * Timing is handled via `setTimeout` for now; higher accuracy transports
  * (Tone.Transport, Web Workers, etc.) can plug in later.
  */
-
-// Scale modes: determines step timing subdivision
-// 16th: standard 16 steps per bar (default)
-// 8th-triplet: 12 steps per bar (triplet feel)
-// 16th-triplet: 24 steps per bar (shuffle)
-// 32nd: 32 steps per bar (double-time for rolls)
-const SCALE_MODES = {
-    '16th': { stepsPerBeat: 4, label: '16th Notes' },
-    '8th-triplet': { stepsPerBeat: 3, label: '8th Triplets' },
-    '16th-triplet': { stepsPerBeat: 6, label: '16th Triplets' },
-    '32nd': { stepsPerBeat: 8, label: '32nd Notes' },
-};
-
 export class StepSequencer {
-    static MIN_BPM = 37;
-    static MAX_BPM = 290;
-    static SCALE_MODES = SCALE_MODES;
-
     constructor(options = {}) {
         this.patterns = new Map();
         this.currentStep = 0;
         this.running = false;
         this.steps = options.steps ?? 16;
-        this.patternLength = options.patternLength ?? 16; // 1-16 steps
-        this.bpm = this.clampBpm(options.bpm ?? 120);
+        this.bpm = options.bpm ?? 120;
         this.swing = options.swing ?? 0;
-        this.scale = options.scale ?? '16th';
-        this.globalAccent = options.globalAccent ?? 1.0; // 0-1 multiplier for accents
     }
     setBpm(bpm) {
-        this.bpm = this.clampBpm(bpm);
+        this.bpm = bpm;
         if (this.running) {
             this.restart();
         }
-    }
-    clampBpm(bpm) {
-        return Math.max(StepSequencer.MIN_BPM, Math.min(StepSequencer.MAX_BPM, bpm));
     }
     setSwing(amount) {
         this.swing = Math.max(0, Math.min(1, amount));
@@ -53,38 +30,6 @@ export class StepSequencer {
     setSteps(steps) {
         this.steps = Math.max(1, Math.floor(steps));
         this.currentStep = 0;
-    }
-    // Pattern length: how many steps before the pattern loops (1-16)
-    setPatternLength(length) {
-        this.patternLength = Math.max(1, Math.min(16, Math.floor(length)));
-        if (this.currentStep >= this.patternLength) {
-            this.currentStep = 0;
-        }
-    }
-    getPatternLength() {
-        return this.patternLength;
-    }
-    // Scale mode: changes timing subdivision
-    setScale(scale) {
-        if (SCALE_MODES[scale]) {
-            this.scale = scale;
-            if (this.running) {
-                this.restart();
-            }
-        }
-    }
-    getScale() {
-        return this.scale;
-    }
-    getScaleModes() {
-        return Object.keys(SCALE_MODES);
-    }
-    // Global accent: multiplier for all accented steps (0-1)
-    setGlobalAccent(amount) {
-        this.globalAccent = Math.max(0, Math.min(1, amount));
-    }
-    getGlobalAccent() {
-        return this.globalAccent;
     }
     addPattern(id, pattern) {
         this.patterns.set(id, pattern);
@@ -128,6 +73,9 @@ export class StepSequencer {
     getCurrentPatternId() {
         return this.currentPatternId;
     }
+    getCurrentPattern() {
+        return this.currentPattern;
+    }
     chain(patternIds) {
         patternIds.forEach((id) => {
             if (!this.patterns.has(id)) {
@@ -153,17 +101,12 @@ export class StepSequencer {
         this.timer = setTimeout(() => {
             const events = this.collectEventsForStep(this.currentStep);
             this.onStep?.(this.currentStep, events);
-            // Use patternLength for looping, not steps
-            this.currentStep = (this.currentStep + 1) % this.patternLength;
+            this.currentStep = (this.currentStep + 1) % this.steps;
             this.scheduleNextStep();
         }, intervalMs);
     }
     computeIntervalMs(step) {
-        // Get steps per beat from scale mode
-        const scaleMode = SCALE_MODES[this.scale] || SCALE_MODES['16th'];
-        const stepsPerBeat = scaleMode.stepsPerBeat;
-        // Base interval: 60s / bpm / stepsPerBeat
-        const base = (60 / this.bpm / stepsPerBeat) * 1000;
+        const base = (60 / this.bpm / 4) * 1000; // 16th note
         if (this.swing <= 0.0001) {
             return base;
         }
@@ -189,7 +132,6 @@ export class StepSequencer {
                 step,
                 velocity: patternStep.velocity,
                 accent: patternStep.accent,
-                globalAccent: this.globalAccent, // Pass global accent multiplier
             });
         }
         return events;

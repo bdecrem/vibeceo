@@ -591,7 +591,7 @@ export class Session {
   }
 
   /**
-   * Mix multiple audio buffers into one
+   * Mix multiple audio buffers into one, applying offline sidechain
    */
   _mixBuffers(context, channelBuffers, duration, sampleRate) {
     const length = Math.floor(duration * sampleRate);
@@ -604,17 +604,75 @@ export class Session {
     const leftOut = outputBuffer.getChannelData(0);
     const rightOut = outputBuffer.getChannelData(1);
 
-    for (const { buffer, volume } of channelBuffers) {
+    // Build buffer lookup by channel name
+    const buffersByName = new Map();
+    for (const { name, buffer, volume } of channelBuffers) {
+      buffersByName.set(name, { buffer, volume });
+    }
+
+    // Process each channel
+    for (const { name, buffer, volume } of channelBuffers) {
       if (!buffer) continue;
 
       const leftIn = buffer.getChannelData(0);
       const rightIn = buffer.numberOfChannels > 1 ? buffer.getChannelData(1) : leftIn;
-
       const copyLength = Math.min(length, buffer.length);
 
-      for (let i = 0; i < copyLength; i++) {
-        leftOut[i] += leftIn[i] * volume;
-        rightOut[i] += rightIn[i] * volume;
+      // Check if this channel has a ducker effect
+      const channel = this._channels.get(name);
+      const ducker = channel?.effects?.find(e => e.constructor.name === 'Ducker');
+
+      if (ducker && ducker._triggerSource) {
+        // Apply offline sidechain
+        const triggerChannelName = this._findTriggerChannelName(ducker._triggerSource);
+        const triggerData = buffersByName.get(triggerChannelName);
+
+        if (triggerData?.buffer) {
+          const triggerLeft = triggerData.buffer.getChannelData(0);
+          const amount = ducker._amount ?? 0.5;
+          const attackMs = ducker._attack ?? 5;
+          const releaseMs = ducker._release ?? 150;
+
+          // Convert ms to samples
+          const attackSamples = Math.max(1, (attackMs / 1000) * sampleRate);
+          const releaseSamples = Math.max(1, (releaseMs / 1000) * sampleRate);
+
+          // Envelope follower state
+          let envelope = 0;
+          const threshold = 0.05;
+
+          for (let i = 0; i < copyLength; i++) {
+            const triggerLevel = Math.abs(triggerLeft[i] || 0);
+
+            // Simple envelope follower
+            if (triggerLevel > envelope) {
+              envelope += (triggerLevel - envelope) / attackSamples;
+            } else {
+              envelope += (triggerLevel - envelope) / releaseSamples;
+            }
+
+            // Calculate gain reduction
+            let gainReduction = 1;
+            if (envelope > threshold) {
+              gainReduction = 1 - (amount * Math.min(1, envelope / 0.5));
+            }
+
+            leftOut[i] += leftIn[i] * volume * gainReduction;
+            rightOut[i] += rightIn[i] * volume * gainReduction;
+          }
+        } else {
+          // No trigger buffer found, mix without ducking
+          for (let i = 0; i < copyLength; i++) {
+            leftOut[i] += leftIn[i] * volume;
+            rightOut[i] += rightIn[i] * volume;
+          }
+        }
+      } else {
+        // No ducker, simple mix
+        for (let i = 0; i < copyLength; i++) {
+          leftOut[i] += leftIn[i] * volume;
+          rightOut[i] += rightIn[i] * volume;
+        }
       }
     }
 
@@ -626,6 +684,30 @@ export class Session {
     }
 
     return outputBuffer;
+  }
+
+  /**
+   * Find which channel a trigger source belongs to
+   */
+  _findTriggerChannelName(triggerSource) {
+    for (const [name, channel] of this._channels) {
+      if (channel._gain === triggerSource || channel._output === triggerSource) {
+        return name;
+      }
+      if (channel.engine.masterGain === triggerSource ||
+          channel.engine.output === triggerSource ||
+          channel.engine.compressor === triggerSource) {
+        return name;
+      }
+      if (channel.engine.voices) {
+        for (const voice of channel.engine.voices.values()) {
+          if (voice.output === triggerSource) {
+            return name;
+          }
+        }
+      }
+    }
+    return null;
   }
 
   /**
