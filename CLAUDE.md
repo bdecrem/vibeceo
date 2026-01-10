@@ -55,6 +55,43 @@ cd sms-bot && npm run dev:reroute:v2
 - **Railway services**: `sms-bot` (port 3030), `web` (port 3000)
 - **NEVER** start/stop/build services without user permission
 
+### Browser Testing with Playwright
+
+**NEVER ask the user to open DevTools.** Use Playwright automation instead.
+
+Playwright is available for browser testing and debugging:
+
+```typescript
+import { chromium } from 'playwright';
+
+const browser = await chromium.launch({ headless: false }); // visible browser
+const page = await browser.newPage();
+
+// Screenshots
+await page.screenshot({ path: 'debug.png', fullPage: true });
+
+// Console logs
+page.on('console', msg => console.log('PAGE:', msg.text()));
+
+// Network requests
+page.on('request', req => console.log('Loading:', req.url()));
+
+// Evaluate JS in page context
+const data = await page.evaluate(() => window.someGlobalVar);
+
+// Query DOM
+const labels = await page.locator('.knob-label').allTextContents();
+
+// Disable cache
+await context.route('**/*', route => route.continue({
+  headers: { ...route.request().headers(), 'Cache-Control': 'no-cache' }
+}));
+```
+
+**Example test script**: `web/test-909-sweep.mjs`
+
+Run with: `node web/test-909-sweep.mjs`
+
 ## Essential Documentation
 
 **When user says "read the docs" or "check documentation", go to `sms-bot/documentation/`.**
