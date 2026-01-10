@@ -4,6 +4,7 @@ export declare class Kick909 extends Voice {
     private tune;
     private decay;
     private attack;
+    private sweep;
     private level;
     constructor(id: VoiceId, context: BaseAudioContext);
     private createSoftClipCurve;

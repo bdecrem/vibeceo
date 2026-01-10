@@ -1,7 +1,7 @@
 import { SynthEngine } from '../../core/engine.js';
 import { StepSequencer } from '../../core/sequencer.js';
 import { LFSRNoise } from '../../core/noise.js';
-import { Kick909 } from './voices/kick.js';
+import { Kick909 } from './voices/kick-v3.js';
 import { Kick909E1 } from './voices/kick-e1.js';
 import { Snare909 } from './voices/snare.js';
 import { Snare909E1 } from './voices/snare-e1.js';

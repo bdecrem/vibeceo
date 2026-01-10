@@ -1,5 +1,5 @@
-import { TR909Engine, } from '../../machines/tr909/engine.js';
-import { TR909_PRESETS } from '../../machines/tr909/presets.js';
+import { TR909Engine, } from '../../machines/tr909/engine-v3.js';
+import { TR909_PRESETS, TR909_KITS, TR909_SEQUENCES } from '../../machines/tr909/presets.js?v=20260110h';
 import audioBufferToWav from 'audiobuffer-to-wav';
 const STEPS = 16;
 
@@ -118,7 +118,6 @@ document.addEventListener('keydown', (e) => {
 const pattern = {};
 const engine = new TR909Engine();
 const PATTERN_ID = 'web-ui';
-const STORAGE_KEY = 'tr909-saved-patterns';
 // Track current step for visualization
 let currentStep = -1;
 const VOICES = [
@@ -444,6 +443,8 @@ function renderVoiceParams() {
             wrapper.className = 'knob-wrapper';
             const knob = document.createElement('div');
             knob.className = 'knob';
+            knob.dataset.voiceId = voice.id;
+            knob.dataset.paramId = param.id;
             const initialRotation = valueToRotation(param.defaultValue, param.range?.min ?? 0, param.range?.max ?? 1);
             knob.style.setProperty('--rotation', `${initialRotation}`);
             knob.style.transform = `rotate(${initialRotation}deg)`;
@@ -501,7 +502,171 @@ function loadPreset(preset) {
         }
     });
     commitPattern();
+
+    // Apply voice parameters if preset includes them
+    if (preset.voiceParams) {
+        const descriptors = engine.getVoiceParameterDescriptors();
+        Object.entries(preset.voiceParams).forEach(([voiceId, params]) => {
+            const voiceDescriptors = descriptors[voiceId] || [];
+            Object.entries(params).forEach(([paramId, value]) => {
+                try {
+                    engine.setVoiceParameter(voiceId, paramId, value);
+                    // Update UI knob if it exists
+                    const knob = document.querySelector(`.knob[data-voice-id="${voiceId}"][data-param-id="${paramId}"]`);
+                    if (knob) {
+                        // Find the param descriptor for range info
+                        const paramDesc = voiceDescriptors.find(p => p.id === paramId);
+                        const min = paramDesc?.range?.min ?? 0;
+                        const max = paramDesc?.range?.max ?? 1;
+                        const rotation = valueToRotation(value, min, max);
+                        knob.style.setProperty('--rotation', `${rotation}`);
+                        knob.style.transform = `rotate(${rotation}deg)`;
+                        // Update value display
+                        const wrapper = knob.closest('.knob-wrapper');
+                        const valueDisplay = wrapper?.querySelector('.knob-value');
+                        if (valueDisplay && paramDesc) {
+                            valueDisplay.textContent = formatParamValue(value, paramDesc);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Failed to set ${voiceId}.${paramId}:`, e);
+                }
+            });
+        });
+    }
+
+    // Switch engine if preset specifies
+    if (preset.engine) {
+        try {
+            engine.setEngine(preset.engine);
+            // Update all engine toggle buttons
+            document.querySelectorAll('.engine-toggle-mini').forEach(btn => {
+                const voiceId = btn.dataset.voiceId;
+                const currentEngine = engine.getVoiceEngine(voiceId);
+                btn.textContent = currentEngine === 'E1' ? '1' : '2';
+                btn.classList.toggle('engine-e2', currentEngine === 'E2');
+            });
+        } catch (e) {
+            console.warn(`Failed to set engine to ${preset.engine}:`, e);
+        }
+    }
 }
+
+// Load just the kit (sound design: engine + voiceParams)
+function loadKit(kit) {
+    // First, reset all per-voice engines to defaults (clears any individual overrides)
+    if (typeof engine.resetAllVoiceEngines === 'function') {
+        engine.resetAllVoiceEngines();
+    }
+
+    // Apply engine if specified
+    if (kit.engine) {
+        try {
+            // Force engine change even if same as current (to ensure clean state)
+            engine.currentEngine = null; // Clear to force re-init
+            engine.setEngine(kit.engine);
+            // Update all engine toggle buttons
+            document.querySelectorAll('.engine-toggle-mini').forEach(btn => {
+                const voiceId = btn.dataset.voiceId;
+                const currentEngine = engine.getVoiceEngine(voiceId);
+                btn.textContent = currentEngine === 'E1' ? '1' : '2';
+                btn.classList.toggle('engine-e2', currentEngine === 'E2');
+            });
+        } catch (e) {
+            console.warn(`Failed to set engine to ${kit.engine}:`, e);
+        }
+    }
+
+    // Reset ALL voice parameters to defaults
+    const descriptors = engine.getVoiceParameterDescriptors();
+    Object.entries(descriptors).forEach(([voiceId, params]) => {
+        params.forEach((param) => {
+            try {
+                const defaultVal = param.defaultValue;
+                engine.setVoiceParameter(voiceId, param.id, defaultVal);
+                // Update UI knob
+                const knob = document.querySelector(`.knob[data-voice-id="${voiceId}"][data-param-id="${param.id}"]`);
+                if (knob) {
+                    const min = param.range?.min ?? 0;
+                    const max = param.range?.max ?? 1;
+                    const rotation = valueToRotation(defaultVal, min, max);
+                    knob.style.setProperty('--rotation', `${rotation}`);
+                    knob.style.transform = `rotate(${rotation}deg)`;
+                    const wrapper = knob.closest('.knob-wrapper');
+                    const valueDisplay = wrapper?.querySelector('.knob-value');
+                    if (valueDisplay) {
+                        valueDisplay.textContent = formatParamValue(defaultVal, param);
+                    }
+                }
+            } catch (e) {
+                // Ignore errors for params that don't exist on current engine
+            }
+        });
+    });
+
+    // Then apply kit-specific overrides
+    if (kit.voiceParams) {
+        Object.entries(kit.voiceParams).forEach(([voiceId, params]) => {
+            const voiceDescriptors = descriptors[voiceId] || [];
+            Object.entries(params).forEach(([paramId, value]) => {
+                try {
+                    engine.setVoiceParameter(voiceId, paramId, value);
+                    // Update UI knob
+                    const knob = document.querySelector(`.knob[data-voice-id="${voiceId}"][data-param-id="${paramId}"]`);
+                    if (knob) {
+                        const paramDesc = voiceDescriptors.find(p => p.id === paramId);
+                        const min = paramDesc?.range?.min ?? 0;
+                        const max = paramDesc?.range?.max ?? 1;
+                        const rotation = valueToRotation(value, min, max);
+                        knob.style.setProperty('--rotation', `${rotation}`);
+                        knob.style.transform = `rotate(${rotation}deg)`;
+                        const wrapper = knob.closest('.knob-wrapper');
+                        const valueDisplay = wrapper?.querySelector('.knob-value');
+                        if (valueDisplay && paramDesc) {
+                            valueDisplay.textContent = formatParamValue(value, paramDesc);
+                        }
+                    }
+                } catch (e) {
+                    console.warn(`Failed to set ${voiceId}.${paramId}:`, e);
+                }
+            });
+        });
+    }
+}
+
+// Load just the sequence (pattern + BPM)
+function loadSequence(seq) {
+    const bpmInput = document.getElementById('bpm');
+
+    // Apply pattern
+    VOICES.forEach((voice) => {
+        const seqTrack = seq.pattern[voice.id];
+        const track = ensureTrack(voice.id);
+        if (seqTrack && Array.isArray(seqTrack)) {
+            for (let i = 0; i < STEPS; i++) {
+                const step = seqTrack[i];
+                if (step) {
+                    track[i] = { ...step };
+                } else {
+                    track[i] = { velocity: 0, accent: false };
+                }
+            }
+        } else {
+            for (let i = 0; i < STEPS; i++) {
+                track[i] = { velocity: 0, accent: false };
+            }
+        }
+    });
+    commitPattern();
+    refreshGrid();
+
+    // Apply BPM
+    if (bpmInput && seq.bpm) {
+        bpmInput.value = String(seq.bpm);
+        engine.setBpm(seq.bpm);
+    }
+}
+
 function refreshGrid() {
     // Update all step buttons to reflect current pattern
     const container = document.getElementById('sequencer');
@@ -524,20 +689,47 @@ function refreshGrid() {
     });
 }
 function populatePresets() {
+    // Legacy - populate old preset dropdown if it exists
     const presetSelect = document.getElementById('preset');
-    if (!presetSelect)
-        return;
-    TR909_PRESETS.forEach((preset) => {
+    if (presetSelect) {
+        TR909_PRESETS.forEach((preset) => {
+            const option = document.createElement('option');
+            option.value = preset.id;
+            option.textContent = `${preset.name} (${preset.bpm} BPM)`;
+            presetSelect.appendChild(option);
+        });
+    }
+}
+
+function populateKits() {
+    const kitSelect = document.getElementById('kit-select');
+    if (!kitSelect) return;
+    TR909_KITS.forEach((kit) => {
         const option = document.createElement('option');
-        option.value = preset.id;
-        option.textContent = `${preset.name} (${preset.bpm} BPM)`;
-        presetSelect.appendChild(option);
+        option.value = kit.id;
+        option.textContent = kit.name;
+        kitSelect.appendChild(option);
+    });
+    // Default to first kit
+    kitSelect.value = TR909_KITS[0]?.id || '';
+}
+
+function populateSequences() {
+    const seqSelect = document.getElementById('sequence-select');
+    if (!seqSelect) return;
+    TR909_SEQUENCES.forEach((seq) => {
+        const option = document.createElement('option');
+        option.value = seq.id;
+        option.textContent = `${seq.name} (${seq.bpm})`;
+        seqSelect.appendChild(option);
     });
 }
 function setupControls() {
     const playToggleBtn = document.getElementById('play-toggle');
     const bpmInput = document.getElementById('bpm');
     const presetSelect = document.getElementById('preset');
+    const kitSelect = document.getElementById('kit-select');
+    const seqSelect = document.getElementById('sequence-select');
     const swingInput = document.getElementById('swing');
     const swingValue = document.getElementById('swing-value');
     const flamInput = document.getElementById('flam');
@@ -545,10 +737,39 @@ function setupControls() {
     const savedPatternsSelect = document.getElementById('saved-patterns');
     const saveBtn = document.getElementById('save-pattern');
     const deleteBtn = document.getElementById('delete-pattern');
-    // Populate preset dropdown
-    populatePresets();
+    // Populate dropdowns
+    populatePresets();  // Legacy
+    populateKits();
+    populateSequences();
     // Populate saved patterns
     populateSavedPatterns();
+
+    // Kit selection - changes sound design (engine + voice params)
+    kitSelect?.addEventListener('change', () => {
+        const kitId = kitSelect.value;
+        if (!kitId) return;
+        const kit = TR909_KITS.find(k => k.id === kitId);
+        if (kit) {
+            loadKit(kit);
+            setStatus(`Kit: ${kit.name} — ${kit.description}`);
+        }
+    });
+
+    // Sequence selection - changes pattern + BPM
+    seqSelect?.addEventListener('change', () => {
+        const seqId = seqSelect.value;
+        if (!seqId) {
+            setStatus('Custom pattern mode');
+            return;
+        }
+        const seq = TR909_SEQUENCES.find(s => s.id === seqId);
+        if (seq) {
+            loadSequence(seq);
+            // Clear saved patterns selection
+            if (savedPatternsSelect) savedPatternsSelect.value = '';
+            setStatus(`Sequence: ${seq.name} at ${seq.bpm} BPM`);
+        }
+    });
     // Swing control
     swingInput?.addEventListener('input', () => {
         const swing = Number(swingInput.value) / 100;
@@ -590,13 +811,18 @@ function setupControls() {
         setStatus(`Scale: ${scale}`);
     });
     // Save pattern
-    saveBtn?.addEventListener('click', () => {
+    saveBtn?.addEventListener('click', async () => {
         const name = prompt('Enter pattern name:');
         if (name && name.trim()) {
             const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
-            savePattern(name.trim(), bpm);
-            populateSavedPatterns();
-            setStatus(`Pattern "${name.trim()}" saved.`);
+            try {
+                setStatus('Saving pattern...');
+                await savePattern(name.trim(), bpm);
+                await populateSavedPatterns();
+                setStatus(`Pattern "${name.trim()}" saved.`);
+            } catch (e) {
+                setStatus(`Failed to save: ${e.message}`);
+            }
         }
     });
     // Load saved pattern
@@ -629,20 +855,24 @@ function setupControls() {
                 bpmInput.value = String(saved.bpm);
                 engine.setBpm(saved.bpm);
             }
-            // Clear preset selection
-            if (presetSelect) {
-                presetSelect.value = '';
-            }
+            // Clear preset/sequence selections
+            if (presetSelect) presetSelect.value = '';
+            if (seqSelect) seqSelect.value = '';
             setStatus(`Loaded saved pattern "${name}"`);
         }
     });
     // Delete saved pattern
-    deleteBtn?.addEventListener('click', () => {
+    deleteBtn?.addEventListener('click', async () => {
         const name = savedPatternsSelect?.value;
         if (name && confirm(`Delete pattern "${name}"?`)) {
-            deleteSavedPattern(name);
-            populateSavedPatterns();
-            setStatus(`Pattern "${name}" deleted.`);
+            try {
+                setStatus('Deleting pattern...');
+                await deleteSavedPattern(name);
+                await populateSavedPatterns();
+                setStatus(`Pattern "${name}" deleted.`);
+            } catch (e) {
+                setStatus(`Failed to delete: ${e.message}`);
+            }
         }
     });
     // Handle preset selection
@@ -682,10 +912,9 @@ function setupControls() {
         if (!Number.isNaN(bpm) && bpm > 0) {
             engine.setBpm(bpm);
             setStatus(`Tempo set to ${bpm} BPM`);
-            // Clear preset selection when BPM is manually changed
-            if (presetSelect) {
-                presetSelect.value = '';
-            }
+            // Clear preset/sequence selection when BPM is manually changed
+            if (presetSelect) presetSelect.value = '';
+            if (seqSelect) seqSelect.value = '';
         }
     });
 }
@@ -726,49 +955,87 @@ function updateStepIndicator(step) {
     // Update mobile page indicator
     updateStepPageIndicator(step);
 }
-function getSavedPatterns() {
+// Pattern storage via Supabase API
+const PATTERNS_API = '/api/synth-patterns';
+let cachedPatterns = null;
+
+async function fetchPatterns() {
     try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : [];
-    }
-    catch {
-        return [];
+        const res = await fetch(`${PATTERNS_API}?machine=909`);
+        if (!res.ok) throw new Error('Failed to fetch patterns');
+        const data = await res.json();
+        cachedPatterns = data.patterns || [];
+        return cachedPatterns;
+    } catch (e) {
+        console.error('Failed to fetch patterns:', e);
+        return cachedPatterns || [];
     }
 }
-function savePattern(name, bpm) {
-    const saved = getSavedPatterns();
+
+function getSavedPatterns() {
+    // Return cached patterns synchronously
+    return cachedPatterns || [];
+}
+
+async function savePattern(name, bpm) {
     // Deep clone pattern
     const patternCopy = {};
     for (const [voiceId, track] of Object.entries(pattern)) {
         patternCopy[voiceId] = track.map((step) => ({ ...step }));
     }
-    // Check if pattern with same name exists
-    const existing = saved.findIndex((p) => p.name === name);
-    if (existing >= 0) {
-        saved[existing] = { name, pattern: patternCopy, bpm };
+
+    try {
+        const res = await fetch(PATTERNS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, machine: '909', bpm, pattern: patternCopy }),
+        });
+
+        if (res.status === 409) {
+            throw new Error('A pattern with this name already exists');
+        }
+        if (!res.ok) throw new Error('Failed to save pattern');
+
+        // Refresh cache
+        await fetchPatterns();
+        return true;
+    } catch (e) {
+        console.error('Failed to save pattern:', e);
+        throw e;
     }
-    else {
-        saved.push({ name, pattern: patternCopy, bpm });
-    }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
 }
+
 function loadSavedPattern(name) {
     const saved = getSavedPatterns();
     return saved.find((p) => p.name === name);
 }
-function deleteSavedPattern(name) {
-    const saved = getSavedPatterns().filter((p) => p.name !== name);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(saved));
+
+async function deleteSavedPattern(name) {
+    try {
+        const res = await fetch(`${PATTERNS_API}?name=${encodeURIComponent(name)}&machine=909`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to delete pattern');
+
+        // Refresh cache
+        await fetchPatterns();
+        return true;
+    } catch (e) {
+        console.error('Failed to delete pattern:', e);
+        throw e;
+    }
 }
-function populateSavedPatterns() {
+
+async function populateSavedPatterns() {
     const savedSelect = document.getElementById('saved-patterns');
-    if (!savedSelect)
-        return;
+    if (!savedSelect) return;
+
     // Clear existing options except first
     while (savedSelect.options.length > 1) {
         savedSelect.remove(1);
     }
-    const saved = getSavedPatterns();
+
+    const saved = await fetchPatterns();
     saved.forEach((p) => {
         const option = document.createElement('option');
         option.value = p.name;
@@ -1148,6 +1415,11 @@ document.addEventListener('DOMContentLoaded', () => {
     setupExportImport();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
+
+    // Load default kit on startup
+    if (TR909_KITS.length > 0) {
+        loadKit(TR909_KITS[0]);
+    }
 
     // Check URL params for ?load= or ?preset=
     checkURLParams();

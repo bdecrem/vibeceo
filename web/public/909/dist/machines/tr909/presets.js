@@ -165,8 +165,40 @@ export const industrial = {
         ride: stepsFromIndices([0, 2, 4, 6, 8, 10, 12, 14]),
     },
 };
-// All presets as a collection
+// Bart Deep - tuned to match the Bart Deep 909 sample
+// Short decay, minimal click, subby character
+export const bartDeep = {
+    id: 'bart-deep',
+    name: 'Bart Deep',
+    description: 'Subby four-on-floor with tight kick',
+    bpm: 128,
+    engine: 'E2',
+    voiceParams: {
+        kick: {
+            tune: 0,
+            decay: 0.1,    // Very short decay
+            attack: 0.1,   // Minimal click
+            level: 1,
+        },
+    },
+    pattern: {
+        kick: stepsFromIndices([0, 4, 8, 12], [0, 8]),
+        snare: stepsFromIndices([]),
+        clap: stepsFromIndices([4, 12]),
+        rimshot: stepsFromIndices([]),
+        ltom: stepsFromIndices([]),
+        mtom: stepsFromIndices([]),
+        htom: stepsFromIndices([]),
+        ch: stepsFromIndices([0, 2, 4, 6, 8, 10, 12, 14]),
+        oh: stepsFromIndices([2, 6, 10, 14]),
+        crash: stepsFromIndices([]),
+        ride: stepsFromIndices([]),
+    },
+};
+
+// All presets as a collection (legacy - combined kit + sequence)
 export const TR909_PRESETS = [
+    bartDeep,
     technoBasic,
     detroitShuffle,
     houseClassic,
@@ -176,7 +208,76 @@ export const TR909_PRESETS = [
     electroFunk,
     industrial,
 ];
-// Get preset by ID
+
+// === KITS (sound design: engine + voice parameters) ===
+export const TR909_KITS = [
+    {
+        id: 'default',
+        name: 'Default',
+        description: 'Standard 909 sound',
+        engine: 'E2',
+        voiceParams: {},
+    },
+    {
+        id: 'bart-deep',
+        name: 'Bart Deep',
+        description: 'Tight subby kick, no pitch sweep',
+        engine: 'E2',
+        voiceParams: {
+            kick: { tune: 0, decay: 0.1, attack: 0.1, sweep: 0, level: 1 },
+        },
+    },
+    {
+        id: 'punchy',
+        name: 'Punchy',
+        description: 'More attack, snappy response',
+        engine: 'E2',
+        voiceParams: {
+            kick: { tune: 0, decay: 0.4, attack: 0.6, level: 1 },
+            snare: { tune: 0.2, level: 1 },
+        },
+    },
+    {
+        id: 'boomy',
+        name: 'Boomy',
+        description: 'Long decay, deep sub',
+        engine: 'E2',
+        voiceParams: {
+            kick: { tune: -0.2, decay: 0.8, attack: 0.3, level: 1 },
+        },
+    },
+    {
+        id: 'e1-classic',
+        name: 'E1 Classic',
+        description: 'Simple sine-based engine',
+        engine: 'E1',
+        voiceParams: {},
+    },
+];
+
+// === SEQUENCES (patterns + BPM) ===
+export const TR909_SEQUENCES = [
+    { id: 'techno-basic', name: 'Techno Basic', bpm: 130, pattern: technoBasic.pattern },
+    { id: 'detroit-shuffle', name: 'Detroit Shuffle', bpm: 125, pattern: detroitShuffle.pattern },
+    { id: 'house-classic', name: 'House Classic', bpm: 122, pattern: houseClassic.pattern },
+    { id: 'breakbeat', name: 'Breakbeat', bpm: 135, pattern: breakbeat.pattern },
+    { id: 'minimal', name: 'Minimal', bpm: 128, pattern: minimal.pattern },
+    { id: 'acid-house', name: 'Acid House', bpm: 126, pattern: acidHouse.pattern },
+    { id: 'electro-funk', name: 'Electro Funk', bpm: 115, pattern: electroFunk.pattern },
+    { id: 'industrial', name: 'Industrial', bpm: 140, pattern: industrial.pattern },
+];
+
+// Get kit by ID
+export function getKit(id) {
+    return TR909_KITS.find((k) => k.id === id);
+}
+
+// Get sequence by ID
+export function getSequence(id) {
+    return TR909_SEQUENCES.find((s) => s.id === id);
+}
+
+// Get preset by ID (legacy)
 export function getPreset(id) {
     return TR909_PRESETS.find((p) => p.id === id);
 }

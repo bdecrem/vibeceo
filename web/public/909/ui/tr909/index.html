@@ -36,23 +36,26 @@
         </div>
       </div>
       <section class="controls">
-        <!-- Pattern tabs -->
-        <div class="pattern-tabs">
-          <div class="tab-content active" data-tab="presets">
-            <select id="preset">
-              <option value="">— Presets —</option>
+        <!-- Kit & Sequence selectors -->
+        <div class="kit-sequence-row">
+          <label class="kit-label">
+            Kit
+            <select id="kit-select">
+              <option value="">— Kit —</option>
             </select>
-          </div>
-          <div class="tab-content" data-tab="saved">
+          </label>
+          <label class="sequence-label">
+            Seq
+            <select id="sequence-select">
+              <option value="">— Sequence —</option>
+            </select>
+          </label>
+          <div class="saved-controls">
             <select id="saved-patterns">
-              <option value="">— Saved —</option>
+              <option value="">Saved</option>
             </select>
-            <button id="save-pattern" type="button">+</button>
-            <button id="delete-pattern" type="button">−</button>
-          </div>
-          <div class="tab-dots">
-            <button class="tab-dot active" data-tab="presets" title="Presets"></button>
-            <button class="tab-dot" data-tab="saved" title="Saved"></button>
+            <button id="save-pattern" type="button" title="Save current">+</button>
+            <button id="delete-pattern" type="button" title="Delete saved">−</button>
           </div>
         </div>
 
@@ -152,6 +155,6 @@
     </div>
     <input type="file" id="import-file" accept=".json" style="display: none" />
 
-    <script type="module" src="../../dist/ui/tr909/app.js"></script>
+    <script type="module" src="../../dist/ui/tr909/app-v3.js"></script>
   </body>
 </html>

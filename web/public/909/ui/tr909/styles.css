@@ -347,6 +347,54 @@ h1::before {
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
 }
 
+/* Kit & Sequence Row */
+.kit-sequence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.kit-sequence-row label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+}
+
+.kit-sequence-row select {
+  min-width: 110px;
+}
+
+.kit-label select {
+  border-color: var(--amber-700);
+}
+
+.sequence-label select {
+  border-color: var(--border-accent);
+}
+
+.saved-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: 0.25rem;
+}
+
+.saved-controls select {
+  min-width: 80px;
+  font-size: 0.7rem;
+}
+
+.saved-controls button {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
 .controls-divider {
   width: 1px;
   height: 24px;
@@ -1089,6 +1137,23 @@ h1::before {
     min-width: 90px;
     font-size: 0.65rem;
     padding: 0.35rem 0.4rem;
+  }
+
+  .kit-sequence-row {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .kit-sequence-row select {
+    min-width: 80px;
+  }
+
+  .saved-controls {
+    margin-left: 0;
+  }
+
+  .saved-controls select {
+    min-width: 60px;
   }
 
   /* Hide pattern tabs save/delete buttons on mobile */
