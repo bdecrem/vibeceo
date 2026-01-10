@@ -108,17 +108,126 @@
       margin-bottom: 1rem;
       font-weight: 700;
     }
+
+    .controls {
+      margin-top: 2rem;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .control-section {
+      margin-bottom: 1rem;
+      padding: 0.75rem 1rem;
+      background: rgba(212, 165, 116, 0.05);
+      border: 1px solid rgba(212, 165, 116, 0.15);
+    }
+
+    .section-title {
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      opacity: 0.5;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .slider-label {
+      font-size: 0.6rem;
+      width: 60px;
+      opacity: 0.7;
+    }
+
+    .slider-value {
+      font-size: 0.6rem;
+      width: 55px;
+      text-align: right;
+      opacity: 0.5;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 4px;
+      -webkit-appearance: none;
+      background: rgba(212, 165, 116, 0.2);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      background: #D4A574;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: #B8860B;
+    }
   </style>
 </head>
 <body>
   <h1>SESSION 1</h1>
-  <div class="subtitle">909 + 101 · DUB TECHNO</div>
-  <div class="bpm">128</div>
+  <div class="subtitle">909 + 101 · MELODIC TECHNO</div>
+  <div class="bpm">122</div>
 
   <div id="pattern"></div>
 
   <button id="play" onclick="playTrack()">PLAY</button>
   <div id="status">underground</div>
+
+  <div class="controls">
+    <!-- Sidechain -->
+    <div class="control-section">
+      <div class="section-title">SIDECHAIN (101 ducks to kick)</div>
+      <div class="slider-row">
+        <span class="slider-label">Amount</span>
+        <input type="range" id="scAmount" min="0" max="100" value="70">
+        <span class="slider-value" id="scAmountVal">70%</span>
+      </div>
+      <div class="slider-row">
+        <span class="slider-label">Release</span>
+        <input type="range" id="scRelease" min="50" max="400" value="150">
+        <span class="slider-value" id="scReleaseVal">150ms</span>
+      </div>
+    </div>
+
+    <!-- Kick EQ -->
+    <div class="control-section">
+      <div class="section-title">KICK (lowpass - remove highs)</div>
+      <div class="slider-row">
+        <span class="slider-label">Lowpass</span>
+        <input type="range" id="kickLp" min="500" max="20000" value="8000">
+        <span class="slider-value" id="kickLpVal">8000Hz</span>
+      </div>
+    </div>
+
+    <!-- 101 EQ -->
+    <div class="control-section">
+      <div class="section-title">101 (highpass - remove lows)</div>
+      <div class="slider-row">
+        <span class="slider-label">Highpass</span>
+        <input type="range" id="synthHp" min="20" max="400" value="150">
+        <span class="slider-value" id="synthHpVal">150Hz</span>
+      </div>
+    </div>
+
+    <!-- 101 Reverb -->
+    <div class="control-section">
+      <div class="section-title">101 REVERB</div>
+      <div class="slider-row">
+        <span class="slider-label">Mix</span>
+        <input type="range" id="reverbMix" min="0" max="100" value="60">
+        <span class="slider-value" id="reverbMixVal">60%</span>
+      </div>
+    </div>
+  </div>
 
   <script type="module">
     import { Session } from '/mixer/dist/session.js';
@@ -135,15 +244,28 @@
       ]
     };
 
-    // Dub techno arp - tight 4-note loop
-    const arpLoop = [
+    // Melodic techno - emotional progression with space
+    // Am -> F -> C -> G feel, half-time rhythm
+    const arpPattern = [
+      // Bar 1: Am (A-C-E) - melancholic start
       { note: 'A2', gate: true, accent: true, slide: false },
+      { note: null, gate: false },
+      { note: 'E3', gate: true, accent: false, slide: true },
+      { note: null, gate: false },
+      { note: 'C3', gate: true, accent: false, slide: false },
+      { note: null, gate: false },
+      { note: 'E3', gate: true, accent: false, slide: true },
+      { note: 'A3', gate: true, accent: false, slide: true },
+      // Bar 2: F (F-A-C) - lift
+      { note: 'F2', gate: true, accent: true, slide: false },
+      { note: null, gate: false },
       { note: 'C3', gate: true, accent: false, slide: true },
-      { note: 'E3', gate: true, accent: false, slide: false },
+      { note: null, gate: false },
+      { note: 'A2', gate: true, accent: false, slide: false },
+      { note: null, gate: false },
       { note: 'C3', gate: true, accent: false, slide: true },
+      { note: 'F3', gate: true, accent: false, slide: true },
     ];
-    // Repeat for 16 steps
-    const arpPattern = [...arpLoop, ...arpLoop, ...arpLoop, ...arpLoop];
 
     const voices = ['kick'];
     const labels = { kick: 'KICK' };
@@ -179,12 +301,30 @@
     let currentSource = null;
     let animateInterval = null;
 
+    // Slider handlers
+    const sliderDefs = {
+      scAmount: { format: v => `${v}%` },
+      scRelease: { format: v => `${v}ms` },
+      kickLp: { format: v => `${v}Hz` },
+      synthHp: { format: v => `${v}Hz` },
+      reverbMix: { format: v => `${v}%` },
+    };
+
+    Object.entries(sliderDefs).forEach(([id, { format }]) => {
+      const el = document.getElementById(id);
+      const valEl = document.getElementById(id + 'Val');
+      el.addEventListener('input', () => {
+        valEl.textContent = format(parseFloat(el.value));
+      });
+    });
+
+    const getVal = (id) => parseFloat(document.getElementById(id).value);
+
     window.playTrack = async function() {
       const btn = document.getElementById('play');
       const status = document.getElementById('status');
 
       if (isPlaying) {
-        // Stop
         if (currentSource) currentSource.stop();
         if (animateInterval) clearInterval(animateInterval);
         isPlaying = false;
@@ -200,49 +340,65 @@
       status.textContent = 'loading...';
 
       try {
-        // Create session with mixer
-        const session = new Session({ bpm: 128 });
+        const session = new Session({ bpm: 122 });
 
-        // 909 drums
+        // 909 kick - softer for melodic techno
         const drums = new TR909Engine({ context: session.context });
         const kick = drums.voices.get('kick');
-        kick.tune = 400;
-        kick.decay = 0.15;
-        kick.attack = 0.8;
+        kick.tune = 380;
+        kick.decay = 0.18;
+        kick.attack = 0.6;
         drums.setPattern('main', drumPattern);
         session.add('drums', drums);
 
-        // 101 synth - dub techno settings
+        // 101 synth - warm, pad-like for melodic techno
         const synth = new SH101Engine({ context: session.context });
-        synth.setParameter('cutoff', 0.25);      // Dark, murky
-        synth.setParameter('resonance', 0.6);    // Some bite
-        synth.setParameter('envMod', 0.3);       // Subtle envelope
-        synth.setParameter('attack', 0.02);      // Soft attack
-        synth.setParameter('decay', 0.4);        // Medium decay
-        synth.setParameter('sustain', 0.3);      // Low sustain
-        synth.setParameter('release', 0.5);      // Longer release for dub
-        synth.setParameter('vcoSaw', 0.7);       // Mostly saw
-        synth.setParameter('vcoPulse', 0.3);     // Touch of pulse
-        synth.setParameter('subLevel', 0.4);     // Sub for depth
+        synth.setParameter('cutoff', 0.45);       // More open, warmer
+        synth.setParameter('resonance', 0.25);    // Less acid, more smooth
+        synth.setParameter('envMod', 0.15);       // Subtle filter movement
+        synth.setParameter('attack', 0.08);       // Softer attack
+        synth.setParameter('decay', 0.6);         // Longer decay
+        synth.setParameter('sustain', 0.5);       // More sustain
+        synth.setParameter('release', 0.8);       // Long release for pads
+        synth.setParameter('vcoSaw', 0.9);        // Full saw - warm
+        synth.setParameter('vcoPulse', 0.1);      // Touch of pulse
+        synth.setParameter('subLevel', 0.2);      // Less sub, cleaner
         synth.setPattern(arpPattern);
         session.add('synth', synth);
 
-        // Aggressive sidechain - synth ducks hard when kick hits
-        session.channel('synth').duck({
-          trigger: session.channel('drums').output,
-          amount: 0.95,     // Near-total duck (95%)
-          attack: 1,        // Instant attack
-          release: 200      // Long release for obvious pump
-        });
+        // Sidechain: 101 ducks when kick hits
+        const scAmount = getVal('scAmount') / 100;
+        const scRelease = getVal('scRelease');
+        if (scAmount > 0) {
+          session.channel('synth').duck({
+            trigger: session.channel('drums').output,
+            amount: scAmount,
+            attack: 1,
+            release: scRelease
+          });
+        }
+
+        // Kick EQ: lowpass to remove highs, keep thump
+        const kickLp = getVal('kickLp');
+        session.channel('drums').eq({ lowpass: kickLp });
+
+        // 101 EQ: highpass to remove lows, stay out of kick's way
+        const synthHp = getVal('synthHp');
+        session.channel('synth').eq({ highpass: synthHp });
+
+        // 101 Reverb: big dub techno space
+        const reverbMix = getVal('reverbMix') / 100;
+        if (reverbMix > 0) {
+          await session.channel('synth').reverb({ preset: 'plate', mix: reverbMix });
+        }
 
         // Levels
         session.channel('drums').volume = 1.0;
-        session.channel('synth').volume = 0.6;
+        session.channel('synth').volume = 0.7;
 
         status.textContent = 'rendering...';
 
-        // Render with sidechain applied
-        const { buffer, wav } = await session.render({ bars: 4 });
+        const { buffer } = await session.render({ bars: 4 });
 
         const audioContext = session.context;
         const source = audioContext.createBufferSource();
@@ -257,8 +413,7 @@
         btn.textContent = 'STOP';
         btn.disabled = false;
 
-        // Animate grid
-        const stepDuration = (60 / 128) / 4 * 1000;
+        const stepDuration = (60 / 122) / 4 * 1000;
         let step = 0;
 
         animateInterval = setInterval(() => {

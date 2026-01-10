@@ -445,18 +445,34 @@ export class Session {
 
     for (const [name, channel] of this._channels) {
       const engine = channel.engine;
+      let buffer = null;
 
       // Check if engine supports offline rendering
       if (engine.renderPattern) {
         // Use engine's render method (TB303, SH101)
-        const buffer = await engine.renderPattern({ bars, bpm: this._bpm });
-        channelBuffers.push({ name, buffer, volume: channel.volume });
+        buffer = await engine.renderPattern({ bars, bpm: this._bpm });
       } else if (engine.renderToBuffer) {
         // Generic render method
-        const buffer = await engine.renderToBuffer({ duration, sampleRate });
-        channelBuffers.push({ name, buffer, volume: channel.volume });
+        buffer = await engine.renderToBuffer({ duration, sampleRate });
       } else {
         console.warn(`Session: channel "${name}" does not support offline rendering`);
+      }
+
+      // Apply effects offline
+      if (buffer) {
+        // EQ
+        const eqEffect = channel.effects?.find(e => e.constructor.name === 'EQ');
+        if (eqEffect) {
+          buffer = await this._applyEqOffline(buffer, eqEffect, sampleRate);
+        }
+
+        // Reverb
+        const reverbEffect = channel.effects?.find(e => e.constructor.name === 'Reverb');
+        if (reverbEffect) {
+          buffer = await this._applyReverbOffline(buffer, reverbEffect, sampleRate);
+        }
+
+        channelBuffers.push({ name, buffer, volume: channel.volume });
       }
     }
 
@@ -591,7 +607,115 @@ export class Session {
   }
 
   /**
-   * Mix multiple audio buffers into one, applying offline sidechain
+   * Apply Reverb to a buffer offline using OfflineAudioContext
+   * @private
+   */
+  async _applyReverbOffline(buffer, reverbEffect, sampleRate) {
+    // Use the buffer's actual sample rate to avoid mismatch errors
+    const bufferSampleRate = buffer.sampleRate;
+    const numChannels = buffer.numberOfChannels;
+
+    // Reverb adds tail, so extend the buffer
+    const irLength = reverbEffect._convolver?.buffer?.length || 0;
+    const tailSamples = Math.min(irLength, bufferSampleRate * 2); // Max 2s tail
+    const length = buffer.length + tailSamples;
+    const offlineCtx = new OfflineAudioContext(numChannels, length, bufferSampleRate);
+
+    // Get reverb parameters
+    const mix = reverbEffect._mix ?? 0.2;
+    const irBuffer = reverbEffect._convolver?.buffer;
+
+    if (!irBuffer) {
+      console.warn('Reverb: no IR buffer available for offline processing');
+      return buffer;
+    }
+
+    // Create convolver
+    const convolver = offlineCtx.createConvolver();
+    convolver.buffer = irBuffer;
+
+    // Dry/wet gains
+    const dryGain = offlineCtx.createGain();
+    const wetGain = offlineCtx.createGain();
+    dryGain.gain.value = 1 - mix;
+    wetGain.gain.value = mix;
+
+    // Source
+    const source = offlineCtx.createBufferSource();
+    source.buffer = buffer;
+
+    // Wire: source -> dry -> destination
+    //       source -> convolver -> wet -> destination
+    source.connect(dryGain);
+    dryGain.connect(offlineCtx.destination);
+
+    source.connect(convolver);
+    convolver.connect(wetGain);
+    wetGain.connect(offlineCtx.destination);
+
+    source.start(0);
+    return await offlineCtx.startRendering();
+  }
+
+  /**
+   * Apply EQ to a buffer offline using OfflineAudioContext
+   * @private
+   */
+  async _applyEqOffline(buffer, eqEffect, sampleRate) {
+    // Use the buffer's actual sample rate to avoid mismatch errors
+    const bufferSampleRate = buffer.sampleRate;
+    const numChannels = buffer.numberOfChannels;
+    const length = buffer.length;
+    const offlineCtx = new OfflineAudioContext(numChannels, length, bufferSampleRate);
+
+    // Get EQ parameters
+    const params = eqEffect.getParameters();
+
+    // Create filter chain
+    const highpass = offlineCtx.createBiquadFilter();
+    highpass.type = 'highpass';
+    highpass.frequency.value = params.highpass;
+    highpass.Q.value = 0.707;
+
+    const lowpass = offlineCtx.createBiquadFilter();
+    lowpass.type = 'lowpass';
+    lowpass.frequency.value = params.lowpass;
+    lowpass.Q.value = 0.707;
+
+    const lowShelf = offlineCtx.createBiquadFilter();
+    lowShelf.type = 'lowshelf';
+    lowShelf.frequency.value = params.lowFreq;
+    lowShelf.gain.value = params.lowGain;
+
+    const peaking = offlineCtx.createBiquadFilter();
+    peaking.type = 'peaking';
+    peaking.frequency.value = params.midFreq;
+    peaking.Q.value = params.midQ;
+    peaking.gain.value = params.midGain;
+
+    const highShelf = offlineCtx.createBiquadFilter();
+    highShelf.type = 'highshelf';
+    highShelf.frequency.value = params.highFreq;
+    highShelf.gain.value = params.highGain;
+
+    // Create source from buffer
+    const source = offlineCtx.createBufferSource();
+    source.buffer = buffer;
+
+    // Wire: source -> HP -> LP -> LS -> Peak -> HS -> destination
+    source.connect(highpass);
+    highpass.connect(lowpass);
+    lowpass.connect(lowShelf);
+    lowShelf.connect(peaking);
+    peaking.connect(highShelf);
+    highShelf.connect(offlineCtx.destination);
+
+    source.start(0);
+    return await offlineCtx.startRendering();
+  }
+
+  /**
+   * Mix multiple audio buffers into one, applying offline sidechain and EQ
    */
   _mixBuffers(context, channelBuffers, duration, sampleRate) {
     const length = Math.floor(duration * sampleRate);

@@ -78,8 +78,13 @@ export class EQ extends Effect {
     // Create filter chain
     this._highpass = context.createBiquadFilter();
     this._highpass.type = 'highpass';
-    this._highpass.frequency.value = 30;
+    this._highpass.frequency.value = 20;  // Default: let everything through
     this._highpass.Q.value = 0.707; // Butterworth
+
+    this._lowpass = context.createBiquadFilter();
+    this._lowpass.type = 'lowpass';
+    this._lowpass.frequency.value = 20000;  // Default: let everything through
+    this._lowpass.Q.value = 0.707;
 
     this._lowShelf = context.createBiquadFilter();
     this._lowShelf.type = 'lowshelf';
@@ -97,9 +102,10 @@ export class EQ extends Effect {
     this._highShelf.frequency.value = 8000;
     this._highShelf.gain.value = 0;
 
-    // Wire chain: input -> HP -> LS -> Peak -> HS -> output
+    // Wire chain: input -> HP -> LP -> LS -> Peak -> HS -> output
     this._input.connect(this._highpass);
-    this._highpass.connect(this._lowShelf);
+    this._highpass.connect(this._lowpass);
+    this._lowpass.connect(this._lowShelf);
     this._lowShelf.connect(this._peaking);
     this._peaking.connect(this._highShelf);
     this._highShelf.connect(this._output);
@@ -113,6 +119,11 @@ export class EQ extends Effect {
       // Highpass
       case 'highpass':
         this._highpass.frequency.value = Math.max(20, Math.min(500, value));
+        break;
+
+      // Lowpass
+      case 'lowpass':
+        this._lowpass.frequency.value = Math.max(200, Math.min(20000, value));
         break;
 
       // Low shelf
@@ -153,6 +164,7 @@ export class EQ extends Effect {
   getParameters() {
     return {
       highpass: this._highpass.frequency.value,
+      lowpass: this._lowpass.frequency.value,
       lowGain: this._lowShelf.gain.value,
       lowFreq: this._lowShelf.frequency.value,
       midGain: this._peaking.gain.value,
@@ -184,6 +196,7 @@ export class EQ extends Effect {
    */
   dispose() {
     this._highpass.disconnect();
+    this._lowpass.disconnect();
     this._lowShelf.disconnect();
     this._peaking.disconnect();
     this._highShelf.disconnect();
