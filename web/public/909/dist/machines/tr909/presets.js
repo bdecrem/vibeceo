@@ -221,10 +221,10 @@ export const TR909_KITS = [
     {
         id: 'bart-deep',
         name: 'Bart Deep',
-        description: 'Tight subby kick, no pitch sweep',
-        engine: 'E2',
+        description: 'E1 Classic with decay 0.55',
+        engine: 'E1',
         voiceParams: {
-            kick: { tune: 0, decay: 0.1, attack: 0.1, sweep: 0, level: 1 },
+            kick: { decay: 0.55 },
         },
     },
     {

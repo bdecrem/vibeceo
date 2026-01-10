@@ -25,66 +25,93 @@ export class Kick909E1 extends Voice {
         const peak = Math.max(0, Math.min(1, velocity * this.level));
         const tuneMultiplier = Math.pow(2, this.tune / 1200);
 
-        // === MAIN BODY: Sine with pitch sweep ===
-        // Real 909: bridged-T oscillator creates damped sine
-        // Base frequency 50-60Hz, pitch sweep adds punch
+        // === MAIN BODY: Triangle with pitch sweep + harmonics ===
+        // Triangle wave through saturation creates rich harmonics like real 909
         const mainOsc = this.context.createOscillator();
-        mainOsc.type = 'sine';
+        mainOsc.type = 'triangle'; // Triangle has odd harmonics, saturates nicely
 
-        // Frequency sweep: start high, drop to base
-        // ds909 uses 30-70Hz base range; we start higher for the "punch" then settle
-        const baseFreq = 55 * tuneMultiplier;  // ~A1, the 909's sweet spot
-        // Sweep controls pitch envelope depth: 0 = flat at base, 1 = full 2.5x sweep
-        const peakFreq = baseFreq + (baseFreq * 1.5 * this.sweep);
+        // Base frequency and pitch sweep
+        const baseFreq = 55 * tuneMultiplier;
+        // Always have SOME pitch sweep for punch (minimum 1.5x), sweep param adds more
+        const sweepAmount = 1.5 + (this.sweep * 2.5); // 1.5x to 4x
+        const peakFreq = baseFreq * sweepAmount;
 
+        // Fast pitch sweep: 150Hz+ down to 55Hz in ~30ms
         mainOsc.frequency.setValueAtTime(peakFreq, time);
-        // Two-stage envelope: fast initial drop, then slower settle
-        if (this.sweep > 0.01) {
-            mainOsc.frequency.exponentialRampToValueAtTime(baseFreq * (1 + 0.2 * this.sweep), time + 0.03);
-            mainOsc.frequency.exponentialRampToValueAtTime(baseFreq, time + 0.12);
-        }
+        mainOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.1, time + 0.025);
+        mainOsc.frequency.exponentialRampToValueAtTime(baseFreq, time + 0.08);
 
-        // Soft saturation for warmth (like the 909's analog distortion)
+        // Heavy saturation for harmonics (drive triangle into soft clip)
         const shaper = this.context.createWaveShaper();
         shaper.curve = this.createSoftClipCurve();
         shaper.oversample = '2x';
 
-        // Amplitude envelope: punchy attack, smooth decay
-        const mainGain = this.context.createGain();
-        const decayTime = 0.2 + (this.decay * 0.6); // 200-800ms range (like ds909)
-        mainGain.gain.setValueAtTime(0, time);
-        mainGain.gain.linearRampToValueAtTime(peak, time + 0.003); // 3ms attack
-        mainGain.gain.setTargetAtTime(0, time + 0.01, decayTime * 0.15);
+        // Pre-gain to drive into saturation
+        const driveGain = this.context.createGain();
+        driveGain.gain.value = 2.5; // Drive hard for harmonics
 
-        mainOsc.connect(shaper);
+        // Amplitude envelope: HOLD-THEN-DECAY
+        const mainGain = this.context.createGain();
+        const holdTime = 0.025 + (this.decay * 0.12);
+        const releaseTime = 0.06 + (this.decay * 0.5);
+        const totalTime = holdTime + releaseTime + 0.1;
+
+        mainGain.gain.setValueAtTime(0, time);
+        mainGain.gain.linearRampToValueAtTime(peak * 0.8, time + 0.002);
+        mainGain.gain.setValueAtTime(peak * 0.75, time + holdTime);
+        mainGain.gain.exponentialRampToValueAtTime(0.001, time + holdTime + releaseTime);
+
+        mainOsc.connect(driveGain);
+        driveGain.connect(shaper);
         shaper.connect(mainGain);
         mainGain.connect(this.output);
         mainOsc.start(time);
-        mainOsc.stop(time + decayTime + 0.5);
+        mainOsc.stop(time + totalTime);
 
-        // === CLICK: Pitched oscillator (not noise) ===
-        // ds909 uses a separate drum synth for click - we use a high sine burst
+        // === CLICK: Bright noise burst + high sine ===
+        // Creates the snappy transient with high-frequency content
         if (this.attack > 0.01) {
+            // Noise burst for brightness
+            const noiseLength = 512; // ~12ms
+            const noiseBuffer = this.context.createBuffer(1, noiseLength, this.context.sampleRate);
+            const noiseData = noiseBuffer.getChannelData(0);
+            for (let i = 0; i < noiseLength; i++) {
+                noiseData[i] = (Math.random() * 2 - 1) * Math.exp(-i / 80);
+            }
+            const noiseSource = this.context.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+
+            // Highpass filter for brightness
+            const noiseFilter = this.context.createBiquadFilter();
+            noiseFilter.type = 'highpass';
+            noiseFilter.frequency.value = 2000;
+            noiseFilter.Q.value = 0.7;
+
+            const noiseGain = this.context.createGain();
+            noiseGain.gain.setValueAtTime(peak * this.attack * 0.4, time);
+
+            noiseSource.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(this.output);
+            noiseSource.start(time);
+
+            // High pitched sine click
             const clickOsc = this.context.createOscillator();
             clickOsc.type = 'sine';
-
-            // Click frequency: higher than body, with its own pitch sweep
-            // ds909: clickFrequency = map(pitch, 0, 255, 30, 70) + extraFreq
-            const clickBaseFreq = 80 * tuneMultiplier;
-            const clickPeakFreq = clickBaseFreq * 3; // Start 3x higher
+            const clickPeakFreq = 400 * tuneMultiplier;
+            const clickBaseFreq = 100 * tuneMultiplier;
 
             clickOsc.frequency.setValueAtTime(clickPeakFreq, time);
-            clickOsc.frequency.exponentialRampToValueAtTime(clickBaseFreq, time + 0.015);
+            clickOsc.frequency.exponentialRampToValueAtTime(clickBaseFreq, time + 0.02);
 
             const clickGain = this.context.createGain();
-            const clickDecay = 0.02 + (this.decay * 0.03); // 20-50ms
-            clickGain.gain.setValueAtTime(peak * this.attack * 0.6, time);
-            clickGain.gain.exponentialRampToValueAtTime(0.001, time + clickDecay);
+            clickGain.gain.setValueAtTime(peak * this.attack * 0.5, time);
+            clickGain.gain.exponentialRampToValueAtTime(0.001, time + 0.04);
 
             clickOsc.connect(clickGain);
             clickGain.connect(this.output);
             clickOsc.start(time);
-            clickOsc.stop(time + clickDecay + 0.05);
+            clickOsc.stop(time + 0.1);
         }
     }
     setParameter(id, value) {
