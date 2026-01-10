@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Mixer — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="Color Mixer — Amber">
+    <meta property="og:description" content="Interactive RGB color mixing toy with dancing particles and generative audio">
+    <meta property="og:image" content="https://kochi.to/amber/color-mixer-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/color-mixer.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Color Mixer — Amber">
+    <meta name="twitter:description" content="Interactive RGB color mixing toy with dancing particles and generative audio">
+    <meta name="twitter:image" content="https://kochi.to/amber/color-mixer-og.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #canvas {
+            flex: 1;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .controls {
+            background: #0D0D0D;
+            padding: 24px;
+            border-top: 1px solid #D4A574;
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .slider-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 200px;
+        }
+        
+        .slider-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .slider-value {
+            font-weight: 700;
+            color: #FFD700;
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #1a1a1a;
+            outline: none;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #D4A574;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #FFD700;
+            transform: scale(1.2);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #D4A574;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover {
+            background: #FFD700;
+            transform: scale(1.2);
+        }
+        
+        #red-slider::-webkit-slider-thumb { background: #ff4444; }
+        #green-slider::-webkit-slider-thumb { background: #44ff44; }
+        #blue-slider::-webkit-slider-thumb { background: #4444ff; }
+        
+        #red-slider::-moz-range-thumb { background: #ff4444; }
+        #green-slider::-moz-range-thumb { background: #44ff44; }
+        #blue-slider::-moz-range-thumb { background: #4444ff; }
+        
+        .info {
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .color-display {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 2px solid #D4A574;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        button {
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 12px 24px;
+            font-family: 'Space Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+        
+        button:hover {
+            background: #FFD700;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div class="controls">
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Red</span>
+                <span class="slider-value" id="red-value">128</span>
+            </div>
+            <input type="range" id="red-slider" min="0" max="255" value="128">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Green</span>
+                <span class="slider-value" id="green-value">128</span>
+            </div>
+            <input type="range" id="green-slider" min="0" max="255" value="128">
+        </div>
+        
+        <div class="slider-group">
+            <div class="slider-label">
+                <span>Blue</span>
+                <span class="slider-value" id="blue-value">128</span>
+            </div>
+            <input type="range" id="blue-slider" min="0" max="255" value="128">
+        </div>
+        
+        <div class="color-display" id="color-display"></div>
+        
+        <button id="audio-toggle">Start Audio</button>
+        
+        <div class="info">
+            Move sliders to mix colors • Particles dance • Audio frequencies follow RGB values
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight - 160; // Account for controls
+        }
+        
+        resize();
+        window.addEventListener('resize', resize);
+        
+        // Audio setup
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let oscillators = [];
+        let gainNodes = [];
+        let audioEnabled = false;
+        
+        const audioToggle = document.getElementById('audio-toggle');
+        audioToggle.addEventListener('click', () => {
+            if (!audioEnabled) {
+                audioCtx.resume();
+                startAudio();
+                audioEnabled = true;
+                audioToggle.textContent = 'Stop Audio';
+            } else {
+stopAudio();
+                audioEnabled = false;
+                audioToggle.textContent = 'Start Audio';
+            }
+        });
+        
+        function startAudio() {
+            // Create three oscillators for RGB
+            ['sine', 'triangle', 'square'].forEach((type, i) => {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = type;
+                osc.frequency.value = 200;
+                gain.gain.value = 0.05;
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                
+                oscillators.push(osc);
+                gainNodes.push(gain);
+            });
+        }
+        
+        function stopAudio() {
+            oscillators.forEach(osc => osc.stop());
+            oscillators = [];
+            gainNodes = [];
+        }
+        
+        function updateAudio() {
+            if (!audioEnabled || oscillators.length === 0) return;
+            
+            const r = parseInt(redSlider.value);
+            const g = parseInt(greenSlider.value);
+            const b = parseInt(blueSlider.value);
+            
+            // Map RGB to frequencies (200-800 Hz)
+            oscillators[0].frequency.value = 200 + (r / 255) * 600;
+            oscillators[1].frequency.value = 200 + (g / 255) * 600;
+            oscillators[2].frequency.value = 200 + (b / 255) * 600;
+        }
+        
+        // Particles
+        class Particle {
+            constructor() {
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1;
+                this.size = Math.random() * 4 + 2;
+            }
+            
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= 0.005;
+                
+                // Bounce off edges
+                if (this.x < 0 || this.x > width) this.vx *= -1;
+                if (this.y < 0 || this.y > height) this.vy *= -1;
+                
+                // Keep in bounds
+                this.x = Math.max(0, Math.min(width, this.x));
+                this.y = Math.max(0, Math.min(height, this.y));
+            }
+            
+            draw(color) {
+                ctx.fillStyle = color;
+                ctx.globalAlpha = this.life;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        let particles = [];
+        for (let i = 0; i < 150; i++) {
+            particles.push(new Particle());
+        }
+        
+        // Color controls
+        const redSlider = document.getElementById('red-slider');
+        const greenSlider = document.getElementById('green-slider');
+        const blueSlider = document.getElementById('blue-slider');
+        const redValue = document.getElementById('red-value');
+        const greenValue = document.getElementById('green-value');
+        const blueValue = document.getElementById('blue-value');
+        const colorDisplay = document.getElementById('color-display');
+        
+        function updateColor() {
+            const r = parseInt(redSlider.value);
+            const g = parseInt(greenSlider.value);
+            const b = parseInt(blueSlider.value);
+            
+            redValue.textContent = r;
+            greenValue.textContent = g;
+            blueValue.textContent = b;
+            
+            const color = `rgb(${r}, ${g}, ${b})`;
+            colorDisplay.style.background = color;
+            
+            updateAudio();
+        }
+        
+        redSlider.addEventListener('input', updateColor);
+        greenSlider.addEventListener('input', updateColor);
+        blueSlider.addEventListener('input', updateColor);
+        
+        updateColor();
+        
+        // Animation
+        function animate() {
+            // Fade out instead of clear for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, width, height);
+            
+            const r = parseInt(redSlider.value);
+            const g = parseInt(greenSlider.value);
+            const b = parseInt(blueSlider.value);
+            
+            // Update and draw particles
+            particles.forEach((p, i) => {
+                p.update();
+                
+                if (p.life <= 0) {
+                    particles[i] = new Particle();
+                } else {
+                    const color = `rgba(${r}, ${g}, ${b}, 1)`;
+                    p.draw(color);
+                }
+            });
+            
+            // Draw connections between nearby particles
+            ctx.globalAlpha = 0.1;
+            ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+            ctx.lineWidth = 1;
+            
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (dist < 100) {
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                    }
+                }
+            }
+            
+            ctx.globalAlpha = 1;
+            
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
