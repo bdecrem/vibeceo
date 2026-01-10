@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter Creatures — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Letter Creatures — Amber">
+  <meta property="og:description" content="Type and watch letters become autonomous creatures that wander the screen">
+  <meta property="og:image" content="https://kochi.to/amber/letter-creatures-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/letter-creatures.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Letter Creatures — Amber">
+  <meta name="twitter:description" content="Type and watch letters become autonomous creatures that wander the screen">
+  <meta name="twitter:image" content="https://kochi.to/amber/letter-creatures-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      cursor: crosshair;
+    }
+    
+    #canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+    }
+    
+    #instructions {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      font-size: 14px;
+      color: #2D9596;
+      pointer-events: none;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(45, 149, 150, 0.5);
+    }
+    
+    #counter {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-size: 12px;
+      color: #D4A574;
+      opacity: 0.6;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <div id="instructions">TYPE ANYTHING. WATCH THEM WANDER.</div>
+  <div id="counter">creatures: <span id="count">0</span></div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const creatures = [];
+    const maxCreatures = 200;
+    
+    class LetterCreature {
+      constructor(letter, x, y) {
+        this.letter = letter;
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 1.5;
+        this.vy = (Math.random() - 0.5) * 1.5;
+        this.life = 1.0; // fades from 1 to 0
+        this.decay = 0.001 + Math.random() * 0.002;
+        this.trailX = [];
+        this.trailY = [];
+        this.maxTrail = 15;
+        this.size = 20 + Math.random() * 10;
+        this.wobble = Math.random() * Math.PI * 2;
+        this.wobbleSpeed = 0.05 + Math.random() * 0.05;
+      }
+      
+      update(others) {
+        // Decay
+        this.life -= this.decay;
+        if (this.life < 0) this.life = 0;
+        
+        // Avoid others
+        for (let other of others) {
+          if (other === this) continue;
+          const dx = this.x - other.x;
+          const dy = this.y - other.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 60 && dist > 0) {
+            const force = (60 - dist) / 60;
+            this.vx += (dx / dist) * force * 0.3;
+            this.vy += (dy / dist) * force * 0.3;
+          }
+        }
+        
+        // Drift
+        this.vx += (Math.random() - 0.5) * 0.2;
+        this.vy += (Math.random() - 0.5) * 0.2;
+        
+        // Damping
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        // Wobble
+        this.wobble += this.wobbleSpeed;
+        this.x += this.vx + Math.cos(this.wobble) * 0.3;
+        this.y += this.vy + Math.sin(this.wobble) * 0.3;
+        
+        // Boundaries (soft bounce)
+        if (this.x < 30) this.vx += 0.3;
+        if (this.x > canvas.width - 30) this.vx -= 0.3;
+        if (this.y < 30) this.vy += 0.3;
+        if (this.y > canvas.height - 30) this.vy -= 0.3;
+        
+        // Trail
+        this.trailX.push(this.x);
+        this.trailY.push(this.y);
+        if (this.trailX.length > this.maxTrail) {
+          this.trailX.shift();
+          this.trailY.shift();
+        }
+      }
+      
+      draw() {
+        if (this.life <= 0) return;
+        
+        // Draw trail
+        ctx.strokeStyle = `rgba(45, 149, 150, ${this.life * 0.3})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < this.trailX.length; i++) {
+          const alpha = (i / this.trailX.length) * this.life * 0.3;
+          ctx.strokeStyle = `rgba(45, 149, 150, ${alpha})`;
+          if (i === 0) {
+            ctx.moveTo(this.trailX[i], this.trailY[i]);
+          } else {
+            ctx.lineTo(this.trailX[i], this.trailY[i]);
+          }
+        }
+        ctx.stroke();
+        
+        // Draw letter
+        ctx.font = `${this.size}px 'Space Mono'`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Glow
+        ctx.shadowColor = '#D4A574';
+        ctx.shadowBlur = 15 * this.life;
+        
+        // Letter
+        ctx.fillStyle = `rgba(212, 165, 116, ${this.life})`;
+        ctx.fillText(this.letter, this.x, this.y);
+        
+        ctx.shadowBlur = 0;
+      }
+      
+      isDead() {
+        return this.life <= 0;
+      }
+    }
+    
+    function spawnCreature(letter, x, y) {
+      if (creatures.length >= maxCreatures) {
+        creatures.shift(); // Remove oldest
+      }
+      creatures.push(new LetterCreature(letter, x, y));
+    }
+    
+    function animate() {
+      // Fade trail effect
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Update and draw creatures
+      for (let i = creatures.length - 1; i >= 0; i--) {
+        creatures[i].update(creatures);
+        creatures[i].draw();
+        
+        if (creatures[i].isDead()) {
+          creatures.splice(i, 1);
+        }
+      }
+      
+      countEl.textContent = creatures.length;
+      requestAnimationFrame(animate);
+    }
+    
+    // Input handling
+    document.addEventListener('keypress', (e) => {
+      if (e.key.length === 1) {
+        // Spawn at random position
+        const x = Math.random() * (canvas.width - 100) + 50;
+        const y = Math.random() * (canvas.height - 100) + 50;
+        spawnCreature(e.key, x, y);
+      }
+    });
+    
+    // Click to spawn random letter
+    canvas.addEventListener('click', (e) => {
+      const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!?.:;';
+      const randomLetter = letters[Math.floor(Math.random() * letters.length)];
+      spawnCreature(randomLetter, e.clientX, e.clientY);
+    });
+    
+    // Resize handling
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+    
+    // Start animation
+    animate();
+    
+    // Spawn welcome message
+    setTimeout(() => {
+      const message = "hello";
+      const startX = canvas.width / 2 - (message.length * 15);
+      const startY = canvas.height / 2;
+      
+      for (let i = 0; i < message.length; i++) {
+        setTimeout(() => {
+          spawnCreature(message[i], startX + i * 30, startY);
+        }, i * 100);
+      }
+    }, 500);
+  </script>
+</body>
+</html>
