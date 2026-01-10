@@ -13,6 +13,69 @@ Web Audio synthesizer libraries for creating electronic music programmatically.
 
 ---
 
+## Audio Analysis Tool
+
+Analyze rendered WAV files to check levels, frequency balance, and sidechain effectiveness.
+
+**Requires:** `brew install sox` (already installed)
+
+### Basic Usage
+
+```bash
+cd synthmachine
+npx ts-node tools/analyze-track.ts path/to/track.wav
+```
+
+### Options
+
+| Flag | Description |
+|------|-------------|
+| `--json` | Output only JSON (for programmatic use) |
+| `--spectrogram` | Generate a spectrogram PNG |
+| `--bpm 128` | Set BPM for sidechain detection (default: 128) |
+
+### What It Reports
+
+```json
+{
+  "peakLevel": -0.5,        // dB - headroom before clipping
+  "rmsLevel": -14.2,        // dB - average loudness
+  "dynamicRange": 13.7,     // dB - difference between peak and RMS
+  "frequencyBalance": {
+    "low": -18.5,           // 20-250 Hz (kick, bass)
+    "lowMid": -20.1,        // 250-1000 Hz (bass harmonics, mud zone)
+    "highMid": -24.3,       // 1-4 kHz (presence, vocals)
+    "high": -32.0           // 4-20 kHz (air, hats, cymbals)
+  },
+  "sidechain": {
+    "detected": true,       // Is sidechain ducking audible?
+    "avgDuckingDb": 6.2,    // How much the signal ducks
+    "duckingPattern": "quarter-notes",
+    "confidence": 0.85
+  }
+}
+```
+
+### Interpreting Results
+
+**Sidechain check:**
+- `detected: false` or `avgDuckingDb < 3` → Sidechain too weak, increase ducker amount
+- `avgDuckingDb > 10` → Sidechain too aggressive, sounds pumpy
+- Sweet spot: 4-8 dB ducking
+
+**Frequency balance for techno:**
+- Low should be loudest (kick/bass dominate)
+- Low-mid often needs cutting (mud zone)
+- High-mid for presence without harshness
+- High should be present but not dominant
+
+**Dynamic range:**
+- < 6 dB: Over-compressed, lifeless
+- 8-14 dB: Good for electronic music
+- > 16 dB: Very dynamic, might need limiting for streaming
+
+---
+
 ## What's New (January 2026)
 
 **Mixer module added.** You can now combine multiple synths (909 + 303 + 101) with professional effects and render to a single mixed WAV file.
