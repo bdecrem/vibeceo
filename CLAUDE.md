@@ -89,14 +89,7 @@ Read these before making changes:
 - **NEVER edit `.js` files that have corresponding `.ts` source files** — edit the TypeScript source instead
 - **Always edit source files**: `.ts`, `.tsx`, `.css`, `.html`, etc.
 - **After editing TypeScript**, remind user to rebuild if needed
-
-### SynthMachine Source Code Locations (READ FIRST)
-- **TR-909**: Source is TypeScript in `synthmachine/`. Edit `.ts` files there, then `npm run build`.
-- **TB-303, SH-101, R9-DS, Mixer**: Source is JavaScript directly in `web/public/{303,101,90s,mixer}/dist/`. No TypeScript exists.
-- **NEVER edit `web/public/909/dist/*.js`** — these are compiled output from `synthmachine/`, not source.
-- The `dist/` folders for 303/101/90s/mixer are misleadingly named — they contain source code, not compiled output.
-- **UI frontends** are static HTML in `web/public/*/ui/` (not React/Next.js).
-- `web/app/{909,303,101,90s}/` are just Next.js redirects to the static HTML — no synth logic lives there.
+- **SynthMachine**: See `sms-bot/documentation/SYNTHMACHINE-GUIDE.md` for source code locations
 
 ### Web App Database Access
 - **Web apps NEVER call Supabase directly** — always go through API routes
