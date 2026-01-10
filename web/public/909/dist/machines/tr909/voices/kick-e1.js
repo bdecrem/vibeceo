@@ -6,6 +6,7 @@ export class Kick909E1 extends Voice {
         this.tune = 0; // cents (±1200 = ±1 octave)
         this.decay = 0.8;
         this.attack = 0.5; // click intensity 0-1
+        this.sweep = 1; // pitch envelope depth: 0 = flat, 1 = full sweep
         this.level = 1;
     }
     // Creates a soft-clip curve that shapes sawtooth into rounded pseudo-sine
@@ -33,12 +34,15 @@ export class Kick909E1 extends Voice {
         // Frequency sweep: start high, drop to base
         // ds909 uses 30-70Hz base range; we start higher for the "punch" then settle
         const baseFreq = 55 * tuneMultiplier;  // ~A1, the 909's sweet spot
-        const peakFreq = baseFreq * 2.5;       // Start 2.5x higher for punch
+        // Sweep controls pitch envelope depth: 0 = flat at base, 1 = full 2.5x sweep
+        const peakFreq = baseFreq + (baseFreq * 1.5 * this.sweep);
 
         mainOsc.frequency.setValueAtTime(peakFreq, time);
         // Two-stage envelope: fast initial drop, then slower settle
-        mainOsc.frequency.exponentialRampToValueAtTime(baseFreq * 1.2, time + 0.03);
-        mainOsc.frequency.exponentialRampToValueAtTime(baseFreq, time + 0.12);
+        if (this.sweep > 0.01) {
+            mainOsc.frequency.exponentialRampToValueAtTime(baseFreq * (1 + 0.2 * this.sweep), time + 0.03);
+            mainOsc.frequency.exponentialRampToValueAtTime(baseFreq, time + 0.12);
+        }
 
         // Soft saturation for warmth (like the 909's analog distortion)
         const shaper = this.context.createWaveShaper();
@@ -94,6 +98,9 @@ export class Kick909E1 extends Voice {
             case 'attack':
                 this.attack = Math.max(0, Math.min(1, value));
                 break;
+            case 'sweep':
+                this.sweep = Math.max(0, Math.min(1, value));
+                break;
             case 'level':
                 this.level = Math.max(0, Math.min(1, value));
                 break;
@@ -120,6 +127,12 @@ export class Kick909E1 extends Voice {
                 label: 'Attack',
                 range: { min: 0, max: 1, step: 0.01 },
                 defaultValue: 0.5,
+            },
+            {
+                id: 'sweep',
+                label: 'Sweep',
+                range: { min: 0, max: 1, step: 0.01 },
+                defaultValue: 1,
             },
             {
                 id: 'level',
