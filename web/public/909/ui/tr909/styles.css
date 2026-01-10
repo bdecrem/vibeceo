@@ -243,6 +243,143 @@ h1::before {
   color: var(--text-muted);
 }
 
+/* Manage Patterns Modal */
+.manage-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.manage-modal.active {
+  display: flex;
+}
+
+.manage-modal-content {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-accent);
+  border-radius: 12px;
+  padding: 1rem;
+  width: 320px;
+  max-height: 80vh;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.manage-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.manage-modal-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--amber-400);
+}
+
+.manage-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1.25rem;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+}
+
+.manage-modal-close:hover {
+  color: var(--text-primary);
+}
+
+.manage-modal-body {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.manage-patterns-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.manage-pattern-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.6rem 0.75rem;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+}
+
+.manage-pattern-name {
+  font-size: 0.75rem;
+  color: var(--text-primary);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.manage-pattern-bpm {
+  font-size: 0.65rem;
+  color: var(--text-muted);
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.manage-pattern-actions {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.75rem;
+}
+
+.manage-pattern-actions button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.25rem 0.4rem;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+}
+
+.manage-pattern-actions button:hover {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+}
+
+.manage-pattern-actions .overwrite-btn:hover {
+  color: var(--amber-400);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.manage-pattern-actions .delete-btn:hover {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+.manage-empty {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
 .engine-selector {
   display: flex;
   align-items: center;
@@ -347,53 +484,50 @@ h1::before {
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
 }
 
-/* Kit & Sequence Row */
-.kit-sequence-row {
+/* Kit & Pattern Row */
+.kit-pattern-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.kit-sequence-row label {
+.kit-pattern-row label {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  font-size: 0.6rem;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  color: var(--text-secondary);
 }
 
-.kit-sequence-row select {
+.kit-pattern-row select {
+  -webkit-appearance: none;
+  appearance: none;
   min-width: 110px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--amber-400);
+  background: var(--bg-dark);
+  border: 1px solid var(--border-accent);
+  border-radius: 6px;
+  padding: 0.45rem 1.8rem 0.45rem 0.6rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23f59e0b' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10l-5 5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+  cursor: pointer;
 }
 
 .kit-label select {
   border-color: var(--amber-700);
 }
 
-.sequence-label select {
+.pattern-label select {
+  min-width: 130px;
   border-color: var(--border-accent);
 }
 
-.saved-controls {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  margin-left: 0.25rem;
-}
-
-.saved-controls select {
-  min-width: 80px;
-  font-size: 0.7rem;
-}
-
-.saved-controls button {
-  padding: 0.4rem 0.5rem;
-  font-size: 0.9rem;
-  line-height: 1;
-}
 
 .controls-divider {
   width: 1px;
@@ -489,6 +623,28 @@ h1::before {
   border-color: var(--amber-600);
 }
 
+/* Compact inline selects (Length, Scale) */
+.controls label.compact-select {
+  gap: 0.35rem;
+}
+
+.controls label.compact-select span {
+  font-size: 0.55rem;
+  min-width: auto;
+  color: var(--text-muted);
+}
+
+.controls label.compact-select select {
+  min-width: auto;
+  width: auto;
+  padding: 0.3rem 0.4rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: var(--amber-400);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+}
+
 /* Buttons */
 .controls button {
   padding: 0.6rem 1.25rem;
@@ -538,13 +694,15 @@ h1::before {
 /* Sequencer Grid */
 .sequencer {
   margin-bottom: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .voice-row {
   display: grid;
   grid-template-columns: 100px repeat(16, 1fr);
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: 4px;
   align-items: center;
 }
 
@@ -597,10 +755,12 @@ h1::before {
   width: 100%;
   aspect-ratio: 3 / 2;
   border-radius: 4px;
-  border: 1px solid var(--border-subtle);
+  border: none;
+  outline: 1px solid var(--border-subtle);
+  outline-offset: -1px;
   background: var(--bg-card);
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition: background 0.1s ease, outline-color 0.1s ease;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
@@ -613,13 +773,13 @@ h1::before {
 .step--on,
 .step--on:hover {
   background: linear-gradient(135deg, var(--amber-600), var(--amber-800));
-  border-color: transparent;
+  outline-color: transparent;
 }
 
 .step--accent,
 .step--accent:hover {
   background: linear-gradient(135deg, var(--amber-500), var(--amber-600));
-  border-color: transparent;
+  outline-color: transparent;
 }
 
 /* Subtle playhead - just a gentle brightness lift */
@@ -639,7 +799,6 @@ h1::before {
 .step[data-index="4"],
 .step[data-index="8"],
 .step[data-index="12"] {
-  margin-left: 6px;
   position: relative;
 }
 
@@ -648,12 +807,12 @@ h1::before {
 .step[data-index="12"]::before {
   content: '';
   position: absolute;
-  left: -4px;
-  top: 10%;
-  height: 80%;
+  left: -3px;
+  top: 15%;
+  height: 70%;
   width: 1px;
   background: var(--border-accent);
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 /* Voice Parameters with Knobs */
@@ -1139,21 +1298,26 @@ h1::before {
     padding: 0.35rem 0.4rem;
   }
 
-  .kit-sequence-row {
+  .kit-pattern-row {
     flex-wrap: wrap;
     gap: 0.5rem;
   }
 
-  .kit-sequence-row select {
+  .kit-pattern-row select {
     min-width: 80px;
   }
 
-  .saved-controls {
-    margin-left: 0;
+  .pattern-label select {
+    min-width: 100px;
   }
 
-  .saved-controls select {
-    min-width: 60px;
+  .controls label.compact-select {
+    gap: 0.25rem;
+  }
+
+  .controls label.compact-select select {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.35rem;
   }
 
   /* Hide pattern tabs save/delete buttons on mobile */
@@ -1187,6 +1351,7 @@ h1::before {
     margin: 0 0 0.75rem 0;
     padding: 0 4px;
     width: 100%;
+    gap: 3px;
   }
 
   /* Sequencer grid: label + 8 equal steps */
@@ -1194,7 +1359,6 @@ h1::before {
     display: grid;
     grid-template-columns: 28px repeat(8, 1fr);
     gap: 3px;
-    margin-bottom: 3px;
   }
 
   /* Hide steps 9-16 by default (page 1) */
@@ -1266,6 +1430,14 @@ h1::before {
     aspect-ratio: 1;
     min-height: 36px;
     border-radius: 3px;
+    outline-width: 1px;
+  }
+
+  /* Hide bar lines on mobile */
+  .step[data-index="4"]::before,
+  .step[data-index="8"]::before,
+  .step[data-index="12"]::before {
+    display: none;
   }
 
   /* Voice parameters - compact layout for mobile */

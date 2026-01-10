@@ -701,73 +701,268 @@ function populatePresets() {
     }
 }
 
-function populateKits() {
+// Unified kit dropdown: presets + saved kits + actions
+async function populateKits() {
     const kitSelect = document.getElementById('kit-select');
     if (!kitSelect) return;
-    TR909_KITS.forEach((kit) => {
-        const option = document.createElement('option');
-        option.value = kit.id;
-        option.textContent = kit.name;
-        kitSelect.appendChild(option);
-    });
-    // Default to first kit
-    kitSelect.value = TR909_KITS[0]?.id || '';
+
+    // Clear existing options except first placeholder
+    while (kitSelect.options.length > 1) {
+        kitSelect.remove(1);
+    }
+
+    // Add presets group
+    if (TR909_KITS.length > 0) {
+        const presetsGroup = document.createElement('optgroup');
+        presetsGroup.label = 'Presets';
+        TR909_KITS.forEach((kit) => {
+            const option = document.createElement('option');
+            option.value = `preset:${kit.id}`;
+            option.textContent = kit.name;
+            presetsGroup.appendChild(option);
+        });
+        kitSelect.appendChild(presetsGroup);
+    }
+
+    // Add saved kits group
+    const saved = await fetchKits();
+    if (saved.length > 0) {
+        const savedGroup = document.createElement('optgroup');
+        savedGroup.label = 'My Kits';
+        saved.forEach((k) => {
+            const option = document.createElement('option');
+            option.value = `saved:${k.name}`;
+            option.textContent = k.name;
+            savedGroup.appendChild(option);
+        });
+        kitSelect.appendChild(savedGroup);
+    }
+
+    // Add actions group
+    const actionsGroup = document.createElement('optgroup');
+    actionsGroup.label = '─────────';
+    const saveOption = document.createElement('option');
+    saveOption.value = 'action:save';
+    saveOption.textContent = 'Save current as...';
+    actionsGroup.appendChild(saveOption);
+
+    // Only show Manage if there are saved kits
+    if (saved.length > 0) {
+        const manageOption = document.createElement('option');
+        manageOption.value = 'action:manage';
+        manageOption.textContent = 'Manage...';
+        actionsGroup.appendChild(manageOption);
+    }
+
+    kitSelect.appendChild(actionsGroup);
+
+    // Default to Punchy kit
+    kitSelect.value = 'preset:punchy';
 }
 
-function populateSequences() {
-    const seqSelect = document.getElementById('sequence-select');
-    if (!seqSelect) return;
-    TR909_SEQUENCES.forEach((seq) => {
-        const option = document.createElement('option');
-        option.value = seq.id;
-        option.textContent = `${seq.name} (${seq.bpm})`;
-        seqSelect.appendChild(option);
-    });
+// Unified pattern dropdown: presets + saved patterns + actions
+async function populatePatterns() {
+    const patternSelect = document.getElementById('pattern-select');
+    if (!patternSelect) return;
+
+    // Clear existing options except first placeholder
+    while (patternSelect.options.length > 1) {
+        patternSelect.remove(1);
+    }
+
+    // Add presets group
+    if (TR909_SEQUENCES.length > 0) {
+        const presetsGroup = document.createElement('optgroup');
+        presetsGroup.label = 'Presets';
+        TR909_SEQUENCES.forEach((seq) => {
+            const option = document.createElement('option');
+            option.value = `preset:${seq.id}`;
+            option.textContent = `${seq.name} (${seq.bpm})`;
+            presetsGroup.appendChild(option);
+        });
+        patternSelect.appendChild(presetsGroup);
+    }
+
+    // Add saved patterns group
+    const saved = await fetchPatterns();
+    if (saved.length > 0) {
+        const savedGroup = document.createElement('optgroup');
+        savedGroup.label = 'My Patterns';
+        saved.forEach((p) => {
+            const option = document.createElement('option');
+            option.value = `saved:${p.name}`;
+            option.textContent = `${p.name} (${p.bpm})`;
+            savedGroup.appendChild(option);
+        });
+        patternSelect.appendChild(savedGroup);
+    }
+
+    // Add actions group
+    const actionsGroup = document.createElement('optgroup');
+    actionsGroup.label = '─────────';
+    const saveOption = document.createElement('option');
+    saveOption.value = 'action:save';
+    saveOption.textContent = 'Save current as...';
+    actionsGroup.appendChild(saveOption);
+
+    // Only show Manage if there are saved patterns
+    if (saved.length > 0) {
+        const manageOption = document.createElement('option');
+        manageOption.value = 'action:manage';
+        manageOption.textContent = 'Manage...';
+        actionsGroup.appendChild(manageOption);
+    }
+
+    patternSelect.appendChild(actionsGroup);
+
+    // Default to Techno Basic pattern
+    patternSelect.value = 'preset:techno-basic';
 }
 function setupControls() {
     const playToggleBtn = document.getElementById('play-toggle');
     const bpmInput = document.getElementById('bpm');
     const presetSelect = document.getElementById('preset');
     const kitSelect = document.getElementById('kit-select');
-    const seqSelect = document.getElementById('sequence-select');
+    const patternSelect = document.getElementById('pattern-select');
     const swingInput = document.getElementById('swing');
     const swingValue = document.getElementById('swing-value');
     const flamInput = document.getElementById('flam');
     const flamValue = document.getElementById('flam-value');
-    const savedPatternsSelect = document.getElementById('saved-patterns');
-    const saveBtn = document.getElementById('save-pattern');
-    const deleteBtn = document.getElementById('delete-pattern');
+
+    // Track what was selected before (for action:save to restore)
+    let previousPatternValue = '';
+
     // Populate dropdowns
     populatePresets();  // Legacy
     populateKits();
-    populateSequences();
-    // Populate saved patterns
-    populateSavedPatterns();
+    populatePatterns();
 
-    // Kit selection - changes sound design (engine + voice params)
-    kitSelect?.addEventListener('change', () => {
-        const kitId = kitSelect.value;
-        if (!kitId) return;
-        const kit = TR909_KITS.find(k => k.id === kitId);
-        if (kit) {
-            loadKit(kit);
-            setStatus(`Kit: ${kit.name} — ${kit.description}`);
+    // Track previous kit selection (for action:save to restore)
+    let previousKitValue = 'preset:punchy';
+
+    // Kit selection - handles presets, saved kits, and actions
+    kitSelect?.addEventListener('change', async () => {
+        const value = kitSelect.value;
+        if (!value) {
+            previousKitValue = '';
+            return;
+        }
+
+        const [type, id] = value.split(':');
+
+        if (type === 'preset') {
+            previousKitValue = value;
+            const kit = TR909_KITS.find(k => k.id === id);
+            if (kit) {
+                loadKit(kit);
+                setStatus(`Kit: ${kit.name} — ${kit.description}`);
+            }
+        } else if (type === 'saved') {
+            previousKitValue = value;
+            const saved = loadSavedKit(id);
+            if (saved) {
+                // Load saved kit - apply engine and voice params
+                const kitToLoad = {
+                    engine: saved.engine,
+                    voiceParams: saved.voice_params,
+                };
+                loadKit(kitToLoad);
+                setStatus(`Kit: ${id}`);
+            }
+        } else if (type === 'action' && id === 'save') {
+            // Handle save action - restore previous selection first
+            kitSelect.value = previousKitValue;
+
+            const name = prompt('Enter kit name:');
+            if (name && name.trim()) {
+                try {
+                    setStatus('Saving kit...');
+                    await saveKit(name.trim());
+                    await populateKits();
+                    // Select the newly saved kit
+                    kitSelect.value = `saved:${name.trim()}`;
+                    previousKitValue = kitSelect.value;
+                    setStatus(`Saved kit: ${name.trim()}`);
+                } catch (e) {
+                    setStatus(`Failed to save: ${e.message}`);
+                }
+            }
+        } else if (type === 'action' && id === 'manage') {
+            // Handle manage action - restore previous selection and show modal
+            kitSelect.value = previousKitValue;
+            showManageKitsModal();
         }
     });
 
-    // Sequence selection - changes pattern + BPM
-    seqSelect?.addEventListener('change', () => {
-        const seqId = seqSelect.value;
-        if (!seqId) {
+    // Unified pattern selection - handles presets, saved patterns, and actions
+    patternSelect?.addEventListener('change', async () => {
+        const value = patternSelect.value;
+        if (!value) {
+            previousPatternValue = '';
             setStatus('Custom pattern mode');
             return;
         }
-        const seq = TR909_SEQUENCES.find(s => s.id === seqId);
-        if (seq) {
-            loadSequence(seq);
-            // Clear saved patterns selection
-            if (savedPatternsSelect) savedPatternsSelect.value = '';
-            setStatus(`Sequence: ${seq.name} at ${seq.bpm} BPM`);
+
+        const [type, id] = value.split(':');
+
+        if (type === 'preset') {
+            previousPatternValue = value;
+            const seq = TR909_SEQUENCES.find(s => s.id === id);
+            if (seq) {
+                loadSequence(seq);
+                setStatus(`Pattern: ${seq.name} at ${seq.bpm} BPM`);
+            }
+        } else if (type === 'saved') {
+            previousPatternValue = value;
+            const saved = loadSavedPattern(id);
+            if (saved) {
+                // Load pattern into our pattern object
+                VOICES.forEach((voice) => {
+                    const savedTrack = saved.pattern[voice.id];
+                    const track = ensureTrack(voice.id);
+                    if (savedTrack && Array.isArray(savedTrack)) {
+                        for (let i = 0; i < STEPS; i++) {
+                            const step = savedTrack[i];
+                            track[i] = step ? { ...step } : { velocity: 0, accent: false };
+                        }
+                    } else {
+                        for (let i = 0; i < STEPS; i++) {
+                            track[i] = { velocity: 0, accent: false };
+                        }
+                    }
+                });
+                commitPattern();
+                refreshGrid();
+                // Update BPM
+                if (bpmInput) {
+                    bpmInput.value = String(saved.bpm);
+                    engine.setBpm(saved.bpm);
+                }
+                setStatus(`Loaded: ${id}`);
+            }
+        } else if (type === 'action' && id === 'save') {
+            // Handle save action - restore previous selection first
+            patternSelect.value = previousPatternValue;
+
+            const name = prompt('Enter pattern name:');
+            if (name && name.trim()) {
+                const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
+                try {
+                    setStatus('Saving pattern...');
+                    await savePattern(name.trim(), bpm);
+                    await populatePatterns();
+                    // Select the newly saved pattern
+                    patternSelect.value = `saved:${name.trim()}`;
+                    previousPatternValue = patternSelect.value;
+                    setStatus(`Saved: ${name.trim()}`);
+                } catch (e) {
+                    setStatus(`Failed to save: ${e.message}`);
+                }
+            }
+        } else if (type === 'action' && id === 'manage') {
+            // Handle manage action - restore previous selection and show modal
+            patternSelect.value = previousPatternValue;
+            showManageModal();
         }
     });
     // Swing control
@@ -810,71 +1005,6 @@ function setupControls() {
         engine.setScale(scale);
         setStatus(`Scale: ${scale}`);
     });
-    // Save pattern
-    saveBtn?.addEventListener('click', async () => {
-        const name = prompt('Enter pattern name:');
-        if (name && name.trim()) {
-            const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
-            try {
-                setStatus('Saving pattern...');
-                await savePattern(name.trim(), bpm);
-                await populateSavedPatterns();
-                setStatus(`Pattern "${name.trim()}" saved.`);
-            } catch (e) {
-                setStatus(`Failed to save: ${e.message}`);
-            }
-        }
-    });
-    // Load saved pattern
-    savedPatternsSelect?.addEventListener('change', () => {
-        const name = savedPatternsSelect.value;
-        if (!name)
-            return;
-        const saved = loadSavedPattern(name);
-        if (saved) {
-            // Load pattern into our pattern object
-            VOICES.forEach((voice) => {
-                const savedTrack = saved.pattern[voice.id];
-                const track = ensureTrack(voice.id);
-                if (savedTrack && Array.isArray(savedTrack)) {
-                    for (let i = 0; i < STEPS; i++) {
-                        const step = savedTrack[i];
-                        track[i] = step ? { ...step } : { velocity: 0, accent: false };
-                    }
-                }
-                else {
-                    for (let i = 0; i < STEPS; i++) {
-                        track[i] = { velocity: 0, accent: false };
-                    }
-                }
-            });
-            commitPattern();
-            refreshGrid();
-            // Update BPM
-            if (bpmInput) {
-                bpmInput.value = String(saved.bpm);
-                engine.setBpm(saved.bpm);
-            }
-            // Clear preset/sequence selections
-            if (presetSelect) presetSelect.value = '';
-            if (seqSelect) seqSelect.value = '';
-            setStatus(`Loaded saved pattern "${name}"`);
-        }
-    });
-    // Delete saved pattern
-    deleteBtn?.addEventListener('click', async () => {
-        const name = savedPatternsSelect?.value;
-        if (name && confirm(`Delete pattern "${name}"?`)) {
-            try {
-                setStatus('Deleting pattern...');
-                await deleteSavedPattern(name);
-                await populateSavedPatterns();
-                setStatus(`Pattern "${name}" deleted.`);
-            } catch (e) {
-                setStatus(`Failed to delete: ${e.message}`);
-            }
-        }
-    });
     // Handle preset selection
     presetSelect?.addEventListener('change', () => {
         const presetId = presetSelect.value;
@@ -912,9 +1042,9 @@ function setupControls() {
         if (!Number.isNaN(bpm) && bpm > 0) {
             engine.setBpm(bpm);
             setStatus(`Tempo set to ${bpm} BPM`);
-            // Clear preset/sequence selection when BPM is manually changed
+            // Clear preset selection when BPM is manually changed
             if (presetSelect) presetSelect.value = '';
-            if (seqSelect) seqSelect.value = '';
+            if (patternSelect) patternSelect.value = '';
         }
     });
 }
@@ -959,6 +1089,10 @@ function updateStepIndicator(step) {
 const PATTERNS_API = '/api/synth-patterns';
 let cachedPatterns = null;
 
+// Kit storage via Supabase API
+const KITS_API = '/api/synth-kits';
+let cachedKits = null;
+
 async function fetchPatterns() {
     try {
         const res = await fetch(`${PATTERNS_API}?machine=909`);
@@ -977,11 +1111,16 @@ function getSavedPatterns() {
     return cachedPatterns || [];
 }
 
-async function savePattern(name, bpm) {
-    // Deep clone pattern
-    const patternCopy = {};
-    for (const [voiceId, track] of Object.entries(pattern)) {
-        patternCopy[voiceId] = track.map((step) => ({ ...step }));
+async function savePattern(name, bpm, existingPattern = null) {
+    // Use existing pattern if provided (for rename), otherwise clone current pattern
+    let patternCopy;
+    if (existingPattern) {
+        patternCopy = existingPattern;
+    } else {
+        patternCopy = {};
+        for (const [voiceId, track] of Object.entries(pattern)) {
+            patternCopy[voiceId] = track.map((step) => ({ ...step }));
+        }
     }
 
     try {
@@ -1026,23 +1165,118 @@ async function deleteSavedPattern(name) {
     }
 }
 
-async function populateSavedPatterns() {
-    const savedSelect = document.getElementById('saved-patterns');
-    if (!savedSelect) return;
+// Kit API functions
+async function fetchKits() {
+    try {
+        const res = await fetch(`${KITS_API}?machine=909`);
+        if (!res.ok) throw new Error('Failed to fetch kits');
+        const data = await res.json();
+        cachedKits = data.kits || [];
+        return cachedKits;
+    } catch (e) {
+        console.error('Failed to fetch kits:', e);
+        return cachedKits || [];
+    }
+}
 
-    // Clear existing options except first
-    while (savedSelect.options.length > 1) {
-        savedSelect.remove(1);
+function getSavedKits() {
+    return cachedKits || [];
+}
+
+async function saveKit(name, existingKit = null) {
+    // Capture current kit state from UI if not provided
+    let kitData;
+    if (existingKit) {
+        kitData = existingKit;
+    } else {
+        // Get current engine type
+        const currentEngine = engine.getVoiceEngine('kick'); // All voices use same engine
+
+        // Get current voice parameters by reading from UI knobs
+        const voiceParams = {};
+        const descriptors = engine.getVoiceParameterDescriptors();
+        VOICES.forEach((voice) => {
+            const params = descriptors[voice.id];
+            if (params) {
+                voiceParams[voice.id] = {};
+                params.forEach((param) => {
+                    try {
+                        // Read value from knob rotation
+                        const knob = document.querySelector(`.knob[data-voice-id="${voice.id}"][data-param-id="${param.id}"]`);
+                        if (knob) {
+                            const rotation = parseFloat(knob.style.getPropertyValue('--rotation') || '0');
+                            const min = param.range?.min ?? 0;
+                            const max = param.range?.max ?? 1;
+                            const value = min + ((rotation + 135) / 270) * (max - min);
+                            // Only save if different from default
+                            if (Math.abs(value - param.defaultValue) > 0.001) {
+                                voiceParams[voice.id][param.id] = value;
+                            }
+                        }
+                    } catch (e) {
+                        // Ignore params that can't be read
+                    }
+                });
+                // Remove empty objects
+                if (Object.keys(voiceParams[voice.id]).length === 0) {
+                    delete voiceParams[voice.id];
+                }
+            }
+        });
+
+        kitData = {
+            engine: currentEngine,
+            voiceParams,
+        };
     }
 
-    const saved = await fetchPatterns();
-    saved.forEach((p) => {
-        const option = document.createElement('option');
-        option.value = p.name;
-        option.textContent = `${p.name} (${p.bpm} BPM)`;
-        savedSelect.appendChild(option);
-    });
+    try {
+        const res = await fetch(KITS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name,
+                machine: '909',
+                engine: kitData.engine,
+                voiceParams: kitData.voiceParams,
+            }),
+        });
+
+        if (res.status === 409) {
+            throw new Error('A kit with this name already exists');
+        }
+        if (!res.ok) throw new Error('Failed to save kit');
+
+        // Refresh cache
+        await fetchKits();
+        return true;
+    } catch (e) {
+        console.error('Failed to save kit:', e);
+        throw e;
+    }
 }
+
+function loadSavedKit(name) {
+    const saved = getSavedKits();
+    return saved.find((k) => k.name === name);
+}
+
+async function deleteSavedKit(name) {
+    try {
+        const res = await fetch(`${KITS_API}?name=${encodeURIComponent(name)}&machine=909`, {
+            method: 'DELETE',
+        });
+        if (!res.ok) throw new Error('Failed to delete kit');
+
+        // Refresh cache
+        await fetchKits();
+        return true;
+    } catch (e) {
+        console.error('Failed to delete kit:', e);
+        throw e;
+    }
+}
+
 // Keyboard shortcuts
 function setupKeyboardShortcuts() {
     document.addEventListener('keydown', (e) => {
@@ -1377,6 +1611,232 @@ function setupExportImport() {
     });
 }
 
+// ========================================
+// Manage Patterns Modal
+// ========================================
+
+function showManageModal() {
+    const modal = document.getElementById('manage-modal');
+    const list = document.getElementById('manage-patterns-list');
+    const emptyMsg = document.getElementById('manage-empty');
+    if (!modal || !list) return;
+
+    // Populate list with saved patterns
+    const saved = getSavedPatterns();
+    list.innerHTML = '';
+
+    if (saved.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'block';
+    } else {
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        saved.forEach((p) => {
+            const li = document.createElement('li');
+            li.className = 'manage-pattern-item';
+            li.innerHTML = `
+                <span class="manage-pattern-name">${escapeHtml(p.name)}</span>
+                <span class="manage-pattern-bpm">${p.bpm} BPM</span>
+                <div class="manage-pattern-actions">
+                    <button class="overwrite-btn" title="Overwrite with current">↻</button>
+                    <button class="rename-btn" title="Rename">✎</button>
+                    <button class="delete-btn" title="Delete">✕</button>
+                </div>
+            `;
+
+            // Overwrite handler - saves current pattern to this name
+            li.querySelector('.overwrite-btn').addEventListener('click', async () => {
+                if (confirm(`Overwrite "${p.name}" with current pattern?`)) {
+                    try {
+                        const bpmInput = document.getElementById('bpm');
+                        const bpm = bpmInput ? Number(bpmInput.value) || 128 : 128;
+                        // Delete old, save new with same name
+                        await deleteSavedPattern(p.name);
+                        await savePattern(p.name, bpm);
+                        await populatePatterns();
+                        showManageModal(); // Refresh list
+                        setStatus(`Updated "${p.name}"`);
+                    } catch (e) {
+                        setStatus(`Update failed: ${e.message}`);
+                    }
+                }
+            });
+
+            // Rename handler
+            li.querySelector('.rename-btn').addEventListener('click', async () => {
+                const newName = prompt(`Rename "${p.name}" to:`, p.name);
+                if (newName && newName.trim() && newName.trim() !== p.name) {
+                    try {
+                        // Save with new name, then delete old
+                        await savePattern(newName.trim(), p.bpm, p.pattern);
+                        await deleteSavedPattern(p.name);
+                        await populatePatterns();
+                        showManageModal(); // Refresh list
+                        setStatus(`Renamed to "${newName.trim()}"`);
+                    } catch (e) {
+                        setStatus(`Rename failed: ${e.message}`);
+                    }
+                }
+            });
+
+            // Delete handler
+            li.querySelector('.delete-btn').addEventListener('click', async () => {
+                if (confirm(`Delete "${p.name}"?`)) {
+                    try {
+                        await deleteSavedPattern(p.name);
+                        await populatePatterns();
+                        showManageModal(); // Refresh list
+                        setStatus(`Deleted "${p.name}"`);
+                    } catch (e) {
+                        setStatus(`Delete failed: ${e.message}`);
+                    }
+                }
+            });
+
+            list.appendChild(li);
+        });
+    }
+
+    modal.classList.add('active');
+}
+
+function hideManageModal() {
+    const modal = document.getElementById('manage-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+function setupManageModal() {
+    const modal = document.getElementById('manage-modal');
+    const closeBtn = modal?.querySelector('.manage-modal-close');
+
+    closeBtn?.addEventListener('click', hideManageModal);
+
+    // Close on backdrop click
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) hideManageModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal?.classList.contains('active')) {
+            hideManageModal();
+        }
+    });
+}
+
+// ========================================
+// Manage Kits Modal
+// ========================================
+
+function showManageKitsModal() {
+    const modal = document.getElementById('manage-kits-modal');
+    const list = document.getElementById('manage-kits-list');
+    const emptyMsg = document.getElementById('manage-kits-empty');
+    if (!modal || !list) return;
+
+    // Populate list with saved kits
+    const saved = getSavedKits();
+    list.innerHTML = '';
+
+    if (saved.length === 0) {
+        if (emptyMsg) emptyMsg.style.display = 'block';
+    } else {
+        if (emptyMsg) emptyMsg.style.display = 'none';
+        saved.forEach((k) => {
+            const li = document.createElement('li');
+            li.className = 'manage-pattern-item';
+            li.innerHTML = `
+                <span class="manage-pattern-name">${escapeHtml(k.name)}</span>
+                <span class="manage-pattern-bpm">${k.engine || 'E2'}</span>
+                <div class="manage-pattern-actions">
+                    <button class="overwrite-btn" title="Overwrite with current">↻</button>
+                    <button class="rename-btn" title="Rename">✎</button>
+                    <button class="delete-btn" title="Delete">✕</button>
+                </div>
+            `;
+
+            // Overwrite handler - saves current kit settings to this name
+            li.querySelector('.overwrite-btn').addEventListener('click', async () => {
+                if (confirm(`Overwrite "${k.name}" with current kit settings?`)) {
+                    try {
+                        // Delete old, save new with same name
+                        await deleteSavedKit(k.name);
+                        await saveKit(k.name);
+                        await populateKits();
+                        showManageKitsModal(); // Refresh list
+                        setStatus(`Updated kit "${k.name}"`);
+                    } catch (e) {
+                        setStatus(`Update failed: ${e.message}`);
+                    }
+                }
+            });
+
+            // Rename handler
+            li.querySelector('.rename-btn').addEventListener('click', async () => {
+                const newName = prompt(`Rename "${k.name}" to:`, k.name);
+                if (newName && newName.trim() && newName.trim() !== k.name) {
+                    try {
+                        // Save with new name, then delete old
+                        await saveKit(newName.trim(), { engine: k.engine, voiceParams: k.voice_params });
+                        await deleteSavedKit(k.name);
+                        await populateKits();
+                        showManageKitsModal(); // Refresh list
+                        setStatus(`Renamed to "${newName.trim()}"`);
+                    } catch (e) {
+                        setStatus(`Rename failed: ${e.message}`);
+                    }
+                }
+            });
+
+            // Delete handler
+            li.querySelector('.delete-btn').addEventListener('click', async () => {
+                if (confirm(`Delete kit "${k.name}"?`)) {
+                    try {
+                        await deleteSavedKit(k.name);
+                        await populateKits();
+                        showManageKitsModal(); // Refresh list
+                        setStatus(`Deleted kit "${k.name}"`);
+                    } catch (e) {
+                        setStatus(`Delete failed: ${e.message}`);
+                    }
+                }
+            });
+
+            list.appendChild(li);
+        });
+    }
+
+    modal.classList.add('active');
+}
+
+function hideManageKitsModal() {
+    const modal = document.getElementById('manage-kits-modal');
+    if (modal) modal.classList.remove('active');
+}
+
+function setupManageKitsModal() {
+    const modal = document.getElementById('manage-kits-modal');
+    const closeBtn = modal?.querySelector('.manage-modal-close');
+
+    closeBtn?.addEventListener('click', hideManageKitsModal);
+
+    // Close on backdrop click
+    modal?.addEventListener('click', (e) => {
+        if (e.target === modal) hideManageKitsModal();
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal?.classList.contains('active')) {
+            hideManageKitsModal();
+        }
+    });
+}
+
 function checkURLParams() {
     const params = new URLSearchParams(window.location.search);
 
@@ -1413,12 +1873,19 @@ document.addEventListener('DOMContentLoaded', () => {
     setupPatternTabs();
     setupStepPageToggle();
     setupExportImport();
+    setupManageModal();
+    setupManageKitsModal();
     // Connect step change callback for visualization
     engine.onStepChange = updateStepIndicator;
 
-    // Load default kit on startup
-    if (TR909_KITS.length > 0) {
-        loadKit(TR909_KITS[0]);
+    // Load default kit (Punchy) and pattern (Techno Basic) on startup
+    const punchyKit = TR909_KITS.find(k => k.id === 'punchy');
+    if (punchyKit) {
+        loadKit(punchyKit);
+    }
+    const technoBasic = TR909_SEQUENCES.find(s => s.id === 'techno-basic');
+    if (technoBasic) {
+        loadSequence(technoBasic);
     }
 
     // Check URL params for ?load= or ?preset=

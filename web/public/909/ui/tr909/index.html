@@ -36,27 +36,20 @@
         </div>
       </div>
       <section class="controls">
-        <!-- Kit & Sequence selectors -->
-        <div class="kit-sequence-row">
+        <!-- Kit & Pattern selectors -->
+        <div class="kit-pattern-row">
           <label class="kit-label">
             Kit
             <select id="kit-select">
               <option value="">— Kit —</option>
             </select>
           </label>
-          <label class="sequence-label">
-            Seq
-            <select id="sequence-select">
-              <option value="">— Sequence —</option>
+          <label class="pattern-label">
+            Pattern
+            <select id="pattern-select">
+              <option value="">— Pattern —</option>
             </select>
           </label>
-          <div class="saved-controls">
-            <select id="saved-patterns">
-              <option value="">Saved</option>
-            </select>
-            <button id="save-pattern" type="button" title="Save current">+</button>
-            <button id="delete-pattern" type="button" title="Delete saved">−</button>
-          </div>
         </div>
 
         <div class="controls-divider"></div>
@@ -80,8 +73,8 @@
           <input id="accent" type="range" min="0" max="100" step="1" value="100" />
           <span id="accent-value">100%</span>
         </label>
-        <label>
-          Length
+        <label class="compact-select">
+          <span>Len</span>
           <select id="pattern-length">
             <option value="4">4</option>
             <option value="8">8</option>
@@ -89,12 +82,12 @@
             <option value="16" selected>16</option>
           </select>
         </label>
-        <label>
-          Scale
+        <label class="compact-select">
+          <span>Scale</span>
           <select id="scale-mode">
             <option value="16th">16th</option>
-            <option value="8th-triplet">8th Trip</option>
-            <option value="16th-triplet">16th Trip</option>
+            <option value="8th-triplet">8T</option>
+            <option value="16th-triplet">16T</option>
             <option value="32nd">32nd</option>
           </select>
         </label>
@@ -154,6 +147,34 @@
       </div>
     </div>
     <input type="file" id="import-file" accept=".json" style="display: none" />
+
+    <!-- Manage Patterns Modal -->
+    <div id="manage-modal" class="manage-modal">
+      <div class="manage-modal-content">
+        <div class="manage-modal-header">
+          <span class="manage-modal-title">Manage Patterns</span>
+          <button class="manage-modal-close">&times;</button>
+        </div>
+        <div class="manage-modal-body">
+          <ul id="manage-patterns-list" class="manage-patterns-list"></ul>
+          <div class="manage-empty" id="manage-empty">No saved patterns yet.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manage Kits Modal -->
+    <div id="manage-kits-modal" class="manage-modal">
+      <div class="manage-modal-content">
+        <div class="manage-modal-header">
+          <span class="manage-modal-title">Manage Kits</span>
+          <button class="manage-modal-close">&times;</button>
+        </div>
+        <div class="manage-modal-body">
+          <ul id="manage-kits-list" class="manage-patterns-list"></ul>
+          <div class="manage-empty" id="manage-kits-empty">No saved kits yet.</div>
+        </div>
+      </div>
+    </div>
 
     <script type="module" src="../../dist/ui/tr909/app-v3.js"></script>
   </body>
