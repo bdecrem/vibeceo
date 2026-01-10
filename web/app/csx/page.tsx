@@ -160,7 +160,7 @@ function CSXContent() {
           border: 1px solid #fff;
           border-left-style: dashed;
           border-right-style: dashed;
-          padding: 20px 24px;
+          padding: 20px 24px 28px 24px;
           max-width: 640px;
           width: 100%;
           position: relative;
@@ -211,7 +211,8 @@ function CSXContent() {
 
         .terminal-body {
           margin-bottom: 0;
-          height: 190px;
+          min-height: 200px;
+          height: 200px;
         }
 
         @media (min-width: 640px) {
