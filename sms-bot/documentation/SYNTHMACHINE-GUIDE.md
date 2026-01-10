@@ -2,6 +2,17 @@
 
 Web Audio synthesizer libraries for creating electronic music programmatically.
 
+## Source Code Locations (READ FIRST)
+
+- **TR-909**: Source is TypeScript in `synthmachine/`. Edit `.ts` files there, then `npm run build`.
+- **TB-303, SH-101, R9-DS**: Source is JavaScript directly in `web/public/{303,101,90s}/dist/`. No TypeScript exists.
+- **NEVER edit `web/public/909/dist/*.js`** — these are compiled output from synthmachine/, not source.
+- The `dist/` folders for 303/101/90s are misleadingly named — they contain source code, not compiled output.
+- **UI frontends** are static HTML in `web/public/*/ui/` (not React/Next.js).
+- `web/app/{909,303,101,90s}/` are just Next.js redirects to the static HTML — no synth logic lives there.
+
+---
+
 ## What's New (January 2026)
 
 **Mixer module added.** You can now combine multiple synths (909 + 303 + 101) with professional effects and render to a single mixed WAV file.
