@@ -607,6 +607,35 @@ export class Session {
   }
 
   /**
+   * Generate a plate reverb IR at a specific sample rate
+   * @private
+   */
+  _generatePlateIR(context, sampleRate) {
+    const duration = 0.8; // 800ms
+    const length = Math.floor(sampleRate * duration);
+    const buffer = context.createBuffer(2, length, sampleRate);
+
+    for (let channel = 0; channel < 2; channel++) {
+      const data = buffer.getChannelData(channel);
+      for (let i = 0; i < length; i++) {
+        const t = i / sampleRate;
+        const decay = Math.exp(-3 * t / duration);
+        const noise = (Math.random() * 2 - 1);
+        let early = 0;
+        if (i < sampleRate * 0.05) {
+          const earlyIdx = Math.floor(i / (sampleRate * 0.01));
+          if (earlyIdx < 5 && i % Math.floor(sampleRate * 0.01) < 10) {
+            early = (Math.random() * 2 - 1) * 0.3;
+          }
+        }
+        const stereoOffset = channel === 0 ? 1 : 0.95;
+        data[i] = (noise * decay + early) * 0.5 * stereoOffset;
+      }
+    }
+    return buffer;
+  }
+
+  /**
    * Apply Reverb to a buffer offline using OfflineAudioContext
    * @private
    */
@@ -616,19 +645,16 @@ export class Session {
     const numChannels = buffer.numberOfChannels;
 
     // Reverb adds tail, so extend the buffer
-    const irLength = reverbEffect._convolver?.buffer?.length || 0;
-    const tailSamples = Math.min(irLength, bufferSampleRate * 2); // Max 2s tail
+    const duration = 0.8; // Match IR duration
+    const tailSamples = Math.floor(bufferSampleRate * duration);
     const length = buffer.length + tailSamples;
     const offlineCtx = new OfflineAudioContext(numChannels, length, bufferSampleRate);
 
     // Get reverb parameters
     const mix = reverbEffect._mix ?? 0.2;
-    const irBuffer = reverbEffect._convolver?.buffer;
 
-    if (!irBuffer) {
-      console.warn('Reverb: no IR buffer available for offline processing');
-      return buffer;
-    }
+    // Generate IR at the correct sample rate (avoids mismatch on mobile)
+    const irBuffer = this._generatePlateIR(offlineCtx, bufferSampleRate);
 
     // Create convolver
     const convolver = offlineCtx.createConvolver();
