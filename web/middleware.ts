@@ -88,6 +88,12 @@ export function middleware(request: NextRequest) {
       return NextResponse.next()
     }
 
+    // SynthMachine landing page at /synthmachine
+    if (pathname === '/synthmachine' || pathname.startsWith('/synthmachine/')) {
+      log(`[Middleware] synthmachine route bypassed: ${pathname}`)
+      return NextResponse.next()
+    }
+
     // /links is the login-wall-free CS page, not /kochi/links
     if (pathname === '/links' || pathname.startsWith('/links/')) {
       log(`[Middleware] Links route bypassed: ${pathname}`)
