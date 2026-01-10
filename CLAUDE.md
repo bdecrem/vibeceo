@@ -57,18 +57,21 @@ cd sms-bot && npm run dev:reroute:v2
 
 ## Essential Documentation
 
+**When user says "read the docs" or "check documentation", go to `sms-bot/documentation/`.**
+
 Read these before making changes:
 
 | Doc | When to Read |
 |-----|--------------|
-| `sms-bot/documentation/AGENT-PIPELINE.md` | Creating/modifying agents |
-| `sms-bot/documentation/AGENTS-OVERVIEW.md` | Understanding agent architecture |
-| `sms-bot/documentation/AMBER-SYSTEM.md` | Amber sidekick (email agent, thinkhard, channels) |
-| `sms-bot/documentation/SMS-MESSAGE-FORMATTING.md` | Formatting SMS messages (length limits, helpers) |
+| `AGENT-PIPELINE.md` | Creating/modifying agents |
+| `AGENTS-OVERVIEW.md` | Understanding agent architecture |
+| `AMBER-SYSTEM.md` | Amber sidekick (email agent, thinkhard, channels) |
+| `SMS-MESSAGE-FORMATTING.md` | Formatting SMS messages (length limits, helpers) |
+| `SYNTHMACHINE-GUIDE.md` | Synth libraries (909, 303, 101, mixer) |
+| `zad-api-reference.md` | ZAD (CRUD) apps |
+| `CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
+| `STATIC-HTML-URL-ROUTING.md` | Adding static HTML apps |
 | `sms-bot/engine/CLAUDE.md` | Webtoys content generation |
-| `sms-bot/documentation/ZAD-API-REFERENCE.md` | ZAD (CRUD) apps |
-| `sms-bot/documentation/CLAUDE-AGENT-SDK-GUIDE.md` | Python autonomous agents |
-| `sms-bot/documentation/STATIC-HTML-URL-ROUTING.md` | Adding static HTML apps with middleware bypass + app routes |
 | `incubator/CLAUDE.md` | Token Tank experiments (isolated) |
 
 ## Critical Rules
