@@ -54,6 +54,30 @@ npm run cli -- render --preset techno-basic --bpm 140 --bars 2 --output fast.wav
 | `electro-funk` | Electro Funk | 115 | Funky electro groove with snare rolls |
 | `industrial` | Industrial | 140 | Relentless industrial stomp |
 
+## Audio Analysis Tool
+
+Analyze rendered WAV files to check levels, frequency balance, and sidechain effectiveness.
+
+```bash
+# Basic analysis
+npx ts-node tools/analyze-track.ts path/to/track.wav
+
+# With spectrogram image
+npx ts-node tools/analyze-track.ts track.wav --spectrogram
+
+# JSON output only (for scripting)
+npx ts-node tools/analyze-track.ts track.wav --json --bpm 128
+```
+
+**Requires:** `brew install sox`
+
+**What it reports:**
+- Peak/RMS levels and dynamic range
+- Frequency balance (low, low-mid, high-mid, high)
+- Sidechain detection (ducking amount, pattern, confidence)
+
+See `sms-bot/documentation/SYNTHMACHINE-GUIDE.md` for full documentation.
+
 ## Python Integration (Amber)
 
 ```python
