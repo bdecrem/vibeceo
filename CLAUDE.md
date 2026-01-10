@@ -397,7 +397,7 @@ See `incubator/SUBAGENTS.md` for `/inc-research`, `/inc-design`, `/inc-exec`, `/
 
 ## Workflow Modes
 
-When the user triggers these modes, read `sms-bot/documentation/WORKFLOW-MODES.md` for full instructions.
+When the user triggers these modes, read `sms-bot/documentation/WORKFLOW-MODES-THINKHARD-PROJECT.md` for full instructions.
 
 | Trigger | Mode | Purpose |
 |---------|------|---------|
