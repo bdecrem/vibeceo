@@ -221,34 +221,55 @@
         let oscillators = [];
         let gainNodes = [];
         let audioEnabled = false;
-        
+
         const audioToggle = document.getElementById('audio-toggle');
-        
-        function initAudioContext() {
+
+        // iOS requires AudioContext to be created AND unlocked in same gesture
+        async function unlockAudioContext() {
             if (!audioCtx) {
                 audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             }
+
+            // Resume if suspended
+            if (audioCtx.state === 'suspended') {
+                await audioCtx.resume();
+            }
+
+            // iOS Safari unlock: play a silent buffer to fully unlock audio
+            const buffer = audioCtx.createBuffer(1, 1, audioCtx.sampleRate);
+            const source = audioCtx.createBufferSource();
+            source.buffer = buffer;
+            source.connect(audioCtx.destination);
+            source.start(0);
+            source.stop(0.001);
+
             return audioCtx;
         }
-        
-        audioToggle.addEventListener('click', async () => {
+
+        async function handleAudioToggle() {
             if (!audioEnabled) {
-                // Initialize audio context on first click
-                const ctx = initAudioContext();
-                
-                // Resume context if suspended (required on iOS)
-                if (ctx.state === 'suspended') {
-                    await ctx.resume();
+                try {
+                    // Unlock audio context (required on iOS)
+                    await unlockAudioContext();
+
+                    startAudio();
+                    audioEnabled = true;
+                    audioToggle.textContent = 'Stop Audio';
+                } catch (e) {
+                    console.error('Failed to start audio:', e);
                 }
-                
-                startAudio();
-                audioEnabled = true;
-                audioToggle.textContent = 'Stop Audio';
             } else {
                 stopAudio();
                 audioEnabled = false;
                 audioToggle.textContent = 'Start Audio';
             }
+        }
+
+        // Use both click and touchend for iOS compatibility
+        audioToggle.addEventListener('click', handleAudioToggle);
+        audioToggle.addEventListener('touchend', (e) => {
+            e.preventDefault(); // Prevent double-firing with click
+            handleAudioToggle();
         });
         
         function startAudio() {
