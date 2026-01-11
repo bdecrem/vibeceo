@@ -199,35 +199,9 @@
       try {
         status.textContent = 'jamming...';
 
-        // ARRANGEMENT with seasons
-        // 16 bars × 16 steps = 256 notes @ 128 BPM = 30 sec
-        const totalSteps = 16 * 16;
-        const decayPerNote = [];
-
-        for (let i = 0; i < totalSteps; i++) {
-          let decay;
-
-          if (i < 160) {
-            // SEASON 1 (0-20 sec): Wild random jamming
-            decay = 0.03 + Math.random() * 0.47;
-
-          } else if (i < 200) {
-            // SEASON 2 (20-25 sec): Slow buildup - decay extends gradually
-            const buildupProgress = (i - 160) / 40; // 0 to 1
-            const baseDecay = 0.15 + buildupProgress * 0.45; // 0.15 -> 0.6
-            decay = baseDecay + (Math.random() - 0.5) * 0.05; // tiny jitter
-
-          } else if (i < 208) {
-            // DROP (25-26 sec): SNAP - super tight, tension release
-            decay = 0.02 + Math.random() * 0.02; // ultra tight 0.02-0.04
-
-          } else {
-            // SEASON 1 RETURN (26-30 sec): Back to wild chaos
-            decay = 0.03 + Math.random() * 0.47;
-          }
-
-          decayPerNote.push(Math.max(0.02, Math.min(0.6, decay)));
-        }
+        // SIMPLE TEST: 4 bars, alternating dry/wet
+        // Bar 1: DRY (full kick), Bar 2: WET (HPF), Bar 3: DRY, Bar 4: WET
+        const totalSteps = 4 * 16; // 4 bars = 64 steps
 
         // Single offline context for everything
         const bpm = 128;
@@ -251,65 +225,69 @@
         const kick = drums.voices.get('kick');
         kick.decay = 0.45;
 
-        // Create a simple HPF effect
+        // Create aggressive 2-stage HPF effect - really cuts the sub
         class HPFEffect extends Effect {
           constructor(context, frequency = 500) {
             super(context);
-            this._hpf = context.createBiquadFilter();
-            this._hpf.type = 'highpass';
-            this._hpf.frequency.value = frequency;
-            this._hpf.Q.value = 1.5;
-            // Wire: input → HPF → output
-            this._input.connect(this._hpf);
-            this._hpf.connect(this._output);
+            // Two cascaded HPFs for steeper rolloff (24dB/octave)
+            this._hpf1 = context.createBiquadFilter();
+            this._hpf1.type = 'highpass';
+            this._hpf1.frequency.value = frequency;
+            this._hpf1.Q.value = 0.7;
+
+            this._hpf2 = context.createBiquadFilter();
+            this._hpf2.type = 'highpass';
+            this._hpf2.frequency.value = frequency;
+            this._hpf2.Q.value = 0.7;
+
+            // Wire: input → HPF1 → HPF2 → output
+            this._input.connect(this._hpf1);
+            this._hpf1.connect(this._hpf2);
+            this._hpf2.connect(this._output);
           }
         }
 
-        // Create EffectSend with the HPF, default to DRY (wet=0)
-        const hpfEffect = new HPFEffect(offlineCtx, 400);
+        // Create EffectSend with musical HPF at 400Hz - cuts the sub but keeps punch
+        const hpfEffect = new HPFEffect(offlineCtx, 400); // 400Hz = thin kick, less boom
         const kickHPF = new EffectSend(offlineCtx, {
           effect: hpfEffect,
           defaultWet: 0,  // Start dry
-          fadeTime: 0.005
+          fadeTime: 0.002 // Fast crossfade
         });
 
-        // Build step automation pattern (256 steps for 16 bars)
-        // HPF on at bars 4-6 (steps 64-96) and bars 13-15 (steps 208-240)
-        const hpfPattern = new Array(256).fill(0);
-        for (let i = 64; i < 96; i++) hpfPattern[i] = 1;   // Bars 4-6: HPF on
-        for (let i = 208; i < 240; i++) hpfPattern[i] = 1; // Bars 13-15: HPF on
+        // Simple alternating pattern: bar 1 DRY, bar 2 WET, bar 3 DRY, bar 4 WET
+        // 16 steps per bar, 4 bars total = 64 steps
+        const hpfPattern = [];
+        for (let bar = 0; bar < 4; bar++) {
+          const isWet = bar % 2 === 1; // Odd bars (1, 3) = HPF on
+          for (let step = 0; step < 16; step++) {
+            hpfPattern.push(isWet ? 1 : 0);
+          }
+        }
         kickHPF.setAutomationPattern(hpfPattern);
 
         // Schedule automation BEFORE rendering
-        kickHPF.scheduleAutomation(bpm, 16, 16, 0); // 128 BPM, 16 bars, 16 steps/bar
+        kickHPF.scheduleAutomation(bpm, 4, 16, 0); // 128 BPM, 4 bars, 16 steps/bar
 
         // Connect kick → EffectSend → master
         kick.output.connect(kickHPF.input);
         kickHPF.output.connect(masterGain);
 
         const ch = drums.voices.get('ch');
+        ch.decay = 0.15; // Fixed short decay for clarity
 
-        // Schedule each hit with its own decay
+        // Schedule each hit - simple 4/4 pattern, no dropouts
         for (let i = 0; i < totalSteps; i++) {
           const time = i * stepDuration;
           const stepInBar = i % 16;
 
-          // Kick pattern (4/4) with strategic dropouts
-          const kickDropouts = [
-            [48, 64],    // bars 3-4: first tease, hats only
-            [144, 160],  // bars 9-10: tension before buildup
-            [176, 200],  // during buildup - maximum tension
-          ];
-          const kickMuted = kickDropouts.some(([start, end]) => i >= start && i < end);
-
-          if (drumPattern.kick[stepInBar].velocity > 0 && !kickMuted) {
-            // Single kick voice - gain automation handles dry/wet routing
+          // Kick on every beat (steps 0, 4, 8, 12)
+          if (drumPattern.kick[stepInBar].velocity > 0) {
             kick.trigger(time, drumPattern.kick[stepInBar].velocity);
           }
 
-          // CH with per-note decay
+          // Closed hats on every step
           if (drumPattern.ch[stepInBar].velocity > 0) {
-            ch.decay = decayPerNote[i]; // Set decay for THIS note
             ch.trigger(time, drumPattern.ch[stepInBar].velocity);
           }
         }
