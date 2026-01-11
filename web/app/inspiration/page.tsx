@@ -76,9 +76,12 @@ export default function InspirationPage() {
   const [style, setStyle] = useState<Style>("illuminated-wellness");
   const [loading, setLoading] = useState(false);
   const [generatingImages, setGeneratingImages] = useState(false);
+  const [generatingVideo, setGeneratingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState("");
   const [storyboard, setStoryboard] = useState<Storyboard | null>(null);
   const [compImages, setCompImages] = useState<CompImages>({});
   const [selectedComp, setSelectedComp] = useState<"A" | "B" | null>(null);
+  const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleGenerate = async () => {
@@ -89,9 +92,9 @@ export default function InspirationPage() {
     setStoryboard(null);
     setCompImages({});
     setSelectedComp(null);
+    setGeneratedVideo(null);
 
     try {
-      // Step 1: Generate storyboard
       const res = await fetch("/inspiration/api/storyboard", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -106,7 +109,6 @@ export default function InspirationPage() {
       setStoryboard(data.storyboard);
       setLoading(false);
 
-      // Step 2: Generate images for both comps in parallel
       setGeneratingImages(true);
       await generateCompImages(data.storyboard);
       setGeneratingImages(false);
@@ -141,7 +143,6 @@ export default function InspirationPage() {
     };
 
     if (sb.type === "video") {
-      // Generate scene1 images for both comps in parallel
       imagePromises.push(
         generateImage(sb.compA.scene1.image).then((img) => {
           setCompImages((prev) => ({
@@ -191,6 +192,119 @@ export default function InspirationPage() {
     await Promise.all(imagePromises);
   };
 
+  const handleGenerateVideo = async () => {
+    if (!selectedComp || !storyboard) return;
+
+    setGeneratingVideo(true);
+    setVideoProgress("Preparing...");
+    setError(null);
+
+    try {
+      const comp = selectedComp === "A" ? storyboard.compA : storyboard.compB;
+      const images = selectedComp === "A" ? compImages.compA : compImages.compB;
+
+      // Get narration text
+      let narrationText = "";
+      if (storyboard.type === "video") {
+        narrationText = `${storyboard.narration.scene1} ${storyboard.narration.scene2}`;
+      } else if (storyboard.type === "wall-of-text") {
+        narrationText = storyboard.script;
+      } else if (storyboard.type === "image") {
+        // For image mode, just download the image
+        if (images?.single) {
+          downloadBase64File(images.single, "inspiration-image.png", "image/png");
+        }
+        setGeneratingVideo(false);
+        return;
+      }
+
+      // Step 1: Generate audio
+      setVideoProgress("Generating voiceover...");
+      const audioRes = await fetch("/inspiration/api/audio", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: narrationText,
+          description: "Warm, engaging, conversational podcast host style",
+        }),
+      });
+
+      if (!audioRes.ok) {
+        throw new Error("Failed to generate audio");
+      }
+
+      const audioData = await audioRes.json();
+
+      // Step 2: Generate second image if needed (for video mode)
+      let allImages: string[] = [];
+
+      if (storyboard.type === "video") {
+        const videoComp = comp as VideoComp;
+        setVideoProgress("Generating scene 2 image...");
+
+        // We already have scene1, now generate scene2
+        const scene2Res = await fetch("/inspiration/api/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            prompt: `${videoComp.scene2.image}\n\n${STYLE_PROMPTS[style]}\n\nIMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS.`,
+            size: "1024x1536",
+          }),
+        });
+
+        if (!scene2Res.ok) {
+          throw new Error("Failed to generate scene 2 image");
+        }
+
+        const scene2Data = await scene2Res.json();
+        allImages = [images?.scene1 || "", scene2Data.image];
+      } else if (storyboard.type === "wall-of-text") {
+        allImages = [images?.background || ""];
+      }
+
+      // Step 3: Generate video
+      setVideoProgress("Rendering video...");
+
+      const videoRes = await fetch("/inspiration/api/video", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: storyboard.type,
+          images: allImages,
+          audio: audioData.audio,
+          script: storyboard.type === "wall-of-text" ? storyboard.script : undefined,
+          overlays: storyboard.type === "video"
+            ? [(comp as VideoComp).scene1.overlay, (comp as VideoComp).scene2.overlay]
+            : undefined,
+        }),
+      });
+
+      if (!videoRes.ok) {
+        const errorText = await videoRes.text();
+        throw new Error(`Failed to generate video: ${errorText}`);
+      }
+
+      const videoData = await videoRes.json();
+      setGeneratedVideo(videoData.video);
+      setVideoProgress("");
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Video generation failed");
+      setVideoProgress("");
+    } finally {
+      setGeneratingVideo(false);
+    }
+  };
+
+  const downloadBase64File = (base64: string, filename: string, mimeType: string) => {
+    const link = document.createElement("a");
+    link.href = `data:${mimeType};base64,${base64}`;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const getCompImage = (comp: "A" | "B"): string | undefined => {
     const images = comp === "A" ? compImages.compA : compImages.compB;
     if (!images) return undefined;
@@ -207,11 +321,9 @@ export default function InspirationPage() {
 
   return (
     <div className="min-h-screen bg-[#09090b] text-white antialiased">
-      {/* Subtle gradient overlay */}
       <div className="fixed inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-amber-900/10 pointer-events-none" />
 
       <div className="relative max-w-4xl mx-auto px-8 py-16">
-        {/* Header */}
         <header className="mb-16">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
@@ -222,7 +334,34 @@ export default function InspirationPage() {
           <p className="text-white/40 text-sm ml-11">Create stunning video ads with AI</p>
         </header>
 
-        {!storyboard ? (
+        {/* Generated Video View */}
+        {generatedVideo ? (
+          <div className="space-y-6">
+            <button
+              onClick={() => setGeneratedVideo(null)}
+              className="text-white/40 hover:text-white/60 text-sm flex items-center gap-2 transition-colors"
+            >
+              ← Back to comps
+            </button>
+
+            <h2 className="text-xl font-semibold">Your video is ready!</h2>
+
+            <div className="rounded-2xl overflow-hidden bg-black">
+              <video
+                controls
+                className="w-full"
+                src={`data:video/mp4;base64,${generatedVideo}`}
+              />
+            </div>
+
+            <button
+              onClick={() => downloadBase64File(generatedVideo, "inspiration-video.mp4", "video/mp4")}
+              className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20"
+            >
+              Download Video
+            </button>
+          </div>
+        ) : !storyboard ? (
           <>
             {/* Topic Input */}
             <section className="mb-12">
@@ -278,54 +417,23 @@ export default function InspirationPage() {
               </label>
               <div className="grid grid-cols-3 gap-4">
                 {[
-                  {
-                    value: "illuminated-wellness",
-                    label: "Illuminated",
-                    desc: "Navy & gold elegance",
-                    colors: ["#1A1A3E", "#D4A84B", "#F5F0DC"]
-                  },
-                  {
-                    value: "paper-cut-wellness",
-                    label: "Paper Cut",
-                    desc: "Teal & cream minimal",
-                    colors: ["#2A7B8C", "#F5F5F0", "#ffffff"]
-                  },
-                  {
-                    value: "tech-dark",
-                    label: "Tech Dark",
-                    desc: "Purple & cyan glow",
-                    colors: ["#0a0a12", "#8B5CF6", "#06B6D4"]
-                  },
+                  { value: "illuminated-wellness", label: "Illuminated", desc: "Navy & gold elegance", colors: ["#1A1A3E", "#D4A84B", "#F5F0DC"] },
+                  { value: "paper-cut-wellness", label: "Paper Cut", desc: "Teal & cream minimal", colors: ["#2A7B8C", "#F5F5F0", "#ffffff"] },
+                  { value: "tech-dark", label: "Tech Dark", desc: "Purple & cyan glow", colors: ["#0a0a12", "#8B5CF6", "#06B6D4"] },
                 ].map((opt) => (
                   <button
                     key={opt.value}
                     onClick={() => setStyle(opt.value as Style)}
                     className={`group relative overflow-hidden rounded-2xl transition-all duration-300 ${
-                      style === opt.value
-                        ? "ring-2 ring-white/30 ring-offset-2 ring-offset-[#09090b]"
-                        : "hover:scale-[1.02]"
+                      style === opt.value ? "ring-2 ring-white/30 ring-offset-2 ring-offset-[#09090b]" : "hover:scale-[1.02]"
                     }`}
                   >
-                    {/* Color preview bar */}
                     <div className="h-24 relative overflow-hidden">
-                      <div
-                        className="absolute inset-0"
-                        style={{ background: `linear-gradient(135deg, ${opt.colors[0]} 0%, ${opt.colors[0]} 60%, ${opt.colors[1]} 100%)` }}
-                      />
-                      {/* Decorative accent */}
-                      <div
-                        className="absolute bottom-3 right-3 w-8 h-8 rounded-full opacity-80"
-                        style={{ backgroundColor: opt.colors[1], boxShadow: `0 0 20px ${opt.colors[1]}40` }}
-                      />
-                      <div
-                        className="absolute top-3 left-3 w-3 h-3 rounded-full opacity-60"
-                        style={{ backgroundColor: opt.colors[2] }}
-                      />
+                      <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${opt.colors[0]} 0%, ${opt.colors[0]} 60%, ${opt.colors[1]} 100%)` }} />
+                      <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full opacity-80" style={{ backgroundColor: opt.colors[1], boxShadow: `0 0 20px ${opt.colors[1]}40` }} />
+                      <div className="absolute top-3 left-3 w-3 h-3 rounded-full opacity-60" style={{ backgroundColor: opt.colors[2] }} />
                     </div>
-                    {/* Label */}
-                    <div className={`px-4 py-3 text-left transition-colors ${
-                      style === opt.value ? "bg-white/10" : "bg-white/[0.03]"
-                    }`}>
+                    <div className={`px-4 py-3 text-left transition-colors ${style === opt.value ? "bg-white/10" : "bg-white/[0.03]"}`}>
                       <div className="text-sm font-medium text-white/90">{opt.label}</div>
                       <div className="text-xs text-white/40">{opt.desc}</div>
                     </div>
@@ -359,11 +467,7 @@ export default function InspirationPage() {
             {/* Comp Selection View */}
             <div className="mb-8">
               <button
-                onClick={() => {
-                  setStoryboard(null);
-                  setCompImages({});
-                  setSelectedComp(null);
-                }}
+                onClick={() => { setStoryboard(null); setCompImages({}); setSelectedComp(null); }}
                 className="text-white/40 hover:text-white/60 text-sm flex items-center gap-2 transition-colors"
               >
                 ← Back to setup
@@ -372,12 +476,10 @@ export default function InspirationPage() {
 
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-2">Choose your direction</h2>
-              <p className="text-white/40 text-sm">
-                Topic: <span className="text-white/60">{topic}</span>
-              </p>
+              <p className="text-white/40 text-sm">Topic: <span className="text-white/60">{topic}</span></p>
             </div>
 
-            {/* Narration Preview (for video/wall-of-text) */}
+            {/* Narration Preview */}
             {storyboard.type === "video" && (
               <div className="mb-8 p-4 bg-white/[0.03] rounded-xl border border-white/[0.06]">
                 <div className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Shared Narration</div>
@@ -387,7 +489,7 @@ export default function InspirationPage() {
             )}
 
             {storyboard.type === "wall-of-text" && (
-              <div className="mb-8 p-4 bg-white/[0.03] rounded-xl border border-white/[0.06]">
+              <div className="mb-8 p-4 bg-white/[0.03] rounded-xl border border-white/[0.06] max-h-48 overflow-y-auto">
                 <div className="text-xs font-medium text-white/40 uppercase tracking-wider mb-2">Script</div>
                 <p className="text-white/70 text-sm italic whitespace-pre-wrap">"{storyboard.script}"</p>
               </div>
@@ -405,19 +507,12 @@ export default function InspirationPage() {
                     key={comp}
                     onClick={() => setSelectedComp(comp)}
                     className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 ${
-                      isSelected
-                        ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-[#09090b] scale-[1.02]"
-                        : "hover:scale-[1.01] border border-white/[0.08]"
+                      isSelected ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-[#09090b] scale-[1.02]" : "hover:scale-[1.01] border border-white/[0.08]"
                     }`}
                   >
-                    {/* Image or Placeholder */}
                     <div className="aspect-[9/16] relative bg-gradient-to-br from-white/5 to-white/[0.02]">
                       {image ? (
-                        <img
-                          src={`data:image/png;base64,${image}`}
-                          alt={`Comp ${comp}`}
-                          className="w-full h-full object-cover"
-                        />
+                        <img src={`data:image/png;base64,${image}`} alt={`Comp ${comp}`} className="w-full h-full object-cover" />
                       ) : generatingImages ? (
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
@@ -431,20 +526,15 @@ export default function InspirationPage() {
                         </div>
                       )}
 
-                      {/* Comp Label */}
                       <div className="absolute top-3 left-3">
                         <span
                           className="px-3 py-1 rounded-full text-xs font-bold"
-                          style={{
-                            backgroundColor: isSelected ? stylePreview.accent : "rgba(255,255,255,0.1)",
-                            color: isSelected && style !== "tech-dark" ? "black" : "white",
-                          }}
+                          style={{ backgroundColor: isSelected ? stylePreview.accent : "rgba(255,255,255,0.1)", color: isSelected && style !== "tech-dark" ? "black" : "white" }}
                         >
                           {comp}
                         </span>
                       </div>
 
-                      {/* Selected Checkmark */}
                       {isSelected && (
                         <div className="absolute top-3 right-3 w-6 h-6 bg-amber-500 rounded-full flex items-center justify-center">
                           <span className="text-black text-sm">✓</span>
@@ -452,7 +542,6 @@ export default function InspirationPage() {
                       )}
                     </div>
 
-                    {/* Info */}
                     <div className={`p-4 bg-gradient-to-br ${stylePreview.gradient}`}>
                       <div className="text-sm font-medium text-white/90 mb-1">Comp {comp}</div>
                       <div className="text-xs text-white/50">{mood}</div>
@@ -465,19 +554,29 @@ export default function InspirationPage() {
             {/* Action Buttons */}
             <div className="space-y-3">
               <button
-                disabled={!selectedComp || generatingImages}
+                onClick={handleGenerateVideo}
+                disabled={!selectedComp || generatingImages || generatingVideo}
                 className={`w-full py-4 rounded-2xl font-semibold text-base transition-all duration-300 ${
-                  !selectedComp || generatingImages
+                  !selectedComp || generatingImages || generatingVideo
                     ? "bg-white/5 text-white/20 cursor-not-allowed"
                     : "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20"
                 }`}
               >
-                {generatingImages ? "Generating images..." : selectedComp ? `Generate ${mode === "image" ? "Final Image" : "Video"} with Comp ${selectedComp}` : "Select a comp to continue"}
+                {generatingVideo ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+                    {videoProgress || "Processing..."}
+                  </span>
+                ) : generatingImages ? (
+                  "Generating images..."
+                ) : selectedComp ? (
+                  `Generate ${mode === "image" ? "Final Image" : "Video"} with Comp ${selectedComp}`
+                ) : (
+                  "Select a comp to continue"
+                )}
               </button>
 
-              <button
-                className="w-full py-3 rounded-2xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70 transition-all"
-              >
+              <button className="w-full py-3 rounded-2xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70 transition-all">
                 Not quite right? Let's discuss...
               </button>
             </div>
@@ -497,7 +596,6 @@ export default function InspirationPage() {
           </div>
         )}
 
-        {/* Footer */}
         <footer className="mt-20 text-center">
           <p className="text-xs text-white/20">TryAir v2 • Powered by Claude & GPT Image</p>
         </footer>

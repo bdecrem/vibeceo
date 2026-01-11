@@ -8,25 +8,25 @@ Building web-based creative tool with comp selection and agent mode.
 |---|---------|--------|-------|
 | 01 | Web Foundation | 6/6 ✓ | Route, middleware, basic UI |
 | 02 | Two-Comp System | 5/5 ✓ | Storyboard 2 directions, parallel image gen |
-| 03 | Wall of Text Mode | 0/4 | Scrolling text over moving background |
+| 03 | Wall of Text Mode | 4/4 ✓ | Audio API, video API, scrolling text |
 | 04 | Agent Mode | 0/5 | Claude agent feedback loop |
 | 05 | Polish | 0/4 | Error handling, mobile, performance |
 
 ## Current Focus
-Project 03: Wall of Text Mode — Implement scrolling text video generation
+Project 04: Agent Mode — Implement conversational refinement via Claude
 
 ## Key Decisions
 - Location: `web/app/inspiration/` (Next.js app router)
 - API routes in `web/app/inspiration/api/` (colocated)
-- Core logic stays in `tryair/lib/` (shared with CLI)
-- Middleware bypass required for Webtoys
-- Image generation uses OpenAI GPT Image API (gpt-image-1)
+- Audio: Hume AI TTS with warm podcast host voice
+- Video: FFmpeg with Ken Burns zoom, crossfades, text overlays
+- Image generation: OpenAI GPT Image API (gpt-image-1)
 
 ## File Locations
 ```
 web/app/inspiration/           # Web UI
-web/app/inspiration/api/       # API routes (storyboard, image)
-tryair/lib/                    # Core logic (storyboard, image, video)
+web/app/inspiration/api/       # API routes (storyboard, image, audio, video)
+tryair/lib/                    # Core logic (shared with CLI)
 tryair/agents/                 # Agent mode (future)
 tryair/sprints/                # Project tracking
 tryair/docs/V2-PLAN.md         # Full v2 plan
