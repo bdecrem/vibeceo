@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 
-type Mode = "image" | "video" | "wall-of-text";
+type Mode = "image" | "video" | "wall-of-text" | "talking-head";
 type Style = "illuminated-wellness" | "paper-cut-wellness" | "tech-dark";
 
 interface VideoComp {
@@ -58,9 +58,23 @@ const STYLE_PREVIEWS: Record<Style, { gradient: string; accent: string }> = {
 };
 
 const STYLE_PROMPTS: Record<Style, string> = {
-  "illuminated-wellness": "Render in an illuminated manuscript style with deep navy blue backgrounds, golden accents, and cream-colored elements. Rich, luxurious, elegant.",
-  "paper-cut-wellness": "Render in a paper-cut layered style with teal, cream, and soft white colors. Minimal, clean, dimensional shadows.",
-  "tech-dark": "Render in a dark tech style with deep blacks, purple glows, and cyan accents. Futuristic, sleek, high-contrast.",
+  "illuminated-wellness": `Style: Professional advertising photography with cinematic lighting.
+Color palette: Deep navy blue (#1A1A3E) as primary background, rich gold (#D4A84B) accents, warm cream (#F5E6C8) highlights.
+Lighting: Soft, diffused golden hour warmth with subtle rim lighting creating depth.
+Mood: Luxurious, elegant, sophisticated wellness aesthetic.
+Technical: Sharp focus on subject, shallow depth of field for background, natural skin tones if people present.`,
+
+  "paper-cut-wellness": `Style: Editorial photography with soft, natural lighting reminiscent of high-end wellness magazines.
+Color palette: Teal (#2A7B8C) and sage green tones, warm cream (#F5F5F0), soft white accents.
+Lighting: Soft diffused daylight, minimal shadows, airy and bright atmosphere.
+Mood: Minimal, clean, calming, Scandinavian-inspired wellness aesthetic.
+Technical: Even exposure, muted tones, gentle gradients, organic textures.`,
+
+  "tech-dark": `Style: Cinematic still photography with dramatic studio lighting.
+Color palette: Deep blacks (#0a0a12), electric purple (#8B5CF6) glows, cyan (#06B6D4) accents.
+Lighting: Dramatic side lighting with neon rim lights, high contrast, moody atmosphere.
+Mood: Futuristic, sleek, premium tech aesthetic, cyberpunk influence.
+Technical: Sharp details, reflective surfaces, subtle lens flares, deep shadows.`,
 };
 
 export default function InspirationPage() {
@@ -76,6 +90,12 @@ export default function InspirationPage() {
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Talking head state
+  const [speakerImage, setSpeakerImage] = useState<string | null>(null);
+  const [speakerImageFile, setSpeakerImageFile] = useState<File | null>(null);
+  const [talkingHeadProgress, setTalkingHeadProgress] = useState("");
+  const [talkingHeadVideo, setTalkingHeadVideo] = useState<string | null>(null);
 
   // Agent state
   const [showAgentChat, setShowAgentChat] = useState(false);
@@ -265,6 +285,77 @@ export default function InspirationPage() {
     }
   };
 
+  const handleGenerateTalkingHead = async () => {
+    if (!topic.trim() || !speakerImage) return;
+
+    setLoading(true);
+    setError(null);
+    setTalkingHeadProgress("Analyzing image...");
+    setTalkingHeadVideo(null);
+
+    try {
+      // Extract base64 data from data URL
+      const base64Data = speakerImage.split(",")[1];
+
+      const res = await fetch("/inspiration/api/talking-head", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          imageBase64: base64Data,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText || "Failed to generate talking head");
+      }
+
+      // Stream progress updates
+      const reader = res.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (reader) {
+        let result = "";
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          result += chunk;
+
+          // Parse SSE events
+          const lines = chunk.split("\n");
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                if (data.progress) {
+                  setTalkingHeadProgress(data.progress);
+                }
+                if (data.videoUrl) {
+                  setTalkingHeadVideo(data.videoUrl);
+                }
+                if (data.error) {
+                  throw new Error(data.error);
+                }
+              } catch (e) {
+                // Ignore parse errors for partial data
+              }
+            }
+          }
+        }
+      }
+
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Talking head generation failed");
+      setLastErrorAction("talking-head");
+    } finally {
+      setLoading(false);
+      setTalkingHeadProgress("");
+    }
+  };
+
   const handleGenerateVideo = async () => {
     if (!selectedCompId || !storyboard) return;
 
@@ -435,11 +526,12 @@ export default function InspirationPage() {
 
             <section className="mb-8 sm:mb-12">
               <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Format</label>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
                 {[
                   { value: "image", label: "Single Image", icon: "◻" },
                   { value: "video", label: "Video", icon: "▶" },
                   { value: "wall-of-text", label: "Wall of Text", icon: "≡" },
+                  { value: "talking-head", label: "Talking Head", icon: "🗣" },
                 ].map((opt) => (
                   <button
                     key={opt.value}
@@ -455,6 +547,62 @@ export default function InspirationPage() {
               </div>
             </section>
 
+            {/* Speaker Photo Upload (Talking Head only) */}
+            {mode === "talking-head" && (
+              <section className="mb-8 sm:mb-12">
+                <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Speaker Photo</label>
+                <div
+                  className={`relative border-2 border-dashed rounded-xl sm:rounded-2xl transition-all ${
+                    speakerImage ? "border-amber-500/50 bg-amber-500/5" : "border-white/[0.08] bg-white/[0.02] hover:border-white/20"
+                  }`}
+                >
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        setSpeakerImageFile(file);
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          setSpeakerImage(ev.target?.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
+                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                  />
+                  {speakerImage ? (
+                    <div className="p-4 flex items-center gap-4">
+                      <img src={speakerImage} alt="Speaker" className="w-20 h-20 object-cover rounded-lg" />
+                      <div className="flex-1">
+                        <p className="text-white/80 text-sm font-medium">{speakerImageFile?.name}</p>
+                        <p className="text-white/40 text-xs mt-1">Click to change photo</p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSpeakerImage(null);
+                          setSpeakerImageFile(null);
+                        }}
+                        className="text-white/40 hover:text-white/60 p-2"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="p-8 text-center">
+                      <div className="text-3xl mb-2 opacity-50">📷</div>
+                      <p className="text-white/50 text-sm">Upload a photo of the speaker</p>
+                      <p className="text-white/30 text-xs mt-1">Face should be clearly visible</p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            )}
+
+            {/* Visual Style (not for talking-head) */}
+            {mode !== "talking-head" && (
             <section className="mb-10 sm:mb-14">
               <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Visual Style</label>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
@@ -480,7 +628,25 @@ export default function InspirationPage() {
                 ))}
               </div>
             </section>
+            )}
 
+            {/* Generate Button */}
+            {mode === "talking-head" ? (
+              <button
+                onClick={handleGenerateTalkingHead}
+                disabled={!topic.trim() || !speakerImage || loading}
+                className={`w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base ${
+                  !topic.trim() || !speakerImage || loading ? "bg-white/5 text-white/20 cursor-not-allowed" : "bg-gradient-to-r from-amber-500 to-orange-500 text-black"
+                }`}
+              >
+                {loading ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+                    {talkingHeadProgress || "Generating..."}
+                  </span>
+                ) : "Generate Talking Head"}
+              </button>
+            ) : (
             <button
               onClick={handleGenerate}
               disabled={!topic.trim() || loading}
@@ -495,7 +661,32 @@ export default function InspirationPage() {
                 </span>
               ) : "Generate Comps"}
             </button>
+            )}
           </>
+        ) : talkingHeadVideo ? (
+          /* Talking Head Result */
+          <div className="space-y-4 sm:space-y-6">
+            <button onClick={() => { setTalkingHeadVideo(null); setSpeakerImage(null); setSpeakerImageFile(null); }} className="text-white/40 hover:text-white/60 text-sm">← Create another</button>
+            <h2 className="text-lg sm:text-xl font-semibold">Your talking head video is ready!</h2>
+            <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-black">
+              <video
+                controls
+                className="w-full"
+                src={talkingHeadVideo}
+                playsInline
+                preload="metadata"
+              />
+            </div>
+            <a
+              href={talkingHeadVideo}
+              download="talking-head.mp4"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-500 text-black text-center"
+            >
+              Download Video
+            </a>
+          </div>
         ) : (
           <>
             {/* Comp Selection */}

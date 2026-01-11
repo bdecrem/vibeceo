@@ -141,35 +141,70 @@ async function generateWallOfTextVideo(
   duration: number,
   outputPath: string
 ) {
-  // Escape script for FFmpeg drawtext
-  const escapedScript = script
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "'\\''")
-    .replace(/:/g, '\\:')
-    .replace(/\n/g, '\\n');
+  const tmpDir = path.dirname(outputPath);
+  const textFilePath = path.join(tmpDir, 'script.txt');
 
-  // Calculate scroll speed based on duration
-  // Text should scroll from bottom to top over the duration
-  // Assuming ~60 chars per line, estimate total height
-  const lineHeight = 60;
-  const fontSize = 48;
-  const lines = Math.ceil(script.length / 40);
-  const textHeight = lines * lineHeight + 1920; // Add screen height for full scroll
-  const scrollSpeed = textHeight / duration;
+  // Video dimensions
+  const videoWidth = 1080;
+  const videoHeight = 1920;
+
+  // Text styling - large, readable text that fills the screen
+  const fontSize = 52;
+  const lineHeight = 72;
+  const marginX = 80; // Left/right margins
+  const maxTextWidth = videoWidth - (marginX * 2);
+
+  // Estimate characters per line based on font size (monospace approximation)
+  // For Arial at 52px, roughly 0.5 * fontSize = char width, so ~1080-160 = 920 / 26 ≈ 35 chars
+  const avgCharWidth = fontSize * 0.52;
+  const charsPerLine = Math.floor(maxTextWidth / avgCharWidth);
+
+  // Word-wrap the script to fit the screen
+  const words = script.split(/\s+/);
+  const lines: string[] = [];
+  let currentLine = '';
+
+  for (const word of words) {
+    const testLine = currentLine ? `${currentLine} ${word}` : word;
+    if (testLine.length <= charsPerLine) {
+      currentLine = testLine;
+    } else {
+      if (currentLine) lines.push(currentLine);
+      currentLine = word;
+    }
+  }
+  if (currentLine) lines.push(currentLine);
+
+  // Write word-wrapped text to file
+  const wrappedText = lines.join('\n');
+  fs.writeFileSync(textFilePath, wrappedText, 'utf8');
+
+  // Calculate scroll parameters
+  const totalTextHeight = lines.length * lineHeight;
+
+  // Text starts at bottom of screen and scrolls up until last line reaches top
+  // Total scroll distance = screen height + total text height
+  const totalScrollDistance = videoHeight + totalTextHeight;
+  const scrollSpeed = totalScrollDistance / duration;
 
   const fps = 30;
   const totalFrames = Math.ceil(duration * fps);
 
+  // Escape the file path for FFmpeg
+  const escapedTextPath = textFilePath.replace(/:/g, '\\:').replace(/'/g, "'\\''");
+
   // Filter complex:
-  // 1. Ken Burns on background image
-  // 2. Scrolling text overlay
+  // 1. Ken Burns slow zoom on background
+  // 2. Dark gradient overlay for text readability
+  // 3. Scrolling text - starts from bottom, scrolls up
   const filterComplex = [
-    // Ken Burns zoom on background
-    `[0:v]zoompan=z='1.03':x='iw/2-(iw/zoom/2)':y='ih*0.35-(ih/zoom*0.35)':d=${totalFrames}:s=1080x1920:fps=${fps}[bg]`,
-    // Add semi-transparent overlay for text readability
-    `[bg]drawbox=x=0:y=0:w=iw:h=ih:color=black@0.4:t=fill[bgdark]`,
-    // Scrolling text
-    `[bgdark]drawtext=text='${escapedScript}':fontsize=${fontSize}:fontcolor=white:x=(w-text_w)/2:y=h-(t*${scrollSpeed}):font=Arial:line_spacing=20[outv]`,
+    // Ken Burns zoom on background (subtle 3% zoom over duration)
+    `[0:v]zoompan=z='1+0.0005*on':x='iw/2-(iw/zoom/2)':y='ih*0.4-(ih/zoom*0.4)':d=${totalFrames}:s=${videoWidth}x${videoHeight}:fps=${fps}[bg]`,
+    // Add dark gradient overlay for better text readability
+    `[bg]drawbox=x=0:y=0:w=iw:h=ih:color=black@0.55:t=fill[bgdark]`,
+    // Scrolling text - y starts at screen height (bottom), decreases to scroll up
+    // y = h - (t * scrollSpeed) means at t=0, y=h (text at bottom), at t=end, y=h-totalScroll (text scrolled up)
+    `[bgdark]drawtext=textfile='${escapedTextPath}':fontsize=${fontSize}:fontcolor=white:x=${marginX}:y=h-(t*${scrollSpeed.toFixed(2)}):line_spacing=${lineHeight - fontSize}:shadowcolor=black@0.8:shadowx=2:shadowy=2[outv]`,
   ].join(';');
 
   const args = [

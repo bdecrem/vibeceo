@@ -10,18 +10,23 @@ Create TWO different creative directions (Comp A and Comp B) for this video. Bot
 
 For each comp, provide:
 1. MOOD - A short description of the visual feeling (3-5 words)
-2. SCENE 1 IMAGE - A vivid description of what the first visual should show
+2. SCENE 1 IMAGE - A detailed image prompt optimized for AI image generation
 3. SCENE 1 OVERLAY - 1-3 punchy words to display on screen
-4. SCENE 2 IMAGE - A vivid description of what the second visual should show
+4. SCENE 2 IMAGE - A detailed image prompt optimized for AI image generation
 5. SCENE 2 OVERLAY - 1-3 punchy words to display on screen
 
 Also provide the shared narration (split into scene 1 and scene 2).
 
 Guidelines:
 - Narration: Conversational, punchy, spoken-word style (~25-30 words per scene)
-- Image descriptions: Concrete, visual, evocative - describe what we SEE
+- Image prompts MUST include for high-quality AI generation:
+  * Visual medium (e.g., "cinematic photography", "professional advertising shot", "editorial fashion photography")
+  * Lighting description (e.g., "golden hour lighting", "soft studio lighting", "dramatic rim light")
+  * Composition (e.g., "wide-angle establishing shot", "intimate close-up", "centered composition with negative space")
+  * Concrete subjects, textures, and materials
+  * Color palette and mood
 - Overlay text: Ultra-short, impactful - think billboard
-- Comp A and Comp B should feel distinctly different (e.g., warm vs cool, close-up vs wide, minimal vs busy)
+- Comp A and Comp B should feel distinctly different (e.g., warm vs cool, close-up vs wide, minimal vs dramatic)
 
 Output exactly this format:
 
@@ -30,16 +35,16 @@ NARRATION SCENE 2: [voiceover text - the payoff/solution/CTA]
 
 COMP A:
 MOOD: [3-5 word mood description]
-SCENE 1 IMAGE: [vivid visual description]
+SCENE 1 IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 SCENE 1 OVERLAY: [1-3 words]
-SCENE 2 IMAGE: [vivid visual description]
+SCENE 2 IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 SCENE 2 OVERLAY: [1-3 words]
 
 COMP B:
 MOOD: [3-5 word mood description]
-SCENE 1 IMAGE: [vivid visual description]
+SCENE 1 IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 SCENE 1 OVERLAY: [1-3 words]
-SCENE 2 IMAGE: [vivid visual description]
+SCENE 2 IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 SCENE 2 OVERLAY: [1-3 words]`;
 
 // Prompt for Wall of Text mode (1 image, scrolling text)
@@ -51,14 +56,20 @@ Create TWO different creative directions (Comp A and Comp B). Both use the same 
 
 For each comp, provide:
 1. MOOD - A short description of the visual feeling (3-5 words)
-2. BACKGROUND IMAGE - A vivid description of the atmospheric background
+2. BACKGROUND IMAGE - A detailed image prompt optimized for AI image generation
 
 Also provide the shared script (the full narration text that will scroll on screen).
 
 Guidelines:
-- Script: ~100-150 words, conversational, engaging, punchy
-- Background image: Atmospheric, mood-setting, not too busy (text will overlay)
-- Comp A and Comp B should feel distinctly different
+- Script: ~100-150 words, conversational, engaging, punchy paragraphs
+- Background image: MUST include specific details for high-quality AI generation:
+  * Visual medium (e.g., "cinematic photography", "professional studio shot", "editorial photography")
+  * Lighting description (e.g., "golden hour rim lighting", "soft diffused light", "dramatic side lighting")
+  * Composition (e.g., "wide-angle view", "shallow depth of field", "centered composition")
+  * Concrete textures and materials
+  * Color palette
+  * Keep it atmospheric and not too busy (text will overlay)
+- Comp A and Comp B should feel distinctly different in style/mood
 
 Output exactly this format:
 
@@ -66,11 +77,11 @@ SCRIPT: [full narration text, ~100-150 words]
 
 COMP A:
 MOOD: [3-5 word mood description]
-BACKGROUND IMAGE: [vivid visual description]
+BACKGROUND IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 
 COMP B:
 MOOD: [3-5 word mood description]
-BACKGROUND IMAGE: [vivid visual description]`;
+BACKGROUND IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]`;
 
 // Prompt for Single Image mode
 const IMAGE_PROMPT = `You are a creative director creating a single striking image for social media.
@@ -81,24 +92,29 @@ Create TWO different creative directions (Comp A and Comp B).
 
 For each comp, provide:
 1. MOOD - A short description of the visual feeling (3-5 words)
-2. IMAGE - A vivid description of what the image should show
+2. IMAGE - A detailed image prompt optimized for AI image generation
 3. HEADLINE - 3-7 impactful words to overlay on the image
 
 Guidelines:
-- Image descriptions: Concrete, visual, evocative
+- Image prompts MUST include for high-quality AI generation:
+  * Visual medium (e.g., "professional advertising photography", "cinematic still", "editorial portrait")
+  * Lighting description (e.g., "soft diffused natural light", "dramatic studio lighting with rim light", "golden hour backlight")
+  * Composition (e.g., "rule of thirds composition", "centered with symmetry", "dynamic diagonal lines")
+  * Concrete subjects, textures, and materials
+  * Color palette and mood
 - Headline: Short, punchy, memorable
-- Comp A and Comp B should feel distinctly different
+- Comp A and Comp B should feel distinctly different in style/approach
 
 Output exactly this format:
 
 COMP A:
 MOOD: [3-5 word mood description]
-IMAGE: [vivid visual description]
+IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 HEADLINE: [3-7 words]
 
 COMP B:
 MOOD: [3-5 word mood description]
-IMAGE: [vivid visual description]
+IMAGE: [detailed AI image prompt with visual medium, lighting, composition, textures, colors]
 HEADLINE: [3-7 words]`;
 
 interface VideoComp {
