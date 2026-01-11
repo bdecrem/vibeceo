@@ -26,6 +26,7 @@
 import { Ducker } from './effects/ducker.js';
 import { EQ } from './effects/eq.js';
 import { Reverb } from './effects/reverb.js';
+import { EffectSend } from './effect-send.js';
 
 /**
  * Channel wrapper for an instrument with effects chain
@@ -187,6 +188,48 @@ class Channel {
 
     this._insertEffect(reverb);
     return reverb;
+  }
+
+  /**
+   * Add an effect with automation support via EffectSend wrapper
+   * Returns the EffectSend instance for step-based automation
+   *
+   * @param {Effect} effect - The effect to add
+   * @param {Object} [options] - EffectSend options
+   * @param {number} [options.defaultWet=1] - Default wet level (0-1)
+   * @param {number} [options.fadeTime=0.005] - Crossfade time in seconds
+   * @returns {EffectSend} The send wrapper for automation control
+   *
+   * @example
+   *   const hpf = new EQ(session.context);
+   *   hpf.setParameter('highpass', 500);
+   *   const send = channel.addSend(hpf, { defaultWet: 0 });
+   *   send.setAutomationPattern([0,0,0,0, 1,1,1,1, 0,0,0,0, 1,1,1,1]);
+   */
+  addSend(effect, options = {}) {
+    const send = new EffectSend(this.context, {
+      effect,
+      defaultWet: options.defaultWet,
+      fadeTime: options.fadeTime,
+    });
+
+    this._insertEffect(send);
+
+    // Track sends separately for automation scheduling
+    if (!this._effectSends) {
+      this._effectSends = [];
+    }
+    this._effectSends.push(send);
+
+    return send;
+  }
+
+  /**
+   * Get all effect sends (for automation scheduling during render)
+   * @returns {EffectSend[]}
+   */
+  getEffectSends() {
+    return this._effectSends || [];
   }
 
   /**
@@ -935,4 +978,5 @@ export class Session {
   }
 }
 
+export { EffectSend };
 export default Session;

@@ -123,8 +123,9 @@
 
 
   <script type="module">
-    import { Session } from '/mixer/dist/session.js';
+    import { Session, EffectSend } from '/mixer/dist/session.js';
     import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { Effect } from '/mixer/dist/effects/base.js';
 
     // 4/4 kick + closed hats on every step
     const drumPattern = {
@@ -240,27 +241,51 @@
         const masterGain = offlineCtx.createGain();
         masterGain.gain.value = 0.9;
 
-        // Connect voices to master (except kick - we'll route it dynamically)
+        // Connect non-kick voices to master
         drums.voices.forEach((voice, id) => {
           if (id !== 'kick') voice.connect(masterGain);
         });
         masterGain.connect(offlineCtx.destination);
 
-        // TWO separate kick voices: dry and HPF
-        const drums2 = new TR909Engine({ context: offlineCtx });
+        // KICK with HPF effect using EffectSend for step-based automation
+        const kick = drums.voices.get('kick');
+        kick.decay = 0.45;
 
-        const kickDry = drums.voices.get('kick');
-        kickDry.decay = 0.45;
-        kickDry.output.connect(masterGain);
+        // Create a simple HPF effect
+        class HPFEffect extends Effect {
+          constructor(context, frequency = 500) {
+            super(context);
+            this._hpf = context.createBiquadFilter();
+            this._hpf.type = 'highpass';
+            this._hpf.frequency.value = frequency;
+            this._hpf.Q.value = 1.5;
+            // Wire: input → HPF → output
+            this._input.connect(this._hpf);
+            this._hpf.connect(this._output);
+          }
+        }
 
-        const kickHPF = drums2.voices.get('kick');
-        kickHPF.decay = 0.45;
-        const hpf = offlineCtx.createBiquadFilter();
-        hpf.type = 'highpass';
-        hpf.frequency.value = 800;
-        hpf.Q.value = 1.5;
-        kickHPF.output.connect(hpf);
-        hpf.connect(masterGain);
+        // Create EffectSend with the HPF, default to DRY (wet=0)
+        const hpfEffect = new HPFEffect(offlineCtx, 400);
+        const kickHPF = new EffectSend(offlineCtx, {
+          effect: hpfEffect,
+          defaultWet: 0,  // Start dry
+          fadeTime: 0.005
+        });
+
+        // Build step automation pattern (256 steps for 16 bars)
+        // HPF on at bars 4-6 (steps 64-96) and bars 13-15 (steps 208-240)
+        const hpfPattern = new Array(256).fill(0);
+        for (let i = 64; i < 96; i++) hpfPattern[i] = 1;   // Bars 4-6: HPF on
+        for (let i = 208; i < 240; i++) hpfPattern[i] = 1; // Bars 13-15: HPF on
+        kickHPF.setAutomationPattern(hpfPattern);
+
+        // Schedule automation BEFORE rendering
+        kickHPF.scheduleAutomation(bpm, 16, 16, 0); // 128 BPM, 16 bars, 16 steps/bar
+
+        // Connect kick → EffectSend → master
+        kick.output.connect(kickHPF.input);
+        kickHPF.output.connect(masterGain);
 
         const ch = drums.voices.get('ch');
 
@@ -278,19 +303,8 @@
           const kickMuted = kickDropouts.some(([start, end]) => i >= start && i < end);
 
           if (drumPattern.kick[stepInBar].velocity > 0 && !kickMuted) {
-            // Strategic HPF sections for vibe shifts
-            const hpfSections = [
-              [64, 96],   // bars 4-6: first HPF section, early contrast
-              [208, 240], // bars 13-15: after the drop, filtered return
-            ];
-            const useHPF = hpfSections.some(([start, end]) => i >= start && i < end);
-
-            // Trigger the appropriate kick voice
-            if (useHPF) {
-              kickHPF.trigger(time, drumPattern.kick[stepInBar].velocity);
-            } else {
-              kickDry.trigger(time, drumPattern.kick[stepInBar].velocity);
-            }
+            // Single kick voice - gain automation handles dry/wet routing
+            kick.trigger(time, drumPattern.kick[stepInBar].velocity);
           }
 
           // CH with per-note decay
