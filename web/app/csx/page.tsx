@@ -269,11 +269,13 @@ function CSXContent() {
 
         .terminal-programs {
           margin-top: 16px;
+          margin-bottom: 2px;
         }
 
         @media (min-width: 640px) {
           .terminal-programs {
             margin-top: 20px;
+            margin-bottom: 0;
           }
         }
 
