@@ -1,0 +1,37 @@
+paper-cut-wellness
+Clean paper-cut silhouettes on teal. Airy, modern wellness aesthetic.
+
+---
+
+IMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS, NO TYPOGRAPHY, NO LETTERS anywhere in the image. This is a text-free illustration only.
+
+{subject}
+
+Render as minimalist paper-cut art. Clean silhouette shapes layered against a teal blue (#2A7B8C) background. Cream and white (#F5F5F0) for foreground elements. Soft diffused lighting with subtle paper-layer shadows. Airy, breathing composition with generous negative space. Vertical 9:16 format with main subject in upper 70% of frame. Leave the bottom 25% as empty background.
+
+Style: Clean crisp edges, smooth flat colors, NOT grainy. Modern editorial illustration. No text anywhere.
+
+---
+
+NOTES FOR EDITORS:
+
+This is a RENDERING STYLE, not a subject prescription.
+The {subject} drives what appears in the image.
+The style just controls HOW it's rendered.
+
+Visual characteristics:
+- Paper-cut / layered silhouette look
+- Teal blue background
+- Cream/white foreground shapes
+- Clean crisp edges (NOT grainy)
+- Soft shadows between layers
+- Airy, spacious composition
+
+Best for:
+- Health, wellness content
+- Lifestyle and self-improvement
+- Clean, modern brand aesthetics
+
+SAFE ZONE:
+- Bottom 25% must remain clear of main subjects
+- Text will be overlaid in this area after generation

@@ -1,0 +1,38 @@
+illuminated-wellness
+Elegant paper-craft aesthetic with warm gold illumination on deep navy. Luxe, contemplative.
+
+---
+
+IMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS, NO TYPOGRAPHY, NO LETTERS anywhere in the image. This is a text-free illustration only.
+
+{subject}
+
+Render in an elegant paper-craft layered aesthetic. Clean vector-like shapes with subtle depth shadows between layers. Color palette: deep navy (#1A1A3E) background with warm gold (#D4A84B) as the primary accent color, cream (#F5F0DC) for highlights. Soft golden glow emanating from key elements. Single strong focal point, generous negative space, balanced composition. Vertical 9:16 format with main subject in upper 70% of frame. Leave the bottom 25% as empty background.
+
+Style: Clean sharp edges, smooth solid colors, NOT grainy. Premium editorial illustration. No text anywhere.
+
+---
+
+NOTES FOR EDITORS:
+
+This is a RENDERING STYLE, not a subject prescription.
+The {subject} drives what appears in the image.
+The style just controls HOW it's rendered.
+
+Visual characteristics:
+- Paper-craft / layered cutout look
+- Clean vector-like shapes (NOT grainy textures)
+- Deep navy background
+- Warm gold illumination/accents
+- Cream highlights
+- Subtle depth shadows between layers
+- Soft golden glow on key elements
+
+Best for:
+- Any subject that benefits from elegance
+- Wellness, luxury, premium brands
+- Contemplative or aspirational content
+
+SAFE ZONE:
+- Bottom 25% must remain clear of main subjects
+- Text will be overlaid in this area after generation

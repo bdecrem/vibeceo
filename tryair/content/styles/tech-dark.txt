@@ -1,0 +1,38 @@
+tech-dark
+Dark dramatic backgrounds with glowing accents. Premium tech/SaaS aesthetic.
+
+---
+
+IMPORTANT: Generate an image with NO TEXT, NO WORDS, NO LABELS, NO TYPOGRAPHY, NO LETTERS anywhere in the image. This is a text-free illustration only.
+
+{subject}
+
+Render in a dramatic dark tech aesthetic. Deep navy or black (#0A0A12) background with subtle gradient. Glowing accent lighting in purple (#8B5CF6) and cyan (#06B6D4). Floating 3D elements with soft light particles. Premium, futuristic feel. High contrast, cinematic lighting with strong focal point. Vertical 9:16 format with main subject in upper 70% of frame. Leave the bottom 25% as dark gradient.
+
+Style: Clean polished rendering, smooth gradients, NOT grainy. Professional product-shot quality. No text anywhere.
+
+---
+
+NOTES FOR EDITORS:
+
+This is a RENDERING STYLE, not a subject prescription.
+The {subject} drives what appears in the image.
+The style just controls HOW it's rendered.
+
+Visual characteristics:
+- Dark navy/black backgrounds
+- Purple and cyan glowing accents
+- Subtle light particles and flares
+- High contrast, cinematic lighting
+- Clean smooth rendering (NOT grainy)
+- Dramatic but focused composition
+
+Best for:
+- SaaS, AI, tech products
+- Fintech, crypto
+- Developer tools
+- Premium B2B
+
+SAFE ZONE:
+- Bottom 25% must remain clear of main subjects
+- Text will be overlaid in this area after generation

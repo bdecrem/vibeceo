@@ -1,0 +1,29 @@
+Stripped down version: wall of text
+
+The very basic version of this generates “Wall of Text” videos.
+
+This is a simpler video request involving
+
+1 “BRoll” scene with text over it
+Transition to a product demo or CTA
+Examples:
+
+https://app.tryatria.com/ad/m1491934386273340
+
+https://app.tryatria.com/ad/m819147950726174
+
+This video style can get more complex and evolves into the first example shown
+
+For instance, a listicle like “3 ways to _” with scenes + text for each demonstration would have multiple unique scenes and text displays
+Wall of text requirements:
+
+Text in center of the screen
+Way to upload pre-filmed product demos to stitch into the end of videos
+Ability to edit text post production
+Different common font styles & AI able to “see” colors enough to make sure the font and color it selects on first go are legible
+Ideally AI can generate different variants of the walls of text and produce these assets at greater scale
+*Wall of text videos often do best with real humans but programmatic generation will allow us to velocity test concepts
+
+Ideally this tool can support different video types with independent functions that can be re-used across formats.
+
+I do not have a strong opinion on if it’s better to start w/ the most complex or simplest video type.

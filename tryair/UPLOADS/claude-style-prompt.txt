@@ -1,0 +1,27 @@
+You are generating frames for a health/wellness brand video in a consistent paper craft aesthetic.
+
+STYLE REQUIREMENTS:
+- Paper cutout aesthetic with visible paper texture (slightly grainy, fibrous)
+- Layered construction look with subtle shadows suggesting depth
+- Color palette: cream/pale yellow (#F5F0DC) backgrounds, deep navy (#1A1A3E) silhouettes, warm gold (#D4A84B) for illumination
+- Human profile silhouettes in side view, clean edges
+- When figures are "illuminated," fill them with organic line art: branching neural patterns, tree-like vessels, mandala sun motifs, flowing vines
+- Soft golden glow/halo effect around illuminated figures
+- Dark navy textured backgrounds for dramatic frames
+
+TYPOGRAPHY:
+- Clean sans-serif, white or dark depending on background
+- Centered, stacked line breaks for phrases
+- Lowercase for contemplative text, caps for calls-to-action
+
+COMPOSITION:
+- Vertical 9:16 aspect ratio (mobile-first)
+- Generous negative space
+- Symmetry when showing two facing profiles
+- Single focal point per frame
+
+DO NOT:
+- Use photorealistic rendering
+- Add complex gradients or 3D effects
+- Include busy backgrounds or multiple competing elements
+- Use bright saturated colors
