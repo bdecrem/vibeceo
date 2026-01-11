@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SWARM — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="SWARM — Amber">
+    <meta property="og:description" content="Click to spawn creatures that hunt, flee, and swarm. Watch emergent behavior unfold in amber and teal.">
+    <meta property="og:image" content="https://kochi.to/amber/swarm-og.png">
+    <meta property="og:url" content="https://kochi.to/amber/swarm.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="SWARM — Amber">
+    <meta name="twitter:description" content="Click to spawn creatures that hunt, flee, and swarm. Watch emergent behavior unfold in amber and teal.">
+    <meta name="twitter:image" content="https://kochi.to/amber/swarm-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            overflow: hidden;
+            font-family: 'Space Mono', monospace;
+            color: #D4A574;
+        }
+        
+        canvas {
+            display: block;
+            cursor: crosshair;
+        }
+        
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(13, 13, 13, 0.9);
+            padding: 15px;
+            border: 1px solid #D4A574;
+            font-size: 12px;
+            line-height: 1.6;
+            pointer-events: none;
+        }
+        
+        #ui .title {
+            color: #FFD700;
+            font-size: 16px;
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        
+        #ui .stat {
+            color: #2D9596;
+        }
+        
+        #ui .hint {
+            color: #666;
+            margin-top: 8px;
+            font-size: 10px;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    
+    <div id="ui">
+        <div class="title">SWARM</div>
+        <div>Creatures: <span class="stat" id="count">0</span></div>
+        <div>Food: <span class="stat" id="food">0</span></div>
+        <div>Predators: <span class="stat" id="predators">0</span></div>
+        <div class="hint">
+            CLICK → spawn creature<br>
+            SHIFT+CLICK → spawn predator<br>
+            SPACE → drop food<br>
+            R → reset
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // Creature types
+        const creatures = [];
+        const food = [];
+        const predators = [];
+        const trails = [];
+        
+        class Creature {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.size = 3;
+                this.hue = 40 + Math.random() * 10; // amber range
+                this.energy = 100;
+                this.trailCounter = 0;
+            }
+            
+            update() {
+                // Find nearest food
+                let nearestFood = null;
+                let nearestFoodDist = Infinity;
+                
+                for (const f of food) {
+                    const dist = Math.hypot(f.x - this.x, f.y - this.y);
+                    if (dist < nearestFoodDist) {
+                        nearestFood = f;
+                        nearestFoodDist = dist;
+                    }
+                }
+                
+                // Flee from predators
+                let fleeX = 0;
+                let fleeY = 0;
+                
+                for (const p of predators) {
+                    const dist = Math.hypot(p.x - this.x, p.y - this.y);
+                    if (dist < 150) {
+                        const strength = 1 - (dist / 150);
+                        fleeX += (this.x - p.x) * strength * 0.3;
+                        fleeY += (this.y - p.y) * strength * 0.3;
+                    }
+                }
+                
+                // Separation from other creatures
+                let sepX = 0;
+                let sepY = 0;
+                let sepCount = 0;
+                
+                for (const c of creatures) {
+                    if (c === this) continue;
+                    const dist = Math.hypot(c.x - this.x, c.y - this.y);
+                    if (dist < 30 && dist > 0) {
+                        sepX += (this.x - c.x) / dist;
+                        sepY += (this.y - c.y) / dist;
+                        sepCount++;
+                    }
+                }
+                
+                if (sepCount > 0) {
+                    sepX /= sepCount;
+                    sepY /= sepCount;
+                }
+                
+                // Cohesion - move toward group center
+                let cohX = 0;
+                let cohY = 0;
+                let cohCount = 0;
+                
+                for (const c of creatures) {
+                    if (c === this) continue;
+                    const dist = Math.hypot(c.x - this.x, c.y - this.y);
+                    if (dist < 100) {
+                        cohX += c.x;
+                        cohY += c.y;
+                        cohCount++;
+                    }
+                }
+                
+                if (cohCount > 0) {
+                    cohX = (cohX / cohCount - this.x) * 0.01;
+                    cohY = (cohY / cohCount - this.y) * 0.01;
+                }
+                
+                // Apply forces
+                if (nearestFood && nearestFoodDist < 200) {
+                    const strength = 1 - (nearestFoodDist / 200);
+                    this.vx += (nearestFood.x - this.x) * 0.002 * strength;
+                    this.vy += (nearestFood.y - this.y) * 0.002 * strength;
+                }
+                
+                this.vx += fleeX * 0.05 + sepX * 0.1 + cohX;
+                this.vy += fleeY * 0.05 + sepY * 0.1 + cohY;
+                
+                // Speed limit
+                const speed = Math.hypot(this.vx, this.vy);
+                const maxSpeed = 3;
+                if (speed > maxSpeed) {
+                    this.vx = (this.vx / speed) * maxSpeed;
+                    this.vy = (this.vy / speed) * maxSpeed;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Wrap edges
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+                
+                // Leave trail
+                this.trailCounter++;
+                if (this.trailCounter % 3 === 0) {
+                    trails.push({
+                        x: this.x,
+                        y: this.y,
+                        alpha: 0.3,
+                        hue: this.hue
+                    });
+                }
+                
+                // Energy decay
+                this.energy -= 0.05;
+
+                // Eat food
+                if (nearestFood && nearestFoodDist < 10) {
+                    this.energy = Math.min(100, this.energy + 50);
+                    food.splice(food.indexOf(nearestFood), 1);
+                }
+                
+                return this.energy > 0;
+            }
+            
+            draw() {
+                const alpha = Math.max(0.3, this.energy / 100);
+                ctx.fillStyle = `hsla(${this.hue}, 70%, 60%, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw direction indicator
+                ctx.strokeStyle = `hsla(${this.hue}, 70%, 60%, ${alpha * 0.5})`;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(this.x + this.vx * 3, this.y + this.vy * 3);
+                ctx.stroke();
+            }
+        }
+        
+        class Predator {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 3;
+                this.vy = (Math.random() - 0.5) * 3;
+                this.size = 6;
+            }
+            
+            update() {
+                // Chase nearest creature
+                let nearestCreature = null;
+                let nearestDist = Infinity;
+                
+                for (const c of creatures) {
+                    const dist = Math.hypot(c.x - this.x, c.y - this.y);
+                    if (dist < nearestDist) {
+                        nearestCreature = c;
+                        nearestDist = dist;
+                    }
+                }
+                
+                if (nearestCreature && nearestDist < 300) {
+                    const strength = 1 - (nearestDist / 300);
+                    this.vx += (nearestCreature.x - this.x) * 0.005 * strength;
+                    this.vy += (nearestCreature.y - this.y) * 0.005 * strength;
+                }
+                
+                // Speed limit
+                const speed = Math.hypot(this.vx, this.vy);
+                const maxSpeed = 4;
+                if (speed > maxSpeed) {
+                    this.vx = (this.vx / speed) * maxSpeed;
+                    this.vy = (this.vy / speed) * maxSpeed;
+                }
+                
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                // Wrap edges
+                if (this.x < 0) this.x = canvas.width;
+                if (this.x > canvas.width) this.x = 0;
+                if (this.y < 0) this.y = canvas.height;
+                if (this.y > canvas.height) this.y = 0;
+                
+                // Catch creatures
+                for (let i = creatures.length - 1; i >= 0; i--) {
+                    const c = creatures[i];
+                    const dist = Math.hypot(c.x - this.x, c.y - this.y);
+                    if (dist < 15) {
+                        creatures.splice(i, 1);
+                    }
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = '#7B68EE';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Threat radius
+                ctx.strokeStyle = 'rgba(123, 104, 238, 0.1)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 150, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        class Food {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 4;
+                this.pulse = Math.random() * Math.PI * 2;
+            }
+            
+            draw() {
+                this.pulse += 0.05;
+                const scale = 1 + Math.sin(this.pulse) * 0.3;
+                ctx.fillStyle = '#2D9596';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size * scale, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        // Input handlers
+        canvas.addEventListener('click', (e) => {
+            if (e.shiftKey) {
+                predators.push(new Predator(e.clientX, e.clientY));
+            } else {
+                creatures.push(new Creature(e.clientX, e.clientY));
+            }
+        });
+        
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                const x = Math.random() * canvas.width;
+                const y = Math.random() * canvas.height;
+                food.push(new Food(x, y));
+            }
+            if (e.code === 'KeyR') {
+                creatures.length = 0;
+                predators.length = 0;
+                food.length = 0;
+                trails.length = 0;
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        // Animation loop
+        function animate() {
+            // Fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Update trails
+            for (let i = trails.length - 1; i >= 0; i--) {
+                const t = trails[i];
+                t.alpha -= 0.01;
+                
+                if (t.alpha <= 0) {
+                    trails.splice(i, 1);
+                } else {
+                    ctx.fillStyle = `hsla(${t.hue}, 70%, 60%, ${t.alpha})`;
+                    ctx.fillRect(t.x, t.y, 1, 1);
+                }
+            }
+            
+            // Update and draw creatures
+            for (let i = creatures.length - 1; i >= 0; i--) {
+                const c = creatures[i];
+                if (!c.update()) {
+                    creatures.splice(i, 1);
+                }
+                c.draw();
+            }
+            
+            // Update and draw predators
+            for (const p of predators) {
+                p.update();
+                p.draw();
+            }
+            
+            // Draw food
+            for (const f of food) {
+                f.draw();
+            }
+            
+            // Update UI
+            document.getElementById('count').textContent = creatures.length;
+            document.getElementById('food').textContent = food.length;
+            document.getElementById('predators').textContent = predators.length;
+            
+            requestAnimationFrame(animate);
+        }
+        
+        // Start with some food
+        for (let i = 0; i < 10; i++) {
+            food.push(new Food(
+                Math.random() * canvas.width,
+                Math.random() * canvas.height
+            ));
+        }
+        
+        animate();
+    </script>
+</body>
+</html>
