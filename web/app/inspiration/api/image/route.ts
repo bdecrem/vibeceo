@@ -1,15 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-const OPENAI_ORG_ID = 'org-3kZbACXqO0sjNiYNjj7AuRsR';
-
 interface OpenAIImageResponse {
   created: number;
-  data: Array<{ b64_json: string }>;
+  data: Array<{ b64_json?: string; url?: string }>;
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { prompt, size = '1024x1536', quality = 'high' } = await request.json();
+    const { prompt, size = '1024x1792', quality = 'standard' } = await request.json();
 
     if (!prompt) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 });
@@ -20,27 +18,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
     }
 
+    // Map size to DALL-E 3 supported sizes
+    // DALL-E 3 supports: 1024x1024, 1024x1792, 1792x1024
+    const sizeMap: Record<string, string> = {
+      '1024x1024': '1024x1024',
+      '1024x1536': '1024x1792', // Portrait - map to closest
+      '1024x1792': '1024x1792',
+      '1792x1024': '1792x1024',
+    };
+    const mappedSize = sizeMap[size] || '1024x1792';
+
     const response = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${apiKey}`,
-        'OpenAI-Organization': OPENAI_ORG_ID,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
+        model: 'dall-e-3',
         prompt,
         n: 1,
-        size,
+        size: mappedSize,
         quality,
+        response_format: 'b64_json',
       }),
     });
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('OpenAI error:', error);
+      console.error('OpenAI error:', response.status, error);
       return NextResponse.json(
-        { error: `OpenAI API error: ${response.status}` },
+        { error: `OpenAI API error: ${response.status} - ${error}` },
         { status: 500 }
       );
     }
@@ -51,10 +59,26 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No image generated' }, { status: 500 });
     }
 
-    // Return base64 image
-    return NextResponse.json({
-      image: result.data[0].b64_json,
-    });
+    const imageData = result.data[0];
+
+    // If we got base64, return it directly
+    if (imageData.b64_json) {
+      return NextResponse.json({
+        image: imageData.b64_json,
+      });
+    }
+
+    // If we got a URL, fetch and convert to base64
+    if (imageData.url) {
+      const imageResponse = await fetch(imageData.url);
+      const imageBuffer = await imageResponse.arrayBuffer();
+      const base64 = Buffer.from(imageBuffer).toString('base64');
+      return NextResponse.json({
+        image: base64,
+      });
+    }
+
+    return NextResponse.json({ error: 'No image data in response' }, { status: 500 });
 
   } catch (error) {
     console.error('Image generation error:', error);
