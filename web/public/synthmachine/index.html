@@ -58,6 +58,23 @@
 margin-top: 15px;
         }
 
+        .intro {
+            background: #111;
+            border-left: 3px solid #d4a574;
+            padding: 25px;
+            margin-bottom: 50px;
+            color: #ccc;
+            line-height: 1.8;
+        }
+
+        .intro p {
+            margin-bottom: 15px;
+        }
+
+        .intro p:last-child {
+            margin-bottom: 0;
+        }
+
         .synths {
             display: grid;
             gap: 30px;
@@ -230,6 +247,12 @@ margin-top: 15px;
             <span class="badge">MIT License</span>
         </header>
 
+        <div class="intro">
+            <p><strong>SynthMachine is a suite of fully programmable music synthesis libraries built on the Web Audio API.</strong> These aren't apps — they're production-ready instruments designed to be imported and controlled by code, whether that's your TypeScript application or an AI agent composing in real-time. Each synth exposes a clean API for parameter control, sequencing, and audio routing, with circuit-accurate emulations of classic hardware (diode ladder filters, bridged-T resonators, waveshapers). The interactive demos you see here are byproducts — minimal frontends that prove the engines work. The real purpose is giving developers and agents access to performant, low-latency synthesis tools that run entirely in the browser, no server required.</p>
+            
+            <p>Combine them with the Mixer for multi-track sessions, sidechain compression, EQ, and reverb. Render to WAV for offline bouncing. Or wire them into your own WebAudio graph for custom signal processing. This is infrastructure for building music applications that can be programmatically controlled, not just played.</p>
+        </div>
+
         <div class="synths">
             <!-- R9-D9 -->
             <div class="synth">
@@ -373,7 +396,7 @@ margin-top: 15px;
                                         <li><a href="/101/dist/machines/sh101/sub-oscillator.js">sub-oscillator.js</a></li>
                                         <li><a href="/101/dist/machines/sh101/envelope.js">envelope.js</a></li>
                                         <li><a href="/101/dist/machines/sh101/lfo.js">lfo.js</a></li>
-                                        <li><a href="/101/dist/machines/sh101/vca.js">vca.js</a></li>
+<li><a href="/101/dist/machines/sh101/vca.js">vca.js</a></li>
                                         <li><a href="/101/dist/machines/sh101/sequencer.js">sequencer.js</a></li>
                                         <li><a href="/101/dist/machines/sh101/presets.js">presets.js</a></li>
                                         <li><a href="/101/dist/machines/sh101/filter/ir3109.js">filter/ir3109.js</a></li>
