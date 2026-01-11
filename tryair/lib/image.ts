@@ -22,21 +22,27 @@ export async function generateImage(options: GenerateOptions): Promise<Buffer> {
 
   const { prompt, size = '1024x1536', quality = 'high' } = options;
 
-  const response = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'OpenAI-Organization': OPENAI_ORG_ID,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-image-1.5',
-      prompt,
-      n: 1,
-      size,
-      quality,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'OpenAI-Organization': OPENAI_ORG_ID,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-image-1.5',
+        prompt,
+        n: 1,
+        size,
+        quality,
+      }),
+    });
+  } catch (err) {
+    const error = err as Error;
+    throw new Error(`Network error calling OpenAI: ${error.message}`);
+  }
 
   if (!response.ok) {
     const error = await response.text();

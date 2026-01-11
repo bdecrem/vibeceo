@@ -125,7 +125,8 @@ All images reserve the **bottom 25%** for text overlay:
 ├────────────────────┤
 │   OVERLAY TEXT     │  ← Bottom 25% safe zone
 └────────────────────┘
-```
+```:q!
+
 
 The Ken Burns effect focuses on 35% from the top, keeping the safe zone stable during zoom.
 
