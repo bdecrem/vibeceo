@@ -368,6 +368,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
+  // SPECIFIC FIX: Bypass inspiration (TryAir v2)
+  if (pathname === '/inspiration' || pathname.startsWith('/inspiration/')) {
+    log(`[Middleware] Inspiration bypassed: ${pathname}`)
+    return NextResponse.next()
+  }
+
   // CRITICAL FIX: Bypass ALL API routes immediately - no processing whatsoever
   if (pathname.startsWith('/api/')) {
     log(`[Middleware] API route bypassed: ${pathname}`)

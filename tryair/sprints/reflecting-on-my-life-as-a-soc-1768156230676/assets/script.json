@@ -1,0 +1,17 @@
+{
+  "subject": "reflecting on my life as a soccer player",
+  "storyboard": {
+    "scene1": {
+      "narration": "Every bruise, every sprint, every moment I questioned if I was good enough. This beautiful game broke me down.",
+      "image": "Close-up of muddy soccer cleats on wet grass, with a worn soccer ball nearby. Rain droplets visible on the ground. Player's legs show dirt stains and grass marks.",
+      "overlay": "BROKEN DOWN"
+    },
+    "scene2": {
+      "narration": "But it also built me into someone who never gives up. Soccer didn't just teach me to play—it taught me to fight.",
+      "image": "Soccer player in golden hour sunlight, arms raised in celebration after scoring a goal. Stadium lights glowing softly in background. Pure joy and determination on their face.",
+      "overlay": "BUILT UP"
+    },
+    "fullNarration": "Every bruise, every sprint, every moment I questioned if I was good enough. This beautiful game broke me down.\n\nBut it also built me into someone who never gives up. Soccer didn't just teach me to play—it taught me to fight."
+  },
+  "createdAt": "2026-01-11T18:30:36.127Z"
+}
