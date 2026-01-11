@@ -9,11 +9,11 @@ Building web-based creative tool with comp selection and agent mode.
 | 01 | Web Foundation | 6/6 ✓ | Route, middleware, basic UI |
 | 02 | Two-Comp System | 5/5 ✓ | Storyboard 2 directions, parallel image gen |
 | 03 | Wall of Text Mode | 4/4 ✓ | Audio API, video API, scrolling text |
-| 04 | Agent Mode | 0/5 | Claude agent feedback loop |
+| 04 | Agent Mode | 5/5 ✓ | Claude agent feedback loop |
 | 05 | Polish | 0/4 | Error handling, mobile, performance |
 
 ## Current Focus
-Project 04: Agent Mode — Implement conversational refinement via Claude
+Project 05: Polish — Error handling, mobile, performance
 
 ## Key Decisions
 - Location: `web/app/inspiration/` (Next.js app router)
