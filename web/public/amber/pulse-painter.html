@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE PAINTER — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PULSE PAINTER — Amber">
+  <meta property="og:description" content="Draw with expanding pulse rings — click to create ripples of light">
+  <meta property="og:image" content="https://kochi.to/amber/pulse-painter-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/pulse-painter.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PULSE PAINTER — Amber">
+  <meta name="twitter:description" content="Draw with expanding pulse rings — click to create ripples of light">
+  <meta name="twitter:image" content="https://kochi.to/amber/pulse-painter-og.png">
+
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      overflow: hidden;
+      font-family: 'Space Mono', monospace;
+      cursor: crosshair;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .ui {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      font-size: 14px;
+      z-index: 10;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      pointer-events: none;
+    }
+
+    .title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
+    }
+
+    .instructions {
+      font-size: 12px;
+      opacity: 0.7;
+      line-height: 1.6;
+    }
+
+    .clear-btn {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 10px 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      z-index: 10;
+    }
+
+    .clear-btn:hover {
+      background: rgba(212, 165, 116, 0.2);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+  </style>
+</head>
+<body>
+  <div class="ui">
+    <div class="title">PULSE PAINTER</div>
+    <div class="instructions">
+      Click to create pulses<br>
+      Hold SHIFT for teal<br>
+      Drag for trails
+    </div>
+  </div>
+
+  <button class="clear-btn" onclick="clearCanvas()">CLEAR</button>
+
+  <canvas id="canvas"></canvas>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    let width = canvas.width = window.innerWidth;
+    let height = canvas.height = window.innerHeight;
+
+    window.addEventListener('resize', () => {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    });
+
+    const pulses = [];
+
+    class Pulse {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.radius = 0;
+        this.maxRadius = Math.random() * 100 + 80;
+        this.speed = Math.random() * 1.5 + 1;
+        this.color = color;
+        this.alpha = 1;
+        this.fadeStart = this.maxRadius * 0.6;
+      }
+
+      update() {
+        this.radius += this.speed;
+        
+        if (this.radius > this.fadeStart) {
+          const fadeProgress = (this.radius - this.fadeStart) / (this.maxRadius - this.fadeStart);
+          this.alpha = 1 - fadeProgress;
+        }
+        
+        return this.radius < this.maxRadius;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        
+        // Outer glow
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 3;
+        ctx.shadowBlur = 20;
+        ctx.shadowColor = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Inner ring
+        ctx.lineWidth = 1;
+        ctx.shadowBlur = 10;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius - 5, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.restore();
+      }
+    }
+
+    function createPulse(x, y, shiftKey) {
+      const color = shiftKey ? '#2D9596' : '#D4A574';
+      pulses.push(new Pulse(x, y, color));
+    }
+
+    let isDrawing = false;
+    let lastX = 0;
+    let lastY = 0;
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDrawing = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      createPulse(e.clientX, e.clientY, e.shiftKey);
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      if (!isDrawing) return;
+      
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      
+      if (dist > 15) {
+        createPulse(e.clientX, e.clientY, e.shiftKey);
+        lastX = e.clientX;
+        lastY = e.clientY;
+      }
+    });
+
+    canvas.addEventListener('mouseup', () => {
+      isDrawing = false;
+    });
+
+    canvas.addEventListener('click', (e) => {
+      createPulse(e.clientX, e.clientY, e.shiftKey);
+    });
+
+    function clearCanvas() {
+      pulses.length = 0;
+    }
+
+    function animate() {
+      // Fade out effect instead of clearing
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = pulses.length - 1; i >= 0; i--) {
+        const pulse = pulses[i];
+        const alive = pulse.update();
+        pulse.draw();
+        
+        if (!alive) {
+          pulses.splice(i, 1);
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Initial black background
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, width, height);
+
+    animate();
+  </script>
+</body>
+</html>
