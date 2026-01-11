@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 type Mode = "image" | "video" | "wall-of-text";
 type Style = "illuminated-wellness" | "paper-cut-wellness" | "tech-dark";
@@ -82,6 +82,38 @@ export default function InspirationPage() {
   const [agentFeedback, setAgentFeedback] = useState("");
   const [agentLoading, setAgentLoading] = useState(false);
   const [agentReasoning, setAgentReasoning] = useState<string | null>(null);
+  const [lastErrorAction, setLastErrorAction] = useState<string | null>(null);
+
+  // User-friendly error messages
+  const getErrorMessage = (error: string, action: string): { title: string; description: string } => {
+    if (error.includes("ANTHROPIC_API_KEY")) {
+      return { title: "API not configured", description: "The storyboard service is not set up. Please contact support." };
+    }
+    if (error.includes("OPENAI_API_KEY") || error.includes("gpt-image")) {
+      return { title: "Image service unavailable", description: "Unable to generate images right now. Please try again later." };
+    }
+    if (error.includes("HUME_API_KEY") || error.includes("audio")) {
+      return { title: "Voice service unavailable", description: "Unable to generate voiceover. Please try again later." };
+    }
+    if (error.includes("FFmpeg") || error.includes("video")) {
+      return { title: "Video rendering failed", description: "There was a problem creating your video. Please try again." };
+    }
+    if (error.includes("fetch") || error.includes("network")) {
+      return { title: "Connection problem", description: "Check your internet connection and try again." };
+    }
+    return { title: `${action} failed`, description: error || "Something unexpected happened. Please try again." };
+  };
+
+  const handleRetry = useCallback(() => {
+    setError(null);
+    if (lastErrorAction === "generate") {
+      handleGenerate();
+    } else if (lastErrorAction === "video") {
+      handleGenerateVideo();
+    } else if (lastErrorAction === "agent") {
+      handleAgentFeedback();
+    }
+  }, [lastErrorAction]);
 
   const handleGenerate = async () => {
     if (!topic.trim()) return;
@@ -135,6 +167,7 @@ export default function InspirationPage() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
+      setLastErrorAction("generate");
       setLoading(false);
       setGeneratingImages(false);
     }
@@ -226,6 +259,7 @@ export default function InspirationPage() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Agent failed");
+      setLastErrorAction("agent");
     } finally {
       setAgentLoading(false);
     }
@@ -329,6 +363,7 @@ export default function InspirationPage() {
 
     } catch (err) {
       setError(err instanceof Error ? err.message : "Video generation failed");
+      setLastErrorAction("video");
       setVideoProgress("");
     } finally {
       setGeneratingVideo(false);
@@ -351,28 +386,34 @@ export default function InspirationPage() {
     <div className="min-h-screen bg-[#09090b] text-white antialiased">
       <div className="fixed inset-0 bg-gradient-to-br from-purple-900/10 via-transparent to-amber-900/10 pointer-events-none" />
 
-      <div className="relative max-w-5xl mx-auto px-8 py-16">
-        <header className="mb-16">
+      <div className="relative max-w-5xl mx-auto px-4 sm:px-8 py-8 sm:py-16">
+        <header className="mb-8 sm:mb-16">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center flex-shrink-0">
               <span className="text-black text-lg">✦</span>
             </div>
-            <h1 className="text-3xl font-semibold tracking-tight">Inspiration</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Inspiration</h1>
           </div>
           <p className="text-white/40 text-sm ml-11">Create stunning video ads with AI</p>
         </header>
 
         {/* Video Result */}
         {generatedVideo ? (
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <button onClick={() => setGeneratedVideo(null)} className="text-white/40 hover:text-white/60 text-sm">← Back to comps</button>
-            <h2 className="text-xl font-semibold">Your video is ready!</h2>
-            <div className="rounded-2xl overflow-hidden bg-black">
-              <video controls className="w-full" src={`data:video/mp4;base64,${generatedVideo}`} />
+            <h2 className="text-lg sm:text-xl font-semibold">Your video is ready!</h2>
+            <div className="rounded-xl sm:rounded-2xl overflow-hidden bg-black">
+              <video
+                controls
+                className="w-full"
+                src={`data:video/mp4;base64,${generatedVideo}`}
+                playsInline
+                preload="metadata"
+              />
             </div>
             <button
               onClick={() => downloadBase64File(generatedVideo, "inspiration-video.mp4", "video/mp4")}
-              className="w-full py-4 rounded-2xl font-semibold text-base bg-gradient-to-r from-amber-500 to-orange-500 text-black"
+              className="w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base bg-gradient-to-r from-amber-500 to-orange-500 text-black"
             >
               Download Video
             </button>
@@ -380,21 +421,21 @@ export default function InspirationPage() {
         ) : !storyboard ? (
           <>
             {/* Initial Form */}
-            <section className="mb-12">
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">Topic</label>
+            <section className="mb-8 sm:mb-12">
+              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-2 sm:mb-3">Topic</label>
               <input
                 type="text"
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
                 placeholder="how acai bowls became all the rage"
-                className="w-full px-5 py-4 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-lg text-white placeholder-white/25 focus:outline-none focus:border-white/20"
+                className="w-full px-4 sm:px-5 py-3 sm:py-4 bg-white/[0.03] border border-white/[0.08] rounded-xl sm:rounded-2xl text-base sm:text-lg text-white placeholder-white/25 focus:outline-none focus:border-white/20"
                 onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
               />
             </section>
 
-            <section className="mb-12">
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Format</label>
-              <div className="flex gap-3">
+            <section className="mb-8 sm:mb-12">
+              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Format</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
                 {[
                   { value: "image", label: "Single Image", icon: "◻" },
                   { value: "video", label: "Video", icon: "▶" },
@@ -403,20 +444,20 @@ export default function InspirationPage() {
                   <button
                     key={opt.value}
                     onClick={() => setMode(opt.value as Mode)}
-                    className={`group flex-1 px-5 py-4 rounded-2xl text-sm font-medium transition-all ${
+                    className={`group px-4 sm:px-5 py-3 sm:py-4 rounded-xl sm:rounded-2xl text-sm font-medium transition-all flex sm:flex-col items-center sm:items-stretch gap-3 sm:gap-0 ${
                       mode === opt.value ? "bg-white text-black" : "bg-white/[0.03] text-white/60 border border-white/[0.06] hover:bg-white/[0.06]"
                     }`}
                   >
-                    <span className={`block text-lg mb-1 ${mode === opt.value ? "opacity-100" : "opacity-50"}`}>{opt.icon}</span>
-                    {opt.label}
+                    <span className={`text-lg sm:mb-1 ${mode === opt.value ? "opacity-100" : "opacity-50"}`}>{opt.icon}</span>
+                    <span>{opt.label}</span>
                   </button>
                 ))}
               </div>
             </section>
 
-            <section className="mb-14">
-              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-4">Visual Style</label>
-              <div className="grid grid-cols-3 gap-4">
+            <section className="mb-10 sm:mb-14">
+              <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3 sm:mb-4">Visual Style</label>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                 {[
                   { value: "illuminated-wellness", label: "Illuminated", desc: "Navy & gold elegance", colors: ["#1A1A3E", "#D4A84B", "#F5F0DC"] },
                   { value: "paper-cut-wellness", label: "Paper Cut", desc: "Teal & cream minimal", colors: ["#2A7B8C", "#F5F5F0", "#ffffff"] },
@@ -425,13 +466,13 @@ export default function InspirationPage() {
                   <button
                     key={opt.value}
                     onClick={() => setStyle(opt.value as Style)}
-                    className={`group relative overflow-hidden rounded-2xl transition-all ${style === opt.value ? "ring-2 ring-white/30 ring-offset-2 ring-offset-[#09090b]" : "hover:scale-[1.02]"}`}
+                    className={`group relative overflow-hidden rounded-xl sm:rounded-2xl transition-all ${style === opt.value ? "ring-2 ring-white/30 ring-offset-2 ring-offset-[#09090b]" : "hover:scale-[1.02]"}`}
                   >
-                    <div className="h-24 relative overflow-hidden">
+                    <div className="h-16 sm:h-24 relative overflow-hidden">
                       <div className="absolute inset-0" style={{ background: `linear-gradient(135deg, ${opt.colors[0]} 0%, ${opt.colors[0]} 60%, ${opt.colors[1]} 100%)` }} />
-                      <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full opacity-80" style={{ backgroundColor: opt.colors[1] }} />
+                      <div className="absolute bottom-2 sm:bottom-3 right-2 sm:right-3 w-6 sm:w-8 h-6 sm:h-8 rounded-full opacity-80" style={{ backgroundColor: opt.colors[1] }} />
                     </div>
-                    <div className={`px-4 py-3 text-left ${style === opt.value ? "bg-white/10" : "bg-white/[0.03]"}`}>
+                    <div className={`px-3 sm:px-4 py-2 sm:py-3 text-left ${style === opt.value ? "bg-white/10" : "bg-white/[0.03]"}`}>
                       <div className="text-sm font-medium text-white/90">{opt.label}</div>
                       <div className="text-xs text-white/40">{opt.desc}</div>
                     </div>
@@ -443,11 +484,16 @@ export default function InspirationPage() {
             <button
               onClick={handleGenerate}
               disabled={!topic.trim() || loading}
-              className={`w-full py-4 rounded-2xl font-semibold text-base ${
+              className={`w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base ${
                 !topic.trim() || loading ? "bg-white/5 text-white/20 cursor-not-allowed" : "bg-gradient-to-r from-amber-500 to-orange-500 text-black"
               }`}
             >
-              {loading ? "Generating creative directions..." : "Generate Comps"}
+              {loading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span className="w-4 h-4 border-2 border-black/20 border-t-black/60 rounded-full animate-spin" />
+                  Generating...
+                </span>
+              ) : "Generate Comps"}
             </button>
           </>
         ) : (
@@ -487,14 +533,14 @@ export default function InspirationPage() {
             )}
 
             {/* Comp Grid */}
-            <div className={`grid gap-4 mb-8 ${comps.length <= 2 ? "grid-cols-2" : comps.length <= 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-2 md:grid-cols-3 lg:grid-cols-4"}`}>
+            <div className={`grid gap-3 sm:gap-4 mb-6 sm:mb-8 ${comps.length <= 2 ? "grid-cols-2" : comps.length <= 4 ? "grid-cols-2" : "grid-cols-2 lg:grid-cols-4"}`}>
               {comps.map((comp) => {
                 const isSelected = selectedCompId === comp.id;
                 return (
                   <div
                     key={comp.id}
                     onClick={() => setSelectedCompId(comp.id)}
-                    className={`relative rounded-2xl overflow-hidden cursor-pointer transition-all ${
+                    className={`relative rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer transition-all ${
                       isSelected ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-[#09090b] scale-[1.02]" : "hover:scale-[1.01] border border-white/[0.08]"
                     }`}
                   >
@@ -502,8 +548,10 @@ export default function InspirationPage() {
                       {comp.image ? (
                         <img src={`data:image/png;base64,${comp.image}`} alt={`Comp ${comp.id}`} className="w-full h-full object-cover" />
                       ) : generatingImages ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="w-6 h-6 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+                          {/* Skeleton loading animation */}
+                          <div className="w-8 h-8 border-2 border-white/20 border-t-white/60 rounded-full animate-spin" />
+                          <span className="text-white/30 text-xs">Generating...</span>
                         </div>
                       ) : (
                         <div className="absolute inset-0 flex items-center justify-center text-white/20 text-sm">No image</div>
@@ -522,7 +570,7 @@ export default function InspirationPage() {
                       )}
                     </div>
 
-                    <div className={`p-3 bg-gradient-to-br ${stylePreview.gradient}`}>
+                    <div className={`p-2 sm:p-3 bg-gradient-to-br ${stylePreview.gradient}`}>
                       <div className="text-xs font-medium text-white/90">Comp {comp.id}</div>
                       <div className="text-xs text-white/50 truncate">{comp.mood}</div>
                     </div>
@@ -533,22 +581,35 @@ export default function InspirationPage() {
 
             {/* Action Buttons */}
             <div className="space-y-3">
+              {/* Video Progress Indicator */}
+              {generatingVideo && (
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl mb-2">
+                  <div className="flex items-center gap-3">
+                    <div className="w-5 h-5 border-2 border-amber-500/30 border-t-amber-500 rounded-full animate-spin flex-shrink-0" />
+                    <div className="flex-1">
+                      <div className="text-amber-200 text-sm font-medium">{videoProgress || "Processing..."}</div>
+                      <div className="text-amber-200/50 text-xs mt-0.5">This may take a minute</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={handleGenerateVideo}
                 disabled={!selectedCompId || generatingImages || generatingVideo}
-                className={`w-full py-4 rounded-2xl font-semibold text-base ${
+                className={`w-full py-3 sm:py-4 rounded-xl sm:rounded-2xl font-semibold text-sm sm:text-base ${
                   !selectedCompId || generatingImages || generatingVideo
                     ? "bg-white/5 text-white/20 cursor-not-allowed"
                     : "bg-gradient-to-r from-amber-500 to-orange-500 text-black"
                 }`}
               >
-                {generatingVideo ? videoProgress || "Processing..." : generatingImages ? "Generating images..." : selectedCompId ? `Generate ${mode === "image" ? "Final Image" : "Video"} with Comp ${selectedCompId}` : "Select a comp"}
+                {generatingVideo ? "Generating..." : generatingImages ? "Generating images..." : selectedCompId ? `Generate ${mode === "image" ? "Final Image" : "Video"} with Comp ${selectedCompId}` : "Select a comp"}
               </button>
 
               <button
                 onClick={() => setShowAgentChat(true)}
                 disabled={generatingImages || generatingVideo}
-                className="w-full py-3 rounded-2xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70 transition-all"
+                className="w-full py-2.5 sm:py-3 rounded-xl sm:rounded-2xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06] hover:bg-white/[0.06] hover:text-white/70 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Not quite right? Let's discuss...
               </button>
@@ -556,29 +617,38 @@ export default function InspirationPage() {
 
             {/* Agent Chat Modal */}
             {showAgentChat && (
-              <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-                <div className="bg-[#0f0f13] rounded-2xl p-6 max-w-lg w-full border border-white/10">
-                  <h3 className="text-lg font-semibold mb-4">What would you like to change?</h3>
+              <div className="fixed inset-0 bg-black/80 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4">
+                <div className="bg-[#0f0f13] rounded-t-2xl sm:rounded-2xl p-5 sm:p-6 w-full sm:max-w-lg border-t sm:border border-white/10 max-h-[80vh] overflow-y-auto">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold">What would you like to change?</h3>
+                    <button
+                      onClick={() => { setShowAgentChat(false); setAgentFeedback(""); }}
+                      className="text-white/40 hover:text-white/60 text-xl sm:hidden"
+                    >
+                      x
+                    </button>
+                  </div>
                   <p className="text-white/50 text-sm mb-4">Describe what you like, don't like, or want to see differently. I'll generate new directions based on your feedback.</p>
 
                   <textarea
                     value={agentFeedback}
                     onChange={(e) => setAgentFeedback(e.target.value)}
                     placeholder="I like the warm feeling of A but want it to feel more premium and exclusive..."
-                    className="w-full h-32 px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20 resize-none"
+                    className="w-full h-28 sm:h-32 px-4 py-3 bg-white/[0.03] border border-white/[0.08] rounded-xl text-sm text-white placeholder-white/30 focus:outline-none focus:border-white/20 resize-none"
+                    autoFocus
                   />
 
                   <div className="flex gap-3 mt-4">
                     <button
                       onClick={() => { setShowAgentChat(false); setAgentFeedback(""); }}
-                      className="flex-1 py-3 rounded-xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06]"
+                      className="flex-1 py-3 rounded-xl font-medium text-sm bg-white/[0.03] text-white/50 border border-white/[0.06] hidden sm:block"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleAgentFeedback}
                       disabled={!agentFeedback.trim() || agentLoading}
-                      className={`flex-1 py-3 rounded-xl font-medium text-sm ${
+                      className={`flex-1 sm:flex-1 w-full sm:w-auto py-3 rounded-xl font-medium text-sm ${
                         !agentFeedback.trim() || agentLoading
                           ? "bg-white/5 text-white/20 cursor-not-allowed"
                           : "bg-gradient-to-r from-amber-500 to-orange-500 text-black"
@@ -594,17 +664,32 @@ export default function InspirationPage() {
         )}
 
         {/* Error */}
-        {error && (
-          <div className="mt-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl">
-            <div className="flex items-start gap-3">
-              <span className="text-red-400 text-lg">⚠</span>
-              <div>
-                <div className="text-red-400 font-medium text-sm">Something went wrong</div>
-                <div className="text-red-400/70 text-sm mt-1">{error}</div>
+        {error && (() => {
+          const { title, description } = getErrorMessage(error, lastErrorAction || "Operation");
+          return (
+            <div className="mt-8 p-5 bg-red-500/10 border border-red-500/20 rounded-2xl">
+              <div className="flex items-start gap-3">
+                <span className="text-red-400 text-lg flex-shrink-0">⚠</span>
+                <div className="flex-1">
+                  <div className="text-red-400 font-medium text-sm">{title}</div>
+                  <div className="text-red-400/70 text-sm mt-1">{description}</div>
+                  <button
+                    onClick={handleRetry}
+                    className="mt-3 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 text-sm font-medium rounded-lg transition-colors"
+                  >
+                    Try again
+                  </button>
+                </div>
+                <button
+                  onClick={() => setError(null)}
+                  className="text-red-400/50 hover:text-red-400 text-lg flex-shrink-0"
+                >
+                  x
+                </button>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         <footer className="mt-20 text-center">
           <p className="text-xs text-white/20">TryAir v2 • Powered by Claude & GPT Image</p>
