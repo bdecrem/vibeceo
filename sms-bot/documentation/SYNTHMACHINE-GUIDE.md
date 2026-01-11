@@ -434,6 +434,296 @@ await session.master.reverb({ preset: 'plate', mix: 0.15 });
 
 ---
 
+## DAW Workflow (Creative Agent Reference)
+
+**This is the primary workflow for creative sessions.** Use this to create tracks with per-step automation, effect modulation, and parameter jamming.
+
+### The 5-Step Workflow
+
+1. **Pick instruments** (909, 303, 101, sampler)
+2. **Set patterns and sequences**
+3. **Add per-note modulations** (jam the knobs)
+4. **Apply effects** (EQ, reverb, HPF)
+5. **Use EffectSend for step-based effect automation**
+
+### Complete Example: Session 2 Style Track
+
+```javascript
+import { Session, EffectSend } from '/mixer/dist/session.js';
+import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+import { Effect } from '/mixer/dist/effects/base.js';
+
+// === STEP 1: Create session and instruments ===
+const bpm = 128;
+const bars = 4;
+const totalSteps = bars * 16;
+
+// For offline rendering, create OfflineAudioContext directly
+const stepDuration = 60 / bpm / 4;
+const totalDuration = totalSteps * stepDuration + 1;
+const sampleRate = 44100;
+const offlineCtx = new OfflineAudioContext(2, totalDuration * sampleRate, sampleRate);
+
+const drums = new TR909Engine({ context: offlineCtx });
+const masterGain = offlineCtx.createGain();
+masterGain.gain.value = 0.9;
+
+// === STEP 2: Define patterns ===
+const drumPattern = {
+  kick: [
+    { velocity: 1.0, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+    { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+    { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+    { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+  ],
+  ch: [
+    { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+    { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+    { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+    { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 }
+  ]
+};
+
+// === STEP 3: Add per-note modulations (jam the knobs) ===
+const kick = drums.voices.get('kick');
+kick.decay = 0.45;  // Set base decay
+
+const ch = drums.voices.get('ch');
+ch.decay = 0.15;  // Short crisp hats
+
+// For dynamic per-note modulation, change parameters before each trigger:
+// kick.decay = 0.3 + Math.random() * 0.3;  // Random decay variation
+// This creates the "knob jamming" effect
+
+// === STEP 4: Create custom effects ===
+// Example: 2-stage HPF for dramatic filtering
+class HPFEffect extends Effect {
+  constructor(context, frequency = 400) {
+    super(context);
+    // Two cascaded HPFs for 24dB/octave rolloff
+    this._hpf1 = context.createBiquadFilter();
+    this._hpf1.type = 'highpass';
+    this._hpf1.frequency.value = frequency;
+    this._hpf1.Q.value = 0.7;
+
+    this._hpf2 = context.createBiquadFilter();
+    this._hpf2.type = 'highpass';
+    this._hpf2.frequency.value = frequency;
+    this._hpf2.Q.value = 0.7;
+
+    // Wire: input → HPF1 → HPF2 → output
+    this._input.connect(this._hpf1);
+    this._hpf1.connect(this._hpf2);
+    this._hpf2.connect(this._output);
+  }
+}
+
+// === STEP 5: Use EffectSend for step-based automation ===
+const hpfEffect = new HPFEffect(offlineCtx, 400);  // 400Hz cuts sub-bass
+const kickHPF = new EffectSend(offlineCtx, {
+  effect: hpfEffect,
+  defaultWet: 0,      // Start dry
+  fadeTime: 0.002     // 2ms crossfade (click-free)
+});
+
+// Create automation pattern: bar 1 DRY, bar 2 WET (filtered), bar 3 DRY, bar 4 WET
+const hpfPattern = [];
+for (let bar = 0; bar < bars; bar++) {
+  const isWet = bar % 2 === 1;  // Odd bars = HPF on
+  for (let step = 0; step < 16; step++) {
+    hpfPattern.push(isWet ? 1 : 0);
+  }
+}
+kickHPF.setAutomationPattern(hpfPattern);
+
+// CRITICAL: Schedule automation BEFORE rendering
+kickHPF.scheduleAutomation(bpm, bars, 16, 0);
+
+// === ROUTING ===
+// Connect voices without HPF to master
+drums.voices.forEach((voice, id) => {
+  if (id !== 'kick') voice.connect(masterGain);
+});
+
+// Connect kick through HPF effect send
+kick.output.connect(kickHPF.input);
+kickHPF.output.connect(masterGain);
+masterGain.connect(offlineCtx.destination);
+
+// === SCHEDULE HITS ===
+for (let i = 0; i < totalSteps; i++) {
+  const time = i * stepDuration;
+  const stepInBar = i % 16;
+
+  if (drumPattern.kick[stepInBar].velocity > 0) {
+    kick.trigger(time, drumPattern.kick[stepInBar].velocity);
+  }
+  if (drumPattern.ch[stepInBar].velocity > 0) {
+    ch.trigger(time, drumPattern.ch[stepInBar].velocity);
+  }
+}
+
+// === RENDER ===
+const buffer = await offlineCtx.startRendering();
+// buffer now contains the mixed audio with effect automation
+```
+
+### EffectSend Class Reference
+
+**Location:** `/mixer/dist/effect-send.js`
+
+**What it does:** Wraps any Effect with parallel dry/wet routing and step-based automation. Never disconnects nodes—uses gain crossfading for glitch-free transitions.
+
+```javascript
+import { EffectSend } from '/mixer/dist/session.js';
+
+// Create
+const send = new EffectSend(context, {
+  effect: myEffect,    // Any Effect instance
+  defaultWet: 0,       // 0 = dry, 1 = wet (default: 0)
+  fadeTime: 0.005      // Crossfade time in seconds (default: 5ms)
+});
+
+// Set automation pattern (array of wet levels per step)
+// 0 = fully dry, 1 = fully wet, 0.5 = 50/50 mix
+send.setAutomationPattern([0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1]);
+
+// Schedule automation for offline rendering
+// MUST be called BEFORE offlineCtx.startRendering()
+send.scheduleAutomation(bpm, bars, stepsPerBar, startTime);
+
+// Clear all automation
+send.clearAutomation();
+
+// Access nodes for routing
+send.input   // Connect source here
+send.output  // Connect to destination
+```
+
+**Routing diagram:**
+```
+Source
+   ↓
+[EffectSend.input]
+   ├── dryGain ────────────────┐
+   │                           ↓
+   └── Effect → wetGain ───→ output → Destination
+```
+
+### Per-Note Parameter Modulation
+
+To "jam the knobs" (change parameters dynamically per note), modify voice parameters before triggering:
+
+```javascript
+const kick = drums.voices.get('kick');
+
+for (let i = 0; i < totalSteps; i++) {
+  const time = i * stepDuration;
+  const stepInBar = i % 16;
+
+  if (drumPattern.kick[stepInBar].velocity > 0) {
+    // Modulate decay per note (example: random variation)
+    kick.decay = 0.3 + Math.random() * 0.3;
+
+    // Or use a pattern-based modulation
+    const decayPattern = [0.5, 0.4, 0.35, 0.3, 0.5, 0.4, 0.35, 0.3,
+                          0.5, 0.4, 0.35, 0.3, 0.5, 0.4, 0.35, 0.3];
+    kick.decay = decayPattern[stepInBar];
+
+    kick.trigger(time, drumPattern.kick[stepInBar].velocity);
+  }
+}
+```
+
+**Common modulatable parameters:**
+
+| Voice | Parameter | Range | Effect |
+|-------|-----------|-------|--------|
+| kick | `decay` | 0.1-0.8 | Short punch to deep boom |
+| ch | `decay` | 0.05-0.3 | Tight tick to open hat feel |
+| snare | `tone` | 0-1 | Bright to dark |
+| 303 | `cutoff` | 0-1 | Filter sweep |
+| 303 | `resonance` | 0-1 | Acid squelch amount |
+
+### Creating Custom Effects
+
+Extend the `Effect` base class:
+
+```javascript
+import { Effect } from '/mixer/dist/effects/base.js';
+
+class MyCustomEffect extends Effect {
+  constructor(context, options = {}) {
+    super(context);
+
+    // Create your processing nodes
+    this._filter = context.createBiquadFilter();
+    this._filter.type = 'lowpass';
+    this._filter.frequency.value = options.cutoff || 1000;
+
+    // Wire: _input → processing → _output
+    this._input.connect(this._filter);
+    this._filter.connect(this._output);
+  }
+
+  // Optional: expose parameters
+  set cutoff(value) {
+    this._filter.frequency.value = value;
+  }
+}
+```
+
+### Effect Automation Patterns
+
+**Alternating bars (tension/release):**
+```javascript
+const pattern = [];
+for (let bar = 0; bar < 8; bar++) {
+  const isWet = bar % 2 === 1;
+  for (let step = 0; step < 16; step++) {
+    pattern.push(isWet ? 1 : 0);
+  }
+}
+```
+
+**Build-up (gradual increase):**
+```javascript
+const pattern = [];
+for (let step = 0; step < 64; step++) {
+  pattern.push(step / 64);  // 0 → 1 over 4 bars
+}
+```
+
+**Drop pattern (wet → sudden dry):**
+```javascript
+const pattern = [
+  ...Array(48).fill(1),  // 3 bars wet (filtered)
+  ...Array(16).fill(0),  // 1 bar dry (full kick hits)
+];
+```
+
+**Per-beat automation:**
+```javascript
+// HPF on beats 2 and 4 only
+const pattern = [];
+for (let bar = 0; bar < 4; bar++) {
+  pattern.push(0, 0, 0, 0);  // Beat 1: dry
+  pattern.push(1, 1, 1, 1);  // Beat 2: wet
+  pattern.push(0, 0, 0, 0);  // Beat 3: dry
+  pattern.push(1, 1, 1, 1);  // Beat 4: wet
+}
+```
+
+### Critical Implementation Notes
+
+1. **Never disconnect nodes** — Use gain crossfading, not connect/disconnect
+2. **Schedule BEFORE startRendering()** — Web Audio automation must be scheduled before offline render begins
+3. **Use setValueAtTime() before ramps** — Web Audio requires an explicit start point before any ramp
+4. **Short fade times** — 2-5ms prevents clicks without audible latency
+5. **Match sample rates** — Use `buffer.sampleRate` for playback context
+
+---
+
 ## Remix & Sharing Features
 
 ### Track Manifest
@@ -626,7 +916,8 @@ web/public/
 │
 └── mixer/
     ├── dist/
-    │   ├── session.js            # Session class
+    │   ├── session.js            # Session class (includes EffectSend export)
+    │   ├── effect-send.js        # Step-based effect automation
     │   └── effects/
     │       ├── base.js           # Effect base class
     │       ├── ducker.js         # Sidechain ducking

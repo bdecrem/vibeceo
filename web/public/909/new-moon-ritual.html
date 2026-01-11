@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEW MOON RITUAL - Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      overflow: hidden;
+    }
+
+    #canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 1.8rem;
+      letter-spacing: 0.5em;
+      text-shadow: 0 0 60px rgba(184, 134, 11, 0.4);
+      opacity: 0.9;
+    }
+
+    .subtitle {
+      opacity: 0.4;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      margin-top: 0.5rem;
+    }
+
+    #scene-name {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.9rem;
+      letter-spacing: 0.4em;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      text-transform: uppercase;
+      color: #D4A574;
+      text-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+    }
+
+    #scene-name.visible {
+      opacity: 0.7;
+    }
+
+    button {
+      position: fixed;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+      z-index: 10;
+      pointer-events: auto;
+    }
+
+    button:hover {
+      transform: translateX(-50%) scale(1.05);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    #status {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0.4;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      z-index: 10;
+    }
+
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+
+  <div class="overlay">
+    <h1>NEW MOON RITUAL</h1>
+    <div class="subtitle">AMBER &middot; TRIBAL PULSE &middot; 105 BPM</div>
+  </div>
+
+  <div id="scene-name"></div>
+
+  <div id="controls" style="position: fixed; top: 20px; right: 20px; z-index: 100; background: rgba(0,0,0,0.8); padding: 15px; border: 1px solid #D4A574;">
+    <label style="display: block; margin-bottom: 10px; cursor: pointer;">
+      <input type="checkbox" id="tomsHPF" checked style="margin-right: 8px;">
+      Toms HPF (2kHz)
+    </label>
+    <label style="display: block; cursor: pointer;">
+      <input type="checkbox" id="kickHPF" checked style="margin-right: 8px;">
+      Kick HPF (scenes)
+    </label>
+  </div>
+
+  <button id="play" onclick="playTrack()">ENTER</button>
+  <div id="status">new moon</div>
+
+  <script type="module">
+    import { EffectSend } from '/mixer/dist/session.js';
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { Effect } from '/mixer/dist/effects/base.js';
+
+    // ============================================================
+    // TRACK CONFIGURATION
+    // ============================================================
+    const bpm = 105;  // Deep, meditative, spacious
+    const bars = 8;
+    const stepsPerBar = 16;
+    const totalSteps = bars * stepsPerBar;
+    const stepDuration = 60 / bpm / 4;
+
+    // Swing: offset for off-beat steps (0 = no swing, 0.33 = heavy shuffle)
+    const swingAmount = 0.25;  // ~66% swing ratio
+
+    // Scene definitions (storytelling structure)
+    const scenes = [
+      { name: 'emergence', bars: [0, 1], kickHPF: true, hatDecayBase: 0.22, hatDecayRange: 0.12, hatDensity: 0.7 },
+      { name: 'the gathering', bars: [2, 3], kickHPF: false, hatDecayBase: 0.10, hatDecayRange: 0.08, hatDensity: 1.0 },
+      { name: 'desert wind', bars: [4, 5], kickHPF: 'alternating', hatDecayBase: 0.15, hatDecayRange: 0.18, hatDensity: 0.85 },
+      { name: 'sunrise', bars: [6, 7], kickHPF: false, hatDecayBase: 0.12, hatDecayRange: 0.15, hatDensity: 1.0 },
+    ];
+
+    // ============================================================
+    // PATTERNS - Deep tribal groove with swing
+    // ============================================================
+
+    // Kick: Simple and powerful - let toms do the talking
+    const kickPattern = [
+      { velocity: 1.0, accent: true },   // 1 - THE hit
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },                   // 2 - space
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0.95 },                // 3 - answer
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },                   // 4 - breathe
+      { velocity: 0 },
+      { velocity: 0 },
+      { velocity: 0 },
+    ];
+
+    // Toms: Tribal polyrhythm - this is the heart
+    const tomPattern = {
+      ltom: [
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.7 },               // &of1
+        { velocity: 0 },
+        { velocity: 0.85 },              // 2
+        { velocity: 0 },
+        { velocity: 0.6 },               // &of2
+        { velocity: 0.5 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.75 },              // &of3
+        { velocity: 0 },
+        { velocity: 0.8 },               // 4
+        { velocity: 0.4 },
+        { velocity: 0 },
+        { velocity: 0.65 },              // pickup
+      ],
+      mtom: [
+        { velocity: 0 },
+        { velocity: 0.5 },
+        { velocity: 0 },
+        { velocity: 0.7 },               // e of 1
+        { velocity: 0 },
+        { velocity: 0.6 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.55 },
+        { velocity: 0 },
+        { velocity: 0.7 },               // e of 3
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.6 },
+        { velocity: 0 },
+      ],
+      htom: [
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.65 },              // accent
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0.7 },               // accent
+        { velocity: 0 },
+        { velocity: 0 },
+      ],
+    };
+
+    // Closed hats: Fast, dynamic, swung - the pulse
+    // Every step has potential, velocity creates the groove
+    const hatPattern = [
+      { velocity: 0.95 },   // 1 - anchor
+      { velocity: 0.35 },   // e - ghost
+      { velocity: 0.7 },    // & - swung accent
+      { velocity: 0.45 },   // a
+      { velocity: 0.85 },   // 2
+      { velocity: 0.3 },    // e - barely there
+      { velocity: 0.75 },   // & - swung
+      { velocity: 0.5 },    // a
+      { velocity: 0.9 },    // 3
+      { velocity: 0.4 },    // e
+      { velocity: 0.7 },    // &
+      { velocity: 0.35 },   // a - drop out
+      { velocity: 0.8 },    // 4
+      { velocity: 0.45 },   // e
+      { velocity: 0.65 },   // &
+      { velocity: 0.55 },   // a - lead into next bar
+    ];
+
+    // ============================================================
+    // VISUALIZATION STATE
+    // ============================================================
+    let particles = [];
+    let currentScene = null;
+    let kickEnergy = 0;
+    let hatEnergy = 0;
+    let tomEnergy = 0;
+    let currentStep = 0;
+    let isPlaying = false;
+    let animationFrame = null;
+
+    // ============================================================
+    // CANVAS SETUP
+    // ============================================================
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+      canvas.width = window.innerWidth * devicePixelRatio;
+      canvas.height = window.innerHeight * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // ============================================================
+    // PARTICLE SYSTEM
+    // ============================================================
+    class Particle {
+      constructor(x, y, type, options = {}) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'kick', 'hat', or 'tom'
+
+        if (type === 'kick') {
+          // Kick particles: rise slowly, large, deep amber
+          this.vx = (Math.random() - 0.5) * 0.8;
+          this.vy = -Math.random() * 1.5 - 0.3;
+          this.size = Math.random() * 40 + 25;
+          this.life = 1;
+          this.decay = 0.006 + Math.random() * 0.004;
+          this.hue = 30 + Math.random() * 10; // deep amber
+        } else if (type === 'tom') {
+          // Tom particles: orbit outward in arcs, warm orange-red
+          const angle = options.angle || Math.random() * Math.PI * 2;
+          const speed = 2 + Math.random() * 3;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed - 1; // slight upward bias
+          this.size = Math.random() * 18 + 10;
+          this.life = 1;
+          this.decay = 0.012 + Math.random() * 0.008;
+          this.hue = 15 + Math.random() * 25; // orange to red
+          this.tomType = options.tomType || 'ltom';
+        } else {
+          // Hat particles: scatter quickly, small, bright gold
+          const angle = Math.random() * Math.PI * 2;
+          const speed = Math.random() * 5 + 3;
+          this.vx = Math.cos(angle) * speed;
+          this.vy = Math.sin(angle) * speed;
+          this.size = Math.random() * 6 + 2;
+          this.life = 1;
+          this.decay = 0.025 + Math.random() * 0.025;
+          this.hue = 45 + Math.random() * 15; // bright gold
+        }
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.life -= this.decay;
+
+        if (this.type === 'kick') {
+          this.vy *= 0.98;
+          this.size *= 0.997;
+        } else if (this.type === 'tom') {
+          this.vx *= 0.97;
+          this.vy *= 0.97;
+          this.vy += 0.05; // slight gravity
+        } else {
+          this.vx *= 0.94;
+          this.vy *= 0.94;
+        }
+      }
+
+      draw(ctx, scene) {
+        if (this.life <= 0) return;
+
+        const alpha = this.life * (this.type === 'hat' ? 0.7 : 0.5);
+        let saturation = 50;
+        let lightness = 45;
+
+        if (scene === 'emergence') {
+          saturation = 35;
+          lightness = 40;
+        } else if (scene === 'sunrise') {
+          saturation = 60;
+          lightness = 55;
+        }
+
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * this.life, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${this.hue}, ${saturation}%, ${lightness}%, ${alpha})`;
+        ctx.fill();
+      }
+    }
+
+    function spawnKickParticles(intensity, filtered) {
+      const count = filtered ? 4 : 10;
+      const baseSize = filtered ? 0.6 : 1;
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight * 0.65;
+
+      for (let i = 0; i < count * intensity; i++) {
+        const p = new Particle(
+          cx + (Math.random() - 0.5) * 80,
+          cy + (Math.random() - 0.5) * 40,
+          'kick'
+        );
+        p.size *= baseSize;
+        particles.push(p);
+      }
+      kickEnergy = intensity;
+    }
+
+    function spawnTomParticles(intensity, tomType) {
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight * 0.5;
+
+      // Position based on tom type - spread across the screen
+      let xOffset = 0;
+      let baseAngle = 0;
+      if (tomType === 'ltom') {
+        xOffset = -window.innerWidth * 0.15;
+        baseAngle = Math.PI * 0.75; // upper left
+      } else if (tomType === 'mtom') {
+        xOffset = 0;
+        baseAngle = Math.PI * 0.5; // up
+      } else {
+        xOffset = window.innerWidth * 0.15;
+        baseAngle = Math.PI * 0.25; // upper right
+      }
+
+      const count = Math.floor(4 + intensity * 4);
+      for (let i = 0; i < count; i++) {
+        const angle = baseAngle + (Math.random() - 0.5) * 1.2;
+        const p = new Particle(
+          cx + xOffset + (Math.random() - 0.5) * 60,
+          cy + (Math.random() - 0.5) * 40,
+          'tom',
+          { angle, tomType }
+        );
+        particles.push(p);
+      }
+      tomEnergy = Math.max(tomEnergy, intensity);
+    }
+
+    function spawnHatParticles(intensity, decay) {
+      const count = Math.floor(2 + decay * 8);
+      const cx = window.innerWidth / 2;
+      const cy = window.innerHeight * 0.35;
+
+      for (let i = 0; i < count * intensity; i++) {
+        const p = new Particle(
+          cx + (Math.random() - 0.5) * 300,
+          cy + (Math.random() - 0.5) * 80,
+          'hat'
+        );
+        // Longer decay = particles travel further and live longer
+        p.vx *= (0.4 + decay * 2.5);
+        p.vy *= (0.4 + decay * 2.5);
+        p.decay *= (1.8 - decay * 1.5);
+        particles.push(p);
+      }
+      hatEnergy = intensity;
+    }
+
+    // ============================================================
+    // RENDER LOOP
+    // ============================================================
+    function renderVisuals() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      // Background with scene-based color
+      let bgHue = 20;
+      let bgSat = 12;
+      let bgLight = 3;
+
+      if (currentScene === 'emergence') {
+        bgLight = 2.5;
+        bgSat = 8;
+      } else if (currentScene === 'the gathering') {
+        bgLight = 4;
+        bgSat = 18;
+        bgHue = 25;
+      } else if (currentScene === 'desert wind') {
+        bgHue = 28;
+        bgLight = 3.5 + Math.sin(Date.now() / 1500) * 0.8;
+        bgSat = 15;
+      } else if (currentScene === 'sunrise') {
+        bgHue = 32;
+        bgLight = 5;
+        bgSat = 22;
+      }
+
+      // Pulse with kick and toms
+      bgLight += kickEnergy * 4;
+      bgLight += tomEnergy * 2;
+
+      ctx.fillStyle = `hsl(${bgHue}, ${bgSat}%, ${bgLight}%)`;
+      ctx.fillRect(0, 0, w, h);
+
+      // Draw ambient glow in center
+      const gradient = ctx.createRadialGradient(w/2, h*0.5, 0, w/2, h*0.5, h*0.7);
+      gradient.addColorStop(0, `hsla(35, 45%, 18%, ${0.08 + kickEnergy * 0.12 + tomEnergy * 0.08})`);
+      gradient.addColorStop(1, 'transparent');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, w, h);
+
+      // Update and draw particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw(ctx, currentScene);
+      });
+
+      // Decay energies
+      kickEnergy *= 0.9;
+      hatEnergy *= 0.88;
+      tomEnergy *= 0.92;
+
+      if (isPlaying) {
+        animationFrame = requestAnimationFrame(renderVisuals);
+      }
+    }
+
+    // ============================================================
+    // AUDIO ENGINE
+    // ============================================================
+    let currentSource = null;
+    let stepInterval = null;
+
+    window.playTrack = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+      const sceneName = document.getElementById('scene-name');
+
+      if (isPlaying) {
+        // Stop
+        if (currentSource) currentSource.stop();
+        if (stepInterval) cancelAnimationFrame(stepInterval);
+        if (animationFrame) cancelAnimationFrame(animationFrame);
+        isPlaying = false;
+        btn.textContent = 'ENTER';
+        status.textContent = 'new moon';
+        sceneName.classList.remove('visible');
+        particles = [];
+        return;
+      }
+
+      btn.disabled = true;
+      status.textContent = 'preparing ritual...';
+
+      try {
+        const totalDuration = totalSteps * stepDuration + 1;
+        const sampleRate = 44100;
+        const offlineCtx = new OfflineAudioContext(2, totalDuration * sampleRate, sampleRate);
+
+        // Create drums engine
+        const drums = new TR909Engine({ context: offlineCtx });
+        const masterGain = offlineCtx.createGain();
+        masterGain.gain.value = 0.8;
+
+        // Get voices
+        const kick = drums.voices.get('kick');
+        const ch = drums.voices.get('ch');
+        const ltom = drums.voices.get('ltom');
+        const mtom = drums.voices.get('mtom');
+        const htom = drums.voices.get('htom');
+
+        kick.decay = 0.5;  // Deep, resonant kick
+
+        // Toms HPF - OBVIOUS test, cuts all the low end
+        class TomsHPF extends Effect {
+          constructor(context, frequency = 2000) {
+            super(context);
+            this._hpf1 = context.createBiquadFilter();
+            this._hpf1.type = 'highpass';
+            this._hpf1.frequency.value = frequency;
+            this._hpf1.Q.value = 0.707;
+
+            this._hpf2 = context.createBiquadFilter();
+            this._hpf2.type = 'highpass';
+            this._hpf2.frequency.value = frequency;
+            this._hpf2.Q.value = 0.707;
+
+            this._input.connect(this._hpf1);
+            this._hpf1.connect(this._hpf2);
+            this._hpf2.connect(this._output);
+          }
+        }
+
+        const tomsFilter = new TomsHPF(offlineCtx, 2000); // Aggressive HPF - should sound thin/tinny
+
+        // Connect hats directly to master
+        ch.connect(masterGain);
+
+        // Connect toms - through HPF if enabled
+        const useTomsHPF = document.getElementById('tomsHPF').checked;
+        if (useTomsHPF) {
+          ltom.output.connect(tomsFilter.input);
+          mtom.output.connect(tomsFilter.input);
+          htom.output.connect(tomsFilter.input);
+          tomsFilter.output.connect(masterGain);
+          console.log('TOMS HPF: ON');
+        } else {
+          ltom.output.connect(masterGain);
+          mtom.output.connect(masterGain);
+          htom.output.connect(masterGain);
+          console.log('TOMS HPF: OFF');
+        }
+
+        // Helper: apply swing to step timing
+        function getSwungTime(step) {
+          const baseTime = step * stepDuration;
+          // Swing the off-beats (steps 1, 3, 5, 7, 9, 11, 13, 15)
+          if (step % 2 === 1) {
+            return baseTime + (stepDuration * swingAmount);
+          }
+          return baseTime;
+        }
+
+        // Create 2-stage HPF for filtered kick
+        class HPFEffect extends Effect {
+          constructor(context, frequency = 350) {
+            super(context);
+            this._hpf1 = context.createBiquadFilter();
+            this._hpf1.type = 'highpass';
+            this._hpf1.frequency.value = frequency;
+            this._hpf1.Q.value = 0.7;
+
+            this._hpf2 = context.createBiquadFilter();
+            this._hpf2.type = 'highpass';
+            this._hpf2.frequency.value = frequency;
+            this._hpf2.Q.value = 0.7;
+
+            this._input.connect(this._hpf1);
+            this._hpf1.connect(this._hpf2);
+            this._hpf2.connect(this._output);
+          }
+        }
+
+        const hpfEffect = new HPFEffect(offlineCtx, 350);
+        const kickHPF = new EffectSend(offlineCtx, {
+          effect: hpfEffect,
+          defaultWet: 0,
+          fadeTime: 0.003
+        });
+
+        // Build HPF automation pattern based on scenes
+        const hpfPattern = [];
+        for (let bar = 0; bar < bars; bar++) {
+          const scene = scenes.find(s => s.bars.includes(bar));
+          for (let step = 0; step < 16; step++) {
+            if (scene.kickHPF === true) {
+              hpfPattern.push(1); // Always filtered
+            } else if (scene.kickHPF === false) {
+              hpfPattern.push(0); // Always full
+            } else if (scene.kickHPF === 'alternating') {
+              // Alternate every 2 beats (8 steps)
+              const beat = Math.floor(step / 4);
+              hpfPattern.push(beat % 2 === 0 ? 1 : 0);
+            }
+          }
+        }
+
+        // Connect kick - through HPF if enabled
+        const useKickHPF = document.getElementById('kickHPF').checked;
+        if (useKickHPF) {
+          kickHPF.setAutomationPattern(hpfPattern);
+          kickHPF.scheduleAutomation(bpm, bars, 16, 0);
+          kick.output.connect(kickHPF.input);
+          kickHPF.output.connect(masterGain);
+          console.log('KICK HPF: ON');
+        } else {
+          kick.output.connect(masterGain);
+          console.log('KICK HPF: OFF');
+        }
+
+        // Master goes direct to destination (toms already filtered)
+        masterGain.connect(offlineCtx.destination);
+
+        // Store hit data for visualization
+        const hatDecays = [];
+        const kickFiltered = [];
+        const tomHits = { ltom: [], mtom: [], htom: [] };
+
+        // Schedule all hits with SWING
+        for (let i = 0; i < totalSteps; i++) {
+          const bar = Math.floor(i / 16);
+          const stepInBar = i % 16;
+          const globalStep = i;
+          const scene = scenes.find(s => s.bars.includes(bar));
+
+          // Calculate swung time for this step
+          const time = getSwungTime(globalStep);
+
+          // Kick (no swing on downbeats - they anchor the groove)
+          const kickVel = kickPattern[stepInBar].velocity;
+          if (kickVel > 0) {
+            const kickTime = (stepInBar % 4 === 0) ? globalStep * stepDuration : time;
+            kick.trigger(kickTime, kickVel);
+          }
+
+          // Track if this step has filtered kick
+          let isFiltered = false;
+          if (scene.kickHPF === true) isFiltered = true;
+          else if (scene.kickHPF === 'alternating') {
+            const beat = Math.floor(stepInBar / 4);
+            isFiltered = beat % 2 === 0;
+          }
+          kickFiltered.push(isFiltered);
+
+          // Toms - the tribal heart (with swing)
+          const ltomVel = tomPattern.ltom[stepInBar].velocity;
+          const mtomVel = tomPattern.mtom[stepInBar].velocity;
+          const htomVel = tomPattern.htom[stepInBar].velocity;
+
+          if (ltomVel > 0) {
+            ltom.trigger(time, ltomVel);
+            tomHits.ltom.push({ step: i, velocity: ltomVel });
+          }
+          if (mtomVel > 0) {
+            mtom.trigger(time, mtomVel);
+            tomHits.mtom.push({ step: i, velocity: mtomVel });
+          }
+          if (htomVel > 0) {
+            htom.trigger(time, htomVel);
+            tomHits.htom.push({ step: i, velocity: htomVel });
+          }
+
+          // Closed hat with decay modulation (with swing)
+          let hatVel = hatPattern[stepInBar].velocity;
+
+          // Apply scene density - thin out hats in sparser scenes
+          if (scene.hatDensity < 1 && Math.random() > scene.hatDensity) {
+            hatVel = hatVel * 0.3; // Ghost instead of kill
+          }
+
+          if (hatVel > 0) {
+            // Calculate decay based on scene and position
+            let decay = scene.hatDecayBase;
+
+            // Add variation based on step position
+            if (scene.name === 'emergence') {
+              // Long shimmery decays with variation
+              decay = scene.hatDecayBase + Math.sin(stepInBar / 4 * Math.PI) * scene.hatDecayRange;
+            } else if (scene.name === 'desert wind') {
+              // Sweep decay across the bar - wave pattern
+              decay = scene.hatDecayBase + Math.sin(stepInBar / 8 * Math.PI) * scene.hatDecayRange;
+            } else if (scene.name === 'sunrise') {
+              // Gradually open up across 2 bars
+              const progress = (i - scene.bars[0] * 16) / 32;
+              decay = scene.hatDecayBase + progress * scene.hatDecayRange;
+            } else {
+              // The gathering: tight and punchy with subtle variation
+              decay += (Math.random() - 0.5) * scene.hatDecayRange;
+            }
+
+            decay = Math.max(0.06, Math.min(0.4, decay));
+            ch.decay = decay;
+            ch.trigger(time, hatVel);
+            hatDecays.push(decay);
+          } else {
+            hatDecays.push(0);
+          }
+        }
+
+        status.textContent = 'rendering...';
+        const buffer = await offlineCtx.startRendering();
+
+        // Create playback context
+        const audioContext = new AudioContext({ sampleRate });
+        await audioContext.resume();
+
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(audioContext.destination);
+
+        currentSource = source;
+        isPlaying = true;
+        source.start();
+
+        status.textContent = 'looping';
+        btn.textContent = 'EXIT';
+        btn.disabled = false;
+
+        // Start visuals
+        renderVisuals();
+
+        // Step sync for visualization (accounts for swing visually)
+        let step = 0;
+        let lastStepTime = performance.now();
+
+        function visualStep() {
+          if (!isPlaying) return;
+
+          const now = performance.now();
+          const elapsed = now - lastStepTime;
+          const baseStepMs = stepDuration * 1000;
+
+          // Calculate expected time to next step (with swing)
+          const isOffBeat = step % 2 === 1;
+          const expectedStepMs = isOffBeat
+            ? baseStepMs * (1 + swingAmount)
+            : baseStepMs * (1 - swingAmount * 0.5);
+
+          if (elapsed >= expectedStepMs) {
+            lastStepTime = now;
+
+            const bar = Math.floor(step / 16);
+            const stepInBar = step % 16;
+            const scene = scenes.find(s => s.bars.includes(bar % bars));
+
+            // Update scene name display
+            if (currentScene !== scene.name) {
+              currentScene = scene.name;
+              sceneName.textContent = scene.name;
+              sceneName.classList.add('visible');
+              setTimeout(() => sceneName.classList.remove('visible'), 2500);
+            }
+
+            // Spawn kick particles
+            const kickVel = kickPattern[stepInBar].velocity;
+            if (kickVel > 0) {
+              spawnKickParticles(kickVel, kickFiltered[step % totalSteps]);
+            }
+
+            // Spawn tom particles
+            const ltomVel = tomPattern.ltom[stepInBar].velocity;
+            const mtomVel = tomPattern.mtom[stepInBar].velocity;
+            const htomVel = tomPattern.htom[stepInBar].velocity;
+            if (ltomVel > 0) spawnTomParticles(ltomVel, 'ltom');
+            if (mtomVel > 0) spawnTomParticles(mtomVel, 'mtom');
+            if (htomVel > 0) spawnTomParticles(htomVel, 'htom');
+
+            // Spawn hat particles
+            const hatVel = hatPattern[stepInBar].velocity;
+            if (hatVel > 0) {
+              spawnHatParticles(hatVel, hatDecays[step % totalSteps] || 0.15);
+            }
+
+            step++;
+            currentStep = step % totalSteps;
+          }
+
+          stepInterval = requestAnimationFrame(visualStep);
+        }
+        stepInterval = requestAnimationFrame(visualStep);
+
+        source.onended = () => {
+          if (stepInterval) cancelAnimationFrame(stepInterval);
+          if (animationFrame) cancelAnimationFrame(animationFrame);
+          isPlaying = false;
+          btn.textContent = 'ENTER';
+          btn.disabled = false;
+          status.textContent = 'new moon';
+          sceneName.classList.remove('visible');
+          particles = [];
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+
+    // Start ambient animation even before playing
+    function ambientRender() {
+      if (!isPlaying) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        ctx.fillStyle = 'hsl(25, 10%, 3.5%)';
+        ctx.fillRect(0, 0, w, h);
+
+        // Gentle breathing glow
+        const breath = Math.sin(Date.now() / 3000) * 0.5 + 0.5;
+        const gradient = ctx.createRadialGradient(w/2, h*0.5, 0, w/2, h*0.5, h*0.5);
+        gradient.addColorStop(0, `hsla(40, 30%, 15%, ${0.05 + breath * 0.03})`);
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, w, h);
+
+        requestAnimationFrame(ambientRender);
+      }
+    }
+    ambientRender();
+  </script>
+</body>
+</html>
