@@ -6,28 +6,30 @@ Building web-based creative tool with comp selection and agent mode.
 ## Project Progress
 | # | Project | Status | Notes |
 |---|---------|--------|-------|
-| 01 | Web Foundation | 6/6 | Route, middleware, basic UI - TASKS DONE, needs Playwright verify |
-| 02 | Two-Comp System | 0/5 | Storyboard 2 directions, parallel gen |
+| 01 | Web Foundation | 6/6 ✓ | Route, middleware, basic UI |
+| 02 | Two-Comp System | 5/5 ✓ | Storyboard 2 directions, parallel image gen |
 | 03 | Wall of Text Mode | 0/4 | Scrolling text over moving background |
-| 04 | Agent Mode | 0/5 | claude-agent-sdk feedback loop |
+| 04 | Agent Mode | 0/5 | Claude agent feedback loop |
 | 05 | Polish | 0/4 | Error handling, mobile, performance |
 
 ## Current Focus
-Project 01: Web Foundation — Run Playwright test and verify storyboard generation works
+Project 03: Wall of Text Mode — Implement scrolling text video generation
 
 ## Key Decisions
 - Location: `web/app/inspiration/` (Next.js app router)
 - API routes in `web/app/inspiration/api/` (colocated)
 - Core logic stays in `tryair/lib/` (shared with CLI)
 - Middleware bypass required for Webtoys
+- Image generation uses OpenAI GPT Image API (gpt-image-1)
 
 ## File Locations
 ```
-web/app/inspiration/     # Web UI
-tryair/lib/              # Core logic (storyboard, image, video)
-tryair/agents/           # Agent mode (future)
-tryair/projects/         # This project tracking
-tryair/docs/V2-PLAN.md   # Full v2 plan
+web/app/inspiration/           # Web UI
+web/app/inspiration/api/       # API routes (storyboard, image)
+tryair/lib/                    # Core logic (storyboard, image, video)
+tryair/agents/                 # Agent mode (future)
+tryair/sprints/                # Project tracking
+tryair/docs/V2-PLAN.md         # Full v2 plan
 ```
 
 ## Quick Start for New Session
