@@ -216,30 +216,47 @@
         resize();
         window.addEventListener('resize', resize);
         
-        // Audio setup
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Audio setup - create context lazily on first user interaction
+        let audioCtx = null;
         let oscillators = [];
         let gainNodes = [];
         let audioEnabled = false;
         
         const audioToggle = document.getElementById('audio-toggle');
-        audioToggle.addEventListener('click', () => {
+        
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            return audioCtx;
+        }
+        
+        audioToggle.addEventListener('click', async () => {
             if (!audioEnabled) {
-                audioCtx.resume();
+                // Initialize audio context on first click
+                const ctx = initAudioContext();
+                
+                // Resume context if suspended (required on iOS)
+                if (ctx.state === 'suspended') {
+                    await ctx.resume();
+                }
+                
                 startAudio();
                 audioEnabled = true;
                 audioToggle.textContent = 'Stop Audio';
             } else {
-stopAudio();
+                stopAudio();
                 audioEnabled = false;
                 audioToggle.textContent = 'Start Audio';
             }
         });
         
         function startAudio() {
+            if (!audioCtx) return;
+            
             // Create three oscillators for RGB
             ['sine', 'triangle', 'square'].forEach((type, i) => {
-                const osc = audioCtx.createOscillator();
+                const osc =audioCtx.createOscillator();
                 const gain = audioCtx.createGain();
                 
                 osc.type = type;
@@ -257,7 +274,21 @@ stopAudio();
         }
         
         function stopAudio() {
-            oscillators.forEach(osc => osc.stop());
+            oscillators.forEach(osc => {
+                try {
+                    osc.stop();
+                    osc.disconnect();
+                } catch (e) {
+                    // Oscillator already stopped
+                }
+            });
+            gainNodes.forEach(gain => {
+                try {
+                    gain.disconnect();
+                } catch (e) {
+                    // Already disconnected
+                }
+            });
             oscillators = [];
             gainNodes = [];
         }
@@ -270,9 +301,9 @@ stopAudio();
             const b = parseInt(blueSlider.value);
             
             // Map RGB to frequencies (200-800 Hz)
-            oscillators[0].frequency.value = 200 + (r / 255) * 600;
-            oscillators[1].frequency.value = 200 + (g / 255) * 600;
-            oscillators[2].frequency.value = 200 + (b / 255) * 600;
+            if (oscillators[0]) oscillators[0].frequency.value = 200 + (r / 255) * 600;
+            if (oscillators[1]) oscillators[1].frequency.value = 200 + (g / 255) * 600;
+            if (oscillators[2]) oscillators[2].frequency.value = 200 + (b / 255) * 600;
         }
         
         // Particles
