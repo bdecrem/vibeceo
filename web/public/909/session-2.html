@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SESSION 2 - 909</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0A0908;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      color: #B8860B;
+      font-size: 2rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 0.5rem;
+      text-shadow: 0 0 40px rgba(184, 134, 11, 0.3);
+    }
+
+    .subtitle {
+      opacity: 0.5;
+      font-size: 0.8rem;
+      letter-spacing: 0.2em;
+      margin-bottom: 2rem;
+    }
+
+    .pattern-row {
+      display: grid;
+      grid-template-columns: 60px repeat(16, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+      width: 100%;
+      max-width: 660px;
+    }
+
+    .row-label {
+      font-size: 0.6rem;
+      opacity: 0.5;
+      text-align: right;
+      padding-right: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+    }
+
+    .step {
+      aspect-ratio: 1;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid rgba(212, 165, 116, 0.2);
+      transition: all 0.05s ease;
+    }
+
+    .step.active {
+      background: rgba(184, 134, 11, 0.8);
+      box-shadow: 0 0 10px rgba(184, 134, 11, 0.5);
+    }
+
+    .step.hit {
+      background: rgba(212, 165, 116, 0.4);
+    }
+
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #B8860B 100%);
+      color: #0A0908;
+      border: none;
+      padding: 1rem 3rem;
+      font-size: 1rem;
+      font-family: inherit;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.3em;
+      transition: all 0.3s ease;
+      margin-top: 1rem;
+    }
+
+    button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.4);
+    }
+
+    button:disabled {
+      opacity: 0.5;
+      cursor: wait;
+    }
+
+    #status {
+      margin-top: 1rem;
+      opacity: 0.6;
+      font-size: 0.75rem;
+    }
+
+    .bpm {
+      font-size: 3rem;
+      color: #B8860B;
+      margin-bottom: 1rem;
+      font-weight: 700;
+    }
+
+  </style>
+</head>
+<body>
+  <h1>SESSION 2</h1>
+  <div class="subtitle">909 BART DEEP · DECAY JAM</div>
+  <div class="bpm">128</div>
+
+  <div id="pattern"></div>
+
+  <button id="play" onclick="playTrack()">PLAY</button>
+  <div id="status">underground</div>
+
+
+  <script type="module">
+    import { Session } from '/mixer/dist/session.js';
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+
+    // 4/4 kick + closed hats on every step
+    const drumPattern = {
+      kick: [
+        { velocity: 1.0, accent: true }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 1.0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 }
+      ],
+      ch: [
+        { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+        { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+        { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 },
+        { velocity: 0.8 }, { velocity: 0.7 }, { velocity: 0.7 }, { velocity: 0.7 }
+      ]
+    };
+
+    const voices = ['kick', 'ch'];
+    const labels = { kick: 'KICK', ch: 'CH' };
+    const pattern = drumPattern;
+
+    // Build visual grid
+    const patternDiv = document.getElementById('pattern');
+    const stepElements = {};
+
+    voices.forEach(voice => {
+      const row = document.createElement('div');
+      row.className = 'pattern-row';
+
+      const label = document.createElement('div');
+      label.className = 'row-label';
+      label.textContent = labels[voice];
+      row.appendChild(label);
+
+      stepElements[voice] = [];
+
+      for (let i = 0; i < 16; i++) {
+        const step = document.createElement('div');
+        step.className = 'step';
+        if (pattern[voice][i].velocity > 0) step.classList.add('hit');
+        row.appendChild(step);
+        stepElements[voice].push(step);
+      }
+
+      patternDiv.appendChild(row);
+    });
+
+    let isPlaying = false;
+    let currentSource = null;
+    let animateInterval = null;
+
+    window.playTrack = async function() {
+      const btn = document.getElementById('play');
+      const status = document.getElementById('status');
+
+      if (isPlaying) {
+        if (currentSource) currentSource.stop();
+        if (animateInterval) clearInterval(animateInterval);
+        isPlaying = false;
+        btn.textContent = 'PLAY';
+        status.textContent = 'underground';
+        voices.forEach(voice => {
+          stepElements[voice].forEach(el => el.classList.remove('active'));
+        });
+        return;
+      }
+
+      btn.disabled = true;
+      status.textContent = 'loading...';
+
+      try {
+        status.textContent = 'jamming...';
+
+        // ARRANGEMENT with seasons
+        // 16 bars × 16 steps = 256 notes @ 128 BPM = 30 sec
+        const totalSteps = 16 * 16;
+        const decayPerNote = [];
+
+        for (let i = 0; i < totalSteps; i++) {
+          let decay;
+
+          if (i < 160) {
+            // SEASON 1 (0-20 sec): Wild random jamming
+            decay = 0.03 + Math.random() * 0.47;
+
+          } else if (i < 200) {
+            // SEASON 2 (20-25 sec): Slow buildup - decay extends gradually
+            const buildupProgress = (i - 160) / 40; // 0 to 1
+            const baseDecay = 0.15 + buildupProgress * 0.45; // 0.15 -> 0.6
+            decay = baseDecay + (Math.random() - 0.5) * 0.05; // tiny jitter
+
+          } else if (i < 208) {
+            // DROP (25-26 sec): SNAP - super tight, tension release
+            decay = 0.02 + Math.random() * 0.02; // ultra tight 0.02-0.04
+
+          } else {
+            // SEASON 1 RETURN (26-30 sec): Back to wild chaos
+            decay = 0.03 + Math.random() * 0.47;
+          }
+
+          decayPerNote.push(Math.max(0.02, Math.min(0.6, decay)));
+        }
+
+        // Single offline context for everything
+        const bpm = 128;
+        const stepDuration = 60 / bpm / 4;
+        const totalDuration = totalSteps * stepDuration + 1; // +1s buffer
+        const sampleRate = 44100;
+        const offlineCtx = new OfflineAudioContext(2, totalDuration * sampleRate, sampleRate);
+
+        // Create drums engine
+        const drums = new TR909Engine({ context: offlineCtx });
+        const masterGain = offlineCtx.createGain();
+        masterGain.gain.value = 0.9;
+
+        // Connect voices to master (except kick - we'll route it dynamically)
+        drums.voices.forEach((voice, id) => {
+          if (id !== 'kick') voice.connect(masterGain);
+        });
+        masterGain.connect(offlineCtx.destination);
+
+        // Get voice references
+        const kick = drums.voices.get('kick');
+        kick.decay = 0.45; // mostly back to original warmth
+        const ch = drums.voices.get('ch');
+
+        // Two kick paths: normal and filtered
+        const kickNormal = offlineCtx.createGain();
+        kickNormal.connect(masterGain);
+
+        const kickHPF = offlineCtx.createBiquadFilter();
+        kickHPF.type = 'highpass';
+        kickHPF.frequency.value = 350; // cuts the sub boom
+        kickHPF.Q.value = 1;
+        const kickFiltered = offlineCtx.createGain();
+        kickFiltered.connect(kickHPF);
+        kickHPF.connect(masterGain);
+
+        // Filtered kick section: steps 80-144 (bars 5-9, ~10-18 sec)
+        const filteredKickRange = [80, 144];
+
+        // Schedule each hit with its own decay
+        for (let i = 0; i < totalSteps; i++) {
+          const time = i * stepDuration;
+          const stepInBar = i % 16;
+
+          // Kick pattern (4/4) with strategic dropouts
+          const kickDropouts = [
+            [48, 64],    // bars 3-4: first tease, hats only
+            [144, 160],  // bars 9-10: tension before buildup
+            [176, 200],  // during buildup - maximum tension
+          ];
+          const kickMuted = kickDropouts.some(([start, end]) => i >= start && i < end);
+
+          if (drumPattern.kick[stepInBar].velocity > 0 && !kickMuted) {
+            // Route kick through HPF during filtered section
+            const isFiltered = i >= filteredKickRange[0] && i < filteredKickRange[1];
+            kick.output.disconnect();
+            kick.output.connect(isFiltered ? kickFiltered : kickNormal);
+            kick.trigger(time, drumPattern.kick[stepInBar].velocity);
+          }
+
+          // CH with per-note decay
+          if (drumPattern.ch[stepInBar].velocity > 0) {
+            ch.decay = decayPerNote[i]; // Set decay for THIS note
+            ch.trigger(time, drumPattern.ch[stepInBar].velocity);
+          }
+        }
+
+        status.textContent = 'rendering...';
+        const buffer = await offlineCtx.startRendering();
+        const audioContext = new AudioContext({ sampleRate });
+        await audioContext.resume();
+
+        const source = audioContext.createBufferSource();
+        source.buffer = buffer;
+        source.loop = true;
+        source.connect(audioContext.destination);
+
+        currentSource = source;
+        isPlaying = true;
+        source.start();
+        status.textContent = 'looping';
+        btn.textContent = 'STOP';
+        btn.disabled = false;
+
+        const animStepDuration = (60 / 128) / 4 * 1000;
+        let step = 0;
+
+        animateInterval = setInterval(() => {
+          const s = step % 16;
+          const prev = (s + 15) % 16;
+
+          voices.forEach(voice => {
+            stepElements[voice][prev].classList.remove('active');
+            if (pattern[voice][s].velocity > 0) {
+              stepElements[voice][s].classList.add('active');
+            }
+          });
+
+          step++;
+        }, animStepDuration);
+
+        source.onended = () => {
+          if (animateInterval) clearInterval(animateInterval);
+          voices.forEach(voice => {
+            stepElements[voice].forEach(el => el.classList.remove('active'));
+          });
+          isPlaying = false;
+          btn.textContent = 'PLAY';
+          btn.disabled = false;
+          status.textContent = 'underground';
+        };
+
+      } catch (err) {
+        console.error(err);
+        status.textContent = 'error: ' + err.message;
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

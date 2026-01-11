@@ -36,6 +36,8 @@ export class TR909Engine extends SynthEngine {
         });
         // Mute/solo state: 'normal', 'muted', 'solo'
         this.voiceStates = new Map();
+        // Voice parameter overrides (persists through render)
+        this.voiceParams = new Map();
         this.setupVoices();
         this.sequencer.onStep = (step, events) => {
             // Notify UI of step change
@@ -87,6 +89,18 @@ export class TR909Engine extends SynthEngine {
     }
     clearOpenHat() {
         this.activeOpenHat = null;
+    }
+    // Set a voice parameter that persists through render
+    setVoiceParam(voiceId, paramId, value) {
+        if (!this.voiceParams.has(voiceId)) {
+            this.voiceParams.set(voiceId, new Map());
+        }
+        this.voiceParams.get(voiceId).set(paramId, value);
+        // Also apply to current voice instance
+        const voice = this.voices.get(voiceId);
+        if (voice) {
+            voice[paramId] = value;
+        }
     }
     setupVoices() {
         const voices = this.createVoiceMap(this.context);
@@ -506,7 +520,7 @@ export class TR909Engine extends SynthEngine {
         const OHClass = getEngine('oh') === 'E1' ? HiHat909E1 : HiHat909;
         const CrashClass = getEngine('crash') === 'E1' ? Cymbal909E1 : Cymbal909;
         const RideClass = getEngine('ride') === 'E1' ? Cymbal909E1 : Cymbal909;
-        return new Map([
+        const voices = new Map([
             ['kick', new KickClass('kick', context)],
             ['snare', new SnareClass('snare', context, noiseBuffer)],
             ['clap', new ClapClass('clap', context, noiseBuffer)],
@@ -519,6 +533,16 @@ export class TR909Engine extends SynthEngine {
             ['crash', new CrashClass('crash', context, this.sampleLibrary, 'crash')],
             ['ride', new RideClass('ride', context, this.sampleLibrary, 'ride')],
         ]);
+        // Apply stored voice parameters
+        this.voiceParams.forEach((params, voiceId) => {
+            const voice = voices.get(voiceId);
+            if (voice) {
+                params.forEach((value, paramId) => {
+                    voice[paramId] = value;
+                });
+            }
+        });
+        return voices;
     }
     schedulePatternInContext({ context, pattern, bpm, bars, stepsPerBar, swing, }) {
         const voices = this.createVoiceMap(context);
