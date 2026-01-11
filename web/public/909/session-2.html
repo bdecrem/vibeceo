@@ -246,25 +246,23 @@
         });
         masterGain.connect(offlineCtx.destination);
 
-        // Get voice references
-        const kick = drums.voices.get('kick');
-        kick.decay = 0.45; // mostly back to original warmth
+        // TWO separate kick voices: dry and HPF
+        const drums2 = new TR909Engine({ context: offlineCtx });
+
+        const kickDry = drums.voices.get('kick');
+        kickDry.decay = 0.45;
+        kickDry.output.connect(masterGain);
+
+        const kickHPF = drums2.voices.get('kick');
+        kickHPF.decay = 0.45;
+        const hpf = offlineCtx.createBiquadFilter();
+        hpf.type = 'highpass';
+        hpf.frequency.value = 800;
+        hpf.Q.value = 1.5;
+        kickHPF.output.connect(hpf);
+        hpf.connect(masterGain);
+
         const ch = drums.voices.get('ch');
-
-        // Two kick paths: normal and filtered
-        const kickNormal = offlineCtx.createGain();
-        kickNormal.connect(masterGain);
-
-        const kickHPF = offlineCtx.createBiquadFilter();
-        kickHPF.type = 'highpass';
-        kickHPF.frequency.value = 350; // cuts the sub boom
-        kickHPF.Q.value = 1;
-        const kickFiltered = offlineCtx.createGain();
-        kickFiltered.connect(kickHPF);
-        kickHPF.connect(masterGain);
-
-        // Filtered kick section: steps 80-144 (bars 5-9, ~10-18 sec)
-        const filteredKickRange = [80, 144];
 
         // Schedule each hit with its own decay
         for (let i = 0; i < totalSteps; i++) {
@@ -280,11 +278,19 @@
           const kickMuted = kickDropouts.some(([start, end]) => i >= start && i < end);
 
           if (drumPattern.kick[stepInBar].velocity > 0 && !kickMuted) {
-            // Route kick through HPF during filtered section
-            const isFiltered = i >= filteredKickRange[0] && i < filteredKickRange[1];
-            kick.output.disconnect();
-            kick.output.connect(isFiltered ? kickFiltered : kickNormal);
-            kick.trigger(time, drumPattern.kick[stepInBar].velocity);
+            // Strategic HPF sections for vibe shifts
+            const hpfSections = [
+              [64, 96],   // bars 4-6: first HPF section, early contrast
+              [208, 240], // bars 13-15: after the drop, filtered return
+            ];
+            const useHPF = hpfSections.some(([start, end]) => i >= start && i < end);
+
+            // Trigger the appropriate kick voice
+            if (useHPF) {
+              kickHPF.trigger(time, drumPattern.kick[stepInBar].velocity);
+            } else {
+              kickDry.trigger(time, drumPattern.kick[stepInBar].velocity);
+            }
           }
 
           // CH with per-note decay
