@@ -559,8 +559,8 @@ async function markCreationAsTweeted(url: string): Promise<void> {
 function buildCreationSmsMessage(creation: { content: string; url: string }): string {
   const lines: string[] = [];
 
-  // Header
-  lines.push("🎨 Amber made something new");
+  // Header - first person, it's from Amber
+  lines.push("🎨 Hey, I made something");
   lines.push("");
 
   // Creation name (truncate if needed)
@@ -571,7 +571,7 @@ function buildCreationSmsMessage(creation: { content: string; url: string }): st
   lines.push("");
 
   // Inline link with trailing text (prevents iMessage splitting)
-  lines.push(`👀 See it: ${creation.url} — fresh from the drawer`);
+  lines.push(`${creation.url} — come see`);
 
   return lines.join("\n");
 }
