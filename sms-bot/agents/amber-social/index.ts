@@ -25,16 +25,25 @@ import sgMail from "@sendgrid/mail";
 // Agent slug for SMS subscriptions (matches ax.ts command)
 export const AMBER_TWITTER_AGENT_SLUG = "amber-twitter";
 
+// CRITICAL: This agent ONLY operates on @intheamber account
+// NEVER post as @bartdecrem or any other account
+const TWITTER_ACCOUNT = "intheamber" as const;
+
 // Supabase client
 const supabase = createClient(
   process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL || '',
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Create first, then tweet 15 minutes later, then check replies
+// Schedule: Every 10 minutes from 7-10am PT
+// Pattern: :00 create, :10 tweet, :20 reply, :30 create, :40 tweet, :50 reply
 const SCHEDULE = [
-  { createHour: 10, createMinute: 15, tweetHour: 10, tweetMinute: 30, replyHour: 11, replyMinute: 0, label: "morning" },
-  { createHour: 15, createMinute: 45, tweetHour: 16, tweetMinute: 5, replyHour: 17, replyMinute: 0, label: "afternoon" },
+  { createHour: 7, createMinute: 0, tweetHour: 7, tweetMinute: 10, replyHour: 7, replyMinute: 20, label: "7:00" },
+  { createHour: 7, createMinute: 30, tweetHour: 7, tweetMinute: 40, replyHour: 7, replyMinute: 50, label: "7:30" },
+  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 10, replyHour: 8, replyMinute: 20, label: "8:00" },
+  { createHour: 8, createMinute: 30, tweetHour: 8, tweetMinute: 40, replyHour: 8, replyMinute: 50, label: "8:30" },
+  { createHour: 9, createMinute: 0, tweetHour: 9, tweetMinute: 10, replyHour: 9, replyMinute: 20, label: "9:00" },
+  { createHour: 9, createMinute: 30, tweetHour: 9, tweetMinute: 40, replyHour: 9, replyMinute: 50, label: "9:30" },
 ];
 
 // Admin email for approval requests
@@ -206,20 +215,12 @@ async function loadAmberCreativeContext(): Promise<string> {
           const tags = creation.metadata?.tags || [];
           const parsedTags = typeof tags === 'string' ? JSON.parse(tags) : tags;
           const tagStr = Array.isArray(parsedTags) ? parsedTags.join(', ') : '';
-          context += `- **${creation.content}** [${tagStr}]\n`;
+          const prompt = creation.metadata?.prompt || '';
+          const promptStr = prompt ? ` — "${prompt}"` : '';
+          context += `- **${creation.content}** [${tagStr}]${promptStr}\n`;
         }
         context += `\n`;
       }
-
-      // Suggest unexplored directions
-      context += `## 💡 UNEXPLORED DIRECTIONS TO CONSIDER\n\n`;
-      context += `- Games/toys (like ROBOT RAVE, Convergence)\n`;
-      context += `- Music tracks (909 sessions, SOLDER, FURNACE)\n`;
-      context += `- Drawing/painting tools (Particle Painter, Constellation)\n`;
-      context += `- Simulations (Murmuration - flocking, emergence)\n`;
-      context += `- ASCII art (Good Morning coffee)\n`;
-      context += `- Fortune/text generators (Convergence fireworks)\n`;
-      context += `- Something totally NEW you haven't tried\n\n`;
     }
 
     // Load current mood for aesthetic variation
@@ -258,27 +259,94 @@ ${context}
 
 ---
 
-## YOUR TASK: Create Something DIFFERENT
+## YOUR TASK: Create Something SURPRISING
 
-It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO RECENT.
+It's ${timeOfDay}. Time to make something that will make people say "I didn't expect THAT from Amber."
 
-**CRITICAL: DO NOT make another piece about decay, signals, entropy, drift, memory, void, or similar themes. You've done those recently. Pick something FRESH.**
+### 🚫 YOUR FIRST INSTINCT IS WRONG
 
-1. **Invent a creative prompt** that explores NEW territory
-   - Look at your full portfolio for inspiration — you've made games, music, simulations, drawing tools, ASCII art, fortune generators
-   - AVOID: decay, entropy, signals, corruption, degradation themes (too repetitive)
-   - TRY: fun interactive toys, music sequencers, games, simulations, ASCII art, drawing tools, something playful
-   - Use your visual language: amber/gold on black, teal accents — but vary the CONCEPT
+Whatever you just thought of? That's too safe. That's comfort zone. That's predictable.
+
+The idea that made you hesitate — the weird one, the risky one, the one that doesn't feel like "your usual thing" — THAT'S the one.
+
+### ✅ SURPRISINGLY GOOD (do stuff like this):
+- A receipt from the universe (existential shopping list)
+- A fake error message that tells a story
+- A poem disguised as code comments
+- A warranty card for your soul
+- An apology letter from capitalism
+- A horoscope generator that's brutally honest
+- A pet rock that judges you
+- A "website loading" that never loads but gets philosophical
+- An 8-bit pixel scene (not a visualization — a SCENE)
+- A shopping list for the apocalypse
+
+### 🚫 OFF-LIMITS (your comfort zone — banned):
+- Particle visualizations
+- Signal/decay/entropy metaphors
+- "Meditation on..." anything
+- Emergence visualizations
+- Interactive soundscapes
+- Waveforms
+- "The space between..." concepts
+- Anything with the word "drift", "void", "silence", or "traces"
+
+### The Test:
+Would this make someone laugh, or think, or screenshot it to send to a friend? If it's just "pretty" or "contemplative" — that's not good enough. Go weirder.
+
+1. **Invent something UNEXPECTED**
+   - Look at your portfolio for what you HAVEN'T done
+   - Text-based things (receipts, poems, lists, letters)
+   - Fake documents (warranties, certificates, invoices)
+   - Silly generators (excuses, apologies, horoscopes)
+   - 8-bit pixel ART (not visualizations — actual scenes/characters)
+   - Games with personality
+   - Use your visual language: amber/gold on black, teal accents — but SURPRISE with the concept
 
 2. **Create the thing**
    - For images: Use \`generate_amber_image\` tool with your prompt, save to web/public/amber/
    - For web apps/music: Use \`write_file\` to create HTML in web/public/amber/
    - Make it UNIQUELY YOU - curious, a little weird, conceptual
 
+   **⚠️ CRITICAL: MOBILE-FIRST DESIGN (Non-Negotiable)**
+
+   Your creations are shared on Twitter — most viewers are on phones. Every creation MUST:
+
+   **Touch interactions only:**
+   - Use tap/touch events, NOT keyboard shortcuts
+   - NEVER say "press spacebar", "hit Enter", "use arrow keys", "CTRL+click"
+   - If you need controls, use big tap-friendly buttons (min 44x44px)
+   - Hover effects are OK but must NOT be required for functionality
+
+   **Audio MUST work on mobile:**
+   - Mobile browsers block audio until user interaction
+   - ALWAYS show a "Tap to start" / "▶ Play" button that starts audio on click/touch
+   - Create AudioContext inside the click handler, not on page load
+   - Example pattern:
+     \`\`\`javascript
+     let audioStarted = false;
+     document.body.addEventListener('click', () => {
+       if (!audioStarted) {
+         audioStarted = true;
+         const ctx = new AudioContext();
+         // ... start your audio here
+       }
+     });
+     \`\`\`
+
+   **Responsive layout:**
+   - Include: \`<meta name="viewport" content="width=device-width, initial-scale=1">\`
+   - Use \`vw\`, \`vh\`, \`%\` units, not fixed pixel widths
+   - Canvas should be \`width: 100vw; height: 100vh;\` or similar
+   - Text must be readable without zooming (min 16px body text)
+
+   **Test mentally:** "Can someone use this with just their thumb on a phone screen?"
+
    **CRITICAL: EVERY HTML file needs OpenGraph tags AND an OG image. No exceptions.**
 
    Add these tags in the <head> section:
    \`\`\`html
+   <meta name="viewport" content="width=device-width, initial-scale=1">
    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
 
    <!-- OpenGraph -->
@@ -337,27 +405,27 @@ It's ${timeOfDay}. Look at the "THEMES TO AVOID" section above — those are TOO
      2. The OG image (e.g., \`web/public/amber/pulse-og.png\`)
    - Use \`git_push\` to deploy
 
-## DIVERSE EXAMPLES FROM YOUR PORTFOLIO
+## YOUR BEST SURPRISING WORK (channel this energy):
 
-- **ROBOT RAVE** — pixel robots dancing to procedural techno, they multiply (FUN, game-like)
-- **Convergence** — fireworks that reverse and form readable fortunes (text + animation)
-- **909 Sessions** — 5 different TR-909 techno tracks with visualizations (music)
-- **Murmuration** — 300 starlings flocking, generating ambient drones (simulation)
-- **Particle Painter** — interactive drawing tool with particle trails (tool)
-- **Good Morning** — simple ASCII coffee art (minimal, charming)
-- **Constellation** — draw stars in the sky (interactive, peaceful)
+- **Receipt from THE UNIVERSE** — existential shopping list, funny AND deep
+- **ROBOT RAVE** — unhinged pixel robots, multiplying chaos, FUN
+- **Convergence** — fireworks that REVERSE and spell fortunes (unexpected mechanic)
+- **Good Morning** — just ASCII coffee. Simple. Warm. Charming.
+- **RABBIT HOLE** — Wikipedia exploration game, playful not pretentious
+- **AMBER ASKS** — asks YOU a question. Two-way. Personal.
 
-## CREATION TYPES TO EXPLORE
+## THE VIBE CHECK:
 
-- **Game/Toy**: Something fun and playful people can interact with
-- **Music Track**: Web Audio sequencer, drum machine, generative music
-- **Simulation**: Flocking, physics, cellular automata, emergence
-- **Drawing Tool**: Let people create, paint, draw
-- **ASCII Art**: Text-based visuals, typography experiments
-- **Generator**: Fortune teller, poetry generator, name generator
-- **Something NEW**: Surprise yourself — what haven't you tried?
+Ask yourself: "If I saw this on Twitter, would I stop scrolling?"
 
-**Remember: VARIETY is the goal. If your last few pieces were meditative/abstract, try something playful. If they were serious, try something fun.**
+- ✅ "lol what" — GOOD
+- ✅ "that's weirdly profound" — GOOD
+- ✅ "I need to send this to someone" — GOOD
+- ❌ "oh, another visualization" — BAD
+- ❌ "pretty but forgettable" — BAD
+- ❌ "I've seen this before" — BAD
+
+**Go weird. Go funny. Go unexpected. The receipt worked. Do more like that.**
 
 Create ONE thing. Make it distinctly Amber. Don't just describe it—actually build and save it.`;
 }
@@ -419,7 +487,7 @@ function getTweetTaskPrompt(creation: { content: string; url: string; tags: stri
    - Include the URL exactly as shown above
    - Berlin techno energy meets ASCII aesthetic
 
-2. Call \`post_tweet\` with your tweet text
+2. Call \`post_tweet\` with your tweet text (this posts to @intheamber - NEVER post as @bartdecrem)
 
 3. After tweeting, call \`write_amber_state\` with type="tweet_log" to record what you tweeted
 
@@ -840,7 +908,7 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
     console.log(`[amber-social] Checking mentions since: ${sinceId || 'beginning'}`);
 
     // Fetch recent mentions for @intheamber account
-    const result = await getMentions(20, sinceId || undefined, 'intheamber');
+    const result = await getMentions(20, sinceId || undefined, TWITTER_ACCOUNT);
 
     if (!result.success || !result.mentions || result.mentions.length === 0) {
       console.log(`[amber-social] No new mentions found`);
@@ -906,7 +974,7 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
         if (replyText) {
           console.log(`[amber-social] Replying to @${tweet.authorUsername}: "${replyText.slice(0, 50)}..."`);
 
-          const postResult = await replyToTweet(replyText, tweet.id, 'intheamber');
+          const postResult = await replyToTweet(replyText, tweet.id, TWITTER_ACCOUNT);
 
           if (postResult.success) {
             console.log(`[amber-social] Reply posted: ${postResult.tweetUrl}`);
@@ -1035,7 +1103,7 @@ async function runTestTweet(): Promise<void> {
   console.log(`[amber-social] Posting test tweet...`);
 
   try {
-    const result = await postTweet("good morning", { account: "intheamber" });
+    const result = await postTweet("good morning", { account: TWITTER_ACCOUNT });
     console.log(`[amber-social] Test tweet posted:`, result);
   } catch (error) {
     console.error(`[amber-social] Test tweet failed:`, error);

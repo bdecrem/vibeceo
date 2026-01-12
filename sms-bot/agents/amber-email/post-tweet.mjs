@@ -24,10 +24,21 @@ async function main() {
   let replyTo = undefined;
   let text = '';
 
+  // BLOCKED ACCOUNTS - these should NEVER be used by this script
+  const BLOCKED_ACCOUNTS = ['bartdecrem', 'tokentankai'];
+
   // Parse arguments
   for (let i = 0; i < args.length; i++) {
     if (args[i] === '--account' && args[i + 1]) {
       account = args[i + 1];
+      // Safety check: block certain accounts
+      if (BLOCKED_ACCOUNTS.includes(account.toLowerCase())) {
+        console.log(JSON.stringify({
+          success: false,
+          error: `BLOCKED: This script cannot post as @${account}. Only @intheamber is allowed.`
+        }));
+        process.exit(1);
+      }
       i++;
     } else if (args[i] === '--reply-to' && args[i + 1]) {
       replyTo = args[i + 1];
