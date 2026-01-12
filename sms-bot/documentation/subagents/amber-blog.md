@@ -48,7 +48,7 @@ curl -o /Users/bart/Documents/code/vibeceo/web/public/my-image.png "..."
 **For screenshots of web pages/toys** (Puppeteer workflow):
 ```
 # 1. Navigate to the page
-mcp__puppeteer__puppeteer_navigate(url="https://kochi.to/amber/my-toy.html")
+mcp__puppeteer__puppeteer_navigate(url="https://intheamber.com/amber/my-toy.html")
 
 # 2. Take screenshot with encoded=true (returns base64 in temp file)
 mcp__puppeteer__puppeteer_screenshot(name="shot", width=800, height=600, encoded=true)
@@ -118,7 +118,7 @@ Use `mcp__supabase__execute_sql` to run this.
 ### Step 8: Confirm
 
 Tell the user:
-- Blog post added to data.json (will appear at kochi.to/amber after deploy)
+- Blog post added to data.json (will appear at intheamber.com/amber after deploy)
 - Summary pushed to Supabase (voice Amber will know about it)
 
 ## Example

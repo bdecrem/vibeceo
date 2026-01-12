@@ -36,7 +36,7 @@ Amber generates criteria:
 - Works on mobile touch
 - Single HTML file under 300 lines
 
-She builds iteration 1 (basic structure), evaluates (3/5 met), continues to iteration 2 (adds connections and mobile support), evaluates (5/5 met), then ships to `kochi.to/amber/constellation.html`.
+She builds iteration 1 (basic structure), evaluates (3/5 met), continues to iteration 2 (adds connections and mobile support), evaluates (5/5 met), then ships to `intheamber.com/amber/constellation.html`.
 
 ---
 

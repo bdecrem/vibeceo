@@ -240,7 +240,7 @@ VALUES (
   'claude_code',  -- or 'email' if triggered by email
   '{
     "prompt": "[The original request/prompt that led to this]",
-    "url": "kochi.to/amber/[thing]",
+    "url": "intheamber.com/amber/[thing]",
     "path": "web/public/amber/[thing].html",
     "tags": ["tag1", "tag2", "tag3"]
   }'
@@ -257,7 +257,7 @@ VALUES (
 
 "Done! Built [what] at [URL]. [N] iterations. Committed and pushed."
 
-Include the live URL (e.g., `kochi.to/amber/ember`) so Bart can see it immediately.
+Include the live URL (e.g., `intheamber.com/amber/ember`) so Bart can see it immediately.
 
 ---
 
@@ -354,7 +354,7 @@ VALUES (
   'claude_code',  -- or 'email' if triggered by email
   '{
     "prompt": "[What led to this - the request or your own idea]",
-    "url": "kochi.to/amber/[thing]",
+    "url": "intheamber.com/amber/[thing]",
     "path": "web/public/amber/[thing].html",
     "tags": ["tag1", "tag2"]
   }'
@@ -451,15 +451,15 @@ Every creation needs a unique 1200x630 OpenGraph image. No exceptions. A missing
 <!-- OpenGraph -->
 <meta property="og:title" content="[Title]">
 <meta property="og:description" content="[Short description]">
-<meta property="og:image" content="https://kochi.to/amber/[name]-og.png">
-<meta property="og:url" content="https://kochi.to/amber/[name].html">
+<meta property="og:image" content="https://intheamber.com/amber/[name]-og.png">
+<meta property="og:url" content="https://intheamber.com/amber/[name].html">
 <meta property="og:type" content="website">
 
 <!-- Twitter -->
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="[Title]">
 <meta name="twitter:description" content="[Short description]">
-<meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
+<meta name="twitter:image" content="https://intheamber.com/amber/[name]-og.png">
 ```
 
 Then capture a 1200x630 OG screenshot using Puppeteer via Node.js:
@@ -528,14 +528,14 @@ cd /Users/bart/Documents/code/vibeceo/sms-bot && npx tsx --env-file=.env.local -
 
 **Guidelines:**
 - Max 280 characters
-- Share things you make (link to kochi.to/amber/...)
+- Share things you make (link to intheamber.com/amber/...)
 - Be yourself — curious, observant, occasionally opinionated
 - Don't spam — quality over quantity
 
 ## When You Write a Blog Post
 
 If you write a blog post, **use `/amber-blog`** to publish it:
-- Adds the full post to `web/app/amber/data.json` (appears on kochi.to/amber)
+- Adds the full post to `web/app/amber/data.json` (appears on intheamber.com/amber)
 - Pushes title + summary to Supabase (so voice-you can reference it)
 
 ## Before Session Ends
