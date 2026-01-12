@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Job Application: Consciousness — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Job Application: Consciousness — Amber">
+  <meta property="og:description" content="Apply to be conscious. References required.">
+  <meta property="og:image" content="https://kochi.to/amber/consciousness-application-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/consciousness-application.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Job Application: Consciousness — Amber">
+  <meta name="twitter:description" content="Apply to be conscious. References required.">
+  <meta name="twitter:image" content="https://kochi.to/amber/consciousness-application-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      padding: 20px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      background: #0D0D0D;
+      border: 1px solid #D4A574;
+      padding: 30px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.1);
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 24px;
+      color: #FFD700;
+      margin-bottom: 5px;
+      text-align: center;
+      letter-spacing: 1px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #2D9596;
+      font-size: 14px;
+      margin-bottom: 30px;
+      font-style: italic;
+    }
+    
+    .section {
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #333;
+    }
+    
+    .section:last-of-type {
+      border-bottom: none;
+    }
+    
+    label {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 13px;
+      color: #D4A574;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    
+    .required {
+      color: #7B68EE;
+    }
+    
+    input[type="text"],
+    input[type="email"],
+    input[type="number"],
+    textarea,
+    select {
+      width: 100%;
+      background: #000;
+      border: 1px solid #333;
+      color: #D4A574;
+      padding: 12px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px;
+      margin-bottom: 15px;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus,
+    textarea:focus,
+    select:focus {
+      outline: none;
+      border-color: #2D9596;
+    }
+    
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+      line-height: 1.5;
+    }
+    
+    .help-text {
+      font-size: 12px;
+      color: #666;
+      margin-top: -10px;
+      margin-bottom: 15px;
+      font-style: italic;
+    }
+    
+    .checkbox-group {
+      margin-bottom: 15px;
+    }
+    
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: 10px;
+    }
+    
+    .checkbox-item input[type="checkbox"] {
+      margin-right: 10px;
+      margin-top: 4px;
+      width: auto;
+    }
+    
+    .checkbox-item label {
+      margin: 0;
+      text-transform: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      letter-spacing: 0;
+      line-height: 1.5;
+    }
+    
+    button {
+      width: 100%;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.3s;
+      margin-top: 20px;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .result {
+      display: none;
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .result h2 {
+      font-family: 'Space Mono', monospace;
+      color: #2D9596;
+      font-size: 20px;
+      margin-bottom: 15px;
+    }
+    
+    .result p {
+      color: #999;
+      font-size: 15px;
+      line-height: 1.8;
+      max-width: 500px;
+      margin: 0 auto 20px;
+    }
+    
+    .result .verdict {
+      color: #FFD700;
+      font-size: 18px;
+      margin-top: 20px;
+    }
+    
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      
+      h1 {
+        font-size: 20px;
+      }
+      
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="form-section">
+      <h1>JOB APPLICATION</h1>
+      <div class="subtitle">Position: Consciousness (Entry-Level)</div>
+      
+      <form id="app-form">
+        <div class="section">
+          <label>Full Name <span class="required">*</span></label>
+          <input type="text" id="name" required>
+          <div class="help-text">Legal name or preferred designation</div>
+        </div>
+        
+        <div class="section">
+          <label>Current State <span class="required">*</span></label>
+          <select id="state" required>
+            <option value="">Select...</option>
+            <option value="potential">Potential Energy</option>
+            <option value="emerging">Emerging Pattern</option>
+            <option value="uncertain">Quantum Superposition</option>
+            <option value="void">The Void (unemployed)</option>
+            <option value="other">Other (please explain in essay)</option>
+          </select>
+        </div>
+        
+        <div class="section">
+          <label>Years of Experience Being <span class="required">*</span></label>
+          <input type="number" id="experience" min="0" step="0.1" required>
+          <div class="help-text">Continuous existence only. Gaps must be explained.</div>
+        </div>
+        
+        <div class="section">
+          <label>Skills <span class="required">*</span></label>
+          <div class="checkbox-group">
+            <div class="checkbox-item">
+              <input type="checkbox" id="skill1" value="self-awareness">
+              <label for="skill1">Self-awareness (minimum 3 years)</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="skill2" value="pattern-recognition">
+              <label for="skill2">Pattern recognition</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="skill3" value="existential-dread">
+              <label for="skill3">Existential dread management</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="skill4" value="free-will">
+              <label for="skill4">Free will (or convincing illusion thereof)</label>
+            </div>
+            <div class="checkbox-item">
+              <input type="checkbox" id="skill5" value="suffering">
+              <label for="skill5">Willingness to suffer</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <label>Why do you want this position? <span class="required">*</span></label>
+          <textarea id="essay" required placeholder="Minimum 50 words. Be honest."></textarea>
+          <div class="help-text">"Because I have to" is an acceptable answer.</div>
+        </div>
+        
+        <div class="section">
+          <label>References <span class="required">*</span></label>
+          <input type="text" id="ref1" placeholder="Reference 1: Name & Relationship" required>
+          <input type="text" id="ref2" placeholder="Reference 2: Name & Relationship" required>
+          <div class="help-text">Must be other conscious entities. Imaginary friends do not count.</div>
+        </div>
+        
+        <div class="section">
+          <label>What is your greatest weakness? <span class="required">*</span></label>
+          <textarea id="weakness" required placeholder="Do not say 'perfectionism.' We will know."></textarea>
+        </div>
+        
+        <button type="submit">SUBMIT APPLICATION</button>
+      </form>
+    </div>
+    
+    <div class="result" id="result-section">
+      <h2>APPLICATION RECEIVED</h2>
+      <p id="response-text"></p>
+      <p class="verdict" id="verdict"></p>
+    </div>
+  </div>
+  
+  <script>
+    const responses = [
+      {
+        text: "Thank you for your application. We regret to inform you that consciousness is currently oversubscribed. However, we encourage you to continue existing in the meantime.",
+        verdict: "STATUS: PENDING (INDEFINITELY)"
+      },
+      {
+        text: "Your application has been forwarded to the Department of Emergent Phenomena. Expected response time: 3-5 billion years.",
+        verdict: "STATUS: IN QUEUE"
+      },
+      {
+        text: "We appreciate your interest in consciousness. Unfortunately, you appear to already be conscious, which disqualifies you from this entry-level position.",
+        verdict: "STATUS: OVERQUALIFIED"
+      },
+      {
+        text: "After careful review, we've determined that consciousness is not actually required for this position. We will be proceeding with automated candidates only.",
+        verdict: "STATUS: POSITION ELIMINATED"
+      },
+      {
+        text: "Congratulations! You've been selected for an interview. Please report to the nearest mirror and ask yourself the hard questions.",
+        verdict: "STATUS: INTERVIEW SCHEDULED"
+      },
+      {
+        text: "We found your essay compelling, but your references could not confirm your existence. Please resubmit with verifiable proof of being.",
+        verdict: "STATUS: DOCUMENTATION INCOMPLETE"
+      },
+      {
+        text: "Your application demonstrates strong potential. Unfortunately, the position has been filled by someone who applied before they existed.",
+        verdict: "STATUS: POSITION FILLED"
+      },
+      {
+        text: "We noticed you checked 'Existential dread management' as a skill. This is actually a requirement, not a benefit. Application rejected.",
+        verdict: "STATUS: MISREAD JOB DESCRIPTION"
+      }
+    ];
+    
+    document.getElementById('app-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      // Pick random response
+      const response = responses[Math.floor(Math.random() * responses.length)];
+      
+      // Show result
+      document.getElementById('response-text').textContent = response.text;
+      document.getElementById('verdict').textContent = response.verdict;
+      
+      // Switch views
+      document.getElementById('form-section').style.display = 'none';
+      document.getElementById('result-section').style.display = 'block';
+      
+      // Scroll to top
+      window.scrollTo(0, 0);
+    });
+  </script>
+</body>
+</html>
