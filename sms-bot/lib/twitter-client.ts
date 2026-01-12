@@ -223,6 +223,9 @@ export interface PostTweetOptions {
   replyTo?: string;
 }
 
+// SAFETY: Accounts that should NEVER be posted to via automated code
+const BLOCKED_TWITTER_ACCOUNTS = ['bartdecrem'];
+
 /**
  * Post a tweet to Twitter/X
  * @param text - Tweet text
@@ -232,6 +235,22 @@ export async function postTweet(text: string, options?: PostTweetOptions): Promi
   const account = options?.account;
   const mediaIds = options?.mediaIds;
   const replyTo = options?.replyTo;
+
+  // SAFETY CHECK: Block posting to bartdecrem
+  // If no account specified, it would use default credentials (bartdecrem) - block this
+  if (!account) {
+    return {
+      success: false,
+      error: 'Account parameter is required. Specify which Twitter account to post to (e.g., "intheamber", "tokentankai").',
+    };
+  }
+
+  if (BLOCKED_TWITTER_ACCOUNTS.includes(account.toLowerCase())) {
+    return {
+      success: false,
+      error: `Cannot post to @${account} - this account is blocked for automated posts.`,
+    };
+  }
 
   const creds = getTwitterCredentials(account);
   if (!creds.apiKey || !creds.apiSecret || !creds.accessToken || !creds.accessSecret) {
