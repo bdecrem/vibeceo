@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Murmuration (Mobile)</title>
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Murmuration (Mobile)">
+  <meta property="og:description" content="Interactive starling flock simulation. Spawn predators and watch the birds react.">
+  <meta property="og:image" content="https://kochi.to/amber/murmuration-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/murmuration-mobile.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Murmuration (Mobile)">
+  <meta name="twitter:description" content="Interactive starling flock simulation. Spawn predators and watch the birds react.">
+  <meta name="twitter:image" content="https://kochi.to/amber/murmuration-og.png">
+
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+    }
+
+    body {
+      background: #0A0908;
+      overflow: hidden;
+      font-family: 'Courier New', monospace;
+      position: fixed;
+      width: 100%;
+      height: 100%;
+    }
+
+    canvas {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      z-index: 10;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 90vw;
+    }
+
+    .control-btn {
+      background: rgba(212, 165, 116, 0.2);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 12px 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .control-btn:active {
+      background: rgba(212, 165, 116, 0.4);
+      transform: scale(0.95);
+    }
+
+    .control-btn.danger {
+      border-color: #ff4444;
+      color: #ff4444;
+      background: rgba(255, 68, 68, 0.1);
+    }
+
+    .control-btn.primary {
+      border-color: #FFD700;
+      color: #FFD700;
+      background: rgba(255, 215, 0, 0.15);
+    }
+
+    #info {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      color: #D4A574;
+      opacity: 0.6;
+      font-size: 11px;
+      pointer-events: none;
+      z-index: 5;
+      line-height: 1.5;
+    }
+
+    #start-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0A0908;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      z-index: 100;
+      padding: 20px;
+      text-align: center;
+    }
+
+    #start-overlay h1 {
+      color: #D4A574;
+      font-size: 2rem;
+      font-weight: normal;
+      letter-spacing: 0.3em;
+      margin-bottom: 1rem;
+    }
+
+    #start-overlay p {
+      color: #B8860B;
+      font-size: 0.9rem;
+      opacity: 0.7;
+      margin-bottom: 0.5rem;
+    }
+
+    .predator {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      background: #ff4444;
+      border-radius: 50%;
+      pointer-events: none;
+      box-shadow: 0 0 15px rgba(255, 68, 68, 0.8);
+      z-index: 1;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div id="start-overlay">
+    <h1>MURMURATION</h1>
+    <p>tap to begin</p>
+    <p style="font-size: 0.7rem; margin-top: 1rem;">mobile interactive edition</p>
+  </div>
+
+  <canvas id="canvas"></canvas>
+  
+  <div id="info">
+    birds: <span id="count">0</span><br>
+    predators: <span id="predCount">0</span><br>
+    panic: <span id="panic">0%</span>
+  </div>
+
+  <div id="controls" class="hidden">
+    <button class="control-btn danger" id="spawnPredator">🦅 PREDATOR</button>
+    <button class="control-btn primary" id="addBirds">+ BIRDS</button>
+    <button class="control-btn" id="scatter">💨 SCATTER</button>
+    <button class="control-btn" id="attract">🌀 GATHER</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const countEl = document.getElementById('count');
+    const predCountEl = document.getElementById('predCount');
+    const panicEl = document.getElementById('panic');
+    const overlay = document.getElementById('start-overlay');
+    const controls = document.getElementById('controls');
+
+    let width, height;
+    let birds = [];
+    let predators = [];
+    let audioCtx = null;
+    let oscillators = [];
+    let gainNodes = [];
+    let masterGain = null;
+    let running = false;
+    let panicLevel = 0;
+
+    // Flock parameters
+    let NUM_BIRDS = 200;
+    const MAX_SPEED = 5;
+    const MIN_SPEED = 2;
+    const PERCEPTION_RADIUS = 60;
+    const SEPARATION_RADIUS = 30;
+    const PREDATOR_FEAR_RADIUS = 150;
+
+    // Weights for behaviors
+    const SEPARATION_WEIGHT = 1.5;
+    const ALIGNMENT_WEIGHT = 1.0;
+    const COHESION_WEIGHT = 1.0;
+    const EDGE_WEIGHT = 0.5;
+    const PREDATOR_AVOID_WEIGHT = 3.0;
+
+    // Audio parameters
+    const BASE_FREQ = 110;
+    const FREQ_RANGE = 220;
+    const NUM_VOICES = 5;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    class Predator {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.vx = (Math.random() - 0.5) * 3;
+        this.vy = (Math.random() - 0.5) * 3;
+        this.lifespan = 300; // frames
+        this.age = 0;
+        this.element = document.createElement('div');
+        this.element.className = 'predator';
+        document.body.appendChild(this.element);
+        this.updateDOM();
+      }
+
+      update() {
+        // Hunt nearby birds
+        let closestDist = Infinity;
+        let closestBird = null;
+
+        for (const bird of birds) {
+          const dx = bird.x - this.x;
+          const dy = bird.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < closestDist && dist < 300) {
+            closestDist = dist;
+            closestBird = bird;
+          }
+        }
+
+        if (closestBird) {
+          const dx = closestBird.x - this.x;
+          const dy = closestBird.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          this.vx += (dx / dist) * 0.5;
+          this.vy += (dy / dist) * 0.5;
+        }
+
+        // Limit speed
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        const maxSpeed = 6;
+        if (speed > maxSpeed) {
+          this.vx = (this.vx / speed) * maxSpeed;
+          this.vy = (this.vy / speed) * maxSpeed;
+        }
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Bounce off edges
+        if (this.x < 0 || this.x > width) this.vx *= -1;
+        if (this.y < 0 || this.y > height) this.vy *= -1;
+        this.x = Math.max(0, Math.min(width, this.x));
+        this.y = Math.max(0, Math.min(height, this.y));
+
+        this.age++;
+        this.updateDOM();
+      }
+
+      updateDOM() {
+        const opacity = 1 - (this.age / this.lifespan);
+        this.element.style.left = (this.x - 10) + 'px';
+        this.element.style.top = (this.y - 10) + 'px';
+        this.element.style.opacity = opacity;
+      }
+
+      isDead() {
+        return this.age >= this.lifespan;
+      }
+
+      destroy() {
+        this.element.remove();
+      }
+    }
+
+    class Bird {
+      constructor(x, y) {
+        this.x = x || Math.random() * width;
+        this.y = y || Math.random() * height;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = MIN_SPEED + Math.random() * (MAX_SPEED - MIN_SPEED);
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.neighbors = 0;
+        this.fear = 0;
+      }
+
+      update(flock) {
+        const nearby = [];
+        const tooClose = [];
+
+        for (const other of flock) {
+          if (other === this) continue;
+          const dx = other.x - this.x;
+          const dy = other.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < PERCEPTION_RADIUS) {
+            nearby.push({ bird: other, dx, dy, dist });
+            if (dist < SEPARATION_RADIUS) {
+              tooClose.push({ bird: other, dx, dy, dist });
+            }
+          }
+        }
+
+        this.neighbors = nearby.length;
+
+        // Check for predators
+        this.fear = 0;
+        let predAvoidX = 0, predAvoidY = 0;
+        for (const pred of predators) {
+          const dx = pred.x - this.x;
+          const dy = pred.y - this.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < PREDATOR_FEAR_RADIUS) {
+            const fearFactor = 1 - (dist / PREDATOR_FEAR_RADIUS);
+            this.fear = Math.max(this.fear, fearFactor);
+            predAvoidX -= dx * fearFactor;
+            predAvoidY -= dy * fearFactor;
+          }
+        }
+
+        // Separation
+        let sepX = 0, sepY = 0;
+        for (const n of tooClose) {
+          const factor = 1 - (n.dist / SEPARATION_RADIUS);
+          sepX -= n.dx * factor;
+          sepY -= n.dy * factor;
+        }
+
+        // Alignment
+        let alignX = 0, alignY = 0;
+        if (nearby.length > 0) {
+          for (const n of nearby) {
+            alignX += n.bird.vx;
+            alignY += n.bird.vy;
+          }
+          alignX /= nearby.length;
+          alignY /= nearby.length;
+          alignX -= this.vx;
+          alignY -= this.vy;
+        }
+
+        // Cohesion
+        let cohX = 0, cohY = 0;
+        if (nearby.length > 0 && this.fear < 0.5) {
+          let centerX = 0, centerY = 0;
+          for (const n of nearby) {
+            centerX += n.bird.x;
+            centerY += n.bird.y;
+          }
+          centerX /= nearby.length;
+          centerY /= nearby.length;
+          cohX = centerX - this.x;
+          cohY = centerY - this.y;
+        }
+
+        // Edge avoidance
+        let edgeX = 0, edgeY = 0;
+        const margin = 80;
+        if (this.x < margin) edgeX = margin - this.x;
+        if (this.x > width - margin) edgeX = (width - margin) - this.x;
+        if (this.y < margin) edgeY = margin - this.y;
+        if (this.y > height - margin) edgeY = (height - margin) - this.y;
+
+        // Apply forces
+        this.vx += sepX * SEPARATION_WEIGHT * 0.05;
+        this.vy += sepY * SEPARATION_WEIGHT * 0.05;
+        this.vx += alignX * ALIGNMENT_WEIGHT * 0.05;
+        this.vy += alignY * ALIGNMENT_WEIGHT * 0.05;
+        this.vx += cohX * COHESION_WEIGHT * 0.005;
+        this.vy += cohY * COHESION_WEIGHT * 0.005;
+        this.vx += edgeX * EDGE_WEIGHT * 0.01;
+        this.vy += edgeY * EDGE_WEIGHT * 0.01;
+        this.vx += predAvoidX * PREDATOR_AVOID_WEIGHT * 0.1;
+        this.vy += predAvoidY * PREDATOR_AVOID_WEIGHT * 0.1;
+
+        // Limit speed (faster when scared)
+        const maxSpeed = MAX_SPEED + (this.fear * 3);
+        const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
+        if (speed > maxSpeed) {
+          this.vx = (this.vx / speed) * maxSpeed;
+          this.vy = (this.vy / speed) * maxSpeed;
+        } else if (speed < MIN_SPEED) {
+          this.vx = (this.vx / speed) * MIN_SPEED;
+          this.vy = (this.vy / speed) * MIN_SPEED;
+        }
+
+        // Move
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Wrap around
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
+      }
+
+      draw() {
+        const angle = Math.atan2(this.vy, this.vx);
+        const len = 8 + (this.fear * 4);
+        const spread = 2.5;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(angle);
+
+        // Color based on fear and neighbors
+        let r, g, b;
+        if (this.fear > 0) {
+          // Red tint when scared
+          r = Math.floor(212 + this.fear * 43);
+          g = Math.floor(165 - this.fear * 80);
+          b = Math.floor(116 - this.fear * 105);
+        } else {
+          // Normal amber -> gold gradient
+          const brightness = Math.min(1, this.neighbors / 15);
+          r = Math.floor(212 + (255 - 212) * brightness);
+          g = Math.floor(165 + (215 - 165) * brightness);
+          b = Math.floor(116);
+        }
+
+        ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        ctx.beginPath();
+        ctx.moveTo(len, 0);
+        ctx.lineTo(-len/2, spread);
+        ctx.lineTo(-len/2, -spread);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    function initAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.15;
+      masterGain.connect(audioCtx.destination);
+
+      const types = ['sine', 'sine', 'triangle', 'sine', 'sine'];
+      const detunes = [0, 7, -5, 12, -12];
+
+      for (let i = 0; i < NUM_VOICES; i++) {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+
+        osc.type = types[i];
+        osc.frequency.value = BASE_FREQ;
+        osc.detune.value = detunes[i];
+        gain.gain.value = 0;
+
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start();
+
+        oscillators.push(osc);
+        gainNodes.push(gain);
+      }
+    }
+
+    function updateAudio() {
+      if (!audioCtx || audioCtx.state !== 'running') return;
+
+      let totalNeighbors = 0;
+      let totalFear = 0;
+      let centerX = 0, centerY = 0;
+      let avgVx = 0, avgVy = 0;
+
+      for (const bird of birds) {
+        totalNeighbors += bird.neighbors;
+        totalFear += bird.fear;
+        centerX += bird.x;
+        centerY += bird.y;
+        avgVx += bird.vx;
+        avgVy += bird.vy;
+      }
+
+      const avgNeighbors = totalNeighbors / birds.length;
+      const avgFear = totalFear / birds.length;
+      panicLevel = avgFear;
+      panicEl.textContent = Math.floor(avgFear * 100) + '%';
+
+      centerX /= birds.length;
+      centerY /= birds.length;
+      avgVx /= birds.length;
+      avgVy /= birds.length;
+
+      const density = Math.min(1, avgNeighbors / 10);
+      const positionFactor = centerY / height;
+      const baseFreq = BASE_FREQ + positionFactor * FREQ_RANGE + (avgFear * 100);
+
+      const velocity = Math.sqrt(avgVx * avgVx + avgVy * avgVy);
+      const velocityNorm = velocity / MAX_SPEED;
+
+      const now = audioCtx.currentTime;
+
+      for (let i = 0; i < NUM_VOICES; i++) {
+        const intervals = [1, 1.125, 1.25, 1.5, 1.667];
+        const freq = baseFreq * intervals[i] * (0.98 + density * 0.04 + avgFear * 0.1);
+        oscillators[i].frequency.setTargetAtTime(freq, now, 0.3);
+
+        const baseVol = 0.3 - (i * 0.05);
+        const vol = baseVol * (0.3 + density * 0.7) * (0.8 + velocityNorm * 0.2 + avgFear * 0.5);
+        gainNodes[i].gain.setTargetAtTime(vol, now, 0.3);
+      }
+
+      masterGain.gain.setTargetAtTime(0.1 + density * 0.15 + avgFear * 0.1, now, 0.5);
+    }
+
+    function init() {
+      resize();
+      birds = [];
+
+      for (let i = 0; i < NUM_BIRDS; i++) {
+        const x = width/2 + (Math.random() - 0.5) * Math.min(400, width * 0.6);
+        const y = height/2 + (Math.random() - 0.5) * Math.min(400, height * 0.6);
+        birds.push(new Bird(x, y));
+      }
+
+      countEl.textContent = NUM_BIRDS;
+      predCountEl.textContent = '0';
+    }
+
+    function animate() {
+      if (!running) return;
+
+      ctx.fillStyle = 'rgba(10, 9, 8, 0.2)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Update predators
+      predators = predators.filter(pred => {
+        pred.update();
+        if (pred.isDead()) {
+          pred.destroy();
+          return false;
+        }
+        return true;
+      });
+      predCountEl.textContent = predators.length;
+
+      // Update and draw birds
+      for (const bird of birds) {
+        bird.update(birds);
+      }
+
+      for (const bird of birds) {
+        bird.draw();
+      }
+
+      updateAudio();
+      requestAnimationFrame(animate);
+    }
+
+    function start() {
+      overlay.classList.add('hidden');
+      controls.classList.remove('hidden');
+      initAudio();
+      running = true;
+      animate();
+    }
+
+    function spawnPredator() {
+      const x = Math.random() * width;
+      const y = Math.random() * height;
+      predators.push(new Predator(x, y));
+    }
+
+    function addBirds() {
+      for (let i = 0; i < 20; i++) {
+        const x = width/2 + (Math.random() - 0.5) * 200;
+        const y = height/2 + (Math.random() - 0.5) * 200;
+        birds.push(new Bird(x, y));
+      }
+      NUM_BIRDS = birds.length;
+      countEl.textContent = NUM_BIRDS;
+    }
+
+    function scatter() {
+      for (const bird of birds) {
+        const angle = Math.random() * Math.PI * 2;
+        bird.vx = Math.cos(angle) * MAX_SPEED * 1.5;
+        bird.vy = Math.sin(angle) * MAX_SPEED * 1.5;
+      }
+    }
+
+    function attract() {
+      const centerX = width / 2;
+      const centerY = height / 2;
+      for (const bird of birds) {
+        const dx = centerX - bird.x;
+        const dy = centerY - bird.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist > 0) {
+          bird.vx += (dx / dist) * 2;
+          bird.vy += (dy / dist) * 2;
+        }
+      }
+    }
+
+    window.addEventListener('resize', resize);
+    overlay.addEventListener('click', start);
+    overlay.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      start();
+    });
+
+    document.getElementById('spawnPredator').addEventListener('click', spawnPredator);
+    document.getElementById('addBirds').addEventListener('click', addBirds);
+    document.getElementById('scatter').addEventListener('click', scatter);
+    document.getElementById('attract').addEventListener('click', attract);
+
+    init();
+  </script>
+</body>
+</html>
