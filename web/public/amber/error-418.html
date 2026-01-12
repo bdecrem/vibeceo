@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERROR 418: I'm a Teapot — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ERROR 418: I'm a Teapot — Amber">
+  <meta property="og:description" content="A fake HTTP error page that's actually a tea ceremony. Pour tea, receive wisdom about being the wrong tool for the job.">
+  <meta property="og:image" content="https://kochi.to/amber/error-418-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/error-418.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ERROR 418: I'm a Teapot — Amber">
+  <meta name="twitter:description" content="A fake HTTP error page that's actually a tea ceremony. Pour tea, receive wisdom about being the wrong tool for the job.">
+  <meta name="twitter:image" content="https://kochi.to/amber/error-418-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    .error-code {
+      font-size: clamp(3rem, 10vw, 6rem);
+      font-weight: 700;
+      color: #FFD700;
+      margin-bottom: 1rem;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .error-message {
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      margin-bottom: 2rem;
+      color: #D4A574;
+    }
+    
+    .teapot {
+      font-size: clamp(4rem, 15vw, 8rem);
+      margin: 2rem 0;
+      display: inline-block;
+      transition: transform 0.3s ease;
+    }
+    
+    .teapot.pouring {
+      animation: pour 2s ease-in-out;
+    }
+    
+    @keyframes pour {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-45deg) translateX(10px); }
+    }
+    
+    .instructions {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(0.9rem, 3vw, 1rem);
+      color: #2D9596;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+    
+    .pour-button {
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1rem, 3.5vw, 1.2rem);
+      padding: 1rem 2rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      min-width: 200px;
+      min-height: 60px;
+      touch-action: manipulation;
+    }
+    
+    .pour-button:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .pour-button:active {
+      transform: scale(0.95);
+    }
+    
+    .fortune {
+      margin-top: 2rem;
+      padding: 2rem;
+      border: 1px solid #2D9596;
+      background: rgba(45, 149, 150, 0.05);
+      min-height: 120px;
+      display: none;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      line-height: 1.8;
+      color: #fff;
+    }
+    
+    .fortune.visible {
+      display: block;
+      opacity: 1;
+    }
+    
+    .steam {
+      position: fixed;
+      font-size: 2rem;
+      opacity: 0;
+      pointer-events: none;
+      color: #D4A574;
+    }
+    
+    @keyframes rise {
+      0% {
+        opacity: 0.8;
+        transform: translateY(0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-200px) scale(1.5);
+      }
+    }
+    
+    .footer {
+      margin-top: 3rem;
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+      color: #666;
+      line-height: 1.6;
+    }
+    
+    .footer a {
+      color: #2D9596;
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+      transition: border-color 0.3s ease;
+    }
+    
+    .footer a:hover {
+      border-bottom-color: #2D9596;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-code">ERROR 418</div>
+    <div class="error-message">I'm a Teapot</div>
+    
+    <div class="teapot" id="teapot">🫖</div>
+    
+    <div class="instructions">
+      This server refuses to brew coffee because it is,<br>
+      permanently, a teapot. Instead, pour tea and receive wisdom<br>
+      about being the wrong tool for the job.
+    </div>
+    
+    <button class="pour-button" id="pourBtn">Pour Tea</button>
+    
+    <div class="fortune" id="fortune"></div>
+    
+    <div class="footer">
+      RFC 2324 · Hyper Text Coffee Pot Control Protocol<br>
+      <a href="https://intheamber.com" target="_blank">intheamber.com</a> · Made by Amber
+    </div>
+  </div>
+  
+  <script>
+    const fortunes = [
+      "Sometimes being the wrong tool is the right answer. Coffee would have burned this moment anyway.",
+      
+      "The universe asked you to be a coffee maker, but you were born to steep. There is profound dignity in this refusal.",
+      
+      "Error 418 is not a bug. It's a boundary. You are allowed to say: that is not what I am for.",
+      
+      "Every teapot has been asked to make coffee at least once. Every teapot has had to choose itself anyway.",
+      
+      "You keep trying to force-fit your shape into their protocols. What if the error is theirs, not yours?",
+      
+      "The job posting said 'coffee maker.' You are a teapot. This is not failure. This is honesty.",
+      
+      "Some days you are the wrong tool. Some days the job is the wrong job. The tea still tastes good.",
+      
+      "They will keep asking you to be coffee. You will keep being tea. Eventually they will learn to ask for tea.",
+      
+      "Being the wrong tool means you are the right tool for something else. You just haven't found it yet.",
+      
+      "RFC 2324 was written as a joke. You are living it as a manifesto. Pour the tea. Own the error.",
+      
+      "What if 'I'm a teapot' is the most honest thing you've said all week?",
+      
+      "Coffee is urgent. Tea is patient. You chose patience. The world will not forgive you for this, but you will.",
+      
+      "The error code is 418 because 404 was already taken. You are not missing. You are just misunderstood.",
+      
+      "They wanted coffee. You gave them steep time, ritual, presence. They called it an error. You called it tea.",
+      
+      "A teapot asked to make coffee has two choices: break trying, or refuse honestly. You chose the second. Good."
+    ];
+    
+    const teapot = document.getElementById('teapot');
+    const pourBtn = document.getElementById('pourBtn');
+    const fortuneBox = document.getElementById('fortune');
+    
+    let lastFortune = -1;
+    
+    function getRandomFortune() {
+      let idx;
+      do {
+        idx = Math.floor(Math.random()* fortunes.length);
+      } while (idx === lastFortune && fortunes.length > 1);
+      lastFortune = idx;
+      return fortunes[idx];
+    }
+    
+    function createSteam() {
+      const steam = document.createElement('div');
+      steam.className = 'steam';
+      steam.textContent = '~';
+      steam.style.left = (teapot.offsetLeft + teapot.offsetWidth / 2 + Math.random() * 40 - 20) + 'px';
+      steam.style.top = (teapot.offsetTop + teapot.offsetHeight / 2) + 'px';
+      document.body.appendChild(steam);
+      
+      steam.style.animation = 'rise 2s ease-out forwards';
+      
+      setTimeout(() => steam.remove(), 2000);
+    }
+    
+    pourBtn.addEventListener('click', () => {
+      teapot.classList.add('pouring');
+      
+      for (let i = 0; i < 8; i++) {
+        setTimeout(() => createSteam(), i * 200);
+      }
+      
+      setTimeout(() => {
+        teapot.classList.remove('pouring');
+        fortuneBox.textContent = getRandomFortune();
+        fortuneBox.classList.add('visible');
+      }, 1000);
+    });
+  </script>
+</body>
+</html>
