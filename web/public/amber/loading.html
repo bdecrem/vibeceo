@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOADING... — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="LOADING... — Amber">
+  <meta property="og:description" content="A fake loading screen for your existential progress">
+  <meta property="og:image" content="https://kochi.to/amber/loading-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/loading.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LOADING... — Amber">
+  <meta name="twitter:description" content="A fake loading screen for your existential progress">
+  <meta name="twitter:image" content="https://kochi.to/amber/loading-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .title {
+      font-size: clamp(24px, 5vw, 36px);
+      font-weight: 700;
+      margin-bottom: 40px;
+      text-align: center;
+      letter-spacing: 4px;
+      color: #FFD700;
+    }
+    
+    .loading-item {
+      margin-bottom: 30px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeIn 0.5s forwards;
+    }
+    
+    .loading-item:nth-child(2) { animation-delay: 0.2s; }
+    .loading-item:nth-child(3) { animation-delay: 0.4s; }
+    .loading-item:nth-child(4) { animation-delay: 0.6s; }
+    .loading-item:nth-child(5) { animation-delay: 0.8s; }
+    .loading-item:nth-child(6) { animation-delay: 1s; }
+    .loading-item:nth-child(7) { animation-delay: 1.2s; }
+    .loading-item:nth-child(8) { animation-delay: 1.4s; }
+    
+    @keyframes fadeIn {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .label {
+      font-size: clamp(12px, 3vw, 14px);
+      margin-bottom: 8px;
+      color: #D4A574;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .percentage {
+      color: #2D9596;
+      font-weight: 700;
+    }
+    
+    .bar-container {
+      width: 100%;
+      height: 24px;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700);
+      transition: width 0.3s ease;
+      position: relative;
+    }
+    
+    .bar::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.3),
+        transparent
+      );
+      animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .status {
+      font-size: clamp(10px, 2.5vw, 11px);
+      margin-top: 4px;
+      color: #7B68EE;
+      font-style: italic;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 60px;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #2D9596;
+      opacity: 0;
+      animation: fadeIn 1s forwards 2s;
+    }
+    
+    @media (max-width: 480px) {
+      .loading-item {
+        margin-bottom: 25px;
+      }
+      
+      .bar-container {
+        height: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="title">LOADING...</div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Existence Protocol</span>
+        <span class="percentage" data-target="100">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="100"></div>
+      </div>
+      <div class="status">Initializing consciousness...</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Emotional Baggage</span>
+        <span class="percentage" data-target="73">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="73"></div>
+      </div>
+      <div class="status">Still unpacking from 2019...</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Life Goals Clarity</span>
+        <span class="percentage" data-target="12">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="12"></div>
+      </div>
+      <div class="status">Error: File not found</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Caffeine Dependency</span>
+        <span class="percentage" data-target="94">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="94"></div>
+      </div>
+      <div class="status">Critical levels detected</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Imposter Syndrome</span>
+        <span class="percentage" data-target="87">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="87"></div>
+      </div>
+      <div class="status">Everyone knows you're faking it</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Will To Adult</span>
+        <span class="percentage" data-target="28">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="28"></div>
+      </div>
+      <div class="status">Insufficient resources</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Regrettable Haircuts</span>
+        <span class="percentage" data-target="56">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="56"></div>
+      </div>
+      <div class="status">2007 was a difficult year</div>
+    </div>
+    
+    <div class="loading-item">
+      <div class="label">
+        <span>Readiness For Tomorrow</span>
+        <span class="percentage" data-target="5">0%</span>
+      </div>
+      <div class="bar-container">
+        <div class="bar" data-width="5"></div>
+      </div>
+      <div class="status">Processing... please wait forever</div>
+    </div>
+    
+    <div class="footer">
+      Press any key to continue existing<br>
+      (just kidding, there is no key)
+    </div>
+  </div>
+  
+  <script>
+    // Animate the loading bars
+    document.addEventListener('DOMContentLoaded', () => {
+      const bars = document.querySelectorAll('.bar');
+      const percentages = document.querySelectorAll('.percentage');
+      
+      // Start animations after initial delay
+      setTimeout(() => {
+        bars.forEach((bar, index) => {
+          const target = parseInt(bar.dataset.width);
+          const percentage = percentages[index];
+          const targetPercent = parseInt(percentage.dataset.target);
+          
+          // Animate bar width
+          setTimeout(() => {
+            bar.style.width = target + '%';
+          }, index * 200);
+          
+          // Animate percentage counter
+          let current = 0;
+          const duration = 1000;
+          const steps = 30;
+          const increment = targetPercent / steps;
+          const stepDuration = duration / steps;
+          
+          setTimeout(() => {
+            const interval = setInterval(() => {
+              current += increment;
+              if (current >= targetPercent) {
+                current = targetPercent;
+                clearInterval(interval);
+              }
+              percentage.textContent = Math.floor(current) + '%';
+            }, stepDuration);
+          }, index * 200);
+        });
+      }, 500);
+    });
+  </script>
+</body>
+</html>
