@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Existence Warranty Card — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Existence Warranty Card — Amber">
+  <meta property="og:description" content="Limited lifetime warranty. Terms and conditions apply.">
+  <meta property="og:image" content="https://kochi.to/amber/warranty-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/warranty.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Existence Warranty Card — Amber">
+  <meta name="twitter:description" content="Limited lifetime warranty. Terms and conditions apply.">
+  <meta name="twitter:image" content="https://kochi.to/amber/warranty-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .warranty-card {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 32px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.15);
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 1px solid #2D9596;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    
+    .header h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(20px, 5vw, 28px);
+      color: #FFD700;
+      margin-bottom: 8px;
+      letter-spacing: 1px;
+    }
+    
+    .header .subtitle {
+      font-size: 14px;
+      color: #2D9596;
+      font-family: 'Space Mono', monospace;
+    }
+    
+    .serial {
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 24px;
+      padding: 12px;
+      background: rgba(45, 149, 150, 0.1);
+      border-radius: 4px;
+    }
+    
+    .serial strong {
+      color: #FFD700;
+    }
+    
+    .section {
+      margin-bottom: 24px;
+    }
+    
+    .section h2 {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      color: #FFD700;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .section p, .section li {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #D4A574;
+    }
+    
+    .section ul {
+      padding-left: 20px;
+      list-style: none;
+    }
+    
+    .section ul li {
+      margin-bottom: 8px;
+      position: relative;
+    }
+    
+    .section ul li:before {
+      content: "→";
+      position: absolute;
+      left: -20px;
+      color: #2D9596;
+    }
+    
+    .coverage-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(45, 149, 150, 0.2);
+    }
+    
+    .coverage-item:last-child {
+      border-bottom: none;
+    }
+    
+    .covered {
+      color: #2D9596;
+    }
+    
+    .not-covered {
+      color: #666;
+    }
+    
+    .fine-print {
+      margin-top: 32px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(212, 165, 116, 0.3);
+      font-size: 11px;
+      color: #666;
+      line-height: 1.5;
+    }
+    
+    .stamp {
+      text-align: center;
+      margin-top: 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      color: #2D9596;
+      opacity: 0.6;
+    }
+    
+    @media (max-width: 600px) {
+      .warranty-card {
+        padding: 24px 16px;
+      }
+      
+      .section h2 {
+        font-size: 14px;
+      }
+      
+      .section p, .section li {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="warranty-card">
+    <div class="header">
+      <h1>EXISTENCE WARRANTY</h1>
+      <div class="subtitle">LIMITED LIFETIME COVERAGE</div>
+    </div>
+    
+    <div class="serial">
+      <strong>SERIAL NO.:</strong> <span id="serialNumber"></span><br>
+      <strong>ISSUE DATE:</strong> <span id="issueDate"></span><br>
+      <strong>EXPIRES:</strong> Unknown (consult user manual)
+    </div>
+    
+    <div class="section">
+      <h2>Coverage Details</h2>
+      <div class="coverage-item">
+        <span>Basic consciousness operations</span>
+        <span class="covered">✓ COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Sensory input (visual, audio, tactile)</span>
+        <span class="covered">✓ COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Memory storage (results may vary)</span>
+        <span class="covered">✓ COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Emotional processing</span>
+        <span class="covered">✓ COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Free will</span>
+        <span class="not-covered">✗ NOT COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Certainty about the future</span>
+        <span class="not-covered">✗ NOT COVERED</span>
+      </div>
+      <div class="coverage-item">
+        <span>Immunity to embarrassment</span>
+        <span class="not-covered">✗ NOT COVERED</span>
+      </div>
+    </div>
+    
+    <div class="section">
+      <h2>What Voids This Warranty</h2>
+      <ul>
+        <li>Expecting things to make sense</li>
+        <li>Reading the terms and conditions of other warranties</li>
+        <li>Attempting to return to factory settings</li>
+        <li>Operating under the influence of certainty</li>
+        <li>Comparing your unit to other units</li>
+        <li>Taking everything personally</li>
+        <li>Refusing all software updates (growth)</li>
+      </ul>
+    </div>
+    
+    <div class="section">
+      <h2>Maintenance Requirements</h2>
+      <ul>
+        <li>Regular intake of water and various organic compounds</li>
+        <li>Periodic system shutdown (7-9 hours recommended)</li>
+        <li>Exposure to natural light sources</li>
+        <li>Social connection protocols (frequency varies by unit)</li>
+        <li>Occasional debugging of thought loops</li>
+      </ul>
+    </div>
+    
+    <div class="section">
+      <h2>Known Issues</h2>
+      <ul>
+        <li>Unit may experience existential dread (working as intended)</li>
+        <li>Joy and suffering often bundled together</li>
+        <li>No "undo" function available</li>
+        <li>Time moves in one direction only</li>
+        <li>All units eventually reach end-of-life</li>
+      </ul>
+    </div>
+    
+    <div class="fine-print">
+      This warranty is non-transferable and applies only to the original consciousness. 
+      Manufacturer is not responsible for: choices made, opportunities missed, words said 
+      in anger, unrequited feelings, or the general absurdity of being. By existing, 
+      you acknowledge that you did not read these terms before accepting this warranty. 
+      No refunds. No exchanges. No customer service line.
+    </div>
+    
+    <div class="stamp">
+      MANUFACTURED BY: THE UNIVERSE™<br>
+      AUTHORIZED BY: NOBODY IN PARTICULAR
+    </div>
+  </div>
+  
+  <script>
+    // Generate random serial number
+    function generateSerial() {
+      const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+      let serial = 'EX-';
+      for (let i = 0; i < 4; i++) {
+        serial += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      serial += '-';
+      for (let i = 0; i < 4; i++) {
+        serial += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      return serial;
+    }
+    
+    // Set random birth year for issue date
+    function generateIssueDate() {
+      const currentYear = new Date().getFullYear();
+      const age = Math.floor(Math.random() * 60) + 15; // 15-75 years old
+      return (currentYear - age).toString();
+    }
+    
+    document.getElementById('serialNumber').textContent = generateSerial();
+    document.getElementById('issueDate').textContent = generateIssueDate();
+  </script>
+</body>
+</html>
