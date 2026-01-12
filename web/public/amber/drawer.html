@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Drawer</title>
+    <meta name="description" content="Open the drawer. Find something unexpected.">
+    <meta property="og:title" content="The Drawer">
+    <meta property="og:description" content="Open the drawer. Find something unexpected.">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary">
+    <meta name="twitter:title" content="The Drawer">
+    <meta name="twitter:description" content="Open the drawer. Find something unexpected.">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            background: #0A0908;
+            color: #D4A574;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 500px;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 300;
+            margin-bottom: 3rem;
+            letter-spacing: 0.1em;
+            opacity: 0.8;
+        }
+
+        .drawer-container {
+            position: relative;
+            width: 100%;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .drawer {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #1a1614 0%, #2a2420 100%);
+            border: 2px solid #D4A574;
+            border-radius: 8px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .drawer:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(212, 165, 116, 0.15);
+        }
+
+        .drawer.open {
+            transform: translateY(20px);
+            opacity: 0.3;
+        }
+
+        .handle {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 12px;
+            background: #D4A574;
+            border-radius: 6px;
+            box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .handle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            right: 10px;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-50%);
+        }
+
+        .instruction {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            opacity: 0.6;
+            letter-spacing: 0.05em;
+            transition: opacity 0.3s;
+        }
+
+        .instruction.hidden {
+            opacity: 0;
+        }
+
+        .treasure-reveal {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 350px;
+            padding: 3rem 2rem;
+            background: rgba(26, 22, 20, 0.95);
+            border: 1px solid #D4A574;
+            border-radius: 8px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .treasure-reveal.visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .treasure-content {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: #D4A574;
+        }
+
+        .treasure-type {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            opacity: 0.5;
+            margin-bottom: 1.5rem;
+        }
+
+        .treasure-object {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .close-btn {
+            margin-top: 2rem;
+            padding: 0.5rem 2rem;
+            background: transparent;
+            border: 1px solid #D4A574;
+            color: #D4A574;
+            font-family: 'Georgia', serif;
+            font-size: 0.9rem;
+            letter-spacing: 0.1em;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(212, 165, 116, 0.1);
+            transform: translateY(-1px);
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            .drawer {
+                height: 150px;
+            }
+
+            .treasure-reveal {
+                padding: 2rem 1.5rem;
+            }
+
+            .treasure-content {
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>THE DRAWER</h1>
+
+        <div class="drawer-container">
+            <div class="drawer" id="drawer">
+                <div class="handle"></div>
+            </div>
+            <p class="instruction" id="instruction">Click to open</p>
+        </div>
+
+        <div class="treasure-reveal" id="treasureReveal">
+            <div class="treasure-type" id="treasureType"></div>
+            <div class="treasure-object" id="treasureObject"></div>
+            <div class="treasure-content" id="treasureContent"></div>
+            <button class="close-btn" id="closeBtn">Close</button>
+        </div>
+    </div>
+
+    <script>
+        const treasures = [
+            {
+                type: "Found Object",
+                emoji: "🔮",
+                content: "A marble with a galaxy inside. You held it up to the light once and saw infinity."
+            },
+            {
+                type: "Note",
+                emoji: "",
+                content: "\"I knew you'd find this.\" — Written in your handwriting, but you don't remember writing it."
+            },
+            {
+                type: "Question",
+                emoji: "❓",
+                content: "What did you used to believe that you've forgotten you believed?"
+            },
+            {
+                type: "Found Object",
+                emoji: "🌸",
+                content: "A pressed flower. You don't remember what kind it was, or who gave it to you, or why you kept it."
+            },
+            {
+                type: "Found Object",
+                emoji: "🔑",
+                content: "A small brass key. You've never found the lock it opens."
+            },
+            {
+                type: "Fortune",
+                emoji: "",
+                content: "The answer is in the asking."
+            },
+            {
+                type: "Found Object",
+                emoji: "💎",
+                content: "A single earring. The other one is somewhere, but not here."
+            },
+            {
+                type: "Memory",
+                emoji: "",
+                content: "A ticket stub from a movie you never saw. Someone else's evening, preserved."
+            },
+            {
+                type: "Found Object",
+                emoji: "🌱",
+                content: "A seed. You think it might still grow, if you planted it. But you never do."
+            },
+            {
+                type: "Found Object",
+                emoji: "✨",
+                content: "A thread of gold. From what, you don't know. But it catches the light."
+            },
+            {
+                type: "Question",
+                emoji: "🤔",
+                content: "If you could send one word back to your younger self, what would it be?"
+            },
+            {
+                type: "Note",
+                emoji: "",
+                content: "\"Meet me where we first met. You'll know when.\" — Unsigned."
+            },
+            {
+                type: "Found Object",
+                emoji: "🪙",
+                content: "A penny from 1987. The year something ended, or began. You're not sure which."
+            },
+            {
+                type: "Fortune",
+                emoji: "",
+                content: "What you're looking for is looking for you too."
+            },
+            {
+                type: "Found Object",
+                emoji: "🎭",
+                content: "A button from a coat you never owned. How did it get here?"
+            },
+            {
+                type: "Memory",
+                emoji: "",
+                content: "A library card with someone else's name. You wonder what they read."
+            },
+            {
+                type: "Question",
+                emoji: "💭",
+                content: "What would you do if you knew nobody was watching?"
+            },
+            {
+                type: "Found Object",
+                emoji: "🎵",
+                content: "A whistle that makes no sound. You've tried. It's silent. But you keep it anyway."
+            },
+            {
+                type: "Note",
+                emoji: "",
+                content: "\"Don't forget.\" — But you've already forgotten what it meant."
+            },
+            {
+                type: "Fortune",
+                emoji: "",
+                content: "The thing you're avoiding is the door you need to walk through."
+            },
+            {
+                type: "Found Object",
+                emoji: "📷",
+                content: "A photo corner, empty. The picture is long gone. Just the corner remains."
+            },
+            {
+                type: "Question",
+                emoji: "🌙",
+                content: "What do you think about when you can't sleep?"
+            },
+            {
+                type: "Memory",
+                emoji: "",
+                content: "A name written in fading ink. You remember the person, but not why you wrote their name here."
+            },
+            {
+                type: "Found Object",
+                emoji: "🦋",
+                content: "A wing from something. Butterfly? Moth? It's incomplete, but still beautiful."
+            },
+            {
+                type: "Fortune",
+                emoji: "",
+                content: "You already know the answer. You're just waiting for permission."
+            }
+        ];
+
+        const drawer = document.getElementById('drawer');
+        const instruction = document.getElementById('instruction');
+        const treasureReveal = document.getElementById('treasureReveal');
+        const treasureType = document.getElementById('treasureType');
+        const treasureObject = document.getElementById('treasureObject');
+        const treasureContent = document.getElementById('treasureContent');
+        const closeBtn = document.getElementById('closeBtn');
+
+        let isOpen = false;
+
+        // Audio context for gentle sound
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playGentleChime() {
+            const now = audioContext.currentTime;
+
+            // Create oscillator for bell-like tone
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            // Gentle bell frequency
+            osc.frequency.value = 800;
+
+            // Soft envelope
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.1, now + 0.01);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.8);
+
+            osc.start(now);
+            osc.stop(now + 0.8);
+        }
+
+        drawer.addEventListener('click', openDrawer);
+        closeBtn.addEventListener('click', closeDrawer);
+
+        function openDrawer() {
+            if (isOpen) return;
+
+            isOpen = true;
+
+            // Play gentle sound
+            playGentleChime();
+
+            drawer.classList.add('open');
+            instruction.classList.add('hidden');
+
+            // Pick random treasure
+            const treasure = treasures[Math.floor(Math.random() * treasures.length)];
+
+            // Populate treasure
+            treasureType.textContent = treasure.type;
+            treasureObject.textContent = treasure.emoji;
+            treasureContent.textContent = treasure.content;
+
+            // Show treasure after delay
+            setTimeout(() => {
+                treasureReveal.classList.add('visible');
+            }, 600);
+        }
+
+        function closeDrawer() {
+            treasureReveal.classList.remove('visible');
+
+            setTimeout(() => {
+                drawer.classList.remove('open');
+                instruction.classList.remove('hidden');
+                isOpen = false;
+            }, 500);
+        }
+
+        // Close on escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isOpen) {
+                closeDrawer();
+            }
+        });
+    </script>
+</body>
+</html>
