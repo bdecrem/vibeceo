@@ -498,21 +498,31 @@ async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
                           "introspective, shadowed, abstract" if mood_valence < 0.4 else \
                           "neutral, observational"
 
-            og_prompt = f"""Abstract digital art for social media preview (1200x630 aspect ratio).
-Theme: "{title}"
-{f'Subtitle: {subtitle}' if subtitle else ''}
+            og_prompt = f"""Create a BOLD, eye-catching social media preview image (1200x630).
 
-Style requirements:
-- Dark background (#0D0D0D to #1a1a1a)
-- Amber/gold primary accent (#D4A574, #FFD700, #f59e0b)
-- Teal secondary accent (#2D9596)
-- Energy: {energy_desc}
+This is the OpenGraph image for: "{title}"
+{f'What it shows: {subtitle}' if subtitle else ''}
+
+MAKE IT SURPRISING AND FUN:
+- This should make someone STOP SCROLLING on Twitter
+- Be playful, weird, unexpected — NOT generic "digital art"
+- If the creation is funny, make the OG image funny
+- If it's weird, lean into the weirdness
+- Think: meme energy meets art gallery
+
+Visual style:
+- Dark background (near-black #0D0D0D)
+- Amber/gold highlights (#FFD700, #f59e0b)
+- Energy level: {energy_desc}
 - Mood: {valence_desc}
-- The title "{title}" should be subtly visible or represented conceptually
-- Berlin techno aesthetic meets generative art
-- No photorealistic elements, purely abstract/digital
-- Suitable for OpenGraph social preview
-- Clean, impactful, modern"""
+
+AVOID being generic! No:
+- Generic "particle systems" or "waveforms"
+- Boring tech gradients
+- Corporate-looking previews
+- Anything that looks like every other OG image
+
+The title "{title}" can appear in the image if it fits the vibe."""
 
             try:
                 url = "https://api.openai.com/v1/images/generations"

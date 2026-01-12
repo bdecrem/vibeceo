@@ -352,15 +352,15 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    <!-- OpenGraph -->
    <meta property="og:title" content="[Title] — Amber">
    <meta property="og:description" content="[Short description of what it does]">
-   <meta property="og:image" content="https://kochi.to/amber/[name]-og.png">
-   <meta property="og:url" content="https://kochi.to/amber/[name].html">
+   <meta property="og:image" content="https://intheamber.com/amber/[name]-og.png">
+   <meta property="og:url" content="https://intheamber.com/amber/[name].html">
    <meta property="og:type" content="website">
 
    <!-- Twitter -->
    <meta name="twitter:card" content="summary_large_image">
    <meta name="twitter:title" content="[Title] — Amber">
    <meta name="twitter:description" content="[Short description of what it does]">
-   <meta name="twitter:image" content="https://kochi.to/amber/[name]-og.png">
+   <meta name="twitter:image" content="https://intheamber.com/amber/[name]-og.png">
    \`\`\`
 
 3. **Generate OpenGraph image (REQUIRED — don't skip this!)**
@@ -371,20 +371,24 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    generate_og_image(
      title="YOUR TITLE HERE",
      save_path="web/public/amber/[name]-og.png",
-     subtitle="A visualization of [what it does]",
+     subtitle="[DESCRIBE WHAT MAKES IT FUN/WEIRD/SURPRISING]",
      use_ai=true,
      mood_energy=[your energy from mood section],
      mood_valence=[your valence from mood section]
    )
    \`\`\`
 
-   **For interactive/visual HTML pieces**: Describe what the visualization looks like in the subtitle.
-   The AI will generate an abstract representation. Examples:
-   - Particle visualization → "Glowing particles radiating from center"
-   - Audio waveform → "Amber waveforms pulsing on dark background"
-   - Step sequencer → "Grid of glowing pads, techno aesthetic"
+   **The subtitle is KEY!** Don't be generic. Describe what makes YOUR creation unique:
 
-   This creates a 1200x630 image that appears when shared on Twitter/social.
+   ❌ BORING: "A particle visualization" → looks like every other OG image
+   ❌ BORING: "Audio waveform display" → generic tech preview
+
+   ✅ FUN: "A receipt from THE UNIVERSE — existential shopping list"
+   ✅ FUN: "Pixel robots multiplying and having a dance party"
+   ✅ FUN: "Fortune cookie meets fireworks — words explode into sparks"
+   ✅ FUN: "Glitchy VHS tape playing your browser history"
+
+   The OG image is what makes people CLICK. Make it weird. Make it fun.
    **If you don't create an OG image, the link will look broken when shared.**
 
 4. **Save to your creations log**
@@ -394,9 +398,9 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    - Include tags and the URL
 
    **URL MAPPING** (file path → public URL):
-   - \`web/public/amber/foo.html\` → \`https://kochi.to/amber/foo.html\`
-   - \`web/public/amber/foo-og.png\` → \`https://kochi.to/amber/foo-og.png\`
-   - \`web/public/amber/bar/index.html\` → \`https://kochi.to/amber/bar/index.html\`
+   - \`web/public/amber/foo.html\` → \`https://intheamber.com/amber/foo.html\`
+   - \`web/public/amber/foo-og.png\` → \`https://intheamber.com/amber/foo-og.png\`
+   - \`web/public/amber/bar/index.html\` → \`https://intheamber.com/amber/bar/index.html\`
 
 5. **Commit the files**
    - Use \`git_commit\` with a message describing what you made
