@@ -553,71 +553,47 @@ async function markCreationAsTweeted(url: string): Promise<void> {
 // =============================================================================
 
 /**
- * Get Amber's latest tweet from Twitter
- * Uses search API to find the most recent tweet from @intheamber
+ * Build SMS message for a new Amber creation
+ * Format: Header + description + inline link (like AI Daily)
  */
-async function getAmberLatestTweet(): Promise<string | null> {
-  try {
-    // Search for tweets from @intheamber (Amber's account)
-    const result = await searchTweets("from:intheamber", 10);
+function buildCreationSmsMessage(creation: { content: string; url: string }): string {
+  const lines: string[] = [];
 
-    if (!result.success || !result.tweets || result.tweets.length === 0) {
-      console.warn("[amber-social] Could not fetch Amber's latest tweet");
-      return null;
-    }
+  // Header
+  lines.push("🎨 Amber made something new");
+  lines.push("");
 
-    // Return the most recent tweet text
-    return result.tweets[0].text;
-  } catch (error) {
-    console.error("[amber-social] Error fetching Amber's tweet:", error);
-    return null;
-  }
+  // Creation name (truncate if needed)
+  const name = creation.content.length > 100
+    ? creation.content.slice(0, 97) + "..."
+    : creation.content;
+  lines.push(name);
+  lines.push("");
+
+  // Inline link with trailing text (prevents iMessage splitting)
+  lines.push(`👀 See it: ${creation.url} — fresh from the drawer`);
+
+  return lines.join("\n");
 }
 
 /**
- * Build SMS message for a tweet notification
- * Uses Amber's exact tweet text - feels like she's talking directly to you
+ * Notify all amber-twitter subscribers about a new creation
+ * Only called from tweet phase (NOT reply phase)
  */
-function buildTweetSmsMessage(tweetText: string): string {
-  const MAX_SMS_LENGTH = 670;
-
-  // Just use Amber's words directly, with a simple prefix
-  const prefix = "🐦 ";
-
-  // Truncate if needed (unlikely since tweets are 280 chars)
-  const available = MAX_SMS_LENGTH - prefix.length - 3;
-  let displayText = tweetText.trim();
-  if (displayText.length > available) {
-    displayText = displayText.slice(0, available).trimEnd() + "...";
-  }
-
-  return `${prefix}${displayText}`;
-}
-
-/**
- * Notify all amber-twitter subscribers about a new tweet
- * Fetches Amber's actual tweet and sends her exact words
- */
-async function notifyTweetSubscribers(): Promise<{ sent: number; failed: number }> {
+async function notifyCreationSubscribers(
+  creation: { content: string; url: string }
+): Promise<{ sent: number; failed: number }> {
   const subscribers = await getAgentSubscribers(AMBER_TWITTER_AGENT_SLUG);
 
   if (subscribers.length === 0) {
-    console.log("[amber-social] No SMS subscribers for tweet notification");
+    console.log("[amber-social] No SMS subscribers for creation notification");
     return { sent: 0, failed: 0 };
   }
 
-  console.log(`[amber-social] Notifying ${subscribers.length} SMS subscribers...`);
+  console.log(`[amber-social] Notifying ${subscribers.length} SMS subscribers about: ${creation.content}`);
 
-  // Fetch Amber's actual tweet from Twitter
-  const tweetText = await getAmberLatestTweet();
-  if (!tweetText) {
-    console.error("[amber-social] Could not get Amber's tweet for SMS notification");
-    return { sent: 0, failed: subscribers.length };
-  }
-
-  // Build message using her exact words
-  const message = buildTweetSmsMessage(tweetText);
-  console.log(`[amber-social] SMS message: ${message}`);
+  const message = buildCreationSmsMessage(creation);
+  console.log(`[amber-social] SMS message:\n${message}`);
 
   let twilioClient: TwilioClient;
   try {
@@ -1084,8 +1060,8 @@ async function runTweetPhase(timeOfDay: string): Promise<void> {
       // Step 3: Mark creation as tweeted
       await markCreationAsTweeted(creation.url);
 
-      // Step 4: Notify SMS subscribers with Amber's exact tweet
-      const smsResult = await notifyTweetSubscribers();
+      // Step 4: Notify SMS subscribers about the new creation
+      const smsResult = await notifyCreationSubscribers(creation);
       console.log(`  - SMS notifications: ${smsResult.sent} sent, ${smsResult.failed} failed`);
     } else {
       console.log(`  - No tweet posted`);

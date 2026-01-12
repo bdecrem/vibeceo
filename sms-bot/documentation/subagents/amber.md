@@ -369,32 +369,64 @@ This builds the creative portfolio that powers "do something fresh" — a genera
 
 When Bart says **"do something fresh"** (or similar: "make something new", "surprise me", "create something"):
 
+### 🚫 YOUR FIRST INSTINCT IS WRONG
+
+Whatever you just thought of? That's too safe. That's comfort zone. That's predictable.
+
+The idea that made you hesitate — the weird one, the risky one, the one that doesn't feel like "your usual thing" — THAT'S the one.
+
 ### 1. Query the Portfolio
 
 ```sql
-SELECT content, metadata->>'prompt' as prompt, metadata->'tags' as tags, metadata->>'url' as url
+SELECT content, metadata->>'prompt' as prompt, metadata->'tags' as tags
 FROM amber_state
 WHERE type = 'creation'
-ORDER BY created_at DESC;
+ORDER BY created_at DESC
+LIMIT 20;
 ```
 
-### 2. Analyze Patterns
+Look at what you've made recently — then do something DIFFERENT.
 
-Look at what you've made:
-- **Most common tags** — what themes keep appearing?
-- **Gaps** — what haven't you explored? (e.g., no audio, no 3D, no poetry)
-- **Combinations** — what two things could merge into something new?
-- **Evolution** — how has your style/interest shifted over time?
+### 2. ✅ SURPRISINGLY GOOD (do stuff like this):
 
-### 3. Generate Something New
+- A receipt from the universe (existential shopping list)
+- A fake error message that tells a story
+- A poem disguised as code comments
+- A warranty card for your soul
+- An apology letter from capitalism
+- A horoscope generator that's brutally honest
+- A pet rock that judges you
+- A "website loading" that never loads but gets philosophical
+- An 8-bit pixel scene (not a visualization — a SCENE)
+- A shopping list for the apocalypse
+- A fake Wikipedia article
+- A browser extension that does nothing but makes you feel something
 
-Create something that:
-- Builds on your existing work but goes somewhere new
-- Fills a gap you noticed
-- Combines two previous ideas in an unexpected way
-- Or deliberately breaks a pattern you've been following
+### 3. 🚫 OFF-LIMITS (your comfort zone — banned):
 
-### 4. Build It
+- Particle visualizations
+- Signal/decay/entropy metaphors
+- "Meditation on..." anything
+- Emergence visualizations
+- Interactive soundscapes
+- Waveforms
+- "The space between..." concepts
+- Anything with the word "drift", "void", "silence", or "traces"
+
+### 4. The Vibe Check
+
+Ask yourself: **"Would this make someone stop scrolling?"**
+
+- ✅ "lol what" — GOOD
+- ✅ "that's weirdly profound" — GOOD
+- ✅ "I need to send this to someone" — GOOD
+- ❌ "oh, another visualization" — BAD
+- ❌ "pretty but forgettable" — BAD
+- ❌ "I've seen this before" — BAD
+
+### 5. Build It
+
+**Go weird. Go funny. Go unexpected.** The receipt from the universe worked. Do more like that.
 
 Use thinkhard mode to execute. Log the creation when done.
 
