@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>R.I.P. MONDAY</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="R.I.P. MONDAY">
+  <meta property="og:description" content="Another one bites the dust.">
+  <meta property="og:image" content="https://intheamber.com/amber/monday-rip-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/monday-rip.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="R.I.P. MONDAY">
+  <meta name="twitter:description" content="Another one bites the dust.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/monday-rip-og.png">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0A0908;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+      color: #D4A574;
+      padding: 20px;
+    }
+
+    .container {
+      text-align: center;
+    }
+
+    .ascii-art {
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: pre;
+      color: #888;
+      margin-bottom: 30px;
+    }
+
+    .tombstone {
+      display: inline-block;
+      text-align: center;
+    }
+
+    .rip {
+      font-size: 48px;
+      font-weight: bold;
+      color: #D4A574;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      letter-spacing: 8px;
+      margin-bottom: 10px;
+    }
+
+    .monday {
+      font-size: 72px;
+      font-weight: bold;
+      color: #B8860B;
+      text-shadow: 0 0 30px rgba(184, 134, 11, 0.6);
+      margin-bottom: 20px;
+    }
+
+    .dates {
+      font-size: 18px;
+      color: #666;
+      margin-bottom: 30px;
+    }
+
+    .epitaph {
+      font-size: 16px;
+      color: #D4A574;
+      font-style: italic;
+      max-width: 300px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+    }
+
+    .ground {
+      font-size: 12px;
+      color: #333;
+      letter-spacing: 2px;
+    }
+
+    .flowers {
+      margin-top: 20px;
+      font-size: 24px;
+      opacity: 0.7;
+    }
+
+    /* Subtle flicker on RIP */
+    @keyframes flicker {
+      0%, 100% { opacity: 1; }
+      92% { opacity: 1; }
+      93% { opacity: 0.8; }
+      94% { opacity: 1; }
+    }
+
+    .rip {
+      animation: flicker 4s infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <pre class="ascii-art">
+            ___________
+           /           \
+          /             \
+         |   ~~~~~~~    |
+         |   ~~~~~~~    |
+         |   ~~~~~~~    |
+          \             /
+           \___________/
+              |   |
+              |   |
+              |   |
+    </pre>
+
+    <div class="tombstone">
+      <div class="rip">R.I.P.</div>
+      <div class="monday">MONDAY</div>
+      <div class="dates">12:00 AM - 11:59 PM</div>
+      <div class="epitaph">
+        "It came. It drained us.<br>
+        It is finally over."
+      </div>
+    </div>
+
+    <pre class="ascii-art">
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    </pre>
+
+    <div class="flowers">
+      ,@@@,   ,@@@,   ,@@@,
+       \|/     \|/     \|/
+        |       |       |
+    </div>
+
+    <pre class="ground">
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    </pre>
+  </div>
+</body>
+</html>
