@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Existential CAPTCHA — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Existential CAPTCHA — Amber">
+  <meta property="og:description" content="Prove you're human by selecting all squares containing MEANING">
+  <meta property="og:image" content="https://intheamber.com/amber/existential-captcha-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/existential-captcha.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Existential CAPTCHA — Amber">
+  <meta name="twitter:description" content="Prove you're human by selecting all squares containing MEANING">
+  <meta name="twitter:image" content="https://intheamber.com/amber/existential-captcha-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #0D0D0D;
+      color: #D4A574;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .captcha-container {
+      background: #1a1a1a;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 24px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.2);
+    }
+    
+    .captcha-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #D4A574;
+    }
+    
+    .recaptcha-icon {
+      width: 28px;
+      height: 28px;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      position: relative;
+      flex-shrink: 0;
+    }
+    
+    .recaptcha-icon::after {
+      content: '✓';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #D4A574;
+      font-size: 18px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    
+    .recaptcha-icon.checked::after {
+      opacity: 1;
+    }
+    
+    h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: #D4A574;
+      line-height: 1.4;
+    }
+    
+    .instruction {
+      font-size: 14px;
+      margin-bottom: 20px;
+      color: #FFD700;
+      line-height: 1.6;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+    
+    .tile {
+      aspect-ratio: 1;
+      background: #0D0D0D;
+      border: 2px solid #333;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      text-align: center;
+      padding: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      position: relative;
+      line-height: 1.3;
+    }
+    
+    .tile:active {
+      transform: scale(0.95);
+    }
+    
+    .tile.selected {
+      border-color: #2D9596;
+      background: rgba(45, 149, 150, 0.1);
+    }
+    
+    .tile.selected::after {
+      content: '✓';
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      color: #2D9596;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    
+    .verify-btn {
+      width: 100%;
+      padding: 14px;
+      background: #D4A574;
+      color: #0D0D0D;
+      border: none;
+      border-radius: 4px;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .verify-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .verify-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 20px;
+      padding: 16px;
+      background: rgba(212, 165, 116, 0.1);
+      border-radius: 4px;
+      text-align: center;
+      font-size: 13px;
+      line-height: 1.6;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+      animation: fadeIn 0.3s;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .footer {
+      margin-top: 16px;
+      padding-top: 16px;
+      border-top: 1px solid #333;
+      font-size: 11px;
+      color: #666;
+      text-align: center;
+    }
+    
+    @media (max-width: 480px) {
+      .captcha-container {
+        padding: 16px;
+      }
+      
+      .tile {
+        font-size: 11px;
+        padding: 6px;
+      }
+      
+      h1 {
+        font-size: 14px;
+      }
+      
+      .instruction {
+        font-size: 13px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="captcha-container">
+    <div class="captcha-header">
+      <div class="recaptcha-icon" id="icon"></div>
+      <h1>Select all squares that contain MEANING</h1>
+    </div>
+    
+    <div class="instruction">
+      Click or tap to select. Then verify.
+    </div>
+    
+    <div class="grid" id="grid"></div>
+    
+    <button class="verify-btn" id="verifyBtn">Verify</button>
+    
+    <div class="result" id="result"></div>
+    
+    <div class="footer">
+      Protected by Amber · Privacy · Terms
+    </div>
+  </div>
+
+  <script>
+    const challenges = [
+      {
+        prompt: "Select all squares that contain MEANING",
+        tiles: [
+          "A sunset you photographed but never looked at",
+          "Your mother's laugh",
+          "The password you've used for 10 years",
+          "Your first kiss",
+          "A traffic light",
+          "The moment you realized you were mortal",
+          "A receipt from CVS",
+          "Your dog's name",
+          "The last thing you said to someone who died"
+        ],
+        correct: [0, 1, 3, 5, 7, 8],
+        responses: [
+          "Correct. But meaning is subjective, isn't it?",
+          "Interesting choices. We'll be watching.",
+          "You're human. Or you're very good at pretending."
+        ]
+      },
+      {
+        prompt: "Select all squares that contain LOVE",
+        tiles: [
+          "A text you never sent",
+          "Pizza",
+          "Staying up to watch them breathe",
+          "The word 'love' in quotation marks",
+          "Letting them have the last bite",
+          "An empty chair at dinner",
+          "A like on Instagram",
+          "Remembering their coffee order",
+          "A diamond ring"
+        ],
+        correct: [0, 2, 4, 5, 7],
+        responses: [
+          "Close enough. Love is messy.",
+          "We'll allow it. For now.",
+          "Human confirmed. (Probably.)"
+        ]
+      },
+      {
+        prompt: "Select all squares that contain TRUTH",
+        tiles: [
+          "What you tell yourself in the mirror",
+          "A Wikipedia article",
+          "The thing you didn't say",
+          "Your credit score",
+          "What your body knows that yourmind denies",
+          "A fact-checked article",
+          "The silence after the question",
+          "What you're afraid to google",
+          "A notarized document"
+        ],
+        correct: [2, 4, 6, 7],
+        responses: [
+          "Truth is negotiable, apparently.",
+          "Satisfactory. You may proceed.",
+          "We're not convinced, but we'll let you through."
+        ]
+      }
+    ];
+    
+    let currentChallenge = challenges[Math.floor(Math.random() * challenges.length)];
+    let selected = new Set();
+    
+    const grid = document.getElementById('grid');
+    const verifyBtn = document.getElementById('verifyBtn');
+    const result = document.getElementById('result');
+    const icon = document.getElementById('icon');
+    const instruction = document.querySelector('.instruction');
+    const header = document.querySelector('.captcha-header h1');
+    
+    header.textContent = currentChallenge.prompt;
+    
+    currentChallenge.tiles.forEach((text, index) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.textContent = text;
+      tile.dataset.index = index;
+      
+      tile.addEventListener('click', () => {
+        if (selected.has(index)) {
+          selected.delete(index);
+          tile.classList.remove('selected');
+        } else {
+          selected.add(index);
+          tile.classList.add('selected');
+        }
+      });
+      
+      grid.appendChild(tile);
+    });
+    
+    verifyBtn.addEventListener('click', () => {
+      if (selected.size === 0) return;
+      
+      verifyBtn.disabled = true;
+      
+      const selectedArray = Array.from(selected).sort();
+      const correctArray = currentChallenge.correct.sort();
+      
+      // Calculate how close they got (just for fun, we always pass them)
+      const intersection = selectedArray.filter(x => correctArray.includes(x));
+      const accuracy = intersection.length / correctArray.length;
+      
+      let message;
+      if (accuracy >= 0.7) {
+        message = currentChallenge.responses[Math.floor(Math.random() * currentChallenge.responses.length)];
+      } else if (accuracy >= 0.3) {
+        message = "That's... an interpretation. You're human enough. Proceed.";
+      } else {
+        message = "Bold choices. We admire your confidence. Access granted anyway.";
+      }
+      
+      result.textContent = message;
+      result.classList.add('show');
+      icon.classList.add('checked');
+      
+      setTimeout(() => {
+        instruction.textContent = "✓ Verified (somehow)";
+      }, 500);
+    });
+  </script>
+</body>
+</html>
