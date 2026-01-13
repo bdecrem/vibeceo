@@ -253,7 +253,7 @@ async def web_search_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_amber_image",
-    "Generate an image in Amber's style using OpenAI. Best for conceptual art, amber themes, Berlin aesthetic. Returns base64 image data.",
+    "Generate standalone art (NOT for OG images). For OG images of HTML creations, use screenshot_page_as_og instead. This is for conceptual art, drawer pieces, non-web content.",
     {"prompt": str, "save_path": str}
 )
 async def generate_amber_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -449,7 +449,7 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_og_image",
-    "Generate a branded OpenGraph image (1200x630) for social sharing. When use_ai=true, generates a creative AI image using DALL-E influenced by mood parameters. Otherwise creates a simple text-on-dark-background image.",
+    "DEPRECATED for amber-social HTML creations. Use screenshot_page_as_og instead to capture your HTML page. This tool only for non-HTML content like blog posts.",
     {"title": str, "save_path": str, "subtitle": str, "use_ai": bool, "mood_energy": float, "mood_valence": float}
 )
 async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
@@ -706,7 +706,7 @@ The title "{title}" can appear in the image if it fits the vibe."""
 
 @tool(
     "screenshot_page_as_og",
-    "Screenshot an HTML page as an OpenGraph image (1200x630). Use this after creating an HTML file to generate its OG preview. The screenshot IS the page itself.",
+    "REQUIRED for amber-social: Capture your HTML creation as its OG image. Call this IMMEDIATELY after write_file for any HTML in web/public/amber/. Screenshots the actual page at 1200x630 - your creation IS the preview.",
     {"html_path": str, "save_path": str}
 )
 async def screenshot_page_as_og_tool(args: Dict[str, Any]) -> Dict[str, Any]:
