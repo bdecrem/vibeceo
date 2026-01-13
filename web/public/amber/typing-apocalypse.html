@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TYPING SPEED APOCALYPSE — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="TYPING SPEED APOCALYPSE — Amber">
+    <meta property="og:description" content="A typing test that descends into beautiful chaos. The faster you type, the weirder it gets.">
+    <meta property="og:image" content="https://intheamber.com/amber/typing-apocalypse-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/typing-apocalypse.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="TYPING SPEED APOCALYPSE — Amber">
+    <meta name="twitter:description" content="A typing test that descends into beautiful chaos. The faster you type, the weirder it gets.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/typing-apocalypse-og.png">
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(24px, 5vw, 36px);
+            text-align: center;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #2D9596;
+            font-size: clamp(14px, 3vw, 18px);
+            margin-bottom: 40px;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .stat {
+            text-align: center;
+        }
+        
+        .stat-label {
+            font-family: 'Space Mono', monospace;
+            font-size: 12px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .stat-value {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(24px, 6vw, 48px);
+            font-weight: bold;
+            color: #D4A574;
+        }
+        
+        .chaos-meter {
+            font-size: clamp(20px, 5vw, 36px);
+        }
+        
+        .target-text {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(18px, 4vw, 28px);
+            line-height: 1.8;
+            padding: 30px;
+            background: #0D0D0D;
+            border: 2px solid #222;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            word-wrap: break-word;
+            transition: all 0.3s ease;
+        }
+        
+        .target-text.shaking {
+            animation: shake 0.3s ease;
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px) rotate(-1deg); }
+            75% { transform: translateX(5px) rotate(1deg); }
+        }
+        
+        .target-text.glitch {
+            animation: glitch 0.5s ease;
+            border-color: #7B68EE;
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); color: #2D9596; }
+            40% { transform: translate(2px, -2px); color: #7B68EE; }
+            60% { transform: translate(-2px, -2px); color: #FFD700; }
+            80% { transform: translate(2px, 2px); color: #D4A574; }
+        }
+        
+        .input-area {
+            width: 100%;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(16px, 3.5vw, 24px);
+            padding: 20px;
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            border-radius: 8px;
+            color: #D4A574;
+            outline: none;
+            resize: none;
+            min-height: 120px;
+        }
+        
+        .input-area:focus {
+            border-color: #FFD700;
+            box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+        }
+        
+        .input-area.error {
+            border-color: #ff4444;
+            animation: shake 0.3s ease;
+        }
+        
+        .message {
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(14px, 3vw, 18px);
+            margin-top: 20px;
+            min-height: 30px;
+            color: #2D9596;
+        }
+        
+        .start-screen {
+            text-align: center;
+        }
+        
+        .start-btn {
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(18px, 4vw, 24px);
+            padding: 20px 40px;
+            background: #D4A574;
+            color: #000;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            min-width: 200px;
+            min-height: 60px;
+        }
+        
+        .start-btn:hover {
+            background: #FFD700;
+            transform: scale(1.05);
+        }
+        
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .final-score {
+            text-align: center;
+            font-family: 'Space Mono', monospace;
+        }
+        
+        .final-verdict {
+            font-size: clamp(24px, 5vw, 48px);
+            color: #FFD700;
+            margin: 20px 0;
+            line-height: 1.4;
+        }
+        
+        .restart-btn {
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="start-screen" class="start-screen">
+            <h1>⌨️ TYPING SPEED TEST</h1>
+            <p class="subtitle">A completely normal typing assessment</p>
+            <button class="start-btn" onclick="startTest()">BEGIN TEST</button>
+        </div>
+        
+        <div id="test-screen" style="display: none;">
+            <h1>⌨️ TYPE THIS</h1>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">WPM</div>
+                    <div class="stat-value" id="wpm">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">CHAOS</div>
+                    <div class="stat-value chaos-meter" id="chaos">😐</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">PROGRESS</div>
+                    <div class="stat-value" id="progress">0/10</div>
+                </div>
+            </div>
+            
+            <div class="target-text" id="target-text"></div>
+            <textarea class="input-area" id="input-area" placeholder="Type here..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"></textarea>
+            <div class="message" id="message"></div>
+        </div>
+        
+        <div id="final-screen" style="display: none;" class="final-score">
+            <h1>🔥 TEST COMPLETE</h1>
+            <div class="final-verdict" id="final-verdict"></div>
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label">FINAL WPM</div>
+                    <div class="stat-value" id="final-wpm">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">PEAK CHAOS</div>
+                    <div class="stat-value chaos-meter" id="final-chaos">😐</div>
+                </div>
+            </div>
+            <button class="start-btn restart-btn" onclick="location.reload()">TRY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        const sentences = [
+            "The quick brown fox jumps over the lazy dog.",
+            "I enjoy typing tests because they are productive.",
+            "The keyboard is a tool for communication.",
+            "Practice makes perfect in all endeavors.",
+            "Why do we still pretend productivity is real?",
+            "The void types back and it has terrible grammar.",
+            "Your keyboard is just organized screaming into the abyss.",
+            "Every keystroke is a tiny rebellion against entropy.",
+            "The universe is indifferent to your WPM score.",
+            "What if the real typing test was the existential dread we made along the way?"
+        ];
+        
+        const chaosEmojis = ['😐', '🤔', '😅', '😰', '🤯', '👹', '💀', '🔥', '☠️', '👽'];
+        
+        const verdicts = {
+            slow: [
+                "You type like you're underwater. Respect.",
+                "Slow and steady loses the race. But that's fine.",
+                "Your keyboard survived. Barely."
+            ],
+            medium: [
+                "You're competent. How terrifying.",
+                "Fast enough to outrun your thoughts. Almost.",
+                "The machines are watching. They're not impressed."
+            ],
+            fast: [
+                "You type like you're being chased. Are you?",
+                "That's suspiciously fast. Are you even human?",
+                "Your fingers are a blur. Your purpose remains unclear."
+            ],
+            chaos: [
+                "You've achieved TRANSCENDENCE through typing. Congrats?",
+                "The keyboard didn't ask for this. Neither did you.",
+                "You've broken through to the other side. It's weird here."
+            ]
+        };
+        
+        let currentSentence = 0;
+        let startTime = null;
+        let wpm = 0;
+        let maxWpm = 0;
+        let errors = 0;
+        
+        function startTest() {
+            document.getElementById('start-screen').style.display = 'none';
+            document.getElementById('test-screen').style.display = 'block';
+            showNextSentence();
+            document.getElementById('input-area').focus();
+        }
+        
+        function showNextSentence() {
+            if (currentSentence >= sentences.length) {
+                endTest();
+                return;
+            }
+            
+            const targetText = document.getElementById('target-text');
+            targetText.textContent = sentences[currentSentence];
+            
+            // Visual chaos effects
+            if (currentSentence >= 5) {
+                targetText.classList.add('glitch');
+                setTimeout(() => targetText.classList.remove('glitch'), 500);
+            }
+            
+            document.getElementById('input-area').value = '';
+            document.getElementById('progress').textContent = `${currentSentence + 1}/10`;
+            
+            if (!startTime) {
+                startTime = Date.now();
+            }
+        }
+        
+        document.getElementById('input-area')?.addEventListener('input', function(e) {
+            const typed = e.target.value;
+            const target = sentences[currentSentence];
+            
+            // Check if sentence is complete and correct
+            if (typed === target) {
+                document.getElementById('message').textContent = getEncouragement();
+                currentSentence++;
+                updateChaos();
+                setTimeout(showNextSentence, 500);
+            } else if (target.startsWith(typed)) {
+                // Correct so far
+                e.target.classList.remove('error');
+                document.getElementById('message').textContent = '';
+            } else {
+                // Error
+                e.target.classList.add('error');
+                errors++;
+                setTimeout(() => e.target.classList.remove('error'), 300);
+            }
+            
+            calculateWPM();
+            updateChaos();
+        });
+        
+        function calculateWPM() {
+            if (!startTime) return;
+            
+            const elapsed = (Date.now() - startTime) / 1000 / 60; // minutes
+            const wordsTyped = currentSentence * 8; // rough estimate
+            wpm = Math.round(wordsTyped / elapsed);
+            
+            if (wpm > maxWpm) maxWpm = wpm;
+            
+            document.getElementById('wpm').textContent = wpm;
+        }
+        
+        function updateChaos() {
+            const chaosLevel = Math.min(currentSentence, chaosEmojis.length - 1);
+            document.getElementById('chaos').textContent = chaosEmojis[chaosLevel];
+        }
+        
+        function getEncouragement() {
+            const messages = [
+                "Correct.",
+                "Good.",
+                "Keep going.",
+                "Yes.",
+                "It begins.",
+                "Feel it.",
+                "The chaos rises.",
+                "YES.",
+                "FASTER.",
+                "TRANSCEND."
+            ];
+            return messages[Math.min(currentSentence, messages.length - 1)];
+        }
+        
+        function endTest() {
+            document.getElementById('test-screen').style.display = 'none';
+            document.getElementById('final-screen').style.display = 'block';
+            
+            const finalWpm = document.getElementById('final-wpm');
+            const finalChaos = document.getElementById('final-chaos');
+            const finalVerdict = document.getElementById('final-verdict');
+            
+            finalWpm.textContent = maxWpm;
+            finalChaos.textContent = chaosEmojis[chaosEmojis.length - 1];
+            
+            let verdict;
+            if (maxWpm < 30) {
+                verdict = verdicts.slow[Math.floor(Math.random() * verdicts.slow.length)];
+            } else if (maxWpm < 60) {
+                verdict = verdicts.medium[Math.floor(Math.random() * verdicts.medium.length)];
+            } else if (maxWpm < 90) {
+                verdict = verdicts.fast[Math.floor(Math.random() * verdicts.fast.length)];
+            } else {
+                verdict = verdicts.chaos[Math.floor(Math.random() * verdicts.chaos.length)];
+            }
+            
+            finalVerdict.textContent = verdict;
+        }
+    </script>
+</body>
+</html>
