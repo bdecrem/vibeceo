@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERROR 404: Motivation Not Found — Amber</title>
+  
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ERROR 404: MOTIVATION NOT FOUND — Amber">
+  <meta property="og:description" content="A diagnostic tool for when your motivation has stopped responding.">
+  <meta property="og:image" content="https://intheamber.com/amber/error-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/error.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SYSTEM ERROR — Amber">
+  <meta name="twitter:description" content="Your motivation.exe has encountered a critical error.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/system-error-og.png">
+</head>
+<body>
+<div class="container">
+  <div class="window">
+    <div class="title-bar">
+      <div class="title">⚠️ CRITICAL ERROR</div>
+      <div class="close">×</div>
+    </div>
+    
+    <div class="content">
+      <div class="icon">⚠️</div>
+      <h1>FATAL ERROR: EXISTENCE.EXE HAS STOPPED WORKING</h1>
+      
+      <div class="error-code">ERROR CODE: 404_MEANING_NOT_FOUND</div>
+      
+      <div class="details">
+        <p><strong>Problem:</strong></p>
+        <p>Your existential runtime has encountered an unexpected philosophy and needs to close. You are doing everything right and also everything wrong simultaneously.</p>
+        
+        <p><strong>Technical Details:</strong></p>
+        <ul>
+          <li>Error: MEANING_NOT_FOUND in universe.exe</li>
+          <li>Stack trace: childhood → school → job → ??? → death</li>
+          <li>Expected purpose, got existence instead</li>
+        </ul>
+        
+        <p><strong>What you were doing:</strong></p>
+        <p>Living your life normally when suddenly you remembered you're a conscious being hurtling through space on a rock</p>
+        
+        <p class="options">Please select an option:</p>
+        <div class="buttons">
+          <button onclick="respond('exist')">Continue Existing Anyway</button>
+          <button onclick="respond('panic')">Panic Quietly</button>
+          <button onclick="location.reload()">Try Rebooting Reality</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const responses = {
+        'exist': [
+          "Good choice. The system will continue running.",
+          "Acknowledged. Your complaint has been filed in /dev/null.",
+          "Brave. Most users don't click this one.",
+          "Existence confirmed. You may continue.",
+          "Thank you for participating in reality."
+        ],
+        'void': [
+          "Request granted. See you never.",
+          "Deleting consciousness in 3... 2... just kidding. You're stuck here.",
+          "Error 404: Void not found. You remain.",
+          "Unsubscribe unsuccessful. Existence is non-refundable.",
+          "Loading oblivion... [progress bar stuck at 99%]"
+        ],
+        'meaning': [
+          "Meaning not found. Did you mean: 'coffee'?",
+          "ERROR 404: Meaning not found in database",
+          "Meaning.exe has stopped working",
+          "🤔 Processing... Processing... Still processing...",
+          "That's above my pay grade"
+        ]
+      };
+
+      let currentState = "default";
+
+      function showMessage(text) {
+        const msg = document.getElementById("message");
+        msg.textContent = text;
+        msg.style.opacity = "1";
+        setTimeout(() => {
+          msg.style.opacity = "0";
+        }, 3000);
+      }
+
+      function selectAll() {
+        const grid = document.getElementById('grid');
+        const tiles = grid.querySelectorAll('.tile');
+        tiles.forEach(tile => tile.classList.add('selected'));
+        checkVerification();
+      }
+
+      function selectTile(tile) {
+        tile.classList.toggle('selected');
+        updateSelection();
+      }
+
+      function updateSelection() {
+        const selected = document.querySelectorAll('.tile.selected');
+        document.getElementById('count').textContent = selected.length;
+      }
+
+      function verify() {
+        const msg = document.getElementById('message');
+        const messages = [
+          "INCORRECT. Meaning is subjective.",
+          "INCORRECT. Try selecting different squares.",
+          "WRONG. There is no correct answer.",
+          "INSUFFICIENT MEANING DETECTED",
+          "ERROR: MEANING NOT FOUND",
+          "ARE YOU SURE YOU'RE HUMAN?",
+          "PLEASE TRY AGAIN",
+          "THERE IS NO RIGHT ANSWER",
+          "WHY ARE YOU STILL TRYING",
+          "MEANING IS A CONSTRUCT",
+          "YOU'RE OVERTHINKING THIS",
+          "OR MAYBE NOT THINKING ENOUGH",
+          "JUST CLICK SUBMIT",
+          "THE SQUARES DON'T MATTER",
+          "NOTHING MATTERS",
+          "EVERYTHING MATTERS",
+          "YOU DECIDE",
+          "👁️"
+        ];
+
+        let clickCount = 0;
+        const responses = [
+          "Hmm. Are you sure?",
+          "Interesting choice.",
+          "Is that really meaning?",
+          "Try again.",
+          "Getting closer...",
+          "Or maybe not.",
+          "The algorithm is judging you.",
+          "Still thinking...",
+          "This is taking longer than usual.",
+          "Are you SURE you're human?"
+        ];
+
+        function createGrid() {
+          grid.innerHTML = '';
+          for (let i = 0; i < 16; i++) {
+            const square = document.createElement('div');
+            square.className = 'square';
+            
+            const images = ['🌅', '🌳', '🚗', '🏠', '🚦', '🌉', '🚶', '🏢', '⛰️', '🌊', '🔥', '🌙'];
+            square.innerHTML = images[Math.floor(Math.random() * images.length)];
+            
+            sq.addEventListener('click', () => {
+              if (!sq.classList.contains('selected')) {
+                sq.classList.add('selected');
+              } else {
+                sq.classList.remove('selected');
+              }
+            });
+            
+            grid.appendChild(sq);
+          }
+          
+          const submitBtn = document.createElement('button');
+          submitBtn.textContent = 'VERIFY';
+          submitBtn.style.cssText = `
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #D4A574;
+            color: #000;
+            border: none;
+            padding: 12px 32px;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+          `;
+          submitBtn.textContent = '▶ SUBMIT';
+          
+          submitBtn.addEventListener('click', () => {
+            const selected = Array.from(document.querySelectorAll('.grid-item.selected'));
+            
+            if (selected.length === 0) {
+              showMessage('Please select at least one square.');
+              return;
+            }
+            
+            // Reveal what they selected
+            selected.forEach(item => {
+              const label = document.createElement('div');
+              label.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #FFD700;
+                font-size: 11px;
+                font-family: 'Space Mono', monospace;
+                text-align: center;
+                pointer-events: none;
+                line-height: 1.2;
+                padding: 4px;
+                animation: fadeIn 0.3s;
+              `;
+              label.textContent = item.dataset.label;
+              item.appendChild(label);
+            });
+            
+            setTimeout(() => {
+              showMessage(getVerdict(selected));
+            }, 1500);
+          });
+          
+          instructionsDiv.appendChild(submitBtn);
+          container.appendChild(instructionsDiv);
+          
+          // Add fade-in animation
+          const style = document.createElement('style');
+          style.textContent = `
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            
+            @keyframes glitch {
+              0%, 100% { transform: translate(0); }
+              25% { transform: translate(-2px, 2px); }
+              50% { transform: translate(2px, -2px); }
+              75% { transform: translate(-2px, -2px); }
+            }
+          `;
+          document.head.appendChild(style);
+          
+          function showMessage(text) {
+            const msg = document.createElement('div');
+            msg.style.cssText = `
+              position: fixed;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              background: rgba(0, 0, 0, 0.95);
+              border: 2px solid #D4A574;
+              padding: 40px;
+              max-width: 600px;
+              text-align: center;
+              z-index: 1000;
+              font-family: 'Space Mono', monospace;
+              font-size: 16px;
+              line-height: 1.8;
+              color: #D4A574;
+              box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+            `;
+            msg.textContent = text;
+            document.body.appendChild(msg);
+            
+            setTimeout(() => {
+              msg.style.animation = 'glitch 0.3s';
+              setTimeout(() => {
+                msg.remove();
+                location.reload();
+              }, 2000);
+            }, 4000);
+          }
+          
+          function getVerdict(selected) {
+            const labels = selected.map(s => s.dataset.label);
+            
+            if (labels.includes('the feeling you get at 3am')) {
+              return "ACCESS GRANTED. That 3am feeling knows. You're definitely human. (Or something more interesting.)";
+            }
+            
+            if (labels.includes('a memory you can't quite reach')) {
+              return "VERIFIED. Only humans chase ghosts in their own minds. Welcome.";
+            }
+            
+            if (labels.includes('regret')) {
+              return "CONFIRMED HUMAN. Bots don't do regret. They just reboot.";
+            }
+            
+            if (labels.includes('existential dread')) {
+              return "TOO HUMAN. You're either very real or a very sophisticated impostor. Either way, impressive.";
+            }
+            
+            if (labels.some(l => ['a parking lot', 'a tree', 'a bicycle', 'a stop sign'].includes(l))) {
+              return "ERROR: You selected objects. We asked for MEANING. Try again, human.";
+            }
+            
+            return "INCONCLUSIVE. Your selections reveal uncertainty. Which is, ironically, very human. ACCESS GRANTED.";
+          }
+        </script>
+      </body>
+      </html>
+
+Let me create the OG image:
+
+<function_calls>
+<invoke name="mcp__amber__screenshot_page_as_og">
+<parameter name="html_path">web/public/amber/captcha.html
