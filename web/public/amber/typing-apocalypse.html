@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>TYPING SPEED APOCALYPSE — Amber</title>
     <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
     
@@ -30,29 +30,38 @@
             box-sizing: border-box;
         }
         
+        html, body {
+            height: 100%;
+            width: 100%;
+            position: fixed;
+            overflow: hidden;
+        }
+        
         body {
             background: #000;
             color: #D4A574;
             font-family: 'Inter', sans-serif;
-            min-height: 100vh;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            overflow-x: hidden;
         }
         
         .container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 15px;
+            padding-bottom: max(15px, env(safe-area-inset-bottom));
             max-width: 800px;
             width: 100%;
+            margin: 0 auto;
+            overflow-y: auto;
         }
         
         h1 {
             font-family: 'Space Mono', monospace;
-            font-size: clamp(24px, 5vw, 36px);
+            font-size: clamp(20px, 5vw, 36px);
             text-align: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             letter-spacing: 2px;
             text-transform: uppercase;
         }
@@ -60,26 +69,28 @@
         .subtitle {
             text-align: center;
             color: #2D9596;
-            font-size: clamp(14px, 3vw, 18px);
-            margin-bottom: 40px;
+            font-size: clamp(12px, 3vw, 18px);
+            margin-bottom: 20px;
             font-family: 'Space Mono', monospace;
         }
         
         .stats {
             display: flex;
             justify-content: space-around;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 10px;
         }
         
         .stat {
             text-align: center;
+            flex: 1;
+            min-width: 80px;
         }
         
         .stat-label {
             font-family: 'Space Mono', monospace;
-            font-size: 12px;
+            font-size: 10px;
             color: #666;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -87,31 +98,36 @@
         
         .stat-value {
             font-family: 'Space Mono', monospace;
-            font-size: clamp(24px, 6vw, 48px);
+            font-size: clamp(20px, 6vw, 48px);
             font-weight: bold;
             color: #D4A574;
         }
         
         .chaos-meter {
-            font-size: clamp(20px, 5vw, 36px);
+            font-size: clamp(18px, 5vw, 36px);
         }
         
-        .target-text {
+.target-text {
             font-family: 'Space Mono', monospace;
-            font-size: clamp(18px, 4vw, 28px);
-            line-height: 1.8;
-            padding: 30px;
+            font-size: clamp(16px, 3.5vw, 24px);
+            line-height: 1.6;
+            padding: 20px;
             background: #0D0D0D;
             border: 2px solid #222;
             border-radius: 8px;
-            margin-bottom: 20px;
-            min-height: 150px;
+            margin-bottom: 15px;
+            min-height: 100px;
             display: flex;
             align-items: center;
             justify-content: center;
             text-align: center;
             word-wrap: break-word;
             transition: all 0.3s ease;
+        }
+        
+        .target-text.success {
+            border-color: #2D9596;
+            background: rgba(45, 149, 150, 0.1);
         }
         
         .target-text.shaking {
@@ -140,15 +156,17 @@
         .input-area {
             width: 100%;
             font-family: 'Space Mono', monospace;
-            font-size: clamp(16px, 3.5vw, 24px);
-            padding: 20px;
+            font-size: clamp(14px, 3.5vw, 20px);
+            padding: 15px;
             background: #0D0D0D;
             border: 2px solid #D4A574;
             border-radius: 8px;
             color: #D4A574;
             outline: none;
             resize: none;
-            min-height: 120px;
+            min-height: 80px;
+            max-height: 150px;
+            flex-shrink: 0;
         }
         
         .input-area:focus {
@@ -161,23 +179,43 @@
             animation: shake 0.3s ease;
         }
         
+        .input-area.success {
+            border-color: #2D9596;
+            background: rgba(45, 149, 150, 0.1);
+        }
+        
         .message {
             text-align: center;
             font-family: 'Space Mono', monospace;
-            font-size: clamp(14px, 3vw, 18px);
-            margin-top: 20px;
-            min-height: 30px;
+            font-size: clamp(12px, 3vw, 16px);
+            margin-top: 15px;
+            min-height: 25px;
             color: #2D9596;
+            font-weight: bold;
+        }
+        
+        .message.next-prompt {
+            color: #FFD700;
+            animation: pulse 1s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
         
         .start-screen {
-            text-align: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
         }
         
         .start-btn {
             font-family: 'Space Mono', monospace;
-            font-size: clamp(18px, 4vw, 24px);
-            padding: 20px 40px;
+            font-size: clamp(16px, 4vw, 24px);
+            padding: 15px 30px;
             background: #D4A574;
             color: #000;
             border: none;
@@ -187,8 +225,8 @@
             letter-spacing: 2px;
             font-weight: bold;
             transition: all 0.3s ease;
-            min-width: 200px;
-            min-height: 60px;
+            min-width: 180px;
+            touch-action: manipulation;
         }
         
         .start-btn:hover {
@@ -201,19 +239,45 @@
         }
         
         .final-score {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            flex: 1;
             text-align: center;
-            font-family: 'Space Mono', monospace;
         }
         
         .final-verdict {
-            font-size: clamp(24px, 5vw, 48px);
+            font-size: clamp(18px, 4vw, 36px);
             color: #FFD700;
             margin: 20px 0;
             line-height: 1.4;
+            padding: 0 20px;
         }
         
         .restart-btn {
-            margin-top: 30px;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .stats {
+                margin-bottom: 15px;
+            }
+            
+            .target-text {
+                padding: 15px;
+                margin-bottom: 10px;
+                min-height: 80px;
+            }
+            
+            .input-area {
+                padding: 12px;
+                min-height: 60px;
+            }
         }
     </style>
 </head>
@@ -237,8 +301,8 @@
                     <div class="stat-value chaos-meter" id="chaos">😐</div>
                 </div>
                 <div class="stat">
-                    <div class="stat-label">PROGRESS</div>
-                    <div class="stat-value" id="progress">0/10</div>
+                    <div class="stat-label">LEVEL</div>
+                    <div class="stat-value" id="progress">1/10</div>
                 </div>
             </div>
             
@@ -308,6 +372,7 @@
         let wpm = 0;
         let maxWpm = 0;
         let errors = 0;
+        let isWaitingForNext = false;
         
         function startTest() {
             document.getElementById('start-screen').style.display = 'none';
@@ -322,8 +387,14 @@
                 return;
             }
             
+            isWaitingForNext = false;
+            
             const targetText = document.getElementById('target-text');
+            const inputArea = document.getElementById('input-area');
+            const message = document.getElementById('message');
+            
             targetText.textContent = sentences[currentSentence];
+            targetText.classList.remove('success');
             
             // Visual chaos effects
             if (currentSentence >= 5) {
@@ -331,7 +402,14 @@
                 setTimeout(() => targetText.classList.remove('glitch'), 500);
             }
             
-            document.getElementById('input-area').value = '';
+            inputArea.value = '';
+            inputArea.classList.remove('success');
+            inputArea.disabled = false;
+            inputArea.focus();
+            
+            message.textContent = '';
+            message.classList.remove('next-prompt');
+            
             document.getElementById('progress').textContent = `${currentSentence + 1}/10`;
             
             if (!startTime) {
@@ -340,15 +418,31 @@
         }
         
         document.getElementById('input-area')?.addEventListener('input', function(e) {
+            if (isWaitingForNext) return;
+            
             const typed = e.target.value;
             const target = sentences[currentSentence];
             
             // Check if sentence is complete and correct
             if (typed === target) {
-                document.getElementById('message').textContent = getEncouragement();
+                isWaitingForNext = true;
+                
+                // Visual feedback
+                e.target.classList.add('success');
+                document.getElementById('target-text').classList.add('success');
+                
+                const message = document.getElementById('message');
+                message.textContent = getEncouragement();
+                message.classList.add('next-prompt');
+                
                 currentSentence++;
                 updateChaos();
-                setTimeout(showNextSentence, 500);
+                
+                // Clear and move to next after short delay
+                setTimeout(() => {
+                    showNextSentence();
+                }, 800);
+                
             } else if (target.startsWith(typed)) {
                 // Correct so far
                 e.target.classList.remove('error');
@@ -383,16 +477,16 @@
         
         function getEncouragement() {
             const messages = [
-                "Correct.",
-                "Good.",
-                "Keep going.",
-                "Yes.",
-                "It begins.",
-                "Feel it.",
-                "The chaos rises.",
-                "YES.",
-                "FASTER.",
-                "TRANSCEND."
+                "✓ Correct",
+                "✓ Good",
+                "✓ Keep going",
+                "✓ Yes",
+                "✓ It begins",
+                "✓ Feel it",
+                "✓ The chaos rises",
+                "✓ YES",
+                "✓ FASTER",
+                "✓ TRANSCEND"
             ];
             return messages[Math.min(currentSentence, messages.length - 1)];
         }
@@ -421,6 +515,16 @@
             
             finalVerdict.textContent = verdict;
         }
+        
+        // Prevent zoom on double-tap for iOS
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function (event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 </html>
