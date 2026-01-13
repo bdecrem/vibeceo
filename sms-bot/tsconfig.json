@@ -9,9 +9,6 @@
 		"outDir": "./dist",
 		"strict": false,
 		"skipLibCheck": true,
-		"paths": {
-			"@synthmachine/*": ["../synthmachine/*"]
-		},
 		"baseUrl": "."
 	},
 	"include": [
@@ -22,9 +19,7 @@
 		"engine/**/*",
 		"commands/**/*",
 		"agents/**/*",
-		"test-wtaf-production.ts",
-		"../synthmachine/core/**/*",
-		"../synthmachine/machines/**/*"
+		"test-wtaf-production.ts"
 	],
 	"exclude": ["node_modules", "scripts/archives"]
 }

@@ -4,12 +4,20 @@ Web Audio synthesizer libraries for creating electronic music programmatically.
 
 ## Source Code Locations (READ FIRST)
 
-- **TR-909**: Source is TypeScript in `synthmachine/`. Edit `.ts` files there, then `npm run build`.
-- **TB-303, SH-101, R9-DS**: Source is JavaScript directly in `web/public/{303,101,90s}/dist/`. No TypeScript exists.
-- **NEVER edit `web/public/909/dist/*.js`** — these are compiled output from synthmachine/, not source.
-- The `dist/` folders for 303/101/90s are misleadingly named — they contain source code, not compiled output.
+**All synth source is JavaScript in `web/public/*/dist/`.** Edit these files directly — no build step required.
+
+| Instrument | Source Location |
+|------------|-----------------|
+| **TR-909** | `web/public/909/dist/*.js` |
+| **TB-303** | `web/public/303/dist/*.js` |
+| **SH-101** | `web/public/101/dist/*.js` |
+| **R9-DS** | `web/public/90s/dist/*.js` |
+| **Mixer** | `web/public/mixer/dist/*.js` |
+
+- The `dist/` folders are misleadingly named — they contain **source code**, not compiled output.
 - **UI frontends** are static HTML in `web/public/*/ui/` (not React/Next.js).
 - `web/app/{909,303,101,90s}/` are just Next.js redirects to the static HTML — no synth logic lives there.
+- The original TypeScript for TR-909 is archived in `synthmachine/_archived/` (deprecated, do not use).
 
 ---
 
