@@ -24,6 +24,7 @@ import { registerAmberAwarenessJobs } from "../../agents/amber/index.js"; // Amb
 import { registerAITwitterDailyJob } from "../../agents/ai-twitter-daily/index.js"; // AI Twitter Daily - curated AI researcher tweets
 import { registerAmberSocialJobs } from "../../agents/amber-social/index.js"; // Amber Social - scheduled Twitter posting
 import { registerAmberMoodJobs } from "../amber-mood.js"; // Amber Mood - aesthetic variation tied to lunar/weather/circadian
+import { registerTraderJob } from "../../agents/trader/index.js"; // Trader - commodity ETF trading every 15min during market hours
 
 function isAutomationEnabled(): boolean {
   const override = process.env.ENABLE_SUBSCRIPTION_AUTOMATION;
@@ -74,6 +75,7 @@ export async function startSmsBot(): Promise<void> {
     // registerAITwitterDailyJob(twilioClient); // DISABLED - hitting Twitter API cap
     registerAmberSocialJobs(); // AMBER SOCIAL - Create at 6:45am/4:30pm, tweet at 7am/4:50pm PT
     registerAmberMoodJobs(); // AMBER MOOD - Daily mood at midnight, weather pulse hourly
+    registerTraderJob(); // TRADER - Commodity ETF trading every 15min during market hours (9:30am-4pm ET)
   } else {
     console.log(
       "⚠️ Subscription automation disabled – daily broadcasts will not run on this instance."

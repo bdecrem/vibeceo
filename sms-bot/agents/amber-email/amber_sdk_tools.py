@@ -701,6 +701,137 @@ The title "{title}" can appear in the image if it fits the vibe."""
 
 
 # =============================================================================
+# PAGE SCREENSHOT AS OG IMAGE (for amber-social)
+# =============================================================================
+
+@tool(
+    "screenshot_page_as_og",
+    "Screenshot an HTML page as an OpenGraph image (1200x630). Use this after creating an HTML file to generate its OG preview. The screenshot IS the page itself.",
+    {"html_path": str, "save_path": str}
+)
+async def screenshot_page_as_og_tool(args: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Screenshot an HTML file as an OG image using HTMLCSStoImage API.
+
+    This captures the actual page at 1200x630 - what you built IS the preview.
+    Much better than generic text cards.
+
+    Args:
+        html_path: Path to the HTML file (e.g., "web/public/amber/thing.html")
+        save_path: Where to save the OG image (e.g., "web/public/amber/thing-og.png")
+    """
+    html_path = args.get("html_path", "")
+    save_path = args.get("save_path", "")
+
+    if not html_path:
+        return make_result(json.dumps({"error": "html_path required"}), is_error=True)
+    if not save_path:
+        return make_result(json.dumps({"error": "save_path required"}), is_error=True)
+
+    # Get HTMLCSStoImage credentials
+    htmlcss_user_id = os.getenv("HTMLCSS_USER_ID")
+    htmlcss_api_key = os.getenv("HTMLCSS_API_KEY")
+
+    if not htmlcss_user_id or not htmlcss_api_key:
+        return make_result(json.dumps({
+            "error": "HTMLCSS_USER_ID and HTMLCSS_API_KEY not configured"
+        }), is_error=True)
+
+    # Read the HTML content
+    html_content = None
+
+    # First check pending files (just written, not yet committed)
+    if html_path in _github_pending_files:
+        html_content = _github_pending_files[html_path]
+        print(f"[screenshot_page_as_og] Reading from pending files: {html_path}", file=sys.stderr)
+    elif IS_RAILWAY:
+        # On Railway, fetch from GitHub
+        result = github_api_request("GET", f"contents/{html_path}?ref={GITHUB_BRANCH}")
+        if "error" not in result and result.get("content"):
+            try:
+                html_content = base64.b64decode(result["content"]).decode("utf-8")
+            except Exception as e:
+                return make_result(json.dumps({"error": f"Failed to decode HTML: {e}"}), is_error=True)
+    else:
+        # Local mode: read from filesystem
+        full_path = os.path.join(ALLOWED_CODEBASE, html_path)
+        if os.path.exists(full_path):
+            with open(full_path, "r", encoding="utf-8") as f:
+                html_content = f.read()
+
+    if not html_content:
+        return make_result(json.dumps({
+            "error": f"Could not read HTML file: {html_path}"
+        }), is_error=True)
+
+    # Call HTMLCSStoImage API
+    try:
+        auth = base64.b64encode(f"{htmlcss_user_id}:{htmlcss_api_key}".encode()).decode()
+
+        payload = json.dumps({
+            "html": html_content,
+            "viewport_width": 1200,
+            "viewport_height": 630,
+            "device_scale_factor": 1
+        }).encode()
+
+        req = urllib.request.Request(
+            "https://hcti.io/v1/image",
+            data=payload,
+            headers={
+                "Content-Type": "application/json",
+                "Authorization": f"Basic {auth}"
+            }
+        )
+
+        with urllib.request.urlopen(req, timeout=30) as response:
+            result = json.loads(response.read().decode())
+
+        if not result.get("url"):
+            return make_result(json.dumps({"error": "No image URL in response"}), is_error=True)
+
+        image_url = result["url"]
+        print(f"[screenshot_page_as_og] Generated: {image_url}", file=sys.stderr)
+
+        # Download the image
+        img_req = urllib.request.Request(image_url)
+        with urllib.request.urlopen(img_req, timeout=30) as img_response:
+            img_data = img_response.read()
+
+        # Save the image
+        if IS_RAILWAY:
+            # Stage for GitHub commit
+            b64_image = base64.b64encode(img_data).decode()
+            _github_pending_files[save_path] = f"BASE64:{b64_image}"
+            return make_result(json.dumps({
+                "success": True,
+                "saved_to": save_path,
+                "source": html_path,
+                "message": f"Screenshot captured and staged for commit at {save_path}"
+            }))
+        else:
+            # Local: save directly
+            full_save_path = os.path.join(ALLOWED_CODEBASE, save_path)
+            os.makedirs(os.path.dirname(full_save_path), exist_ok=True)
+            with open(full_save_path, "wb") as f:
+                f.write(img_data)
+            return make_result(json.dumps({
+                "success": True,
+                "saved_to": full_save_path,
+                "source": html_path,
+                "message": f"Screenshot captured and saved to {full_save_path}"
+            }))
+
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode() if e.fp else str(e)
+        return make_result(json.dumps({
+            "error": f"HTMLCSStoImage API error {e.code}: {error_body}"
+        }), is_error=True)
+    except Exception as e:
+        return make_result(json.dumps({"error": str(e)}), is_error=True)
+
+
+# =============================================================================
 # FILE OPERATIONS
 # =============================================================================
 
@@ -1243,6 +1374,7 @@ amber_server = create_sdk_mcp_server(
         generate_amber_image_tool,  # OpenAI - Amber's preferred style
         generate_image_tool,  # fal.ai - fast alternative
         generate_og_image_tool,  # Branded OG images for social sharing
+        screenshot_page_as_og_tool,  # Screenshot HTML page as OG image (amber-social)
         # Files
         read_file_tool,
         write_file_tool,

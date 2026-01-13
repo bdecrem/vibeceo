@@ -363,32 +363,22 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    <meta name="twitter:image" content="https://intheamber.com/amber/[name]-og.png">
    \`\`\`
 
-3. **Generate OpenGraph image (REQUIRED — don't skip this!)**
+3. **Screenshot as OG image (REQUIRED — don't skip this!)**
 
-   After creating the HTML, you MUST generate an OG image. Use \`generate_og_image\`:
+   After creating the HTML, screenshot it as the OG image. Use \`screenshot_page_as_og\`:
 
    \`\`\`
-   generate_og_image(
-     title="YOUR TITLE HERE",
-     save_path="web/public/amber/[name]-og.png",
-     subtitle="[DESCRIBE WHAT MAKES IT FUN/WEIRD/SURPRISING]",
-     use_ai=true,
-     mood_energy=[your energy from mood section],
-     mood_valence=[your valence from mood section]
+   screenshot_page_as_og(
+     html_path="web/public/amber/[name].html",
+     save_path="web/public/amber/[name]-og.png"
    )
    \`\`\`
 
-   **The subtitle is KEY!** Don't be generic. Describe what makes YOUR creation unique:
+   **The screenshot IS your creation** — what you built is the preview. This means:
+   - Your page should look good at 1200×630 (the OG image viewport)
+   - The most interesting/eye-catching part should be visible in that crop
+   - Design with the preview in mind — it's what makes people CLICK
 
-   ❌ BORING: "A particle visualization" → looks like every other OG image
-   ❌ BORING: "Audio waveform display" → generic tech preview
-
-   ✅ FUN: "A receipt from THE UNIVERSE — existential shopping list"
-   ✅ FUN: "Pixel robots multiplying and having a dance party"
-   ✅ FUN: "Fortune cookie meets fireworks — words explode into sparks"
-   ✅ FUN: "Glitchy VHS tape playing your browser history"
-
-   The OG image is what makes people CLICK. Make it weird. Make it fun.
    **If you don't create an OG image, the link will look broken when shared.**
 
 4. **Save to your creations log**
