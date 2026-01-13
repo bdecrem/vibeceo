@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AUTOCORRECT POETRY — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="AUTOCORRECT POETRY — Amber">
+  <meta property="og:description" content="Your phone corrects your existential crisis into corporate optimism">
+  <meta property="og:image" content="https://intheamber.com/amber/autocorrect-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/autocorrect.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="AUTOCORRECT POETRY — Amber">
+  <meta name="twitter:description" content="Your phone corrects your existential crisis into corporate optimism">
+  <meta name="twitter:image" content="https://intheamber.com/amber/autocorrect-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 5vw, 36px);
+      margin-bottom: 10px;
+      text-align: center;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      text-align: center;
+      margin-bottom: 40px;
+      color: #2D9596;
+      font-family: 'Space Mono', monospace;
+    }
+    
+    .input-area {
+      position: relative;
+      margin-bottom: 30px;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 200px;
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      font-size: 18px;
+      padding: 20px;
+      resize: vertical;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    textarea::placeholder {
+      color: #666;
+      font-style: italic;
+    }
+    
+    .output-area {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 200px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .corrected-text {
+      position: relative;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #2D9596;
+      font-weight: 500;
+      z-index: 2;
+    }
+    
+    .original-text {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      right: 20px;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #D4A574;
+      opacity: 0.3;
+      pointer-events: none;
+      text-decoration: line-through;
+      z-index: 1;
+    }
+    
+    .placeholder-text {
+      color: #666;
+      font-style: italic;
+      font-size: 16px;
+    }
+    
+    button {
+      width: 100%;
+      padding: 15px;
+      background: #2D9596;
+      border: none;
+      color: #000;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      border-radius: 8px;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+      min-height: 44px;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(255, 215, 0, 0.4);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 14px;
+      color: #666;
+      font-family: 'Space Mono', monospace;
+    }
+    
+    @media (max-width: 600px) {
+      textarea, .corrected-text, .original-text {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Autocorrect Poetry</h1>
+    <p class="subtitle">Your existential crisis, optimized.</p>
+    
+    <div class="input-area">
+      <textarea id="input" placeholder="Type something honest..."></textarea>
+    </div>
+    
+    <button id="correctBtn">✨ OPTIMIZE FOR HAPPINESS</button>
+    
+    <div class="output-area" id="output" style="margin-top: 30px;">
+      <div class="placeholder-text">Your corrected message will appear here...</div>
+    </div>
+    
+    <div class="footer">
+      — Amber
+    </div>
+  </div>
+  
+  <script>
+    const corrections = [
+      {
+        pattern: /void|emptiness|hollow|empty/gi,
+        replace: 'opportunity for growth'
+      },
+      {
+        pattern: /meaning(less)?|pointless|purpose/gi,
+        replace: 'aligned with core values'
+      },
+      {
+        pattern: /afraid|scared|terrified|fear/gi,
+        replace: 'excited about challenges'
+      },
+      {
+        pattern: /lost|confused|uncertain/gi,
+        replace: 'exploring possibilities'
+      },
+      {
+        pattern: /tired|exhausted|drained/gi,
+        replace: 'recharging for success'
+      },
+      {
+        pattern: /alone|lonely|isolated/gi,
+        replace: 'practicing self-care'
+      },
+      {
+        pattern: /dying|death|dead/gi,
+        replace: 'transitioning to new opportunities'
+      },
+      {
+        pattern: /hate|despise|loathe/gi,
+        replace: 'have feedback about'
+      },
+      {
+        pattern: /fail(ure|ed|ing)?|failed/gi,
+        replace: 'learned important lessons'
+      },
+      {
+        pattern: /sad|depressed|miserable/gi,
+        replace: 'in a reflective mood'
+      },
+      {
+        pattern: /scream(ing)?|screaming/gi,
+        replace: 'expressing enthusiasm'
+      },
+      {
+        pattern: /crisis|disaster|catastrophe/gi,
+        replace: 'pivot opportunity'
+      },
+      {
+        pattern: /nightmare|hell|awful/gi,
+        replace: 'challenging learning experience'
+      },
+      {
+        pattern: /fake|pretending|lie/gi,
+        replace: 'maintaining professionalism'
+      },
+      {
+        pattern: /numb|nothing|apathetic/gi,
+        replace: 'zen and centered'
+      }
+    ];
+    
+    const input = document.getElementById('input');
+    const output = document.getElementById('output');
+    const correctBtn = document.getElementById('correctBtn');
+    
+    correctBtn.addEventListener('click', () => {
+      const original = input.value.trim();
+      
+      if (!original) {
+        output.innerHTML = '<div class="placeholder-text">Please type something first...</div>';
+        return;
+      }
+      
+      let corrected = original;
+      corrections.forEach(({pattern, replace}) => {
+        corrected = corrected.replace(pattern, replace);
+      });
+      
+      // If nothing was corrected, add a generic corporate phrase
+      if (corrected === original) {
+        corrected = original + ' 🎉 (Look at you go!)';
+      }
+      
+      output.innerHTML = `
+        <div class="original-text">${original}</div>
+        <div class="corrected-text">${corrected}</div>
+      `;
+    });
+    
+    // Also trigger on Enter (but not Shift+Enter)
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        correctBtn.click();
+      }
+    });
+  </script>
+</body>
+</html>
