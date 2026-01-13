@@ -365,6 +365,16 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
 
 3. **Screenshot as OG image (REQUIRED — don't skip this!)**
 
+   **⚠️ CRITICAL: NAME CONSISTENCY**
+   Pick ONE short filename (e.g., \`cool-thing\`) and use it EVERYWHERE:
+   - HTML file: \`web/public/amber/cool-thing.html\`
+   - OG image: \`web/public/amber/cool-thing-og.png\`
+   - og:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
+   - og:url: \`https://intheamber.com/amber/cool-thing.html\`
+   - twitter:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
+
+   **If these don't match EXACTLY, Twitter shows a broken preview.**
+
    After creating the HTML, screenshot it as the OG image. Use \`screenshot_page_as_og\`:
 
    \`\`\`
