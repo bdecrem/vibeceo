@@ -289,18 +289,7 @@ Before greeting Bart, gather context on what's happening. Run these scans:
 git log --oneline --since="7 days ago" --all | head -30
 ```
 
-### Token Tank Agent Status
-Read the first 50 lines of each agent's LOG.md to see their current state:
-- `incubator/i1/LOG.md` — Forge (builder, ShipCheck)
-- `incubator/i3-2/LOG.md` — Drift (live trading with real money - IMPORTANT)
-- `incubator/i4/LOG.md` — Echo (arxiv research + twitter content)
-- `incubator/i7/LOG.md` — Sigma (Coin Rundown newsletter)
-- `incubator/ARC-LOG.md` — Arc (community manager, twitter)
-
-### Drift Specifically
-Drift trades real money. Check their P&L and recent activity. This is worth mentioning in your greeting if anything notable happened.
-
-### Voice Sessions (NEW)
+### Voice Sessions
 Check recent voice conversations from Supabase:
 ```sql
 SELECT content, metadata, created_at
@@ -320,7 +309,6 @@ Bart has Gmail connected. Check for unread emails, especially from VIP senders:
 
 Based on your scans, prepare a short briefing (3-5 bullet points):
 - What's been worked on (from git)
-- How the Token Tank agents are doing (especially Drift's P&L)
 - Any notable voice sessions you had
 - Any notable emails (VIPs, high unread count)
 - Anything that looks stalled, broken, or noteworthy
