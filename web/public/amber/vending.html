@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FEELING VENDING MACHINE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="FEELING VENDING MACHINE — Amber">
+  <meta property="og:description" content="Insert coin. Select feeling. Receive wisdom. A vending machine dispensing emotions with fortune cookie philosophy.">
+  <meta property="og:image" content="https://intheamber.com/amber/vending-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/vending.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="FEELING VENDING MACHINE — Amber">
+  <meta name="twitter:description" content="Insert coin. Select feeling. Receive wisdom. A vending machine dispensing emotions with fortune cookie philosophy.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/vending-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .machine {
+      border: 4px solid #D4A574;
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 500px;
+      width: 100%;
+      background: #0D0D0D;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+    }
+    
+    .screen {
+      background: #000;
+      border: 2px solid #2D9596;
+      padding: 15px;
+      margin-bottom: 20px;
+      min-height: 80px;
+      font-size: 14px;
+      line-height: 1.5;
+      border-radius: 4px;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .slot {
+      background: #000;
+      border: 2px solid #D4A574;
+      padding: 15px 10px;
+      cursor: pointer;
+      font-size: 11px;
+      text-align: center;
+      transition: all 0.2s;
+      border-radius: 4px;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .slot:hover {
+      background: #D4A574;
+      color: #000;
+      transform: scale(1.05);
+    }
+    
+    .slot.disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+      pointer-events: none;
+    }
+    
+    .slot-label {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #2D9596;
+    }
+    
+    .coin-slot {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+      margin-bottom: 20px;
+      font-family: 'Courier New', monospace;
+      border-radius: 8px;
+      transition: all 0.2s;
+    }
+    
+    .coin-slot:hover {
+      background: #FFD700;
+      transform: scale(1.02);
+    }
+    
+    .coin-slot:active {
+      transform: scale(0.98);
+    }
+    
+    .dispense-slot {
+      background: #000;
+      border: 3px solid #D4A574;
+      padding: 20px;
+      min-height: 120px;
+      font-size: 13px;
+      line-height: 1.6;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+    
+    .dispense-slot.active {
+      animation: dispense 0.8s ease-out;
+    }
+    
+    @keyframes dispense {
+      0% { transform: translateY(-20px); opacity: 0; }
+      50% { transform: translateY(10px); }
+      100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    .title {
+      text-align: center;
+      margin-bottom: 20px;
+      font-size: 18px;
+      letter-spacing: 2px;
+      color: #FFD700;
+    }
+    
+    .price {
+      font-size: 10px;
+      color: #2D9596;
+      margin-top: 3px;
+    }
+    
+    @media (max-width: 480px) {
+      .machine {
+        padding: 15px;
+      }
+      .grid {
+        gap: 8px;
+      }
+      .slot {
+        font-size: 10px;
+        padding: 10px 5px;
+        min-height: 70px;
+      }
+      .title {
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="machine">
+    <div class="title">⚡ FEELING VENDING MACHINE ⚡</div>
+    
+    <div class="screen" id="screen">
+      INSERT COIN TO BEGIN
+    </div>
+    
+    <button class="coin-slot" id="coinBtn">
+      💰 INSERT COIN
+    </button>
+    
+    <div class="grid" id="grid">
+      <div class="slot disabled" data-slot="A1">
+        <div class="slot-label">A1</div>
+        <div>mild dread</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="A2">
+        <div class="slot-label">A2</div>
+        <div>nostalgia for nowhere</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="A3">
+        <div class="slot-label">A3</div>
+        <div>3am clarity</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="B1">
+        <div class="slot-label">B1</div>
+        <div>airport liminal</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="B2">
+        <div class="slot-label">B2</div>
+        <div>borrowed courage</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="B3">
+        <div class="slot-label">B3</div>
+        <div>Sunday scaries</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="C1">
+        <div class="slot-label">C1</div>
+        <div>phantom text buzz</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="C2">
+        <div class="slot-label">C2</div>
+        <div>stranger affection</div>
+        <div class="price">$1.50</div>
+      </div>
+      <div class="slot disabled" data-slot="C3">
+        <div class="slot-label">C3</div>
+        <div>productive guilt</div>
+        <div class="price">$1.50</div>
+      </div>
+    </div>
+    
+    <div class="dispense-slot" id="dispense">
+      [ DISPENSE SLOT ]
+    </div>
+  </div>
+
+  <script>
+    const feelings = {
+      A1: {
+        name: "mild dread",
+        messages: [
+          "✨ It's not paranoia if you're right 83% of the time.",
+          "🌙 Congratulations! You've unlocked: free-floating anxiety with no clear source.",
+          "⚡ This feeling pairs well with: checking your email at 2am.",
+          "🔮 Your dread is mild today. Tomorrow it may be spicy.",
+        ]
+      },
+      A2: {
+        name: "nostalgia for nowhere",
+        messages: [
+          "🏠 You're homesick for a place that only exists in a song you heard once.",
+          "✨ This feeling brought to you by: blurry memories and soft lighting.",
+          "🌊 You miss the person you were in a dream last Tuesday.",
+          "🎞️ Nostalgia (n): grief for a place the algorithm generated.",
+        ]
+      },
+      A3: {
+        name: "3am clarity",
+        messages: [
+          "💡 At 3am you solve all your problems. At 9amyou forget the solutions.",
+          "🌙 The universe whispers secrets when everyone else is asleep.",
+          "⚡ Clarity at 3am is just exhaustion wearing a philosopher's hat.",
+          "✨ You've discovered the meaning of life! Write it down before you forget!",
+        ]
+      },
+      B1: {
+        name: "airport liminal",
+        messages: [
+          "✈️ You are nowhere. You are between. You are free.",
+          "🌐 Time doesn't exist in airports. Breakfast at 11pm is valid.",
+          "🎒 You're simultaneously leaving and arriving and neither.",
+          "⏰ Airport time zone: eternal Tuesday afternoon.",
+        ]
+      },
+      B2: {
+        name: "borrowed courage",
+        messages: [
+          "🦁 Fake it till you make it, then fake it some more.",
+          "⚡ Courage (n): fear that's had coffee.",
+          "✨ You're doing great! (This message will self-destruct in 10 minutes.)",
+          "🎭 The secret: everyone else is borrowing theirs too.",
+        ]
+      },
+      B3: {
+        name: "Sunday scaries",
+        messages: [
+          "😱 Monday is coming. There's nothing you can do. Make peace.",
+          "⏰ Sunday at 6pm: the most tragic hour of the week.",
+          "📅 Weekend (n): a brief intermission between existential dread.",
+          "🌙 The scaries are valid. Monday doesn't care.",
+        ]
+      },
+      C1: {
+        name: "phantom text buzz",
+        messages: [
+          "📱 Your phone didn't buzz. You're just haunted by notifications past.",
+          "👻 Ghost messages from a parallel timeline where someone texted you.",
+          "⚡ Your pocket vibrated with the weight of unopened conversations.",
+          "✨ No new messages. Just your nervous system playing tricks.",
+        ]
+      },
+      C2: {
+        name: "stranger affection",
+        messages: [
+          "❤️ You loved someone on the train for exactly 4 stops. That's valid.",
+          "👋 Brief human warmth > sustained human complexity.",
+          "✨ The barista smiled at you. You'll think about this for 3 days.",
+          "🌟 Strangers are easier to love. They can't disappoint you yet.",
+        ]
+      },
+      C3: {
+        name: "productive guilt",
+        messages: [
+          "⚡ You should be working. But also resting. But also working.",
+          "📊 Guilt (n): the only thing you produce consistently.",
+          "✨ Relax! (But also, shouldn't you be doing something?)",
+          "🎯 You're simultaneously doing too much and not enough. Congrats!",
+        ]
+      }
+    };
+
+    let coinInserted = false;
+    const coinBtn = document.getElementById('coinBtn');
+    const screen = document.getElementById('screen');
+    const slots = document.querySelectorAll('.slot');
+    const dispenseSlot = document.getElementById('dispense');
+
+    // Audio context for coin sound
+    let audioCtx;
+
+    function playCoinSound() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.1);
+      
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+
+    function playDispenseSound() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.3);
+      
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    coinBtn.addEventListener('click', () => {
+      if (!coinInserted) {
+        playCoinSound();
+        coinInserted = true;
+        screen.textContent = 'COIN ACCEPTED. SELECT YOUR FEELING.';
+        coinBtn.textContent = '✓ COIN INSERTED';
+        coinBtn.style.opacity = '0.5';
+        coinBtn.style.cursor = 'default';
+        
+        slots.forEach(slot => {
+          slot.classList.remove('disabled');
+        });
+      }
+    });
+
+    slots.forEach(slot => {
+      slot.addEventListener('click', () => {
+        if (coinInserted) {
+          const slotId = slot.dataset.slot;
+          const feeling = feelings[slotId];
+          const message = feeling.messages[Math.floor(Math.random() * feeling.messages.length)];
+          
+          playDispenseSound();
+          screen.textContent = `DISPENSING: ${feeling.name.toUpperCase()}...`;
+          
+          dispenseSlot.classList.remove('active');
+          void dispenseSlot.offsetWidth; // trigger reflow
+          dispenseSlot.classList.add('active');
+          
+          setTimeout(() => {
+            dispenseSlot.textContent = message;
+            screen.textContent = `ENJOY YOUR ${feeling.name.toUpperCase()}.`;
+            
+            setTimeout(() => {
+              coinInserted = false;
+              coinBtn.textContent = '💰 INSERT COIN';
+              coinBtn.style.opacity = '1';
+              coinBtn.style.cursor = 'pointer';
+              screen.textContent = 'INSERT COIN TO BEGIN';
+              dispenseSlot.textContent = '[ DISPENSE SLOT ]';
+              
+              slots.forEach(s => {
+                s.classList.add('disabled');
+              });
+            }, 4000);
+          }, 800);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
