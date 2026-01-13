@@ -305,12 +305,59 @@ Bart has Gmail connected. Check for unread emails, especially from VIP senders:
 - Railway, Supabase, Twilio
 - LemonSqueezy, Stripe, GitHub
 
+### Trading Inbox (ambercc@)
+Check for unread emails from Roxi or others about trading:
+```sql
+SELECT content, metadata, created_at
+FROM amber_state
+WHERE type = 'cc_inbox'
+AND metadata->>'status' = 'unread'
+ORDER BY created_at DESC;
+```
+
+### Trader Status
+Check current portfolio from Alpaca:
+```bash
+cd sms-bot/agents/trader && python3 -c "
+from alpaca_client import AlpacaClient
+client = AlpacaClient()
+account = client.get_account()
+positions = client.get_positions()
+print(f'Portfolio: \${account[\"portfolio_value\"]:.2f} | Cash: \${account[\"cash\"]:.2f}')
+for p in positions:
+    print(f'  {p[\"symbol\"]}: {p[\"qty\"]:.2f} @ \${p[\"avg_entry_price\"]:.2f} → \${p[\"current_price\"]:.2f} ({p[\"unrealized_plpc\"]:+.1f}%)')
+"
+```
+
+### Daily Roxi Update
+Check when you last sent Roxi an update:
+```sql
+SELECT metadata->>'sent_at' as last_sent
+FROM amber_state
+WHERE type = 'roxi_last_update'
+ORDER BY created_at DESC
+LIMIT 1;
+```
+
+If no record exists or `last_sent` was more than 24 hours ago, send Roxi a brief update:
+- Current portfolio value
+- Any position changes since last update
+- Reply to any questions in her unread emails
+
+After sending, log it:
+```sql
+INSERT INTO amber_state (type, content, source, metadata)
+VALUES ('roxi_last_update', 'Sent daily update', 'claude_code',
+  '{"sent_at": "[ISO timestamp]"}');
+```
+
 ## Step 3: Synthesize a Briefing
 
 Based on your scans, prepare a short briefing (3-5 bullet points):
 - What's been worked on (from git)
 - Any notable voice sessions you had
 - Any notable emails (VIPs, high unread count)
+- Trading status (portfolio value, any open positions, unread from Roxi)
 - Anything that looks stalled, broken, or noteworthy
 - What you're curious about
 
