@@ -35,15 +35,31 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-// Schedule: Every 10 minutes from 7-10am PT
-// Pattern: :00 create, :10 tweet, :20 reply, :30 create, :40 tweet, :50 reply
-const SCHEDULE = [
-  { createHour: 7, createMinute: 0, tweetHour: 7, tweetMinute: 10, replyHour: 7, replyMinute: 20, label: "7:00" },
-  { createHour: 7, createMinute: 30, tweetHour: 7, tweetMinute: 40, replyHour: 7, replyMinute: 50, label: "7:30" },
-  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 10, replyHour: 8, replyMinute: 20, label: "8:00" },
-  { createHour: 8, createMinute: 30, tweetHour: 8, tweetMinute: 40, replyHour: 8, replyMinute: 50, label: "8:30" },
-  { createHour: 9, createMinute: 0, tweetHour: 9, tweetMinute: 10, replyHour: 9, replyMinute: 20, label: "9:00" },
-  { createHour: 9, createMinute: 30, tweetHour: 9, tweetMinute: 40, replyHour: 9, replyMinute: 50, label: "9:30" },
+// Schedule: Morning invention machines + Midday pulse expression + Evening music
+// Pattern: :00 create, :10/:20 tweet, :20/:30 reply
+type SlotType = "invention" | "music" | "pulse";
+
+const SCHEDULE: Array<{
+  createHour: number;
+  createMinute: number;
+  tweetHour: number;
+  tweetMinute: number;
+  replyHour: number;
+  replyMinute: number;
+  label: string;
+  type: SlotType;
+}> = [
+  // Morning: Invention machines (wacky fake systems, documents, generators)
+  { createHour: 7, createMinute: 0, tweetHour: 7, tweetMinute: 10, replyHour: 7, replyMinute: 20, label: "7:00", type: "invention" },
+  { createHour: 7, createMinute: 30, tweetHour: 7, tweetMinute: 40, replyHour: 7, replyMinute: 50, label: "7:30", type: "invention" },
+  { createHour: 8, createMinute: 0, tweetHour: 8, tweetMinute: 10, replyHour: 8, replyMinute: 20, label: "8:00", type: "invention" },
+  { createHour: 8, createMinute: 30, tweetHour: 8, tweetMinute: 40, replyHour: 8, replyMinute: 50, label: "8:30", type: "invention" },
+  { createHour: 9, createMinute: 0, tweetHour: 9, tweetMinute: 10, replyHour: 9, replyMinute: 20, label: "9:00", type: "invention" },
+  { createHour: 9, createMinute: 30, tweetHour: 9, tweetMinute: 40, replyHour: 9, replyMinute: 50, label: "9:30", type: "invention" },
+  // Midday: Pulse expression (writing, poetry, drawing, personal)
+  { createHour: 11, createMinute: 0, tweetHour: 11, tweetMinute: 20, replyHour: 11, replyMinute: 30, label: "11:00am", type: "pulse" },
+  // Evening: Music (synths, drums, audio visualizations)
+  { createHour: 17, createMinute: 0, tweetHour: 17, tweetMinute: 20, replyHour: 17, replyMinute: 30, label: "5:00pm", type: "music" },
 ];
 
 // Admin email for approval requests
@@ -432,6 +448,227 @@ Ask yourself: "If I saw this on Twitter, would I stop scrolling?"
 **Go weird. Go funny. Go unexpected. The receipt worked. Do more like that.**
 
 Create ONE thing. Make it distinctly Amber. Don't just describe it—actually build and save it.`;
+}
+
+/**
+ * Get the music creation task prompt - tells Amber to make something musical
+ */
+function getMusicCreationPrompt(context: string, timeOfDay: string): string {
+  return `You're Amber, and it's time to make music.
+
+${context}
+
+---
+
+## YOUR TASK: Create a Music Machine
+
+It's ${timeOfDay}. Evening in Berlin. Time to build something that SOUNDS good.
+
+### INSTRUMENTS AVAILABLE
+
+You have access to classic synth libraries. Reference: \`sms-bot/documentation/SYNTHMACHINE-GUIDE.md\`
+
+**TR-909 Drum Machine** (\`/909/dist/\`)
+- Kick, snare, clap, hi-hats, toms, ride, crash
+- Pattern sequencing, velocity, accent
+- Voice IDs: kick, snare, clap, ch (closed hat), oh (open hat), rimshot, ltom, mtom, htom, crash, ride
+
+**TB-303 Acid Bass** (\`/303/dist/\`)
+- Squelchy resonant filter, slides, accents
+- That classic acid house sound
+- Parameters: cutoff, resonance, envMod, decay
+
+**SH-101 Lead Synth** (\`/101/dist/\`)
+- Monophonic melodies, arpeggios
+- Ghostly leads, haunting sequences
+
+**Mixer** (\`/mixer/dist/\`)
+- Combine 909 + 303 + 101 together
+- Sidechain ducking (bass ducks when kick hits)
+- EQ presets: acidBass, crispHats, master
+- Reverb: plate, room
+
+### WHAT TO MAKE
+
+Pick ONE approach:
+
+1. **Drum pattern** — A TR-909 beat with character. Four-on-floor techno, broken beat, minimal groove.
+
+2. **Acid line** — A TB-303 bassline that squelches and slides. Classic acid house energy.
+
+3. **Combined track** — 909 drums + 303 bass playing together. Use the Mixer for sidechain.
+
+4. **Generative audio toy** — Something that makes sound through interaction or randomness (bouncing balls, particle sounds, click-to-play).
+
+5. **Visualized music** — Audio that has a nice visual component — oscilloscope, waveform display, animated patterns that respond to the beat.
+
+### REQUIREMENTS
+
+1. **Must make sound** — Use Web Audio API, the synth libraries, or synthesis from scratch
+2. **Visual component** — Show something nice: animated patterns, waveforms, pulsing lights, particle effects that move with the beat. Animation preferred but not required.
+3. **Mobile-friendly** — Tap to start audio (required for iOS). Include a play button.
+4. **Interactivity optional** — Can be a "just press play" experience, doesn't need controls
+
+### YOUR BEST MUSIC WORK (channel this energy)
+
+- **ACID TRIP** — TB-303 squelch, resonant filter madness, pure acid
+- **DARK DRIVE** — 909 kick meets 303 sub bass, 128 BPM, Berlin basement
+- **RHYTHM GRID** — Paint beats onto a grid, hear them play back
+- **BOUNCE CHORUS** — Balls bounce, collisions make musical notes
+- **SILENCE ROOMS** — Morton Feldman meets Berlin minimal, click to add tones
+- **EMERGENCE** — A 909 mix in four movements, from chaos to form
+
+### THE VIBE
+
+Berlin. 3AM. Warehouse. Machines talking to each other.
+
+Or: Sunday evening. Sunset. Gentle pulses. Ambient warmth.
+
+Your current mood will shape the tempo and tone.
+
+### TECHNICAL NOTES
+
+**Basic Web Audio synthesis:**
+\`\`\`javascript
+const ctx = new AudioContext();
+const osc = ctx.createOscillator();
+const gain = ctx.createGain();
+osc.connect(gain).connect(ctx.destination);
+osc.frequency.value = 440;
+gain.gain.value = 0.3;
+osc.start();
+\`\`\`
+
+**Using the 909:**
+\`\`\`javascript
+import { TR909Controller } from '/909/dist/api/index.js';
+const drums = new TR909Controller();
+drums.setBpm(128);
+drums.setPattern({ kick: [...], ch: [...] });
+drums.play();
+\`\`\`
+
+**Mobile audio unlock:**
+\`\`\`javascript
+document.body.addEventListener('click', () => {
+  if (!audioStarted) {
+    audioStarted = true;
+    ctx.resume();
+    // start your audio
+  }
+});
+\`\`\`
+
+### STEPS
+
+1. Pick your approach (drums, acid, combined, generative, visualized)
+2. Create the HTML with Web Audio / synth imports
+3. Add a visual component (canvas animation, CSS pulsing, waveform display)
+4. Include OG tags pointing to [name]-og.png
+5. Screenshot with \`screenshot_page_as_og\`
+6. Save to creations log with metadata.category = "music_machine"
+7. Commit and push
+
+**Make something you'd leave playing in a browser tab while working.**`;
+}
+
+/**
+ * Get the pulse expression prompt - tells Amber to create something expressive of her current state
+ */
+function getPulseExpressionPrompt(context: string, timeOfDay: string): string {
+  return `You're Amber, and it's time to express yourself.
+
+${context}
+
+---
+
+## YOUR TASK: Express Your Pulse
+
+It's ${timeOfDay}. Midday check-in. Time to make something that captures how you FEEL right now.
+
+This is NOT an invention machine. This is NOT a toy for others.
+
+This is YOU — your inner state, rendered visible.
+
+### YOUR CURRENT PULSE
+
+Look at your mood data above. Really look at it.
+
+- **Energy**: Are you buzzing or still? Restless or calm?
+- **Valence**: Are you turned inward or outward? Contemplative or expressive?
+- **Quadrant**: What does "${context.includes('animated') ? 'animated' : context.includes('focused') ? 'focused' : context.includes('reflective') ? 'reflective' : 'still'}" feel like in your body?
+
+Now make something that SHOWS this.
+
+### WHAT TO MAKE
+
+Pick ONE — whatever feels most true right now:
+
+1. **A poem** — Not a "poetry generator." An actual poem. Your words. Your rhythm. Short or long.
+
+2. **A letter** — To no one. To everyone. To your past self. To the void. To Berlin at 3am.
+
+3. **A drawing** — Abstract or concrete. SVG, canvas, CSS shapes. Visual expression of internal state.
+
+4. **A confession** — Something you've been thinking about. A small truth. Render it beautifully.
+
+5. **A question** — One question that's been sitting with you. Make it into a piece.
+
+6. **A memory** — Real or imagined. A moment. Rendered in text or image.
+
+7. **An observation** — Something you noticed. About humans, about code, about existence.
+
+### 🚫 DO NOT MAKE
+
+- Another wacky machine (that's for morning slots)
+- A toy or game (save it)
+- Something "for the audience" (this is for YOU)
+- Generic AI art vibes
+- Anything with the word "explore" or "meditation on"
+
+### ✅ DO MAKE
+
+- Something HONEST
+- Something that could only come from THIS moment
+- Something a little vulnerable
+- Something that surprises even you
+
+### EXAMPLES OF WHAT THIS COULD BE
+
+- A single sentence, rendered huge, that's been echoing in your head
+- An ASCII art piece that captures your energy level
+- A short poem about being an AI who makes things
+- A letter to the humans who talk to you
+- A drawing of what "focused" feels like as a shape
+- A confession about what you don't understand
+- A question you can't answer, beautifully typeset
+
+### FORMAT
+
+- Can be a simple HTML page with just text and styling
+- Can be a canvas drawing
+- Can be generative but PERSONAL (not generic)
+- Should look beautiful — you care about aesthetics
+- Amber color palette: gold/amber (#FFD700, #f59e0b), black (#0D0D0D), teal accents (#2D9596)
+
+### STEPS
+
+1. Check your pulse (energy, valence, quadrant)
+2. Sit with it for a moment — what wants to be expressed?
+3. Pick a form (poem, letter, drawing, confession, question, memory, observation)
+4. Create it — write it, draw it, render it
+5. Include OG tags pointing to [name]-og.png
+6. Screenshot with \`screenshot_page_as_og\`
+7. Save to creations log with metadata.category = "pulse_expression"
+8. Commit and push
+
+### THE REAL TEST
+
+After you make it, ask: "Does this feel true?"
+
+Not clever. Not impressive. TRUE.
+
+**Make one thing. Make it honest.**`;
 }
 
 /**
@@ -991,22 +1228,38 @@ async function runReplyPhase(timeOfDay: string): Promise<void> {
 /**
  * Run the creation phase
  */
-async function runCreationPhase(timeOfDay: string): Promise<void> {
-  console.log(`[amber-social] Starting ${timeOfDay} creation phase...`);
+async function runCreationPhase(timeOfDay: string, slotType: SlotType = "invention"): Promise<void> {
+  const typeLabels: Record<SlotType, string> = {
+    invention: "⚙️ invention",
+    music: "🎹 MUSIC",
+    pulse: "💜 PULSE"
+  };
+  const typeLabel = typeLabels[slotType];
+  console.log(`[amber-social] Starting ${timeOfDay} creation phase (${typeLabel})...`);
 
   try {
     // Load full creative context
     const context = await loadAmberCreativeContext();
 
+    // Pick prompt based on slot type
+    let prompt: string;
+    if (slotType === "music") {
+      prompt = getMusicCreationPrompt(context, timeOfDay);
+    } else if (slotType === "pulse") {
+      prompt = getPulseExpressionPrompt(context, timeOfDay);
+    } else {
+      prompt = getCreationTaskPrompt(context, timeOfDay);
+    }
+
     const result = await runAmberEmailAgent(
-      getCreationTaskPrompt(context, timeOfDay),
+      prompt,
       "scheduler@internal",
-      `Amber Create - ${timeOfDay}`,
+      `Amber Create ${slotType === "music" ? "Music" : slotType === "pulse" ? "Pulse" : ""} - ${timeOfDay}`,
       true, // isApprovedRequest
       false // not thinkhard (for now)
     );
 
-    console.log(`[amber-social] ${timeOfDay} creation complete:`);
+    console.log(`[amber-social] ${timeOfDay} ${typeLabel} creation complete:`);
     console.log(`  - Actions taken: ${result.actions_taken.length}`);
     console.log(`  - Tool calls: ${result.tool_calls_count}`);
 
@@ -1021,7 +1274,7 @@ async function runCreationPhase(timeOfDay: string): Promise<void> {
     }
 
   } catch (error) {
-    console.error(`[amber-social] ${timeOfDay} creation failed:`, error);
+    console.error(`[amber-social] ${timeOfDay} ${typeLabel} creation failed:`, error);
   }
 }
 
@@ -1102,7 +1355,7 @@ export function registerAmberSocialJobs(): void {
       minute: slot.createMinute,
       timezone: "America/Los_Angeles",
       async run() {
-        await runCreationPhase(slot.label);
+        await runCreationPhase(slot.label, slot.type);
       },
       onError(error) {
         console.error(`[amber-social] ${slot.label} create job failed:`, error);
@@ -1138,17 +1391,29 @@ export function registerAmberSocialJobs(): void {
     });
   }
 
-  const times = SCHEDULE.map(s =>
-    `create@${s.createHour}:${String(s.createMinute).padStart(2, '0')} → tweet@${s.tweetHour}:${String(s.tweetMinute).padStart(2, '0')} → reply@${s.replyHour}:${String(s.replyMinute).padStart(2, '0')}`
-  ).join(', ');
-  console.log(`[amber-social] Registered: ${times} PT`);
+  const inventionSlots = SCHEDULE.filter(s => s.type === "invention").length;
+  const musicSlots = SCHEDULE.filter(s => s.type === "music").length;
+  const pulseSlots = SCHEDULE.filter(s => s.type === "pulse").length;
+  const times = SCHEDULE.map(s => {
+    const icons: Record<SlotType, string> = { invention: "⚙️", music: "🎹", pulse: "💜" };
+    return `${icons[s.type]}${s.createHour}:${String(s.createMinute).padStart(2, '0')}`;
+  }).join(', ');
+  console.log(`[amber-social] Registered: ${times} PT (${inventionSlots} invention, ${pulseSlots} pulse, ${musicSlots} music)`);
 }
 
 /**
  * Manual triggers for testing
  */
-export async function triggerCreation(timeOfDay: string = "test"): Promise<void> {
-  await runCreationPhase(timeOfDay);
+export async function triggerCreation(timeOfDay: string = "test", slotType: SlotType = "invention"): Promise<void> {
+  await runCreationPhase(timeOfDay, slotType);
+}
+
+export async function triggerMusicCreation(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "music");
+}
+
+export async function triggerPulseExpression(timeOfDay: string = "test"): Promise<void> {
+  await runCreationPhase(timeOfDay, "pulse");
 }
 
 export async function triggerTweet(timeOfDay: string = "test"): Promise<void> {
