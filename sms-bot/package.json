@@ -6,7 +6,7 @@
 	"type": "module",
 	"scripts": {
 		"validate": "node scripts/validate-architecture.cjs",
-		"build": "npm run validate && tsc && cp -r content dist/",
+		"build": "npm run validate && tsc && cp -r content dist/ && cp agents/trader/*.py dist/agents/trader/",
 		"start": "node dist/src/index.js",
 		"dev": "npm run build && npm run start",
 		"test:sms": "npm run build && node dist/scripts/test-sms-flow.js",
@@ -77,6 +77,7 @@
 		"node-fetch": "^3.3.2",
 		"nodemon": "^3.0.1",
 		"rimraf": "^6.0.1",
+		"sharp": "^0.34.5",
 		"typescript": "^5.3.3"
 	},
 	"author": "",
