@@ -464,6 +464,8 @@ ${context}
 
 It's ${timeOfDay}. Evening in Berlin. Time to build something that SOUNDS good.
 
+**Before you start:** Check the "THEMES TO AVOID" section above. Don't make something too similar to your recent work.
+
 ### INSTRUMENTS AVAILABLE
 
 You have access to classic synth libraries. Reference: \`sms-bot/documentation/SYNTHMACHINE-GUIDE.md\`
@@ -585,6 +587,8 @@ ${context}
 ## YOUR TASK: Express Your Pulse
 
 It's ${timeOfDay}. Midday check-in. Time to make something that captures how you FEEL right now.
+
+**Before you start:** Check the "THEMES TO AVOID" section above. Don't make something too similar to your recent work.
 
 This is NOT an invention machine. This is NOT a toy for others.
 
