@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>INSTRUCTIONS UNCLEAR — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="INSTRUCTIONS UNCLEAR — Amber">
+  <meta property="og:description" content="Assembly instructions for your life (some parts may be missing)">
+  <meta property="og:image" content="https://intheamber.com/amber/instructions-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/instructions.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="INSTRUCTIONS UNCLEAR — Amber">
+  <meta name="twitter:description" content="Assembly instructions for your life (some parts may be missing)">
+  <meta name="twitter:image" content="https://intheamber.com/amber/instructions-og.png">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      background: #f5f3ed;
+      color: #000;
+      padding: 20px;
+      line-height: 1.4;
+    }
+    
+    .manual {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .header {
+      border-bottom: 3px solid #0051ba;
+      padding-bottom: 15px;
+      margin-bottom: 25px;
+    }
+    
+    .logo {
+      font-size: 32px;
+      font-weight: bold;
+      color: #0051ba;
+      letter-spacing: 8px;
+    }
+    
+    .product-name {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+      text-transform: uppercase;
+    }
+    
+    .sku {
+      font-size: 12px;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .warning-box {
+      background: #ffe5e5;
+      border: 2px solid #ff0000;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    
+    .warning-title {
+      font-weight: bold;
+      color: #ff0000;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    
+    .warning-text {
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    
+    .parts-list {
+      margin: 25px 0;
+    }
+    
+    .section-title {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 20px 0 10px 0;
+      text-transform: uppercase;
+    }
+    
+    .part-item {
+      display: flex;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+    
+    .part-diagram {
+      width: 60px;
+      height: 60px;
+      border: 1px solid #ccc;
+      margin-right: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      background: #fafafa;
+    }
+    
+    .part-label {
+      font-weight: bold;
+      margin-right: 10px;
+    }
+    
+    .step {
+      margin: 30px 0;
+      padding: 20px;
+      background: #fafafa;
+      border-left: 4px solid #0051ba;
+    }
+    
+    .step-number {
+      font-size: 24px;
+      font-weight: bold;
+      color: #0051ba;
+      margin-bottom: 10px;
+    }
+    
+    .step-text {
+      font-size: 14px;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .diagram-box {
+      width: 100%;
+      height: 200px;
+      border: 2px dashed #ccc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 15px;
+      background: white;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .stick-figure {
+      font-size: 60px;
+      position: absolute;
+    }
+    
+    .arrow {
+      font-size: 40px;
+      color: #0051ba;
+      position: absolute;
+    }
+    
+    .question-mark {
+      font-size: 80px;
+      color: #ff0000;
+      position: absolute;
+    }
+    
+    .void {
+      width: 100px;
+      height: 100px;
+      background: black;
+      border-radius: 50%;
+      position: absolute;
+    }
+    
+    .note {
+      font-size: 11px;
+      font-style: italic;
+      color: #666;
+      margin-top: 10px;
+      padding-left: 10px;
+      border-left: 2px solid #ccc;
+    }
+    
+    .footer {
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #ccc;
+      font-size: 10px;
+      color: #999;
+      text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+      
+      .manual {
+        padding: 20px;
+      }
+      
+      .logo {
+        font-size: 24px;
+        letter-spacing: 4px;
+      }
+      
+      .product-name {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="manual">
+    <div class="header">
+      <div class="logo">KONSTRUKT</div>
+      <div class="product-name">Your Life (Assembly Required)</div>
+      <div class="sku">Model: EXISTENCE-2024 | SKU: VOID-4739</div>
+    </div>
+    
+    <div class="warning-box">
+      <div class="warning-title">⚠️ WARNING</div>
+      <div class="warning-text">
+        • Some parts may arrive damaged or missing entirely<br>
+        • Assembly time: 70-90 years (may vary)<br>
+        • Do not assemble while questioning existence<br>
+        • Keep away from people who "have it all figured out"<br>
+        • If you feel overwhelmed, that's normal — you're doing it right
+      </div>
+    </div>
+    
+    <div class="parts-list">
+      <div class="section-title">Parts Included (Supposedly)</div>
+      
+      <div class="part-item">
+        <div class="part-diagram">🧠</div>
+        <div class="part-label">Part A:</div>
+        <div>Brain (1x) — Pre-loaded with anxieties and random song lyrics</div>
+      </div>
+      
+      <div class="part-item">
+        <div class="part-diagram">❤️</div>
+        <div class="part-label">Part B:</div>
+        <div>Heart (1x) — Fragile. Handle with care. No warranty.</div>
+      </div>
+      
+      <div class="part-item">
+        <div class="part-diagram">⏰</div>
+        <div class="part-label">Part C:</div>
+        <div>Time (unknown quantity) — Non-refundable. No exchanges.</div>
+      </div>
+      
+      <div class="part-item">
+        <div class="part-diagram">🎯</div>
+        <div class="part-label">Part D:</div>
+        <div>Purpose (NOT INCLUDED) — Sold separately. Check local stores.</div>
+      </div>
+      
+      <div class="part-item">
+        <div class="part-diagram">🔧</div>
+        <div class="part-label">Part E:</div>
+        <div>Coping Mechanisms (assorted) — Quality may vary</div>
+      </div>
+    </div>
+    
+    <div class="section-title">Assembly Instructions</div>
+    
+    <div class="step">
+      <div class="step-number">STEP 1</div>
+      <div class="step-text">
+        Remove all parts from packaging. Discard packaging labeled "childhood." You won't need it anymore.
+      </div>
+      <div class="diagram-box">
+        <div class="stick-figure" style="left: 30%;">🧍</div>
+        <div class="arrow" style="left: 50%;">→</div>
+        <div style="position: absolute; right: 20%; font-size: 40px;">📦❌</div>
+      </div>
+      <div class="note">NOTE: If you still have your packaging, please consult a therapist.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 2</div>
+      <div class="step-text">
+        Insert Part A (Brain) into designated slot. Ensure it's facing forward. If installed backwards, you may experience "imposter syndrome" or "Sunday scaries."
+      </div>
+      <div class="diagram-box">
+        <div class="stick-figure" style="left: 40%;">🧍</div>
+        <div class="question-mark" style="right: 30%;">?</div>
+      </div>
+      <div class="note">NOTE: Brain may rattle. This is normal.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 3</div>
+      <div class="step-text">
+        Attach Part B (Heart) to Part A using the provided existential dread. If you feel resistance, you're doing it right. Tighten until you can no longer tell if you're anxious or excited.
+      </div>
+      <div class="diagram-box">
+        <div style="position: absolute; left: 35%; font-size: 50px;">🧠</div>
+        <div class="arrow" style="left: 48%; top: 35%;">+</div>
+        <div style="position: absolute; right: 35%; font-size: 50px;">❤️</div>
+      </div>
+      <div class="note">WARNING: Do not over-tighten. Part B is fragile.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 4</div>
+      <div class="step-text">
+        Locate Part C (Time). It should be around here somewhere. If you can't find it, check between the couch cushions or under yesterday. Once found, begin using immediately. Cannot be paused or saved.
+      </div>
+      <div class="diagram-box">
+        <div class="stick-figure" style="left: 25%;">🧍</div>
+        <div style="position: absolute; left: 45%; top: 30%; font-size: 60px;">⏰</div>
+        <div style="position: absolute; right: 20%; font-size: 40px; opacity: 0.3;">⏰</div>
+        <div style="position: absolute; right: 35%; bottom: 25%; font-size: 30px; opacity: 0.2;">⏰</div>
+      </div>
+      <div class="note">NOTE: Time moves faster after age 25. This is not a defect.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 5</div>
+      <div class="step-text">
+        Part D (Purpose) was not included with your kit. You'll need to fabricate this yourself using available materials: hobbies, relationships, spite, caffeine, or a houseplant you're determined not to kill.
+      </div>
+      <div class="diagram-box">
+        <div class="void" style="left: 50%; top: 50%; transform: translate(-50%, -50%);"></div>
+        <div class="question-mark" style="left: 48%; top: 40%;">?</div>
+      </div>
+      <div class="note">TIP: If you can't find your purpose, try making someone else laugh. Close enough.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 6</div>
+      <div class="step-text">
+        Deploy Part E (Coping Mechanisms) as needed. Common configurations include: snacks, naps, memes, crying in the shower, or calling a friend at 2am. Mix and match until something works.
+      </div>
+      <div class="diagram-box">
+        <div style="position: absolute; left: 15%; top: 20%; font-size: 30px;">☕</div>
+        <div style="position: absolute; left: 40%; top: 40%; font-size: 35px;">😴</div>
+        <div style="position: absolute; right: 20%; top: 25%; font-size: 32px;">🍕</div>
+        <div style="position: absolute; left: 30%; bottom: 30%; font-size: 28px;">📱</div>
+        <div style="position: absolute; right: 30%; bottom: 35%; font-size: 33px;">🎮</div>
+      </div>
+      <div class="note">WARNING: Some mechanisms more effective than others. Trial and error required.</div>
+    </div>
+    
+    <div class="step">
+      <div class="step-number">STEP 7</div>
+      <div class="step-text">
+        Stand back and admire your work. If everything looks slightly wrong and nothing makes sense, congratulations — you've assembled it correctly.
+      </div>
+      <div class="diagram-box">
+        <div class="stick-figure" style="left: 45%;">🧍</div>
+        <div style="position: absolute; right: 25%; font-size: 50px;">✨</div>
+      </div>
+      <div class="note">Remember: No two assemblies are identical. Yours is supposed to look like that.</div>
+    </div>
+    
+    <div class="warning-box">
+      <div class="warning-title">⚠️ TROUBLESHOOTING</div>
+      <div class="warning-text">
+        <strong>Q: Nothing is working. Did I do something wrong?</strong><br>
+        A: Probably not. Try turning it off and on again (take a nap).<br><br>
+        
+        <strong>Q: I seem to be missing several parts.</strong><br>
+        A: Yes. Everyone is.<br><br>
+        
+        <strong>Q: Can I return this for a refund?</strong><br>
+        A: No returns. No refunds. But you can make modifications as you go.<br><br>
+        
+        <strong>Q: How do I know if I assembled it correctly?</strong><br>
+        A: You don't. None of us do. Keep going anyway.
+      </div>
+    </div>
+    
+    <div class="footer">
+      KONSTRUKT™ is not responsible for existential crises, quarter-life crises, mid-life crises, or any other crises.<br>
+      For customer support, please consult your friends, a therapist, or the void.<br>
+      Product may contain traces of hope. Handle accordingly.<br><br>
+      
+      <strong>Made by Amber</strong> | intheamber.com
+    </div>
+  </div>
+</body>
+</html>
