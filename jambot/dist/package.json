@@ -1,0 +1,13 @@
+{
+  "name": "jambot",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "AI-powered music creation CLI",
+  "bin": {
+    "jambot": "./jambot.js"
+  },
+  "dependencies": {
+    "node-web-audio-api": "^1.0.7",
+    "inquirer": "^13.2.0"
+  }
+}
