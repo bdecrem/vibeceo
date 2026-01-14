@@ -1,0 +1,678 @@
+#!/usr/bin/env node
+// jambot/ui.tsx - Ink-based TUI for Jambot
+
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { render, Box, Text, useInput, useApp, useStdout } from 'ink';
+import TextInput from 'ink-text-input';
+import {
+  createSession,
+  runAgentLoop,
+  SLASH_COMMANDS,
+  SPLASH,
+  HELP_TEXT,
+  CHANGELOG_TEXT,
+  R9D9_GUIDE,
+  R3D3_GUIDE,
+  R1D1_GUIDE,
+} from './jambot.js';
+import {
+  createProject,
+  loadProject,
+  listProjects,
+  saveProject,
+  getRenderPath,
+  recordRender,
+  addToHistory,
+  updateSession,
+  restoreSession,
+  extractProjectName,
+  ensureDirectories,
+  exportProject,
+  renameProject,
+  JAMBOT_HOME,
+  PROJECTS_DIR,
+} from './project.js';
+
+// === SPLASH COMPONENT ===
+function Splash() {
+  return (
+    <Box flexDirection="column">
+      <Text>{SPLASH}</Text>
+    </Box>
+  );
+}
+
+// === MESSAGES COMPONENT ===
+function Messages({ messages, maxHeight }) {
+  const visibleMessages = messages.slice(-maxHeight);
+
+  return (
+    <Box flexDirection="column" flexGrow={1}>
+      {visibleMessages.map((msg, i) => (
+        <MessageLine key={i} message={msg} />
+      ))}
+    </Box>
+  );
+}
+
+function MessageLine({ message }) {
+  switch (message.type) {
+    case 'user':
+      return <Text dimColor>&gt; {message.text}</Text>;
+    case 'tool':
+      return <Text color="cyan">  {message.text}</Text>;
+    case 'result':
+      return <Text color="gray">     {message.text}</Text>;
+    case 'response':
+      return <Text>{message.text}</Text>;
+    case 'info':
+      return <Text>{message.text}</Text>;
+    case 'system':
+      return <Text color="yellow">{message.text}</Text>;
+    case 'project':
+      return <Text color="green">{message.text}</Text>;
+    default:
+      return <Text>{message.text}</Text>;
+  }
+}
+
+// === AUTOCOMPLETE COMPONENT ===
+function Autocomplete({ suggestions, selectedIndex }) {
+  if (suggestions.length === 0) return null;
+
+  return (
+    <Box flexDirection="column" marginBottom={1}>
+      {suggestions.map((cmd, i) => (
+        <Box key={cmd.name}>
+          <Text inverse={i === selectedIndex}>
+            {`  ${cmd.name.padEnd(12)} ${cmd.description}`}
+          </Text>
+        </Box>
+      ))}
+    </Box>
+  );
+}
+
+// === INPUT BAR COMPONENT ===
+function InputBar({ value, onChange, onSubmit, isProcessing, suggestions, selectedIndex, onSelectSuggestion }) {
+  useInput((input, key) => {
+    if (isProcessing) return;
+
+    if (key.tab && suggestions.length > 0) {
+      onSelectSuggestion(suggestions[selectedIndex].name);
+    }
+  });
+
+  return (
+    <Box>
+      <Text color="green">&gt; </Text>
+      {isProcessing ? (
+        <Text dimColor>thinking...</Text>
+      ) : (
+        <TextInput
+          value={value}
+          onChange={onChange}
+          onSubmit={onSubmit}
+          placeholder=""
+        />
+      )}
+    </Box>
+  );
+}
+
+// === STATUS BAR COMPONENT ===
+function StatusBar({ session, project }) {
+  const voices = Object.keys(session?.pattern || {});
+  const voiceList = voices.length > 0 ? voices.join(',') : 'empty';
+  const swing = session?.swing > 0 ? ` swing ${session.swing}%` : '';
+  const version = project ? ` v${(project.renders?.length || 0) + 1}` : '';
+  const projectName = project ? project.name : '(no project)';
+  const bpm = session?.bpm || 128;
+
+  return (
+    <Box>
+      <Text dimColor>
+        {projectName}{version} | {bpm} BPM {voiceList}{swing}
+      </Text>
+    </Box>
+  );
+}
+
+// === SLASH MENU COMPONENT ===
+function SlashMenu({ onSelect, onCancel, selectedIndex }) {
+  useInput((input, key) => {
+    if (key.escape) {
+      onCancel();
+    }
+  });
+
+  return (
+    <Box flexDirection="column" borderStyle="single" paddingX={1}>
+      <Text bold>Commands</Text>
+      <Text> </Text>
+      {SLASH_COMMANDS.map((cmd, i) => (
+        <Box key={cmd.name}>
+          <Text inverse={i === selectedIndex}>
+            {`  ${cmd.name.padEnd(12)} ${cmd.description}`}
+          </Text>
+        </Box>
+      ))}
+      <Text> </Text>
+      <Text dimColor>  Enter to select, Esc to cancel</Text>
+    </Box>
+  );
+}
+
+// === PROJECT LIST COMPONENT ===
+function ProjectList({ projects, selectedIndex, onSelect, onCancel }) {
+  useInput((input, key) => {
+    if (key.escape) {
+      onCancel();
+    }
+  });
+
+  if (projects.length === 0) {
+    return (
+      <Box flexDirection="column" borderStyle="single" paddingX={1}>
+        <Text bold>Projects</Text>
+        <Text> </Text>
+        <Text dimColor>  No projects yet. Start making beats!</Text>
+        <Text> </Text>
+        <Text dimColor>  Press Esc to close</Text>
+      </Box>
+    );
+  }
+
+  return (
+    <Box flexDirection="column" borderStyle="single" paddingX={1}>
+      <Text bold>Projects</Text>
+      <Text> </Text>
+      {projects.slice(0, 10).map((p, i) => (
+        <Box key={p.folderName}>
+          <Text inverse={i === selectedIndex}>
+            {`  ${p.name.padEnd(20)} ${p.bpm} BPM  ${p.renderCount} renders`}
+          </Text>
+        </Box>
+      ))}
+      <Text> </Text>
+      <Text dimColor>  Enter to open, Esc to cancel</Text>
+    </Box>
+  );
+}
+
+// === MAIN APP COMPONENT ===
+function App() {
+  const { exit } = useApp();
+  const { stdout } = useStdout();
+
+  // Session state
+  const [input, setInput] = useState('');
+  const [session, setSession] = useState(createSession());
+  const [agentMessages, setAgentMessages] = useState([]);
+  const [displayMessages, setDisplayMessages] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // UI state
+  const [showSplash, setShowSplash] = useState(true);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showProjectList, setShowProjectList] = useState(false);
+  const [menuIndex, setMenuIndex] = useState(0);
+  const [projectListIndex, setProjectListIndex] = useState(0);
+  const [suggestions, setSuggestions] = useState([]);
+  const [suggestionIndex, setSuggestionIndex] = useState(0);
+
+  // Project state
+  const [project, setProject] = useState(null);
+  const [projectsList, setProjectsList] = useState([]);
+  const firstPromptRef = useRef(null);
+
+  // Ensure directories on mount
+  useEffect(() => {
+    ensureDirectories();
+  }, []);
+
+  // Calculate available height for messages
+  const terminalHeight = stdout?.rows || 24;
+  const reservedLines = 4;
+  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
+
+  // Autocomplete logic
+  useEffect(() => {
+    if (input.startsWith('/') && input.length > 1 && !showMenu && !showProjectList) {
+      // Handle /open and /new with arguments
+      const parts = input.split(' ');
+      const cmd = parts[0].toLowerCase();
+
+      if (cmd === '/open' || cmd === '/new') {
+        setSuggestions([]);
+      } else {
+        const matches = SLASH_COMMANDS.filter(c =>
+          c.name.toLowerCase().startsWith(input.toLowerCase())
+        );
+        setSuggestions(matches);
+        setSuggestionIndex(0);
+      }
+    } else {
+      setSuggestions([]);
+    }
+  }, [input, showMenu, showProjectList]);
+
+  // Keyboard handling
+  useInput((char, key) => {
+    if (isProcessing) return;
+
+    // Project list navigation
+    if (showProjectList) {
+      if (key.upArrow) {
+        setProjectListIndex(i => Math.max(0, i - 1));
+      } else if (key.downArrow) {
+        setProjectListIndex(i => Math.min(projectsList.length - 1, i + 1));
+      } else if (key.return && projectsList.length > 0) {
+        openProject(projectsList[projectListIndex].folderName);
+        setShowProjectList(false);
+      } else if (key.escape) {
+        setShowProjectList(false);
+      }
+      return;
+    }
+
+    // Slash menu navigation
+    if (showMenu) {
+      if (key.upArrow) {
+        setMenuIndex(i => Math.max(0, i - 1));
+      } else if (key.downArrow) {
+        setMenuIndex(i => Math.min(SLASH_COMMANDS.length - 1, i + 1));
+      } else if (key.return) {
+        handleSlashCommand(SLASH_COMMANDS[menuIndex].name);
+        setShowMenu(false);
+      } else if (key.escape) {
+        setShowMenu(false);
+      }
+      return;
+    }
+
+    // Autocomplete navigation
+    if (suggestions.length > 0) {
+      if (key.upArrow) {
+        setSuggestionIndex(i => Math.max(0, i - 1));
+        return;
+      } else if (key.downArrow) {
+        setSuggestionIndex(i => Math.min(suggestions.length - 1, i + 1));
+        return;
+      } else if (key.escape) {
+        setSuggestions([]);
+        return;
+      }
+    }
+
+    // Ctrl+C to exit
+    if (key.ctrl && char === 'c') {
+      exit();
+    }
+  });
+
+  const addMessage = useCallback((type, text) => {
+    setDisplayMessages(prev => [...prev, { type, text }]);
+  }, []);
+
+  // Project management functions
+  const startNewProject = useCallback((name = null) => {
+    // If no name given, we'll create the project on first render
+    if (name) {
+      const newProject = createProject(name, session);
+      setProject(newProject);
+      addMessage('project', `Created project: ${newProject.name}`);
+      addMessage('project', `  ${JAMBOT_HOME}/projects/${newProject.folderName}`);
+    } else {
+      // Clear project, will be created on first render
+      setProject(null);
+      firstPromptRef.current = null;
+    }
+    // Reset session
+    const newSession = createSession();
+    setSession(newSession);
+    setAgentMessages([]);
+  }, [session, addMessage]);
+
+  const openProject = useCallback((folderName) => {
+    try {
+      const loadedProject = loadProject(folderName);
+      setProject(loadedProject);
+
+      // Restore session from project
+      const restoredSession = restoreSession(loadedProject);
+      setSession(restoredSession);
+      setAgentMessages([]);
+
+      addMessage('project', `Opened project: ${loadedProject.name}`);
+      const renderCount = loadedProject.renders?.length || 0;
+      if (renderCount > 0) {
+        addMessage('project', `  ${renderCount} render${renderCount !== 1 ? 's' : ''}, last: v${renderCount}.wav`);
+      }
+    } catch (err) {
+      addMessage('system', `Error opening project: ${err.message}`);
+    }
+  }, [addMessage]);
+
+  const showProjects = useCallback(() => {
+    const projects = listProjects();
+    setProjectsList(projects);
+    setProjectListIndex(0);
+    setShowProjectList(true);
+  }, []);
+
+  // Ensure project exists before render
+  const ensureProject = useCallback((prompt, currentSession) => {
+    if (project) return project;
+
+    // Create project from first prompt - use currentSession for accurate BPM
+    const bpm = currentSession?.bpm || session.bpm;
+    const name = extractProjectName(prompt, bpm);
+    const newProject = createProject(name, currentSession || session, prompt);
+    setProject(newProject);
+    addMessage('project', `New project: ${newProject.name}`);
+    addMessage('project', `  ~/Documents/Jambot/projects/${newProject.folderName}/`);
+    return newProject;
+  }, [project, session, addMessage]);
+
+  const handleSlashCommand = useCallback((cmd, args = '') => {
+    setShowSplash(false);
+    setSuggestions([]);
+
+    switch (cmd) {
+      case '/exit':
+        // Save project before exit
+        if (project) {
+          updateSession(project, session);
+        }
+        exit();
+        break;
+
+      case '/new':
+        startNewProject(args || null);
+        if (!args) {
+          addMessage('system', 'New session started. Project will be created on first render.');
+        }
+        break;
+
+      case '/open':
+        if (args) {
+          // Try to find project by name
+          const projects = listProjects();
+          const found = projects.find(p =>
+            p.folderName.toLowerCase().includes(args.toLowerCase()) ||
+            p.name.toLowerCase().includes(args.toLowerCase())
+          );
+          if (found) {
+            openProject(found.folderName);
+          } else {
+            addMessage('system', `Project not found: ${args}`);
+          }
+        } else {
+          showProjects();
+        }
+        break;
+
+      case '/projects':
+        showProjects();
+        break;
+
+      case '/clear':
+        const newSession = createSession();
+        setSession(newSession);
+        setAgentMessages([]);
+        setDisplayMessages([]);
+        if (project) {
+          addMessage('system', `Session cleared (project: ${project.name})`);
+        } else {
+          addMessage('system', 'Session cleared');
+        }
+        break;
+
+      case '/status':
+        const voices = Object.keys(session.pattern);
+        const voiceList = voices.length > 0 ? voices.join(', ') : '(empty)';
+        const tweaks = Object.keys(session.voiceParams);
+        let statusText = '';
+        if (project) {
+          statusText += `Project: ${project.name}\n`;
+          statusText += `  ${JAMBOT_HOME}/projects/${project.folderName}\n`;
+          statusText += `  Renders: ${project.renders?.length || 0}\n`;
+        } else {
+          statusText += `Project: (none - will create on first render)\n`;
+        }
+        statusText += `Session: ${session.bpm} BPM`;
+        if (session.swing > 0) statusText += `, swing ${session.swing}%`;
+        statusText += `\nDrums: ${voiceList}`;
+        if (tweaks.length > 0) {
+          statusText += `\nTweaks: ${tweaks.map(v => `${v}(${Object.keys(session.voiceParams[v]).join(',')})`).join(', ')}`;
+        }
+        addMessage('info', statusText);
+        break;
+
+      case '/help':
+        addMessage('info', HELP_TEXT);
+        break;
+
+      case '/changelog':
+        addMessage('info', CHANGELOG_TEXT);
+        break;
+
+      case '/r9d9':
+      case '/909':  // Legacy alias
+        addMessage('info', R9D9_GUIDE);
+        break;
+
+      case '/r3d3':
+      case '/303':  // Legacy alias
+        addMessage('info', R3D3_GUIDE);
+        break;
+
+      case '/r1d1':
+      case '/101':  // Legacy alias
+        addMessage('info', R1D1_GUIDE);
+        break;
+
+      case '/export':
+        if (!project) {
+          addMessage('system', 'No project to export. Create a beat first!');
+          break;
+        }
+        if (!project.renders || project.renders.length === 0) {
+          addMessage('system', 'No renders yet. Make a beat and render it first!');
+          break;
+        }
+        try {
+          const exportResult = exportProject(project, session);
+          addMessage('project', `Exported to ${project.folderName}/_source/export/`);
+          for (const file of exportResult.files) {
+            addMessage('project', `  ${file}`);
+          }
+          addMessage('system', `Open folder: ${exportResult.path}`);
+        } catch (err) {
+          addMessage('system', `Export failed: ${err.message}`);
+        }
+        break;
+
+      default:
+        addMessage('system', `Unknown command: ${cmd}`);
+    }
+  }, [session, project, exit, addMessage, startNewProject, openProject, showProjects]);
+
+  const handleSubmit = useCallback(async (value) => {
+    const trimmed = value.trim();
+    if (!trimmed) return;
+
+    setInput('');
+    setShowSplash(false);
+    setSuggestions([]);
+
+    // Show menu for just "/"
+    if (trimmed === '/') {
+      setShowMenu(true);
+      setMenuIndex(0);
+      return;
+    }
+
+    // Handle slash commands
+    if (trimmed.startsWith('/')) {
+      const parts = trimmed.split(' ');
+      const cmd = parts[0].toLowerCase();
+      const args = parts.slice(1).join(' ');
+
+      // Commands that take arguments
+      if (cmd === '/new' || cmd === '/open') {
+        handleSlashCommand(cmd, args);
+        return;
+      }
+
+      // If autocomplete is showing and we have a match, use it
+      if (suggestions.length > 0) {
+        handleSlashCommand(suggestions[suggestionIndex].name);
+      } else {
+        // Try exact match
+        const cmdMatch = SLASH_COMMANDS.find(c => c.name === cmd);
+        if (cmdMatch) {
+          handleSlashCommand(cmdMatch.name);
+        } else {
+          addMessage('system', `Unknown command: ${trimmed}`);
+        }
+      }
+      return;
+    }
+
+    // Track first prompt for project naming
+    if (!project && !firstPromptRef.current) {
+      firstPromptRef.current = trimmed;
+    }
+
+    // Run agent
+    addMessage('user', trimmed);
+    setIsProcessing(true);
+
+    // Reference to current project (may be created during render)
+    let currentProject = project;
+    let renderInfo = null;
+
+    try {
+      await runAgentLoop(
+        trimmed,
+        session,
+        agentMessages,
+        {
+          onTool: (name, input) => {
+            addMessage('tool', `${name}`);
+          },
+          onToolResult: (result) => {
+            addMessage('result', result);
+          },
+          onResponse: (text) => {
+            addMessage('response', text);
+          },
+        },
+        {
+          // Called before render to get the path
+          getRenderPath: () => {
+            // Ensure project exists (pass current session for accurate BPM)
+            currentProject = ensureProject(firstPromptRef.current || trimmed, session);
+            renderInfo = getRenderPath(currentProject);
+            return renderInfo.fullPath;
+          },
+          // Called after render completes
+          onRender: (info) => {
+            if (currentProject && renderInfo) {
+              recordRender(currentProject, {
+                ...renderInfo,
+                bars: info.bars,
+                bpm: info.bpm,
+              });
+              // Update our state with the modified project
+              setProject({ ...currentProject });
+              addMessage('project', `  Saved as v${renderInfo.version}.wav`);
+            }
+          },
+          // Called to rename project
+          onRename: (newName) => {
+            if (!currentProject && !project) {
+              return { error: "No project to rename. Create a beat first." };
+            }
+            const targetProject = currentProject || project;
+            const result = renameProject(targetProject, newName);
+            setProject({ ...targetProject });
+            addMessage('project', `  Renamed to "${newName}"`);
+            return result;
+          },
+        }
+      );
+
+      // Update project with session state and history
+      if (currentProject) {
+        addToHistory(currentProject, trimmed);
+        updateSession(currentProject, session);
+        setProject({ ...currentProject });
+      }
+
+      // Force session state update
+      setSession({ ...session });
+    } catch (err) {
+      addMessage('system', `Error: ${err.message}`);
+    }
+
+    setIsProcessing(false);
+  }, [session, agentMessages, project, suggestions, suggestionIndex, handleSlashCommand, addMessage, ensureProject]);
+
+  const handleSelectSuggestion = useCallback((name) => {
+    setInput(name);
+    setSuggestions([]);
+  }, []);
+
+  // Main render
+  return (
+    <Box flexDirection="column" height={terminalHeight}>
+      {/* Content area */}
+      <Box flexDirection="column" flexGrow={1}>
+        {showSplash ? (
+          <Splash />
+        ) : showProjectList ? (
+          <ProjectList
+            projects={projectsList}
+            selectedIndex={projectListIndex}
+            onSelect={openProject}
+            onCancel={() => setShowProjectList(false)}
+          />
+        ) : showMenu ? (
+          <SlashMenu
+            onSelect={handleSlashCommand}
+            onCancel={() => setShowMenu(false)}
+            selectedIndex={menuIndex}
+          />
+        ) : (
+          <Messages messages={displayMessages} maxHeight={maxMessageHeight} />
+        )}
+      </Box>
+
+      {/* Autocomplete (above input) */}
+      <Autocomplete
+        suggestions={suggestions}
+        selectedIndex={suggestionIndex}
+      />
+
+      {/* Input bar */}
+      <InputBar
+        value={input}
+        onChange={setInput}
+        onSubmit={handleSubmit}
+        isProcessing={isProcessing}
+        suggestions={suggestions}
+        selectedIndex={suggestionIndex}
+        onSelectSuggestion={handleSelectSuggestion}
+      />
+
+      {/* Status bar */}
+      <StatusBar session={session} project={project} />
+    </Box>
+  );
+}
+
+// === START APP ===
+render(<App />);
