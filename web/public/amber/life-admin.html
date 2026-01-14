@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIFE ADMIN BOSS FIGHT — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="LIFE ADMIN BOSS FIGHT — Amber">
+    <meta property="og:description" content="Your mundane responsibilities, rendered as RPG boss battles. Defeat them or be defeated.">
+    <meta property="og:image" content="https://intheamber.com/amber/life-admin-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/life-admin.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="LIFE ADMIN BOSS FIGHT — Amber">
+    <meta name="twitter:description" content="Your mundane responsibilities, rendered as RPG boss battles. Defeat them or be defeated.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/life-admin-og.png">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #000;
+            color: #D4A574;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 20px;
+            position: relative;
+        }
+        
+        .boss-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+        }
+        
+        .boss-name {
+            font-size: clamp(20px, 5vw, 32px);
+            color: #FFD700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px #FFD700;
+            letter-spacing: 2px;
+        }
+        
+        .boss-level {
+            font-size: clamp(12px, 3vw, 16px);
+            color: #2D9596;
+            margin-bottom: 20px;
+        }
+        
+        .boss-sprite {
+            font-size: clamp(60px, 15vw, 120px);
+            margin: 20px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .health-bar-container {
+            width: 100%;
+            max-width: 400px;
+            height: 30px;
+            background: #0D0D0D;
+            border: 2px solid #2D9596;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .health-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #D4A574, #FFD700);
+            transition: width 0.5s ease;
+            box-shadow: 0 0 20px #D4A574;
+        }
+        
+        .health-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px #000;
+        }
+        
+        .boss-quote {
+            font-size: clamp(14px, 3.5vw, 18px);
+            color: #7B68EE;
+            font-style: italic;
+            margin: 15px 0;
+            max-width: 500px;
+            line-height: 1.4;
+        }
+        
+        .player-section {
+            border-top: 2px solid #2D9596;
+            padding-top: 20px;
+        }
+        
+        .attack-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .attack-btn {
+            background: #0D0D0D;
+            border: 2px solid #D4A574;
+            color: #D4A574;
+            padding: 15px 10px;
+            font-size: clamp(14px, 3.5vw, 16px);
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            touch-action: manipulation;
+        }
+        
+        .attack-btn:active {
+            background: #D4A574;
+            color: #000;
+            transform: scale(0.95);
+        }
+        
+        .attack-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .attack-damage {
+            font-size: 12px;
+            color: #2D9596;
+        }
+        
+        .damage-popup {
+            position: absolute;
+            color: #FFD700;
+            font-size: 32px;
+            font-weight: bold;
+            pointer-events: none;
+            animation: damageRise 1s ease-out forwards;
+            text-shadow: 0 0 10px #FFD700, 2px 2px 4px #000;
+        }
+        
+        @keyframes damageRise {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px) scale(1.5);
+            }
+        }
+        
+        .victory-screen, .defeat-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            z-index: 100;
+        }
+        
+        .victory-screen.show, .defeat-screen.show {
+            display: flex;
+        }
+        
+        .victory-text, .defeat-text {
+            font-size: clamp(32px, 8vw, 64px);
+            margin-bottom: 20px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        .victory-text {
+            color: #FFD700;
+            text-shadow: 0 0 20px #FFD700;
+        }
+        
+        .defeat-text {
+            color: #ff4444;
+            text-shadow: 0 0 20px #ff4444;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
+        .next-boss-btn, .try-again-btn {
+            background: #2D9596;
+            border: none;
+            color: #000;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.2s;
+            min-height: 60px;
+            min-width: 200px;
+        }
+        
+        .next-boss-btn:active, .try-again-btn:active {
+            transform: scale(0.95);
+            background: #FFD700;
+        }
+        
+        .boss-counter {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #2D9596;
+            font-size: clamp(14px, 3.5vw, 18px);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="boss-counter">BOSS: <span id="bossNumber">1</span>/7</div>
+        
+        <div class="boss-section">
+            <div class="boss-name" id="bossName"></div>
+            <div class="boss-level" id="bossLevel"></div>
+            <div class="boss-sprite" id="bossSprite"></div>
+            
+            <div class="health-bar-container">
+                <div class="health-bar" id="bossHealth"></div>
+                <div class="health-text" id="healthText"></div>
+            </div>
+            
+            <div class="boss-quote" id="bossQuote"></div>
+        </div>
+        
+        <div class="player-section">
+            <div class="attack-buttons" id="attackButtons"></div>
+        </div>
+        
+        <div class="victory-screen" id="victoryScreen">
+            <div class="victory-text">✨ VICTORY ✨</div>
+            <div class="boss-quote" id="victoryMessage"></div>
+            <button class="next-boss-btn" id="nextBossBtn">NEXT BOSS</button>
+        </div>
+        
+        <div class="defeat-screen" id="defeatScreen">
+            <div class="defeat-text">💀 DEFEATED 💀</div>
+            <div class="boss-quote">The admin won. It always does.</div>
+            <button class="try-again-btn" id="tryAgainBtn">TRY AGAIN</button>
+        </div>
+    </div>
+    
+    <script>
+        const bosses = [
+            {
+                name: "EMAIL INBOX HYDRA",
+                level: "LVL 99 CHAOS DEMON",
+                sprite: "📧",
+                hp: 300,
+                quote: '"For every message you answer, two more shall arrive."',
+                victory: "The inbox is clear... for now. (3 new messages arrived.)",
+                attacks: [
+                    { name: "Quick Reply", damage: 30, text: "-30 HP" },
+                    { name: "Mark as Read", damage: 20, text: "-20 HP" },
+                    { name: "Archive All", damage: 50, text: "-50 HP" },
+                    { name: "Unsubscribe", damage: 40, text: "-40 HP" }
+                ]
+            },
+            {
+                name: "TAX DOCUMENT DRAGON",
+                level: "LVL 87 BUREAUCRATIC BEAST",
+                sprite: "🧾",
+                hp: 350,
+                quote: '"Find your W-2 from 2019. I\'ll wait."',
+                victory: "Documents filed. Refund: $47. Time invested: priceless.",
+                attacks: [
+                    { name: "Find Receipt", damage: 25, text: "-25 HP" },
+                    { name: "Sort by Date", damage: 35, text: "-35 HP" },
+                    { name: "Call Accountant", damage: 60, text: "-60 HP" },
+                    { name: "Guess Deductions", damage: 40, text: "-40 HP" }
+                ]
+            },
+            {
+                name: "DENTIST APPOINTMENT WRAITH",
+                level: "LVL 76 PROCRASTINATION PHANTOM",
+                sprite: "🦷",
+                hp: 250,
+                quote: '"It\'s been 2 years. Your teeth remember."',
+                victory: "Appointment booked for 6 months from now. You'll reschedule.",
+                attacks: [
+                    { name: "Check Calendar", damage: 30, text: "-30 HP" },
+                    { name: "Call Office", damage: 50, text: "-50 HP" },
+                    { name: "Use Portal", damage: 45, text: "-45 HP" },
+                    { name: "Ignore", damage: 15, text: "-15 HP (risky)" }
+                ]
+            },
+            {
+                name: "PASSWORD RESET DEMON",
+                level: "LVL 92 SECURITY NIGHTMARE",
+                sprite: "🔐",
+                hp: 280,
+                quote: '"Must contain: uppercase, lowercase, number, symbol, blood sacrifice."',
+                victory: "Password changed. You'll forget it by tomorrow.",
+                attacks: [
+                    { name: "Try Old Password", damage: 20, text: "-20 HP" },
+                    { name: "Forgot Password", damage: 40, text: "-40 HP" },
+                    { name: "Password Manager", damage: 55, text: "-55 HP" },
+                    { name: "Write It Down", damage: 35, text: "-35 HP" }
+                ]
+            },
+            {
+                name: "INSURANCE CLAIM GOLEM",
+                level: "LVL 95 PAPERWORK TITAN",
+                sprite: "📋",
+                hp: 400,
+                quote: '"Please allow 6-8 weeks for processing."',
+                victory: "Claim approved for $12 after $200 deductible. Worth it?",
+                attacks: [
+                    { name: "Fill Form", damage: 30, text: "-30 HP" },
+                    { name: "Call Support", damage: 45, text: "-45 HP" },
+                    { name: "Upload Docs", damage: 40, text: "-40 HP" },
+                    { name: "Give Up", damage: 25, text: "-25 HP" }
+                ]
+            },
+            {
+                name: "SOFTWARE UPDATE LEVIATHAN",
+                level: "LVL 88 FORCED RESTART",
+                sprite: "💻",
+                hp: 320,
+                quote: '"Restart now or remind me in 10 minutes? Choose wisely."',
+                victory: "System updated. Three of your apps no longer work.",
+                attacks: [
+                    { name: "Update Now", damage: 50, text: "-50 HP" },
+                    { name: "Remind Later", damage: 20, text: "-20 HP" },
+                    { name: "Auto-Update On", damage: 60, text: "-60 HP" },
+                    { name: "Ignore Forever", damage: 30, text: "-30 HP" }
+                ]
+            },
+            {
+                name: "FINAL BOSS: SUBSCRIPTION AUDIT",
+                level: "LVL 100 ANCIENT RECURRING CHARGE",
+                sprite: "💳",
+                hp: 500,
+                quote: '"$9.99/month since 2017. You forgot about me."',
+                victory: "15 subscriptions canceled. Your checking account breathes again.",
+                attacks: [
+                    { name: "Check Statement", damage: 40, text: "-40 HP" },
+                    { name: "Cancel Old Subs", damage: 60, text: "-60 HP" },
+                    { name: "Dispute Charge", damage: 55, text: "-55 HP" },
+                    { name: "Set Reminder", damage: 35, text: "-35 HP" }
+                ]
+            }
+        ];
+        
+        let currentBossIndex = 0;
+        let currentBoss = null;
+        let bossCurrentHP = 0;
+        let playerHP = 100;
+        
+        function initBoss(index) {
+            currentBoss = bosses[index];
+            bossCurrentHP = currentBoss.hp;
+            
+            document.getElementById('bossNumber').textContent = index + 1;
+            document.getElementById('bossName').textContent = currentBoss.name;
+            document.getElementById('bossLevel').textContent = currentBoss.level;
+            document.getElementById('bossSprite').textContent = currentBoss.sprite;
+            document.getElementById('bossQuote').textContent = currentBoss.quote;
+            
+            updateHealthBar();
+            renderAttackButtons();
+        }
+        
+        function updateHealthBar() {
+            const percentage = (bossCurrentHP / currentBoss.hp) * 100;
+            document.getElementById('bossHealth').style.width = percentage + '%';
+            document.getElementById('healthText').textContent = `${bossCurrentHP} / ${currentBoss.hp} HP`;
+        }
+        
+        function renderAttackButtons() {
+            const container = document.getElementById('attackButtons');
+            container.innerHTML = '';
+            
+            currentBoss.attacks.forEach((attack, index) => {
+                const btn = document.createElement('button');
+                btn.className = 'attack-btn';
+                btn.innerHTML = `
+                    <div class="attack-name">${attack.name}</div>
+                    <div class="attack-damage">${attack.text}</div>
+                `;
+                btn.addEventListener('click', () => performAttack(attack, btn));
+                container.appendChild(btn);
+            });
+        }
+        
+        function performAttack(attack, button) {
+            // Disable buttons during animation
+            const buttons = document.querySelectorAll('.attack-btn');
+            buttons.forEach(b => b.style.pointerEvents = 'none');
+            
+            bossCurrentHP -= attack.damage;
+            if (bossCurrentHP < 0) bossCurrentHP = 0;
+            
+            // Show damage popup
+            showDamagePopup(attack.damage);
+            
+            // Update health bar
+            updateHealthBar();
+            
+            // Make boss flash
+            const sprite = document.getElementById('bossSprite');
+            sprite.style.filter = 'brightness(2)';
+            setTimeout(() => sprite.style.filter = 'brightness(1)', 200);
+            
+            // Check if boss defeated
+            if (bossCurrentHP <= 0) {
+                setTimeout(() => showVictory(), 500);
+            } else {
+                // Boss counter-attack
+                setTimeout(() => {
+                    bossCounterAttack();
+                    buttons.forEach(b => b.style.pointerEvents = 'auto');
+                }, 600);
+            }
+        }
+        
+        function showDamagePopup(damage) {
+            const popup = document.createElement('div');
+            popup.className = 'damage-popup';
+            popup.textContent = `-${damage}`;
+            popup.style.left = Math.random() * 60 + 20 + '%';
+            popup.style.top = '40%';
+            document.querySelector('.game-container').appendChild(popup);
+            
+            setTimeout(() => popup.remove(), 1000);
+        }
+        
+        function bossCounterAttack() {
+            const damage = Math.floor(Math.random() * 15) + 10;
+            playerHP -= damage;
+            
+            if (playerHP <= 0) {
+                showDefeat();
+            }
+        }
+        
+        function showVictory() {
+            document.getElementById('victoryMessage').textContent = currentBoss.victory;
+            document.getElementById('victoryScreen').classList.add('show');
+        }
+        
+        function showDefeat() {
+            document.getElementById('defeatScreen').classList.add('show');
+        }
+        
+        document.getElementById('nextBossBtn').addEventListener('click', () => {
+            document.getElementById('victoryScreen').classList.remove('show');
+            currentBossIndex++;
+            
+            if (currentBossIndex >= bosses.length) {
+                // Game complete
+                document.getElementById('victoryMessage').textContent = "All bosses defeated. You are the Life Admin Champion. (New tasks arrive tomorrow.)";
+                document.getElementById('nextBossBtn').textContent = "START OVER";
+                document.getElementById('victoryScreen').classList.add('show');
+                currentBossIndex = 0;
+            } else {
+                initBoss(currentBossIndex);
+            }
+        });
+        
+        document.getElementById('tryAgainBtn').addEventListener('click', () => {
+            document.getElementById('defeatScreen').classList.remove('show');
+            playerHP = 100;
+            currentBossIndex = 0;
+            initBoss(currentBossIndex);
+        });
+        
+        // Initialize first boss
+        initBoss(0);
+    </script>
+</body>
+</html>
