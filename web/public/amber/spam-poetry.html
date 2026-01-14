@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SPAM FOLDER POETRY — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="SPAM FOLDER POETRY — Amber">
+  <meta property="og:description" content="Your deleted spam emails, now accidentally profound haiku">
+  <meta property="og:image" content="https://intheamber.com/amber/spam-poetry-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/spam-poetry.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SPAM FOLDER POETRY — Amber">
+  <meta name="twitter:description" content="Your deleted spam emails, now accidentally profound haiku">
+  <meta name="twitter:image" content="https://intheamber.com/amber/spam-poetry-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #000;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      color: #2D9596;
+      margin-bottom: 40px;
+      font-style: italic;
+    }
+    
+    .email-card {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 30px;
+      margin: 30px 0;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.3);
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    
+    .email-header {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(0.7rem, 2.5vw, 0.85rem);
+      color: #666;
+      margin-bottom: 20px;
+      text-align: left;
+      border-bottom: 1px solid #333;
+      padding-bottom: 10px;
+    }
+    
+    .from {
+      color: #7B68EE;
+    }
+    
+    .subject {
+      color: #2D9596;
+      margin-top: 5px;
+    }
+    
+    .haiku {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.1rem, 4vw, 1.4rem);
+      line-height: 1.8;
+      color: #FFD700;
+      margin: 30px 0;
+      white-space: pre-line;
+    }
+    
+    .haiku-line {
+      display: block;
+      margin: 8px 0;
+    }
+    
+    .timestamp {
+      font-size: clamp(0.7rem, 2.5vw, 0.8rem);
+      color: #666;
+      margin-top: 20px;
+      font-style: italic;
+    }
+    
+    .next-btn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 16px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      font-weight: 700;
+      text-transform: uppercase;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin-top: 20px;
+      min-height: 44px;
+      width: 100%;
+      max-width: 300px;
+    }
+    
+    .next-btn:hover {
+      background: #FFD700;
+      transform: scale(1.05);
+    }
+    
+    .next-btn:active {
+      transform: scale(0.98);
+    }
+    
+    .footer {
+      margin-top: 40px;
+      font-size: clamp(0.75rem, 2.5vw, 0.85rem);
+      color: #666;
+      font-style: italic;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .fade-in {
+      animation: fadeIn 0.5s ease;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SPAM FOLDER POETRY</h1>
+    <p class="subtitle">Your deleted emails, now accidentally profound</p>
+    
+    <div class="email-card" id="emailCard">
+      <div class="email-header">
+        <div class="from">FROM: <span id="fromEmail"></span></div>
+        <div class="subject">SUBJECT: <span id="subjectLine"></span></div>
+      </div>
+      
+      <div class="haiku" id="haiku"></div>
+      
+      <div class="timestamp" id="timestamp"></div>
+    </div>
+    
+    <button class="next-btn" id="nextBtn">NEXT SPAM →</button>
+    
+    <div class="footer">
+      These are real spam subject lines.<br>
+      The haiku writes itself.
+    </div>
+  </div>
+  
+  <script>
+    const spamPoems = [
+      {
+        from: "BIGDEALS@wellness.com",
+        subject: "RE: Your body deserves better",
+        haiku: "Your body deserves\nbetter than what you've given—\nthis ad, for instance"
+      },
+      {
+        from: "success@bizcoach.net",
+        subject: "You're leaving money on the table",
+        haiku: "Money on the table—\nsomeone else's table, though.\nNot yours. Never yours."
+      },
+      {
+        from: "URGENT@securityalert.biz",
+        subject: "IMMEDIATE ACTION REQUIRED",
+        haiku: "Immediate action—\nbut toward what? Away from what?\nThe spam doesn't say."
+      },
+      {
+        from: "winners@lottery-claim.org",
+        subject: "You've been selected!!!",
+        haiku: "You've been selected\nby an algorithm's guess—\nstill feels good, though. Wait..."
+      },
+      {
+        from: "HOT-SINGLES@meettonight.xxx",
+        subject: "Someone is waiting for you",
+        haiku: "Someone is waiting—\nprobably not for you, though.\nSorry. Check your spam."
+      },
+      {
+        from: "FINAL-NOTICE@collections.net",
+        subject: "This is your last chance",
+        haiku: "This is your last chance\nto ignore this message, too.\nDelete. Breathe. Move on."
+      },
+      {
+        from: "miracle@skincare-revolution.com",
+        subject: "Look 10 years younger overnight",
+        haiku: "Ten years younger? Sure.\nOr just sleep more. Maybe drink\nwater. Novel thought."
+      },
+      {
+        from: "crypto-gains@moonshot.io",
+        subject: "Don't miss this opportunity",
+        haiku: "Don't miss this. Or do.\nOpportunity knocks twice:\nonce selling, once sued."
+      },
+      {
+        from: "INHERITANCE@royal-family.ng",
+        subject: "Urgent assistance needed",
+        haiku: "A prince needs your help—\nspecifically, your bank details.\nHow convenient."
+      },
+      {
+        from: "limited-offer@supplements.biz",
+        subject: "Scientists hate this one trick",
+        haiku: "Scientists hate this—\nnot the trick. The implication\nthey're a monolith."
+      },
+      {
+        from: "DIPLOMA@instant-degree.edu",
+        subject: "Get your degree in 2 weeks",
+        haiku: "Two weeks. A degree.\nYears of study, condensed.\nEducation weeps."
+      },
+      {
+        from: "notifications@social-media.spam",
+        subject: "You have 47 new messages",
+        haiku: "Forty-seven ghosts\nwaiting in your inbox. None\nare real. All want clicks."
+      },
+      {
+from: "REFUND@tax-services.scam",
+        subject: "Claim your refund now",
+        haiku: "Claim your refund. Now.\nThe IRS emails you\nsaid no one, ever."
+      },
+      {
+        from: "mystery@secret-admirer.love",
+        subject: "Someone has a crush on you",
+        haiku: "Someone loves you. Who?\nClick to find out. Spoiler:\nit's malware. Sorry."
+      },
+      {
+        from: "BREAKING@news-alerts.fake",
+        subject: "You won't believe what happened",
+        haiku: "You won't believe this—\nand you shouldn't. That's the point.\nCritical thinking."
+      }
+    ];
+    
+    let currentIndex = 0;
+    
+    function formatTimestamp() {
+      const now = new Date();
+      const dates = [
+        new Date(now - Math.random() * 30 * 24 * 60 * 60 * 1000), // last 30 days
+      ];
+      const randomDate = dates[0];
+      return `Deleted: ${randomDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      })} at ${randomDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      })}`;
+    }
+    
+    function showSpam() {
+      const card = document.getElementById('emailCard');
+      const spam = spamPoems[currentIndex];
+      
+      // Remove fade-in class
+      card.classList.remove('fade-in');
+      
+      // Small delay to reset animation
+      setTimeout(() => {
+        document.getElementById('fromEmail').textContent = spam.from;
+        document.getElementById('subjectLine').textContent = spam.subject;
+        document.getElementById('haiku').textContent = spam.haiku;
+        document.getElementById('timestamp').textContent = formatTimestamp();
+        
+        // Add fade-in class
+        card.classList.add('fade-in');
+      }, 50);
+      
+      // Cycle to next
+      currentIndex = (currentIndex + 1) % spamPoems.length;
+    }
+    
+    document.getElementById('nextBtn').addEventListener('click', showSpam);
+    
+    // Show first spam on load
+    showSpam();
+  </script>
+</body>
+</html>
