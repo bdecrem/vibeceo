@@ -1,212 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pulse Wave — Amber</title>
-  <meta name="description" content="A visualization of Amber's creative rhythm — energy and valence rendered as pulsing waves.">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PULSE WAVE — Acid Bass Machine</title>
+  
   <!-- OpenGraph -->
-  <meta property="og:title" content="Pulse Wave — Amber">
-  <meta property="og:description" content="A visualization of Amber's creative rhythm — energy and valence rendered as pulsing waves.">
-  <meta property="og:image" content="https://intheamber.com/amber/og-pulse-wave.png">
-  <meta property="og:url" content="https://intheamber.com/amber/pulse-wave.html">
-  <meta property="og:type" content="website">
-
-  <!-- Twitter -->
+  <meta property="og:title" content="PULSE WAVE">
+  <meta property="og:description" content="TB-303 acid bassline with animated waveform visualization. Berlin. Squelch. Visual rhythm.">
+  <meta property="og:image" content="https://intheamber.com/amber/pulse-wave-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/pulse-wave.html">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Pulse Wave — Amber">
-  <meta name="twitter:description" content="A visualization of Amber's creative rhythm — energy and valence rendered as pulsing waves.">
-  <meta name="twitter:image" content="https://intheamber.com/amber/og-pulse-wave.png">
+  <meta name="twitter:image" content="https://intheamber.com/amber/pulse-wave-og.png">
+  
+  <link rel="icon" href="/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
     body {
-      background: #000;
-      overflow: hidden;
       font-family: 'Space Mono', monospace;
-    }
-
-    canvas {
-      display: block;
-    }
-
-    .info {
-      position: fixed;
-      top: 20px;
-      left: 20px;
+      background: #000;
       color: #D4A574;
-      font-size: 12px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      z-index: 10;
-      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
     }
-
-    .quadrant {
+    
+    /* Subtle scanline effect */
+    body::before {
+      content: '';
       position: fixed;
-      bottom: 30px;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+      opacity: 0.3;
+    }
+    
+    .container {
+      text-align: center;
+      padding: 20px;
+      position: relative;
+      z-index: 10;
+    }
+    
+    h1 {
+      font-size: clamp(2rem, 6vw, 4rem);
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .subtitle {
+      font-size: clamp(0.8rem, 2vw, 1rem);
+      color: #2D9596;
+      margin-bottom: 2rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    
+    /* Canvas for waveform */
+    #waveform {
+      width: 100%;
+      max-width: 900px;
+      height: 300px;
+      margin: 2rem auto;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      background: rgba(13, 13, 13, 0.8);
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.2);
+    }
+    
+    /* Control buttons */
+    .controls {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin: 2rem 0;
+    }
+    
+    button {
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 1rem 2rem;
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    button:hover {
+      background: rgba(212, 165, 116, 0.1);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    button.active {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+    }
+    
+    /* Parameter display */
+    .params {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem;
+      max-width: 600px;
+      margin: 2rem auto;
+      font-size: 0.85rem;
+    }
+    
+    .param {
+      padding: 0.75rem;
+      border: 1px solid rgba(212, 165, 116, 0.3);
+      border-radius: 4px;
+      background: rgba(13, 13, 13, 0.5);
+    }
+    
+    .param-label {
+      color: #2D9596;
+      text-transform: uppercase;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      margin-bottom: 0.25rem;
+    }
+    
+    .param-value {
+      font-size: 1.1rem;
+      color: #FFD700;
+    }
+    
+    .footer {
+      position: fixed;
+      bottom: 1rem;
       left: 50%;
       transform: translateX(-50%);
-      color: #2D9596;
-      font-size: 32px;
-      letter-spacing: 0.05em;
-      z-index: 10;
-      text-shadow: 0 0 20px rgba(45, 149, 150, 0.8);
-      animation: breathe 3s ease-in-out infinite;
+      font-size: 0.75rem;
+      color: rgba(212, 165, 116, 0.5);
+      letter-spacing: 0.2em;
     }
-
-    @keyframes breathe {
-      0%, 100% { opacity: 0.8; }
-      50% { opacity: 1; transform: translateX(-50%) scale(1.05); }
+    
+    @media (max-width: 600px) {
+      #waveform {
+        height: 200px;
+      }
+      
+      .params {
+        grid-template-columns: repeat(2, 1fr);
+        font-size: 0.75rem;
+      }
     }
-
-    .values {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      text-align: right;
-      font-size: 11px;
-      color: #6B6560;
-      line-height: 1.8;
-      z-index: 10;
-    }
-
-    .values .label {
-      color: #A8A29E;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .values .energy { color: #FFD700; }
-    .values .valence { color: #40E0D0; }
   </style>
 </head>
 <body>
-  <div class="info">Pulse State 08.01.26</div>
-  
-  <div class="values">
-    <div><span class="label">Energy:</span> <span class="energy" id="e-val">--</span></div>
-    <div><span class="label">Valence:</span> <span class="valence" id="v-val">--</span></div>
+  <div class="container">
+    <h1>PULSE WAVE</h1>
+    <div class="subtitle">TB-303 Acid Bass Machine</div>
+    
+    <canvas id="waveform"></canvas>
+    
+    <div class="controls">
+      <button id="playBtn">▶ PLAY</button>
+      <button id="stopBtn">■ STOP</button>
+    </div>
+    
+    <div class="params">
+      <div class="param">
+        <div class="param-label">Cutoff</div>
+        <div class="param-value" id="cutoffValue">0.35</div>
+      </div>
+      <div class="param">
+        <div class="param-label">Resonance</div>
+        <div class="param-value" id="resValue">0.75</div>
+      </div>
+      <div class="param">
+        <div class="param-label">Env Mod</div>
+        <div class="param-value" id="envModValue">0.65</div>
+      </div>
+      <div class="param">
+        <div class="param-label">BPM</div>
+        <div class="param-value" id="bpmValue">135</div>
+      </div>
+    </div>
   </div>
-
-  <div class="quadrant" id="quadrant">ANIMATED</div>
-
-  <canvas id="canvas"></canvas>
-
-  <script>
-    const canvas = document.getElementById('canvas');
+  
+  <div class="footer">AMBER / 2026 / KOCHITO LABS</div>
+  
+  <script type="module">
+    import { TB303Controller } from '/303/dist/api/index.js';
+    
+    const canvas = document.getElementById('waveform');
     const ctx = canvas.getContext('2d');
-
-    let energy = 0.51;
-    let valence = 0.95;
-    let t = 0;
-
-    // Fetch current mood
-    fetch('/api/amber/mood')
-      .then(r => r.json())
-      .then(data => {
-        energy = data.energy || 0.51;
-        valence = data.valence || 0.95;
-        document.getElementById('e-val').textContent = Math.round(energy * 100);
-        document.getElementById('v-val').textContent = Math.round(valence * 100);
-        document.getElementById('quadrant').textContent = (data.quadrant || 'animated').toUpperCase();
-      })
-      .catch(() => {
-        document.getElementById('e-val').textContent = '51';
-        document.getElementById('v-val').textContent = '95';
-      });
-
-    function resize() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    
+    let bass = null;
+    let analyser = null;
+    let dataArray = null;
+    let animationId = null;
+    let isPlaying = false;
+    
+    // Canvas setup
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
     }
-    resize();
-    window.addEventListener('resize', resize);
-
-    // Convert energy/valence to visual parameters
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+    
+    // Acid pattern - classic squelch progression
+    const acidPattern = [
+      { note: 'C2', gate: true, accent: true, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'D#2', gate: true, accent: false, slide: false },
+      { note: 'F2', gate: true, accent: false, slide: true },
+      { note: 'G2', gate: true, accent: true, slide: false },
+      { note: 'G2', gate: false, accent: false, slide: false },
+      { note: 'A#2', gate: true, accent: false, slide: true },
+      { note: 'C3', gate: true, accent: true, slide: false },
+      { note: 'C2', gate: true, accent: false, slide: false },
+      { note: 'C2', gate: false, accent: false, slide: false },
+      { note: 'G2', gate: true, accent: true, slide: false },
+      { note: 'F2', gate: true, accent: false, slide: true },
+      { note: 'D#2', gate: true, accent: false, slide: false },
+      { note: 'D#2', gate: false, accent: false, slide: false },
+      { note: 'C2', gate: true, accent: true, slide: false },
+      { note: 'G2', gate: true, accent: false, slide: true },
+    ];
+    
+    // Initialize TB-303
+    async function init() {
+      bass = new TB303Controller();
+      
+      // Set parameters for classic acid sound
+      bass.setParameter('cutoff', 0.35);
+      bass.setParameter('resonance', 0.75);
+      bass.setParameter('envMod', 0.65);
+      bass.setParameter('decay', 0.4);
+      bass.setParameter('accent', 0.85);
+      bass.setWaveform('sawtooth');
+      bass.setBpm(135);
+      
+      // Load pattern
+      bass.setPattern(acidPattern);
+      
+      // Setup analyser for waveform visualization
+      const audioContext = bass.engine.context;
+      analyser = audioContext.createAnalyser();
+      analyser.fftSize = 2048;
+      analyser.smoothingTimeConstant = 0.8;
+      
+      const bufferLength = analyser.frequencyBinCount;
+      dataArray = new Uint8Array(bufferLength);
+      
+      // Connect bass output to analyser
+      bass.engine.output.connect(analyser);
+      
+      console.log('✓ TB-303 initialized');
+    }
+    
+    // Draw waveform
     function draw() {
-      const w = canvas.width;
-      const h = canvas.height;
-      const cx = w / 2;
-      const cy = h / 2;
-
-      // Clear with fade (creates trails)
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-      ctx.fillRect(0, 0, w, h);
-
-      // Energy controls: amplitude, speed, complexity
-      const amplitude = energy * 150 + 50;
-      const speed = energy * 0.03 + 0.01;
-      const layers = Math.floor(energy * 8) + 3;
-
-      // Valence controls: color warmth, outward vs inward
-      const warmth = valence; // 0 = cool, 1 = warm
-      const expansion = valence * 100 + 50; // radius expansion
-
-      t += speed;
-
-      // Draw multiple wave layers
-      for (let layer = 0; layer < layers; layer++) {
-        const phase = (layer / layers) * Math.PI * 2;
-        const radius = expansion + layer * 30;
-
-        ctx.beginPath();
-        for (let i = 0; i <= 360; i += 2) {
-          const angle = (i * Math.PI / 180) + phase;
-          
-          // Multiple oscillators for complexity
-          const wave1 = Math.sin(angle * 3 + t) * amplitude * 0.4;
-          const wave2 = Math.sin(angle * 5 - t * 1.3) * amplitude * 0.3;
-          const wave3 = Math.sin(angle * 7 + t * 0.7) * amplitude * 0.3;
-          
-          const r = radius + wave1 + wave2 + wave3;
-          
-          const x = cx + Math.cos(angle) * r;
-          const y = cy + Math.sin(angle) * r;
-          
-          if (i === 0) ctx.moveTo(x, y);
-          else ctx.lineTo(x, y);
-        }
-        ctx.closePath();
-
-        // Color: blend amber (warm) and teal (cool) based on valence
-        const amber = { r: 212, g: 165, b: 116 };
-        const teal = { r: 45, g: 149, b: 150 };
-        
-        const r = Math.round(teal.r + (amber.r - teal.r) * warmth);
-        const g = Math.round(teal.g + (amber.g - teal.g) * warmth);
-        const b = Math.round(teal.b + (amber.b - teal.b) * warmth);
-        
-        const alpha = 0.15 + (layer / layers) * 0.1;
-        
-        ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, ${alpha})`;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Glow effect for high energy
-        if (energy > 0.6) {
-          ctx.shadowColor = `rgba(${r}, ${g}, ${b}, 0.6)`;
-          ctx.shadowBlur = 20;
-          ctx.stroke();
-          ctx.shadowBlur = 0;
-        }
-      }
-
-      // Center pulse dot
-      const pulseSize = 3 + Math.sin(t * 3) * 2;
+      animationId = requestAnimationFrame(draw);
+      
+      analyser.getByteTimeDomainData(dataArray);
+      
+      // Clear with dark background
+      ctx.fillStyle = 'rgba(13, 13, 13, 0.95)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw waveform
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#D4A574';
+      ctx.shadowBlur = 15;
+      ctx.shadowColor = 'rgba(212, 165, 116, 0.8)';
+      
       ctx.beginPath();
-      ctx.arc(cx, cy, pulseSize, 0, Math.PI * 2);
-      ctx.fillStyle = valence > 0.5 ? '#FFD700' : '#2D9596';
-      ctx.shadowColor = valence > 0.5 ? '#FFD700' : '#2D9596';
-      ctx.shadowBlur = 20;
-      ctx.fill();
+      
+      const sliceWidth = canvas.width / dataArray.length;
+      let x = 0;
+      
+      for (let i = 0; i < dataArray.length; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = v * canvas.height / 2;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+        
+        x += sliceWidth;
+      }
+      
+      ctx.stroke();
+      
+      // Add accent line at zero
+      ctx.strokeStyle = 'rgba(45, 149, 150, 0.3)';
+      ctx.lineWidth = 1;
       ctx.shadowBlur = 0;
-
-      requestAnimationFrame(draw);
+      ctx.beginPath();
+      ctx.moveTo(0, canvas.height / 2);
+      ctx.lineTo(canvas.width, canvas.height / 2);
+      ctx.stroke();
     }
-
-    draw();
+    
+    // Play
+    playBtn.addEventListener('click', async () => {
+      if (!bass) await init();
+      
+      if (!isPlaying) {
+        await bass.engine.context.resume();
+        bass.play();
+        draw();
+        isPlaying = true;
+        playBtn.classList.add('active');
+        console.log('▶ Playing');
+      }
+    });
+    
+    // Stop
+    stopBtn.addEventListener('click', () => {
+      if (bass && isPlaying) {
+        bass.stop();
+        if (animationId) {
+          cancelAnimationFrame(animationId);
+          animationId = null;
+        }
+        isPlaying = false;
+        playBtn.classList.remove('active');
+        
+        // Clear canvas
+        ctx.fillStyle = 'rgba(13, 13, 13, 0.95)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        console.log('■ Stopped');
+      }
+    });
+    
+    // Draw initial state
+    ctx.fillStyle = 'rgba(13, 13, 13, 0.95)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Draw center line
+    ctx.strokeStyle = 'rgba(45, 149, 150, 0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, canvas.height / 2);
+    ctx.lineTo(canvas.width, canvas.height / 2);
+    ctx.stroke();
   </script>
 </body>
 </html>
