@@ -11,14 +11,11 @@ npm start
 
 Requires `ANTHROPIC_API_KEY` in `../sms-bot/.env.local`
 
-## Commands
+## Daily Development
 
-| Command | Description |
-|---------|-------------|
-| `npm start` | Run jambot |
-| `npm run build` | Build for distribution |
+Just edit files here and commit/push to vibeceo as normal. No builds needed during development.
 
-## Making a Release
+## Cutting a Release
 
 1. Update version number in three places:
    - `package.json` → `"version": "x.x.x"`
