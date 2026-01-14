@@ -64,6 +64,27 @@ session = {
 }
 ```
 
+## Genre Knowledge System
+
+`genres.json` contains deep production knowledge for 17 genres. When users mention a genre, the system auto-injects relevant knowledge into the agent's context.
+
+**How it works:**
+1. `detectGenres(text)` scans user input for genre keywords
+2. `buildGenreContext(keys)` formats the genre data for the system prompt
+3. Agent receives: BPM range, keys, swing, drum/bass settings, production philosophy
+
+**Supported genres:**
+- Classic House, Chicago House, Deep House, Tech House
+- Detroit Techno, Berlin Techno, Industrial Techno, Minimal
+- Acid House, Acid Techno
+- Electro, Breakbeat, Trance
+- Drum & Bass, Jungle
+- Ambient, IDM
+
+**Aliases:** "house" → classic_house, "techno" → berlin_techno, "acid" → acid_house, etc.
+
+**To add a genre:** Add entry to `genres.json` with name, bpm, keys, description, production, drums, bass, swing, references. Then add aliases to `GENRE_ALIASES` in `jambot.js`.
+
 ## Slash Commands
 
 | Command | Description |

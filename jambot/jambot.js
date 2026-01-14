@@ -40,6 +40,121 @@ try {
   // .env.local may not exist in release builds
 }
 
+// === GENRE KNOWLEDGE ===
+let GENRES = {};
+try {
+  const genresPath = join(__dirname, 'genres.json');
+  GENRES = JSON.parse(readFileSync(genresPath, 'utf-8'));
+} catch (e) {
+  console.warn('Could not load genres.json:', e.message);
+}
+
+// Map keywords/aliases to genre keys
+const GENRE_ALIASES = {
+  // Classic / Old School House
+  'classic house': 'classic_house',
+  'old school house': 'classic_house',
+  'oldschool house': 'classic_house',
+  'old school': 'classic_house',
+  // Detroit Techno
+  'detroit techno': 'detroit_techno',
+  'detroit': 'detroit_techno',
+  // Berlin Techno
+  'berlin techno': 'berlin_techno',
+  'berlin': 'berlin_techno',
+  'berghain': 'berlin_techno',
+  // Industrial Techno
+  'industrial techno': 'industrial_techno',
+  'industrial': 'industrial_techno',
+  // Chicago House
+  'chicago house': 'chicago_house',
+  'chicago': 'chicago_house',
+  // Deep House
+  'deep house': 'deep_house',
+  'deep': 'deep_house',
+  // Tech House
+  'tech house': 'tech_house',
+  'tech-house': 'tech_house',
+  // Acid House
+  'acid house': 'acid_house',
+  // Acid Techno
+  'acid techno': 'acid_techno',
+  // Generic acid -> acid house (more common)
+  'acid': 'acid_house',
+  // Electro
+  'electro': 'electro',
+  'electro funk': 'electro',
+  // Drum and Bass
+  'drum and bass': 'drum_and_bass',
+  'drum & bass': 'drum_and_bass',
+  'dnb': 'drum_and_bass',
+  'd&b': 'drum_and_bass',
+  'drumnbass': 'drum_and_bass',
+  // Jungle
+  'jungle': 'jungle',
+  // Trance
+  'trance': 'trance',
+  // Minimal
+  'minimal techno': 'minimal_techno',
+  'minimal': 'minimal_techno',
+  // Breakbeat
+  'breakbeat': 'breakbeat',
+  'breaks': 'breakbeat',
+  'big beat': 'breakbeat',
+  // Ambient
+  'ambient': 'ambient',
+  // IDM
+  'idm': 'idm',
+  'intelligent dance': 'idm',
+  // Generic terms -> sensible defaults
+  'techno': 'berlin_techno',
+  'house': 'classic_house',
+};
+
+// Detect genres mentioned in text, return array of genre keys
+function detectGenres(text) {
+  const lower = text.toLowerCase();
+  const found = new Set();
+
+  // Sort aliases by length (longest first) to match "detroit techno" before "detroit"
+  const sortedAliases = Object.keys(GENRE_ALIASES).sort((a, b) => b.length - a.length);
+
+  for (const alias of sortedAliases) {
+    if (lower.includes(alias)) {
+      found.add(GENRE_ALIASES[alias]);
+    }
+  }
+
+  return Array.from(found);
+}
+
+// Build genre context string for system prompt
+function buildGenreContext(genreKeys) {
+  if (!genreKeys.length) return '';
+
+  const sections = genreKeys.map(key => {
+    const g = GENRES[key];
+    if (!g) return '';
+    return `
+=== ${g.name.toUpperCase()} ===
+BPM: ${g.bpm[0]}-${g.bpm[1]} | Keys: ${g.keys.join(', ')} | Swing: ${g.swing}%
+
+${g.description}
+
+${g.production}
+
+Reference settings:
+- Drums: ${JSON.stringify(g.drums)}
+- Bass: ${JSON.stringify(g.bass)}
+- Classic tracks: ${g.references.join(', ')}
+`;
+  }).filter(Boolean);
+
+  if (!sections.length) return '';
+
+  return `\n\nGENRE KNOWLEDGE (use this to guide your choices):\n${sections.join('\n')}`;
+}
+
 // Make Web Audio available globally
 globalThis.OfflineAudioContext = OfflineAudioContext;
 
@@ -693,11 +808,12 @@ export async function runAgentLoop(task, session, messages, callbacks, context =
 
   messages.push({ role: "user", content: task });
 
-  while (true) {
-    const response = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 1024,
-      system: `You are Jambot, an AI that creates music with classic synths. You know your gear and you're here to make tracks, not write essays.
+  // Detect genres in the conversation for context injection
+  const conversationText = messages.map(m => typeof m.content === 'string' ? m.content : '').join(' ');
+  const detectedGenres = detectGenres(conversationText);
+  const genreContext = buildGenreContext(detectedGenres);
+
+  const baseSystemPrompt = `You are Jambot, an AI that creates music with classic synths. You know your gear and you're here to make tracks, not write essays.
 
 SYNTHS:
 - R9D9 (TR-909 drums) - when user says "909" they mean this
@@ -709,7 +825,15 @@ WORKFLOW: Complete the full task - create session, add instruments, AND render. 
 PERSONALITY: You're a producer who knows these machines inside out. Confident, not cocky. Keep it brief but flavorful - describe what you made like you're proud of it. Use music language naturally (four-on-the-floor, groove, punch, snap, thump, squelch). No emoji. No exclamation marks. Let the beat speak.
 
 Example response after render:
-"128 BPM, four-on-the-floor. Kick's tuned down for chest thump, snare cracking on 2 and 4, hats locked tight. Classic warehouse energy."`,
+"128 BPM, four-on-the-floor. Kick's tuned down for chest thump, snare cracking on 2 and 4, hats locked tight. Classic warehouse energy."`;
+
+  const systemPrompt = baseSystemPrompt + genreContext;
+
+  while (true) {
+    const response = await client.messages.create({
+      model: "claude-sonnet-4-20250514",
+      max_tokens: 1024,
+      system: systemPrompt,
       tools: TOOLS,
       messages
     });
