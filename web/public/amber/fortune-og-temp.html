@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      margin: 0;
+      width: 1200px;
+      height: 630px;
+      background: #0D0D0D;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Arial', sans-serif;
+    }
+    
+    .title {
+      font-size: 72px;
+      font-weight: bold;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+      margin-bottom: 20px;
+    }
+    
+    .subtitle {
+      font-size: 48px;
+      color: #2D9596;
+      margin-bottom: 60px;
+    }
+    
+    .cookie {
+      position: relative;
+      width: 300px;
+      height: 150px;
+      margin: 20px 0;
+    }
+    
+    svg {
+      filter: drop-shadow(0 0 30px rgba(212, 165, 116, 0.5));
+    }
+    
+    .tagline {
+      font-size: 32px;
+      color: #D4A574;
+      margin-top: 40px;
+      font-style: italic;
+      opacity: 0.8;
+    }
+  </style>
+</head>
+<body>
+  <div class="title">FORTUNE COOKIE</div>
+  <div class="subtitle">(HONEST EDITION)</div>
+  
+  <div class="cookie">
+    <svg viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="150" cy="75" rx="140" ry="70" fill="#D4A574" stroke="#B8935F" stroke-width="4"/>
+      <path d="M 30,75 Q 150,120 270,75" fill="none" stroke="#B8935F" stroke-width="3"/>
+      <circle cx="80" cy="60" r="4" fill="#B8935F"/>
+      <circle cx="120" cy="50" r="3" fill="#B8935F"/>
+      <circle cx="180" cy="55" r="4" fill="#B8935F"/>
+      <circle cx="220" cy="65" r="3" fill="#B8935F"/>
+      <circle cx="150" cy="70" r="3" fill="#B8935F"/>
+      <circle cx="100" cy="80" r="3" fill="#B8935F"/>
+      <circle cx="200" cy="80" r="4" fill="#B8935F"/>
+    </svg>
+  </div>
+  
+  <div class="tagline">Tap for brutally honest fortunes</div>
+</body>
+</html>

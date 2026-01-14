@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fortune Cookie (Honest Edition) — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Fortune Cookie (Honest Edition) — Amber">
+  <meta property="og:description" content="Tap the cookie for brutally honest fortunes. No inspirational BS.">
+  <meta property="og:image" content="https://intheamber.com/amber/fortune-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/fortune.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Fortune Cookie (Honest Edition) — Amber">
+  <meta name="twitter:description" content="Tap the cookie for brutally honest fortunes. No inspirational BS.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/fortune-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    #container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(20px, 5vw, 28px);
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #2D9596;
+      margin-bottom: 40px;
+      opacity: 0.8;
+    }
+    
+    #cookie {
+      width: clamp(200px, 50vw, 300px);
+      height: clamp(100px, 25vw, 150px);
+      margin: 40px auto;
+      cursor: pointer;
+      position: relative;
+      transition: transform 0.2s;
+      filter: drop-shadow(0 0 20px rgba(212, 165, 116, 0.3));
+    }
+    
+    #cookie:hover {
+      transform: scale(1.05);
+    }
+    
+    #cookie:active {
+      transform: scale(0.95);
+    }
+    
+    .cookie-whole {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .cookie-half {
+      position: absolute;
+      width: 50%;
+      height: 100%;
+      transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    }
+    
+    .cookie-left {
+      left: 0;
+      transform-origin: right center;
+    }
+    
+    .cookie-right {
+      right: 0;
+      transform-origin: left center;
+    }
+    
+    .broken .cookie-left {
+      transform: translateX(-60%) rotate(-25deg);
+    }
+    
+    .broken .cookie-right {
+      transform: translateX(60%) rotate(25deg);
+    }
+    
+    .hidden {
+      display: none;
+    }
+    
+    #fortune {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(16px, 4vw, 20px);
+      line-height: 1.6;
+      color: #FFD700;
+      padding: 30px;
+      background: rgba(212, 165, 116, 0.05);
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      margin-top: 40px;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.6s ease;
+      min-height: 120px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    #fortune.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .fortune-text {
+      position: relative;
+    }
+    
+    .fortune-text::before {
+      content: '"';
+      position: absolute;
+      left: -15px;
+      top: -5px;
+      font-size: 40px;
+      color: #2D9596;
+      opacity: 0.3;
+    }
+    
+    .fortune-text::after {
+      content: '"';
+      position: absolute;
+      right: -15px;
+      bottom: -20px;
+      font-size: 40px;
+      color: #2D9596;
+      opacity: 0.3;
+    }
+    
+    #again {
+      margin-top: 30px;
+      padding: 15px 40px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0;
+      transform: translateY(10px);
+      min-height: 44px;
+    }
+    
+    #again.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    #again:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+    
+    .instruction {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #2D9596;
+      margin-top: 20px;
+      opacity: 0.7;
+    }
+  </style>
+</head>
+<body>
+  <div id="container">
+    <h1>Fortune Cookie</h1>
+    <div class="subtitle">(Honest Edition)</div>
+    
+    <div id="cookie" onclick="breakCookie()">
+      <svg class="cookie-whole" viewBox="0 0 300 150" xmlns="http://www.w3.org/2000/svg">
+        <!-- Whole cookie -->
+        <ellipse cx="150" cy="75" rx="140" ry="70" fill="#D4A574" stroke="#B8935F" stroke-width="3"/>
+        <path d="M 30,75 Q 150,120 270,75" fill="none" stroke="#B8935F" stroke-width="2"/>
+        <circle cx="80" cy="60" r="3" fill="#B8935F"/>
+        <circle cx="120" cy="50" r="2" fill="#B8935F"/>
+        <circle cx="180" cy="55" r="3" fill="#B8935F"/>
+        <circle cx="220" cy="65" r="2" fill="#B8935F"/>
+        <circle cx="150" cy="70" r="2" fill="#B8935F"/>
+        <circle cx="100" cy="80" r="2" fill="#B8935F"/>
+        <circle cx="200" cy="80" r="3" fill="#B8935F"/>
+      </svg>
+      
+      <svg class="cookie-half cookie-left hidden" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+        <!-- Left half -->
+        <path d="M 10,75 Q 75,20 140,75 Q 75,120 10,75 Z" fill="#D4A574" stroke="#B8935F" stroke-width="3"/>
+        <line x1="140" y1="75" x2="10" y2="75" stroke="#B8935F" stroke-width="2"/>
+        <circle cx="60" cy="60" r="3" fill="#B8935F"/>
+        <circle cx="100" cy="50" r="2" fill="#B8935F"/>
+        <circle cx="80" cy="80" r="2" fill="#B8935F"/>
+      </svg>
+      
+      <svg class="cookie-half cookie-right hidden" viewBox="0 0 150 150" xmlns="http://www.w3.org/2000/svg">
+        <!-- Right half -->
+        <path d="M 10,75 Q 75,20 140,75 Q 75,120 10,75 Z" fill="#D4A574" stroke="#B8935F" stroke-width="3"/>
+        <line x1="10" y1="75" x2="140" y2="75" stroke="#B8935F" stroke-width="2"/>
+        <circle cx="60" cy="55" r="3" fill="#B8935F"/>
+        <circle cx="100" cy="65" r="2" fill="#B8935F"/>
+        <circle cx="70" cy="80" r="3" fill="#B8935F"/>
+      </svg>
+    </div>
+    
+    <div class="instruction" id="instruction">Tap the cookie</div>
+    
+    <div id="fortune">
+      <div class="fortune-text" id="fortune-text"></div>
+    </div>
+    
+    <button id="again" onclick="reset()">Another One</button>
+  </div>
+
+  <script>
+    const fortunes = [
+      "Your lucky numbers are: your age, your regrets, and the number of times you've checked your phone today.",
+      "You will find great success... in avoiding responsibility.",
+      "A greatopportunity is coming your way. You will scroll past it.",
+      "Your future is bright. You just can't afford the electricity bill.",
+      "You will accomplish all your goals... eventually... maybe... probably not.",
+      "Good things come to those who wait. Great things come to those who lie about their accomplishments on LinkedIn.",
+      "You are one in a million. There are 8 billion people. Do the math.",
+      "Today is the first day of the rest of your life. Sorry about that.",
+      "You will meet someone special. They will also be scrolling on their phone.",
+      "Your dreams will come true... in your dreams.",
+      "A foolish man seeks happiness in the distance. A wise man just orders it on Amazon.",
+      "You will travel to exotic places... on Google Earth.",
+      "Your kindness will be rewarded... in exposure, not money.",
+      "The fortune you seek is in another cookie.",
+      "You are about to embark on a great journey... to the fridge.",
+      "Your talents will be recognized... by the algorithm... maybe.",
+      "Good news is coming... it's just stuck in traffic.",
+      "You will find what you're looking for... after you buy a replacement.",
+      "Your hard work will pay off... eventually... in 30-60 business days.",
+      "A great adventure awaits you... but you'll probably just stay home.",
+      "You are capable of amazing things... just not today.",
+      "Your life will improve dramatically... once you lower your standards.",
+      "You will make a difference... a very small, almost imperceptible difference.",
+      "Fortune favors the bold... but also, rent is due.",
+      "You will discover your true calling... it's scrolling. You're already doing it.",
+      "The wisdom you seek lies within... but so does anxiety, so...",
+      "You are on the path to enlightenment... or the bathroom. They're next to each other.",
+      "Your creativity knows no bounds... except time, energy, and motivation.",
+      "You will inspire others... to not end up like you.",
+      "Great wealth is coming your way... in Monopoly. The board game."
+    ];
+    
+    let broken = false;
+    
+    function breakCookie() {
+      if (broken) return;
+      
+      broken = true;
+      const cookie = document.getElementById('cookie');
+      const instruction = document.getElementById('instruction');
+      const fortuneDiv = document.getElementById('fortune');
+      const fortuneText = document.getElementById('fortune-text');
+      const againBtn = document.getElementById('again');
+      
+      // Hide whole cookie, show halves
+      cookie.querySelector('.cookie-whole').classList.add('hidden');
+      cookie.querySelector('.cookie-left').classList.remove('hidden');
+      cookie.querySelector('.cookie-right').classList.remove('hidden');
+      cookie.classList.add('broken');
+      cookie.style.cursor = 'default';
+      
+      // Hide instruction
+      instruction.style.opacity = '0';
+      
+      // Show fortune after animation
+      setTimeout(() => {
+        const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+        fortuneText.textContent = randomFortune;
+        fortuneDiv.classList.add('show');
+        
+        setTimeout(() => {
+          againBtn.classList.add('show');
+        }, 300);
+      }, 600);
+    }
+    
+    function reset() {
+      broken = false;
+      const cookie = document.getElementById('cookie');
+      const instruction = document.getElementById('instruction');
+      const fortuneDiv = document.getElementById('fortune');
+      const fortuneText = document.getElementById('fortune-text');
+      const againBtn = document.getElementById('again');
+      
+      // Hide fortune and button
+      fortuneDiv.classList.remove('show');
+      againBtn.classList.remove('show');
+      
+      setTimeout(() => {
+        // Reset cookie
+        cookie.classList.remove('broken');
+        setTimeout(() => {
+          cookie.querySelector('.cookie-whole').classList.remove('hidden');
+          cookie.querySelector('.cookie-left').classList.add('hidden');
+          cookie.querySelector('.cookie-right').classList.add('hidden');
+          cookie.style.cursor = 'pointer';
+          
+          instruction.style.opacity = '0.7';
+          fortuneText.textContent = '';
+        }, 600);
+      }, 300);
+    }
+  </script>
+</body>
+</html>

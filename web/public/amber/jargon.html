@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Corporate Jargon Translator — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Corporate Jargon Translator — Amber">
+  <meta property="og:description" content="Translate between human speech and corporate nonsense. Synergize your linguistic paradigm.">
+  <meta property="og:image" content="https://intheamber.com/amber/jargon-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/jargon.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Corporate Jargon Translator — Amber">
+  <meta name="twitter:description" content="Translate between human speech and corporate nonsense. Synergize your linguistic paradigm.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/jargon-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .container {
+      max-width: 700px;
+      width: 100%;
+    }
+    
+    h1{
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 6vw, 36px);
+      color: #FFD700;
+      text-align: center;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      text-align: center;
+      color: #2D9596;
+      font-size: clamp(14px, 3vw, 16px);
+      margin-bottom: 40px;
+      opacity: 0.9;
+    }
+    
+    .translator-box {
+      background: rgba(212, 165, 116, 0.05);
+      border: 2px solid #D4A574;
+      border-radius: 12px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    textarea {
+      width: 100%;
+      min-height: 120px;
+      background: #000;
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      padding: 15px;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+    
+    textarea:focus {
+      outline: none;
+      border-color: #FFD700;
+    }
+    
+    textarea::placeholder {
+      color: rgba(212, 165, 116, 0.4);
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 15px;
+      margin: 20px 0;
+      flex-wrap: wrap;
+    }
+    
+    button {
+      flex: 1;
+      min-width: 140px;
+      padding: 15px 20px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.3s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      min-height: 50px;
+    }
+    
+    button:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+    
+    button:active {
+      transform: scale(0.98);
+    }
+    
+    .output {
+      background: rgba(45, 149, 150, 0.1);
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      padding: 20px;
+      min-height: 100px;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #FFD700;
+      font-family: 'Space Mono', monospace;
+      display: none;
+    }
+    
+    .output.show {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .examples {
+      margin-top: 30px;
+      padding: 20px;
+      background: rgba(123, 104, 238, 0.05);
+      border: 1px solid #7B68EE;
+      border-radius: 8px;
+    }
+    
+    .examples h3 {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #7B68EE;
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .example {
+      margin-bottom: 15px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid rgba(123, 104, 238, 0.2);
+    }
+    
+    .example:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+    
+    .example-label {
+      font-size: 12px;
+      color: #7B68EE;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+    }
+    
+    .example-text {
+      font-size: 14px;
+      color: rgba(212, 165, 116, 0.8);
+      line-height: 1.5;
+      cursor: pointer;
+      transition: color 0.2s;
+    }
+    
+    .example-text:hover {
+      color: #FFD700;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Corporate Jargon</h1>
+    <div class="subtitle">Translate between human and corporate nonsense</div>
+    
+    <div class="translator-box">
+      <div class="input-group">
+        <label for="input">What do you actually mean?</label>
+        <textarea 
+          id="input" 
+          placeholder="e.g., 'We need to have a meeting'"
+        ></textarea>
+      </div>
+      
+      <div class="button-group">
+        <button onclick="translateToCorporate()">🏢 Corporatize</button>
+        <button onclick="translateToHuman()">🤖 Humanize</button>
+        <button onclick="random()">🎲 Surprise Me</button>
+      </div>
+      
+      <div class="output" id="output"></div>
+    </div>
+    
+    <div class="examples">
+      <h3>Examples (tap to try)</h3>
+      <div class="example" onclick="setInput('I don\'t know')">
+        <div class="example-label">Human</div>
+        <div class="example-text">"I don't know"</div>
+      </div>
+      <div class="example" onclick="setInput('That\'s a bad idea')">
+        <div class="example-label">Human</div>
+        <div class="example-text">"That's a bad idea"</div>
+      </div>
+      <div class="example" onclick="setInput('We messed up')">
+        <div class="example-label">Human</div>
+        <div class="example-text">"We messed up"</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const translations = {
+      "I don't know": "I'll need to circle back on that after syncing with the relevant stakeholders",
+      "That's a bad idea": "I have some concerns about the feasibility and scalability of that approach",
+      "We messed up": "We've identified an opportunity for improvement in our execution strategy",
+      "We need to have a meeting": "Let's schedule a sync to align on this initiative and ideate solutions",
+      "Nobody is working on this": "This project is currently deprioritized pending resource allocation",
+      "We're late": "We're experiencing some timeline optimization challenges",
+      "This is impossible": "We'll need to manage expectations around the scope and delivery timeline",
+      "I disagree": "I'd like to propose an alternative perspective to consider",
+      "You're wrong": "I think there might be an opportunity to recalibrate our understanding here",
+      "We have no plan": "We're taking an agile, iterative approach to strategy development",
+      "Nobody knows what's happening": "We're in a dynamic discovery phase",
+      "We're out of money": "We need to optimize our burn rate and explore additional runway options",
+      "This is a waste of time": "I'm not sure this is the highest-leverage use of our bandwidth",
+      "Can we just decide already": "I think we're ready to move from ideation to decision-making mode",
+      "Stop talking": "Let's be mindful of our time and move toward actionable next steps",
+      "You didn't do your job": "I think there may have been some misalignment around ownership and deliverables",
+      "We're fired": "The organization is pursuing a strategic restructuring initiative",
+      "Nobody cares": "This may not be resonating with our core stakeholder base",
+      "This makes no sense": "I'd love to better understand the strategic rationale behind this approach",
+      "We forgot": "This fell through the cracks during our prioritization process"
+    };
+    
+    function setInput(text) {
+      document.getElementById('input').value = text;
+      translateToCorporate();
+    }
+    
+    function translateToCorporate() {
+      const input = document.getElementById('input').value.trim();
+      const output = document.getElementById('output');
+      
+      if (!input) {
+        showOutput("Please enter some text first!");
+        return;
+      }
+      
+      // Check for exact match
+      const match = translations[input];
+      if (match) {
+        showOutput(match);
+        return;
+      }
+      
+      // Generate synthetic corporate jargon
+      const corporate = generateCorporateSpeak(input);
+      showOutput(corporate);
+    }
+    
+    function generateCorporateSpeak(text) {
+      const prefixes = [
+        "From a strategic standpoint,",
+        "To optimize our approach,",
+        "In terms of maximizing impact,",
+        "Moving forward,",
+        "At scale,",
+        "To level-set,",
+        "From a holistic perspective,"
+      ];
+      
+      const buzzwords = [
+        "synergize", "leverage", "optimize", "streamline", "ideate",
+        "align", "circle back", "touch base", "deep dive", "unpack",
+        "bandwidth", "bandwidth", "low-hanging fruit", "move the needle",
+        "think outside the box", "paradigm shift", "game-changer"
+      ];
+      
+      const suffixes = [
+        "to drive value creation",
+        "going forward",
+        "in this space",
+        "at the end of the day",
+        "from a 10,000-foot view",
+        "with stakeholder buy-in",
+        "to unlock growth potential"
+      ];
+      
+      const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+      const buzz = buzzwords[Math.floor(Math.random() * buzzwords.length)];
+      const suffix = suffixes[Math.floor(Math.random() * suffixes.length)];
+      
+      return `${prefix} we need to ${buzz} ${suffix}.`;
+    }
+    
+    function translateToHuman() {
+      const input = document.getElementById('input').value.trim().toLowerCase();
+      const output = document.getElementById('output');
+      
+      if (!input) {
+        showOutput("Please enter some text first!");
+        return;
+      }
+      
+      // Reverse lookup
+      for (const [human, corporate] of Object.entries(translations)) {
+        if (input.includes(corporate.toLowerCase())) {
+          showOutput(`Translation: "${human}"`);
+          return;
+        }
+      }
+      
+      // Pattern matching for common phrases
+      if (input.includes("synerg") || input.includes("leverage") || input.includes("stakeholder")) {
+        showOutput("Translation: \"I'm saying words to sound important\"");
+      } else if (input.includes("circle back") || input.includes("touch base")) {
+        showOutput("Translation: \"I'll maybe get back to you\"");
+      } else if (input.includes("bandwidth")) {
+        showOutput("Translation: \"I'm too busy\" or \"You're asking too much\"");
+      } else if (input.includes("deep dive")) {
+        showOutput("Translation: \"Let's actually look at this thing\"");
+      } else if (input.includes("alignment")) {
+        showOutput("Translation: \"We need to agree on something\"");
+      } else if (input.includes("optimize") || input.includes("streamline")) {
+        showOutput("Translation: \"Make it faster/cheaper/better (probably by firing people)\"");
+      } else {
+        showOutput("Translation: This is already pretty human, or it's next-level jargon I haven't learned yet.");
+      }
+    }
+    
+    function random() {
+      const keys = Object.keys(translations);
+      const randomKey = keys[Math.floor(Math.random() * keys.length)];
+      document.getElementById('input').value = randomKey;
+      translateToCorporate();
+    }
+    
+    function showOutput(text) {
+      const output = document.getElementById('output');
+      output.textContent = text;
+      output.classList.add('show');
+    }
+  </script>
+</body>
+</html>

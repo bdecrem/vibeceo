@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Generate OG Image</title>
+</head>
+<body>
+  <canvas id="canvas" width="1200" height="630"></canvas>
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Background
+    ctx.fillStyle = '#0D0D0D';
+    ctx.fillRect(0, 0, 1200, 630);
+    
+    // Title
+    ctx.fillStyle = '#FFD700';
+    ctx.font = 'bold 72px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('FORTUNE COOKIE', 600, 200);
+    
+    // Subtitle
+    ctx.fillStyle = '#2D9596';
+    ctx.font = '48px Arial';
+    ctx.fillText('(HONEST EDITION)', 600, 270);
+    
+    // Cookie (simplified ellipse)
+    ctx.fillStyle = '#D4A574';
+    ctx.strokeStyle = '#B8935F';
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.ellipse(600, 380, 140, 70, 0, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Cookie details (dots)
+    ctx.fillStyle = '#B8935F';
+    const dots = [
+      [520, 360], [560, 350], [640, 355], [680, 365],
+      [600, 370], [540, 390], [660, 390]
+    ];
+    dots.forEach(([x, y]) => {
+      ctx.beginPath();
+      ctx.arc(x, y, 4, 0, 2 * Math.PI);
+      ctx.fill();
+    });
+    
+    // Cookie fold line
+    ctx.strokeStyle = '#B8935F';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(470, 380);
+    ctx.quadraticCurveTo(600, 420, 730, 380);
+    ctx.stroke();
+    
+    // Tagline
+    ctx.fillStyle = '#D4A574';
+    ctx.font = 'italic 32px Arial';
+    ctx.globalAlpha = 0.8;
+    ctx.fillText('Tap for brutally honest fortunes', 600, 530);
+    
+    // Convert to downloadable image
+    canvas.toBlob(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'fortune-og.png';
+      a.click();
+      console.log('Download triggered - right click and save as fortune-og.png');
+    });
+  </script>
+</body>
+</html>
