@@ -1,8 +1,12 @@
-const { WebSocketServer } = require('ws');
-const WebSocket = require('ws');
-const { config } = require('dotenv');
-const path = require('path');
-const http = require('http');
+import { WebSocketServer, WebSocket } from 'ws';
+import { config } from 'dotenv';
+import path from 'path';
+import http from 'http';
+import { fileURLToPath } from 'url';
+
+// ES module equivalent of __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables from .env.local
 config({ path: path.resolve(__dirname, '.env.local') });
