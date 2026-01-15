@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BASEMENT PULSE — Berlin Techno by Amber</title>
+  <meta name="description" content="Hypnotic minimal techno with TR-909 drums and TB-303 acid bass. Berlin warehouse at 3AM.">
+  
+  <!-- OG tags -->
+  <meta property="og:title" content="BASEMENT PULSE — Berlin Techno by Amber">
+  <meta property="og:description" content="Hypnotic minimal techno with TR-909 drums and TB-303 acid bass. Berlin warehouse at 3AM.">
+  <meta property="og:image" content="https://intheamber.com/amber/basement-pulse-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/basement-pulse.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/basement-pulse-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Courier New', monospace;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #title {
+      position: absolute;
+      top: 30px;
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 0.2em;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+      z-index: 10;
+    }
+
+    #info {
+      position: absolute;
+      top: 80px;
+      font-size: 0.9rem;
+      color: #2D9596;
+      letter-spacing: 0.1em;
+      z-index: 10;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #controls {
+      position: absolute;
+      bottom: 40px;
+      display: flex;
+      gap: 20px;
+      z-index: 10;
+    }
+
+    button {
+      background: rgba(212, 165, 116, 0.1);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 15px 40px;
+      font-size: 1.1rem;
+      font-family: 'Courier New', monospace;
+      cursor: pointer;
+      letter-spacing: 0.1em;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background: rgba(212, 165, 116, 0.2);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.3);
+    }
+
+    button:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    #status {
+      position: absolute;
+      bottom: 10px;
+      font-size: 0.8rem;
+      color: #7B68EE;
+      letter-spacing: 0.05em;
+    }
+
+    @media (max-width: 768px) {
+      #title {
+        font-size: 1.5rem;
+        top: 20px;
+      }
+      #info {
+        font-size: 0.75rem;
+        top: 60px;
+      }
+      button {
+        padding: 12px 30px;
+        font-size: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="title">BASEMENT PULSE</div>
+  <div id="info">128 BPM • TR-909 × TB-303</div>
+  
+  <canvas id="canvas"></canvas>
+  
+  <div id="controls">
+    <button id="playBtn">START</button>
+    <button id="stopBtn" disabled>STOP</button>
+  </div>
+  
+  <div id="status">Tap START to enter the basement</div>
+
+  <script type="module">
+    import { TR909Engine } from '/909/dist/machines/tr909/engine.js';
+    import { TB303Engine } from '/303/dist/machines/tb303/engine.js';
+
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const playBtn = document.getElementById('playBtn');
+    const stopBtn = document.getElementById('stopBtn');
+    const status = document.getElementById('status');
+
+    let audioContext;
+    let drums, bass;
+    let kickOutput, bassOutput;
+    let analyserKick, analyserBass;
+    let dataKick, dataBass;
+    let isPlaying = false;
+    let animationId;
+
+    // Resize canvas
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Berlin minimal techno pattern - hypnotic and dark
+    const drumPattern = {
+      kick: [
+        { velocity: 1.0, accent: true },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 1.0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 1.0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 1.0 },
+        { velocity: 0 },
+        { velocity: 0 },
+        { velocity: 0 }
+      ],
+      ch: [ // closed hat - steady 16ths
+        { velocity: 0.6 }, { velocity: 0.5 }, { velocity: 0.6 }, { velocity: 0.5 },
+        { velocity: 0.7 }, { velocity: 0.5 }, { velocity: 0.6 }, { velocity: 0.5 },
+        { velocity: 0.6 }, { velocity: 0.5 }, { velocity: 0.7 }, { velocity: 0.5 },
+        { velocity: 0.6 }, { velocity: 0.5 }, { velocity: 0.6 }, { velocity: 0.5 }
+      ],
+      oh: [ // open hat - occasional accents
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.7 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0 }, { velocity: 0 },
+        { velocity: 0 }, { velocity: 0 }, { velocity: 0.8 }, { velocity: 0 }
+      ]
+    };
+
+    // Dark acid bassline - A minor feel
+    const bassPattern = [
+      { note: 'A1', gate: true, accent: true, slide: false },
+      { note: 'A1', gate: false, accent: false, slide: false },
+      { note: 'A1', gate: true, accent: false, slide: false },
+      { note: 'A1', gate: false, accent: false, slide: false },
+      { note: 'E2', gate: true, accent: true, slide: false },
+      { note: 'E2', gate: false, accent: false, slide: false },
+      { note: 'D2', gate: true, accent: false, slide: true },
+      { note: 'C2', gate: true, accent: true, slide: false },
+      { note: 'A1', gate: true, accent: false, slide: false },
+      { note: 'A1', gate: false, accent: false, slide: false },
+      { note: 'G1', gate: true, accent: true, slide: false },
+      { note: 'G1', gate: false, accent: false, slide: false },
+      { note: 'E2', gate: true, accent: false, slide: false },
+      { note: 'E2', gate: false, accent: false, slide: false },
+      { note: 'D2', gate: true, accent: true, slide: true },
+      { note: 'C2', gate: true, accent: false, slide: false }
+    ];
+
+    // Sidechain compression (manual gain ducking)
+    let duckerNode, duckerGain;
+    let kickTriggers = [];
+
+    function setupAudio() {
+      audioContext = new AudioContext();
+      
+      // Create engines
+      drums = new TR909Engine({ context: audioContext });
+      bass = new TB303Engine({ context: audioContext });
+
+      // Set BPM
+      const bpm = 128;
+      drums.setBpm(bpm);
+      bass.setBpm(bpm);
+
+      // Load patterns
+      drums.setPattern('main', drumPattern);
+      bass.setPattern(bassPattern);
+
+      // Configure bass sound - dark and resonant
+      bass.setParameter('cutoff', 0.25);
+      bass.setParameter('resonance', 0.75);
+      bass.setParameter('envMod', 0.7);
+      bass.setParameter('decay', 0.4);
+      bass.setParameter('accent', 0.8);
+      bass.setWaveform('sawtooth');
+
+      // Create master gain
+      const masterGain = audioContext.createGain();
+      masterGain.gain.value = 0.85;
+      masterGain.connect(audioContext.destination);
+
+      // Create sidechain ducker for bass
+      duckerNode = audioContext.createGain();
+      duckerGain = duckerNode.gain;
+      duckerGain.value = 1.0;
+
+      // Route drums directly to master
+      drums.output.connect(masterGain);
+
+      // Route bass through ducker
+      bass.output.connect(duckerNode);
+      duckerNode.connect(masterGain);
+
+      // Create analysers for visualization
+      analyserKick = audioContext.createAnalyser();
+      analyserKick.fftSize = 256;
+      dataKick = new Uint8Array(analyserKick.frequencyBinCount);
+      drums.output.connect(analyserKick);
+
+      analyserBass = audioContext.createAnalyser();
+      analyserBass.fftSize = 256;
+      dataBass = new Uint8Array(analyserBass.frequencyBinCount);
+      bass.output.connect(analyserBass);
+
+      // Get outputs for visualization
+      kickOutput = drums.voices.get('kick').output;
+      bassOutput = bass.output;
+    }
+
+    // Sidechain ducking - triggered on each kick
+    function duckBass() {
+      const now = audioContext.currentTime;
+      const attackTime = 0.02;
+      const releaseTime = 0.15;
+      const duckAmount = 0.3; // Duck to 30% volume
+
+      duckerGain.cancelScheduledValues(now);
+      duckerGain.setValueAtTime(duckerGain.value, now);
+      duckerGain.linearRampToValueAtTime(duckAmount, now + attackTime);
+      duckerGain.linearRampToValueAtTime(1.0, now + attackTime + releaseTime);
+    }
+
+    // Calculate kick times and set up ducking
+    function scheduleDucking() {
+      const bpm = 128;
+      const stepDuration = 60 / bpm / 4;
+      
+      // Schedule ducking for each kick hit
+      function scheduleLoop() {
+        if (!isPlaying) return;
+
+        const now = audioContext.currentTime;
+        
+        drumPattern.kick.forEach((step, i) => {
+          if (step.velocity > 0) {
+            const time = now + (i * stepDuration);
+            setTimeout(() => {
+              if (isPlaying) duckBass();
+            }, (i * stepDuration * 1000));
+          }
+        });
+
+        // Schedule next loop
+        const loopDuration = 16 * stepDuration * 1000;
+        setTimeout(scheduleLoop, loopDuration);
+      }
+
+      scheduleLoop();
+    }
+
+    // Visualization
+    function draw() {
+      if (!isPlaying) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+      const centerX = width / 2;
+      const centerY = height / 2;
+
+      // Fade previous frame
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+      ctx.fillRect(0, 0, width, height);
+
+      // Get frequency data
+      analyserKick.getByteFrequencyData(dataKick);
+      analyserBass.getByteFrequencyData(dataBass);
+
+      // Calculate average levels
+      const kickLevel = dataKick.slice(0, 20).reduce((a, b) => a + b, 0) / 20 / 255;
+      const bassLevel = dataBass.slice(0, 40).reduce((a, b) => a + b, 0) / 40 / 255;
+
+      // Kick pulse - concentric amber circles
+      const kickRadius = 80 + (kickLevel * 200);
+      ctx.strokeStyle = `rgba(212, 165, 116, ${kickLevel * 0.8})`;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, kickRadius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Inner kick pulse
+      const kickRadius2 = 60 + (kickLevel * 150);
+      ctx.strokeStyle = `rgba(255, 215, 0, ${kickLevel * 0.6})`;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, kickRadius2, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // Bass waveform - teal ring
+      const bassRadius = 180;
+      const points = 64;
+      ctx.strokeStyle = 'rgba(45, 149, 150, 0.8)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      
+      for (let i = 0; i < points; i++) {
+        const angle = (i / points) * Math.PI * 2;
+        const amp = (dataBass[i % dataBass.length] / 255) * 40;
+        const r = bassRadius + amp;
+        const x = centerX + Math.cos(angle) * r;
+        const y = centerY + Math.sin(angle) * r;
+        
+        if (i === 0) {
+          ctx.moveTo(x, y);
+        } else {
+          ctx.lineTo(x, y);
+        }
+      }
+      ctx.closePath();
+      ctx.stroke();
+
+      // Background grid - subtle
+      ctx.strokeStyle = 'rgba(45, 149, 150, 0.08)';
+      ctx.lineWidth = 1;
+      const gridSize = 40;
+      
+      for (let x = 0; x < width; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      
+      for (let y = 0; y < height; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      // Sidechain visualization - violet flash when ducking
+      const duckAmount = 1.0 - duckerGain.value;
+      if (duckAmount > 0.1) {
+        ctx.fillStyle = `rgba(123, 104, 238, ${duckAmount * 0.2})`;
+        ctx.fillRect(0, 0, width, height);
+      }
+
+      animationId = requestAnimationFrame(draw);
+    }
+
+    playBtn.addEventListener('click', async () => {
+      if (!audioContext) {
+        setupAudio();
+      }
+      
+      await audioContext.resume();
+      
+      drums.startSequencer();
+      bass.startSequencer();
+      scheduleDucking();
+      
+      isPlaying = true;
+      playBtn.disabled = true;
+      stopBtn.disabled = false;
+      status.textContent = 'Berlin 3AM';
+      
+      draw();
+    });
+
+    stopBtn.addEventListener('click', () => {
+      drums.stopSequencer();
+      bass.stopSequencer();
+      
+      isPlaying = false;
+      playBtn.disabled = false;
+      stopBtn.disabled = true;
+      status.textContent = 'Tap START to enter the basement';
+      
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    });
+  </script>
+</body>
+</html>
