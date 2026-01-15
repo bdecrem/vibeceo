@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Crisis Bingo — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Crisis Bingo — Amber">
+  <meta property="og:description" content="Existential crisis bingo card. Tap to mark your squares. Get BINGO, receive wisdom.">
+  <meta property="og:image" content="https://intheamber.com/amber/crisis-bingo-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/crisis-bingo.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Crisis Bingo — Amber">
+  <meta name="twitter:description" content="Existential crisis bingo card. Tap to mark your squares. Get BINGO, receive wisdom.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/crisis-bingo-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(24px, 6vw, 36px);
+      text-align: center;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .subtitle {
+      font-size: clamp(12px, 3vw, 14px);
+      text-align: center;
+      margin-bottom: 24px;
+      opacity: 0.7;
+      font-weight: 300;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 24px;
+    }
+    
+    .square {
+      aspect-ratio: 1;
+      background: #0D0D0D;
+      border: 1px solid #D4A574;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8px;
+      font-size: clamp(9px, 2vw, 12px);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    .square:hover {
+      background: #1a1a1a;
+    }
+    
+    .square:active {
+      transform: scale(0.95);
+    }
+    
+    .square.marked {
+      background: #2D9596;
+      color: #000;
+      border-color: #2D9596;
+      font-weight: 600;
+    }
+    
+    .square.free {
+      background: #D4A574;
+      color: #000;
+      font-weight: 700;
+      border-color: #D4A574;
+      font-size: clamp(11px, 2.5vw, 14px);
+    }
+    
+    .fortune {
+      width: 100%;
+      max-width: 600px;
+      background: #0D0D0D;
+      border: 2px solid #FFD700;
+      padding: 20px;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3vw, 16px);
+      line-height: 1.6;
+      display: none;
+      animation: glow 2s ease-in-out infinite;
+    }
+    
+    .fortune.show {
+      display: block;
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 10px #FFD700; }
+      50% { box-shadow: 0 0 20px #FFD700, 0 0 30px #FFD700; }
+    }
+    
+    .reset {
+      margin-top: 16px;
+      background: transparent;
+      border: 1px solid #D4A574;
+      color: #D4A574;
+      padding: 12px 24px;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: none;
+    }
+    
+    .reset.show {
+      display: inline-block;
+    }
+    
+    .reset:hover {
+      background: #D4A574;
+      color: #000;
+    }
+    
+    .reset:active {
+      transform: scale(0.95);
+    }
+    
+    .scanlines {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(212, 165, 116, 0.03) 0px,
+        transparent 1px,
+        transparent 2px,
+        rgba(212, 165, 116, 0.03) 3px
+      );
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <div class="scanlines"></div>
+  
+  <h1>Crisis Bingo</h1>
+  <p class="subtitle">Mark your existential spiral squares. Get BINGO. Receive wisdom.</p>
+  
+  <div class="grid" id="grid"></div>
+  
+  <div class="fortune" id="fortune"></div>
+  <button class="reset" id="reset">Reset Card</button>
+  
+  <script>
+    const squares = [
+      "Googled symptoms at 3am",
+      "Questioned every life choice in the shower",
+      "Doom-scrolled instead of sleeping",
+      "Remembered something embarrassing from 2009",
+      "Compared yourself to strangers on Instagram",
+      "Calculated how many years until retirement",
+      "FREE SPACE",
+      "Wondered if anyone actually likes you",
+      "Read your old texts and cringed",
+      "Thought about a different career path",
+      "Worried about a text you sent 3 hours ago",
+      "Lay awake thinking about death",
+      "Started a fight with yourself in your head",
+      "Felt guilty about not being productive",
+      "Overanalyzed a casual conversation",
+      "Considered moving to a new city and starting over",
+      "Checked your bank account and felt dread",
+      "Thought 'what's the point of any of this'",
+      "Made a pros/cons list about your entire life",
+      "Felt weirdly nostalgic for a random Tuesday in 2014",
+      "Realized you're becoming your parents",
+      "Had an imaginary argument you'll never have",
+      "Spiraled over something you can't control",
+      "Wondered if this is as good as it gets",
+      "Felt existentially lonely in a crowd"
+    ];
+    
+    const fortunes = [
+      "Your crisis is not a bug. It's a feature.",
+      "The spiral is the way. Keep turning.",
+      "You're overthinking this. But that's also fine.",
+      "Everything is temporary. Even this feeling. Especially this feeling.",
+      "You're doing better than you think. (Not by much, but still.)",
+      "The universe doesn't care. That's liberating if you let it be.",
+      "Your 3am thoughts are not facts. They're just loud.",
+      "Congrats on being self-aware enough to spiral. That's progress.",
+      "The existential dread means you're paying attention. Good.",
+      "You're allowed to restart as many times as you need.",
+      "Your past self would be impressed you made it this far.",
+      "Nobody knows what they're doing. You're in good company.",
+      "The point is that there is no point. Now go have fun.",
+      "You're not behind. There is no race. Breathe.",
+      "Your weird brain is a gift. Even when it doesn't feel like one."
+    ];
+    
+    let marked = new Set();
+    marked.add(6); // Free space is always marked
+    
+    const grid = document.getElementById('grid');
+    const fortuneEl = document.getElementById('fortune');
+    const resetBtn = document.getElementById('reset');
+    
+    // Create grid
+    squares.forEach((text, i) => {
+      const square = document.createElement('div');
+      square.className = 'square';
+      if (i === 6) square.classList.add('free', 'marked');
+      square.textContent = text;
+      square.dataset.index = i;
+      
+      square.addEventListener('click', () => {
+        if (i === 6) return; // Can't unmark free space
+        
+        if (marked.has(i)) {
+          marked.delete(i);
+          square.classList.remove('marked');
+        } else {
+          marked.add(i);
+          square.classList.add('marked');
+        }
+        
+        checkBingo();
+      });
+      
+      grid.appendChild(square);
+    });
+    
+    function checkBingo() {
+      const rows = [
+        [0, 1, 2, 3, 4],
+        [5, 6, 7, 8, 9],
+        [10, 11, 12, 13, 14],
+        [15, 16, 17, 18, 19],
+        [20, 21, 22, 23, 24]
+      ];
+      
+      const cols = [
+        [0, 5, 10, 15, 20],
+        [1, 6, 11, 16, 21],
+        [2, 7, 12, 17, 22],
+        [3, 8, 13, 18, 23],
+        [4, 9, 14, 19, 24]
+      ];
+      
+      const diags = [
+        [0, 6, 12, 18, 24],
+        [4, 8, 12, 16, 20]
+      ];
+      
+      const all = [...rows, ...cols, ...diags];
+      
+      for (const line of all) {
+        if (line.every(i => marked.has(i))) {
+          showFortune();
+          return;
+        }
+      }
+      
+      // No bingo, hide fortune
+      fortuneEl.classList.remove('show');
+      resetBtn.classList.remove('show');
+    }
+    
+    function showFortune() {
+      const fortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+      fortuneEl.textContent = `🎉 BINGO! 🎉\n\n${fortune}`;
+      fortuneEl.classList.add('show');
+      resetBtn.classList.add('show');
+    }
+    
+    resetBtn.addEventListener('click', () => {
+      marked.clear();
+      marked.add(6); // Keep free space
+      
+      document.querySelectorAll('.square').forEach((sq, i) => {
+        if (i !== 6) sq.classList.remove('marked');
+      });
+      
+      fortuneEl.classList.remove('show');
+      resetBtn.classList.remove('show');
+    });
+  </script>
+</body>
+</html>

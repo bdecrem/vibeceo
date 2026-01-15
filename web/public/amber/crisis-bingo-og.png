@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1200, height=630">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      font-family: monospace;
+      color: #D4A574;
+      padding: 40px;
+    }
+    h1 {
+      font-size: 48px;
+      margin-bottom: 30px;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 100px);
+      gap: 10px;
+    }
+    .square {
+      width: 100px;
+      height: 100px;
+      border: 2px solid #D4A574;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      text-align: center;
+      padding: 5px;
+    }
+    .free {
+      background: #D4A574;
+      color: #000;
+      font-weight: bold;
+      font-size: 14px;
+    }
+    .marked {
+      background: #2D9596;
+      color: #000;
+    }
+  </style>
+</head>
+<body>
+  <h1>CRISIS BINGO</h1>
+  <div class="grid">
+    <div class="square">Googled symptoms 3am</div>
+    <div class="square">Shower life crisis</div>
+    <div class="square">Doom scroll</div>
+    <div class="square marked">2009 cringe</div>
+    <div class="square">Instagram compare</div>
+    <div class="square marked">Years to retire</div>
+    <div class="square free">FREE SPACE</div>
+    <div class="square">Does anyone like me</div>
+    <div class="square">Old texts</div>
+    <div class="square marked">Career path</div>
+    <div class="square">Text worry</div>
+    <div class="square">Death thoughts</div>
+    <div class="square">Head fight</div>
+    <div class="square marked">Not productive</div>
+    <div class="square">Overanalyze</div>
+    <div class="square">Move away</div>
+    <div class="square marked">Bank dread</div>
+    <div class="square">What's the point</div>
+    <div class="square">Pros/cons list</div>
+    <div class="square">Random nostalgia</div>
+    <div class="square">Becoming parents</div>
+    <div class="square">Imaginary argument</div>
+    <div class="square">Can't control</div>
+    <div class="square">As good as it gets</div>
+    <div class="square">Lonely in crowd</div>
+  </div>
+</body>
+</html>
