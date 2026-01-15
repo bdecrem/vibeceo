@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LOADING... — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="LOADING... — Amber">
+  <meta property="og:description" content="A loading bar for your life. Please wait while we process your existence.">
+  <meta property="og:image" content="https://intheamber.com/amber/life-loading-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/life-loading.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LOADING... — Amber">
+  <meta name="twitter:description" content="A loading bar for your life. Please wait while we process your existence.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/life-loading-og.png">
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      margin-bottom: 40px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .loading-bar-container {
+      width: 100%;
+      height: 40px;
+      background: #000;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700);
+      width: 0%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    .percentage {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.2rem, 4vw, 1.8rem);
+      margin-bottom: 30px;
+      color: #FFD700;
+    }
+
+    .status {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(0.9rem, 3vw, 1.1rem);
+      color: #2D9596;
+      margin-bottom: 15px;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1.5;
+      padding: 0 10px;
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #2D9596;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .restart-btn {
+      margin-top: 30px;
+      padding: 12px 30px;
+      background: transparent;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(0.9rem, 3vw, 1rem);
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .restart-btn.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .restart-btn:hover {
+      background: #D4A574;
+      color: #0D0D0D;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+
+    .restart-btn:active {
+      transform: scale(0.95);
+    }
+
+    .credits {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      color: #D4A574;
+      opacity: 0.5;
+    }
+
+    @media (max-width: 600px) {
+      .loading-bar-container {
+        height: 35px;
+      }
+      .status {
+        min-height: 70px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Loading...</h1>
+    
+    <div class="loading-bar-container">
+      <div class="loading-bar" id="bar"></div>
+    </div>
+
+    <div class="percentage" id="percent">0%</div>
+    
+    <div class="status" id="status">
+      <span class="spinner"></span>
+      <span id="statusText">Initializing existence...</span>
+    </div>
+
+    <button class="restart-btn" id="restart">Restart Life</button>
+  </div>
+
+  <div class="credits">— Amber</div>
+
+  <script>
+    const stages = [
+      { percent: 3, text: 'Initializing existence...', duration: 800 },
+      { percent: 7, text: 'Loading childhood memories...', duration: 1200 },
+      { percent: 12, text: 'Installing regrets...', duration: 900 },
+      { percent: 18, text: 'Calibrating anxiety levels...', duration: 1000 },
+      { percent: 24, text: 'Downloading unrealistic expectations...', duration: 1100 },
+      { percent: 31, text: 'Processing embarrassing moments...', duration: 1300 },
+      { percent: 38, text: 'Loading quarter-life crisis...', duration: 1000 },
+      { percent: 45, text: 'Installing procrastination habits...', duration: 900 },
+      { percent: 52, text: 'Buffering relationships...', duration: 1200 },
+      { percent: 59, text: 'Syncing with societal pressure...', duration: 1000 },
+      { percent: 66, text: 'Compiling unread messages...', duration: 800 },
+      { percent: 72, text: 'Generating existential dread...', duration: 1100 },
+      { percent: 78, text: 'Loading forgotten passwords...', duration: 900 },
+      { percent: 84, text: 'Processing unfinished projects...', duration: 1000 },
+      { percent: 89, text: 'Installing self-doubt...', duration: 800 },
+      { percent: 94, text: 'Finalizing imposter syndrome...', duration: 1100 },
+      { percent: 97, text: 'Applying finishing touches to mortality...', duration: 1300 },
+      { percent: 99, text: 'Almost done...', duration: 2000 },
+      { percent: 100, text: 'Life loaded successfully. Now what?', duration: 0 }
+    ];
+
+    const bar = document.getElementById('bar');
+    const percent = document.getElementById('percent');
+    const statusText = document.getElementById('statusText');
+    const restartBtn = document.getElementById('restart');
+
+    let currentStage = 0;
+
+    function updateStage() {
+      if (currentStage >= stages.length) {
+        // Done
+        document.querySelector('.spinner').style.display = 'none';
+        restartBtn.classList.add('visible');
+        return;
+      }
+
+      const stage = stages[currentStage];
+      bar.style.width = stage.percent + '%';
+      percent.textContent = stage.percent + '%';
+      statusText.textContent = stage.text;
+
+      currentStage++;
+      
+      if (currentStage < stages.length) {
+        setTimeout(updateStage, stage.duration);
+      } else {
+        // Final stage
+        setTimeout(() => {
+          document.querySelector('.spinner').style.display = 'none';
+          restartBtn.classList.add('visible');
+        }, 1000);
+      }
+    }
+
+    restartBtn.addEventListener('click', () => {
+      currentStage = 0;
+      restartBtn.classList.remove('visible');
+      document.querySelector('.spinner').style.display = 'inline-block';
+      updateStage();
+    });
+
+    // Start loading
+    setTimeout(updateStage, 500);
+  </script>
+</body>
+</html>
