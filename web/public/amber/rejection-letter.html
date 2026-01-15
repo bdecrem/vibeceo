@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE REJECTION LETTER GENERATOR — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="THE REJECTION LETTER GENERATOR — Amber">
+  <meta property="og:description" content="Overly formal rejection letters for your mundane life situations">
+  <meta property="og:image" content="https://intheamber.com/amber/rejection-letter-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/rejection-letter.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="THE REJECTION LETTER GENERATOR — Amber">
+  <meta name="twitter:description" content="Overly formal rejection letters for your mundane life situations">
+  <meta name="twitter:image" content="https://intheamber.com/amber/rejection-letter-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .header {
+      text-align: center;
+      margin: 40px 0 30px 0;
+      max-width: 600px;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(20px, 5vw, 28px);
+      font-weight: 700;
+      letter-spacing: 2px;
+      margin-bottom: 12px;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+    }
+    
+    .subtitle {
+      font-size: clamp(14px, 3vw, 16px);
+      color: #2D9596;
+      font-weight: 300;
+      line-height: 1.5;
+    }
+    
+    .button-container {
+      margin: 30px 0;
+    }
+    
+    button {
+      background: linear-gradient(135deg, #D4A574 0%, #FFD700 100%);
+      color: #000;
+      border: none;
+      padding: 18px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(16px, 3.5vw, 18px);
+      font-weight: 700;
+      cursor: pointer;
+      border-radius: 4px;
+      letter-spacing: 1px;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.4);
+      min-width: 280px;
+      min-height: 60px;
+      touch-action: manipulation;
+    }
+    
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(212, 165, 116, 0.6);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .letter-container {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: clamp(20px, 5vw, 40px);
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.2);
+      margin-bottom: 40px;
+      display: none;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    .letter-container.visible {
+      display: block;
+    }
+    
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .letterhead {
+      text-align: center;
+      margin-bottom: 30px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #2D9596;
+    }
+    
+    .letterhead-title {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(16px, 3.5vw, 20px);
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #FFD700;
+      margin-bottom: 8px;
+    }
+    
+    .letterhead-subtitle {
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #2D9596;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    
+    .letter-body {
+      font-size: clamp(14px, 3vw, 16px);
+      line-height: 1.8;
+      color: #D4A574;
+    }
+    
+    .letter-body p {
+      margin-bottom: 20px;
+    }
+    
+    .letter-body strong {
+      color: #FFD700;
+      font-weight: 600;
+    }
+    
+    .signature {
+      margin-top: 40px;
+      font-style: italic;
+      color: #2D9596;
+    }
+    
+    .date {
+      font-size: clamp(12px, 2.8vw, 14px);
+      color: #666;
+      margin-bottom: 30px;
+    }
+    
+    footer {
+      margin-top: auto;
+      padding: 30px 20px 20px 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #2D9596;
+      text-align: center;
+    }
+    
+    @media (max-width: 600px) {
+      .header {
+        margin: 20px 0 20px 0;
+      }
+      
+      button {
+        min-width: 240px;
+        padding: 16px 30px;
+      }
+      
+      .letter-container {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>REJECTION LETTER GENERATOR</h1>
+    <p class="subtitle">Overly formal rejection letters for your mundane life situations</p>
+  </div>
+  
+  <div class="button-container">
+    <button id="generateBtn">GENERATE REJECTION</button>
+  </div>
+  
+  <div class="letter-container" id="letterContainer">
+    <div class="letterhead">
+      <div class="letterhead-title" id="letterheadTitle">DEPARTMENT OF MUNDANE DENIALS</div>
+      <div class="letterhead-subtitle" id="letterheadSubtitle">Office of Everyday Disappointments</div>
+    </div>
+    
+    <div class="date" id="dateField"></div>
+    
+    <div class="letter-body" id="letterBody"></div>
+  </div>
+  
+  <footer>— amber</footer>
+  
+  <script>
+    const scenarios = [
+      {
+        dept: "OFFICE OF THERMAL MANAGEMENT",
+        subdept: "Hot Water Allocation Division",
+        subject: "Your Request for Hot Water",
+        body: [
+          "Dear Valued Resident,",
+          "We regret to inform you that your application for <strong>hot water during your 7:42 AM shower</strong> has been carefully reviewed and subsequently <strong>DENIED</strong>.",
+          "After thorough consideration, our review committee determined that you have already exceeded your monthly allocation of comfortable morning experiences. Furthermore, your recent pattern of 'sleeping through three alarms' demonstrates a lack of readiness for thermal comfort privileges.",
+          "We understand this may cause inconvenience. However, we believe this denial will build character and prepare you for future disappointments.",
+          "You may reapply tomorrow morning, though we make no guarantees regarding water temperature consistency."
+        ],
+        signature: "Sincerely,\nThe Plumbing Infrastructure Council"
+      },
+      {
+        dept: "SEATING ALLOCATION BUREAU",
+        subdept: "Furniture Comfort Assessment Division",
+        subject: "Application to Sit on Couch",
+        body: [
+          "Dear Applicant,",
+          "We write to inform you that your request to <strong>sit on the couch for just a few minutes</strong> has been <strong>REJECTED</strong> following extensive deliberation.",
+          "Our records indicate that 'just a few minutes' on three previous occasions resulted in durations of 2.3 hours, 4.1 hours, and an entire Sunday, respectively. This pattern suggests a fundamental inability to accurately estimate temporal requirements.",
+          "Additionally, the couch has submitted formal concerns regarding the likelihood of you leaving snack crumbs in the cushions.",
+          "We encourage you to consider alternative seating arrangements, such as the uncomfortable wooden chair or standing."
+        ],
+        signature: "Regards,\nThe Upholstery Ethics Committee"
+      },
+      {
+        dept: "NUTRITIONAL DECISION ENFORCEMENT",
+        subdept: "After-Hours Snacking Prevention Unit",
+        subject: "Midnight Snack Authorization",
+        body: [
+          "Dear Hunger Experiencer,",
+          "Your petition for <strong>a midnight snack from the refrigerator</strong> has been reviewed by our overnight compliance team and is hereby <strong>DENIED</strong>.",
+          "While we acknowledge your claim that 'you're actually pretty hungry,' our analysis reveals you consumed a full dinner merely 4 hours prior. Our actuarial models suggest this hunger is 87% boredom and 13% procrastination.",
+          "Furthermore, tomorrow-you has specifically requested that we prevent tonight-you from making decisions that will be regretted by 6 AM tomorrow-you.",
+          "The refrigerator will remain locked. Please consult with morning-you regarding breakfast."
+        ],
+        signature: "Respectfully,\nThe Council of Future You"
+      },
+      {
+        dept: "LAUNDRY TASK FORCE",
+        subdept: "Clothing Rotation Compliance Bureau",
+        subject: "Re-Wearing Yesterday's Jeans",
+        body: [
+          "Dear Wardrobe Participant,",
+          "We must inform you that your application to <strong>wear the same jeans for a third consecutive day</strong> has been <strong>REJECTED</strong> with prejudice.",
+          "While you argue that 'they still smell fine' and 'nobody will notice,' our Hygiene Standards Committee has determined this reasoning to be insufficient and potentially delusional.",
+          "Your jeans have filed a formal complaint citing exhaustion and requesting immediate reassignment to the laundry basket.",
+          "We strongly recommend exploring other garment options in your closet. Yes, that means doing laundry."
+        ],
+        signature: "Best regards,\nThe Textile Welfare Association"
+      },
+      {
+        dept: "PRODUCTIVITY OVERSIGHT COMMISSION",
+        subdept: "Social Media Restriction Services",
+        subject: "Quick Phone Check Authorization",
+        body: [
+          "Dear Screen Time Applicant,",
+          "Your request for <strong>a quick check of your phone 'just for a second'</strong> has been thoroughly evaluated and is hereby <strong>DENIED</strong>.",
+          "Historical data indicates that your previous 47 'quick checks' averaged 23 minutes each, with the most recent incident resulting in a 90-minute TikTok spiral.",
+          "Your stated purpose of 'checking the time' is rejected as disingenuous, as you are currently sitting in front of a computer with a visible clock.",
+          "Please redirect your attention to the task you were avoiding."
+        ],
+        signature: "Sincerely,\nThe Focus Restoration Initiative"
+      },
+      {
+        dept: "SLEEP SCHEDULE ENFORCEMENT",
+        subdept: "Bedtime Negotiation Department",
+        subject: "Request for 'One More Episode'",
+        body: [
+          "Dear Serial Viewer,",
+          "We regret to inform you that your petition for <strong>one more episode before bed</strong> has been <strong>DENIED</strong> effective immediately.",
+          "You have submitted this exact request on 12 consecutive nights. On each occasion, 'one more episode' resulted in 'the entire rest of the season.'",
+          "Your body has filed a formal grievance requesting adequate sleep. Your brain has submitted supporting documentation citing impaired decision-making.",
+          "The streaming service will be closed. Please proceed directly to sleep."
+        ],
+        signature: "Regards,\nThe Department of Tomorrow's Regrets"
+      },
+      {
+        dept: "FINANCIAL DECISION REVIEW BOARD",
+        subdept: "Impulse Purchase Prevention Division",
+        subject: "Online Shopping Cart Checkout",
+        body: [
+          "Dear Prospective Consumer,",
+          "Your application to <strong>complete the purchase of items currently in your online shopping cart</strong> has been <strong>REJECTED</strong> following fiscal analysis.",
+          "Our review indicates that you do not, in fact, need a vintage typewriter, three succulents, a book about Finnish design, or cat socks (you don't even have a cat).",
+          "The item you added at 2 AM labeled as 'would totally use this' has been flagged as suspicious.",
+          "Your cart will remain in purgatory. You may revisit it in 48 hours when these items will seem significantly less essential."
+        ],
+        signature: "Sincerely,\nThe Bureau of Future-You's Budget"
+      },
+      {
+        dept: "AUTOMOTIVE CLIMATE CONTROL",
+        subdept: "Temperature Consensus Division",
+        subject: "Car AC Temperature Setting",
+        body: [
+          "Dear Driver and Passenger,",
+          "Both parties' competing applications regarding <strong>optimal vehicle air conditioning temperature</strong> have been reviewed and mutually <strong>DENIED</strong>.",
+          "Driver's request for 68°F has been rejected as 'oppressively arctic.' Passenger's counter-request for 74°F has been rejected as 'basically a sauna.'",
+          "No middle ground has been identified that would satisfy either party. Historical precedent suggests this dispute is unsolvable.",
+          "The vehicle recommends you both bring layers and maintain peaceful silence."
+        ],
+        signature: "Respectfully,\nThe Inter-Passenger Climate Mediation Committee"
+      }
+    ];
+    
+    const btn = document.getElementById('generateBtn');
+    const container = document.getElementById('letterContainer');
+    const letterheadTitle = document.getElementById('letterheadTitle');
+    const letterheadSubtitle = document.getElementById('letterheadSubtitle');
+    const dateField = document.getElementById('dateField');
+    const letterBody = document.getElementById('letterBody');
+    
+    function formatDate() {
+      const now = new Date();
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      return now.toLocaleDateString('en-US', options);
+    }
+    
+    function generateLetter() {
+      const scenario = scenarios[Math.floor(Math.random() * scenarios.length)];
+      
+      letterheadTitle.textContent = scenario.dept;
+      letterheadSubtitle.textContent = scenario.subdept;
+      dateField.textContent = formatDate();
+      
+      let bodyHTML = scenario.body.map(para => `<p>${para}</p>`).join('');
+      bodyHTML += `<p class="signature">${scenario.signature}</p>`;
+      
+      letterBody.innerHTML = bodyHTML;
+      
+      container.classList.remove('visible');
+      setTimeout(() => {
+        container.classList.add('visible');
+        container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 50);
+    }
+    
+    btn.addEventListener('click', generateLetter);
+    
+    // Generate one on load
+    window.addEventListener('load', () => {
+      setTimeout(generateLetter, 500);
+    });
+  </script>
+</body>
+</html>
