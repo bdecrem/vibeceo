@@ -16,13 +16,14 @@ Core files:
 - `ui.tsx` — Ink-based terminal UI
 - `project.js` — Project persistence
 
-## The Droid Trio
+## The Droid Quartet
 
 | Synth | Engine | Description |
 |-------|--------|-------------|
 | **R9D9** | TR-909 | Drum machine (11 voices) |
 | **R3D3** | TB-303 | Acid bass synth |
 | **R1D1** | SH-101 | Lead/poly synth |
+| **R9DS** | Sampler | 10-slot sample player with kits |
 
 ## Synth Sources
 
@@ -31,7 +32,28 @@ Engines imported from `web/public/`:
 - R3D3: `../web/public/303/dist/machines/tb303/engine.js`
 - R1D1: `../web/public/101/dist/machines/sh101/engine.js`
 
-**Do NOT duplicate synth code** - always import from web/public/.
+R9DS uses local files:
+- `kit-loader.js` — Loads kits from filesystem
+- `sample-voice.js` — Sample playback engine
+- `samples/` — Bundled sample kits
+
+**Do NOT duplicate synth code** - always import from web/public/ (except R9DS which is local).
+
+## R9DS Sample Kits
+
+Kit locations (checked in order, user can override bundled):
+1. **Bundled**: `./samples/` (ships with app)
+2. **User**: `~/Documents/Jambot/kits/` (user adds their own)
+
+Kit structure:
+```
+my-kit/
+  kit.json          # { name, slots: [{id, name, short}] }
+  samples/
+    s1.wav ... s10.wav
+```
+
+Bundled kits: 808, amber
 
 ## Tools Available to Agent
 
@@ -44,6 +66,10 @@ Engines imported from `web/public/`:
 | `tweak_bass` | R3D3 | waveform, cutoff, resonance, envMod, decay, accent |
 | `add_lead` | R1D1 | 16-step pattern with note, gate, accent, slide |
 | `tweak_lead` | R1D1 | vcoSaw, vcoPulse, pulseWidth, subLevel, cutoff, resonance, envMod, attack, decay, sustain, release |
+| `list_kits` | R9DS | Show available sample kits (bundled + user) |
+| `load_kit` | R9DS | Load a kit by ID (e.g., "808", "amber") |
+| `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
+| `tweak_samples` | R9DS | Adjust level, tune, attack, decay, filter, pan per slot |
 | `set_swing` | — | Groove amount 0-100% |
 | `render` | — | Mix all synths to WAV file |
 
@@ -61,6 +87,10 @@ session = {
   // R1D1
   leadPattern: [{ note, gate, accent, slide }, ...],
   leadParams: { vcoSaw, vcoPulse, ... },
+  // R9DS
+  samplerKit: { id, name, slots: [{ id, name, short, buffer }] },
+  samplerPattern: { s1: [{step, vel}, ...], s2: [...], ... },
+  samplerParams: { s1: { level, tune, attack, decay, filter, pan }, ... },
 }
 ```
 
@@ -92,6 +122,8 @@ session = {
 | `/r9d9` | R9D9 drum machine guide |
 | `/r3d3` | R3D3 acid bass guide |
 | `/r1d1` | R1D1 lead synth guide |
+| `/r9ds` | R9DS sampler guide |
+| `/kits` | List available sample kits |
 | `/status` | Show current session |
 | `/clear` | Reset session |
 | `/new` | New project |
