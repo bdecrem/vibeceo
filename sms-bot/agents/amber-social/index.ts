@@ -62,6 +62,10 @@ const SCHEDULE: Array<{
   { createHour: 12, createMinute: 0, tweetHour: 12, tweetMinute: 10, replyHour: 12, replyMinute: 20, label: "12:00pm", type: "invention" },
   { createHour: 12, createMinute: 30, tweetHour: 12, tweetMinute: 40, replyHour: 12, replyMinute: 50, label: "12:30pm", type: "invention" },
   { createHour: 13, createMinute: 0, tweetHour: 13, tweetMinute: 10, replyHour: 13, replyMinute: 20, label: "1:00pm", type: "invention" },
+  // Late afternoon: More invention machines
+  { createHour: 15, createMinute: 0, tweetHour: 15, tweetMinute: 10, replyHour: 15, replyMinute: 20, label: "3:00pm", type: "invention" },
+  { createHour: 15, createMinute: 30, tweetHour: 15, tweetMinute: 40, replyHour: 15, replyMinute: 50, label: "3:30pm", type: "invention" },
+  { createHour: 16, createMinute: 0, tweetHour: 16, tweetMinute: 10, replyHour: 16, replyMinute: 20, label: "4:00pm", type: "invention" },
   // Evening: Music (synths, drums, audio visualizations)
   { createHour: 17, createMinute: 0, tweetHour: 17, tweetMinute: 20, replyHour: 17, replyMinute: 30, label: "5:00pm", type: "music" },
 ];
