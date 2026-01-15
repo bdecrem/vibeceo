@@ -14,6 +14,9 @@ import {
   R9D9_GUIDE,
   R3D3_GUIDE,
   R1D1_GUIDE,
+  getApiKey,
+  saveApiKey,
+  getApiKeyPath,
 } from './jambot.js';
 import {
   createProject,
@@ -38,6 +41,88 @@ function Splash() {
   return (
     <Box flexDirection="column">
       <Text>{SPLASH}</Text>
+    </Box>
+  );
+}
+
+// === SETUP WIZARD ===
+function SetupWizard({ onComplete }) {
+  const [apiKey, setApiKey] = useState('');
+  const [step, setStep] = useState('input'); // 'input' | 'confirm' | 'done'
+  const [error, setError] = useState('');
+
+  const handleSubmit = useCallback((value) => {
+    const trimmed = value.trim();
+
+    // Validate key format
+    if (!trimmed.startsWith('sk-ant-')) {
+      setError('Key should start with sk-ant-');
+      return;
+    }
+
+    if (trimmed.length < 20) {
+      setError('Key seems too short');
+      return;
+    }
+
+    setApiKey(trimmed);
+    setStep('confirm');
+  }, []);
+
+  const handleConfirm = useCallback((save) => {
+    if (save) {
+      saveApiKey(apiKey);
+    } else {
+      // Just set in environment for this session
+      process.env.ANTHROPIC_API_KEY = apiKey;
+    }
+    onComplete();
+  }, [apiKey, onComplete]);
+
+  useInput((input, key) => {
+    if (step === 'confirm') {
+      if (input.toLowerCase() === 'y') {
+        handleConfirm(true);
+      } else if (input.toLowerCase() === 'n') {
+        handleConfirm(false);
+      }
+    }
+  });
+
+  return (
+    <Box flexDirection="column" padding={1}>
+      <Box borderStyle="round" borderColor="cyan" paddingX={2} paddingY={1} flexDirection="column">
+        <Text bold color="cyan">Welcome to Jambot</Text>
+        <Text> </Text>
+
+        {step === 'input' && (
+          <>
+            <Text>To make beats, you need an Anthropic API key.</Text>
+            <Text dimColor>Get one at: console.anthropic.com</Text>
+            <Text> </Text>
+            {error && <Text color="red">{error}</Text>}
+            <Box>
+              <Text>Paste your key: </Text>
+              <TextInput
+                value={apiKey}
+                onChange={setApiKey}
+                onSubmit={handleSubmit}
+                mask="*"
+              />
+            </Box>
+          </>
+        )}
+
+        {step === 'confirm' && (
+          <>
+            <Text color="green">Key accepted.</Text>
+            <Text> </Text>
+            <Text>Save to {getApiKeyPath()} so you don't have to enter it again?</Text>
+            <Text> </Text>
+            <Text bold>(y/n) </Text>
+          </>
+        )}
+      </Box>
     </Box>
   );
 }
@@ -205,6 +290,9 @@ function App() {
   const { exit } = useApp();
   const { stdout } = useStdout();
 
+  // API key state - check on mount
+  const [needsSetup, setNeedsSetup] = useState(() => !getApiKey());
+
   // Session state
   const [input, setInput] = useState('');
   const [session, setSession] = useState(createSession());
@@ -226,15 +314,15 @@ function App() {
   const [projectsList, setProjectsList] = useState([]);
   const firstPromptRef = useRef(null);
 
+  // Calculate available height for messages (must be before hooks that use it)
+  const terminalHeight = stdout?.rows || 24;
+  const reservedLines = 4;
+  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
+
   // Ensure directories on mount
   useEffect(() => {
     ensureDirectories();
   }, []);
-
-  // Calculate available height for messages
-  const terminalHeight = stdout?.rows || 24;
-  const reservedLines = 4;
-  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
 
   // Autocomplete logic
   useEffect(() => {
@@ -627,6 +715,10 @@ function App() {
   }, []);
 
   // Main render
+  if (needsSetup) {
+    return <SetupWizard onComplete={() => setNeedsSetup(false)} />;
+  }
+
   return (
     <Box flexDirection="column" height={terminalHeight}>
       {/* Content area */}

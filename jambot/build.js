@@ -1,46 +1,60 @@
 // jambot/build.js - Bundle jambot for distribution
 import * as esbuild from 'esbuild';
-import { mkdirSync, cpSync, writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync, copyFileSync, existsSync } from 'fs';
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-console.log('🔨 Building Jambot for distribution...\n');
+console.log('🔨 Building Jambot v0.0.2 for distribution...\n');
 
 // Create dist folder
 mkdirSync('dist', { recursive: true });
 
-// Bundle the main app
+// Bundle the UI (entry point)
 await esbuild.build({
-  entryPoints: ['jambot.js'],
+  entryPoints: ['ui.tsx'],
   bundle: true,
   platform: 'node',
   target: 'node18',
   format: 'esm',
   outfile: 'dist/jambot.js',
-  banner: {
-    js: '#!/usr/bin/env node'
-  },
-  // Mark native modules as external (they can't be bundled)
+  // Shebang already in ui.tsx, don't add another
+  // Mark native/dynamic modules as external
   external: [
     'node-web-audio-api',  // Native addon
-    'inquirer',            // Has dynamic requires
+    'ink',                 // React renderer
+    'ink-text-input',      // Input component
+    'react',               // React runtime
+    '@anthropic-ai/sdk',   // API client
+    'ffmpeg-static',       // Binary
   ],
+  loader: {
+    '.tsx': 'tsx',
+  },
 });
+
+// Copy genres.json
+if (existsSync('genres.json')) {
+  copyFileSync('genres.json', 'dist/genres.json');
+}
 
 // Create package.json for dist
 const pkg = {
   name: "jambot",
-  version: "0.0.1",
+  version: "0.0.2",
   type: "module",
   description: "AI-powered music creation CLI",
   bin: {
     jambot: "./jambot.js"
   },
   dependencies: {
+    "@anthropic-ai/sdk": "^0.39.0",
     "node-web-audio-api": "^1.0.7",
-    "inquirer": "^13.2.0"
+    "ink": "^5.2.0",
+    "ink-text-input": "^6.0.0",
+    "react": "^18.3.1",
+    "ffmpeg-static": "^5.2.0"
   }
 };
 
@@ -51,42 +65,60 @@ const readme = `# Jambot
 
 🤖 Your AI just learned to funk 🎛️
 
-## Setup
+Jambot is Claude Code for grooves, a command-line AI groovebox with an old skool attitude. Talk naturally—"give me a four-on-the-floor kick with offbeat hats"—and it programs real synth engines: TR-909 drums, TB-303 acid bass, SH-101 leads, plus a sample-based drum machine. No black-box AI slop. Every parameter is tweakable, every pattern is yours. Built for producers who want a jam partner, not a replacement.
 
-1. Install dependencies:
-   \`\`\`
-   npm install
-   \`\`\`
+## Install
 
-2. Set your Anthropic API key:
-   \`\`\`
-   export ANTHROPIC_API_KEY=sk-ant-...
-   \`\`\`
+1. [Download Jambot](https://github.com/bdecrem/jambot/archive/refs/heads/main.zip), move it to your preferred location, and unzip
+2. Open Terminal, \`cd\` into the folder
+3. Run: \`npm install\` (need Node.js? [get it here](https://nodejs.org/))
+4. Run: \`node jambot.js\`
+5. On first run, enter your Anthropic API key when prompted
 
-3. Run:
-   \`\`\`
-   node jambot.js
-   \`\`\`
+## Requirements
 
-## Usage
+- Anthropic API key (get one at console.anthropic.com)
 
-Just talk to it:
+## What it does
+
+Talk to it naturally:
 - "make me a techno beat at 128"
-- "add some swing"
+- "add some acid bass"
 - "make the kick punchier"
-- "render it"
+- "add swing"
+- Your projects live in \`~/Documents/Jambot/\` — drag WAVs straight into your DAW
 
-Type \`/\` for commands, \`/909\` for drum machine guide.
+## Commands
+
+Type \`/\` for menu, or:
+- \`/r9d9\` - Drum machine guide
+- \`/r3d3\` - Acid bass guide
+- \`/r1d1\` - Lead synth guide
+- \`/export\` - Export MIDI + README
+- \`/status\` - Current session
+- \`/clear\` - Reset
+
+## Troubleshooting
+
+**API key issues:**
+- Key stored in: \`~/.jambot/.env\`
+- To reset: \`rm ~/.jambot/.env\` and restart
+
+**Build errors on npm install:**
+- Ensure Node.js 18+ is installed
+- On Mac: May need Xcode Command Line Tools
+- On Linux: May need build-essential
+
+## Version
+
+v0.0.2 — Jan 15, 2026
 `;
 
 writeFileSync('dist/README.md', readme);
 
 console.log('✅ Built to dist/');
 console.log('');
-console.log('To distribute:');
-console.log('  1. cd dist');
-console.log('  2. npm install');
-console.log('  3. export ANTHROPIC_API_KEY=...');
-console.log('  4. node jambot.js');
+console.log('To test:');
+console.log('  cd dist && npm install && node jambot.js');
 console.log('');
-console.log('Or zip dist/ and send to a friend!');
+console.log('To distribute: zip dist/ and share!');

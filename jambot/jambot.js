@@ -16,10 +16,6 @@ const R3D3Engine = TB303Module.TB303Engine || TB303Module.default;
 import * as SH101Module from '../web/public/101/dist/machines/sh101/engine.js';
 const R1D1Engine = SH101Module.SH101Engine || SH101Module.default;
 
-// Debug: verify engines loaded
-console.log('R9D9Engine:', typeof R9D9Engine, R9D9Engine?.name);
-console.log('R3D3Engine:', typeof R3D3Engine, R3D3Engine?.name);
-console.log('R1D1Engine:', typeof R1D1Engine, R1D1Engine?.name);
 import { writeFileSync, readFileSync, readdirSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { execSync } from 'child_process';
 import ffmpegPath from 'ffmpeg-static';
@@ -31,20 +27,77 @@ import { homedir } from 'os';
 import { getAvailableKits, loadKit, ensureUserKitsDir, getKitPaths } from './kit-loader.js';
 import { SampleVoice } from './sample-voice.js';
 
-// Load .env.local
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const envPath = join(__dirname, '..', 'sms-bot', '.env.local');
-try {
-  const envContent = readFileSync(envPath, 'utf-8');
-  for (const line of envContent.split('\n')) {
-    const trimmed = line.trim();
-    if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
-      const [key, ...rest] = trimmed.split('=');
-      process.env[key] = rest.join('=');
+
+// === API KEY HANDLING ===
+// Check multiple locations for Anthropic API key
+const JAMBOT_CONFIG_DIR = join(homedir(), '.jambot');
+const JAMBOT_ENV_FILE = join(JAMBOT_CONFIG_DIR, '.env');
+
+function loadEnvFile(path) {
+  try {
+    const content = readFileSync(path, 'utf-8');
+    for (const line of content.split('\n')) {
+      const trimmed = line.trim();
+      if (trimmed && !trimmed.startsWith('#') && trimmed.includes('=')) {
+        const [key, ...rest] = trimmed.split('=');
+        process.env[key] = rest.join('=');
+      }
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+export function getApiKey() {
+  // 1. Check environment variable (already set)
+  if (process.env.ANTHROPIC_API_KEY) {
+    return process.env.ANTHROPIC_API_KEY;
+  }
+
+  // 2. Check ~/.jambot/.env
+  if (existsSync(JAMBOT_ENV_FILE)) {
+    loadEnvFile(JAMBOT_ENV_FILE);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
     }
   }
-} catch (e) {
-  // .env.local may not exist in release builds
+
+  // 3. Check ./.env (local directory)
+  const localEnv = join(process.cwd(), '.env');
+  if (existsSync(localEnv)) {
+    loadEnvFile(localEnv);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+
+  // 4. Check ../sms-bot/.env.local (dev environment)
+  const devEnv = join(__dirname, '..', 'sms-bot', '.env.local');
+  if (existsSync(devEnv)) {
+    loadEnvFile(devEnv);
+    if (process.env.ANTHROPIC_API_KEY) {
+      return process.env.ANTHROPIC_API_KEY;
+    }
+  }
+
+  return null;
+}
+
+export function saveApiKey(key) {
+  // Create config directory if needed
+  if (!existsSync(JAMBOT_CONFIG_DIR)) {
+    mkdirSync(JAMBOT_CONFIG_DIR, { recursive: true });
+  }
+
+  // Write the key to ~/.jambot/.env
+  writeFileSync(JAMBOT_ENV_FILE, `ANTHROPIC_API_KEY=${key}\n`);
+  process.env.ANTHROPIC_API_KEY = key;
+}
+
+export function getApiKeyPath() {
+  return JAMBOT_ENV_FILE;
 }
 
 // === GENRE KNOWLEDGE ===
@@ -165,7 +218,22 @@ Reference settings:
 // Make Web Audio available globally
 globalThis.OfflineAudioContext = OfflineAudioContext;
 
-const client = new Anthropic();
+// Initialize API key (loads from various locations)
+// If no key found, getApiKey() returns null and UI will prompt
+getApiKey();
+
+// Client is created lazily to allow UI to prompt for key first
+let _client = null;
+function getClient() {
+  if (!_client) {
+    const apiKey = getApiKey();
+    if (!apiKey) {
+      throw new Error('No API key configured');
+    }
+    _client = new Anthropic({ apiKey });
+  }
+  return _client;
+}
 
 // === SESSION STATE ===
 export function createSession() {
@@ -1299,7 +1367,7 @@ Example response after render:
     // Build system prompt with CURRENT session state (regenerated each iteration)
     const sessionContext = buildSessionContext(session);
     const systemPrompt = baseSystemPrompt + genreContext + sessionContext;
-    const response = await client.messages.create({
+    const response = await getClient().messages.create({
       model: "claude-sonnet-4-20250514",
       max_tokens: 1024,
       system: systemPrompt,
@@ -1363,14 +1431,16 @@ export const SPLASH = `
 ╚█████╔╝██║  ██║██║ ╚═╝ ██║██████╔╝╚██████╔╝   ██║
  ╚════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚═════╝  ╚═════╝    ╚═╝
 
-    Your AI just learned to funk
+  🤖 Your AI just learned to funk 🎛️
  ─────────────────────────────────────────────────
-  v0.1.0 — The Droid Trio
-  R9D9 drums • R3D3 acid bass • R1D1 lead synth
+  v0.0.2 — What's New
+  ✓ R9D9 drums + R3D3 acid bass + R1D1 lead synth
+  ✓ R9DS sampler — load your own kits
+  ✓ 17 genres of production knowledge
+  ✓ Projects saved to ~/Documents/Jambot/
  ─────────────────────────────────────────────────
   "make me an acid track at 130"
   "add a squelchy 303 bass line"
-  "layer in some synth stabs"
   "render it"
  ─────────────────────────────────────────────────
 
@@ -1404,17 +1474,25 @@ Or just talk:
 export const CHANGELOG_TEXT = `
 Changelog
 
-  v0.1.0 — Jan 14, 2026 — The Droid Trio
-  • R9D9 (TR-909) drums with all 11 voices
-  • R3D3 (TB-303) acid bass with filter/resonance
-  • R1D1 (SH-101) lead synth with VCO/filter/env
-  • Multi-synth rendering in single WAV
+  v0.0.2 — Jan 15, 2026
 
-  v0.0.1 — Jan 13, 2026 — Initial release
-  • TR-909 with all 11 voices + parameters
-  • Natural language beat creation
-  • Velocity per step, swing for groove
-  • WAV rendering, interactive CLI
+  Synths
+  • R9D9 (TR-909) drums — 11 voices, full parameter control
+  • R3D3 (TB-303) acid bass — filter, resonance, envelope
+  • R1D1 (SH-101) lead — VCO, filter, envelope
+  • R9DS sampler — sample-based drums, load your own kits
+  • Multi-synth rendering to single WAV
+
+  Features
+  • Genre knowledge (17 genres with production tips)
+  • Project system: ~/Documents/Jambot/
+  • Ink TUI with slash commands
+  • First-run API key wizard
+  • MIDI export (/export)
+  • Natural language everything
+
+  v0.0.1 — Jan 13, 2026
+  • Initial prototype
 `;
 
 export const R9D9_GUIDE = `
