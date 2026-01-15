@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>THE COMPLIMENT MACHINE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="THE COMPLIMENT MACHINE — Amber">
+  <meta property="og:description" content="An unnecessarily formal industrial apparatus for generating compliments">
+  <meta property="og:image" content="https://intheamber.com/amber/compliment-machine-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/compliment-machine.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="THE COMPLIMENT MACHINE — Amber">
+  <meta name="twitter:description" content="An unnecessarily formal industrial apparatus for generating compliments">
+  <meta name="twitter:image" content="https://intheamber.com/amber/compliment-machine-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #000;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .machine {
+      max-width: 600px;
+      width: 100%;
+      border: 3px solid #D4A574;
+      padding: 30px;
+      background: #0D0D0D;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+      position: relative;
+    }
+    
+    .machine::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(212, 165, 116, 0.03) 0px,
+        rgba(212, 165, 116, 0.03) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+    }
+    
+    .header {
+      text-align: center;
+      border-bottom: 2px solid #2D9596;
+      padding-bottom: 20px;
+      margin-bottom: 30px;
+    }
+    
+    h1 {
+      font-size: clamp(18px, 5vw, 24px);
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    
+    .serial {
+      font-size: 10px;
+      color: #2D9596;
+      letter-spacing: 1px;
+    }
+    
+    .status-panel {
+      background: #000;
+      border: 2px solid #2D9596;
+      padding: 20px;
+      min-height: 200px;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      position: relative;
+    }
+    
+    .status-text {
+      font-size: clamp(12px, 3vw, 14px);
+      line-height: 1.6;
+      color: #D4A574;
+    }
+    
+    .status-text.processing {
+      color: #2D9596;
+      animation: pulse 1s infinite;
+    }
+    
+    .status-text.complete {
+      color: #FFD700;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+    
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .button {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3.5vw, 16px);
+      font-weight: 700;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      box-shadow: 0 4px 0 #8B6F47;
+      position: relative;
+      top: 0;
+      min-height: 60px;
+    }
+    
+    .button:active {
+      top: 4px;
+      box-shadow: 0 0 0 #8B6F47;
+    }
+    
+    .button:disabled {
+      background: #333;
+      color: #666;
+      box-shadow: 0 4px 0 #222;
+      cursor: not-allowed;
+    }
+    
+    .button:disabled:active {
+      top: 0;
+      box-shadow: 0 4px 0 #222;
+    }
+    
+    .indicator {
+      display: flex;
+      justify-content: space-around;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #2D9596;
+    }
+    
+    .light {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #333;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+    }
+    
+    .light.active {
+      background: #2D9596;
+      box-shadow: 0 0 10px #2D9596, inset 0 0 5px rgba(45, 149, 150, 0.5);
+      animation: blink 0.5s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 10px;
+      color: #666;
+      letter-spacing: 1px;
+    }
+  </style>
+</head>
+<body>
+  <div class="machine">
+    <div class="header">
+      <h1>THE COMPLIMENT MACHINE</h1>
+      <div class="serial">SERIAL NO. ACM-2026-001 | AMBER INDUSTRIES</div>
+    </div>
+    
+    <div class="status-panel">
+      <div class="status-text" id="status">
+        SYSTEM READY<br>
+        TAP TO INITIATE COMPLIMENT SEQUENCE
+      </div>
+    </div>
+    
+    <div class="controls">
+      <button class="button" id="generate">GENERATE COMPLIMENT</button>
+    </div>
+    
+    <div class="indicator">
+      <div class="light" id="light1"></div>
+      <div class="light" id="light2"></div>
+      <div class="light" id="light3"></div>
+      <div class="light" id="light4"></div>
+    </div>
+    
+    <div class="footer">
+      MANUFACTURED BY AMBER INDUSTRIES | BERLIN × ASCII × FUTURE
+    </div>
+  </div>
+
+  <script>
+    const compliments = [
+      "Your existence contributes measurably to the ambient joy levels in your immediate vicinity.",
+      "Analysis indicates your presence generates statistically significant increases in atmospheric pleasantness.",
+      "Data suggests you possess an optimal ratio of kindness to wit.",
+      "Sensors detect above-average wavelengths of authenticity emanating from your general direction.",
+      "Your laugh has been classified as Grade A, Top Tier, Premium Quality by our acoustic analysis unit.",
+      "Records show you've been making the world incrementally better through micro-acts of decency.",
+      "Our instruments confirm you are operating at peak human warmth capacity.",
+      "The cosmic ledger indicates you're pulling your weight in the universal goodness economy.",
+      "Thermal imaging reveals your heart radiates at comfortable, inviting temperatures.",
+      "Calibration checks indicate your sense of humor is precisely tuned to optimal frequency.",
+      "Archival review confirms you're aging like fine wine, not like milk left in the sun.",
+      "Our database lists you under 'People Who Make Mondays Slightly Less Monday-ish'.",
+      "Spectral analysis shows you contain trace elements of magic not found in standard humans.",
+      "Quality control has verified you as 100% certified good person, no recalls necessary.",
+      "The universe's complaint department has zero tickets filed against you.",
+      "Momentum sensors detect you're moving through life with admirable velocity and grace.",
+      "Our pattern recognition system identifies you as a net positive for the timeline.",
+      "Structural analysis confirms your vibe is, as the technical term goes, 'immaculate'.",
+      "Carbon dating suggests your soul is vintage, rare, and appreciating in value.",
+      "Systems check: Your ability to be simultaneously tough and tender is functioning perfectly."
+    ];
+    
+    const statusEl = document.getElementById('status');
+    const generateBtn = document.getElementById('generate');
+    const lights = [
+      document.getElementById('light1'),
+      document.getElementById('light2'),
+      document.getElementById('light3'),
+      document.getElementById('light4')
+    ];
+    
+    let isProcessing = false;
+    
+    async function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+    
+    async function activateLights() {
+      for (let light of lights) {
+        light.classList.add('active');
+        await sleep(100);
+      }
+    }
+    
+    function deactivateLights() {
+      lights.forEach(light => light.classList.remove('active'));
+    }
+    
+    async function generateCompliment() {
+      if (isProcessing) return;
+      
+      isProcessing = true;
+      generateBtn.disabled = true;
+      
+      // Sequence start
+      statusEl.className = 'status-text processing';
+      statusEl.innerHTML = 'COMPLIMENT GENERATION SEQUENCE INITIATED...';
+      await activateLights();
+      await sleep(1200);
+      
+      statusEl.innerHTML = 'ANALYZING SUBJECT PARAMETERS...';
+      await sleep(1000);
+      
+      statusEl.innerHTML = 'SCANNING VIBES...';
+      await sleep(800);
+      
+      statusEl.innerHTML = 'CALCULATING WARMTH COEFFICIENTS...';
+      await sleep(1000);
+      
+      statusEl.innerHTML = 'DISPATCHING AFFIRMATION...';
+      await sleep(800);
+      
+      // Show compliment
+      const compliment = compliments[Math.floor(Math.random() * compliments.length)];
+      statusEl.className = 'status-text complete';
+      statusEl.innerHTML = compliment;
+      
+      deactivateLights();
+      
+      // Reset after reading time
+      await sleep(6000);
+      statusEl.className = 'status-text';
+      statusEl.innerHTML = 'SYSTEM READY<br>TAP TO INITIATE COMPLIMENT SEQUENCE';
+      
+      isProcessing = false;
+      generateBtn.disabled = false;
+    }
+    
+    generateBtn.addEventListener('click', generateCompliment);
+  </script>
+</body>
+</html>
