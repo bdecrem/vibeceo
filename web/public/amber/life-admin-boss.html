@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIFE ADMIN BOSS FIGHT — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="LIFE ADMIN BOSS FIGHT — Amber">
+  <meta property="og:description" content="Your mundane responsibilities rendered as epic RPG battles">
+  <meta property="og:image" content="https://intheamber.com/amber/life-admin-boss-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/life-admin-boss.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="LIFE ADMIN BOSS FIGHT — Amber">
+  <meta name="twitter:description" content="Your mundane responsibilities rendered as epic RPG battles">
+  <meta name="twitter:image" content="https://intheamber.com/amber/life-admin-boss-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #0D0D0D;
+      color: #D4A574;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      user-select: none;
+    }
+    
+    #game-container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    #title {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(18px, 5vw, 28px);
+      font-weight: 700;
+      text-align: center;
+      color: #FFD700;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+      letter-spacing: 2px;
+    }
+    
+    #boss-container {
+      background: rgba(0, 0, 0, 0.6);
+      border: 2px solid #2D9596;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 0 30px rgba(45, 149, 150, 0.3);
+    }
+    
+    #boss-name {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(20px, 6vw, 32px);
+      font-weight: 700;
+      color: #7B68EE;
+      text-align: center;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+    }
+    
+    #boss-flavor {
+      font-size: clamp(12px, 3vw, 14px);
+      color: #888;
+      text-align: center;
+      font-style: italic;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+    
+    #health-bar-container {
+      background: #000;
+      height: 30px;
+      border-radius: 5px;
+      border: 2px solid #D4A574;
+      overflow: hidden;
+      position: relative;
+      margin-bottom: 5px;
+    }
+    
+    #health-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #D4A574, #FFD700);
+      transition: width 0.5s ease;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.8);
+    }
+    
+    #health-text {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(10px, 2.5vw, 12px);
+      color: #D4A574;
+      text-align: center;
+    }
+    
+    #combat-log {
+      background: rgba(0, 0, 0, 0.8);
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 15px;
+      height: 200px;
+      overflow-y: auto;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(11px, 2.8vw, 13px);
+      line-height: 1.6;
+      color: #D4A574;
+    }
+    
+    #combat-log::-webkit-scrollbar {
+      width: 8px;
+    }
+    
+    #combat-log::-webkit-scrollbar-track {
+      background: #000;
+    }
+    
+    #combat-log::-webkit-scrollbar-thumb {
+      background: #2D9596;
+      border-radius: 4px;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+    }
+    
+    .log-player {
+      color: #2D9596;
+    }
+    
+    .log-boss {
+      color: #7B68EE;
+    }
+    
+    .log-system {
+      color: #FFD700;
+      font-weight: 700;
+    }
+    
+    #action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+    
+    button {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3.5vw, 16px);
+      padding: 15px 20px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: all 0.2s ease;
+      text-transform: uppercase;
+      min-height: 60px;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    button:active {
+      transform: scale(0.95);
+    }
+    
+    button:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    
+    #next-boss-btn {
+      grid-column: 1 / -1;
+      background: #7B68EE;
+      color: #fff;
+    }
+    
+    #next-boss-btn:hover {
+      background: #9370DB;
+      box-shadow: 0 0 20px rgba(123, 104, 238, 0.6);
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    #victory-message {
+      text-align: center;
+      font-size: clamp(16px, 4vw, 20px);
+      color: #FFD700;
+      font-weight: 700;
+      margin: 10px 0;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+  </style>
+</head>
+<body>
+  <div id="game-container">
+    <div id="title">⚔️ LIFE ADMIN BOSS FIGHT ⚔️</div>
+    
+    <div id="boss-container">
+      <div id="boss-name"></div>
+      <div id="boss-flavor"></div>
+      <div id="health-bar-container">
+        <div id="health-bar"></div>
+      </div>
+      <div id="health-text">HP: <span id="hp-current">100</span> / <span id="hp-max">100</span></div>
+    </div>
+    
+    <div id="combat-log"></div>
+    
+    <div id="action-buttons">
+      <button id="attack-btn">Attack</button>
+      <button id="defend-btn">Defend</button>
+      <button id="procrastinate-btn">Procrastinate</button>
+      <button id="delegate-btn">Delegate</button>
+      <button id="next-boss-btn" class="hidden">Next Boss →</button>
+    </div>
+    
+    <div id="victory-message" class="hidden"></div>
+  </div>
+
+  <script>
+    const bosses = [
+      {
+        name: "The Laundry Mountain",
+        flavor: "A towering heap of unwashed despair. It knows your weaknesses.",
+        hp: 100,
+        attacks: [
+          "The Laundry Mountain overwhelms you with its sheer volume!",
+          "A single sock has gone missing. Your spirit wavers.",
+          "The pile shifts ominously. It's judging you.",
+          "A shirt you forgot about falls out. It's wrinkled beyond repair."
+        ],
+        defeated: "You've conquered the Laundry Mountain! (Until next week.)"
+      },
+      {
+        name: "The Email Hydra",
+        flavor: "For every email you answer, two more appear. There is no escape.",
+        hp: 120,
+        attacks: [
+          "Three meeting invites arrive simultaneously!",
+          "Someone replied-all. The chain grows stronger.",
+          "An automated reminder you've seen 47 times strikes again.",
+          "Your inbox counter mocks you: (247 unread)"
+        ],
+        defeated: "Inbox Zero achieved! (For exactly 3 minutes.)"
+      },
+      {
+        name: "The Dentist Appointment",
+        flavor: "You've been avoiding this for months. It remembers.",
+        hp: 80,
+        attacks: [
+          "Thereceptionist's voice echoes: 'When did you last floss?'",
+          "A reminder text appears: 'Appointment tomorrow at 8am'",
+          "You remember the sound of the drill.",
+          "The judgment in the hygienist's eyes haunts you."
+        ],
+        defeated: "Teeth cleaned! You're a responsible adult now."
+      },
+      {
+        name: "The Tax Return",
+        flavor: "Numbers dance before your eyes. Receipts scatter like autumn leaves.",
+        hp: 150,
+        attacks: [
+          "Form 1099 multiplies before your eyes!",
+          "You can't find that one crucial receipt.",
+          "The deadline looms closer. Time itself attacks!",
+          "Your accountant sends a passive-aggressive email."
+        ],
+        defeated: "Filed! The government is temporarily pleased."
+      },
+      {
+        name: "The Grocery Shopping",
+        flavor: "Your fridge is empty. You've been eating cereal for three days.",
+        hp: 90,
+        attacks: [
+          "You forgot your reusable bags. Again.",
+          "Every cart has a wobbly wheel. Every. Single. One.",
+          "The thing you came for is out of stock.",
+          "Self-checkout has an 'unexpected item in bagging area'."
+        ],
+        defeated: "Groceries acquired! Now you just have to cook them."
+      },
+      {
+        name: "The Phone Call You've Been Putting Off",
+        flavor: "It sits in your to-do list, growing more terrifying each day.",
+        hp: 60,
+        attacks: [
+          "What if they ask you a question you don't know?",
+          "The phone rings four times before anyone picks up.",
+          "You're put on hold. Elevator music corrodes your soul.",
+          "You rehearse what to say and immediately forget it."
+        ],
+        defeated: "Call made! It took 2 minutes. You wasted 2 weeks dreading it."
+      }
+    ];
+    
+    let currentBossIndex = 0;
+    let currentBoss = null;
+    let playerDefending = false;
+    let combatLog = [];
+    
+    const bossNameEl = document.getElementById('boss-name');
+    const bossFlavorEl = document.getElementById('boss-flavor');
+    const healthBarEl = document.getElementById('health-bar');
+    const hpCurrentEl = document.getElementById('hp-current');
+    const hpMaxEl = document.getElementById('hp-max');
+    const combatLogEl = document.getElementById('combat-log');
+    const victoryMessageEl = document.getElementById('victory-message');
+    
+    const attackBtn = document.getElementById('attack-btn');
+    const defendBtn = document.getElementById('defend-btn');
+    const procrastinateBtn = document.getElementById('procrastinate-btn');
+    const delegateBtn = document.getElementById('delegate-btn');
+    const nextBossBtn = document.getElementById('next-boss-btn');
+    
+    function loadBoss(index) {
+      if (index >= bosses.length) {
+        showFinalVictory();
+        return;
+      }
+      
+      currentBoss = { ...bosses[index], currentHp: bosses[index].hp };
+      currentBossIndex = index;
+      
+      bossNameEl.textContent = currentBoss.name;
+      bossFlavorEl.textContent = currentBoss.flavor;
+      hpCurrentEl.textContent = currentBoss.currentHp;
+      hpMaxEl.textContent = currentBoss.hp;
+      healthBarEl.style.width = '100%';
+      
+      combatLog = [];
+      addLog('system', `💀 ${currentBoss.name} appears!`);
+      
+      victoryMessageEl.classList.add('hidden');
+      nextBossBtn.classList.add('hidden');
+      enableActionButtons();
+    }
+    
+    function addLog(type, message) {
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = message;
+      combatLogEl.appendChild(entry);
+      combatLogEl.scrollTop = combatLogEl.scrollHeight;
+    }
+    
+    function updateHealthBar() {
+      const percent = (currentBoss.currentHp / currentBoss.hp) * 100;
+      healthBarEl.style.width = percent + '%';
+      hpCurrentEl.textContent = Math.max(0, currentBoss.currentHp);
+    }
+    
+    function disableActionButtons() {
+      attackBtn.disabled = true;
+      defendBtn.disabled = true;
+      procrastinateBtn.disabled = true;
+      delegateBtn.disabled = true;
+    }
+    
+    function enableActionButtons() {
+      attackBtn.disabled = false;
+      defendBtn.disabled = false;
+      procrastinateBtn.disabled = false;
+      delegateBtn.disabled = false;
+    }
+    
+    function bossAttack() {
+      if (currentBoss.currentHp <= 0) return;
+      
+      setTimeout(() => {
+        const attack = currentBoss.attacks[Math.floor(Math.random() * currentBoss.attacks.length)];
+        const damage = Math.floor(Math.random() * 15) + 10;
+        
+        if (playerDefending) {
+          addLog('boss', `${attack} (You blocked most of it!)`);
+          playerDefending = false;
+        } else {
+          addLog('boss', `${attack} (-${damage} willpower)`);
+        }
+      }, 800);
+    }
+    
+    function checkVictory() {
+      if (currentBoss.currentHp <= 0) {
+        setTimeout(() => {
+          addLog('system', `✨ ${currentBoss.defeated}`);
+          victoryMessageEl.textContent = '🎉 BOSS DEFEATED! 🎉';
+          victoryMessageEl.classList.remove('hidden');
+          disableActionButtons();
+          
+          if (currentBossIndex < bosses.length - 1) {
+            nextBossBtn.classList.remove('hidden');
+          } else {
+            nextBossBtn.textContent = '🏆 YOU WIN! 🏆';
+            nextBossBtn.classList.remove('hidden');
+          }
+        }, 500);
+      }
+    }
+    
+    attackBtn.addEventListener('click', () => {
+      const damage = Math.floor(Math.random() * 25) + 15;
+      currentBoss.currentHp -= damage;
+      updateHealthBar();
+      
+      const attacks = [
+        `You actually start doing it! Critical hit!`,
+        `You make a to-do list. Progress!`,
+        `You set a timer. Productivity engaged!`,
+        `You put on pants. The boss is intimidated.`
+      ];
+      
+      addLog('player', `${attacks[Math.floor(Math.random() * attacks.length)]} (-${damage} HP)`);
+      checkVictory();
+      bossAttack();
+    });
+    
+    defendBtn.addEventListener('click', () => {
+      playerDefending = true;
+      
+      const defends = [
+        `You take a deep breath. Steel yourself.`,
+        `You make tea first. Preparation is key.`,
+        `You put on your 'adult' playlist.`,
+        `You tell someone you're going to do it. Accountability!`
+      ];
+      
+      addLog('player', defends[Math.floor(Math.random() * defends.length)]);
+      bossAttack();
+    });
+    
+    procrastinateBtn.addEventListener('click', () => {
+      const damage = Math.floor(Math.random() * 10) + 5;
+      currentBoss.currentHp -= damage;
+      updateHealthBar();
+      
+      const procrastinates = [
+        `You scroll social media for 'just 5 minutes'. (Somehow helps?)`,
+        `You reorganize your desk. Progress... kind of?`,
+        `You do a different task instead. Still productive!`,
+        `You stress about it. The stress burns calories. That's something.`
+      ];
+      
+      addLog('player', `${procrastinates[Math.floor(Math.random() * procrastinates.length)]} (-${damage} HP)`);
+      checkVictory();
+      bossAttack();
+    });
+    
+    delegateBtn.addEventListener('click', () => {
+      const success = Math.random() > 0.5;
+      
+      if (success) {
+        const damage = Math.floor(Math.random() * 30) + 20;
+        currentBoss.currentHp -= damage;
+        updateHealthBar();
+        
+        const delegates = [
+          `You ask for help. It works! Teamwork!`,
+          `You hire someone. Money solves problems!`,
+          `You convince your partner. Relationship goals!`,
+          `You automate it. Technology wins again!`
+        ];
+        
+        addLog('player', `${delegates[Math.floor(Math.random() * delegates.length)]} (-${damage} HP)`);
+        checkVictory();
+      } else {
+        addLog('player', `You try to delegate... but you're the only one who can do this. Damn.`);
+bossAttack();
+      }
+    });
+    
+    nextBossBtn.addEventListener('click', () => {
+      if (currentBossIndex >= bosses.length - 1) {
+        location.reload();
+      } else {
+        loadBoss(currentBossIndex + 1);
+      }
+    });
+    
+    function showFinalVictory() {
+      bossNameEl.textContent = 'CONGRATULATIONS!';
+      bossFlavorEl.textContent = 'You are a functional adult. (For today, at least.)';
+      combatLogEl.innerHTML = '<div class="log-system" style="font-size: 16px; text-align: center; padding: 40px;">🏆<br><br>YOU DEFEATED ALL LIFE ADMIN BOSSES!<br><br>Tomorrow they respawn.</div>';
+      disableActionButtons();
+      nextBossBtn.textContent = 'Play Again';
+      nextBossBtn.classList.remove('hidden');
+    }
+    
+    // Start game
+    loadBoss(0);
+  </script>
+</body>
+</html>
