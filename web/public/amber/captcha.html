@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CAPTCHA Test — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="CAPTCHA Test — Amber">
+  <meta property="og:description" content="Prove you're human by selecting all squares with existential dread.">
+  <meta property="og:image" content="https://intheamber.com/amber/captcha-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/captcha.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="CAPTCHA Test — Amber">
+  <meta name="twitter:description" content="Prove you're human by selecting all squares with existential dread.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/captcha-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 500px;
+      width: 100%;
+      background: #000;
+      border: 2px solid #2D9596;
+      padding: 30px;
+      box-shadow: 0 0 30px rgba(45, 149, 150, 0.3);
+    }
+    
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #2D9596;
+    }
+    
+    .logo {
+      width: 24px;
+      height: 24px;
+      background: #D4A574;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .header-text {
+      font-size: 14px;
+      color: #999;
+    }
+    
+    .prompt {
+      font-size: 16px;
+      margin-bottom: 20px;
+      line-height: 1.5;
+      color: #FFD700;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 25px;
+    }
+    
+    .tile {
+      aspect-ratio: 1;
+      background: #1a1a1a;
+      border: 2px solid #333;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      text-align: center;
+      padding: 8px;
+      color: #666;
+      line-height: 1.2;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 80px;
+    }
+    
+    .tile:active {
+      transform: scale(0.95);
+    }
+    
+    .tile.selected {
+      background: #2D9596;
+      border-color: #2D9596;
+      color: #000;
+      font-weight: bold;
+    }
+    
+    .tile.correct {
+      background: #D4A574;
+      border-color: #FFD700;
+      color: #000;
+    }
+    
+    .tile.wrong {
+      background: #7B68EE;
+      border-color: #7B68EE;
+      color: #fff;
+    }
+    
+    .submit {
+      width: 100%;
+      padding: 15px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .submit:active {
+      transform: scale(0.98);
+      background: #FFD700;
+    }
+    
+    .submit:disabled {
+      background: #333;
+      color: #666;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 20px;
+      padding: 20px;
+      background: #1a1a1a;
+      border-left: 4px solid #FFD700;
+      display: none;
+    }
+    
+    .result.show {
+      display: block;
+    }
+    
+    .result-title {
+      font-size: 18px;
+      color: #FFD700;
+      margin-bottom: 10px;
+    }
+    
+    .result-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #D4A574;
+    }
+    
+    .refresh {
+      margin-top: 15px;
+      padding: 12px;
+      background: #2D9596;
+      color: #000;
+      border: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+      width: 100%;
+    }
+    
+    .progress {
+      font-size: 12px;
+      color: #666;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">✓</div>
+      <div class="header-text">Security Check</div>
+    </div>
+    
+    <div class="prompt" id="prompt">Select all squares with EXISTENTIAL DREAD</div>
+    
+    <div class="grid" id="grid"></div>
+    
+    <button class="submit" id="submit">VERIFY</button>
+    
+    <div class="progress" id="progress">Round 1 of 3</div>
+    
+    <div class="result" id="result">
+      <div class="result-title" id="result-title"></div>
+      <div class="result-text" id="result-text"></div>
+      <button class="refresh" onclick="location.reload()">TRY AGAIN</button>
+    </div>
+  </div>
+
+  <script>
+    const rounds = [
+      {
+        prompt: "Select all squares with EXISTENTIAL DREAD",
+        tiles: [
+          { text: "Sunday evening", correct: true },
+          { text: "Birthday candles", correct: true },
+          { text: "Old photos", correct: true },
+          { text: "Traffic light", correct: false },
+          { text: "Empty inbox", correct: false },
+          { text: "Alarm clock", correct: true },
+          { text: "Grocery store", correct: false },
+          { text: "Mirror at 3am", correct: true },
+          { text: "Unanswered text", correct: true }
+        ]
+      },
+      {
+        prompt: "Select all squares that are DEFINITELY REAL",
+        tiles: [
+          { text: "Your childhood", correct: false },
+          { text: "This moment", correct: false },
+          { text: "Free will", correct: false },
+          { text: "Time", correct: false },
+          { text: "Your memories", correct: false },
+          { text: "The self", correct: false },
+          { text: "Yesterday", correct: false },
+          { text: "Consciousness", correct: false },
+          { text: "Nothing is real", correct: true }
+        ]
+      },
+      {
+        prompt: "Select all squares with GOOD LIFE CHOICES",
+        tiles: [
+          { text: "3am scrolling", correct: false },
+          { text: "One more episode", correct: false },
+          { text: "Reply tomorrow", correct: false },
+          { text: "I'll start Monday", correct: false },
+          { text: "Just 5 more min", correct: false },
+          { text: "Skip the gym", correct: false },
+          { text: "It's fine", correct: false },
+          { text: "I deserve this", correct: false },
+          { text: "None of these", correct: true }
+        ]
+      }
+    ];
+    
+    const personalities = [
+      {
+        condition: (scores) => scores[0] >= 5 && scores[1] <= 2 && scores[2] >= 1,
+        type: "THE OVERTHINKER",
+        desc: "You see dread everywhere but pretend reality is stable. You're lying to yourself, but at least you're self-aware about your bad choices."
+      },
+      {
+        condition: (scores) => scores[1] >= 8,
+        type: "THE NIHILIST",
+        desc: "Nothing is real, including this test. Why are you evenhere? But hey, at least you're consistent."
+      },
+      {
+        condition: (scores) => scores[0] <= 2 && scores[2] <= 2,
+        type: "THE DELUSIONAL OPTIMIST",
+        desc: "You either feel nothing or you're in denial. Either way, impressive mental gymnastics."
+      },
+      {
+        condition: (scores) => scores[2] >= 8,
+        type: "THE ENABLER",
+        desc: "You know all your choices are bad and you're doing them anyway. Respect."
+      },
+      {
+        condition: (scores) => scores[0] >= 6 && scores[1] <= 5 && scores[2] <= 3,
+        type: "THE ANXIOUS REALIST",
+        desc: "You feel everything, question nothing, and make decent choices out of fear. Peak human condition."
+      },
+      {
+        condition: (scores) => true,
+        type: "THE CONFUSED HUMAN",
+        desc: "Your answers are chaos. You clicked randomly, didn't you? That's probably the most honest response here."
+      }
+    ];
+    
+    let currentRound = 0;
+    let selected = new Set();
+    let scores = [];
+    
+    function renderRound() {
+      const round = rounds[currentRound];
+      document.getElementById('prompt').textContent = round.prompt;
+      document.getElementById('progress').textContent = `Round ${currentRound + 1} of ${rounds.length}`;
+      
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      selected.clear();
+      
+      round.tiles.forEach((tile, idx) => {
+        const div = document.createElement('div');
+        div.className = 'tile';
+        div.textContent = tile.text;
+        div.dataset.idx = idx;
+        div.addEventListener('click', () => toggleTile(idx));
+        grid.appendChild(div);
+      });
+    }
+    
+    function toggleTile(idx) {
+      const tile = document.querySelector(`[data-idx="${idx}"]`);
+      if (selected.has(idx)) {
+        selected.delete(idx);
+        tile.classList.remove('selected');
+      } else {
+        selected.add(idx);
+        tile.classList.add('selected');
+      }
+    }
+    
+    function checkAnswer() {
+      const round = rounds[currentRound];
+      let correct = 0;
+      
+      // Show feedback
+      round.tiles.forEach((tile, idx) => {
+        const div = document.querySelector(`[data-idx="${idx}"]`);
+        const wasSelected = selected.has(idx);
+        
+        if (tile.correct && wasSelected) {
+          div.classList.add('correct');
+          correct++;
+        } else if (!tile.correct && wasSelected) {
+          div.classList.add('wrong');
+        } else if (tile.correct && !wasSelected) {
+          div.classList.add('correct');
+        }
+      });
+      
+      scores.push(Array.from(selected).length);
+      
+      setTimeout(() => {
+        currentRound++;
+        if (currentRound < rounds.length) {
+          renderRound();
+        } else {
+          showResult();
+        }
+      }, 1500);
+    }
+    
+    function showResult() {
+      document.getElementById('grid').style.display = 'none';
+      document.getElementById('submit').style.display = 'none';
+      document.getElementById('progress').style.display = 'none';
+      document.getElementById('prompt').style.display = 'none';
+      
+      const personality = personalities.find(p => p.condition(scores));
+      
+      document.getElementById('result-title').textContent = personality.type;
+      document.getElementById('result-text').textContent = personality.desc;
+      document.getElementById('result').classList.add('show');
+    }
+    
+    document.getElementById('submit').addEventListener('click', checkAnswer);
+    
+    // Initialize
+    renderRound();
+  </script>
+</body>
+</html>

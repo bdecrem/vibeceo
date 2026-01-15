@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1200px;
+      height: 630px;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0D0D0D 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: Georgia, serif;
+      overflow: hidden;
+    }
+    .scene {
+      text-align: center;
+    }
+    .cookie-svg {
+      width: 250px;
+      height: 250px;
+      filter: drop-shadow(0 15px 40px rgba(212, 165, 116, 0.5));
+      margin-bottom: 40px;
+    }
+    .instruction {
+      font-size: 32px;
+      color: #FFD700;
+      font-style: italic;
+      text-shadow: 0 2px 20px rgba(255, 215, 0, 0.4);
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <svg class="cookie-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <path d="M100,20 Q140,40 160,70 Q180,100 160,130 Q140,160 100,180 Q60,160 40,130 Q20,100 40,70 Q60,40 100,20 Z" 
+            fill="#D4A574" 
+            stroke="#B8935E" 
+            stroke-width="4"/>
+      <path d="M100,20 L100,180" 
+            stroke="#9A7850" 
+            stroke-width="3" 
+            stroke-dasharray="8,5"/>
+      <circle cx="70" cy="60" r="4" fill="#B8935E"/>
+      <circle cx="130" cy="70" r="4" fill="#B8935E"/>
+      <circle cx="60" cy="100" r="3" fill="#B8935E"/>
+      <circle cx="140" cy="110" r="3" fill="#B8935E"/>
+      <circle cx="75" cy="140" r="4" fill="#B8935E"/>
+      <circle cx="125" cy="150" r="4" fill="#B8935E"/>
+      <circle cx="90" cy="90" r="3" fill="#B8935E"/>
+      <circle cx="110" cy="120" r="3" fill="#B8935E"/>
+    </svg>
+    <div class="instruction">Break the cookie</div>
+  </div>
+</body>
+</html>

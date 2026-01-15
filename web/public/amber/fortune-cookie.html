@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Break the Cookie — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Break the Cookie — Amber">
+  <meta property="og:description" content="A fortune cookie that tells uncomfortable truths.">
+  <meta property="og:image" content="https://intheamber.com/amber/fortune-cookie-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/fortune-cookie.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Break the Cookie — Amber">
+  <meta name="twitter:description" content="A fortune cookie that tells uncomfortable truths.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/fortune-cookie-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0D0D0D 100%);
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .scene {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .cookie {
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 40px;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.3s;
+    }
+    
+    .cookie:hover {
+      transform: scale(1.05);
+    }
+    
+    .cookie:active {
+      transform: scale(0.95);
+    }
+    
+    .cookie-svg {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 10px 30px rgba(212, 165, 116, 0.4));
+    }
+    
+    .cookie.broken {
+      animation: breakCookie 0.6s forwards;
+    }
+    
+    @keyframes breakCookie {
+      0% { transform: scale(1) rotate(0deg); }
+      30% { transform: scale(1.1) rotate(5deg); }
+      60% { transform: scale(0.95) rotate(-5deg); }
+      100% { transform: scale(0) rotate(180deg); opacity: 0; }
+    }
+    
+    .instruction {
+      font-size: 20px;
+      color: #FFD700;
+      margin-bottom: 30px;
+      font-style: italic;
+      opacity: 1;
+      transition: opacity 0.3s;
+    }
+    
+    .instruction.hidden {
+      opacity: 0;
+    }
+    
+    .fortune-container {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: all 0.6s ease;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .fortune-container.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    
+    .fortune-slip {
+      background: linear-gradient(135deg, #FFD700 0%, #D4A574 100%);
+      color: #000;
+      padding: 30px 40px;
+      border-radius: 8px;
+      box-shadow: 0 8px 32px rgba(255, 215, 0, 0.3);
+      position: relative;
+      max-width: 500px;
+      width: 100%;
+      font-size: 18px;
+      line-height: 1.8;
+      text-align: left;
+    }
+    
+    .fortune-slip::before {
+      content: '"';
+      position: absolute;
+      top: 10px;
+      left: 15px;
+      font-size: 60px;
+      color: rgba(0, 0, 0, 0.1);
+      font-family: Georgia, serif;
+    }
+    
+    .fortune-text {
+      position: relative;
+      z-index: 1;
+      margin-bottom: 20px;
+    }
+    
+    .lucky-numbers {
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      padding-top: 15px;
+      border-top: 2px dashed rgba(0, 0, 0, 0.2);
+      color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .again-btn {
+      margin-top: 30px;
+      padding: 15px 40px;
+      background: #2D9596;
+      color: #fff;
+      border: none;
+      border-radius: 30px;
+      font-family: Georgia, serif;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(45, 149, 150, 0.3);
+    }
+    
+    .again-btn:hover {
+      background: #3DB5B6;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(45, 149, 150, 0.4);
+    }
+    
+    .again-btn:active {
+      transform: translateY(0);
+    }
+    
+    .crumbs {
+      position: fixed;
+      pointer-events: none;
+    }
+    
+    .crumb {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background: #D4A574;
+      border-radius: 50%;
+      opacity: 0;
+    }
+    
+    @keyframes crumble {
+      0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+      }
+      100% {
+        opacity: 0;
+        transform: translate(var(--tx), var(--ty)) scale(0.3);
+      }
+    }
+    
+    @media (max-width: 480px) {
+      .fortune-slip {
+        padding: 20px 25px;
+        font-size: 16px;
+      }
+      
+      .instruction {
+        font-size: 18px;
+      }
+      
+      .cookie {
+        width: 150px;
+        height: 150px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="scene">
+    <div class="cookie" id="cookie">
+      <svg class="cookie-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <!-- Cookie shape -->
+        <path d="M100,20 Q140,40 160,70 Q180,100 160,130 Q140,160 100,180 Q60,160 40,130 Q20,100 40,70 Q60,40 100,20 Z" 
+              fill="#D4A574" 
+              stroke="#B8935E" 
+              stroke-width="3"/>
+        
+        <!-- Fold line -->
+        <path d="M100,20 L100,180" 
+              stroke="#9A7850" 
+              stroke-width="2" 
+              stroke-dasharray="5,3"/>
+        
+        <!-- Texture dots -->
+        <circle cx="70" cy="60" r="3" fill="#B8935E"/>
+        <circle cx="130" cy="70" r="3" fill="#B8935E"/>
+        <circle cx="60" cy="100" r="2" fill="#B8935E"/>
+        <circle cx="140" cy="110" r="2" fill="#B8935E"/>
+        <circle cx="75" cy="140" r="3" fill="#B8935E"/>
+        <circle cx="125" cy="150" r="3" fill="#B8935E"/>
+        <circle cx="90" cy="90" r="2" fill="#B8935E"/>
+        <circle cx="110" cy="120" r="2" fill="#B8935E"/>
+      </svg>
+    </div>
+    
+    <div class="instruction" id="instruction">Tap the cookie</div>
+    
+    <div class="fortune-container" id="fortune">
+      <div class="fortune-slip">
+        <div class="fortune-text" id="fortuneText"></div>
+        <div class="lucky-numbers" id="luckyNumbers"></div>
+      </div>
+      <button class="again-btn" onclick="location.reload()">Another?</button>
+    </div>
+  </div>
+  
+  <div class="crumbs" id="crumbs"></div>
+
+  <script>
+    const fortunes = [
+      "You will scroll past this tomorrow and not remember it.",
+      "Someone is thinking about you. They're judging you.",
+      "A great opportunity is coming. You'll be too anxious to take it.",
+      "You are your own worst enemy. But also your only friend.",
+      "The thing you're avoiding will not go away on its own.",
+      "You'll check your phone 47 more times today. None of it will matter.",
+      "Your fear of being ordinary is making you ordinary.",
+      "That person never thinks about you anymore.",
+      "You're right about what you suspect.",
+      "The best years were three years ago. You didn't notice.",
+      "You'll die with that song still in you.",
+      "Everything you're doing is a distraction from the real thing.",
+      "You know exactly what you need to do. You won't do it.",
+      "Someone will ask how you are. You'll lie. Again.",
+      "That email can wait. Everything can wait. You're already waiting.",
+      "The call is coming from inside the house.",
+      "You're the side character in someone else's story.",
+      "Monday is coming. It's always coming.",
+      "Nothing you did today will matter in a year. Do it anyway.",
+      "Your plant is dying because you're dying inside.",
+      "The algorithm knows you better than you know yourself.",
+      "You'll forget this fortune immediately. Like everything else.",
+      "Inbox zero is a myth. So is work-life balance.",
+      "That thing you said three years ago? They remember.",
+      "You're overthinking this. And everything else.",
+      "The void stares back. It's bored too.",
+      "Your parents were right about one thing. You know which one.",
+      "The plot twist: there is no plot twist. This is it.",
+      "You'll die with 47 unread books and 83 unwatched courses.",
+      "Every New Year's resolution is just old guilt in new packaging."
+    ];
+    
+    const cookie = document.getElementById('cookie');
+    const instruction = document.getElementById('instruction');
+    const fortune = document.getElementById('fortune');
+    const fortuneText = document.getElementById('fortuneText');
+    const luckyNumbers = document.getElementById('luckyNumbers');
+    const crumbsContainer = document.getElementById('crumbs');
+    
+    function generateLuckyNumbers() {
+      const numbers = [];
+      while (numbers.length < 6) {
+        const num = Math.floor(Math.random() * 49) + 1;
+        if (!numbers.includes(num)) {
+          numbers.push(num);
+        }
+      }
+      return numbers.sort((a, b) => a - b).join(', ');
+    }
+    
+    function createCrumbs(x, y) {
+      for (let i = 0; i < 30; i++) {
+        const crumb = document.createElement('div');
+        crumb.className = 'crumb';
+        crumb.style.left = x + 'px';
+        crumb.style.top = y + 'px';
+        
+        const angle = (Math.PI * 2 * i) / 30;
+        const distance = 50 + Math.random() * 100;
+        const tx = Math.cos(angle) * distance;
+        const ty = Math.sin(angle) * distance;
+        
+        crumb.style.setProperty('--tx', tx + 'px');
+        crumb.style.setProperty('--ty', ty + 'px');
+        crumb.style.width = (5 + Math.random() * 10) + 'px';
+        crumb.style.height = crumb.style.width;
+        crumb.style.animation = `crumble ${0.6 + Math.random() * 0.4}s ease-out forwards`;
+        crumb.style.animationDelay = (Math.random() * 0.1) + 's';
+        
+        crumbsContainer.appendChild(crumb);
+        
+        setTimeout(() => crumb.remove(), 1000);
+      }
+    }
+    
+    cookie.addEventListener('click', (e) => {
+      const rect = cookie.getBoundingClientRect();
+      const x = rect.left + rect.width / 2;
+      const y = rect.top + rect.height / 2;
+      
+      cookie.classList.add('broken');
+      instruction.classList.add('hidden');
+      createCrumbs(x, y);
+      
+      const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+      fortuneText.textContent = randomFortune;
+      luckyNumbers.textContent = 'LUCKY NUMBERS: ' + generateLuckyNumbers();
+      
+      setTimeout(() => {
+        fortune.classList.add('show');
+      }, 700);
+    });
+  </script>
+</body>
+</html>

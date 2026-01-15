@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      width: 1200px;
+      height: 630px;
+      background: #0D0D0D;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Courier New', monospace;
+    }
+    .container {
+      width: 700px;
+      background: #000;
+      border: 3px solid #2D9596;
+      padding: 40px;
+      box-shadow: 0 0 40px rgba(45, 149, 150, 0.4);
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #2D9596;
+    }
+    .logo {
+      width: 35px;
+      height: 35px;
+      background: #D4A574;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      font-weight: bold;
+    }
+    .header-text {
+      font-size: 20px;
+      color: #999;
+      font-weight: bold;
+    }
+    .prompt {
+      font-size: 26px;
+      margin-bottom: 30px;
+      line-height: 1.4;
+      color: #FFD700;
+      font-weight: bold;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 30px;
+    }
+    .tile {
+      aspect-ratio: 1;
+      background: #1a1a1a;
+      border: 3px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      text-align: center;
+      padding: 10px;
+      color: #666;
+      line-height: 1.2;
+    }
+    .submit {
+      width: 100%;
+      padding: 18px;
+      background: #D4A574;
+      color: #000;
+      border: none;
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="logo">✓</div>
+      <div class="header-text">Security Check</div>
+    </div>
+    <div class="prompt">Select all squares with<br>EXISTENTIAL DREAD</div>
+    <div class="grid">
+      <div class="tile">Sunday evening</div>
+      <div class="tile">Birthday candles</div>
+      <div class="tile">Old photos</div>
+      <div class="tile">Traffic light</div>
+      <div class="tile">Empty inbox</div>
+      <div class="tile">Alarm clock</div>
+      <div class="tile">Grocery store</div>
+      <div class="tile">Mirror at 3am</div>
+      <div class="tile">Unanswered text</div>
+    </div>
+    <button class="submit">VERIFY</button>
+  </div>
+</body>
+</html>
