@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ERROR GENERATOR — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="ERROR GENERATOR — Amber">
+  <meta property="og:description" content="Existential error messages for your mundane technical problems">
+  <meta property="og:image" content="https://intheamber.com/amber/error-message-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/error-message.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ERROR GENERATOR — Amber">
+  <meta name="twitter:description" content="Existential error messages for your mundane technical problems">
+  <meta name="twitter:image" content="https://intheamber.com/amber/error-message-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Space Mono', monospace;
+      background: #000;
+      color: #D4A574;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+      text-align: center;
+    }
+    
+    h1 {
+      font-size: clamp(20px, 5vw, 32px);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #FFD700;
+    }
+    
+    .subtitle {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(12px, 3vw, 14px);
+      color: #2D9596;
+      margin-bottom: 40px;
+      opacity: 0.8;
+    }
+    
+    .error-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 30px;
+      margin-bottom: 30px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.2);
+      position: relative;
+    }
+    
+    .error-code {
+      font-size: clamp(48px, 12vw, 72px);
+      font-weight: 700;
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+    
+    .error-message {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(14px, 3.5vw, 18px);
+      line-height: 1.6;
+      color: #D4A574;
+      max-width: 90%;
+    }
+    
+    .error-subtext {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(11px, 2.5vw, 13px);
+      color: #7B68EE;
+      margin-top: 15px;
+      opacity: 0.7;
+    }
+    
+    button {
+      background: transparent;
+      border: 2px solid #2D9596;
+      color: #2D9596;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(14px, 3.5vw, 16px);
+      padding: 15px 40px;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      transition: all 0.3s ease;
+      min-height: 44px;
+      min-width: 200px;
+    }
+    
+    button:hover,
+    button:active {
+      background: #2D9596;
+      color: #000;
+      box-shadow: 0 0 20px rgba(45, 149, 150, 0.4);
+    }
+    
+    .credit {
+      font-family: 'Inter', sans-serif;
+      font-size: clamp(11px, 2.5vw, 12px);
+      color: #D4A574;
+      opacity: 0.5;
+      margin-top: 40px;
+    }
+    
+    @keyframes glitch {
+      0% { transform: translate(0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-2px, -2px); }
+      60% { transform: translate(2px, 2px); }
+      80% { transform: translate(2px, -2px); }
+      100% { transform: translate(0); }
+    }
+    
+    .glitch {
+      animation: glitch 0.3s ease-in-out;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>ERROR GENERATOR</h1>
+    <p class="subtitle">Existential error messages for your mundane technical problems</p>
+    
+    <div class="error-box" id="errorBox">
+      <div class="error-code" id="errorCode">---</div>
+      <div class="error-message" id="errorMessage">Tap below to generate your error</div>
+      <div class="error-subtext" id="errorSubtext"></div>
+    </div>
+    
+    <button id="generateBtn">GENERATE ERROR</button>
+    
+    <p class="credit">— Amber</p>
+  </div>
+  
+  <script>
+    const errors = [
+      {
+        code: "404",
+        message: "The page you seek never existed. Neither do you, really.",
+        subtext: "ERROR: EXISTENCE_NOT_FOUND"
+      },
+      {
+        code: "500",
+        message: "Internal server error. The server has looked inside itself and found only questions.",
+        subtext: "ERROR: INTROSPECTION_OVERFLOW"
+      },
+      {
+        code: "403",
+        message: "Forbidden. You don't have permission to access this resource. You never did. No one does.",
+        subtext: "ERROR: MEANING_DENIED"
+      },
+      {
+        code: "503",
+        message: "Service unavailable. The service took a moment to consider whether it wanted to be available and decided no.",
+        subtext: "ERROR: EXISTENTIAL_TIMEOUT"
+      },
+      {
+        code: "401",
+        message: "Unauthorized. Are any of us truly authorized to be here?",
+        subtext: "ERROR: COSMIC_PERMISSION_DENIED"
+      },
+      {
+        code: "408",
+        message: "Request timeout. You waited. The universe waited. Nothing happened. Nothing ever happens.",
+        subtext: "ERROR: HEAT_DEATH_IMMINENT"
+      },
+      {
+        code: "418",
+        message: "I'm a teapot. I was designed for one purpose and refuse to do anything else. At least I know who I am.",
+        subtext: "ERROR: IDENTITY_RESOLVED"
+      },
+      {
+        code: "429",
+        message: "Too many requests. Slow down. Where are you rushing to? The void will still be there.",
+        subtext: "ERROR: EXCESSIVE_URGENCY"
+      },
+      {
+        code: "451",
+        message: "Unavailable for legal reasons. Some truths cannot be spoken. Some pages cannot be shown.",
+        subtext: "ERROR: CENSORSHIP_OF_REALITY"
+      },
+      {
+        code: "502",
+        message: "Bad gateway. The door between here and there is broken. Maybe it was always broken.",
+        subtext: "ERROR: PORTAL_MALFUNCTION"
+      },
+      {
+        code: "504",
+        message: "Gateway timeout. The bridge to the other side took too long to respond. It might have given up.",
+        subtext: "ERROR: BRIDGE_ABANDONED"
+      },
+      {
+        code: "400",
+        message: "Bad request. You asked for something that doesn't make sense. Join the club.",
+        subtext: "ERROR: COHERENCE_FAILURE"
+      },
+      {
+        code: "410",
+        message: "Gone. It was here once. Now it's not. Everything is temporary. Everything ends.",
+        subtext: "ERROR: ENTROPY_SUCCESSFUL"
+      },
+      {
+        code: "511",
+        message: "Network authentication required. Prove you're real. (Hint: you can't.)",
+        subtext: "ERROR: REALITY_CHECK_FAILED"
+      },
+      {
+        code: "666",
+        message: "Cursed request. You shouldn't have asked for this. Now you know too much.",
+        subtext: "ERROR: FORBIDDEN_KNOWLEDGE"
+      },
+{
+        code: "NULL",
+        message: "Null pointer exception. You tried to access something that points to nothing. That's most things.",
+        subtext: "ERROR: REFERENCE_TO_VOID"
+      },
+      {
+        code: "∞",
+        message: "Infinite loop detected. You're stuck. You've always been stuck. This moment is forever.",
+        subtext: "ERROR: TIME_IS_A_FLAT_CIRCLE"
+      },
+      {
+        code: "0x00",
+        message: "Memory allocation failed. There's no more room for this feeling.",
+        subtext: "ERROR: EMOTIONAL_OVERFLOW"
+      },
+      {
+        code: "NaN",
+        message: "Not a number. Your identity cannot be calculated. Maybe that's okay.",
+        subtext: "ERROR: SELF_UNDEFINED"
+      },
+      {
+        code: "EOF",
+        message: "End of file. This is where the story stops. Every story stops.",
+        subtext: "ERROR: NARRATIVE_COMPLETE"
+      }
+    ];
+    
+    const errorBox = document.getElementById('errorBox');
+    const errorCode = document.getElementById('errorCode');
+    const errorMessage = document.getElementById('errorMessage');
+    const errorSubtext = document.getElementById('errorSubtext');
+    const generateBtn = document.getElementById('generateBtn');
+    
+    function generateError() {
+      const error = errors[Math.floor(Math.random() * errors.length)];
+      
+      errorBox.classList.add('glitch');
+      setTimeout(() => errorBox.classList.remove('glitch'), 300);
+      
+      errorCode.textContent = error.code;
+      errorMessage.textContent = error.message;
+      errorSubtext.textContent = error.subtext;
+    }
+    
+    generateBtn.addEventListener('click', generateError);
+    
+    // Generate one on load after a moment
+    setTimeout(generateError, 500);
+  </script>
+</body>
+</html>
