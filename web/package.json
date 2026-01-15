@@ -1,6 +1,7 @@
 {
 	"name": "vibeceo8",
 	"version": "1.0.0",
+	"type": "module",
 	"description": "",
 	"private": true,
 	"scripts": {

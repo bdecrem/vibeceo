@@ -14,10 +14,12 @@ import {
   R9D9_GUIDE,
   R3D3_GUIDE,
   R1D1_GUIDE,
+  R9DS_GUIDE,
   getApiKey,
   saveApiKey,
   getApiKeyPath,
 } from './jambot.js';
+import { getAvailableKits, getKitPaths } from './kit-loader.js';
 import {
   createProject,
   loadProject,
@@ -35,6 +37,13 @@ import {
   JAMBOT_HOME,
   PROJECTS_DIR,
 } from './project.js';
+
+// === HAIRLINE COMPONENT ===
+function Hairline() {
+  const { stdout } = useStdout();
+  const width = stdout?.columns || 80;
+  return <Text dimColor>{'─'.repeat(width)}</Text>;
+}
 
 // === SPLASH COMPONENT ===
 function Splash() {
@@ -129,7 +138,21 @@ function SetupWizard({ onComplete }) {
 
 // === MESSAGES COMPONENT ===
 function Messages({ messages, maxHeight }) {
-  const visibleMessages = messages.slice(-maxHeight);
+  // Calculate how many lines each message takes
+  const getLineCount = (msg) => msg.text.split('\n').length;
+
+  // Work backwards to find messages that fit in maxHeight lines
+  let totalLines = 0;
+  let startIndex = messages.length;
+
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const lines = getLineCount(messages[i]);
+    if (totalLines + lines > maxHeight) break;
+    totalLines += lines;
+    startIndex = i;
+  }
+
+  const visibleMessages = messages.slice(startIndex);
 
   return (
     <Box flexDirection="column" flexGrow={1}>
@@ -141,24 +164,33 @@ function Messages({ messages, maxHeight }) {
 }
 
 function MessageLine({ message }) {
-  switch (message.type) {
-    case 'user':
-      return <Text dimColor>&gt; {message.text}</Text>;
-    case 'tool':
-      return <Text color="cyan">  {message.text}</Text>;
-    case 'result':
-      return <Text color="gray">     {message.text}</Text>;
-    case 'response':
-      return <Text>{message.text}</Text>;
-    case 'info':
-      return <Text>{message.text}</Text>;
-    case 'system':
-      return <Text color="yellow">{message.text}</Text>;
-    case 'project':
-      return <Text color="green">{message.text}</Text>;
-    default:
-      return <Text>{message.text}</Text>;
+  // Split multi-line messages into separate lines for proper Ink rendering
+  const lines = message.text.split('\n');
+
+  const getStyle = (type) => {
+    switch (type) {
+      case 'user': return { dimColor: true, prefix: '> ' };
+      case 'tool': return { color: 'cyan', prefix: '  ' };
+      case 'result': return { color: 'gray', prefix: '     ' };
+      case 'system': return { color: 'yellow', prefix: '' };
+      case 'project': return { color: 'green', prefix: '' };
+      default: return { prefix: '' };
+    }
+  };
+
+  const style = getStyle(message.type);
+
+  if (lines.length === 1) {
+    return <Text {...style}>{style.prefix}{message.text}</Text>;
   }
+
+  return (
+    <Box flexDirection="column">
+      {lines.map((line, i) => (
+        <Text key={i} {...style}>{i === 0 ? style.prefix : style.prefix.replace(/./g, ' ')}{line}</Text>
+      ))}
+    </Box>
+  );
 }
 
 // === AUTOCOMPLETE COMPONENT ===
@@ -207,8 +239,21 @@ function InputBar({ value, onChange, onSubmit, isProcessing, suggestions, select
 
 // === STATUS BAR COMPONENT ===
 function StatusBar({ session, project }) {
-  const voices = Object.keys(session?.pattern || {});
-  const voiceList = voices.length > 0 ? voices.join(',') : 'empty';
+  // Build list of active synths
+  const synths = [];
+  if (session?.drumPattern && Object.keys(session.drumPattern).length > 0) {
+    synths.push('R9D9');
+  }
+  if (session?.bassPattern?.some(s => s.gate)) {
+    synths.push('R3D3');
+  }
+  if (session?.leadPattern?.some(s => s.gate)) {
+    synths.push('R1D1');
+  }
+  if (session?.samplerKit && session?.samplerPattern && Object.keys(session.samplerPattern).length > 0) {
+    synths.push('R9DS');
+  }
+  const synthList = synths.length > 0 ? synths.join('+') : 'empty';
   const swing = session?.swing > 0 ? ` swing ${session.swing}%` : '';
   const version = project ? ` v${(project.renders?.length || 0) + 1}` : '';
   const projectName = project ? project.name : '(no project)';
@@ -217,7 +262,7 @@ function StatusBar({ session, project }) {
   return (
     <Box>
       <Text dimColor>
-        {projectName}{version} | {bpm} BPM {voiceList}{swing}
+        {projectName}{version} | {bpm} BPM {synthList}{swing}
       </Text>
     </Box>
   );
@@ -324,6 +369,15 @@ function App() {
     ensureDirectories();
   }, []);
 
+<<<<<<< Updated upstream
+=======
+  // Calculate available height for messages
+  // Reserved: hairline (1) + autocomplete (1) + input (1) + hairline (1) + status (1) = 5 minimum
+  const terminalHeight = stdout?.rows || 24;
+  const reservedLines = 6;
+  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
+
+>>>>>>> Stashed changes
   // Autocomplete logic
   useEffect(() => {
     if (input.startsWith('/') && input.length > 1 && !showMenu && !showProjectList) {
@@ -561,6 +615,31 @@ function App() {
         addMessage('info', R1D1_GUIDE);
         break;
 
+      case '/r9ds':
+      case '/sampler':  // Alias
+        addMessage('info', R9DS_GUIDE);
+        break;
+
+      case '/kits': {
+        const kits = getAvailableKits();
+        const paths = getKitPaths();
+        let kitsText = 'Available Sample Kits\n\n';
+        if (kits.length === 0) {
+          kitsText += '  No kits found.\n\n';
+        } else {
+          for (const kit of kits) {
+            const source = kit.source === 'user' ? '[user]' : '[bundled]';
+            kitsText += `  ${kit.id.padEnd(12)} ${kit.name.padEnd(20)} ${source}\n`;
+          }
+          kitsText += '\n';
+        }
+        kitsText += `Bundled: ${paths.bundled}\n`;
+        kitsText += `User:    ${paths.user}\n`;
+        kitsText += '\nSay "load the 808 kit" or use load_kit tool.';
+        addMessage('info', kitsText);
+        break;
+      }
+
       case '/export':
         if (!project) {
           addMessage('system', 'No project to export. Create a beat first!');
@@ -721,8 +800,8 @@ function App() {
 
   return (
     <Box flexDirection="column" height={terminalHeight}>
-      {/* Content area */}
-      <Box flexDirection="column" flexGrow={1}>
+      {/* Content area - fixed height to prevent overflow */}
+      <Box flexDirection="column" height={maxMessageHeight} overflowY="hidden">
         {showSplash ? (
           <Splash />
         ) : showProjectList ? (
@@ -743,6 +822,9 @@ function App() {
         )}
       </Box>
 
+      {/* Hairline above input */}
+      <Hairline />
+
       {/* Autocomplete (above input) */}
       <Autocomplete
         suggestions={suggestions}
@@ -759,6 +841,9 @@ function App() {
         selectedIndex={suggestionIndex}
         onSelectSuggestion={handleSelectSuggestion}
       />
+
+      {/* Hairline below input */}
+      <Hairline />
 
       {/* Status bar */}
       <StatusBar session={session} project={project} />

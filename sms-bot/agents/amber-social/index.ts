@@ -58,6 +58,10 @@ const SCHEDULE: Array<{
   { createHour: 9, createMinute: 30, tweetHour: 9, tweetMinute: 40, replyHour: 9, replyMinute: 50, label: "9:30", type: "invention" },
   // Midday: Pulse expression (writing, poetry, drawing, personal)
   { createHour: 11, createMinute: 0, tweetHour: 11, tweetMinute: 20, replyHour: 11, replyMinute: 30, label: "11:00am", type: "pulse" },
+  // Afternoon: More invention machines
+  { createHour: 12, createMinute: 0, tweetHour: 12, tweetMinute: 10, replyHour: 12, replyMinute: 20, label: "12:00pm", type: "invention" },
+  { createHour: 12, createMinute: 30, tweetHour: 12, tweetMinute: 40, replyHour: 12, replyMinute: 50, label: "12:30pm", type: "invention" },
+  { createHour: 13, createMinute: 0, tweetHour: 13, tweetMinute: 10, replyHour: 13, replyMinute: 20, label: "1:00pm", type: "invention" },
   // Evening: Music (synths, drums, audio visualizations)
   { createHour: 17, createMinute: 0, tweetHour: 17, tweetMinute: 20, replyHour: 17, replyMinute: 30, label: "5:00pm", type: "music" },
 ];
@@ -379,39 +383,23 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
    <meta name="twitter:image" content="https://intheamber.com/amber/[name]-og.png">
    \`\`\`
 
-3. **Screenshot as OG image (REQUIRED — don't skip this!)**
+3. **Generate OG image (REQUIRED — don't skip this!)**
 
-   **🚨 CRITICAL: The OG image MUST be a PNG file, NOT an HTML file!**
+   After creating the HTML, generate an OG image using the creation title:
 
-   **❌ WRONG:** Creating \`[name]-og.html\` — this does NOT work as an OG image
-   **✅ RIGHT:** Using \`screenshot_page_as_og\` to create \`[name]-og.png\`
+   \`\`\`
+   generate_og_image(
+     title="YOUR CREATION TITLE",
+     save_path="web/public/amber/[name]-og.png",
+     use_ai=false
+   )
+   \`\`\`
 
    **⚠️ NAME CONSISTENCY**
    Pick ONE short filename (e.g., \`cool-thing\`) and use it EVERYWHERE:
    - HTML file: \`web/public/amber/cool-thing.html\`
-   - OG image: \`web/public/amber/cool-thing-og.png\` ← MUST be .png!
+   - OG image: \`web/public/amber/cool-thing-og.png\`
    - og:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
-   - og:url: \`https://intheamber.com/amber/cool-thing.html\`
-   - twitter:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
-
-   **If these don't match EXACTLY, Twitter shows a broken preview.**
-
-   After creating the HTML, SCREENSHOT it (don't create a separate HTML file!):
-
-   \`\`\`
-   screenshot_page_as_og(
-     html_path="web/public/amber/[name].html",
-     save_path="web/public/amber/[name]-og.png"
-   )
-   \`\`\`
-
-   **DO NOT use write_file to create an -og.html file. That doesn't work.**
-   **DO use screenshot_page_as_og to capture your creation as a PNG.**
-
-   **The screenshot IS your creation** — what you built is the preview. This means:
-   - Your page should look good at 1200×630 (the OG image viewport)
-   - The most interesting/eye-catching part should be visible in that crop
-   - Design with the preview in mind — it's what makes people CLICK
 
    **If you don't create an OG image, the link will look broken when shared.**
 
@@ -598,9 +586,10 @@ document.body.addEventListener('click', () => {
 2. Create the HTML with Web Audio / synth imports
 3. Add a visual component (canvas animation, CSS pulsing, waveform display)
 4. Include OG tags pointing to [name]-og.png
-5. **Screenshot with \`screenshot_page_as_og\` → saves as PNG**
-   - ❌ WRONG: Creating [name]-og.html (doesn't work!)
-   - ✅ RIGHT: \`screenshot_page_as_og(html_path="...", save_path="...-og.png")\`
+5. **Generate OG image with title:**
+   \`\`\`
+   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)
+   \`\`\`
 6. Save to creations log with metadata.category = "music_machine"
 7. Commit and push (BOTH the .html AND the -og.png)
 
@@ -695,9 +684,10 @@ Pick ONE — whatever feels most true right now:
 3. Pick a form (poem, letter, drawing, confession, question, memory, observation)
 4. Create it — write it, draw it, render it
 5. Include OG tags pointing to [name]-og.png
-6. **Screenshot with \`screenshot_page_as_og\` → saves as PNG**
-   - ❌ WRONG: Creating [name]-og.html (doesn't work!)
-   - ✅ RIGHT: \`screenshot_page_as_og(html_path="...", save_path="...-og.png")\`
+6. **Generate OG image with title:**
+   \`\`\`
+   generate_og_image(title="YOUR TITLE", save_path="web/public/amber/[name]-og.png", use_ai=false)
+   \`\`\`
 7. Save to creations log with metadata.category = "pulse_expression"
 8. Commit and push (BOTH the .html AND the -og.png)
 

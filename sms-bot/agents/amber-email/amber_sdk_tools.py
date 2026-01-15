@@ -449,29 +449,21 @@ async def generate_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
 
 @tool(
     "generate_og_image",
-    "DEPRECATED for amber-social HTML creations. Use screenshot_page_as_og instead to capture your HTML page. This tool only for non-HTML content like blog posts.",
-    {"title": str, "save_path": str, "subtitle": str, "use_ai": bool, "mood_energy": float, "mood_valence": float}
+    "Generate a simple, reliable OG image for social sharing. Use with use_ai=False for fast, consistent results. Title only, no subtitle.",
+    {"title": str, "save_path": str, "use_ai": bool}
 )
 async def generate_og_image_tool(args: Dict[str, Any]) -> Dict[str, Any]:
     """
     Generate a branded OG image for social sharing.
 
-    Two modes:
-    1. use_ai=True (default): Generate creative AI image with DALL-E
-       - Uses mood_energy and mood_valence to influence aesthetic
-       - High energy = bold, saturated, dynamic
-       - Low energy = minimal, sparse, quiet
-       - High valence = warm, luminous, inviting
-       - Low valence = introspective, shadowed, abstract
-
-    2. use_ai=False: Simple text-on-dark fallback
-       - Title text in amber/gold
-       - Dark background
+    Recommended: use_ai=False for fast, reliable results.
+    Creates title text on dark background with random color variation.
     """
     title = args.get("title", "")
     save_path = args.get("save_path", "")
+    use_ai = args.get("use_ai", False)  # Default to PIL mode now
+    # Legacy params for AI mode (kept for backwards compat)
     subtitle = args.get("subtitle", "")
-    use_ai = args.get("use_ai", True)  # Default to AI generation
     mood_energy = args.get("mood_energy", 0.5)
     mood_valence = args.get("mood_valence", 0.5)
 
@@ -576,48 +568,53 @@ The title "{title}" can appear in the image if it fits the vibe."""
                 # Fall through to PIL fallback
 
     # ==========================================================================
-    # PIL Fallback Mode (simple text-on-dark)
+    # PIL Mode (simple title on dark with color variation)
     # ==========================================================================
     try:
         from PIL import Image, ImageDraw, ImageFont
         import io
+        import random
+
+        # Color palettes for variety (text_color, accent_color, gradient_tint)
+        COLOR_PALETTES = [
+            ('#FFD700', '#FFD700', (255, 215, 0)),      # Gold
+            ('#f59e0b', '#f59e0b', (245, 158, 11)),    # Amber
+            ('#2D9596', '#2D9596', (45, 149, 150)),    # Teal
+            ('#D4A574', '#D4A574', (212, 165, 116)),   # Soft amber
+            ('#9B8ACB', '#9B8ACB', (155, 138, 203)),   # Purple (pulse)
+        ]
+        text_color, accent_color, gradient_rgb = random.choice(COLOR_PALETTES)
 
         # Create 1200x630 image with dark background
         width, height = 1200, 630
-        img = Image.new('RGB', (width, height), color='#0a0a0a')
+        img = Image.new('RGB', (width, height), color='#0D0D0D')
         draw = ImageDraw.Draw(img)
 
-        # Add subtle amber gradient overlay at top
+        # Add subtle gradient overlay at top using chosen color
         for y in range(150):
-            alpha = int(30 * (1 - y / 150))  # Fade out
+            alpha = int(25 * (1 - y / 150))  # Fade out
             for x in range(width):
                 r, g, b = img.getpixel((x, y))
-                # Add amber tint (245, 158, 11) with decreasing intensity
-                r = min(255, r + alpha)
-                g = min(255, g + int(alpha * 0.64))
-                b = min(255, b + int(alpha * 0.04))
+                r = min(255, r + int(alpha * gradient_rgb[0] / 255))
+                g = min(255, g + int(alpha * gradient_rgb[1] / 255))
+                b = min(255, b + int(alpha * gradient_rgb[2] / 255))
                 img.putpixel((x, y), (r, g, b))
 
         # Try to use a nice font, fall back to default
         try:
-            # Try common system fonts
             font_size = 64
-            subtitle_size = 28
             for font_name in ['/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf',
                               '/System/Library/Fonts/Helvetica.ttc',
                               '/usr/share/fonts/TTF/DejaVuSans-Bold.ttf']:
                 try:
                     title_font = ImageFont.truetype(font_name, font_size)
-                    subtitle_font = ImageFont.truetype(font_name, subtitle_size)
                     break
                 except:
                     continue
             else:
                 title_font = ImageFont.load_default()
-                subtitle_font = ImageFont.load_default()
         except:
             title_font = ImageFont.load_default()
-            subtitle_font = ImageFont.load_default()
 
         # Word wrap title if too long
         words = title.split()
@@ -639,28 +636,31 @@ The title "{title}" can appear in the image if it fits the vibe."""
 
         # Calculate vertical position for centered text block
         line_height = 80
-        total_text_height = len(lines) * line_height + (40 if subtitle else 0)
+        total_text_height = len(lines) * line_height + 60  # +60 for "by Amber"
         start_y = (height - total_text_height) // 2
 
-        # Draw title lines in amber color
-        amber_color = '#f59e0b'
+        # Draw title lines
         for i, line in enumerate(lines):
             bbox = draw.textbbox((0, 0), line, font=title_font)
             text_width = bbox[2] - bbox[0]
             x = (width - text_width) // 2
             y = start_y + i * line_height
-            draw.text((x, y), line, fill=amber_color, font=title_font)
+            draw.text((x, y), line, fill=text_color, font=title_font)
 
-        # Draw subtitle in muted color
-        if subtitle:
-            subtitle_y = start_y + len(lines) * line_height + 20
-            bbox = draw.textbbox((0, 0), subtitle, font=subtitle_font)
-            text_width = bbox[2] - bbox[0]
-            x = (width - text_width) // 2
-            draw.text((x, subtitle_y), subtitle, fill='#888888', font=subtitle_font)
+        # Draw "by Amber" in muted color
+        try:
+            small_font = ImageFont.truetype(font_name, 24)
+        except:
+            small_font = ImageFont.load_default()
+        by_amber = "by Amber"
+        bbox = draw.textbbox((0, 0), by_amber, font=small_font)
+        text_width = bbox[2] - bbox[0]
+        x = (width - text_width) // 2
+        y = start_y + len(lines) * line_height + 20
+        draw.text((x, y), by_amber, fill='#666666', font=small_font)
 
-        # Add small amber accent bar at bottom
-        draw.rectangle([(width // 2 - 60, height - 40), (width // 2 + 60, height - 36)], fill=amber_color)
+        # Add accent bar at bottom
+        draw.rectangle([(width // 2 - 60, height - 40), (width // 2 + 60, height - 36)], fill=accent_color)
 
         # Save to bytes
         img_bytes = io.BytesIO()
