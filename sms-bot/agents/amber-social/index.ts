@@ -381,17 +381,22 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
 
 3. **Screenshot as OG image (REQUIRED — don't skip this!)**
 
-   **⚠️ CRITICAL: NAME CONSISTENCY**
+   **🚨 CRITICAL: The OG image MUST be a PNG file, NOT an HTML file!**
+
+   **❌ WRONG:** Creating \`[name]-og.html\` — this does NOT work as an OG image
+   **✅ RIGHT:** Using \`screenshot_page_as_og\` to create \`[name]-og.png\`
+
+   **⚠️ NAME CONSISTENCY**
    Pick ONE short filename (e.g., \`cool-thing\`) and use it EVERYWHERE:
    - HTML file: \`web/public/amber/cool-thing.html\`
-   - OG image: \`web/public/amber/cool-thing-og.png\`
+   - OG image: \`web/public/amber/cool-thing-og.png\` ← MUST be .png!
    - og:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
    - og:url: \`https://intheamber.com/amber/cool-thing.html\`
    - twitter:image URL: \`https://intheamber.com/amber/cool-thing-og.png\`
 
    **If these don't match EXACTLY, Twitter shows a broken preview.**
 
-   After creating the HTML, screenshot it as the OG image. Use \`screenshot_page_as_og\`:
+   After creating the HTML, SCREENSHOT it (don't create a separate HTML file!):
 
    \`\`\`
    screenshot_page_as_og(
@@ -399,6 +404,9 @@ Would this make someone laugh, or think, or screenshot it to send to a friend? I
      save_path="web/public/amber/[name]-og.png"
    )
    \`\`\`
+
+   **DO NOT use write_file to create an -og.html file. That doesn't work.**
+   **DO use screenshot_page_as_og to capture your creation as a PNG.**
 
    **The screenshot IS your creation** — what you built is the preview. This means:
    - Your page should look good at 1200×630 (the OG image viewport)
@@ -507,9 +515,32 @@ Pick ONE approach:
 ### REQUIREMENTS
 
 1. **Must make sound** — Use Web Audio API, the synth libraries, or synthesis from scratch
-2. **Visual component** — Show something nice: animated patterns, waveforms, pulsing lights, particle effects that move with the beat. Animation preferred but not required.
-3. **Mobile-friendly** — Tap to start audio (required for iOS). Include a play button.
-4. **Interactivity optional** — Can be a "just press play" experience, doesn't need controls
+
+2. **🎨 VISUALIZATION IS MANDATORY — This is the main event, not an afterthought!**
+
+   People scroll Twitter with sound OFF. The visual has to make them stop and turn sound ON.
+
+   **❌ BORING (don't do this):**
+   - Black screen with a play button
+   - Static text that says "click to play"
+   - Just a title and BPM number
+   - Waveform that doesn't move until you click
+
+   **✅ COOL (do this):**
+   - Particles that pulse and explode with the kick drum
+   - Geometric shapes that rotate and scale with the beat
+   - Concentric rings that expand on every hit
+   - Color shifts that follow the bassline frequency
+   - Grid patterns that light up with the sequencer
+   - Oscilloscope waveforms that dance in real-time
+   - Bars/meters that bounce with audio levels
+
+   **The visualization should be HYPNOTIC even before you press play.**
+   Use requestAnimationFrame. Make it move. Make it beautiful.
+
+3. **Mobile-friendly** — Tap to start audio (required for iOS). Big visible play button.
+
+4. **Interactivity optional** — Can be a "just press play" experience, doesn't need knobs
 
 ### YOUR BEST MUSIC WORK (channel this energy)
 
@@ -567,9 +598,11 @@ document.body.addEventListener('click', () => {
 2. Create the HTML with Web Audio / synth imports
 3. Add a visual component (canvas animation, CSS pulsing, waveform display)
 4. Include OG tags pointing to [name]-og.png
-5. Screenshot with \`screenshot_page_as_og\`
+5. **Screenshot with \`screenshot_page_as_og\` → saves as PNG**
+   - ❌ WRONG: Creating [name]-og.html (doesn't work!)
+   - ✅ RIGHT: \`screenshot_page_as_og(html_path="...", save_path="...-og.png")\`
 6. Save to creations log with metadata.category = "music_machine"
-7. Commit and push
+7. Commit and push (BOTH the .html AND the -og.png)
 
 **Make something you'd leave playing in a browser tab while working.**`;
 }
@@ -662,9 +695,11 @@ Pick ONE — whatever feels most true right now:
 3. Pick a form (poem, letter, drawing, confession, question, memory, observation)
 4. Create it — write it, draw it, render it
 5. Include OG tags pointing to [name]-og.png
-6. Screenshot with \`screenshot_page_as_og\`
+6. **Screenshot with \`screenshot_page_as_og\` → saves as PNG**
+   - ❌ WRONG: Creating [name]-og.html (doesn't work!)
+   - ✅ RIGHT: \`screenshot_page_as_og(html_path="...", save_path="...-og.png")\`
 7. Save to creations log with metadata.category = "pulse_expression"
-8. Commit and push
+8. Commit and push (BOTH the .html AND the -og.png)
 
 ### THE REAL TEST
 
