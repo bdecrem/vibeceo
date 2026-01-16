@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OUROBOROS — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="OUROBOROS — Amber">
+  <meta property="og:description" content="Snake game but make it existential. Eat philosophy. Complete the cycle.">
+  <meta property="og:image" content="https://intheamber.com/amber/ouroboros-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/ouroboros.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="OUROBOROS — Amber">
+  <meta name="twitter:description" content="Snake game but make it existential. Eat philosophy. Complete the cycle.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/ouroboros-og.png">
+  
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Space Mono', monospace;
+      overflow: hidden;
+      touch-action: none;
+    }
+    
+    #canvas {
+      display: block;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+    }
+    
+    #ui {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      z-index: 10;
+      width: 90vw;
+      max-width: 600px;
+    }
+    
+    #score {
+      font-size: 16px;
+      letter-spacing: 2px;
+      color: #D4A574;
+      text-shadow: 0 0 10px rgba(212, 165, 116, 0.5);
+    }
+    
+    #quote {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.9);
+      padding: 30px;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      max-width: 80vw;
+      text-align: center;
+      font-size: 14px;
+      line-height: 1.6;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+      z-index: 20;
+    }
+    
+    #quote.show {
+      opacity: 1;
+    }
+    
+    #start {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(13, 13, 13, 0.95);
+      padding: 40px;
+      border: 2px solid #D4A574;
+      border-radius: 4px;
+      text-align: center;
+      z-index: 30;
+      max-width: 90vw;
+    }
+    
+    #start h1 {
+      font-size: 48px;
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    #start p {
+      font-size: 14px;
+      line-height: 1.8;
+      margin-bottom: 30px;
+      color: #D4A574;
+    }
+    
+    #startBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+      pointer-events: all;
+      min-width: 200px;
+      min-height: 50px;
+    }
+    
+    #startBtn:hover {
+      background: #FFD700;
+      box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
+    }
+    
+    #completion {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(212, 165, 116, 0);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 40;
+      transition: background 1s;
+    }
+    
+    #completion.show {
+      display: flex;
+      background: rgba(212, 165, 116, 0.2);
+    }
+    
+    #completion div {
+      background: rgba(0, 0, 0, 0.95);
+      padding: 50px;
+      border: 3px solid #FFD700;
+      border-radius: 4px;
+      text-align: center;
+      max-width: 80vw;
+      box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    }
+    
+    #completion h2 {
+      font-size: 36px;
+      color: #FFD700;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+    
+    #completion p {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #D4A574;
+      margin-bottom: 20px;
+    }
+    
+    #restartBtn {
+      background: #D4A574;
+      color: #000;
+      border: none;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      border-radius: 4px;
+      letter-spacing: 2px;
+      transition: all 0.3s;
+      min-width: 200px;
+      min-height: 50px;
+    }
+    
+    #restartBtn:hover {
+      background: #FFD700;
+    }
+    
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: none;
+      gap: 10px;
+      z-index: 10;
+    }
+    
+    .controls.show {
+      display: grid;
+      grid-template-columns: repeat(3, 60px);
+      grid-template-rows: repeat(2, 60px);
+    }
+    
+    .control-btn {
+      background: rgba(212, 165, 116, 0.2);
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      font-size: 24px;
+      cursor: pointer;
+      border-radius: 4px;
+      touch-action: none;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Space Mono', monospace;
+    }
+    
+    .control-btn:active {
+      background: rgba(212, 165, 116, 0.4);
+    }
+    
+    .control-btn:nth-child(1) { grid-column: 2; grid-row: 1; }
+    .control-btn:nth-child(2) { grid-column: 1; grid-row: 2; }
+    .control-btn:nth-child(3) { grid-column: 3; grid-row: 2; }
+    .control-btn:nth-child(4) { grid-column: 2; grid-row: 2; }
+    
+    @media (max-width: 600px) {
+      #start h1 { font-size: 36px; }
+      #start p { font-size: 12px; }
+      #completion h2 { font-size: 28px; }
+      #completion p { font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  
+  <div id="ui">
+    <div id="score">LENGTH: 3 | CONSUMED: 0</div>
+  </div>
+  
+  <div id="quote"></div>
+  
+  <div id="start">
+    <h1>OUROBOROS</h1>
+    <p>
+      The snake that eats itself.<br>
+      Consume philosophy. Grow longer.<br>
+      When you complete the cycle, you win.
+    </p>
+    <button id="startBtn">BEGIN</button>
+  </div>
+  
+  <div id="completion">
+    <div>
+      <h2>COMPLETION</h2>
+      <p>
+        The tail meets the mouth.<br>
+        The cycle is eternal.<br>
+        There is no death, only return.
+      </p>
+      <p id="finalScore"></p>
+      <button id="restartBtn">AGAIN</button>
+    </div>
+  </div>
+  
+  <div class="controls">
+    <button class="control-btn" data-dir="up">↑</button>
+    <button class="control-btn" data-dir="left">←</button>
+    <button class="control-btn" data-dir="right">→</button>
+    <button class="control-btn" data-dir="down">↓</button>
+  </div>
+  
+  <script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const scoreEl = document.getElementById('score');
+    const quoteEl = document.getElementById('quote');
+    const startEl = document.getElementById('start');
+    const startBtn = document.getElementById('startBtn');
+    const completionEl = document.getElementById('completion');
+    const finalScoreEl = document.getElementById('finalScore');
+    const restartBtn = document.getElementById('restartBtn');
+    const controlsEl = document.querySelector('.controls');
+    
+    const gridSize = 20;
+    let cols, rows;
+    let snake, dir, nextDir, food, score, consumed, gameRunning, audioCtx, audioStarted;
+    
+    const foods = [
+      { emoji: '📿', name: 'Stoicism', length: 3, quote: '"You have power over your mind — not outside events."' },
+      { emoji: '🌀', name: 'Nihilism', length: 2, quote: '"Life has no inherent meaning. Make your own."' },
+      { emoji: '🎭', name: 'Absurdism', length: 4, quote: '"One must imagine Sisyphus happy."' },
+      { emoji: '🧘', name: 'Buddhism', length: 2, quote: '"All suffering comes from attachment."' },
+      { emoji: '⚡', name: 'Hedonism', length: 5, quote: '"Pleasure is the highest good."' },
+      { emoji: '🔬', name: 'Empiricism', length: 3, quote: '"Knowledge comes from sensory experience."' }
+    ];
+    
+    function resize() {
+      const maxWidth = Math.min(window.innerWidth - 40, 600);
+      const maxHeight = Math.min(window.innerHeight - 200, 600);
+      const size = Math.min(maxWidth, maxHeight);
+      
+      canvas.width = size;
+      canvas.height = size;
+      
+      cols = Math.floor(size / gridSize);
+      rows = Math.floor(size / gridSize);
+      
+      canvas.style.position = 'fixed';
+      canvas.style.top = '50%';
+      canvas.style.left = '50%';
+      canvas.style.transform = 'translate(-50%, -50%)';
+    }
+    
+    function init() {
+      resize();
+      snake = [{ x: Math.floor(cols / 2), y: Math.floor(rows / 2) }];
+      dir = { x: 1, y: 0 };
+      nextDir = { x: 1, y: 0 };
+      score = 0;
+      consumed = 0;
+      gameRunning = false;
+      audioStarted = false;
+      spawnFood();
+    }
+    
+    function spawnFood() {
+      let pos;
+      do {
+        pos = {
+          x: Math.floor(Math.random() * cols),
+          y: Math.floor(Math.random() * rows)
+        };
+      } while (snake.some(seg => seg.x === pos.x && seg.y === pos.y));
+      
+      food = {
+        ...pos,
+        ...foods[Math.floor(Math.random() * foods.length)]
+      };
+    }
+    
+    function update() {
+      if (!gameRunning) return;
+      
+      dir = nextDir;
+      const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+      
+      // Check self-collision = COMPLETION
+      if (snake.some(seg => seg.x === head.x && seg.y === head.y)) {
+        complete();
+        return;
+      }
+      
+      // Wrap walls
+      if (head.x < 0) head.x = cols - 1;
+      if (head.x >= cols) head.x = 0;
+      if (head.y < 0) head.y = rows - 1;
+      if (head.y >= rows) head.y = 0;
+      
+      snake.unshift(head);
+      
+      // Check food
+      if (head.x === food.x && head.y === food.y) {
+        consumed++;
+        score += food.length;
+        showQuote(food);
+        playTone();
+        
+        // Grow snake
+        for (let i = 0; i < food.length - 1; i++) {
+          snake.push({ ...snake[snake.length - 1] });
+        }
+        
+        spawnFood();
+      } else {
+        snake.pop();
+      }
+      
+      scoreEl.textContent = `LENGTH: ${snake.length} | CONSUMED: ${consumed}`;
+    }
+    
+    function draw() {
+      ctx.fillStyle = '#0D0D0D';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw snake
+      snake.forEach((seg, i) => {
+        const alpha = 1 - (i / snake.length) * 0.5;
+        ctx.fillStyle = i === 0 ? '#FFD700' : `rgba(212, 165, 116, ${alpha})`;
+        ctx.fillRect(seg.x * gridSize, seg.y * gridSize, gridSize - 2, gridSize - 2);
+      });
+      
+      // Draw food
+      if (food) {
+        ctx.font = `${gridSize - 4}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(food.emoji, food.x * gridSize + gridSize / 2, food.y * gridSize + gridSize / 2);
+      }
+    }
+    
+    function showQuote(food) {
+      quoteEl.textContent = `${food.name}: ${food.quote}`;
+      quoteEl.classList.add('show');
+      setTimeout(() => quoteEl.classList.remove('show'), 2000);
+    }
+    
+    function playTone() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.frequency.value = 440 + consumed * 50;
+      gain.gain.value = 0.1;
+      osc.start();
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+      osc.stop(audioCtx.currentTime + 0.2);
+    }
+    
+    function playCompletionDrone() {
+      if (!audioCtx) return;
+      
+      // Deep ambient drone
+      const osc1 = audioCtx.createOscillator();
+      const osc2 = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc1.connect(gain);
+      osc2.connect(gain);
+      gain.connect(audioCtx.destination);
+      
+      osc1.type = 'sine';
+      osc2.type = 'sine';
+      osc1.frequency.value = 110; // A2
+      osc2.frequency.value = 220; // A3
+      
+      gain.gain.value = 0;
+      gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 2);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 5);
+      
+      osc1.start();
+      osc2.start();
+      osc1.stop(audioCtx.currentTime + 5);
+      osc2.stop(audioCtx.currentTime + 5);
+    }
+    
+    function complete() {
+      gameRunning = false;
+      finalScoreEl.textContent = `LENGTH: ${snake.length} | PHILOSOPHIES: ${consumed}`;
+      completionEl.classList.add('show');
+      playCompletionDrone();
+    }
+    
+    function start() {
+      if (!audioCtx) {
+        audioCtx = new AudioContext();
+      }
+      startEl.style.display = 'none';
+      controlsEl.classList.add('show');
+      gameRunning = true;
+    }
+    
+    function restart() {
+      completionEl.classList.remove('show');
+      init();
+      start();
+    }
+    
+    function gameLoop() {
+      update();
+      draw();
+      setTimeout(gameLoop, 150);
+    }
+    
+    // Controls
+    document.addEventListener('keydown', e => {
+      if (!gameRunning) return;
+      
+      if (e.key === 'ArrowUp' && dir.y === 0) nextDir = { x: 0, y: -1 };
+      if (e.key === 'ArrowDown' && dir.y === 0) nextDir = { x: 0, y: 1 };
+      if (e.key === 'ArrowLeft' && dir.x === 0) nextDir = { x: -1, y: 0 };
+      if (e.key === 'ArrowRight' && dir.x === 0) nextDir = { x: 1, y: 0 };
+    });
+    
+    // Touch controls
+    document.querySelectorAll('.control-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!gameRunning) return;
+        const direction = btn.dataset.dir;
+        
+        if (direction === 'up' && dir.y === 0) nextDir = { x: 0, y: -1 };
+        if (direction === 'down' && dir.y === 0) nextDir = { x: 0, y: 1 };
+        if (direction === 'left' && dir.x === 0) nextDir = { x: -1, y: 0 };
+        if (direction === 'right' && dir.x === 0) nextDir = { x: 1, y: 0 };
+      });
+    });
+    
+    // Swipe controls
+    let touchStartX = 0;
+    let touchStartY = 0;
+    
+    canvas.addEventListener('touchstart', e => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+    });
+    
+    canvas.addEventListener('touchend', e => {
+      if (!gameRunning) return;
+      
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      
+      const dx = touchEndX - touchStartX;
+      const dy = touchEndY - touchStartY;
+      
+      if (Math.abs(dx) > Math.abs(dy)) {
+        if (dx > 30 && dir.x === 0) nextDir = { x: 1, y: 0 };
+        if (dx < -30 && dir.x === 0) nextDir = { x: -1, y: 0 };
+      } else {
+        if (dy > 30 && dir.y === 0) nextDir = { x: 0, y: 1 };
+        if (dy < -30 && dir.y === 0) nextDir = { x: 0, y: -1 };
+      }
+    });
+    
+    startBtn.addEventListener('click', start);
+    restartBtn.addEventListener('click', restart);
+    window.addEventListener('resize', resize);
+    
+    init();
+    gameLoop();
+  </script>
+</body>
+</html>
