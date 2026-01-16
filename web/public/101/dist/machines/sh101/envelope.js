@@ -22,10 +22,11 @@ export class ADSREnvelope {
         this.envelope.connect(this.output);
 
         // ADSR parameters (in seconds for A/D/R, 0-1 for S)
-        this.attack = options.attack ?? 0.01;
-        this.decay = options.decay ?? 0.3;
-        this.sustain = options.sustain ?? 0.7;
-        this.release = options.release ?? 0.3;
+        // Note: Using _attack etc. to avoid shadowing methods
+        this._attack = options.attack ?? 0.01;
+        this._decay = options.decay ?? 0.3;
+        this._sustain = options.sustain ?? 0.7;
+        this._release = options.release ?? 0.3;
 
         // State
         this.isGateOn = false;
@@ -43,7 +44,7 @@ export class ADSREnvelope {
     setAttack(value) {
         const normalized = Math.max(0, Math.min(1, value));
         // Exponential mapping for more control at low values
-        this.attack = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
+        this._attack = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
     }
 
     /**
@@ -51,14 +52,14 @@ export class ADSREnvelope {
      */
     setDecay(value) {
         const normalized = Math.max(0, Math.min(1, value));
-        this.decay = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
+        this._decay = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
     }
 
     /**
      * Set sustain level (0-1)
      */
     setSustain(value) {
-        this.sustain = Math.max(0, Math.min(1, value));
+        this._sustain = Math.max(0, Math.min(1, value));
     }
 
     /**
@@ -66,7 +67,7 @@ export class ADSREnvelope {
      */
     setRelease(value) {
         const normalized = Math.max(0, Math.min(1, value));
-        this.release = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
+        this._release = this.minTime * Math.pow(this.maxTime / this.minTime, normalized);
     }
 
     /**
@@ -103,11 +104,11 @@ export class ADSREnvelope {
         // Attack phase: ramp to peak (1.0)
         // Using setTargetAtTime for exponential curve
         // Time constant = attack / 3 gets to ~95% in attack time
-        this.envelope.offset.setTargetAtTime(1.0, when, this.attack / 3);
+        this.envelope.offset.setTargetAtTime(1.0, when, this._attack / 3);
 
         // Decay phase: ramp to sustain
-        const decayStart = when + this.attack;
-        this.envelope.offset.setTargetAtTime(this.sustain, decayStart, this.decay / 3);
+        const decayStart = when + this._attack;
+        this.envelope.offset.setTargetAtTime(this._sustain, decayStart, this._decay / 3);
     }
 
     /**
@@ -128,7 +129,7 @@ export class ADSREnvelope {
         this.envelope.offset.setValueAtTime(currentVal, when);
 
         // Release to 0
-        this.envelope.offset.setTargetAtTime(0, when, this.release / 3);
+        this.envelope.offset.setTargetAtTime(0, when, this._release / 3);
     }
 
     /**
@@ -144,16 +145,16 @@ export class ADSREnvelope {
 
         const elapsed = when - this.gateOnTime;
 
-        if (elapsed < this.attack) {
+        if (elapsed < this._attack) {
             // Attack phase
-            const progress = elapsed / this.attack;
+            const progress = elapsed / this._attack;
             return 1 - Math.exp(-3 * progress);
         } else {
             // Decay/sustain phase
-            const decayElapsed = elapsed - this.attack;
-            const decayProgress = decayElapsed / this.decay;
-            const decayed = (1 - this.sustain) * Math.exp(-3 * decayProgress);
-            return this.sustain + decayed;
+            const decayElapsed = elapsed - this._attack;
+            const decayProgress = decayElapsed / this._decay;
+            const decayed = (1 - this._sustain) * Math.exp(-3 * decayProgress);
+            return this._sustain + decayed;
         }
     }
 
@@ -212,13 +213,13 @@ export class DecayEnvelope {
         this.output.gain.value = 1;
         this.envelope.connect(this.output);
 
-        this.decay = options.decay ?? 0.3;
+        this._decay = options.decay ?? 0.3;
         this.accent = options.accent ?? 1.0;
     }
 
     setDecay(value) {
         const normalized = Math.max(0, Math.min(1, value));
-        this.decay = 0.01 + normalized * 2.0; // 10ms to 2s
+        this._decay = 0.01 + normalized * 2.0; // 10ms to 2s
     }
 
     trigger(time, velocity = 1) {
@@ -227,7 +228,7 @@ export class DecayEnvelope {
 
         this.envelope.offset.cancelScheduledValues(when);
         this.envelope.offset.setValueAtTime(peak, when);
-        this.envelope.offset.setTargetAtTime(0, when, this.decay / 3);
+        this.envelope.offset.setTargetAtTime(0, when, this._decay / 3);
     }
 
     connect(param, amount = 1) {

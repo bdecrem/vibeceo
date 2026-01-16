@@ -46,23 +46,78 @@ async function init() {
     console.log('SH-101 initialized');
 }
 
-// --- Preset Selector ---
+// --- Preset Selector (Custom Dropdown) ---
+
+let currentPresetId = '';
 
 function initPresetSelector() {
-    const select = document.getElementById('preset-select');
+    const dropdown = document.getElementById('preset-dropdown');
+    const btn = document.getElementById('preset-dropdown-btn');
+    const menu = document.getElementById('preset-dropdown-menu');
     const presets = getPresetNames();
 
+    // Populate menu
     presets.forEach(preset => {
-        const option = document.createElement('option');
-        option.value = preset.id;
-        option.textContent = preset.name;
-        select.appendChild(option);
+        const item = document.createElement('div');
+        item.className = 'preset-dropdown-item';
+        item.dataset.value = preset.id;
+        item.textContent = preset.name;
+        item.addEventListener('click', () => {
+            selectPreset(preset.id, preset.name);
+            dropdown.classList.remove('open');
+        });
+        menu.appendChild(item);
     });
 
-    select.addEventListener('change', (e) => {
-        if (e.target.value) {
-            loadPreset(e.target.value);
+    // Toggle dropdown
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        dropdown.classList.toggle('open');
+    });
+
+    // Close on click outside
+    document.addEventListener('click', (e) => {
+        if (!dropdown.contains(e.target)) {
+            dropdown.classList.remove('open');
         }
+    });
+
+    // Close on escape
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            dropdown.classList.remove('open');
+        }
+    });
+}
+
+function selectPreset(id, name) {
+    currentPresetId = id;
+    const textEl = document.querySelector('.preset-dropdown-text');
+    if (textEl) {
+        textEl.textContent = name || 'Select Preset...';
+    }
+
+    // Update selected state
+    document.querySelectorAll('.preset-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === id);
+    });
+
+    // Load the preset
+    if (id) {
+        loadPreset(id);
+    }
+}
+
+function updatePresetSelector(id) {
+    currentPresetId = id;
+    const presets = getPresetNames();
+    const preset = presets.find(p => p.id === id);
+    const textEl = document.querySelector('.preset-dropdown-text');
+    if (textEl) {
+        textEl.textContent = preset?.name || 'Select Preset...';
+    }
+    document.querySelectorAll('.preset-dropdown-item').forEach(item => {
+        item.classList.toggle('selected', item.dataset.value === id);
     });
 }
 
@@ -92,8 +147,8 @@ function loadPreset(id) {
         updateStepGrid();
     }
 
-    // Update preset selector
-    document.getElementById('preset-select').value = id;
+    // Update preset selector (visual only, already loaded)
+    updatePresetSelector(id);
 }
 
 // --- Engine Toggle ---
@@ -632,7 +687,7 @@ function exportPatternJSON() {
         bpm: bpmInput ? parseInt(bpmInput.value) : 120,
         pattern: synth.getPattern(),
         parameters: synth.getParameters ? synth.getParameters() : {},
-        preset: document.getElementById('preset-select')?.value || null
+        preset: currentPresetId || null
     };
 
     // Download
@@ -694,8 +749,7 @@ function importPatternJSON(file) {
             }
 
             // Clear preset selection
-            const presetSelect = document.getElementById('preset-select');
-            if (presetSelect) presetSelect.value = '';
+            updatePresetSelector('');
 
             console.log(`Pattern imported: ${file.name}`);
         } catch (err) {

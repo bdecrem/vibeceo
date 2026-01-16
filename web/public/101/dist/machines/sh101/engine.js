@@ -301,14 +301,24 @@ export class SH101Engine extends SynthEngine {
         const peakCutoff = Math.min(1, baseCutoff + amount);
         const sustainCutoff = baseCutoff + (amount * this.params.sustain * 0.5);
 
-        // Attack
+        // Attack: ramp from base to peak
         this.filter.setCutoff(baseCutoff, when);
         this.filter.rampCutoff(peakCutoff, a, when);
 
-        // Decay to sustain
-        setTimeout(() => {
-            this.filter.rampCutoff(sustainCutoff, d);
-        }, a * 1000);
+        // Decay to sustain: schedule at when + attack (works for both real-time and offline)
+        // For real-time, also use setTimeout as fallback for smoother response
+        const decayTime = when + a;
+        this.filter.rampCutoff(sustainCutoff, d, decayTime);
+
+        // For real-time playback, also use setTimeout for immediate UI response
+        if (this.context.constructor.name !== 'OfflineAudioContext') {
+            setTimeout(() => {
+                // Only apply if still playing (context might have changed)
+                if (this.context.state === 'running') {
+                    this.filter.rampCutoff(sustainCutoff, d);
+                }
+            }, a * 1000);
+        }
     }
 
     /**
@@ -666,6 +676,32 @@ export class SH101Engine extends SynthEngine {
     // --- Render Methods ---
 
     /**
+     * Compute LFO value at a given time for offline rendering
+     */
+    computeLfoValue(time, waveform, rate) {
+        // Rate is normalized 0-1, maps to 0.1-30 Hz
+        const freq = 0.1 * Math.pow(300, rate);
+        const phase = (time * freq) % 1;
+
+        switch (waveform) {
+            case 'triangle':
+                return phase < 0.5 ? (phase * 4 - 1) : (3 - phase * 4);
+            case 'square':
+                return phase < 0.5 ? 1 : -1;
+            case 'sh':
+                // For S&H, use deterministic random based on time quantized to LFO period
+                const period = 1 / freq;
+                const quantizedTime = Math.floor(time / period);
+                // Simple seeded random using fract(sin(x) * large_number) technique
+                const seed = quantizedTime * 12345.6789;
+                const random = Math.abs((Math.sin(seed) * 43758.5453) % 1);
+                return random * 2 - 1; // Map 0-1 to -1 to +1
+            default:
+                return 0;
+        }
+    }
+
+    /**
      * Render pattern to AudioBuffer
      */
     async renderPattern(options = {}) {
@@ -697,6 +733,25 @@ export class SH101Engine extends SynthEngine {
 
         // Copy pattern
         offlineEngine.setPattern([...this.pattern]);
+
+        // Pre-compute LFO modulation if filter modulation is enabled
+        // Note: PWM and pitch LFO modulation cannot be scheduled in offline rendering
+        // due to Web Audio limitations (waveshaper curves aren't AudioParams)
+        const lfoToFilter = this.params.lfoToFilter || 0;
+        const lfoRate = this.params.lfoRate || 0;
+        const lfoWaveform = this.params.lfoWaveform || 'triangle';
+        const baseCutoff = this.params.cutoff || 0.5;
+
+        // Schedule LFO filter modulation changes (every 50ms for smoothness)
+        if (lfoToFilter > 0) {
+            const lfoUpdateInterval = 0.05; // 50ms
+            for (let t = 0; t < totalDuration; t += lfoUpdateInterval) {
+                const lfoValue = this.computeLfoValue(t, lfoWaveform, lfoRate);
+                // lfoToFilter 0-1 maps to significant filter sweep
+                const modulatedCutoff = Math.max(0, Math.min(1, baseCutoff + lfoValue * lfoToFilter * 0.5));
+                offlineEngine.filter.setCutoff(modulatedCutoff, t);
+            }
+        }
 
         // Schedule all notes
         for (let step = 0; step < totalSteps; step++) {

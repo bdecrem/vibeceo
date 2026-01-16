@@ -187,6 +187,15 @@ export class IR3109Filter {
         const normalized = Math.max(0, Math.min(1, targetValue));
         const targetHz = this.minFreq * Math.pow(this.maxFreq / this.minFreq, normalized);
 
+        // Cancel any scheduled values first to avoid "cannot assign curve twice" errors
+        this.stage1.frequency.cancelScheduledValues(when);
+        this.stage2.frequency.cancelScheduledValues(when);
+
+        // Set current value at the start time (required before ramp)
+        const currentHz = this.cutoffHz || this.minFreq;
+        this.stage1.frequency.setValueAtTime(currentHz, when);
+        this.stage2.frequency.setValueAtTime(currentHz, when);
+
         this.stage1.frequency.exponentialRampToValueAtTime(targetHz, when + duration);
         this.stage2.frequency.exponentialRampToValueAtTime(targetHz, when + duration);
 
@@ -283,6 +292,14 @@ export class IR3109FilterE1 {
         const when = time ?? this.context.currentTime;
         const normalized = Math.max(0, Math.min(1, targetValue));
         const targetHz = this.minFreq * Math.pow(this.maxFreq / this.minFreq, normalized);
+
+        // Cancel any scheduled values first to avoid "cannot assign curve twice" errors
+        this.filter.frequency.cancelScheduledValues(when);
+
+        // Set current value at the start time (required before ramp)
+        const currentHz = this.cutoffHz || this.minFreq;
+        this.filter.frequency.setValueAtTime(currentHz, when);
+
         this.filter.frequency.exponentialRampToValueAtTime(targetHz, when + duration);
         this.cutoffHz = targetHz;
     }

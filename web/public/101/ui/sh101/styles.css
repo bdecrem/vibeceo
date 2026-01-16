@@ -27,9 +27,6 @@ body {
     font-family: 'Helvetica Neue', Arial, sans-serif;
     background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
     min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
     padding: 20px;
     overscroll-behavior: none;
 }
@@ -41,9 +38,9 @@ body {
         0 20px 60px rgba(0, 0, 0, 0.5),
         inset 0 1px 0 rgba(255, 255, 255, 0.3),
         inset 0 -1px 0 rgba(0, 0, 0, 0.2);
-    max-width: 900px;
+    max-width: 1050px;
     width: 100%;
-    overflow: hidden;
+    margin: 0 auto;
 }
 
 /* Header */
@@ -81,13 +78,81 @@ body {
     gap: 15px;
 }
 
-.preset-selector {
+/* Custom Preset Dropdown */
+.preset-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.preset-dropdown-btn {
     padding: 8px 12px;
     border-radius: 4px;
     border: 1px solid #999;
     background: white;
     font-size: 14px;
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 140px;
+}
+
+.preset-dropdown-btn:hover {
+    background: #f5f5f5;
+}
+
+.preset-dropdown-text {
+    flex: 1;
+    text-align: left;
+}
+
+.preset-dropdown-arrow {
+    font-size: 10px;
+    color: #666;
+}
+
+.preset-dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 2px;
+    background: white;
+    border: 1px solid #999;
+    border-radius: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 1000;
+}
+
+.preset-dropdown.open .preset-dropdown-menu {
+    display: block;
+}
+
+.preset-dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    border-bottom: 1px solid #eee;
+}
+
+.preset-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.preset-dropdown-item:hover {
+    background: #f0f0f0;
+}
+
+.preset-dropdown-item.selected {
+    background: var(--sh101-accent-blue);
+    color: white;
+}
+
+.preset-dropdown-item.selected:hover {
+    background: #3366aa;
 }
 
 .engine-toggle {
@@ -742,9 +807,14 @@ body {
         justify-content: space-between;
     }
 
-    .preset-selector {
+    .preset-dropdown {
         flex: 1;
         max-width: 150px;
+    }
+
+    .preset-dropdown-btn {
+        width: 100%;
+        min-width: unset;
     }
 
     .control-panel {

@@ -74,7 +74,22 @@ export class Oscillator {
             curve[i] = x > threshold ? 1 : -1;
         }
 
-        this.pulseShaper.curve = curve;
+        // In some Web Audio implementations (especially offline contexts),
+        // you can't reassign curve once set. Create a new shaper if needed.
+        if (this.pulseShaper.curve !== null) {
+            // Create new waveshaper and reconnect
+            const newShaper = this.context.createWaveShaper();
+            newShaper.curve = curve;
+
+            // Reconnect: pulseOsc -> newShaper -> pulseGain
+            this.pulseOsc.disconnect(this.pulseShaper);
+            this.pulseOsc.connect(newShaper);
+            newShaper.connect(this.pulseGain);
+
+            this.pulseShaper = newShaper;
+        } else {
+            this.pulseShaper.curve = curve;
+        }
     }
 
     /**
