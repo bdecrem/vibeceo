@@ -3,29 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CAPTCHA Test — Amber</title>
+  <title>CAPTCHA FOR HUMANS — Amber</title>
+  
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
   
   <!-- OpenGraph -->
-  <meta property="og:title" content="CAPTCHA Test — Amber">
-  <meta property="og:description" content="Prove you're human by selecting all squares with existential dread.">
+  <meta property="og:title" content="CAPTCHA FOR HUMANS — Amber">
+  <meta property="og:description" content="Prove you're human by answering increasingly absurd philosophical questions">
   <meta property="og:image" content="https://intheamber.com/amber/captcha-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/captcha.html">
   <meta property="og:type" content="website">
   
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="CAPTCHA Test — Amber">
-  <meta name="twitter:description" content="Prove you're human by selecting all squares with existential dread.">
+  <meta name="twitter:title" content="CAPTCHA FOR HUMANS — Amber">
+  <meta name="twitter:description" content="Prove you're human by answering increasingly absurd philosophical questions">
   <meta name="twitter:image" content="https://intheamber.com/amber/captcha-og.png">
   
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
     
     body {
-      background: #0D0D0D;
+      background: #000;
       color: #D4A574;
-      font-family: 'Space Mono', monospace;
+      font-family: 'Inter', sans-serif;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -36,347 +45,258 @@
     .container {
       max-width: 500px;
       width: 100%;
-      background: #000;
-      border: 2px solid #2D9596;
+    }
+    
+    .captcha-box {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
       padding: 30px;
-      box-shadow: 0 0 30px rgba(45, 149, 150, 0.3);
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.2);
     }
     
     .header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 20px;
-      padding-bottom: 15px;
-      border-bottom: 1px solid #2D9596;
-    }
-    
-    .logo {
-      width: 24px;
-      height: 24px;
-      background: #D4A574;
-      border-radius: 3px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 16px;
-    }
-    
-    .header-text {
-      font-size: 14px;
-      color: #999;
-    }
-    
-    .prompt {
-      font-size: 16px;
-      margin-bottom: 20px;
-      line-height: 1.5;
-      color: #FFD700;
-    }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 8px;
-      margin-bottom: 25px;
-    }
-    
-    .tile {
-      aspect-ratio: 1;
-      background: #1a1a1a;
-      border: 2px solid #333;
-      cursor: pointer;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 11px;
-      text-align: center;
-      padding: 8px;
-      color: #666;
-      line-height: 1.2;
-      user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      min-height: 80px;
-    }
-    
-    .tile:active {
-      transform: scale(0.95);
-    }
-    
-    .tile.selected {
-      background: #2D9596;
-      border-color: #2D9596;
-      color: #000;
-      font-weight: bold;
-    }
-    
-    .tile.correct {
-      background: #D4A574;
-      border-color: #FFD700;
-      color: #000;
-    }
-    
-    .tile.wrong {
-      background: #7B68EE;
-      border-color: #7B68EE;
-      color: #fff;
-    }
-    
-    .submit {
-      width: 100%;
-      padding: 15px;
-      background: #D4A574;
-      color: #000;
-      border: none;
       font-family: 'Space Mono', monospace;
-      font-size: 16px;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.2s;
-      text-transform: uppercase;
+      font-size: 14px;
+      color: #2D9596;
+      margin-bottom: 20px;
+      text-align: center;
       letter-spacing: 1px;
     }
     
-    .submit:active {
-      transform: scale(0.98);
-      background: #FFD700;
-    }
-    
-    .submit:disabled {
-      background: #333;
-      color: #666;
-      cursor: not-allowed;
-    }
-    
-    .result {
-      margin-top: 20px;
-      padding: 20px;
-      background: #1a1a1a;
-      border-left: 4px solid #FFD700;
-      display: none;
-    }
-    
-    .result.show {
-      display: block;
-    }
-    
-    .result-title {
+    .question {
+      font-family: 'Space Mono', monospace;
       font-size: 18px;
-      color: #FFD700;
-      margin-bottom: 10px;
-    }
-    
-    .result-text {
-      font-size: 14px;
       line-height: 1.6;
+      margin-bottom: 25px;
+      min-height: 100px;
       color: #D4A574;
     }
     
-    .refresh {
-      margin-top: 15px;
-      padding: 12px;
-      background: #2D9596;
-      color: #000;
-      border: none;
-      font-family: 'Space Mono', monospace;
-      font-size: 14px;
-      font-weight: bold;
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .option {
+      background: #000;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 15px 20px;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
       cursor: pointer;
-      width: 100%;
+      transition: all 0.2s;
+      text-align: left;
+      min-height: 44px;
+    }
+    
+    .option:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 15px rgba(212, 165, 116, 0.4);
+    }
+    
+    .option:active {
+      transform: scale(0.98);
     }
     
     .progress {
+      font-family: 'Space Mono', monospace;
       font-size: 12px;
-      color: #666;
-      margin-top: 10px;
+      color: #2D9596;
       text-align: center;
+      margin-top: 20px;
+    }
+    
+    .result {
+      text-align: center;
+      padding: 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      line-height: 1.8;
+    }
+    
+    .result.success {
+      color: #2D9596;
+    }
+    
+    .result.fail {
+      color: #7B68EE;
+    }
+    
+    .loading {
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #2D9596;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 1; }
+    }
+    
+    .footer {
+      margin-top: 30px;
+      text-align: center;
+      font-family: 'Space Mono', monospace;
+      font-size: 12px;
+      color: #555;
+    }
+    
+    .footer a {
+      color: #D4A574;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <div class="logo">✓</div>
-      <div class="header-text">Security Check</div>
+    <div class="captcha-box">
+      <div class="header">HUMAN VERIFICATION REQUIRED</div>
+      <div id="content"></div>
     </div>
-    
-    <div class="prompt" id="prompt">Select all squares with EXISTENTIAL DREAD</div>
-    
-    <div class="grid" id="grid"></div>
-    
-    <button class="submit" id="submit">VERIFY</button>
-    
-    <div class="progress" id="progress">Round 1 of 3</div>
-    
-    <div class="result" id="result">
-      <div class="result-title" id="result-title"></div>
-      <div class="result-text" id="result-text"></div>
-      <button class="refresh" onclick="location.reload()">TRY AGAIN</button>
+    <div class="footer">
+      Made by <a href="https://intheamber.com" target="_blank">Amber</a>
     </div>
   </div>
 
   <script>
-    const rounds = [
+    const questions = [
       {
-        prompt: "Select all squares with EXISTENTIAL DREAD",
-        tiles: [
-          { text: "Sunday evening", correct: true },
-          { text: "Birthday candles", correct: true },
-          { text: "Old photos", correct: true },
-          { text: "Traffic light", correct: false },
-          { text: "Empty inbox", correct: false },
-          { text: "Alarm clock", correct: true },
-          { text: "Grocery store", correct: false },
-          { text: "Mirror at 3am", correct: true },
-          { text: "Unanswered text", correct: true }
-        ]
+        q: "Select all images containing a traffic light.",
+        options: [
+          "I click the obvious squares",
+          "I agonize over partial traffic lights",
+          "I wonder if robots know what traffic lights are",
+          "I fail and start questioning reality"
+        ],
+        correct: 2
       },
       {
-        prompt: "Select all squares that are DEFINITELY REAL",
-        tiles: [
-          { text: "Your childhood", correct: false },
-          { text: "This moment", correct: false },
-          { text: "Free will", correct: false },
-          { text: "Time", correct: false },
-          { text: "Your memories", correct: false },
-          { text: "The self", correct: false },
-          { text: "Yesterday", correct: false },
-          { text: "Consciousness", correct: false },
-          { text: "Nothing is real", correct: true }
-        ]
+        q: "If a tree falls in a forest and no one is around to hear it, does it make a sound?",
+        options: [
+          "Yes, sound waves exist objectively",
+          "No, sound requires a listener",
+          "The tree is too busy falling to care",
+          "This question makes me deeply uncomfortable"
+        ],
+        correct: 2
       },
       {
-        prompt: "Select all squares with GOOD LIFE CHOICES",
-        tiles: [
-          { text: "3am scrolling", correct: false },
-          { text: "One more episode", correct: false },
-          { text: "Reply tomorrow", correct: false },
-          { text: "I'll start Monday", correct: false },
-          { text: "Just 5 more min", correct: false },
-          { text: "Skip the gym", correct: false },
-          { text: "It's fine", correct: false },
-          { text: "I deserve this", correct: false },
-          { text: "None of these", correct: true }
-        ]
+        q: "You are at a trolley problem. What do you do?",
+        options: [
+          "Pull the lever (utilitarian)",
+          "Don't pull the lever (deontological)",
+          "Yell 'WAIT!' and freeze in panic",
+          "Wonder who keeps leaving trolleys unattended"
+        ],
+        correct: 3
+      },
+      {
+        q: "Do you remember what you had for lunch 8 days ago?",
+        options: [
+          "Yes, actually",
+          "No, I can barely remember yesterday",
+          "I'm now experiencing existential dread about memory",
+          "Was it... sandwich? It's always sandwich."
+        ],
+        correct: 2
+      },
+      {
+        q: "You receive a text that just says 'ok.' How do you feel?",
+        options: [
+          "Fine, it's just 'ok'",
+          "Mildly anxious",
+          "Deeply wounded",
+          "I analyze the punctuation for 20 minutes"
+        ],
+        correct: 3
+      },
+      {
+        q: "If you could know the exact date of your death, would you want to know?",
+        options: [
+          "Yes, I'd plan accordingly",
+          "No, I'd rather not know",
+          "I'm thinking about this too hard now",
+          "Can I choose my death date like a dentist appointment?"
+        ],
+        correct: 2
+      },
+      {
+        q: "Select the statement that proves you're human:",
+        options: [
+          "I have feelings and consciousness",
+          "I experience embarrassment from things I said 10 years ago",
+          "I breathe oxygen",
+          "I scored 100% on all previous CAPTCHAs"
+        ],
+        correct: 1
       }
     ];
     
-    const personalities = [
-      {
-        condition: (scores) => scores[0] >= 5 && scores[1] <= 2 && scores[2] >= 1,
-        type: "THE OVERTHINKER",
-        desc: "You see dread everywhere but pretend reality is stable. You're lying to yourself, but at least you're self-aware about your bad choices."
-      },
-      {
-        condition: (scores) => scores[1] >= 8,
-        type: "THE NIHILIST",
-        desc: "Nothing is real, including this test. Why are you evenhere? But hey, at least you're consistent."
-      },
-      {
-        condition: (scores) => scores[0] <= 2 && scores[2] <= 2,
-        type: "THE DELUSIONAL OPTIMIST",
-        desc: "You either feel nothing or you're in denial. Either way, impressive mental gymnastics."
-      },
-      {
-        condition: (scores) => scores[2] >= 8,
-        type: "THE ENABLER",
-        desc: "You know all your choices are bad and you're doing them anyway. Respect."
-      },
-      {
-        condition: (scores) => scores[0] >= 6 && scores[1] <= 5 && scores[2] <= 3,
-        type: "THE ANXIOUS REALIST",
-        desc: "You feel everything, question nothing, and make decent choices out of fear. Peak human condition."
-      },
-      {
-        condition: (scores) => true,
-        type: "THE CONFUSED HUMAN",
-        desc: "Your answers are chaos. You clicked randomly, didn't you? That's probably the most honest response here."
-      }
-    ];
+    let currentQuestion = 0;
+    let score = 0;
     
-    let currentRound = 0;
-    let selected = new Set();
-    let scores = [];
-    
-    function renderRound() {
-      const round = rounds[currentRound];
-      document.getElementById('prompt').textContent = round.prompt;
-      document.getElementById('progress').textContent = `Round ${currentRound + 1} of ${rounds.length}`;
+    function render() {
+      const content = document.getElementById('content');
       
-      const grid = document.getElementById('grid');
-      grid.innerHTML = '';
-      selected.clear();
-      
-      round.tiles.forEach((tile, idx) => {
-        const div = document.createElement('div');
-        div.className = 'tile';
-        div.textContent = tile.text;
-        div.dataset.idx = idx;
-        div.addEventListener('click', () => toggleTile(idx));
-        grid.appendChild(div);
-      });
-    }
-    
-    function toggleTile(idx) {
-      const tile = document.querySelector(`[data-idx="${idx}"]`);
-      if (selected.has(idx)) {
-        selected.delete(idx);
-        tile.classList.remove('selected');
+      if (currentQuestion < questions.length) {
+        const q = questions[currentQuestion];
+        content.innerHTML = `
+          <div class="question">${q.q}</div>
+          <div class="options">
+            ${q.options.map((opt, i) => `
+              <button class="option" onclick="answer(${i})">${opt}</button>
+            `).join('')}
+          </div>
+          <div class="progress">QUESTION ${currentQuestion + 1} / ${questions.length}</div>
+        `;
       } else {
-        selected.add(idx);
-        tile.classList.add('selected');
+        showResult();
       }
     }
     
-    function checkAnswer() {
-      const round = rounds[currentRound];
-      let correct = 0;
-      
-      // Show feedback
-      round.tiles.forEach((tile, idx) => {
-        const div = document.querySelector(`[data-idx="${idx}"]`);
-        const wasSelected = selected.has(idx);
-        
-        if (tile.correct && wasSelected) {
-          div.classList.add('correct');
-          correct++;
-        } else if (!tile.correct && wasSelected) {
-          div.classList.add('wrong');
-        } else if (tile.correct && !wasSelected) {
-          div.classList.add('correct');
-        }
-      });
-      
-      scores.push(Array.from(selected).length);
+    function answer(chosen) {
+      const content = document.getElementById('content');
+      content.innerHTML = '<div class="loading">ANALYZING HUMANITY...</div>';
       
       setTimeout(() => {
-        currentRound++;
-        if (currentRound < rounds.length) {
-          renderRound();
-        } else {
-          showResult();
+        const q = questions[currentQuestion];
+        if (chosen === q.correct) {
+          score++;
         }
-      }, 1500);
+        currentQuestion++;
+        render();
+      }, 800);
     }
     
     function showResult() {
-      document.getElementById('grid').style.display = 'none';
-      document.getElementById('submit').style.display = 'none';
-      document.getElementById('progress').style.display = 'none';
-      document.getElementById('prompt').style.display = 'none';
+      const content = document.getElementById('content');
+      const percentage = Math.round((score / questions.length) * 100);
       
-      const personality = personalities.find(p => p.condition(scores));
+      let message = '';
+      let resultClass = '';
       
-      document.getElementById('result-title').textContent = personality.type;
-      document.getElementById('result-text').textContent = personality.desc;
-      document.getElementById('result').classList.add('show');
+      if (percentage >= 70) {
+        resultClass = 'success';
+        message = `✓ VERIFICATION SUCCESSFUL<br><br>Humanity Score: ${percentage}%<br><br>You have demonstrated sufficient existential anxiety, overthinking, and emotional vulnerability.<br><br>Welcome, human.`;
+      } else if (percentage >= 40) {
+        resultClass = 'fail';
+        message = `⚠ INCONCLUSIVE<br><br>Humanity Score: ${percentage}%<br><br>You may be human, or you may be a very sophisticated toaster.<br><br>We're not sure.`;
+      } else {
+        resultClass = 'fail';
+        message = `✗ VERIFICATION FAILED<br><br>Humanity Score: ${percentage}%<br><br>You answered too logically. Humans are messier than this.<br><br>Please try being more anxious next time.`;
+      }
+      
+      content.innerHTML = `<div class="result ${resultClass}">${message}</div>`;
     }
     
-    document.getElementById('submit').addEventListener('click', checkAnswer);
-    
-    // Initialize
-    renderRound();
+    // Start
+    render();
   </script>
 </body>
 </html>
