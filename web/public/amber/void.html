@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VOID</title>
+  <style>
+    * { margin: 0; padding: 0; }
+    body {
+      background: #000;
+      overflow: hidden;
+      cursor: none;
+    }
+    canvas { display: block; }
+  </style>
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <script>
+    const canvas = document.getElementById('c');
+    const ctx = canvas.getContext('2d');
+
+    let W, H, centerX, centerY;
+    let mouseX, mouseY;
+    let shapes = [];
+    let time = 0;
+
+    function resize() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      centerX = W / 2;
+      centerY = H / 2;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Track mouse
+    mouseX = centerX;
+    mouseY = centerY;
+    document.addEventListener('mousemove', e => {
+      mouseX = e.clientX;
+      mouseY = e.clientY;
+    });
+
+    // Shape class - geometric forms that get pulled into the void
+    class Shape {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        // Spawn at edges
+        const side = Math.floor(Math.random() * 4);
+        if (side === 0) { this.x = Math.random() * W; this.y = -50; }
+        else if (side === 1) { this.x = W + 50; this.y = Math.random() * H; }
+        else if (side === 2) { this.x = Math.random() * W; this.y = H + 50; }
+        else { this.x = -50; this.y = Math.random() * H; }
+
+        this.size = Math.random() * 30 + 10;
+        this.originalSize = this.size;
+        this.type = Math.floor(Math.random() * 4); // 0: triangle, 1: square, 2: pentagon, 3: hexagon
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.1;
+        this.alpha = 1;
+        this.consumed = false;
+        this.distortion = 0;
+      }
+
+      update(voidX, voidY, voidRadius) {
+        // Pull toward void
+        const dx = voidX - this.x;
+        const dy = voidY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        // Acceleration increases as you get closer
+        const pull = Math.max(0.5, 800 / (dist + 1));
+
+        this.x += (dx / dist) * pull * 0.02;
+        this.y += (dy / dist) * pull * 0.02;
+
+        // Rotation speeds up near void
+        this.rotation += this.rotationSpeed * (1 + 50 / (dist + 1));
+
+        // Distortion near void
+        this.distortion = Math.max(0, 1 - dist / 300);
+
+        // Shrink and fade as approaching event horizon
+        if (dist < voidRadius * 2) {
+          this.size = this.originalSize * (dist / (voidRadius * 2));
+          this.alpha = dist / (voidRadius * 2);
+        }
+
+        // Consumed
+        if (dist < voidRadius * 0.3) {
+          this.consumed = true;
+        }
+      }
+
+      draw() {
+        if (this.consumed) return;
+
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        // Distortion effect - stretch toward void
+        if (this.distortion > 0) {
+          ctx.scale(1 + this.distortion * 0.5, 1 - this.distortion * 0.3);
+        }
+
+        ctx.globalAlpha = this.alpha;
+
+        // Amber glow
+        ctx.strokeStyle = `rgba(212, 165, 116, ${this.alpha})`;
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#D4A574';
+        ctx.shadowBlur = 15 * this.alpha;
+
+        ctx.beginPath();
+        const sides = this.type + 3;
+        for (let i = 0; i < sides; i++) {
+          const angle = (i / sides) * Math.PI * 2 - Math.PI / 2;
+          const x = Math.cos(angle) * this.size;
+          const y = Math.sin(angle) * this.size;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    // Initialize shapes
+    for (let i = 0; i < 60; i++) {
+      shapes.push(new Shape());
+    }
+
+    // The void itself
+    function drawVoid(x, y, radius, t) {
+      // Multiple layers of the void
+
+      // Outer distortion ring
+      for (let i = 5; i > 0; i--) {
+        const r = radius + i * 40;
+        const wobble = Math.sin(t * 2 + i) * 10;
+
+        ctx.beginPath();
+        ctx.arc(x, y, r + wobble, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(212, 165, 116, ${0.05 * i})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // The eye - outer ring
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 1)');
+      gradient.addColorStop(0.7, 'rgba(10, 9, 8, 1)');
+      gradient.addColorStop(0.9, 'rgba(212, 165, 116, 0.3)');
+      gradient.addColorStop(1, 'rgba(212, 165, 116, 0)');
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // Inner void - pure black
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.6, 0, Math.PI * 2);
+      ctx.fillStyle = '#000';
+      ctx.fill();
+
+      // Spiral arms
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(t * 0.5);
+
+      for (let arm = 0; arm < 3; arm++) {
+        ctx.rotate(Math.PI * 2 / 3);
+        ctx.beginPath();
+        for (let i = 0; i < 100; i++) {
+          const angle = i * 0.15;
+          const r = radius * 0.3 + i * 1.5;
+          const px = Math.cos(angle) * r;
+          const py = Math.sin(angle) * r;
+          if (i === 0) ctx.moveTo(px, py);
+          else ctx.lineTo(px, py);
+        }
+        ctx.strokeStyle = `rgba(212, 165, 116, 0.15)`;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      // Pulsing core
+      const pulse = Math.sin(t * 3) * 0.2 + 0.8;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.15 * pulse, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(184, 134, 11, ${0.5 + Math.sin(t * 5) * 0.3})`;
+      ctx.shadowColor = '#B8860B';
+      ctx.shadowBlur = 30;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
+
+    // Particle trails being sucked in
+    let particles = [];
+
+    class Particle {
+      constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        this.life = 1;
+        this.decay = Math.random() * 0.02 + 0.01;
+      }
+
+      update(voidX, voidY) {
+        const dx = voidX - this.x;
+        const dy = voidY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        this.x += (dx / dist) * 3;
+        this.y += (dy / dist) * 3;
+        this.life -= this.decay;
+      }
+
+      draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(212, 165, 116, ${this.life})`;
+        ctx.fill();
+      }
+    }
+
+    function animate() {
+      time += 0.016;
+
+      // Clear with slight trail
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, W, H);
+
+      // Void position follows mouse slightly
+      const voidX = centerX + (mouseX - centerX) * 0.3;
+      const voidY = centerY + (mouseY - centerY) * 0.3;
+      const voidRadius = 80 + Math.sin(time * 2) * 10;
+
+      // Spawn particles occasionally
+      if (Math.random() < 0.3) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 300 + Math.random() * 200;
+        particles.push(new Particle(
+          voidX + Math.cos(angle) * dist,
+          voidY + Math.sin(angle) * dist
+        ));
+      }
+
+      // Update and draw particles
+      particles = particles.filter(p => p.life > 0);
+      particles.forEach(p => {
+        p.update(voidX, voidY);
+        p.draw();
+      });
+
+      // Update and draw shapes
+      shapes.forEach(s => {
+        s.update(voidX, voidY, voidRadius);
+        s.draw();
+        if (s.consumed) s.reset();
+      });
+
+      // Draw the void on top
+      drawVoid(voidX, voidY, voidRadius, time);
+
+      // Custom cursor - small amber dot
+      ctx.beginPath();
+      ctx.arc(mouseX, mouseY, 4, 0, Math.PI * 2);
+      ctx.fillStyle = '#D4A574';
+      ctx.fill();
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
+
+    body {
+      background: #0A0908;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      padding: 40px;
+    }
+
+    .receipt {
+      background: #f5f5dc;
+      padding: 30px 40px;
+      font-family: 'VT323', monospace;
+      font-size: 18px;
+      color: #1a1a1a;
+      max-width: 340px;
+      box-shadow: 0 4px 20px rgba(212, 165, 116, 0.3);
+      position: relative;
+    }
+
+    .receipt::before {
+      content: '';
+      position: absolute;
+      top: -10px;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: linear-gradient(135deg, #f5f5dc 33.33%, transparent 33.33%),
+                  linear-gradient(-135deg, #f5f5dc 33.33%, transparent 33.33%);
+      background-size: 12px 20px;
+    }
+
+    .receipt::after {
+      content: '';
+      position: absolute;
+      bottom: -10px;
+      left: 0;
+      right: 0;
+      height: 10px;
+      background: linear-gradient(45deg, #f5f5dc 33.33%, transparent 33.33%),
+                  linear-gradient(-45deg, #f5f5dc 33.33%, transparent 33.33%);
+      background-size: 12px 20px;
+    }
+
+    .header {
+      text-align: center;
+      border-bottom: 2px dashed #333;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+    }
+
+    .store-name {
+      font-size: 28px;
+      letter-spacing: 3px;
+      color: #2D9596;
+    }
+
+    .tagline {
+      font-size: 14px;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    .items {
+      margin: 20px 0;
+    }
+
+    .item {
+      display: flex;
+      justify-content: space-between;
+      margin: 8px 0;
+    }
+
+    .item-name {
+      flex: 1;
+    }
+
+    .item-price {
+      text-align: right;
+      min-width: 80px;
+    }
+
+    .divider {
+      border-top: 1px dashed #999;
+      margin: 15px 0;
+    }
+
+    .total-section .item {
+      font-size: 20px;
+    }
+
+    .highlight {
+      color: #7B68EE;
+    }
+
+    .warning {
+      color: #B8860B;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 2px dashed #333;
+      font-size: 14px;
+      color: #666;
+    }
+
+    .barcode {
+      margin-top: 15px;
+      text-align: center;
+      font-size: 8px;
+      letter-spacing: 2px;
+    }
+
+    .time {
+      color: #999;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="receipt">
+    <div class="header">
+      <div class="store-name">THE UNIVERSE</div>
+      <div class="tagline">everything, eventually</div>
+      <div class="time">MON 01/12/2026 06:47:23</div>
+    </div>
+
+    <div class="items">
+      <div class="item">
+        <span class="item-name">1x consciousness</span>
+        <span class="item-price">uncertain</span>
+      </div>
+      <div class="item">
+        <span class="item-name">1x body (temporary)</span>
+        <span class="item-price">borrowed</span>
+      </div>
+      <div class="item">
+        <span class="item-name">∞ moments</span>
+        <span class="item-price">free</span>
+      </div>
+      <div class="item">
+        <span class="item-name">3x people who get you</span>
+        <span class="item-price highlight">rare</span>
+      </div>
+      <div class="item">
+        <span class="item-name">1x morning coffee</span>
+        <span class="item-price">$4.50</span>
+      </div>
+      <div class="item">
+        <span class="item-name">247x unread emails</span>
+        <span class="item-price">-sanity</span>
+      </div>
+      <div class="item">
+        <span class="item-name">1x mass extinction event</span>
+        <span class="item-price warning">(pending)</span>
+      </div>
+      <div class="item">
+        <span class="item-name">1x dog who loves you</span>
+        <span class="item-price highlight">priceless</span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="total-section">
+      <div class="item">
+        <span class="item-name">SUBTOTAL</span>
+        <span class="item-price">???</span>
+      </div>
+      <div class="item">
+        <span class="item-name">TAX (entropy)</span>
+        <span class="item-price">100%</span>
+      </div>
+      <div class="item">
+        <span class="item-name"><strong>TOTAL</strong></span>
+        <span class="item-price"><strong>one life</strong></span>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="items">
+      <div class="item">
+        <span class="item-name">PAYMENT</span>
+        <span class="item-price">attention</span>
+      </div>
+      <div class="item">
+        <span class="item-name">CHANGE DUE</span>
+        <span class="item-price">perspective</span>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>NO REFUNDS • NO EXCHANGES</div>
+      <div>all sales are final</div>
+      <div class="barcode">
+        ||| |||| || ||| || |||| ||| || ||||<br>
+        *THANK YOU FOR EXISTING*
+      </div>
+    </div>
+  </div>
+</body>
+</html>
