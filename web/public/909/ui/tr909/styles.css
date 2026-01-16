@@ -417,11 +417,25 @@ h1::before {
   gap: 1.25rem;
   align-items: center;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 0;
   padding: 1rem 1.25rem;
   background: var(--bg-card);
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: 10px 10px 0 0;
+  border-bottom: none;
+}
+
+/* Second row: Volume + Play */
+.controls-row-2 {
+  border-radius: 0 0 10px 10px;
+  border-top: 1px solid var(--border-subtle);
+  margin-bottom: 1rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+}
+
+.controls-spacer {
+  flex: 1;
 }
 
 .storage-controls {

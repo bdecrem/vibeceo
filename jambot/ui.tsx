@@ -760,6 +760,27 @@ function App() {
             addMessage('project', `  Renamed to "${newName}"`);
             return result;
           },
+          // Called to open an existing project
+          onOpenProject: (folderName) => {
+            try {
+              const loadedProject = loadProject(folderName);
+              const restoredSession = restoreSession(loadedProject);
+              // Update state
+              setProject(loadedProject);
+              setSession(restoredSession);
+              currentProject = loadedProject;
+              // Clear agent messages for fresh start
+              setAgentMessages([]);
+              addMessage('project', `Opened: ${loadedProject.name}`);
+              return {
+                name: loadedProject.name,
+                bpm: restoredSession.bpm,
+                renderCount: loadedProject.renders?.length || 0,
+              };
+            } catch (e) {
+              return { error: `Could not open project: ${e.message}` };
+            }
+          },
         }
       );
 

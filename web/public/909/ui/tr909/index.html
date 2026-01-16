@@ -91,9 +91,16 @@
             <option value="32nd">32nd</option>
           </select>
         </label>
+      </section>
 
+      <section class="controls controls-row-2">
+        <label>
+          Volume
+          <input id="volume" type="range" min="0" max="100" step="1" value="80" />
+          <span id="volume-value">80%</span>
+        </label>
+        <div class="controls-spacer"></div>
         <div class="controls-divider"></div>
-
         <button id="play-toggle" type="button">Play</button>
       </section>
       <div id="status"></div>

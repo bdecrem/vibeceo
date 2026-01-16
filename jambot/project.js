@@ -243,8 +243,8 @@ export function updateSession(project, session) {
     leadPattern: session.leadPattern,
     leadParams: session.leadParams,
     leadArp: session.leadArp,
-    // R9DS (sampler)
-    samplerKit: session.samplerKit,
+    // R9DS (sampler) - save kit ID only, not the actual buffers
+    samplerKitId: session.samplerKit?.id || null,
     samplerPattern: session.samplerPattern,
     samplerParams: session.samplerParams,
     // Mixer
@@ -260,8 +260,20 @@ export function updateSession(project, session) {
 
 // === SESSION RESTORE ===
 
+import { loadKit } from './kit-loader.js';
+
 // Restore session state from a project
 export function restoreSession(project) {
+  // Reload sampler kit if one was saved
+  let samplerKit = null;
+  if (project.session?.samplerKitId) {
+    try {
+      samplerKit = loadKit(project.session.samplerKitId);
+    } catch (e) {
+      console.warn(`Could not reload sampler kit ${project.session.samplerKitId}:`, e.message);
+    }
+  }
+
   return {
     bpm: project.session?.bpm || 128,
     bars: project.session?.bars || 2,
@@ -285,8 +297,8 @@ export function restoreSession(project) {
     leadPattern: project.session?.leadPattern || [],
     leadParams: project.session?.leadParams || {},
     leadArp: project.session?.leadArp || { mode: 'off', octaves: 1, hold: false },
-    // R9DS (sampler)
-    samplerKit: project.session?.samplerKit || null,
+    // R9DS (sampler) - reload kit from ID
+    samplerKit: samplerKit,
     samplerPattern: project.session?.samplerPattern || {},
     samplerParams: project.session?.samplerParams || {},
     // Mixer
