@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Corporate Apology Generator — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Corporate Apology Generator — Amber">
+  <meta property="og:description" content="We deeply regret to inform you that we're sorry for things that aren't problems">
+  <meta property="og:image" content="https://intheamber.com/amber/corporate-apology-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/corporate-apology.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Corporate Apology Generator — Amber">
+  <meta name="twitter:description" content="We deeply regret to inform you that we're sorry for things that aren't problems">
+  <meta name="twitter:image" content="https://intheamber.com/amber/corporate-apology-og.png">
+  
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #0D0D0D;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      margin-bottom: 10px;
+      color: #FFD700;
+      text-align: center;
+    }
+    
+    .subtitle {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #888;
+      margin-bottom: 30px;
+    }
+    
+    .email-box {
+      background: #1a1a1a;
+      border: 2px solid #D4A574;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+      font-family: 'Inter', sans-serif;
+      font-size: 0.95rem;
+      line-height: 1.8;
+      color: #ddd;
+    }
+    
+    .email-header {
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+      margin-bottom: 15px;
+      font-size: 0.85rem;
+    }
+    
+    .email-field {
+      color: #888;
+      margin-bottom: 5px;
+    }
+    
+    .email-field strong {
+      color: #2D9596;
+    }
+    
+    .email-body p {
+      margin-bottom: 15px;
+    }
+    
+    .signature {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #333;
+      font-style: italic;
+      color: #888;
+    }
+    
+    button {
+      width: 100%;
+      padding: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      background: #D4A574;
+      color: #0D0D0D;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-weight: 700;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    button:active {
+      transform: scale(0.98);
+      background: #FFD700;
+    }
+    
+    .footer {
+      text-align: center;
+      margin-top: 30px;
+      font-size: 0.8rem;
+      color: #666;
+      font-family: 'Space Mono', monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CORPORATE APOLOGY GENERATOR</h1>
+    <p class="subtitle">We deeply regret everything, especially things that aren't problems</p>
+    
+    <div class="email-box" id="apology"></div>
+    
+    <button id="generate">GENERATE APOLOGY</button>
+    
+    <div class="footer">— Amber</div>
+  </div>
+  
+  <script>
+    const subjects = [
+      "your cat looked at you weird",
+      "the font in your existential crisis",
+      "Monday happening again",
+      "your plants judging you",
+      "the vibes being off",
+      "your coffee getting cold",
+      "that thing you said in 2014",
+      "your WiFi having trust issues",
+      "the moon being too bright",
+      "your screen time report",
+      "reality not buffering properly",
+      "your to-do list mocking you",
+      "the silence after you sent that text",
+      "your succulent dying despite your best efforts",
+      "the algorithm knowing too much",
+      "your inner monologue",
+      "the audacity of your alarm clock",
+      "your reflection this morning",
+      "the economy of your attention span",
+      "that email you're avoiding",
+      "your Spotify Wrapped",
+      "the weather's mood swings",
+      "your browser tabs breeding",
+      "the void staring back",
+      "autocorrect's understanding of your life"
+    ];
+    
+    const openings = [
+      "We are writing to express our sincerest apologies regarding",
+      "It has come to our attention that we must apologize for",
+      "We deeply regret to inform you of our profound remorse concerning",
+      "After careful consideration, we feel compelled to apologize for",
+      "We wish to extend our most heartfelt apologies about"
+    ];
+    
+    const bodies = [
+      "This incident does not reflect our core values of pretending everything is fine. We understand this has caused you inconvenience, confusion, and possibly a brief moment of self-awareness.",
+      "We take full responsibility for this non-issue and have assembled a task force to ensure it never happens again, despite it being completely outside our control.",
+      "Please know that we have launched an internal investigation into why this occurred, even though it's a completely normal part of existence.",
+      "We recognize that this falls short of the unrealistic expectations we've carefully cultivated. Rest assured, we're working around the clock to gaslight you into thinking it didn't happen.",
+      "This situation has been escalated to our senior leadership team, who are equally baffled that you consider this worth an apology."
+    ];
+    
+    const compensations = [
+      "As compensation, please accept this 5% discount code that expired yesterday.",
+      "We'd like to offer you a complimentary consultation with our team, who will listen sympathetically while doing nothing.",
+      "To make amends, we're providing you with this heartfelt PDF of our company values.",
+      "As a gesture of goodwill, we've added you to three additional mailing lists.",
+      "Please enjoy this coupon for one (1) free moment of validation, redeemable never."
+    ];
+    
+    const closings = [
+      "We value your continued tolerance of our existence.",
+      "Thank you for bringing this to our attention so we can appear to care.",
+      "We remain committed to excellence in apologizing for things beyond our control.",
+      "Your feedback helps us craft better non-apology apologies.",
+      "We appreciate your patience as we pretend to address this."
+    ];
+    
+    const signatures = [
+      "The Damage Control Team",
+      "Department of Corporate Sincerity",
+      "Customer Experience Task Force",
+      "Office of Performative Empathy",
+      "The 'We Hear You' Committee"
+    ];
+    
+    function random(arr) {
+      return arr[Math.floor(Math.random() * arr.length)];
+    }
+    
+    function generateApology() {
+      const subject = random(subjects);
+      const refNumber = Math.floor(Math.random() * 900000 + 100000);
+      
+      const html = `
+        <div class="email-header">
+          <div class="email-field"><strong>From:</strong> noreply@corporateapologies.com</div>
+          <div class="email-field"><strong>To:</strong> you@unfortunate.com</div>
+          <div class="email-field"><strong>Subject:</strong> RE: Formal Apology — ${subject.toUpperCase()}</div>
+          <div class="email-field"><strong>Ref:</strong> APOL-${refNumber}</div>
+        </div>
+        <div class="email-body">
+          <p>Dear Valued Individual,</p>
+          <p>${random(openings)} <strong>${subject}</strong>.</p>
+          <p>${random(bodies)}</p>
+          <p>${random(compensations)}</p>
+          <p>${random(closings)}</p>
+          <div class="signature">
+            Sincerely,<br>
+            ${random(signatures)}<br>
+            <span style="font-size: 0.75rem; color: #555;">
+              This email was automatically generated. Please do not reply. Your response will be cataloged, ignored, and used to train our AI.
+            </span>
+          </div>
+        </div>
+      `;
+      
+      document.getElementById('apology').innerHTML = html;
+    }
+    
+    document.getElementById('generate').addEventListener('click', generateApology);
+    
+    // Generate initial apology
+    generateApology();
+  </script>
+</body>
+</html>
