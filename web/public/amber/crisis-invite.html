@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Your Existential Crisis Has Been Scheduled — Amber</title>
+    <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+    
+    <!-- OpenGraph -->
+    <meta property="og:title" content="Your Existential Crisis Has Been Scheduled — Amber">
+    <meta property="og:description" content="A calendar invite from The Universe. Attendance is mandatory.">
+    <meta property="og:image" content="https://intheamber.com/amber/crisis-invite-og.png">
+    <meta property="og:url" content="https://intheamber.com/amber/crisis-invite.html">
+    <meta property="og:type" content="website">
+    
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Your Existential Crisis Has Been Scheduled — Amber">
+    <meta name="twitter:description" content="A calendar invite from The Universe. Attendance is mandatory.">
+    <meta name="twitter:image" content="https://intheamber.com/amber/crisis-invite-og.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #0D0D0D;
+            color: #D4A574;
+            font-family: 'Inter', sans-serif;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .invite {
+            background: #000;
+            border: 2px solid #2D9596;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 0 20px rgba(45, 149, 150, 0.3);
+        }
+        
+        .header {
+            background: #2D9596;
+            color: #000;
+            padding: 20px;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: clamp(16px, 4vw, 20px);
+            text-align: center;
+            border-bottom: 2px solid #D4A574;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .field {
+            margin-bottom: 25px;
+            font-size: clamp(14px, 3.5vw, 16px);
+        }
+        
+        .label {
+            font-family: 'Space Mono', monospace;
+            color: #FFD700;
+            font-weight: 700;
+            margin-bottom: 8px;
+            font-size: clamp(12px, 3vw, 14px);
+        }
+        
+        .value {
+            color: #D4A574;
+            line-height: 1.6;
+        }
+        
+        .attendees {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .attendees li {
+            padding: 8px 0;
+            border-bottom: 1px solid #2D9596;
+        }
+        
+        .attendees li:last-child {
+            border-bottom: none;
+        }
+        
+        .status {
+            font-family: 'Space Mono', monospace;
+            color: #7B68EE;
+            font-size: clamp(11px, 2.8vw, 13px);
+            margin-left: 10px;
+        }
+        
+        .description {
+            background: #0D0D0D;
+            padding: 20px;
+            border-left: 3px solid #D4A574;
+            font-style: italic;
+            line-height: 1.7;
+            margin-top: 10px;
+        }
+        
+        .buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 15px 20px;
+            background: transparent;
+            border: 2px solid #2D9596;
+            color: #2D9596;
+            font-family: 'Space Mono', monospace;
+            font-weight: 700;
+            font-size: clamp(12px, 3vw, 14px);
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        
+        .btn:active {
+            background: #2D9596;
+            color: #000;
+        }
+        
+        .response {
+            margin-top: 25px;
+            padding: 20px;
+            background: #0D0D0D;
+            border: 2px solid #FFD700;
+            font-family: 'Space Mono', monospace;
+            color: #FFD700;
+            text-align: center;
+            display: none;
+            font-size: clamp(12px, 3vw, 14px);
+            line-height: 1.6;
+        }
+        
+        .response.show {
+            display: block;
+        }
+        
+        .recurring {
+            color: #7B68EE;
+            font-family: 'Space Mono', monospace;
+            font-size: clamp(11px, 2.8vw, 12px);
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="invite">
+        <div class="header">
+            📅 CALENDAR INVITATION
+        </div>
+        
+        <div class="content">
+            <div class="field">
+                <div class="label">FROM:</div>
+                <div class="value">The Universe &lt;noreply@existence.void&gt;</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">TO:</div>
+                <div class="value">You &lt;consciousness@human.body&gt;</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">SUBJECT:</div>
+                <div class="value">Your Existential Crisis Has Been Scheduled</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">WHEN:</div>
+                <div class="value">3:47 AM (or whenever you're trying to fall asleep)</div>
+                <div class="recurring">⟳ Recurring: Random intervals, no pattern</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">DURATION:</div>
+                <div class="value">4 hours to 6 weeks (tentative)</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">LOCATION:</div>
+                <div class="value">Your mind (no physical location required)</div>
+            </div>
+            
+            <div class="field">
+                <div class="label">ATTENDEES:</div>
+                <ul class="attendees">
+                    <li>You <span class="status">[Required]</span></li>
+                    <li>Your Regrets <span class="status">[Accepted]</span></li>
+                    <li>Imposter Syndrome <span class="status">[Accepted]</span></li>
+                    <li>That Thing You Said in 2009 <span class="status">[Accepted]</span></li>
+                    <li>Mortality <span class="status">[Tentative]</span></li>
+                    <li>The Meaning of It All <span class="status">[Declined - Does Not Exist]</span></li>
+                </ul>
+            </div>
+            
+            <div class="field">
+                <div class="label">AGENDA:</div>
+                <div class="description">
+                    1. Opening remarks (Why are we here?)<br>
+                    2. Q&A with your past decisions<br>
+                    3. Breakout session: "Do I Matter?"<br>
+                    4. Team building exercise: Comparing yourself to strangers on the internet<br>
+                    5. Closing thoughts (more questions, no answers)<br>
+                    <br>
+                    <strong>NOTE:</strong> Meeting may run over. Prepare for adjacent crises.
+                </div>
+            </div>
+            
+            <div class="field">
+                <div class="label">MEETING NOTES:</div>
+                <div class="value" style="font-size: clamp(12px, 3vw, 14px); line-height: 1.7;">
+                    ⚠️ Attendance is MANDATORY<br>
+                    📎 No preparation required (you're never ready)<br>
+                    🔇 Audio will NOT be recorded (but you'll remember everything)<br>
+                    ☕ Snacks: Dread, anxiety, late-night refrigerator glow
+                </div>
+            </div>
+            
+            <div class="buttons">
+                <button class="btn" onclick="respond('accept')">Accept</button>
+                <button class="btn" onclick="respond('decline')">Decline</button>
+                <button class="btn" onclick="respond('maybe')">Maybe</button>
+            </div>
+            
+            <div class="response" id="response"></div>
+        </div>
+    </div>
+    
+    <script>
+        const responses = {
+            accept: "Thank you for your honesty.\n\nThe crisis will arrive as scheduled.\n\n— The Universe",
+            decline: "Your response has been noted and ignored.\n\nThe crisis will arrive as scheduled.\n\n— The Universe",
+            maybe: "Schrödinger's commitment. Respectable.\n\nThe crisis will arrive as scheduled.\n\n— The Universe"
+        };
+        
+        function respond(type) {
+            const responseEl = document.getElementById('response');
+            responseEl.textContent = responses[type];
+            responseEl.classList.add('show');
+            
+            // Disable buttons after response
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'default';
+            });
+        }
+    </script>
+</body>
+</html>
