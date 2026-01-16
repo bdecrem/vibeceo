@@ -225,14 +225,34 @@ export function updateSession(project, session) {
     bars: session.bars,
     swing: session.swing,
     // R9D9 (drums)
+    drumKit: session.drumKit,
     drumPattern: session.drumPattern,
     drumParams: session.drumParams,
+    drumFlam: session.drumFlam,
+    drumPatternLength: session.drumPatternLength,
+    drumScale: session.drumScale,
+    drumGlobalAccent: session.drumGlobalAccent,
+    drumVoiceEngines: session.drumVoiceEngines,
+    drumUseSample: session.drumUseSample,
+    drumAutomation: session.drumAutomation,
     // R3D3 (bass)
     bassPattern: session.bassPattern,
     bassParams: session.bassParams,
     // R1D1 (lead)
+    leadPreset: session.leadPreset,
     leadPattern: session.leadPattern,
     leadParams: session.leadParams,
+    leadArp: session.leadArp,
+    // R9DS (sampler)
+    samplerKit: session.samplerKit,
+    samplerPattern: session.samplerPattern,
+    samplerParams: session.samplerParams,
+    // Mixer
+    mixer: session.mixer,
+    // Song mode (patterns + arrangement)
+    patterns: session.patterns,
+    currentPattern: session.currentPattern,
+    arrangement: session.arrangement,
   };
   saveProject(project);
   return project;
@@ -247,14 +267,50 @@ export function restoreSession(project) {
     bars: project.session?.bars || 2,
     swing: project.session?.swing || 0,
     // R9D9 (drums)
+    drumKit: project.session?.drumKit || 'default',
     drumPattern: project.session?.drumPattern || {},
     drumParams: project.session?.drumParams || {},
+    drumFlam: project.session?.drumFlam || 0,
+    drumPatternLength: project.session?.drumPatternLength || 16,
+    drumScale: project.session?.drumScale || '16th',
+    drumGlobalAccent: project.session?.drumGlobalAccent || 1,
+    drumVoiceEngines: project.session?.drumVoiceEngines || {},
+    drumUseSample: project.session?.drumUseSample || {},
+    drumAutomation: project.session?.drumAutomation || {},
     // R3D3 (bass)
     bassPattern: project.session?.bassPattern || [],
     bassParams: project.session?.bassParams || {},
     // R1D1 (lead)
+    leadPreset: project.session?.leadPreset || null,
     leadPattern: project.session?.leadPattern || [],
     leadParams: project.session?.leadParams || {},
+    leadArp: project.session?.leadArp || { mode: 'off', octaves: 1, hold: false },
+    // R9DS (sampler)
+    samplerKit: project.session?.samplerKit || null,
+    samplerPattern: project.session?.samplerPattern || {},
+    samplerParams: project.session?.samplerParams || {},
+    // Mixer
+    mixer: project.session?.mixer || {
+      sends: {},
+      voiceRouting: {},
+      channelInserts: {},
+      masterInserts: [],
+      masterVolume: 0.8,
+    },
+    // Song mode (patterns + arrangement)
+    patterns: project.session?.patterns || {
+      drums: {},
+      bass: {},
+      lead: {},
+      sampler: {},
+    },
+    currentPattern: project.session?.currentPattern || {
+      drums: 'A',
+      bass: 'A',
+      lead: 'A',
+      sampler: 'A',
+    },
+    arrangement: project.session?.arrangement || [],
   };
 }
 

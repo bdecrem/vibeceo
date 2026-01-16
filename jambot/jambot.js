@@ -30,6 +30,9 @@ import { SampleVoice } from './sample-voice.js';
 // Project management
 import { listProjects } from './project.js';
 
+// Producer-friendly parameter converters
+import { convertTweaks, toEngine, getParamDef, formatValue } from './params/converters.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // === PLATE REVERB GENERATOR ===
@@ -411,6 +414,13 @@ export function createSession() {
     drumKit: 'default',  // Kit ID for engine selection
     drumPattern: {},
     drumParams: {},
+    drumFlam: 0,              // Flam amount 0-1
+    drumPatternLength: 16,    // Pattern length 1-16
+    drumScale: '16th',        // '16th', '8th-triplet', '16th-triplet', '32nd'
+    drumGlobalAccent: 1,      // Global accent multiplier 0-1
+    drumVoiceEngines: {},     // Per-voice engine overrides { kick: 'E1', snare: 'E2', ... }
+    drumUseSample: {},        // Sample mode for hats/cymbals { ch: true, oh: false, ... }
+    drumAutomation: {},       // Per-step param automation { ch: { decay: [0.1, 0.2, ...], level: [...] }, ... }
     // R3D3 (bass)
     bassPattern: createEmptyBassPattern(),
     bassParams: {
@@ -469,6 +479,20 @@ export function createSession() {
       masterInserts: [],     // [{ type: 'eq', preset: 'master' }]
       masterVolume: 0.8,
     },
+    // SONG MODE (patterns + arrangement)
+    patterns: {
+      drums: {},    // { 'A': { pattern, params, automation, flam, length, scale, accent, engines, useSample } }
+      bass: {},     // { 'A': { pattern, params } }
+      lead: {},     // { 'A': { pattern, params, arp } }
+      sampler: {},  // { 'A': { pattern, params } }
+    },
+    currentPattern: {
+      drums: 'A',
+      bass: 'A',
+      lead: 'A',
+      sampler: 'A',
+    },
+    arrangement: [],  // [{ bars: 4, patterns: { drums: 'A', bass: 'A', lead: 'A', sampler: 'A' } }, ...]
   };
 }
 
@@ -579,7 +603,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_drums",
-    description: "Adjust drum voice parameters. Each voice has specific params: kick (tune, decay, attack, sweep, level), snare (tune, tone, snappy, level), clap/tom/hihat (decay, tone, level).",
+    description: "Adjust drum voice parameters. UNITS: level in dB (-60 to +6), tune in semitones (-12 to +12), decay/attack/tone/snappy/sweep as 0-100, hi-hat tone in Hz (4000-16000).",
     input_schema: {
       type: "object",
       properties: {
@@ -588,27 +612,157 @@ export const TOOLS = [
           enum: ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"],
           description: "Which drum voice to tweak"
         },
-        decay: { type: "number", description: "Decay/length (0.05-2.0). Lower = shorter, punchier. Higher = longer." },
-        tune: { type: "number", description: "Pitch tuning in cents (-1200 to +1200). -100 = 1 semitone down." },
-        tone: { type: "number", description: "Brightness (0-1). Lower = darker. Works on snare, clap, hats, cymbals, rimshot." },
-        level: { type: "number", description: "Volume (0-1)" },
-        attack: { type: "number", description: "Kick attack transient (0-1). Higher = more click. (kick only)" },
-        sweep: { type: "number", description: "Kick pitch sweep amount (0-1). Higher = more 'boom'. (kick only)" },
-        snappy: { type: "number", description: "Snare noise/wire amount (0-1). Higher = more snap. (snare only)" }
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity, -6dB = half volume" },
+        tune: { type: "number", description: "Pitch in semitones (-12 to +12). -2 = 2 semitones down" },
+        decay: { type: "number", description: "Decay 0-100. 0=tight/punchy, 100=long/boomy" },
+        tone: { type: "number", description: "Brightness. For hats: Hz (4000-16000). Others: 0-100 (0=dark, 100=bright)" },
+        attack: { type: "number", description: "Kick click intensity 0-100. 0=soft, 100=clicky (kick only)" },
+        sweep: { type: "number", description: "Kick pitch envelope 0-100. 0=flat, 100=full sweep (kick only)" },
+        snappy: { type: "number", description: "Snare wire rattle 0-100 (snare only)" },
+        engine: { type: "string", enum: ["E1", "E2"], description: "Engine version: E1=simpler, E2=authentic" },
+        useSample: { type: "boolean", description: "Use real 909 samples (ch, oh, crash, ride only)" }
       },
       required: ["voice"]
     }
   },
   {
+    name: "set_drum_groove",
+    description: "Set global R9D9 groove parameters: flam, pattern length, scale mode, and accent.",
+    input_schema: {
+      type: "object",
+      properties: {
+        flam: { type: "number", description: "Flam amount (0-1). Adds ghost note before main hit for fuller sound." },
+        patternLength: { type: "number", description: "Pattern length in steps (1-16). Default 16." },
+        scale: { type: "string", enum: ["16th", "8th-triplet", "16th-triplet", "32nd"], description: "Time scale. 16th=standard, triplets for shuffle, 32nd for double-time." },
+        globalAccent: { type: "number", description: "Global accent strength (0-1). Multiplier for accented hits." }
+      }
+    }
+  },
+  {
+    name: "automate_drums",
+    description: "Add per-step parameter automation to a drum voice. This is 'knob mashing' - dynamic parameter changes over time. Provide an array of 16 values for the parameter, one per step. Use null to keep the default value for that step.",
+    input_schema: {
+      type: "object",
+      properties: {
+        voice: {
+          type: "string",
+          enum: ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"],
+          description: "Which drum voice to automate"
+        },
+        param: {
+          type: "string",
+          enum: ["decay", "tune", "tone", "level", "attack", "sweep", "snappy"],
+          description: "Which parameter to automate"
+        },
+        values: {
+          type: "array",
+          description: "Array of 16 values (one per step). Use null to keep default. Example: [0.1, 0.2, 0.5, null, 0.8, ...] for rapid decay changes.",
+          items: { type: ["number", "null"] }
+        }
+      },
+      required: ["voice", "param", "values"]
+    }
+  },
+  {
     name: "render",
-    description: "Render the current session to a WAV file",
+    description: "Render the current session to a WAV file. If arrangement is set, renders the full song. Otherwise renders current patterns for specified bars.",
     input_schema: {
       type: "object",
       properties: {
         filename: { type: "string", description: "Output filename (without .wav extension)" },
-        bars: { type: "number", description: "Number of bars to render (default: 2)" }
+        bars: { type: "number", description: "Number of bars to render (default: 2, ignored if arrangement is set)" }
       },
       required: ["filename"]
+    }
+  },
+  // SONG MODE (patterns + arrangement)
+  {
+    name: "save_pattern",
+    description: "Save the current working pattern for an instrument to a named slot (A, B, C, etc). This captures the current pattern, params, and automation.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument's pattern to save" },
+        name: { type: "string", description: "Pattern name (A, B, C, etc)" }
+      },
+      required: ["instrument", "name"]
+    }
+  },
+  {
+    name: "load_pattern",
+    description: "Load a saved pattern into the current working pattern for an instrument. This replaces the current pattern with the saved one.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument's pattern to load" },
+        name: { type: "string", description: "Pattern name to load (A, B, C, etc)" }
+      },
+      required: ["instrument", "name"]
+    }
+  },
+  {
+    name: "copy_pattern",
+    description: "Copy a saved pattern to a new name. Useful for creating variations.",
+    input_schema: {
+      type: "object",
+      properties: {
+        instrument: { type: "string", enum: ["drums", "bass", "lead", "sampler"], description: "Which instrument" },
+        from: { type: "string", description: "Source pattern name (A, B, etc)" },
+        to: { type: "string", description: "Destination pattern name" }
+      },
+      required: ["instrument", "from", "to"]
+    }
+  },
+  {
+    name: "list_patterns",
+    description: "List all saved patterns for each instrument",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "set_arrangement",
+    description: "Set the song arrangement. Each section specifies bars and which pattern each instrument plays. Patterns loop to fill the section. Omit an instrument to silence it for that section.",
+    input_schema: {
+      type: "object",
+      properties: {
+        sections: {
+          type: "array",
+          description: "Array of sections. Each section: {bars: 4, drums: 'A', bass: 'A', lead: 'B', sampler: 'A'}",
+          items: {
+            type: "object",
+            properties: {
+              bars: { type: "number", description: "Number of bars for this section" },
+              drums: { type: "string", description: "Drum pattern name (or omit to silence)" },
+              bass: { type: "string", description: "Bass pattern name (or omit to silence)" },
+              lead: { type: "string", description: "Lead pattern name (or omit to silence)" },
+              sampler: { type: "string", description: "Sampler pattern name (or omit to silence)" }
+            },
+            required: ["bars"]
+          }
+        }
+      },
+      required: ["sections"]
+    }
+  },
+  {
+    name: "clear_arrangement",
+    description: "Clear the arrangement to go back to single-pattern mode",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
+    }
+  },
+  {
+    name: "show_arrangement",
+    description: "Show the current arrangement and all saved patterns",
+    input_schema: {
+      type: "object",
+      properties: {},
+      required: []
     }
   },
   // R3D3 (TB-303 acid bass)
@@ -637,17 +791,17 @@ export const TOOLS = [
   },
   {
     name: "tweak_bass",
-    description: "Adjust R3D3 bass synth parameters. All values 0-1 except waveform.",
+    description: "Adjust R3D3 bass synth parameters. UNITS: level in dB (-60 to +6), cutoff in Hz (100-10000), resonance/envMod/decay/accent as 0-100.",
     input_schema: {
       type: "object",
       properties: {
         waveform: { type: "string", enum: ["sawtooth", "square"], description: "Oscillator waveform" },
-        cutoff: { type: "number", description: "Filter cutoff (0-1). Lower = darker, muffled. Higher = brighter." },
-        resonance: { type: "number", description: "Filter resonance (0-1). Higher = more squelch/acid sound." },
-        envMod: { type: "number", description: "Envelope modulation depth (0-1). How much filter opens on each note." },
-        decay: { type: "number", description: "Envelope decay (0-1). How quickly filter closes after opening." },
-        accent: { type: "number", description: "Accent intensity (0-1). How much accented notes pop." },
-        level: { type: "number", description: "Master volume (0-1). Use to balance with other instruments." }
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
+        cutoff: { type: "number", description: "Filter cutoff in Hz (100-10000). 500=dark, 2000=medium, 5000=bright" },
+        resonance: { type: "number", description: "Filter resonance 0-100. 0=clean, 80+=screaming acid" },
+        envMod: { type: "number", description: "Filter envelope depth 0-100. Higher = more wah on each note" },
+        decay: { type: "number", description: "Filter envelope decay 0-100. How quickly filter closes" },
+        accent: { type: "number", description: "Accent intensity 0-100. How much accented notes pop" }
       },
       required: []
     }
@@ -678,34 +832,34 @@ export const TOOLS = [
   },
   {
     name: "tweak_lead",
-    description: "Adjust R1D1 lead synth parameters. Controls oscillators, sub-osc, filter, envelope, and LFO modulation.",
+    description: "Adjust R1D1 lead synth parameters. UNITS: level in dB, cutoff in Hz (20-16000), all others 0-100. LFO pitch mod in semitones.",
     input_schema: {
       type: "object",
       properties: {
-        // Oscillators
-        vcoSaw: { type: "number", description: "Sawtooth level (0-1)" },
-        vcoPulse: { type: "number", description: "Pulse/square level (0-1)" },
-        pulseWidth: { type: "number", description: "Pulse width (0-1). 0.5 = square wave" },
-        // Sub-oscillator
-        subLevel: { type: "number", description: "Sub-oscillator level (0-1). Adds low-end beef." },
-        subMode: { type: "number", description: "Sub-oscillator mode: 0=off, 1=-1oct square, 2=-2oct square, 3=pulse" },
-        // Filter
-        cutoff: { type: "number", description: "Filter cutoff (0-1)" },
-        resonance: { type: "number", description: "Filter resonance (0-1)" },
-        envMod: { type: "number", description: "Filter envelope depth (0-1)" },
-        // Envelope
-        attack: { type: "number", description: "Envelope attack (0-1). 0=instant, 1=slow fade in" },
-        decay: { type: "number", description: "Envelope decay (0-1)" },
-        sustain: { type: "number", description: "Envelope sustain level (0-1)" },
-        release: { type: "number", description: "Envelope release (0-1). How long note tails after release" },
-        // LFO
-        lfoRate: { type: "number", description: "LFO speed (0-1). 0=slow, 1=fast" },
-        lfoWaveform: { type: "string", enum: ["triangle", "square", "sh"], description: "LFO waveform. 'sh' = sample-and-hold (random)" },
-        lfoToPitch: { type: "number", description: "LFO modulation to pitch (0-1). Creates vibrato." },
-        lfoToFilter: { type: "number", description: "LFO modulation to filter (0-1). Creates wah/wobble effects." },
-        lfoToPW: { type: "number", description: "LFO modulation to pulse width (0-1). Creates PWM movement." },
         // Output
-        level: { type: "number", description: "Master volume (0-1). Use to balance with other instruments." }
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
+        // Oscillators
+        vcoSaw: { type: "number", description: "Sawtooth level 0-100" },
+        vcoPulse: { type: "number", description: "Pulse/square level 0-100" },
+        pulseWidth: { type: "number", description: "Pulse width 5-95. 50=square wave" },
+        // Sub-oscillator
+        subLevel: { type: "number", description: "Sub-oscillator level 0-100. Adds low-end beef" },
+        subMode: { type: "number", description: "Sub mode: 0=-1oct square, 1=-1oct pulse, 2=-2oct pulse" },
+        // Filter
+        cutoff: { type: "number", description: "Filter cutoff in Hz (20-16000). 500=dark, 2000=medium" },
+        resonance: { type: "number", description: "Filter resonance 0-100. 100=self-oscillates" },
+        envMod: { type: "number", description: "Filter envelope depth 0-100" },
+        // Envelope
+        attack: { type: "number", description: "Envelope attack 0-100. 0=instant, 100=slow" },
+        decay: { type: "number", description: "Envelope decay 0-100" },
+        sustain: { type: "number", description: "Envelope sustain level 0-100" },
+        release: { type: "number", description: "Envelope release 0-100. How long note tails" },
+        // LFO
+        lfoRate: { type: "number", description: "LFO speed 0-100. 0=slow wobble, 100=fast" },
+        lfoWaveform: { type: "string", enum: ["triangle", "square", "random"], description: "LFO shape" },
+        lfoToPitch: { type: "number", description: "LFO to pitch in semitones (0-24). Vibrato depth" },
+        lfoToFilter: { type: "number", description: "LFO to filter 0-100. Wah/wobble depth" },
+        lfoToPW: { type: "number", description: "LFO to pulse width 0-100. PWM movement" }
       },
       required: []
     }
@@ -784,17 +938,17 @@ export const TOOLS = [
   },
   {
     name: "tweak_samples",
-    description: "Tweak R9DS sample parameters. Specify slot (s1-s10) and parameters.",
+    description: "Tweak R9DS sample parameters. UNITS: level in dB, tune in semitones, attack/decay 0-100, filter in Hz, pan L/R -100 to +100.",
     input_schema: {
       type: "object",
       properties: {
         slot: { type: "string", description: "Which slot to tweak (s1-s10)" },
-        level: { type: "number", description: "Volume (0-1)" },
-        tune: { type: "number", description: "Pitch in semitones (-12 to +12)" },
-        attack: { type: "number", description: "Fade in time (0-1, 0=instant)" },
-        decay: { type: "number", description: "Sample length percentage (0-1, 1=full sample)" },
-        filter: { type: "number", description: "Lowpass filter (0-1, 0=dark, 1=bright)" },
-        pan: { type: "number", description: "Stereo position (-1=left, 0=center, 1=right)" }
+        level: { type: "number", description: "Volume in dB (-60 to +6). 0dB = unity" },
+        tune: { type: "number", description: "Pitch in semitones (-24 to +24)" },
+        attack: { type: "number", description: "Fade in 0-100. 0=instant" },
+        decay: { type: "number", description: "Sample length 0-100. 0=short chop, 100=full sample" },
+        filter: { type: "number", description: "Lowpass filter in Hz (200-20000). 20000=no filter" },
+        pan: { type: "number", description: "Stereo position (-100=L, 0=C, +100=R)" }
       },
       required: ["slot"]
     }
@@ -971,6 +1125,13 @@ export async function executeTool(name, input, session, context = {}) {
     session.drumKit = 'default';
     session.drumPattern = {};
     session.drumParams = {};
+    session.drumFlam = 0;
+    session.drumPatternLength = 16;
+    session.drumScale = '16th';
+    session.drumGlobalAccent = 1;
+    session.drumVoiceEngines = {};
+    session.drumUseSample = {};
+    session.drumAutomation = {};
     // Reset R3D3 (bass)
     session.bassPattern = createEmptyBassPattern();
     session.bassParams = { waveform: 'sawtooth', cutoff: 0.5, resonance: 0.5, envMod: 0.5, decay: 0.5, accent: 0.8, level: 0.8 };
@@ -994,6 +1155,195 @@ export async function executeTool(name, input, session, context = {}) {
   if (name === "set_swing") {
     session.swing = Math.max(0, Math.min(100, input.amount));
     return `Swing set to ${session.swing}%`;
+  }
+
+  // === SONG MODE TOOLS ===
+
+  // Save current pattern to a named slot
+  if (name === "save_pattern") {
+    const { instrument, name: patternName } = input;
+
+    if (instrument === 'drums') {
+      session.patterns.drums[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.drumPattern)),
+        params: JSON.parse(JSON.stringify(session.drumParams)),
+        automation: JSON.parse(JSON.stringify(session.drumAutomation)),
+        flam: session.drumFlam,
+        length: session.drumPatternLength,
+        scale: session.drumScale,
+        accent: session.drumGlobalAccent,
+        engines: JSON.parse(JSON.stringify(session.drumVoiceEngines)),
+        useSample: JSON.parse(JSON.stringify(session.drumUseSample)),
+      };
+      session.currentPattern.drums = patternName;
+      return `Saved drums pattern "${patternName}"`;
+    }
+
+    if (instrument === 'bass') {
+      session.patterns.bass[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.bassPattern)),
+        params: JSON.parse(JSON.stringify(session.bassParams)),
+      };
+      session.currentPattern.bass = patternName;
+      return `Saved bass pattern "${patternName}"`;
+    }
+
+    if (instrument === 'lead') {
+      session.patterns.lead[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.leadPattern)),
+        params: JSON.parse(JSON.stringify(session.leadParams)),
+        arp: JSON.parse(JSON.stringify(session.leadArp)),
+      };
+      session.currentPattern.lead = patternName;
+      return `Saved lead pattern "${patternName}"`;
+    }
+
+    if (instrument === 'sampler') {
+      session.patterns.sampler[patternName] = {
+        pattern: JSON.parse(JSON.stringify(session.samplerPattern)),
+        params: JSON.parse(JSON.stringify(session.samplerParams)),
+      };
+      session.currentPattern.sampler = patternName;
+      return `Saved sampler pattern "${patternName}"`;
+    }
+
+    return `Unknown instrument: ${instrument}`;
+  }
+
+  // Load a saved pattern into current working pattern
+  if (name === "load_pattern") {
+    const { instrument, name: patternName } = input;
+
+    if (instrument === 'drums') {
+      const saved = session.patterns.drums[patternName];
+      if (!saved) return `No drums pattern "${patternName}" found`;
+      session.drumPattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.drumParams = JSON.parse(JSON.stringify(saved.params));
+      session.drumAutomation = JSON.parse(JSON.stringify(saved.automation || {}));
+      session.drumFlam = saved.flam || 0;
+      session.drumPatternLength = saved.length || 16;
+      session.drumScale = saved.scale || '16th';
+      session.drumGlobalAccent = saved.accent || 1;
+      session.drumVoiceEngines = JSON.parse(JSON.stringify(saved.engines || {}));
+      session.drumUseSample = JSON.parse(JSON.stringify(saved.useSample || {}));
+      session.currentPattern.drums = patternName;
+      return `Loaded drums pattern "${patternName}"`;
+    }
+
+    if (instrument === 'bass') {
+      const saved = session.patterns.bass[patternName];
+      if (!saved) return `No bass pattern "${patternName}" found`;
+      session.bassPattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.bassParams = JSON.parse(JSON.stringify(saved.params));
+      session.currentPattern.bass = patternName;
+      return `Loaded bass pattern "${patternName}"`;
+    }
+
+    if (instrument === 'lead') {
+      const saved = session.patterns.lead[patternName];
+      if (!saved) return `No lead pattern "${patternName}" found`;
+      session.leadPattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.leadParams = JSON.parse(JSON.stringify(saved.params));
+      session.leadArp = JSON.parse(JSON.stringify(saved.arp || { mode: 'off', octaves: 1, hold: false }));
+      session.currentPattern.lead = patternName;
+      return `Loaded lead pattern "${patternName}"`;
+    }
+
+    if (instrument === 'sampler') {
+      const saved = session.patterns.sampler[patternName];
+      if (!saved) return `No sampler pattern "${patternName}" found`;
+      session.samplerPattern = JSON.parse(JSON.stringify(saved.pattern));
+      session.samplerParams = JSON.parse(JSON.stringify(saved.params));
+      session.currentPattern.sampler = patternName;
+      return `Loaded sampler pattern "${patternName}"`;
+    }
+
+    return `Unknown instrument: ${instrument}`;
+  }
+
+  // Copy a pattern to a new name
+  if (name === "copy_pattern") {
+    const { instrument, from, to } = input;
+    const patterns = session.patterns[instrument];
+    if (!patterns) return `Unknown instrument: ${instrument}`;
+    if (!patterns[from]) return `No ${instrument} pattern "${from}" found`;
+
+    patterns[to] = JSON.parse(JSON.stringify(patterns[from]));
+    return `Copied ${instrument} pattern "${from}" to "${to}"`;
+  }
+
+  // List all saved patterns
+  if (name === "list_patterns") {
+    const lines = [];
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+      const patterns = session.patterns[instrument];
+      const names = Object.keys(patterns);
+      const current = session.currentPattern[instrument];
+      if (names.length > 0) {
+        const list = names.map(n => n === current ? `[${n}]` : n).join(', ');
+        lines.push(`${instrument}: ${list}`);
+      } else {
+        lines.push(`${instrument}: (none saved)`);
+      }
+    }
+    return lines.join('\n');
+  }
+
+  // Set the song arrangement
+  if (name === "set_arrangement") {
+    session.arrangement = input.sections.map(s => ({
+      bars: s.bars,
+      patterns: {
+        drums: s.drums || null,
+        bass: s.bass || null,
+        lead: s.lead || null,
+        sampler: s.sampler || null,
+      }
+    }));
+
+    const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
+    const sectionCount = session.arrangement.length;
+    return `Arrangement set: ${sectionCount} sections, ${totalBars} bars total`;
+  }
+
+  // Clear arrangement
+  if (name === "clear_arrangement") {
+    session.arrangement = [];
+    return `Arrangement cleared. Back to single-pattern mode.`;
+  }
+
+  // Show arrangement and patterns
+  if (name === "show_arrangement") {
+    const lines = [];
+
+    // Show patterns
+    lines.push('PATTERNS:');
+    for (const instrument of ['drums', 'bass', 'lead', 'sampler']) {
+      const patterns = session.patterns[instrument];
+      const names = Object.keys(patterns);
+      if (names.length > 0) {
+        lines.push(`  ${instrument}: ${names.join(', ')}`);
+      }
+    }
+
+    // Show arrangement
+    if (session.arrangement.length > 0) {
+      lines.push('\nARRANGEMENT:');
+      session.arrangement.forEach((section, i) => {
+        const parts = [];
+        if (section.patterns.drums) parts.push(`drums:${section.patterns.drums}`);
+        if (section.patterns.bass) parts.push(`bass:${section.patterns.bass}`);
+        if (section.patterns.lead) parts.push(`lead:${section.patterns.lead}`);
+        if (section.patterns.sampler) parts.push(`sampler:${section.patterns.sampler}`);
+        lines.push(`  ${i + 1}. ${section.bars} bars — ${parts.join(', ') || '(silent)'}`);
+      });
+      const totalBars = session.arrangement.reduce((sum, s) => sum + s.bars, 0);
+      lines.push(`\nTotal: ${totalBars} bars`);
+    } else {
+      lines.push('\nARRANGEMENT: (not set - single pattern mode)');
+    }
+
+    return lines.join('\n');
   }
 
   // R9D9 - List 909 kits
@@ -1091,7 +1441,7 @@ export async function executeTool(name, input, session, context = {}) {
               session.drumPattern[voice][step].velocity = vel;
             }
           }
-          added.push(`${voice}:[${steps.map(h => h.step).join(',')}]`);
+          added.push(`${voice}:${steps.length}`);
         } else {
           const defaultVel = (voice === 'ch' || voice === 'oh') ? 0.7 : 1;
           for (const step of steps) {
@@ -1099,7 +1449,7 @@ export async function executeTool(name, input, session, context = {}) {
               session.drumPattern[voice][step].velocity = defaultVel;
             }
           }
-          added.push(`${voice}:[${steps.join(',')}]`);
+          added.push(`${voice}:${steps.length}`);
         }
       }
     }
@@ -1108,6 +1458,7 @@ export async function executeTool(name, input, session, context = {}) {
   }
 
   // R9D9 - Tweak drums
+  // Accepts producer units: dB for level, semitones for tune, 0-100 for decay/attack/sweep/snappy, Hz for hi-hat tone
   if (name === "tweak_drums") {
     const voice = input.voice;
     if (!session.drumParams[voice]) {
@@ -1115,39 +1466,125 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     const tweaks = [];
-    // Common params
+
+    // Convert and store each param using producer-friendly units
+    // Level: dB → linear (0-1)
+    if (input.level !== undefined) {
+      const def = getParamDef('r9d9', voice, 'level');
+      session.drumParams[voice].level = def ? toEngine(input.level, def) : input.level;
+      tweaks.push(`level=${input.level}dB`);
+    }
+
+    // Tune: semitones → cents (for engine)
+    if (input.tune !== undefined) {
+      const def = getParamDef('r9d9', voice, 'tune');
+      // Engine expects cents, toEngine returns cents for semitones
+      session.drumParams[voice].tune = def ? toEngine(input.tune, def) : input.tune * 100;
+      tweaks.push(`tune=${input.tune > 0 ? '+' : ''}${input.tune}st`);
+    }
+
+    // Decay: 0-100 → 0-1
     if (input.decay !== undefined) {
-      session.drumParams[voice].decay = input.decay;
+      const def = getParamDef('r9d9', voice, 'decay');
+      session.drumParams[voice].decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
-    if (input.tune !== undefined) {
-      session.drumParams[voice].tune = input.tune;
-      tweaks.push(`tune=${input.tune}`);
-    }
+
+    // Tone: Hz for hats, 0-100 for others
     if (input.tone !== undefined) {
-      session.drumParams[voice].tone = input.tone;
-      tweaks.push(`tone=${input.tone}`);
+      const def = getParamDef('r9d9', voice, 'tone');
+      if (def?.unit === 'Hz') {
+        // Hi-hats use Hz
+        session.drumParams[voice].tone = toEngine(input.tone, def);
+        tweaks.push(`tone=${input.tone}Hz`);
+      } else {
+        // Others use 0-100
+        session.drumParams[voice].tone = def ? toEngine(input.tone, def) : input.tone / 100;
+        tweaks.push(`tone=${input.tone}`);
+      }
     }
-    if (input.level !== undefined) {
-      session.drumParams[voice].level = input.level;
-      tweaks.push(`level=${input.level}`);
-    }
-    // Kick-specific params
+
+    // Attack: 0-100 → 0-1 (kick only)
     if (input.attack !== undefined) {
-      session.drumParams[voice].attack = input.attack;
+      const def = getParamDef('r9d9', voice, 'attack');
+      session.drumParams[voice].attack = def ? toEngine(input.attack, def) : input.attack / 100;
       tweaks.push(`attack=${input.attack}`);
     }
+
+    // Sweep: 0-100 → 0-1 (kick only)
     if (input.sweep !== undefined) {
-      session.drumParams[voice].sweep = input.sweep;
+      const def = getParamDef('r9d9', voice, 'sweep');
+      session.drumParams[voice].sweep = def ? toEngine(input.sweep, def) : input.sweep / 100;
       tweaks.push(`sweep=${input.sweep}`);
     }
-    // Snare-specific param
+
+    // Snappy: 0-100 → 0-1 (snare only)
     if (input.snappy !== undefined) {
-      session.drumParams[voice].snappy = input.snappy;
+      const def = getParamDef('r9d9', voice, 'snappy');
+      session.drumParams[voice].snappy = def ? toEngine(input.snappy, def) : input.snappy / 100;
       tweaks.push(`snappy=${input.snappy}`);
     }
 
+    // Per-voice engine selection (no conversion needed)
+    if (input.engine !== undefined) {
+      session.drumVoiceEngines[voice] = input.engine;
+      tweaks.push(`engine=${input.engine}`);
+    }
+
+    // Sample mode (ch, oh, crash, ride only)
+    if (input.useSample !== undefined) {
+      const sampleCapable = ['ch', 'oh', 'crash', 'ride'];
+      if (sampleCapable.includes(voice)) {
+        session.drumUseSample[voice] = input.useSample;
+        tweaks.push(`useSample=${input.useSample}`);
+      }
+    }
+
     return `R9D9 ${voice}: ${tweaks.join(', ')}`;
+  }
+
+  // R9D9 - Set drum groove (flam, pattern length, scale, global accent)
+  if (name === "set_drum_groove") {
+    const changes = [];
+    if (input.flam !== undefined) {
+      session.drumFlam = Math.max(0, Math.min(1, input.flam));
+      changes.push(`flam=${session.drumFlam}`);
+    }
+    if (input.patternLength !== undefined) {
+      session.drumPatternLength = Math.max(1, Math.min(16, Math.floor(input.patternLength)));
+      changes.push(`patternLength=${session.drumPatternLength}`);
+    }
+    if (input.scale !== undefined) {
+      const validScales = ['16th', '8th-triplet', '16th-triplet', '32nd'];
+      if (validScales.includes(input.scale)) {
+        session.drumScale = input.scale;
+        changes.push(`scale=${session.drumScale}`);
+      }
+    }
+    if (input.globalAccent !== undefined) {
+      session.drumGlobalAccent = Math.max(0, Math.min(1, input.globalAccent));
+      changes.push(`globalAccent=${session.drumGlobalAccent}`);
+    }
+    return `R9D9 groove: ${changes.join(', ') || 'no changes'}`;
+  }
+
+  // R9D9 - Automate drums (knob mashing)
+  if (name === "automate_drums") {
+    const { voice, param, values } = input;
+
+    // Initialize automation structure if needed
+    if (!session.drumAutomation[voice]) {
+      session.drumAutomation[voice] = {};
+    }
+
+    // Store the 16-step automation values (pad with null if needed)
+    const automationValues = Array(16).fill(null).map((_, i) =>
+      values[i] !== undefined ? values[i] : null
+    );
+    session.drumAutomation[voice][param] = automationValues;
+
+    const activeSteps = automationValues.filter(v => v !== null).length;
+    return `R9D9 ${voice} ${param} automation: ${activeSteps}/16 steps`;
   }
 
   // R3D3 - Add bass
@@ -1167,36 +1604,59 @@ export async function executeTool(name, input, session, context = {}) {
   }
 
   // R3D3 - Tweak bass
+  // Accepts producer units: dB for level, Hz for cutoff, 0-100 for resonance/envMod/decay/accent
   if (name === "tweak_bass") {
     const tweaks = [];
+
+    // Waveform (choice, no conversion)
     if (input.waveform !== undefined) {
       session.bassParams.waveform = input.waveform;
       tweaks.push(`waveform=${input.waveform}`);
     }
-    if (input.cutoff !== undefined) {
-      session.bassParams.cutoff = input.cutoff;
-      tweaks.push(`cutoff=${input.cutoff}`);
+
+    // Level: dB → linear
+    if (input.level !== undefined) {
+      const def = getParamDef('r3d3', 'bass', 'level');
+      session.bassParams.level = def ? toEngine(input.level, def) : input.level;
+      tweaks.push(`level=${input.level}dB`);
     }
+
+    // Cutoff: Hz → 0-1 (log scale)
+    if (input.cutoff !== undefined) {
+      const def = getParamDef('r3d3', 'bass', 'cutoff');
+      session.bassParams.cutoff = def ? toEngine(input.cutoff, def) : input.cutoff;
+      const display = input.cutoff >= 1000 ? `${(input.cutoff/1000).toFixed(1)}kHz` : `${input.cutoff}Hz`;
+      tweaks.push(`cutoff=${display}`);
+    }
+
+    // Resonance: 0-100 → 0-1
     if (input.resonance !== undefined) {
-      session.bassParams.resonance = input.resonance;
+      const def = getParamDef('r3d3', 'bass', 'resonance');
+      session.bassParams.resonance = def ? toEngine(input.resonance, def) : input.resonance / 100;
       tweaks.push(`resonance=${input.resonance}`);
     }
+
+    // EnvMod: 0-100 → 0-1
     if (input.envMod !== undefined) {
-      session.bassParams.envMod = input.envMod;
+      const def = getParamDef('r3d3', 'bass', 'envMod');
+      session.bassParams.envMod = def ? toEngine(input.envMod, def) : input.envMod / 100;
       tweaks.push(`envMod=${input.envMod}`);
     }
+
+    // Decay: 0-100 → 0-1
     if (input.decay !== undefined) {
-      session.bassParams.decay = input.decay;
+      const def = getParamDef('r3d3', 'bass', 'decay');
+      session.bassParams.decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
+
+    // Accent: 0-100 → 0-1
     if (input.accent !== undefined) {
-      session.bassParams.accent = input.accent;
+      const def = getParamDef('r3d3', 'bass', 'accent');
+      session.bassParams.accent = def ? toEngine(input.accent, def) : input.accent / 100;
       tweaks.push(`accent=${input.accent}`);
     }
-    if (input.level !== undefined) {
-      session.bassParams.level = input.level;
-      tweaks.push(`level=${input.level}`);
-    }
+
     return `R3D3 bass: ${tweaks.join(', ')}`;
   }
 
@@ -1217,23 +1677,59 @@ export async function executeTool(name, input, session, context = {}) {
   }
 
   // R1D1 - Tweak lead
+  // Accepts producer units: dB for level, Hz for cutoff, semitones for lfoToPitch, 0-100 for most others
   if (name === "tweak_lead") {
     const tweaks = [];
-    // All available params: oscillators, sub-osc, filter, envelope, LFO, output
-    const params = [
+
+    // Level: dB → linear
+    if (input.level !== undefined) {
+      const def = getParamDef('r1d1', 'lead', 'level');
+      session.leadParams.level = def ? toEngine(input.level, def) : input.level;
+      tweaks.push(`level=${input.level}dB`);
+    }
+
+    // Cutoff: Hz → 0-1 (log scale)
+    if (input.cutoff !== undefined) {
+      const def = getParamDef('r1d1', 'lead', 'cutoff');
+      session.leadParams.cutoff = def ? toEngine(input.cutoff, def) : input.cutoff;
+      const display = input.cutoff >= 1000 ? `${(input.cutoff/1000).toFixed(1)}kHz` : `${input.cutoff}Hz`;
+      tweaks.push(`cutoff=${display}`);
+    }
+
+    // LFO to pitch: semitones (keep as semitones for engine, it handles it)
+    if (input.lfoToPitch !== undefined) {
+      // SH-101 engine expects 0-1 for lfoToPitch where 1 = max modulation
+      // We'll convert semitones to 0-1 range (0-24 semitones → 0-1)
+      const def = getParamDef('r1d1', 'lead', 'lfoToPitch');
+      session.leadParams.lfoToPitch = def ? input.lfoToPitch / def.max : input.lfoToPitch / 24;
+      tweaks.push(`lfoToPitch=${input.lfoToPitch}st`);
+    }
+
+    // All other 0-100 params
+    const knobParams = [
       'vcoSaw', 'vcoPulse', 'pulseWidth',
-      'subLevel', 'subMode',
-      'cutoff', 'resonance', 'envMod',
+      'subLevel', 'resonance', 'envMod',
       'attack', 'decay', 'sustain', 'release',
-      'lfoRate', 'lfoWaveform', 'lfoToPitch', 'lfoToFilter', 'lfoToPW',
-      'level'
+      'lfoRate', 'lfoToFilter', 'lfoToPW'
     ];
-    for (const param of params) {
+    for (const param of knobParams) {
       if (input[param] !== undefined) {
-        session.leadParams[param] = input[param];
+        const def = getParamDef('r1d1', 'lead', param);
+        session.leadParams[param] = def ? toEngine(input[param], def) : input[param] / 100;
         tweaks.push(`${param}=${input[param]}`);
       }
     }
+
+    // Choice params (no conversion)
+    if (input.subMode !== undefined) {
+      session.leadParams.subMode = input.subMode;
+      tweaks.push(`subMode=${input.subMode}`);
+    }
+    if (input.lfoWaveform !== undefined) {
+      session.leadParams.lfoWaveform = input.lfoWaveform;
+      tweaks.push(`lfoWaveform=${input.lfoWaveform}`);
+    }
+
     return `R1D1 lead: ${tweaks.join(', ')}`;
   }
 
@@ -1353,14 +1849,14 @@ export async function executeTool(name, input, session, context = {}) {
               session.samplerPattern[slot][step].velocity = vel;
             }
           }
-          added.push(`${slot}:[${steps.map(h => h.step).join(',')}]`);
+          added.push(`${slot}:${steps.length}`);
         } else {
           for (const step of steps) {
             if (step >= 0 && step < 16) {
               session.samplerPattern[slot][step].velocity = 1;
             }
           }
-          added.push(`${slot}:[${steps.join(',')}]`);
+          added.push(`${slot}:${steps.length}`);
         }
       }
     }
@@ -1376,6 +1872,7 @@ export async function executeTool(name, input, session, context = {}) {
   }
 
   // R9DS Sampler - Tweak samples
+  // Accepts producer units: dB for level, semitones for tune, 0-100 for attack/decay, Hz for filter, pan -100 to +100
   if (name === "tweak_samples") {
     const slot = input.slot;
     if (!session.samplerParams[slot]) {
@@ -1383,29 +1880,49 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     const tweaks = [];
+
+    // Level: dB → linear
     if (input.level !== undefined) {
-      session.samplerParams[slot].level = input.level;
-      tweaks.push(`level=${input.level}`);
+      const def = getParamDef('r9ds', slot, 'level');
+      session.samplerParams[slot].level = def ? toEngine(input.level, def) : input.level;
+      tweaks.push(`level=${input.level}dB`);
     }
+
+    // Tune: semitones (sampler might want semitones directly)
     if (input.tune !== undefined) {
+      // Keep as semitones for sampler engine
       session.samplerParams[slot].tune = input.tune;
-      tweaks.push(`tune=${input.tune}`);
+      tweaks.push(`tune=${input.tune > 0 ? '+' : ''}${input.tune}st`);
     }
+
+    // Attack: 0-100 → 0-1
     if (input.attack !== undefined) {
-      session.samplerParams[slot].attack = input.attack;
+      const def = getParamDef('r9ds', slot, 'attack');
+      session.samplerParams[slot].attack = def ? toEngine(input.attack, def) : input.attack / 100;
       tweaks.push(`attack=${input.attack}`);
     }
+
+    // Decay: 0-100 → 0-1
     if (input.decay !== undefined) {
-      session.samplerParams[slot].decay = input.decay;
+      const def = getParamDef('r9ds', slot, 'decay');
+      session.samplerParams[slot].decay = def ? toEngine(input.decay, def) : input.decay / 100;
       tweaks.push(`decay=${input.decay}`);
     }
+
+    // Filter: Hz → 0-1 (log scale)
     if (input.filter !== undefined) {
-      session.samplerParams[slot].filter = input.filter;
-      tweaks.push(`filter=${input.filter}`);
+      const def = getParamDef('r9ds', slot, 'filter');
+      session.samplerParams[slot].filter = def ? toEngine(input.filter, def) : input.filter;
+      const display = input.filter >= 1000 ? `${(input.filter/1000).toFixed(1)}kHz` : `${input.filter}Hz`;
+      tweaks.push(`filter=${display}`);
     }
+
+    // Pan: -100 to +100 → -1 to +1
     if (input.pan !== undefined) {
-      session.samplerParams[slot].pan = input.pan;
-      tweaks.push(`pan=${input.pan}`);
+      const def = getParamDef('r9ds', slot, 'pan');
+      session.samplerParams[slot].pan = def ? toEngine(input.pan, def) : input.pan / 100;
+      const panDisplay = input.pan === 0 ? 'C' : (input.pan < 0 ? `L${Math.abs(input.pan)}` : `R${input.pan}`);
+      tweaks.push(`pan=${panDisplay}`);
     }
 
     // Get slot name from kit
@@ -1793,9 +2310,65 @@ async function renderSession(session, bars, filename) {
   const SH101Mod = await import('../web/public/101/dist/machines/sh101/engine.js');
   const SH101Engine = SH101Mod.SH101Engine || SH101Mod.default;
 
+  // === ARRANGEMENT MODE ===
+  // If arrangement is set, calculate total bars from sections and build a render plan
+  const hasArrangement = session.arrangement && session.arrangement.length > 0;
+  let renderBars = bars;
+  let arrangementPlan = null;  // { barStart, barEnd, patterns } for each section
+
+  if (hasArrangement) {
+    // Build the render plan
+    arrangementPlan = [];
+    let currentBar = 0;
+    for (const section of session.arrangement) {
+      arrangementPlan.push({
+        barStart: currentBar,
+        barEnd: currentBar + section.bars,
+        patterns: section.patterns
+      });
+      currentBar += section.bars;
+    }
+    renderBars = currentBar;
+  }
+
+  // Helper: get pattern data for a specific instrument at a given bar
+  const getPatternForBar = (instrument, bar) => {
+    if (!hasArrangement) {
+      // Use current working pattern
+      if (instrument === 'drums') return { pattern: session.drumPattern, params: session.drumParams, automation: session.drumAutomation, length: session.drumPatternLength };
+      if (instrument === 'bass') return { pattern: session.bassPattern, params: session.bassParams };
+      if (instrument === 'lead') return { pattern: session.leadPattern, params: session.leadParams };
+      if (instrument === 'sampler') return { pattern: session.samplerPattern, params: session.samplerParams };
+      return null;
+    }
+
+    // Find which section this bar is in
+    const section = arrangementPlan.find(s => bar >= s.barStart && bar < s.barEnd);
+    if (!section) return null;
+
+    const patternName = section.patterns[instrument];
+    if (!patternName) return null;  // Instrument silenced in this section
+
+    const savedPattern = session.patterns[instrument]?.[patternName];
+    if (!savedPattern) return null;
+
+    return savedPattern;
+  };
+
   const stepsPerBar = 16;
-  const totalSteps = bars * stepsPerBar;
-  const stepDuration = 60 / session.bpm / 4;
+  const totalSteps = renderBars * stepsPerBar;
+  const stepDuration = 60 / session.bpm / 4;  // Standard 16th note duration
+
+  // Drum-specific step duration based on scale mode
+  const drumScaleMultipliers = {
+    '16th': 1,           // Standard 16th notes
+    '8th-triplet': 4/3,  // 8th triplets (slower, 12 per bar)
+    '16th-triplet': 2/3, // 16th triplets (faster, 24 per bar)
+    '32nd': 0.5          // 32nd notes (double speed)
+  };
+  const drumStepDuration = stepDuration * (drumScaleMultipliers[session.drumScale] || 1);
+  const drumPatternLength = session.drumPatternLength || 16;
+
   const totalDuration = totalSteps * stepDuration + 2; // Extra time for release tails
   const sampleRate = 44100;
 
@@ -1852,7 +2425,7 @@ async function renderSession(session, bars, filename) {
     Object.entries(descriptors).forEach(([voiceId, params]) => {
       params.forEach((param) => {
         try {
-          drums.setVoiceParameter(voiceId, param.id, param.defaultValue);
+          drums.setVoiceParam(voiceId, param.id, param.defaultValue);
         } catch (e) {
           // Ignore - param may not exist on current engine
         }
@@ -1865,7 +2438,7 @@ async function renderSession(session, bars, filename) {
     Object.entries(drumKit.voiceParams).forEach(([voiceId, params]) => {
       Object.entries(params).forEach(([paramId, value]) => {
         try {
-          drums.setVoiceParameter(voiceId, paramId, value);
+          drums.setVoiceParam(voiceId, paramId, value);
         } catch (e) {
           // Ignore
         }
@@ -1879,12 +2452,41 @@ async function renderSession(session, bars, filename) {
     if (userParams) {
       Object.entries(userParams).forEach(([paramId, value]) => {
         try {
-          drums.setVoiceParameter(name, paramId, value);
+          drums.setVoiceParam(name, paramId, value);
         } catch (e) {
           // Ignore
         }
       });
     }
+  }
+
+  // Step 7: Apply per-voice engine selection
+  if (session.drumVoiceEngines && drums.setVoiceEngine) {
+    Object.entries(session.drumVoiceEngines).forEach(([voiceId, engine]) => {
+      try {
+        drums.setVoiceEngine(voiceId, engine);
+      } catch (e) {
+        // Ignore
+      }
+    });
+  }
+
+  // Step 8: Apply sample mode for hats/cymbals
+  if (session.drumUseSample) {
+    const sampleCapable = ['ch', 'oh', 'crash', 'ride'];
+    sampleCapable.forEach(voiceId => {
+      if (session.drumUseSample[voiceId] !== undefined) {
+        const voice = drums.voices.get(voiceId);
+        if (voice && voice.setUseSample) {
+          voice.setUseSample(session.drumUseSample[voiceId]);
+        }
+      }
+    });
+  }
+
+  // Step 9: Apply flam (globalAccent is applied during manual triggering below)
+  if (session.drumFlam > 0 && drums.setFlam) {
+    drums.setFlam(session.drumFlam);
   }
 
   // === R3D3 (Bass) ===
@@ -1902,22 +2504,56 @@ async function renderSession(session, bars, filename) {
   });
 
   // === R1D1 (Lead) ===
-  // Use engine's own renderPattern for accurate sound (same as web app)
-  // Create separate context for lead init (renderPattern creates its own for rendering)
-  const leadInitContext = new OfflineAudioContext(2, 44100, 44100);  // Minimal dummy
-  const lead = new SH101Engine({ context: leadInitContext, engine: 'E1' });
-  // Apply lead params (map 'level' to 'volume' for SH-101 engine)
-  Object.entries(session.leadParams).forEach(([key, value]) => {
-    const paramKey = key === 'level' ? 'volume' : key;
-    lead.setParameter(paramKey, value);
-  });
-  // Set the pattern on the engine
-  lead.setPattern(session.leadPattern);
+  // For arrangement mode, pre-render each unique lead pattern and store with section offsets
+  // For single-pattern mode, pre-render once
+  const leadBuffers = [];  // { buffer, startBar, bars }
 
-  // Pre-render the lead using engine's own method (matches web app exactly)
-  let leadBuffer = null;
-  if (session.leadPattern.some(s => s.gate)) {
-    leadBuffer = await lead.renderPattern({ bars, bpm: session.bpm });
+  if (hasArrangement) {
+    // Collect unique lead patterns with their section info
+    const leadSections = [];
+    for (const section of arrangementPlan) {
+      const patternName = section.patterns.lead;
+      if (patternName && session.patterns.lead?.[patternName]) {
+        leadSections.push({
+          patternName,
+          patternData: session.patterns.lead[patternName],
+          startBar: section.barStart,
+          bars: section.barEnd - section.barStart
+        });
+      }
+    }
+
+    // Pre-render each lead section
+    for (const sec of leadSections) {
+      const leadInitContext = new OfflineAudioContext(2, 44100, 44100);
+      const lead = new SH101Engine({ context: leadInitContext, engine: 'E1' });
+
+      // Apply params
+      Object.entries(sec.patternData.params || {}).forEach(([key, value]) => {
+        const paramKey = key === 'level' ? 'volume' : key;
+        lead.setParameter(paramKey, value);
+      });
+      lead.setPattern(sec.patternData.pattern);
+
+      if (sec.patternData.pattern?.some(s => s.gate)) {
+        const buffer = await lead.renderPattern({ bars: sec.bars, bpm: session.bpm });
+        leadBuffers.push({ buffer, startBar: sec.startBar, bars: sec.bars });
+      }
+    }
+  } else {
+    // Single pattern mode - original behavior
+    const leadInitContext = new OfflineAudioContext(2, 44100, 44100);
+    const lead = new SH101Engine({ context: leadInitContext, engine: 'E1' });
+    Object.entries(session.leadParams).forEach(([key, value]) => {
+      const paramKey = key === 'level' ? 'volume' : key;
+      lead.setParameter(paramKey, value);
+    });
+    lead.setPattern(session.leadPattern);
+
+    if (session.leadPattern.some(s => s.gate)) {
+      const buffer = await lead.renderPattern({ bars: renderBars, bpm: session.bpm });
+      leadBuffers.push({ buffer, startBar: 0, bars: renderBars });
+    }
   }
 
   // === R9DS (Sampler) ===
@@ -2159,79 +2795,179 @@ async function renderSession(session, bars, filename) {
     return 440 * Math.pow(2, (midi - 69) / 12);
   };
 
+  // Track current section to apply params when section changes
+  let lastDrumSection = null;
+  let lastBassSection = null;
+  let lastSamplerSection = null;
+
   for (let i = 0; i < totalSteps; i++) {
     let time = i * stepDuration;
     const step = i % 16;
+    const currentBar = Math.floor(i / 16);
 
-    // Apply swing to off-beats
+    // Apply swing to off-beats (for bass/sampler)
     if (step % 2 === 1) {
       time += swingAmount * maxSwingDelay;
     }
 
-    // R9D9 drums
-    for (const name of voiceNames) {
-      if (session.drumPattern[name]?.[step]?.velocity > 0) {
-        const voice = drums.voices.get(name);
-        if (voice) voice.trigger(time, session.drumPattern[name][step].velocity);
+    // === R9D9 drums (uses arrangement-aware patterns) ===
+    const drumData = getPatternForBar('drums', currentBar);
+    if (drumData && drumData.pattern) {
+      // Apply pattern params when section changes (for per-pattern level/tune/etc)
+      const drumSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
+      if (drumSectionKey !== lastDrumSection && drumData.params) {
+        lastDrumSection = drumSectionKey;
+        // Apply this pattern's params to drum voices
+        for (const [voiceName, voiceParams] of Object.entries(drumData.params)) {
+          Object.entries(voiceParams).forEach(([paramId, value]) => {
+            try {
+              drums.setVoiceParam(voiceName, paramId, value);
+            } catch (e) {
+              // Ignore
+            }
+          });
+        }
+      }
 
-        // Schedule sidechain ducking if this voice is a trigger
-        for (const [targetChannel, scConfig] of sidechainTargets) {
-          if (scConfig.trigger === name) {
-            const attackTime = 0.005; // 5ms attack
-            const releaseTime = 0.15; // 150ms release
-            const targetGain = 1 - scConfig.amount;
+      const patternLength = drumData.length || 16;
+      const drumStep = i % patternLength;  // Wrap based on pattern length
+      let drumTime = i * drumStepDuration;
+      // Apply swing to drum off-beats
+      if (drumStep % 2 === 1) {
+        drumTime += swingAmount * (drumStepDuration * 0.5);
+      }
 
-            scConfig.gain.gain.setValueAtTime(1, time);
-            scConfig.gain.gain.linearRampToValueAtTime(targetGain, time + attackTime);
-            scConfig.gain.gain.linearRampToValueAtTime(1, time + attackTime + releaseTime);
+      for (const name of voiceNames) {
+        if (drumData.pattern[name]?.[drumStep]?.velocity > 0) {
+          const voice = drums.voices.get(name);
+          if (voice) {
+            // Apply automation for this step (knob mashing)
+            const voiceAutomation = drumData.automation?.[name];
+            if (voiceAutomation) {
+              for (const [paramId, stepValues] of Object.entries(voiceAutomation)) {
+                const autoValue = stepValues[drumStep];
+                if (autoValue !== null && autoValue !== undefined) {
+                  voice[paramId] = autoValue;  // Direct property set for immediate effect
+                }
+              }
+            }
+            voice.trigger(drumTime, drumData.pattern[name][drumStep].velocity);
+          }
+
+          // Schedule sidechain ducking if this voice is a trigger
+          for (const [targetChannel, scConfig] of sidechainTargets) {
+            if (scConfig.trigger === name) {
+              const attackTime = 0.005; // 5ms attack
+              const releaseTime = 0.15; // 150ms release
+              const targetGain = 1 - scConfig.amount;
+
+              scConfig.gain.gain.setValueAtTime(1, drumTime);
+              scConfig.gain.gain.linearRampToValueAtTime(targetGain, drumTime + attackTime);
+              scConfig.gain.gain.linearRampToValueAtTime(1, drumTime + attackTime + releaseTime);
+            }
           }
         }
       }
     }
 
-    // R3D3 bass
-    const bassStep = session.bassPattern[step];
-    if (bassStep?.gate && bassVoice) {
-      const freq = noteToFreq(bassStep.note);
-      const nextStep = session.bassPattern[(step + 1) % 16];
-      const shouldSlide = bassStep.slide && nextStep?.gate;
-      const nextFreq = shouldSlide ? noteToFreq(nextStep.note) : null;
-      bassVoice.trigger(time, 0.8, freq, bassStep.accent, shouldSlide, nextFreq);
+    // === R3D3 bass (uses arrangement-aware patterns) ===
+    const bassData = getPatternForBar('bass', currentBar);
+    if (bassData && bassData.pattern) {
+      // Apply pattern params when section changes (for per-pattern level/cutoff/etc)
+      const bassSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
+      if (bassSectionKey !== lastBassSection && bassData.params) {
+        lastBassSection = bassSectionKey;
+        // Apply this pattern's params to bass
+        Object.entries(bassData.params).forEach(([key, value]) => {
+          if (key !== 'waveform') {
+            bass.setParameter(key, value);
+          }
+        });
+        if (bassData.params.waveform) {
+          bass.setWaveform(bassData.params.waveform);
+        }
+      }
+
+      const bassStep = bassData.pattern[step];
+      if (bassStep?.gate && bassVoice) {
+        const freq = noteToFreq(bassStep.note);
+        const nextStep = bassData.pattern[(step + 1) % 16];
+        const shouldSlide = bassStep.slide && nextStep?.gate;
+        const nextFreq = shouldSlide ? noteToFreq(nextStep.note) : null;
+        bassVoice.trigger(time, 0.8, freq, bassStep.accent, shouldSlide, nextFreq);
+      }
     }
 
     // R1D1 lead is pre-rendered above using engine.renderPattern()
 
-    // R9DS sampler
-    for (const [slotId, voice] of samplerVoices) {
-      if (session.samplerPattern[slotId]?.[step]?.velocity > 0) {
-        voice.trigger(time, session.samplerPattern[slotId][step].velocity);
+    // === R9DS sampler (uses arrangement-aware patterns) ===
+    const samplerData = getPatternForBar('sampler', currentBar);
+    if (samplerData && samplerData.pattern) {
+      // Apply pattern params when section changes
+      const samplerSectionKey = hasArrangement ? arrangementPlan.find(s => currentBar >= s.barStart && currentBar < s.barEnd) : null;
+      if (samplerSectionKey !== lastSamplerSection && samplerData.params) {
+        lastSamplerSection = samplerSectionKey;
+        // Apply this pattern's params to sampler voices
+        for (const [slotId, slotParams] of Object.entries(samplerData.params)) {
+          const voice = samplerVoices.get(slotId);
+          if (voice) {
+            Object.entries(slotParams).forEach(([key, value]) => {
+              voice.setParameter(key, value);
+            });
+          }
+        }
+      }
+
+      for (const [slotId, voice] of samplerVoices) {
+        if (samplerData.pattern[slotId]?.[step]?.velocity > 0) {
+          voice.trigger(time, samplerData.pattern[slotId][step].velocity);
+        }
       }
     }
   }
 
-  // Count what we rendered
-  const hasDrums = Object.keys(session.drumPattern).length > 0;
-  const hasBass = session.bassPattern.some(s => s.gate);
-  const hasLead = session.leadPattern.some(s => s.gate);
-  const hasSamples = Object.keys(session.samplerPattern).length > 0 && session.samplerKit;
+  // Count what we rendered (check both current patterns and arrangement)
+  let hasDrums = Object.keys(session.drumPattern).length > 0;
+  let hasBass = session.bassPattern.some(s => s.gate);
+  let hasLead = session.leadPattern.some(s => s.gate);
+  let hasSamples = Object.keys(session.samplerPattern).length > 0 && session.samplerKit;
+
+  if (hasArrangement) {
+    // Check if any section uses each instrument
+    hasDrums = arrangementPlan.some(s => s.patterns.drums && session.patterns.drums[s.patterns.drums]);
+    hasBass = arrangementPlan.some(s => s.patterns.bass && session.patterns.bass[s.patterns.bass]);
+    hasLead = leadBuffers.length > 0;
+    hasSamples = arrangementPlan.some(s => s.patterns.sampler && session.patterns.sampler[s.patterns.sampler]) && session.samplerKit;
+  }
+
   const synths = [hasDrums && 'R9D9', hasBass && 'R3D3', hasLead && 'R1D1', hasSamples && 'R9DS'].filter(Boolean);
 
   return context.startRendering().then(buffer => {
-    // Mix in pre-rendered lead buffer if present
-    if (leadBuffer) {
-      const mixLength = Math.min(buffer.length, leadBuffer.length);
+    // Mix in pre-rendered lead buffers at their respective positions
+    const samplesPerBar = (60 / session.bpm) * 4 * sampleRate;  // 4 beats per bar
+
+    for (const { buffer: leadBuffer, startBar } of leadBuffers) {
+      const startSample = Math.floor(startBar * samplesPerBar);
+      const mixLength = Math.min(buffer.length - startSample, leadBuffer.length);
+
       for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
         const mainData = buffer.getChannelData(ch);
         const leadData = leadBuffer.getChannelData(ch % leadBuffer.numberOfChannels);
         for (let i = 0; i < mixLength; i++) {
-          mainData[i] += leadData[i] * 0.8;  // Mix at 80% level
+          mainData[startSample + i] += leadData[i] * 0.8;  // Mix at 80% level
         }
       }
     }
 
     const wav = audioBufferToWav(buffer);
     writeFileSync(filename, Buffer.from(wav));
-    return `Rendered ${bars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
+
+    // Output message varies based on mode
+    if (hasArrangement) {
+      const sectionCount = session.arrangement.length;
+      return `Rendered ${renderBars} bars (${sectionCount} sections) at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
+    }
+    return `Rendered ${renderBars} bars at ${session.bpm} BPM (${synths.join('+') || 'empty'})`;
   });
 }
 

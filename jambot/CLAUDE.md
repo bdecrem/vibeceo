@@ -39,6 +39,79 @@ R9DS uses local files:
 
 **Do NOT duplicate synth code** - always import from web/public/ (except R9DS which is local).
 
+## Parameter Units (Producer-Friendly)
+
+Synth parameters use producer-friendly units instead of raw 0-1 engine values. The system converts automatically.
+
+### The 5 Unit Types
+
+| Unit | Range | Examples |
+|------|-------|----------|
+| **dB** | -60 to +6 | Level, volume (0 = unity gain) |
+| **0-100** | 0 to 100 | Decay, attack, resonance, envMod (like hardware knobs) |
+| **semitones** | ±12 or ±24 | Tune, pitch (+12 = 1 octave up) |
+| **Hz** | varies | Filter cutoff, hi-hat tone (log scale) |
+| **pan** | -100 to +100 | Stereo position (L=-100, C=0, R=+100) |
+
+Plus `choice` for discrete options (waveform: "sawtooth"/"square").
+
+### File Structure
+
+```
+params/
+  r9d9-params.json   # TR-909 drum voices
+  r3d3-params.json   # TB-303 bass
+  r1d1-params.json   # SH-101 lead
+  r9ds-params.json   # Sampler slots
+  converters.js      # toEngine(), fromEngine(), etc.
+```
+
+### Per-Synth Parameters
+
+**R9D9 (drums):**
+- `level` (dB): -60 to +6
+- `tune` (semitones): -12 to +12
+- `decay` (0-100): 0=tight/punchy, 100=boomy
+- `attack` (0-100): 0=soft, 100=clicky
+- `tone` (Hz): 4000-16000 for hi-hats
+
+**R3D3 (bass):**
+- `level` (dB): -60 to +6
+- `cutoff` (Hz): 100-10000
+- `resonance` (0-100): 0=clean, 100=screaming
+- `envMod`, `decay`, `accent` (0-100)
+
+**R1D1 (lead):**
+- `level` (dB): -60 to +6
+- `cutoff` (Hz): 20-16000
+- `vcoSaw`, `vcoPulse`, `pulseWidth` (0-100)
+- `attack`, `decay`, `sustain`, `release` (0-100)
+- `lfoToPitch` (semitones): 0-24 vibrato depth
+
+**R9DS (sampler):**
+- `level` (dB): -60 to +6
+- `tune` (semitones): -24 to +24
+- `attack`, `decay` (0-100)
+- `filter` (Hz): 200-20000 lowpass
+- `pan` (-100 to +100)
+
+### How It Works
+
+1. Agent passes producer values (e.g., `level: -3` dB)
+2. `converters.js` converts to engine units (0-1)
+3. Synth engine receives normalized values
+
+```javascript
+import { convertTweaks } from './params/converters.js';
+
+// Producer-friendly input
+const tweaks = { level: -6, decay: 80, cutoff: 2000 };
+
+// Convert to engine units
+const engineTweaks = convertTweaks('r3d3', 'bass', tweaks);
+// → { level: 0.25, decay: 0.8, cutoff: 0.65 }
+```
+
 ## R9DS Sample Kits
 
 Kit locations (checked in order, user can override bundled):
@@ -57,6 +130,10 @@ Bundled kits: 808, amber
 
 ## Tools Available to Agent
 
+**Note on muting:** There is no `mute` tool. To mute:
+- **Single-pattern mode**: Use tweak tool to set `level: -60` (minimum dB, effectively silent)
+- **Song mode**: Omit the instrument from the section's pattern assignment
+
 | Tool | Synth | Description |
 |------|-------|-------------|
 | `create_session` | — | Set BPM (60-200), reset all patterns |
@@ -66,19 +143,28 @@ Bundled kits: 808, amber
 | `list_909_kits` | R9D9 | Show available 909 kits (sound presets) |
 | `load_909_kit` | R9D9 | Load a kit by ID (e.g., "bart-deep", "punchy") |
 | `add_drums` | R9D9 | 11 voices: kick, snare, clap, ch, oh, ltom, mtom, htom, rimshot, crash, ride |
-| `tweak_drums` | R9D9 | Adjust decay, tune, tone, level per voice |
+| `tweak_drums` | R9D9 | Adjust level (dB), tune (semitones), decay/attack (0-100), tone (Hz), engine, useSample per voice |
+| `set_drum_groove` | R9D9 | Set flam, patternLength (1-16), scale (16th/triplets/32nd), globalAccent |
+| `automate_drums` | R9D9 | Per-step parameter automation ("knob mashing") - array of 16 values per param |
 | `add_bass` | R3D3 | 16-step pattern with note, gate, accent, slide |
-| `tweak_bass` | R3D3 | waveform, cutoff, resonance, envMod, decay, accent, level |
+| `tweak_bass` | R3D3 | level (dB), cutoff (Hz), resonance/envMod/decay/accent (0-100), waveform |
 | `list_101_presets` | R1D1 | Show available 101 presets (sound + pattern) |
 | `load_101_preset` | R1D1 | Load a preset by ID (e.g., "acidLine", "fatBass") |
 | `add_lead` | R1D1 | 16-step pattern with note, gate, accent, slide |
-| `tweak_lead` | R1D1 | vcoSaw, vcoPulse, pulseWidth, subLevel, cutoff, resonance, envMod, attack, decay, sustain, release, level |
+| `tweak_lead` | R1D1 | level (dB), cutoff (Hz), osc/envelope params (0-100), lfoToPitch (semitones) |
 | `list_kits` | R9DS | Show available sample kits (bundled + user) |
 | `load_kit` | R9DS | Load a kit by ID (e.g., "808", "amber") |
 | `add_samples` | R9DS | Program sample hits on steps (slot, step, velocity) |
-| `tweak_samples` | R9DS | Adjust level, tune, attack, decay, filter, pan per slot |
+| `tweak_samples` | R9DS | level (dB), tune (semitones), attack/decay (0-100), filter (Hz), pan (-100 to +100) |
 | `set_swing` | — | Groove amount 0-100% |
-| `render` | — | Mix all synths to WAV file |
+| `render` | — | Mix all synths to WAV file (uses arrangement if set) |
+| `save_pattern` | Song | Save current pattern for an instrument to a named slot (A, B, C...) |
+| `load_pattern` | Song | Load a saved pattern into current working pattern |
+| `copy_pattern` | Song | Copy a pattern to a new name (for variations) |
+| `list_patterns` | Song | List all saved patterns per instrument |
+| `set_arrangement` | Song | Set song arrangement: sections with bar counts and pattern assignments |
+| `clear_arrangement` | Song | Clear arrangement, return to single-pattern mode |
+| `show_arrangement` | Song | Display current patterns and arrangement |
 | `create_send` | Mixer | Create send bus with plate reverb (full param control) |
 | `tweak_reverb` | Mixer | Adjust reverb parameters on existing send |
 | `route_to_send` | Mixer | Route a voice to a send bus |
@@ -156,6 +242,13 @@ session = {
   drumKit: 'default',  // Kit ID (e.g., 'bart-deep', 'punchy')
   drumPattern: { kick: [...], snare: [...], ... },
   drumParams: { kick: { decay, tune, ... }, ... },
+  drumFlam: 0,              // Flam amount 0-1
+  drumPatternLength: 16,    // Pattern length 1-16 steps
+  drumScale: '16th',        // '16th', '8th-triplet', '16th-triplet', '32nd'
+  drumGlobalAccent: 1,      // Global accent multiplier 0-1
+  drumVoiceEngines: {},     // Per-voice engine { kick: 'E1', snare: 'E2', ... }
+  drumUseSample: {},        // Sample mode for hats/cymbals { ch: true, oh: false, ... }
+  drumAutomation: {},       // Per-step automation { ch: { decay: [0.1, 0.2, ...], level: [...] }, ... }
   // R3D3
   bassPattern: [{ note, gate, accent, slide }, ...],
   bassParams: { waveform, cutoff, resonance, envMod, decay, accent, level },
@@ -176,8 +269,70 @@ session = {
     masterInserts: [{ type: 'eq', preset: 'master' }],
     masterVolume: 0.8,
   },
+  // Song Mode
+  patterns: {
+    drums: { 'A': {...}, 'B': {...} },   // Named patterns with full state
+    bass: { 'A': {...}, 'B': {...} },
+    lead: { 'A': {...} },
+    sampler: { 'A': {...} },
+  },
+  currentPattern: { drums: 'A', bass: 'A', lead: 'A', sampler: 'A' },
+  arrangement: [
+    { bars: 4, patterns: { drums: 'A', bass: 'A' } },
+    { bars: 8, patterns: { drums: 'B', bass: 'A', lead: 'A' } },
+  ],
 }
 ```
+
+## Song Mode
+
+Song mode enables multi-section arrangements with reusable patterns.
+
+### Workflow
+
+1. **Create patterns**: Program drums/bass/lead/sampler as usual
+2. **Save patterns**: `save_pattern(instrument: 'drums', name: 'A')` — saves current state to named slot
+3. **Create variations**: Load pattern, modify, save as new name (B, C, etc.)
+4. **Set arrangement**: Define sections with bar counts and pattern assignments
+5. **Render**: Outputs full song with patterns looping within each section
+
+### How Patterns Loop
+
+Each 16-step pattern loops to fill its section. A 16-step kick pattern playing over 8 bars loops 8 times. This matches hardware behavior (TR-909, MPC) and works musically — a 4-on-floor kick IS a loop.
+
+### Example
+
+```javascript
+// 1. Create verse pattern
+add_drums({ kick: [0,4,8,12], ch: [0,2,4,6,8,10,12,14] })
+save_pattern({ instrument: 'drums', name: 'A' })
+
+// 2. Create chorus with more energy
+add_drums({ kick: [0,4,8,12], snare: [4,12], oh: [2,6,10,14] })
+save_pattern({ instrument: 'drums', name: 'B' })
+
+// 3. Arrange
+set_arrangement({
+  sections: [
+    { bars: 4, drums: 'A', bass: 'A' },           // Intro
+    { bars: 8, drums: 'B', bass: 'A', lead: 'A' }, // Main
+    { bars: 4, drums: 'A' },                       // Breakdown (no bass/lead)
+    { bars: 8, drums: 'B', bass: 'A', lead: 'A' }, // Main
+  ]
+})
+
+// 4. Render full 24-bar song
+render({ filename: 'full-track' })
+```
+
+### Pattern Contents
+
+Each saved pattern captures the full state for that instrument:
+
+- **drums**: pattern, params, automation, flam, length, scale, accent, engines, useSample
+- **bass**: pattern, params
+- **lead**: pattern, params, arp settings
+- **sampler**: pattern, params
 
 ## Genre Knowledge System
 

@@ -390,6 +390,31 @@ await sgMail.send({
 SELECT * FROM amber_state WHERE type = 'cc_inbox' ORDER BY created_at DESC;
 ```
 
+**To check what you've sent (cc_outbox):**
+```sql
+SELECT * FROM amber_state WHERE type = 'cc_outbox' ORDER BY created_at DESC;
+```
+
+### CRITICAL: Log All Outbound ambercc@ Emails
+
+**Every email sent from ambercc@ MUST be logged to cc_outbox.** Otherwise, future Claude Code sessions have no memory of what was sent and will repeatedly ask "should I reply to this?" for emails that were already answered.
+
+**Use the script (enforced logging):**
+```bash
+cd sms-bot && npx tsx --env-file=.env.local scripts/send-ambercc-email.ts \
+  "recipient@example.com" \
+  "Subject line" \
+  "Email body text here"
+
+# Or with body from file:
+cd sms-bot && npx tsx --env-file=.env.local scripts/send-ambercc-email.ts \
+  "recipient@example.com" \
+  "Subject line" \
+  --file body.txt
+```
+
+This script sends via SendGrid AND logs to `amber_state` with `type: 'cc_outbox'` atomically. **Do not send ambercc@ emails any other way.**
+
 ## Quick Reference
 
 **Adding a feature:**
