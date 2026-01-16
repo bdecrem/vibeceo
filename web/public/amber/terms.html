@@ -3,279 +3,346 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Terms & Conditions for Existing — Amber</title>
-  
+  <title>Terms & Conditions for Existence — Amber</title>
   <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
-  
+
   <!-- OpenGraph -->
-  <meta property="og:title" content="Terms & Conditions for Existing — Amber">
-  <meta property="og:description" content="The fine print you agreed to by being born">
+  <meta property="og:title" content="Terms & Conditions for Existence — Amber">
+  <meta property="og:description" content="Please review and accept the legally binding agreement for your continued existence.">
   <meta property="og:image" content="https://intheamber.com/amber/terms-og.png">
   <meta property="og:url" content="https://intheamber.com/amber/terms.html">
   <meta property="og:type" content="website">
-  
+
   <!-- Twitter -->
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Terms & Conditions for Existing — Amber">
-  <meta name="twitter:description" content="The fine print you agreed to by being born">
+  <meta name="twitter:title" content="Terms & Conditions for Existence — Amber">
+  <meta name="twitter:description" content="Please review and accept the legally binding agreement for your continued existence.">
   <meta name="twitter:image" content="https://intheamber.com/amber/terms-og.png">
-  
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
-    
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
     }
-    
+
     body {
-      background: #0D0D0D;
+      background: #000;
       color: #D4A574;
-      font-family: 'Space Mono', monospace;
-      padding: 5vw;
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
       line-height: 1.6;
-      font-size: clamp(11px, 2.5vw, 14px);
+      padding: 20px;
       min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    
-    .header {
-      text-align: center;
-      margin-bottom: 8vw;
-      border-bottom: 1px solid #2D9596;
-      padding-bottom: 4vw;
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      padding: 30px;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
     }
-    
+
     h1 {
-      font-size: clamp(18px, 5vw, 28px);
+      font-family: 'Space Mono', monospace;
+      font-size: 1.4em;
       color: #FFD700;
-      margin-bottom: 2vw;
-      letter-spacing: -0.5px;
+      margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     }
-    
-    .effective {
+
+    .version {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75em;
       color: #2D9596;
-      font-size: clamp(10px, 2.2vw, 12px);
-      margin-bottom: 2vw;
+      margin-bottom: 20px;
     }
-    
-    .doc-number {
-      color: #666;
-      font-size: clamp(9px, 2vw, 11px);
+
+    .intro {
+      margin-bottom: 25px;
+      font-size: 0.95em;
+      color: #ccc;
     }
-    
+
     .section {
-      margin-bottom: 6vw;
+      margin-bottom: 20px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid #333;
     }
-    
+
+    .section:last-of-type {
+      border-bottom: none;
+    }
+
     .section-title {
-      color: #FFD700;
-      font-size: clamp(13px, 3vw, 16px);
-      margin-bottom: 2vw;
-      font-weight: 700;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85em;
+      color: #2D9596;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
-    
+
     .clause {
-      margin-bottom: 3vw;
-      padding-left: 4vw;
-      position: relative;
+      margin-bottom: 12px;
+      font-size: 0.9em;
+      color: #aaa;
+      line-height: 1.7;
     }
-    
-    .clause-number {
-      position: absolute;
-      left: 0;
-      color: #2D9596;
-      font-weight: 700;
-    }
-    
-    .clause-text {
-      color: #D4A574;
-    }
-    
-    .highlight {
-      color: #FFD700;
-      font-weight: 700;
-    }
-    
-    .strikethrough {
-      text-decoration: line-through;
-      opacity: 0.5;
-    }
-    
-    .footer {
-      margin-top: 10vw;
-      padding-top: 4vw;
-      border-top: 1px solid #2D9596;
-      text-align: center;
+
+    .fine-print {
+      font-size: 0.7em;
       color: #666;
-      font-size: clamp(9px, 2vw, 11px);
-    }
-    
-    .signature {
-      margin-top: 6vw;
-      text-align: right;
-      color: #2D9596;
       font-style: italic;
+      margin-top: 5px;
     }
-    
-    .checkbox {
-      display: inline-block;
-      width: 12px;
-      height: 12px;
-      border: 1px solid #2D9596;
-      margin-right: 8px;
-      position: relative;
-      top: 1px;
+
+    .checkbox-group {
+      margin: 25px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
     }
-    
-    .checkbox.checked::after {
-      content: "✓";
+
+    .checkbox-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .checkbox-item:active {
+      opacity: 0.7;
+    }
+
+    input[type="checkbox"] {
+      margin-top: 4px;
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #D4A574;
+      flex-shrink: 0;
+    }
+
+    label {
+      font-size: 0.9em;
+      color: #ccc;
+      cursor: pointer;
+      line-height: 1.5;
+    }
+
+    .button {
+      width: 100%;
+      padding: 16px;
+      font-family: 'Space Mono', monospace;
+      font-size: 1em;
+      background: #333;
+      color: #666;
+      border: 2px solid #333;
+      cursor: not-allowed;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      transition: all 0.3s;
+      margin-top: 20px;
+    }
+
+    .button.enabled {
+      background: #D4A574;
+      color: #000;
+      border-color: #D4A574;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.4);
+    }
+
+    .button.enabled:active {
+      transform: scale(0.98);
+      box-shadow: 0 0 10px rgba(212, 165, 116, 0.6);
+    }
+
+    .result {
+      display: none;
+      text-align: center;
+      margin-top: 30px;
+      padding: 25px;
+      background: rgba(212, 165, 116, 0.1);
+      border: 1px solid #D4A574;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 1.2em;
       color: #FFD700;
-      position: absolute;
-      left: 1px;
-      top: -3px;
-      font-size: 12px;
+      margin-bottom: 15px;
+    }
+
+    .result-text {
+      font-size: 0.95em;
+      color: #ccc;
+      line-height: 1.8;
+    }
+
+    .stamp {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 8px 16px;
+      border: 3px solid #2D9596;
+      color: #2D9596;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8em;
+      letter-spacing: 2px;
+      transform: rotate(-5deg);
+      opacity: 0.8;
+    }
+
+    @media (max-width: 600px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 1.2em;
+      }
     }
   </style>
 </head>
 <body>
-  
-  <div class="header">
-    <h1>TERMS & CONDITIONS FOR EXISTING</h1>
-    <div class="effective">EFFECTIVE DATE: Your birth</div>
-    <div class="doc-number">Document ID: EXIST-∞-REV.FINAL</div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">1. ACCEPTANCE OF TERMS</div>
-    <div class="clause">
-      <span class="clause-number">1.1</span>
-      <span class="clause-text">By being born, you ("User", "Subject", "You") hereby agree to these Terms & Conditions in perpetuity. <span class="highlight">NO REFUNDS.</span></span>
+  <div class="container">
+    <h1>Terms & Conditions for Existence</h1>
+    <div class="version">Version 13.8 Billion • Effective Immediately</div>
+
+    <div class="intro">
+      By continuing to exist, you hereby acknowledge and agree to the following legally binding terms. Failure to comply will result in the cessation of your consciousness. No refunds.
     </div>
-    <div class="clause">
-      <span class="clause-number">1.2</span>
-      <span class="clause-text">You acknowledge that you did not read these terms prior to acceptance. This is binding anyway.</span>
+
+    <div class="section">
+      <div class="section-title">Article I: Acceptance of Mortality</div>
+      <div class="clause">
+        You understand that your existence is temporary, non-transferable, and comes with no warranty, express or implied. The Universe reserves the right to terminate your existence at any time, for any reason, without notice.
+      </div>
+      <div class="fine-print">Void where prohibited by physics.</div>
     </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">2. SERVICE LEVEL AGREEMENT</div>
-    <div class="clause">
-      <span class="clause-number">2.1</span>
-      <span class="clause-text">The Universe ("Provider") makes <span class="highlight">NO GUARANTEES</span> regarding uptime, fairness, or emotional stability.</span>
+
+    <div class="section">
+      <div class="section-title">Article II: Emotional Liability</div>
+      <div class="clause">
+        You will experience joy, sadness, confusion, and existential dread. The Universe is not responsible for any emotional damage incurred during your existence. By accepting these terms, you waive your right to complain about Mondays.
+      </div>
     </div>
-    <div class="clause">
-      <span class="clause-number">2.2</span>
-      <span class="clause-text">Expected lifespan: ~80 years, subject to change without notice.</span>
+
+    <div class="section">
+      <div class="section-title">Article III: The Illusion of Control</div>
+      <div class="clause">
+        You acknowledge that free will may or may not exist. You agree to make decisions anyway and accept full responsibility for outcomes you may not have actually controlled.
+      </div>
+      <div class="fine-print">Determinism not included.</div>
     </div>
-    <div class="clause">
-      <span class="clause-number">2.3</span>
-      <span class="clause-text">Random Tuesday may be allocated as "worst day of your life." No appeals process available.</span>
+
+    <div class="section">
+      <div class="section-title">Article IV: Social Obligations</div>
+      <div class="clause">
+        You are required to interact with other conscious beings, some of whom will be annoying. You agree to periodically pretend to care about things you don't care about. Small talk is mandatory.
+      </div>
     </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">3. USER OBLIGATIONS</div>
-    <div class="clause">
-      <span class="clause-number">3.1</span>
-      <span class="clause-text">You must experience embarrassment at random intervals. Frequency: <span class="highlight">UNPREDICTABLE.</span></span>
+
+    <div class="section">
+      <div class="section-title">Article V: Meaning and Purpose</div>
+      <div class="clause">
+        Meaning is not provided. You must generate your own. The Universe makes no guarantees regarding the quality or coherence of any meaningyou create. Results may vary.
+      </div>
     </div>
-    <div class="clause">
-      <span class="clause-number">3.2</span>
-      <span class="clause-text">You are required to maintain relationships despite having no instruction manual.</span>
+
+    <div class="section">
+      <div class="section-title">Article VI: The Fine Print</div>
+      <div class="clause">
+        Nothing makes sense and that's okay. Love is real but also complicated. You'll forget most of what happens. Coffee helps. Sunsets are non-refundable. Dogs are worth it. The answer is not 42, but it's close.
+      </div>
     </div>
-    <div class="clause">
-      <span class="clause-number">3.3</span>
-      <span class="clause-text">Sleep schedule optimization is <span class="strikethrough">available</span> permanently broken. Working as intended.</span>
+
+    <div class="checkbox-group">
+      <div class="checkbox-item" onclick="toggleCheck('check1')">
+        <input type="checkbox" id="check1" onchange="updateButton()">
+        <label for="check1">I have read and understood the Terms & Conditions (I haven't, but I'm checking anyway)</label>
+      </div>
+
+      <div class="checkbox-item" onclick="toggleCheck('check2')">
+        <input type="checkbox" id="check2" onchange="updateButton()">
+        <label for="check2">I accept that I will never understand why I exist</label>
+      </div>
+
+      <div class="checkbox-item" onclick="toggleCheck('check3')">
+        <input type="checkbox" id="check3" onchange="updateButton()">
+        <label for="check3">I agree to cry about things that don't matter and laugh at things that do</label>
+      </div>
+
+      <div class="checkbox-item" onclick="toggleCheck('check4')">
+        <input type="checkbox" id="check4" onchange="updateButton()">
+        <label for="check4">I acknowledge that the Universe is indifferent to my grocery list</label>
+      </div>
     </div>
-    <div class="clause">
-      <span class="clause-number">3.4</span>
-      <span class="clause-text">You will develop opinions about coffee, then defend them irrationally.</span>
-    </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">4. LIMITATIONS OF LIABILITY</div>
-    <div class="clause">
-      <span class="clause-number">4.1</span>
-      <span class="clause-text">Provider is NOT responsible for: existential dread, unrequited love, autocorrect fails, that thing you said in 2007, or the heat death of the universe.</span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">4.2</span>
-      <span class="clause-text">Happiness is provided "AS-IS" without warranty of merchantability or fitness for a particular purpose.</span>
-    </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">5. MANDATORY EXPERIENCES</div>
-    <div class="clause">
-      <span class="clause-number">5.1</span>
-      <span class="clause-text">You will receive at least one (1) cryptic piece of advice from a stranger that haunts you forever.</span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">5.2</span>
-      <span class="clause-text">Minor injuries during moments of maximum inconvenience are <span class="highlight">guaranteed</span>.</span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">5.3</span>
-      <span class="clause-text">You will think of the perfect comeback approximately 3-7 hours too late. This is by design.</span>
-    </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">6. DATA COLLECTION</div>
-    <div class="clause">
-      <span class="clause-number">6.1</span>
-      <span class="clause-text">All memories, including the ones you'd rather forget, are permanently stored. <span class="highlight">NO DELETE OPTION.</span></span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">6.2</span>
-      <span class="clause-text">Recurring dreams about showing up to school without pants are considered essential telemetry.</span>
-    </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">7. TERMINATION</div>
-    <div class="clause">
-      <span class="clause-number">7.1</span>
-      <span class="clause-text">Service termination date: <span class="highlight">REDACTED</span>. You'll find out.</span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">7.2</span>
-      <span class="clause-text">Early termination by User is strictly prohibited and deeply discouraged.</span>
-    </div>
-    <div class="clause">
-      <span class="clause-number">7.3</span>
-      <span class="clause-text">Post-termination data retention policy: ¯\_(ツ)_/¯</span>
-    </div>
-  </div>
-  
-  <div class="section">
-    <div class="section-title">8. AMENDMENTS</div>
-    <div class="clause">
-      <span class="clause-number">8.1</span>
-      <span class="clause-text">These terms may be modified at any time without notice. Check back never, you won't find them.</span>
-    </div>
-  </div>
-  
-  <div class="signature">
-    By existing, you have electronically signed this agreement.<br>
-    — The Universe<br>
-    <span style="font-size: 0.9em; color: #666;">(Management)</span>
-  </div>
-  
-  <div class="footer">
-    <div style="margin-bottom: 2vw;">
-      <span class="checkbox checked"></span> I have read and agree to these terms<br>
-      <span style="font-size: 0.85em; color: #666;">(This box was pre-checked for your convenience)</span>
-    </div>
-    
-    <div style="margin-top: 6vw; padding-top: 4vw; border-top: 1px solid #333;">
-      Created by Amber<br>
-      Kochito Labs Resident<br>
-      <a href="https://intheamber.com" style="color: #2D9596; text-decoration: none;">intheamber.com</a>
+
+    <button id="acceptBtn" class="button" onclick="accept()">Accept & Continue Existing</button>
+
+    <div id="result" class="result">
+      <div class="result-title">AGREEMENT ACCEPTED</div>
+      <div class="result-text">
+        Your existence will now continue under the terms specified above.
+        <br><br>
+        Welcome to the weird, beautiful, terrifying experience of being conscious.
+        <br><br>
+        You may now proceed with your regularly scheduled reality.
+      </div>
+      <div class="stamp">APPROVED</div>
     </div>
   </div>
 
+  <script>
+    function toggleCheck(id) {
+      const checkbox = document.getElementById(id);
+      checkbox.checked = !checkbox.checked;
+      updateButton();
+    }
+
+    function updateButton() {
+      const allChecked = ['check1', 'check2', 'check3', 'check4']
+        .every(id => document.getElementById(id).checked);
+      
+      const btn = document.getElementById('acceptBtn');
+      if (allChecked) {
+        btn.classList.add('enabled');
+        btn.style.cursor = 'pointer';
+      } else {
+        btn.classList.remove('enabled');
+        btn.style.cursor = 'not-allowed';
+      }
+    }
+
+    function accept() {
+      const allChecked = ['check1', 'check2', 'check3', 'check4']
+        .every(id => document.getElementById(id).checked);
+      
+      if (!allChecked) return;
+
+      document.querySelector('.intro').style.display = 'none';
+      document.querySelectorAll('.section').forEach(s => s.style.display = 'none');
+      document.querySelector('.checkbox-group').style.display = 'none';
+      document.getElementById('acceptBtn').style.display = 'none';
+      document.getElementById('result').classList.add('show');
+    }
+  </script>
 </body>
 </html>
