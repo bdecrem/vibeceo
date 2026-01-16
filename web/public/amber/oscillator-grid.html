@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OSCILLATOR GRID — Amber</title>
+  
+  <meta property="og:title" content="OSCILLATOR GRID">
+  <meta property="og:description" content="Tap cells. Build drones. Harmonic textures emerge.">
+  <meta property="og:image" content="https://intheamber.com/amber/oscillator-grid-og.png">
+  <meta property="og:url" content="https://kochi.to/amber/oscillator-grid.html">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://intheamber.com/amber/oscillator-grid-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      text-align: center;
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: 2em;
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+      text-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .subtitle {
+      font-size: 0.9em;
+      color: #888;
+      margin-bottom: 30px;
+      font-weight: 300;
+    }
+    
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 8px;
+      margin-bottom: 30px;
+      opacity: 0.3;
+      transition: opacity 0.5s ease;
+    }
+    
+    .grid.active {
+      opacity: 1;
+    }
+    
+    .cell {
+      aspect-ratio: 1;
+      background: #0D0D0D;
+      border: 1px solid #333;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .cell::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(circle, rgba(212, 165, 116, 0.4), transparent 70%);
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+    
+    .cell.active {
+      background: #D4A574;
+      border-color: #FFD700;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.6);
+    }
+    
+    .cell.active::before {
+      opacity: 1;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 0.4; }
+      50% { transform: scale(1.5); opacity: 0; }
+    }
+    
+    .start-button {
+      background: #0D0D0D;
+      border: 2px solid #D4A574;
+      color: #D4A574;
+      padding: 15px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: 1em;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.3s ease;
+      letter-spacing: 2px;
+    }
+    
+    .start-button:hover {
+      background: #D4A574;
+      color: #000;
+      box-shadow: 0 0 30px rgba(212, 165, 116, 0.5);
+    }
+    
+    .start-button.started {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .controls {
+      margin-top: 30px;
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+    }
+    
+    .controls.visible {
+      opacity: 1;
+    }
+    
+    .control-button {
+      background: transparent;
+      border: 1px solid #555;
+      color: #888;
+      padding: 8px 20px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.8em;
+      cursor: pointer;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+    
+    .control-button:hover {
+      border-color: #D4A574;
+      color: #D4A574;
+    }
+    
+    .info {
+      margin-top: 40px;
+      font-size: 0.85em;
+      color: #555;
+      line-height: 1.6;
+    }
+    
+    @media (max-width: 600px) {
+      h1 { font-size: 1.5em; }
+      .grid { gap: 6px; }
+      .start-button { padding: 12px 30px; font-size: 0.9em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>OSCILLATOR GRID</h1>
+    <p class="subtitle">Tap cells. Build drones. Harmonic textures emerge.</p>
+    
+    <button class="start-button" id="startBtn">TAP TO BEGIN</button>
+    
+    <div class="grid" id="grid"></div>
+    
+    <div class="controls" id="controls">
+      <button class="control-button" id="clearBtn">CLEAR</button>
+      <button class="control-button" id="randomBtn">RANDOM</button>
+    </div>
+    
+    <div class="info">
+      Each cell is a sine wave. Frequencies follow harmonic series.<br>
+      Left to right: ascending pitch. Top to bottom: octaves.<br>
+      Tap multiple cells to create chords and textures.
+    </div>
+  </div>
+
+  <script>
+    const ctx = new AudioContext();
+    let audioStarted = false;
+    
+    // 6x6 grid = 36 oscillators
+    // Base frequency 110 Hz (A2), harmonic series
+    const ROWS = 6;
+    const COLS = 6;
+    
+    const oscillators = [];
+    const gains = [];
+    const states = [];
+    
+    // Create grid of frequencies (harmonic series across, octaves down)
+    function getFrequency(row, col) {
+      const baseFreq = 110; // A2
+      const octave = Math.pow(2, -row); // Each row is an octave lower
+      const harmonic = col + 1; // 1st to 6th harmonic
+      return baseFreq * octave * harmonic;
+    }
+    
+    // Initialize audio nodes
+    function initAudio() {
+      for (let row = 0; row < ROWS; row++) {
+        for (let col = 0; col < COLS; col++) {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          
+          osc.type = 'sine';
+          osc.frequency.value = getFrequency(row, col);
+          
+          gain.gain.value = 0; // Start silent
+          
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          
+          osc.start();
+          
+          oscillators.push(osc);
+          gains.push(gain);
+          states.push(false);
+        }
+      }
+    }
+    
+    // Toggle cell
+    function toggleCell(index) {
+      states[index] = !states[index];
+      const targetGain = states[index] ? 0.15 : 0;
+      
+      // Smooth fade
+      gains[index].gain.linearRampToValueAtTime(
+        targetGain,
+        ctx.currentTime + 0.1
+      );
+      
+      // Update visual
+      const cell = document.querySelectorAll('.cell')[index];
+      cell.classList.toggle('active', states[index]);
+    }
+    
+    // Clear all
+    function clearAll() {
+      states.forEach((_, i) => {
+        if (states[i]) toggleCell(i);
+      });
+    }
+    
+    // Random pattern
+    function randomPattern() {
+      clearAll();
+      const numActive = Math.floor(Math.random() * 8) + 4; // 4-12 cells
+      const indices = [];
+      
+      while (indices.length < numActive) {
+        const idx = Math.floor(Math.random() * (ROWS * COLS));
+        if (!indices.includes(idx)) {
+          indices.push(idx);
+        }
+      }
+      
+      indices.forEach(idx => toggleCell(idx));
+    }
+    
+    // Build grid UI
+    const gridEl = document.getElementById('grid');
+    for (let i = 0; i < ROWS * COLS; i++) {
+      const cell = document.createElement('div');
+      cell.className = 'cell';
+      cell.addEventListener('click', () => {
+        if (audioStarted) toggleCell(i);
+      });
+      gridEl.appendChild(cell);
+    }
+    
+    // Start button
+    document.getElementById('startBtn').addEventListener('click', () => {
+      if (!audioStarted) {
+        ctx.resume();
+        initAudio();
+        audioStarted = true;
+        
+        document.getElementById('startBtn').classList.add('started');
+        document.getElementById('grid').classList.add('active');
+        document.getElementById('controls').classList.add('visible');
+        
+        // Start with a nice chord (1st, 3rd, 5th harmonics, middle octave)
+        setTimeout(() => {
+          toggleCell(12); // Row 2, Col 0 (fundamental)
+          toggleCell(14); // Row 2, Col 2 (3rd harmonic)
+          toggleCell(16); // Row 2, Col 4 (5th harmonic)
+        }, 300);
+      }
+    });
+    
+    // Controls
+    document.getElementById('clearBtn').addEventListener('click', clearAll);
+    document.getElementById('randomBtn').addEventListener('click', randomPattern);
+  </script>
+</body>
+</html>
