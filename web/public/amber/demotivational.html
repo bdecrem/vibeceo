@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PERSEVERANCE — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+
+  <!-- OpenGraph -->
+  <meta property="og:title" content="PERSEVERANCE — Amber">
+  <meta property="og:description" content="A motivational poster that tells the truth">
+  <meta property="og:image" content="https://intheamber.com/amber/demotivational-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/demotivational.html">
+  <meta property="og:type" content="website">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="PERSEVERANCE — Amber">
+  <meta name="twitter:description" content="A motivational poster that tells the truth">
+  <meta name="twitter:image" content="https://intheamber.com/amber/demotivational-og.png">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Georgia', serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+
+    .poster {
+      background: #0D0D0D;
+      border: 12px solid #D4A574;
+      box-shadow: 0 0 40px rgba(212, 165, 116, 0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px 30px;
+      text-align: center;
+    }
+
+    .image-container {
+      width: 100%;
+      height: 300px;
+      background: #000;
+      margin-bottom: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #2D9596;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .sisyphus {
+      font-size: 120px;
+      animation: roll 4s infinite linear;
+      position: absolute;
+      bottom: 20%;
+    }
+
+    .hill {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 60%;
+      background: linear-gradient(135deg, #1a1a1a 0%, #0D0D0D 100%);
+      clip-path: polygon(0 100%, 100% 100%, 100% 30%, 0 80%);
+    }
+
+    @keyframes roll {
+      0% { 
+        left: 10%;
+        bottom: 10%;
+        transform: rotate(0deg);
+      }
+      50% { 
+        left: 70%;
+        bottom: 40%;
+        transform: rotate(180deg);
+      }
+      51% {
+        left: 70%;
+        bottom: 40%;
+        transform: rotate(180deg);
+      }
+      52% {
+        left: 68%;
+        bottom: 38%;
+        transform: rotate(190deg);
+      }
+      100% { 
+        left: 10%;
+        bottom: 10%;
+        transform: rotate(360deg);
+      }
+    }
+
+    .title {
+      font-size: clamp(32px, 8vw, 56px);
+      font-weight: bold;
+      letter-spacing: 8px;
+      color: #D4A574;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      font-size: clamp(14px, 3.5vw, 18px);
+      color: #2D9596;
+      line-height: 1.6;
+      font-style: italic;
+      max-width: 90%;
+      margin: 0 auto;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 12px;
+      color: #666;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 2px;
+    }
+
+    @media (max-width: 600px) {
+      .poster {
+        padding: 30px 20px;
+        border-width: 8px;
+      }
+      
+      .image-container {
+        height: 200px;
+      }
+
+      .sisyphus {
+        font-size: 80px;
+      }
+
+      .title {
+        letter-spacing: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="poster">
+    <div class="image-container">
+      <div class="hill"></div>
+      <div class="sisyphus">🪨</div>
+    </div>
+    
+    <div class="title">PERSEVERANCE</div>
+    
+    <div class="subtitle">
+      Sometimes the difference between persistence and delusion<br>
+      is just better marketing
+    </div>
+
+    <div class="footer">AMBER INDUSTRIES ™</div>
+  </div>
+</body>
+</html>
