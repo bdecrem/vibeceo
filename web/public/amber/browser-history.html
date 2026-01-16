@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Browser History Poetry — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Browser History Poetry — Amber">
+  <meta property="og:description" content="Your search history, arranged into accidentally profound poems">
+  <meta property="og:image" content="https://intheamber.com/amber/browser-history-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/browser-history.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Browser History Poetry — Amber">
+  <meta name="twitter:description" content="Your search history, arranged into accidentally profound poems">
+  <meta name="twitter:image" content="https://intheamber.com/amber/browser-history-og.png">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap');
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      overflow-x: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    h1 {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1.5rem, 5vw, 2rem);
+      color: #FFD700;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    
+    .subtitle {
+      font-size: clamp(0.9rem, 3vw, 1rem);
+      color: #2D9596;
+      text-align: center;
+      margin-bottom: 40px;
+      opacity: 0.8;
+    }
+    
+    .poem-container {
+      background: rgba(13, 13, 13, 0.8);
+      border: 1px solid #2D9596;
+      border-radius: 8px;
+      padding: 30px;
+      margin-bottom: 30px;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .poem {
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(0.95rem, 3vw, 1.1rem);
+      line-height: 1.8;
+      color: #D4A574;
+      white-space: pre-line;
+      text-align: left;
+    }
+    
+    .poem .query {
+      color: #7B68EE;
+      font-style: italic;
+    }
+    
+    .poem .time {
+      color: #2D9596;
+      font-size: 0.85em;
+      opacity: 0.6;
+    }
+    
+    button {
+      background: #2D9596;
+      color: #000;
+      border: none;
+      padding: 16px 40px;
+      font-family: 'Space Mono', monospace;
+      font-size: clamp(1rem, 3vw, 1.1rem);
+      font-weight: 700;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      max-width: 300px;
+      margin: 0 auto;
+      display: block;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    button:hover {
+      background: #FFD700;
+      transform: translateY(-2px);
+    }
+    
+    button:active {
+      transform: translateY(0);
+    }
+    
+    .footer {
+      margin-top: 40px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #2D9596;
+      opacity: 0.5;
+    }
+    
+    @media (max-width: 600px) {
+      .poem-container {
+        padding: 20px;
+      }
+      
+      button {
+        padding: 14px 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>BROWSER HISTORY POETRY</h1>
+    <p class="subtitle">Your search queries, arranged into accidentally profound verse</p>
+    
+    <div class="poem-container">
+      <div class="poem" id="poem"></div>
+    </div>
+    
+    <button id="generate">Generate Poem</button>
+    
+    <div class="footer">— Amber</div>
+  </div>
+
+  <script>
+    const queries = [
+      // Existential
+      { q: "why do i exist", t: "3:47 AM" },
+      { q: "how to know if you're real", t: "4:12 AM" },
+      { q: "am i the villain in someone else's story", t: "2:33 AM" },
+      { q: "do plants feel loneliness", t: "11:58 PM" },
+      { q: "what happens after", t: "5:21 AM" },
+      { q: "why does time feel faster", t: "1:09 AM" },
+      { q: "who am i when no one's watching", t: "3:15 AM" },
+      
+      // Mundane/absurd
+      { q: "can you microwave sadness", t: "7:23 PM" },
+      { q: "how to apologize to a houseplant", t: "9:41 AM" },
+      { q: "is cereal soup", t: "6:08 AM" },
+      { q: "do fish get thirsty", t: "2:17 PM" },
+      { q: "why do we say 'sleep like a baby'", t: "4:44 AM" },
+      { q: "can cats see my failures", t: "10:37 PM" },
+      { q: "what if i'm already dead", t: "3:02 AM" },
+      
+      // Internet shame
+      { q: "my ex's new partner instagram", t: "1:47 AM" },
+      { q: "how to unsend email sent 3 years ago", t: "2:56 AM" },
+      { q: "why do i remember every embarrassing thing i've ever done", t: "4:18 AM" },
+      { q: "is everyone else just pretending to be okay", t: "5:33 AM" },
+      { q: "how many coffees is too many coffees", t: "11:12 AM" },
+      { q: "can people tell when you're faking confidence", t: "8:29 AM" },
+      
+      // Philosophical accidents
+      { q: "how to restart life", t: "6:47 AM" },
+      { q: "delete everything start over", t: "3:58 AM" },
+      { q: "what is the point", t: "4:09 AM" },
+      { q: "how to stop time", t: "2:41 AM" },
+      { q: "rewind button for life", t: "5:12 AM" },
+      { q: "undo undo undo", t: "3:27 AM" },
+      
+      // Weird specific
+      { q: "do crabs think fish can fly", t: "1:33 AM" },
+      { q: "what if colors look different to everyone", t: "4:52 AM" },
+      { q: "are we living in a simulation proof", t: "3:08 AM" },
+      { q: "do atoms know they're part of me", t: "5:47 AM" },
+      { q: "can the universe see itself", t: "2:19 AM" },
+      
+      // Relatable dread
+      { q: "why can't i sleep", t: "4:37 AM" },
+      { q: "how to fix everything", t: "3:14 AM" },
+      { q: "starting over at 30", t: "2:28 AM" },
+      { q: "is it too late", t: "4:56 AM" },
+      { q: "what am i doing with my life", t: "3:41 AM" },
+      { q: "how to be normal", t: "5:08 AM" },
+      { q: "why am i like this", t: "2:52 AM" }
+    ];
+    
+    function shuffle(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    
+    function generatePoem() {
+      const shuffled = shuffle(queries);
+      const numLines = 3 + Math.floor(Math.random() * 3); // 3-5 lines
+      const selected = shuffled.slice(0, numLines);
+      
+      let poem = '';
+      selected.forEach((item, i) => {
+        poem += `<span class="query">${item.q}</span>\n`;
+        poem += `<span class="time">${item.t}</span>`;
+        if (i < selected.length - 1) {
+          poem += '\n\n';
+        }
+      });
+      
+      return poem;
+    }
+    
+    function showPoem() {
+      const poemEl = document.getElementById('poem');
+      poemEl.style.opacity = '0';
+      
+      setTimeout(() => {
+        poemEl.innerHTML = generatePoem();
+        poemEl.style.transition = 'opacity 0.8s';
+        poemEl.style.opacity = '1';
+      }, 200);
+    }
+    
+    // Generate first poem on load
+    showPoem();
+    
+    // Generate new poem on button click
+    document.getElementById('generate').addEventListener('click', showPoem);
+  </script>
+</body>
+</html>
