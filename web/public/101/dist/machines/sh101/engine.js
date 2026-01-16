@@ -753,7 +753,7 @@ export class SH101Engine extends SynthEngine {
             }
         }
 
-        // Schedule all notes
+        // Schedule all notes with proper slide/glide handling
         for (let step = 0; step < totalSteps; step++) {
             const patternStep = step % 16;
             const stepData = this.pattern[patternStep];
@@ -761,7 +761,19 @@ export class SH101Engine extends SynthEngine {
 
             if (stepData.gate) {
                 const velocity = stepData.accent ? 1.0 : 0.7;
-                offlineEngine.playNote(stepData.note, velocity, stepTime);
+
+                // Check for slide: glide from previous note instead of retriggering
+                if (stepData.slide && offlineEngine.currentNote !== null) {
+                    // Glide to this note (like real-time triggerStep does)
+                    const midiNote = offlineEngine.noteNameToMidi(stepData.note);
+                    const freq = 440 * Math.pow(2, (midiNote - 69) / 12);
+                    offlineEngine.vco.glideToFrequency(freq, offlineEngine.glideTime, stepTime);
+                    offlineEngine.subOsc.glideToFrequency(freq, offlineEngine.glideTime, stepTime);
+                    offlineEngine.currentNote = midiNote;
+                } else {
+                    // Normal note trigger
+                    offlineEngine.playNote(stepData.note, velocity, stepTime);
+                }
 
                 // Check if next step is NOT a slide - release before it
                 const nextPatternStep = (patternStep + 1) % 16;
