@@ -369,15 +369,6 @@ function App() {
     ensureDirectories();
   }, []);
 
-<<<<<<< Updated upstream
-=======
-  // Calculate available height for messages
-  // Reserved: hairline (1) + autocomplete (1) + input (1) + hairline (1) + status (1) = 5 minimum
-  const terminalHeight = stdout?.rows || 24;
-  const reservedLines = 6;
-  const maxMessageHeight = Math.max(5, terminalHeight - reservedLines);
-
->>>>>>> Stashed changes
   // Autocomplete logic
   useEffect(() => {
     if (input.startsWith('/') && input.length > 1 && !showMenu && !showProjectList) {
