@@ -579,7 +579,7 @@ export const TOOLS = [
   },
   {
     name: "tweak_drums",
-    description: "Adjust drum voice parameters like decay, tune, tone, and level. Use this to shape the sound.",
+    description: "Adjust drum voice parameters. Each voice has specific params: kick (tune, decay, attack, sweep, level), snare (tune, tone, snappy, level), clap/tom/hihat (decay, tone, level).",
     input_schema: {
       type: "object",
       properties: {
@@ -588,10 +588,13 @@ export const TOOLS = [
           enum: ["kick", "snare", "clap", "ch", "oh", "ltom", "mtom", "htom", "rimshot", "crash", "ride"],
           description: "Which drum voice to tweak"
         },
-        decay: { type: "number", description: "Decay/length (0.1-1.0). Lower = shorter, punchier. Higher = longer, boomy." },
-        tune: { type: "number", description: "Pitch tuning (-12 to +12 semitones). Lower = deeper." },
-        tone: { type: "number", description: "Brightness (0-1). Lower = darker. (snare only)" },
-        level: { type: "number", description: "Volume (0-1)" }
+        decay: { type: "number", description: "Decay/length (0.05-2.0). Lower = shorter, punchier. Higher = longer." },
+        tune: { type: "number", description: "Pitch tuning in cents (-1200 to +1200). -100 = 1 semitone down." },
+        tone: { type: "number", description: "Brightness (0-1). Lower = darker. Works on snare, clap, hats, cymbals, rimshot." },
+        level: { type: "number", description: "Volume (0-1)" },
+        attack: { type: "number", description: "Kick attack transient (0-1). Higher = more click. (kick only)" },
+        sweep: { type: "number", description: "Kick pitch sweep amount (0-1). Higher = more 'boom'. (kick only)" },
+        snappy: { type: "number", description: "Snare noise/wire amount (0-1). Higher = more snap. (snare only)" }
       },
       required: ["voice"]
     }
@@ -675,21 +678,33 @@ export const TOOLS = [
   },
   {
     name: "tweak_lead",
-    description: "Adjust R1D1 lead synth parameters. All values 0-1.",
+    description: "Adjust R1D1 lead synth parameters. Controls oscillators, sub-osc, filter, envelope, and LFO modulation.",
     input_schema: {
       type: "object",
       properties: {
+        // Oscillators
         vcoSaw: { type: "number", description: "Sawtooth level (0-1)" },
         vcoPulse: { type: "number", description: "Pulse/square level (0-1)" },
         pulseWidth: { type: "number", description: "Pulse width (0-1). 0.5 = square wave" },
+        // Sub-oscillator
         subLevel: { type: "number", description: "Sub-oscillator level (0-1). Adds low-end beef." },
+        subMode: { type: "number", description: "Sub-oscillator mode: 0=off, 1=-1oct square, 2=-2oct square, 3=pulse" },
+        // Filter
         cutoff: { type: "number", description: "Filter cutoff (0-1)" },
         resonance: { type: "number", description: "Filter resonance (0-1)" },
         envMod: { type: "number", description: "Filter envelope depth (0-1)" },
+        // Envelope
         attack: { type: "number", description: "Envelope attack (0-1). 0=instant, 1=slow fade in" },
         decay: { type: "number", description: "Envelope decay (0-1)" },
         sustain: { type: "number", description: "Envelope sustain level (0-1)" },
         release: { type: "number", description: "Envelope release (0-1). How long note tails after release" },
+        // LFO
+        lfoRate: { type: "number", description: "LFO speed (0-1). 0=slow, 1=fast" },
+        lfoWaveform: { type: "string", enum: ["triangle", "square", "sh"], description: "LFO waveform. 'sh' = sample-and-hold (random)" },
+        lfoToPitch: { type: "number", description: "LFO modulation to pitch (0-1). Creates vibrato." },
+        lfoToFilter: { type: "number", description: "LFO modulation to filter (0-1). Creates wah/wobble effects." },
+        lfoToPW: { type: "number", description: "LFO modulation to pulse width (0-1). Creates PWM movement." },
+        // Output
         level: { type: "number", description: "Master volume (0-1). Use to balance with other instruments." }
       },
       required: []
@@ -1100,6 +1115,7 @@ export async function executeTool(name, input, session, context = {}) {
     }
 
     const tweaks = [];
+    // Common params
     if (input.decay !== undefined) {
       session.drumParams[voice].decay = input.decay;
       tweaks.push(`decay=${input.decay}`);
@@ -1115,6 +1131,20 @@ export async function executeTool(name, input, session, context = {}) {
     if (input.level !== undefined) {
       session.drumParams[voice].level = input.level;
       tweaks.push(`level=${input.level}`);
+    }
+    // Kick-specific params
+    if (input.attack !== undefined) {
+      session.drumParams[voice].attack = input.attack;
+      tweaks.push(`attack=${input.attack}`);
+    }
+    if (input.sweep !== undefined) {
+      session.drumParams[voice].sweep = input.sweep;
+      tweaks.push(`sweep=${input.sweep}`);
+    }
+    // Snare-specific param
+    if (input.snappy !== undefined) {
+      session.drumParams[voice].snappy = input.snappy;
+      tweaks.push(`snappy=${input.snappy}`);
     }
 
     return `R9D9 ${voice}: ${tweaks.join(', ')}`;
@@ -1189,7 +1219,15 @@ export async function executeTool(name, input, session, context = {}) {
   // R1D1 - Tweak lead
   if (name === "tweak_lead") {
     const tweaks = [];
-    const params = ['vcoSaw', 'vcoPulse', 'pulseWidth', 'subLevel', 'cutoff', 'resonance', 'envMod', 'attack', 'decay', 'sustain', 'release', 'level'];
+    // All available params: oscillators, sub-osc, filter, envelope, LFO, output
+    const params = [
+      'vcoSaw', 'vcoPulse', 'pulseWidth',
+      'subLevel', 'subMode',
+      'cutoff', 'resonance', 'envMod',
+      'attack', 'decay', 'sustain', 'release',
+      'lfoRate', 'lfoWaveform', 'lfoToPitch', 'lfoToFilter', 'lfoToPW',
+      'level'
+    ];
     for (const param of params) {
       if (input[param] !== undefined) {
         session.leadParams[param] = input[param];
