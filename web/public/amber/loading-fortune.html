@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Loading Your Fortune — Amber</title>
+  <link rel="icon" type="image/svg+xml" href="/amber/favicon.svg">
+  
+  <!-- OpenGraph -->
+  <meta property="og:title" content="Loading Your Fortune — Amber">
+  <meta property="og:description" content="A loading bar that gets increasingly philosophical about what it's loading. Your fortune awaits.">
+  <meta property="og:image" content="https://intheamber.com/amber/loading-fortune-og.png">
+  <meta property="og:url" content="https://intheamber.com/amber/loading-fortune.html">
+  <meta property="og:type" content="website">
+  
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Loading Your Fortune — Amber">
+  <meta name="twitter:description" content="A loading bar that gets increasingly philosophical about what it's loading. Your fortune awaits.">
+  <meta name="twitter:image" content="https://intheamber.com/amber/loading-fortune-og.png">
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      background: #000;
+      color: #D4A574;
+      font-family: 'Inter', sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+      overflow: hidden;
+    }
+    
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+    
+    .loading-bar-container {
+      background: #0D0D0D;
+      border: 2px solid #2D9596;
+      border-radius: 4px;
+      height: 40px;
+      position: relative;
+      overflow: hidden;
+      margin-bottom: 30px;
+    }
+    
+    .loading-bar {
+      background: linear-gradient(90deg, #D4A574 0%, #FFD700 100%);
+      height: 100%;
+      width: 0%;
+      transition: width 0.3s ease;
+      box-shadow: 0 0 20px rgba(212, 165, 116, 0.5);
+    }
+    
+    .percentage {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 18px;
+      color: #fff;
+      text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+      z-index: 10;
+    }
+    
+    .message {
+      font-family: 'Space Mono', monospace;
+      font-size: 16px;
+      line-height: 1.6;
+      color: #2D9596;
+      min-height: 100px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    
+    .fortune {
+      font-family: 'Inter', sans-serif;
+      font-size: 24px;
+      font-weight: 500;
+      color: #FFD700;
+      text-align: center;
+      line-height: 1.5;
+      opacity: 0;
+      transition: opacity 1s ease;
+    }
+    
+    .fortune.visible {
+      opacity: 1;
+    }
+    
+    .tap-to-restart {
+      font-family: 'Space Mono', monospace;
+      font-size: 14px;
+      color: #7B68EE;
+      text-align: center;
+      margin-top: 30px;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      cursor: pointer;
+    }
+    
+    .tap-to-restart.visible {
+      opacity: 0.7;
+    }
+    
+    .tap-to-restart:hover {
+      opacity: 1;
+    }
+    
+    @media (max-width: 600px) {
+      .message {
+        font-size: 14px;
+        min-height: 80px;
+      }
+      
+      .fortune {
+        font-size: 20px;
+      }
+      
+      .percentage {
+        font-size: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="loading-bar-container">
+      <div class="loading-bar"></div>
+      <div class="percentage">0%</div>
+    </div>
+    
+    <div class="message"></div>
+    <div class="fortune"></div>
+    
+    <div class="tap-to-restart">tap to restart</div>
+  </div>
+  
+  <script>
+    const loadingBar = document.querySelector('.loading-bar');
+    const percentage = document.querySelector('.percentage');
+    const message = document.querySelector('.message');
+    const fortune = document.querySelector('.fortune');
+    const tapToRestart = document.querySelector('.tap-to-restart');
+    
+    const stages = [
+      { percent: 5, text: "Loading...", delay: 500 },
+      { percent: 12, text: "Initializing random number generator...", delay: 800 },
+      { percent: 23, text: "Consulting the void...", delay: 1000 },
+      { percent: 34, text: "Decrypting your browser cookies for clues...", delay: 1200 },
+      { percent: 47, text: "Cross-referencing your last 1,000 decisions...", delay: 1000 },
+      { percent: 56, text: "Analyzing the color of your aura (it's teal, btw)...", delay: 1200 },
+      { percent: 68, text: "Waiting for Mercury to stop being in retrograde...", delay: 1000 },
+      { percent: 79, text: "Reading the tea leaves from a cup you drank in 2019...", delay: 1200 },
+      { percent: 87, text: "Asking the universe nicely...", delay: 800 },
+      { percent: 94, text: "The universe is typing...", delay: 1500 },
+      { percent: 100, text: "Complete.", delay: 500 }
+    ];
+    
+    const fortunes = [
+      "You will find something you weren't looking for.",
+      "The thing you're avoiding? That's the answer.",
+      "Someone is thinking about texting you. They won't.",
+      "You'll make the right decision by accident.",
+      "The password you forgot will come to you at 3am.",
+      "You are exactly where you're supposed to be. Unfortunately.",
+      "Your next mistake will teach you something expensive.",
+      "The WiFi will be weak, but your resolve will be weaker.",
+      "You will receive an email. You will not read it carefully.",
+      "The answer is yes, but you'll ask the wrong question.",
+      "Your next brilliant idea will come in the shower.",
+      "You'll forget why you opened that tab.",
+      "The thing you ordered online will arrive when you've forgotten about it.",
+      "You will be right, but no one will believe you.",
+      "Your courage will fail you at exactly the wrong moment.",
+      "The universe has a plan. It's weirder than yours.",
+      "You'll think of the perfect reply two days too late.",
+      "Your best idea will come when you can't write it down.",
+      "The person you need to talk to is also avoiding you.",
+      "You'll know what to do. You'll do something else instead."
+    ];
+    
+    let currentStage = 0;
+    let isComplete = false;
+    
+    function updateLoading() {
+      if (currentStage >= stages.length) {
+        showFortune();
+        return;
+      }
+      
+      const stage = stages[currentStage];
+      loadingBar.style.width = stage.percent + '%';
+      percentage.textContent = stage.percent + '%';
+      message.textContent = stage.text;
+      
+      currentStage++;
+      setTimeout(updateLoading, stage.delay);
+    }
+    
+    function showFortune() {
+      const randomFortune = fortunes[Math.floor(Math.random() * fortunes.length)];
+      
+      setTimeout(() => {
+        message.style.opacity = '0';
+        setTimeout(() => {
+          message.style.display = 'none';
+          fortune.textContent = randomFortune;
+          fortune.classList.add('visible');
+          tapToRestart.classList.add('visible');
+          isComplete = true;
+        }, 500);
+      }, 500);
+    }
+    
+    function restart() {
+      if (!isComplete) return;
+      
+      // Reset everything
+      currentStage = 0;
+      isComplete = false;
+      loadingBar.style.width = '0%';
+      percentage.textContent = '0%';
+      message.style.display = 'block';
+      message.style.opacity = '1';
+      message.textContent = '';
+      fortune.classList.remove('visible');
+      fortune.textContent = '';
+      tapToRestart.classList.remove('visible');
+      
+      // Start again
+      setTimeout(() => updateLoading(), 100);
+    }
+    
+    // Start on load
+    setTimeout(() => updateLoading(), 500);
+    
+    // Restart on tap
+    tapToRestart.addEventListener('click', restart);
+    document.body.addEventListener('click', (e) => {
+      if (isComplete && e.target !== tapToRestart) {
+        restart();
+      }
+    });
+  </script>
+</body>
+</html>
